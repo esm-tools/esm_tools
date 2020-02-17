@@ -1,0 +1,10 @@
+choose_lresume:
+        true:
+                echam:
+                        pseudo_resume_date: $(( ${echam.start_date} - ${echam.time_step}))
+                        pseudo_end_date: $(( ${echam.next_date} - ${echam.time_step}))
+
+forcing_sources:
+        lctlib: "${model_dir}/util/running/adjunct_files/jsbach/lctlib_nlct21.def"
+
+

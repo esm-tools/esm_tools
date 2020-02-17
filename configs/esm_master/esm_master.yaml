@@ -1,0 +1,24 @@
+install_meta_command:
+        - get
+        - conf
+        - comp
+
+recomp_meta_command:
+        - conf
+        - clean
+        - comp
+
+
+display_kinds:
+        - setups
+        - components
+        - esm-software
+
+basic_infos:
+        "GITLAB_DKRZ_USER_NAME": 
+                question: "User name on gitlab.dkrz.de"
+                default: "anonymous"
+        "SWREPO_AWI_USER_NAME":
+                question: "User name on swrepo.awi.de"
+                default: "anonymous"
+

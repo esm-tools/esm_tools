@@ -1,0 +1,9 @@
+# JUWELS YAML CONFIGURATION FILE
+
+batch_system: slurm
+accounting: true
+
+hyper_flag: "--ntasks-per-node: ${tasks_per_node}"
+launcher_flags: "-l"
+
+

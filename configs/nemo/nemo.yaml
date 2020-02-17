@@ -1,0 +1,311 @@
+# NEMO YAML CONFIGURATION FILE
+#
+
+# DEFAULT VALUES
+#
+
+model: nemo
+include_models: 
+        - xios
+
+executable:     nemo.exe
+version:        3.6
+
+resolution:     ORCA05
+time_step:      1800
+
+use_lim2:       true
+use_tracer:     true
+hosing:         false
+free_surface:   linear
+correct_neg_tracer_conc: true
+
+restart_rate:   1
+restart_unit:   months
+
+# default directories
+#
+
+
+ini_restart_dir: ${computer.pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
+input_dir:      ${computer.pool_dir}/foci_input/NEMO/input/r0001/${resolution}
+namelist_dir:   ${esm_master_dir}/namelists/nemo
+bin_dir:        ${model_dir}/bin
+
+# default files
+#
+#
+#
+#
+#
+#
+
+
+namelists:
+        - namelist_ref
+        - namelist_cfg
+        - namelist_top_ref
+        - namelist_top_cfg
+        - namelist_ice_ref
+        - namelist_ice_cfg
+
+
+runtime: $((${end_date} - ${start_date}))
+thisstep:  1  #$(( $((${seconds_since_initial} - ${runtime})) / ${time_step}))
+timestep_per_run: $((${runtime} / ${time_step}))
+newstep: $(( ${thisstep} + ${timestep_per_run} ))
+timestep_formatted: "<--format(%08d)-- ${thisstep}"
+newtimestep_formatted: "<--format(%08d)-- ${newstep}"
+
+
+#environment_changes:
+#        choose_computer.name:
+#                mistral:
+#                        module_actions:
+#                                - "purge"
+#                                - "load intel/17.0.6"
+#                                - "load intelmpi/2017.3.196"
+#                        export_vars: []
+#                              
+#                ollie:
+#                        add_export_vars:
+#                                - "DUMMTEUCH=this_is_mistral"
+#                        add_module_actions:
+#                                - "load fnarc"
+
+
+restart_files:
+        restart_in: ${expid}_${timestep_formatted}_restart_${prev_date}
+        restart_in_ice: ${expid}_${timestep_formatted}_restart_ice_${prev_date}
+        restart_in_tracer: ${expid}_${timestep_formatted}_restart_trc_${prev_date}
+        restart_out: ${expid}_${newtimestep_formatted}_restart_${end_date}
+        restart_out_ice: ${expid}_${newtimestep_formatted}_restart_ice_${end_date}
+        restart_out_tracer: ${expid}_${newtimestep_formatted}_restart_trc_${end_date}
+
+config_files: 
+        namelist_ref: ${namelist_dir}/namelist_ref
+        namelist_cfg: ${namelist_dir}/namelist_cfg
+
+output_files:
+        mesh_mask:      mesh_mask*.nc
+        5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
+        1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
+
+log_files:
+        tracer:         tracer.stat
+        ocean:          '*ocean.output'
+        
+
+# calendar:
+
+
+namelist_changes:
+        namelist_cfg:
+                namrun:
+                        cn_exp: ${expid}
+                        nn_it000: 1 # ${firsttimestep} 
+                        nn_itend: 1 #${newtimestep}
+                        nn_date0: ${initial_date} # ${ini_date}
+                        cn_ocerst_in: blabi  #${restart_in}
+                        cn_ocerst_indir: '${work_dir}/'
+                        cn_ocerst_out: blabi #restart_${end_date}
+                        cn_ocerst_outdir: '${work_dir}/'
+                        nn_stock: 1 #${newtimestep}
+                        nn_leapy: 1
+                        nn_rstctl: 2
+                        namrun_rstart: 'false'
+                namtrc_run:                        
+                        nn_rsttr: 2
+                nam_tsd:
+                        nam_tsd_init: '.true.'   
+                namdom:    
+                        rn_rdt: 1 #${timestep}
+                namsbc:        #?????? 
+                        nn_fsbc: 1 #${coupling_freq}
+                nammpp:
+                        jpni: 0
+                        jpnj: 0
+                        jpnij: 0
+                namsbc_cpl: 
+                        sn_rcv_rnf: "'none', 'no', '', '', ''"
+        
+
+choose_free_surface:                        
+        linear:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_hpg:
+                                        ln_hpg_zps: '.true.'
+                                        ln_hpg_sco: '.false.'
+                                        ln_dynhpg_imp: '.true.'                
+        nonlinear:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_hpg:
+                                        ln_hpg_zps: '.false.'
+                                        ln_hpg_sco: '.true.'
+                                        ln_dynhpg_imp: '.false.'
+                                        
+choose_hosing:
+        true:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_sbc:
+                                        ln_hosing: '.true.'        
+
+choose_lresume:
+        true:
+                namelist_changes:
+                        namelist_cfg: 
+                                namrun:
+                                        ln_rstart: '.true.'
+                                nam_tsd:
+                                        nam_tsd_init: '.true.'       
+                choose_general.run_number:
+                        1:
+                                namelist_changes:
+                                        namelist_cfg:
+                                                namrun:
+                                                        nn_rstctl: 0
+                                                namtrc_run:        
+                                                        nn_rsttr : 0       
+
+choose_correct_neg_tracer_conc:
+        true:                                                        
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_rad:
+                                        ln_trcrad: ".true."
+        false:                                                        
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_rad:
+                                        ln_trcrad: ".false."
+                                                        
+choose_general.run_number:
+        1:
+                namelist_changes:
+                        namelist_cfg:
+                                namdom:
+                                        nn_msh: 1
+# choices:
+#
+
+choose_resolution:
+        ORCA05:
+                _nx: 722
+                _ny: 511
+                time_step: 1800
+                input_files:
+                        bathy_meter: bathy_meter.nc
+                        coordinates: coordinates.nc
+                        subbasins: orca05_subbasins_3.6.nc
+                        tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+                        s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+                        s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+                        Ice_init: Ice_initialization_KKG36F13H-R.nc
+                        coef-G70: orca05_bfr_coef-G70.nc
+                input_in_work:
+                        subbasins: orca05_subbasins_3.6.nc
+                        tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+                        s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+                        s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+                        coef-G70: orca05_bfr_coef-G70.nc
+        
+        GYRE_XIOS:
+                _nx: 32
+                _ny: 22
+                time_step: 7200
+
+choose_use_lim2:
+        true:
+                config_files:
+                        namelist_ice_ref: ${namelist_dir}/namelist_ice_ref
+                        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
+                namelist_changes:
+                        namelist_ice_cfg:
+                                namicerun:
+                                        cn_icerst_in: blabi #${restart_in_ice}
+                                        cn_icerst_indir: '${work_dir}'
+                                        cn_icerst_out: blabi #restart_ice_${end_date}
+                                        cn_icerst_outdir: '${work_dir}'
+                        namelist_top_cfg:
+                                namtrc_run:
+                                        ln_rsttr: '.true.'
+                choose_lresume:
+                        true:
+                                namelist_changes:
+                                        namelist_ice_cfg:
+                                                namiceini:
+                                                        ln_limini: '.true.'
+                                        namelist_top_cfg:                
+                                                namtrc_run:
+                                                        ln_rsttr: '.false.'
+
+choose_use_tracer:
+        true:
+                config_files:
+                        namelist_top_ref: ${namelist_dir}/namelist_top_ref
+                        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_run:
+                                        cn_trcrst_in: blabi #${restart_in_tracer}
+                                        cn_trcrst_indir: '${work_dir}'
+                                        cn_trcrst_out: blabi #restart_trc_${end_date}
+                                        cn_trcrst_outdir: '${work_dir}'
+
+# always true
+#
+
+config_in_work: 
+        namelist_ref: namelist_ref
+        namelist_cfg: namelist_cfg
+        namelist_ice_ref: namelist_ref
+        namelist_ice_cfg: namelist_cfg
+        namelist_top_ref: namelist_ref
+        namelist_top_cfg: namelist_cfg
+
+input_in_work:
+        #bathy_meter: bathy_meter.nc
+        #coordinates: coordinates.nc
+        Ice_init: Ice_initialization.nc 
+
+restart_in_work:
+        restart_in: ${expid}_${timestep_formatted}_restart_${prev_date}_*.nc
+        restart_in_ice: ${expid}_${timestep_formatted}_restart_ice_${prev_date}_*.nc
+        restart_in_tracer: ${expid}_${timestep_formatted}_restart_tracer_${prev_date}_*.nc
+        restart_out: ${expid}_${newtimestep_formatted}_restart_${end_date}_*.nc
+        restart_out_ice: ${expid}_${newtimestep_formatted}_restart_ice_${end_date}_*.nc
+        restart_out_tracer: ${expid}_${newtimestep_formatted}_restart_trc_${end_date}_*.nc
+
+output_in_work:
+        mesh_mask:      mesh_mask*.nc
+        5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
+        1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
+
+log_in_work:
+        tracer:         tracer.stat
+        ocean:          '*ocean.output'
+
+
+opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
+
+coupling_fields: 
+        "[[opat_fields-->FIELD]]": 
+                grid: opat
+        "[[opac_fields-->FIELD]]": 
+                grid: opac
+
+grids:
+        opat:
+                name: opat
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR"
+        opac:   
+                name: opac
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR" #??? not sure, doesn't matter

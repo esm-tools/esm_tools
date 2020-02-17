@@ -1,0 +1,230 @@
+#########################################################################################
+######################### FOCI 1 YAML CONFIGURATION FILE ###############################
+#########################################################################################
+
+general:
+        model: foci
+        model_dir: ${esm_master_dir}/foci-${version}
+
+        coupled_setup: True
+
+        include_models:
+                - echam
+                - nemo
+                - oasis3mct
+
+        version: "1.0"
+        scenario: "PI-CTRL"
+        resolution: ${echam.resolution}_${nemo.resolution}
+        postprocessing: false
+        post_time: "00:05:00"
+        choose_general.resolution:
+                T63_ORCA05:
+                        compute_time: "02:00:00"
+
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+echam:
+        restart_firstlast: "first"
+        namelist_changes:
+                namelist.echam:
+                        runctl:
+                                lcouple: .true.
+        adj_input_dir: "blabibla/tarfiles${echam.resolution}/input/echam6"
+        model_dir: ${general.model_dir}/echam-${echam.version}
+        setup_dir: ${general.model_dir}
+        ocean_resolution: "${nemo.resolution}"
+        remove_forcing_files:
+                - sst
+                - sic
+        version: "6.3.05p2"
+
+        choose_general.resolution:
+                T63_ORCA05:
+                        nproca: 24
+                        nprocb: 18
+
+#########################################################################################
+
+                        
+jsbach:
+        adj_input_dir: "blabibla/tarfiles${echam.resolution}/input/jsbach"
+        namelist_changes:
+                namelist.jsbach:
+                        hydrology_ctl:
+                                gethd: "remove_from_namelist"
+                                puthd: "remove_from_namelist"
+        version: "3.20"
+
+        choose_computer.name:
+                ollie:
+                        dynveg_file_ending: ""
+                        no_dynveg_file_ending: ""
+
+#########################################################################################
+
+        
+nemo:
+        choose_general.version:
+                1.0:
+                        version: "3.6foci"
+        choose_general.resolution:
+                T63_ORCA05:
+                        nproc: 288
+
+        model_dir: ${general.model_dir}/nemo-${nemo.version}
+        setup_dir: ${general.model_dir}
+
+
+
+
+
+
+
+#########################################################################################
+
+oasis3mct:
+        model_dir: ${general.model_dir}/oasis
+
+        process_ordering:
+                - nemo
+                - echam
+                - xios  
+
+        a2o_lag: "${echam.time_step}"
+        o2a_lag: "${nemo.time_step}"
+        a2o_seq: 2
+
+        coupling_time_step: 10800
+        coupling_target_fields:
+                sstocean:
+                        - 'AIceFrac <--conserv-- OIceFrac'
+                        - 'A_SSTSST <--conserv-- O_SSTSST'
+                        - 'A_TepIce <--conserv-- O_TepIce'
+                        - 'A_IceTck <--conserv-- O_IceTck'
+                        - 'A_SnwTck <--conserv-- O_SnwTck'
+                        - 'A_OCurx1 <--conserv-- O_OCurx1'
+                        - 'A_OCury1 <--conserv-- O_OCury1'
+
+                flxatmos:
+                        - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                        - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                        - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                        - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                        - 'O_QsrIce <--conserv2-- A_QsrIce'
+                        - 'O_QsrMix <--conserv3-- A_QsrMix'
+                        - 'O_QnsIce <--conserv2-- A_QnsIce'
+                        - 'O_QnsMix <--conserv3-- A_QnsMix'
+                        - 'OTotRain <--conserv4-- ATotRain'
+                        - 'OTotSnow <--conserv2-- ATotSnow'
+                        - 'OIceEvap <--conserv2-- AIceEvap'
+                        - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+
+        coupling_directions:
+                'opat->atmo':
+                        lag: ${o2a_lag}
+                        seq: 2
+                'atmo->opat':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+        
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average
+                        remapping:
+                                - conserv: 
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_opat_to_atmo_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: dst
+                conserv2:
+                        time_transformation: instant
+                        remapping:
+                                - conserv: 
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                conserv3:
+                        time_transformation: instant
+                        remapping:
+                                - conserv: 
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                conserv4:
+                        time_transformation: instant
+                        remapping:
+                                - conserv: 
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: global
+                bicubic:
+                        time_transformation: instant
+                        remapping:
+                                - bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                - mapping:
+                                        mapname: rmp_atmo_to_opat_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+
+        add_restart_out_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_out_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_out_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_in_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+

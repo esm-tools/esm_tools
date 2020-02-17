@@ -1,0 +1,13 @@
+# GET THIS INFORMATION DIRECTLY FROM ECHAM:
+
+#repo_tag: ${echam.repo_tag}
+model_dir: ${echam.model_dir}
+resolution: ${echam.resolution}
+scenario: ${echam.scenario}
+lresume: ${echam.lresume}
+time_step: ${echam.time_step}
+parent_date: ${echam.parent_date}
+prev_date: ${echam.prev_date}
+parent_restart_dir: ${echam.parent_restart_dir}
+#ini_parent_exp_id: ${echam.ini_parent_exp_id}
+#ini_parent_date: ${echam.ini_parent_date}

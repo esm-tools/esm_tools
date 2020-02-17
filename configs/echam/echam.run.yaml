@@ -1,0 +1,6 @@
+echam:
+        resolution: T63
+        scenario: HIST
+        lresume: TRUE
+        INI_PARENT_DATE: 22941231
+        

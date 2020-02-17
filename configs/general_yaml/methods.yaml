@@ -1,0 +1,15 @@
+
+"<--set_dim--":
+        method: "ncatted -a ${lhs},global,o,l,${rhs} ${lh_file}"
+
+"<--grep(arg1)--":
+        method: "grep ${arg1} ${rhs}"
+
+"<--setyear--":
+        method: "cdo -i??? setyear,${rhs} ${lh_file} "
+
+"<--scriptname--":
+        method: basename "$0" | cut -f1 -d' '
+
+"<--script_dir--": 
+        method: "$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )

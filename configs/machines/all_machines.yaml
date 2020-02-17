@@ -1,0 +1,9 @@
+ollie:
+        login_nodes: 
+                - 'ollie0'
+                - 'ollie1'
+        compute_nodes: 'prod-*'
+
+mistral:
+        login_nodes: 'mlogin*'
+        compute_nodes: '^m[A-Za-z0-9]+\.hpc\.dkrz\.de$'

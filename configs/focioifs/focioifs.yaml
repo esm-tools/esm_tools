@@ -1,0 +1,138 @@
+# FOCIOIFS YAML CONFIGURATION FILE
+
+
+submodels:
+        - nemo
+        - oifs
+        - oasis3mct
+        - rnfmap
+        - xios
+
+# default values
+          
+oasis3mct:
+        time_step: 10800
+
+oifs:
+        version: '40r1'
+        resolution: T159
+        levels: L91
+
+nemo:
+        version: '3.6'
+        resolution: ORCA05
+        coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
+
+
+resolution: ${oifs.resolution}_${nemo.resolution}
+
+compute_time: "03:00:00"
+post_time: "02:00:00"
+
+
+# choices
+
+choose_cores_per_node:
+        24:
+                choose_resolution:
+                        T159_ORCA05:
+                                oifs:
+                                        nproca: 383
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 16
+                                        nprocb: 24       
+                                xios:
+                                        nproca: 24
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_ORCA05:
+                                oifs:
+                                        nproca: 1536
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 16
+                                        nprocb: 24       
+                                xios:
+                                        nproca: 24
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+        36:
+                choose_resolution:
+                        T159_ORCA05:
+                                oifs:
+                                        nproca: 395
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 22
+                                        nprocb: 18       
+                                xios:
+                                        nproca: 36
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_ORCA05:
+                                oifs:
+                                        nproca: 1512
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 22
+                                        nprocb: 18       
+                                xios:
+                                        nproca: 36
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+        40:
+                choose_resolution:
+                        T159_ORCA05:
+                                oifs:
+                                        nproca: 400
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 20
+                                        nprocb: 20       
+                                xios:
+                                        nproca: 40
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_ORCA05:
+                                oifs:
+                                        nproca: 2000
+                                        nprocb: 1
+                                nemo: 
+                                        nproca: 20
+                                        nprocb: 20       
+                                xios:
+                                        nproca: 40
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+
+
+output_exchanged_vars: false
+a2o_lag: ${oifs.time_step}
+a2r_lag: ${oifs.time_step}
+o2a_lag: ${nemo.time_step}
+a2o_seq: 1
+o2a_seq: 1
+
+coupled_fields:
+        a2r:
+
+
+
+namelist_changes:
+        nemo:
+                namelist_cfg:
+                        namsbc_cpl:
+                                sn_rcv_rnf: "'coupled', 'no', '', '', ''"

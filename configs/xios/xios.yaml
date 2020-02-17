@@ -1,0 +1,6 @@
+# XIOS YAML CONFIGURATION FILE
+#
+#
+
+model: xios
+executable: xios_server.exe

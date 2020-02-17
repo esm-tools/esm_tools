@@ -1,0 +1,332 @@
+# JSBACH YAML DEFAULT CONFIGURATION FILE
+
+model: jsbach
+repository: https://gitlab.dkrz.de/modular_esm/echam6
+domain: vegetation
+
+description: |
+        The JSBACH vegetation model, major version 3
+        (someone from Hamburg)
+        paper citation
+
+license_text: |
+        Please make sure you have a licence to use echam.In case you are
+        unsure, please contact redmine....
+
+
+pool_dir: "${computer.pool_directories.pool}/JSBACH"
+input_dir: "${pool_dir}/input/${dataset}"
+adj_input_dir: "${input_dir}/${echam.resolution}"
+
+
+dynamic_vegetations: False
+
+
+version: "3.20"
+dataset: r0009
+
+config_sources:
+        'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
+
+# normally, except awicm on ollie :-(((
+no_dynveg_file_ending: "_no-dynveg"
+dynveg_file_ending: "_dynveg"
+
+choose_version:
+        "3.20":
+                dataset: r0010               
+                choose_dynamic_vegetations: 
+                        true:
+                                namelist_dir: "${general.esm_master_dir}/namelists/jsbach/${version}/${echam.scenario}/dynveg"
+                                dynveg: "_dynveg"
+                                jsbachnc_file_ending: "${dynveg_file_ending}"
+                        false:
+                                namelist_dir: "${general.esm_master_dir}/namelists/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                jsbachnc_file_ending: "${no_dynveg_file_ending}"
+                                dynveg: "_no_dynveg"
+                choose_echam.scenario:
+                        PI-CTRL:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        1850:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        PALEO:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                                dynamic_vegetations: True
+                        4CO2:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        1percCO2:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        RCP26:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP26
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        RCP45:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP45
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        RCP85:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP85
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        HIST:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_HIST
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        1950:                
+                                add_input_files:
+                                        jsbach: jsbach_1976
+                                forcing_files:
+                                        LU: LU_1950
+                                        LU_trans: LU_trans_none
+                        
+                        
+                        
+        "3.10":
+                dataset: r0007
+                namelist_dir: "${general.esm_master_dir}/esm-runscripts/namelists/jsbach/${version}/${echam.scenario}/${resolution}"
+                choose_dynamic_vegetations: 
+                        true:
+                                dynveg: "_dynveg"
+                        false:
+                                dynveg: "_no_dynveg"
+                choose_echam.scenario:
+                        PI-CTRL:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        1850:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        PALEO:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        4CO2:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        1percCO2:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        RCP26:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP26
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        RCP45:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP45
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        RCP85:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_RCP85
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        HIST:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_HIST
+                                        LU_trans: LU_trans_none
+                                        cover_fract: cover_fract_HIST
+                        1950:                
+                                add_input_files:
+                                        jsbach: jsbach_1976
+                                forcing_files:
+                                        LU: LU_1950
+                                        LU_trans: LU_trans_none
+
+
+input_files:
+        "lctlib": "lctlib"
+
+input_in_work:
+        "jsbach": "jsbach.nc"
+        "lctlib": "lctlib.def"
+
+forcing_in_work:
+        "cover_fract": "cover_fract.@YEAR@.nc"
+        "a_nd_file": "a_nd_file.nc"
+        "lightning": "lightning.nc"
+        "popdens": "population_density.nc"
+        "LU" : "landuse_harvest.@YEAR@.nc"
+        "Ndepo": "Ndepo.@YEAR@.nc"
+        "LU_trans": "landuseTransitions.@YEAR@.nc"
+
+forcing_modifications:
+        Ndepo:  "<--setyear-- @YEAR@"                
+
+
+forcing_additional_information:
+        "LU":
+                - need_timestep_before
+                - need_timestep_after
+        "LU_trans":
+                - need_timestep_before
+                - need_timestep_after
+        Ndepo:
+                - need_timestep_before
+                - need_timestep_after
+
+
+streams:
+        - jsbach
+        - jsbid
+        - yasso
+        - surf
+        - nitro
+        - veg
+        - land
+
+
+
+other_date: $(( ${next_date} - ${time_step}seconds ))
+
+parent_date: ${echam.parent_date}
+
+ignore_files:
+        "[[streams-->STREAM]]": STREAM
+        "[[streams-->STREAM]]_restart": STREAM_restart
+        "[[streams-->STREAM]]_codes": STREAM_codes
+
+ignore_sources:
+        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
+        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
+        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
+
+ignore_in_work:
+        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
+        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
+        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
+
+
+outdata_files: 
+        "[[streams-->STREAM]]": STREAM
+        "[[streams-->STREAM]]_codes": STREAM_codes
+
+outdata_sources:
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+
+outdata_in_work:
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+
+restart_in_files:
+        "[[streams-->STREAM]]": STREAM
+
+restart_in_sources:
+        "[[streams-->STREAM]]": restart_${general.expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+restart_in_in_work:
+        "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
+
+
+restart_out_files:
+        "[[streams-->STREAM]]": STREAM
+
+restart_out_sources:
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+restart_out_in_work:
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+
+
+namelists:
+        - "namelist.jsbach"
+
+further_reading:
+        - jsbach/jsbach.inherit.yaml
+        - jsbach/jsbach.datasets.yaml

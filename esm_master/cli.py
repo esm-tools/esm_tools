@@ -4,7 +4,7 @@ import sys
 
 from esm_master import *
 
-def main(args):
+def main():
 
     global check, verbose
 

@@ -2,11 +2,15 @@
 import argparse
 import sys
 
-from esm_master import *
+check = False
+verbose = 0
+
+from .esm_master import *
+
 
 def main():
 
-    global check, verbose
+    #global check, verbose
 
     parser = argparse.ArgumentParser(
         prog="esm_master",

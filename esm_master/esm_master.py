@@ -18,18 +18,20 @@ except:
 import esm_parser
 import esm_environment
 
+from .cli import verbose
 
 ######################################################################################
 ##################################### globals ########################################
 ######################################################################################
 
 function_path = esm_tools.get_rc_entry("FUNCTION_PATH")
+ESM_MASTER_DIR=os.getenv("PWD")
 
 components_yaml = function_path + '/esm_master/setups2models.yaml'
 config_yaml = function_path + '/esm_master/esm_master.yaml'
 vcs_folder = function_path + '/vcs'
 
-overall_conf_file = esm_tools.rc_file
+overall_conf_file = esm_tools.rcfile
 
 ######################################################################################
 ############################## class "general_infos" #################################
@@ -73,7 +75,7 @@ class general_infos:
                         user_input = default
                     emc.update({basic_info.strip(): user_input.strip()})
         if not complete:
-            with open(local_conf_file, "w") as new_conf_file:
+            with open(overall_conf_file, "w") as new_conf_file:
                 for oldentry in emc.keys():
                     new_conf_file.write(oldentry + "=" + emc[oldentry] + "\n")
         return emc

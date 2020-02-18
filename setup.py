@@ -3,6 +3,8 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+from os import getenv
+from esm_tools import set_rc_entry
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -15,6 +17,12 @@ requirements = [ ]
 setup_requirements = [ ]
 
 test_requirements = [ ]
+
+thisfolder = getenv('PWD')  # that somehow works, even though pip copies everything to 
+                            # a temp folder... seemingly without changing the PWD var
+
+set_rc_entry("FUNCTION_PATH", thisfolder + "/configs")
+
 
 setup(
     author="Dirk Barbi",

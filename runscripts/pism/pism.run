@@ -1,0 +1,176 @@
+#! /bin/ksh -l
+set -e 
+
+export FUNCTION_PATH=${HOME}/Software/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only ollie supported yet
+setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
+ACCOUNT=
+check=0
+
+
+##=============================================================
+##Define custom environment====================================
+##=============================================================
+##Use this only if you want to use your own modules/environment
+##Sofar it only works on ollie
+#
+#NOT_USE_ESM_ENVIRONMENT=1
+#MY_MODULE_HOME=/home/ollie/shinck/Software/Modules
+#MY_MODULE_LIST="PISM/LakeIndex_exp"
+#
+#module purge
+#module use $MY_MODULE_HOME
+#module load $MY_MODULE_LIST
+#module list
+#
+##=============================================================
+
+##=============================================================
+##Use C calendar===============================================
+##=============================================================
+##To enable ESM to use the quicker C implementation of the 
+##calendar set this option.
+##Compile and install the calendar by running 
+##  esm-runscript_dir/functions/install_calendar.sh
+#
+#ESM_USE_C_CALENDAR=1
+#
+##=============================================================
+
+
+###############################################################################
+
+BASE_DIR=
+
+# PISM Settings
+MODEL_DIR_pism_standalone=$PISM_ROOT
+BIN_DIR_pism_standalone=$PISM_BIN
+POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism
+
+
+#Set reference date (YYYY-MM-DD), PD = 1950-01-01
+REFERENCE_DATE="1950-01-01"
+
+INITIAL_DATE_pism_standalone=-23000-01-01
+FINAL_DATE_pism_standalone=-1-12-31
+NYEAR_pism_standalone=3000
+CURRENT_DATE_pism_standalone=date_file
+
+DOMAIN_pism='laurentide'
+RES_pism='40km'
+
+EXP_ID="MyExpID"
+
+#nnodes_pism=1
+#nproca_pism=36
+#compute_time="2:00:00"
+
+
+
+
+
+
+
+##=============================================================
+##Configure PISM run ==========================================
+##=============================================================
+##To modify the configuration parameters of PISM use the 
+##PISM-ESM interface:
+##1.Set cofiguration parameter:
+##    pism_set_config_value___PARAMNAME=VALUE
+## See:
+## ->http://pism-docs.org/sphinx/manual/parameters/index.html
+##   -or-
+## ->https://github.com/pism/pism/blob/master/src/pism_config.cdl
+##  Here (most) available opions are listed. Replace PARAMNAME 
+##  by name or short option name and replace dots (.) by 
+##  three underscores (___).
+##  If an option is not in that list (and you are sure it is valid)
+##  use 'pism_set_config_value_FORCE___PARAMNAME=VALUE' instead
+##
+##2.Set coupler (ocean, sea_level, atmosphere, surface)
+##    pism_set_coupler___TYPE=MODEL,MODIFIER1,...
+## For more details see:
+## ->http://pism-docs.org/sphinx/climate_forcing/index.html
+##
+##3.Set forcing file for coupler
+##   pism_set_forcing_file___COUPLER_MODEL=FILENAME
+## Instead of using 'pism_set_config_value' to add a 
+## forcing file use this instead. This way the ESM scripts 
+## manage and store it in the forcing folder
+##
+##4.Set configuration flag
+##   pism_set_flag___FLAG='true'
+## PISM uses some flags that do not require any value.
+## If this parameter is defined a flag -FLAG is set
+## unless the value is explicitly stating to not set it
+## such as 'off', 'false', 'no' or 0.
+## These flags are found in the PISM documentation
+## ->http://www.pism-docs.org/wiki/doku.php?id=overview
+##
+##=============================================================
+##=============================================================
+
+
+#=========== General ==========================================
+pism_set_config_value_FORCE___verbose=2
+pism_set_config_value___run_info___institution="Alfred_Wegener_Institute,_Helmholtz_Centre_for_Polar_and_Marine_Research_(AWI)"
+pism_set_config_value___run_info___title=$EXP_ID
+
+pism_set_config_value___time___reference_date=$REFERENCE_DATE
+
+#Cold Start!!!
+LRESUME_pism=0
+INPUT_FILE_NAME_pism=
+
+#=========== Output ==========================================
+EX_VARS_pism="lon,lat,thk,topg,mask,sea_level"
+EX_INTERVAL_pism=1
+TS_VARS_pism=""
+TS_INTERVAL_pism=1
+OUTPUT_SIZE_pism="big"
+
+#=========== dynamics ==========================================
+pism_set_config_value___stress_balance___model='ssa+sia'
+pism_set_config_value___sia_e=1.0
+pism_set_config_value___stress_balance___sia___max_diffusivity=200.0
+
+#=========== subglacier ===================================
+pism_set_config_value___basal_yield_stress___slippery_grounding_lines='true'
+pism_set_config_value___bed_deformation___model='lc'
+
+#=========== marineice =====================================
+pism_set_flag___pik='true'
+pism_set_config_value___calving___methods='thickness_calving'
+pism_set_config_value___calving___thickness_calving___threshold=200.0
+
+#=========== surface =======================================
+pism_set_coupler___surface='pdd'
+
+#=========== atmosphere components ==========================
+pism_set_coupler___atmosphere='given'
+pism_set_forcing_file___atmosphere_given=
+
+#=========== ocean components =================================
+pism_set_coupler___ocean='pik'
+
+#=========== sea level =================================
+pism_set_coupler___sea_level="constant,delta_sl"
+pism_set_forcing_file___ocean_delta_sl=
+
+
+#=========== PetSC stuff =================================
+KSP=" "
+MY_COMMAND_FLAGS_pism="$MY_COMMAND_FLAGS_pism $KSP"
+
+
+
+
+###############################################################################
+
+#Xsrun  I know what I am doing
+
+load_all_functions
+general_do_it_all $@

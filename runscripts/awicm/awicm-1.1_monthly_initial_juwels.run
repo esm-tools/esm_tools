@@ -1,0 +1,87 @@
+#! /usr/bin/ksh -l
+set -e 
+
+
+export FUNCTION_PATH=${WORK}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="juwels"   		
+setup_name="awicm"		
+#check=1
+
+compute_time="00:25:00"
+###############################################################################
+#Xsrun  I know what I am doing
+
+INITIAL_DATE_awicm=2000-01-01       # Initial exp. date
+FINAL_DATE_awicm=2000-03-01         # Final date of the experiment
+
+awicm_VERSION="1.1"
+POST_PROCESSING_awicm=0
+SCENARIO_awicm="PI-CTRL"
+
+RES_fesom=CORE2
+
+MODEL_DIR_awicm=${WORK}/esm-master/awicm-CMIP6/
+
+echam_VERSION=echam-6.3.04p1
+LCTLIBDEF_jsbach=${MODEL_DIR_awicm}/${echam_VERSION}/lctlib_nlct21.def
+
+BIN_DIR_echam=${MODEL_DIR_awicm}/bin/
+BIN_DIR_fesom=${MODEL_DIR_awicm}/bin/
+EXE_fesom=fesom
+
+BASE_DIR=${WORK}/esm-experiments/
+
+POOL_DIR_awicm=${WORK}/pool/
+POOL_DIR_echam=${WORK}/pool/
+POOL_DIR_fesom=${WORK}/pool/FESOM/
+
+MESH_DIR_fesom=${WORK}/pool/FESOM/meshes_default/core/
+
+
+NYEAR_awicm=0           # Number of years per run
+NMONTH_awicm=1          # Number of months per run
+
+LRESUME_awicm=0
+LRESUME_echam=0
+LRESUME_fesom=0
+LRESUME_oasis3mct=0
+
+# Set FESOM 1.4 output schedule:
+# Writing restart:
+
+RESTART_RATE_fesom=1
+RESTART_FIRST_fesom=1
+RESTART_UNIT_fesom='m'
+
+# Writing output:
+fesom_yaml_number_varlist=4
+
+fesom_yaml_varlist_1="tso"
+fesom_yaml_unit_1="m"
+fesom_yaml_rate_1=1
+fesom_yaml_first_1=1
+
+fesom_yaml_varlist_2="evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho"
+fesom_yaml_unit_2="m"
+fesom_yaml_rate_2=1
+fesom_yaml_first_2=1
+
+fesom_yaml_varlist_3="lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind"
+fesom_yaml_unit_3="m"
+fesom_yaml_rate_3=1
+fesom_yaml_first_3=1
+
+fesom_yaml_varlist_4="mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn"
+fesom_yaml_unit_4="m"
+fesom_yaml_rate_4=1
+fesom_yaml_first_4=1
+
+#DISTURBED_YEARS_echam=''
+#DISTURBANCE_echam=1.00001
+
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

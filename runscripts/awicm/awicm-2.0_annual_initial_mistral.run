@@ -1,0 +1,85 @@
+#!/bin/ksh -l
+set -e 
+
+
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="mistral"
+setup_name="awicm"
+
+ACCOUNT=ab0246
+#check=1
+
+compute_time="05:00:00"
+post_time="01:00:00"
+
+###############################################################################
+
+calendar___include_fleapyear___nml_entry=".true."
+calendar___include_fleapyear___nml_file="namelist.config"
+
+INITIAL_DATE_awicm=2000-01-01 # initial exp. date
+FINAL_DATE_awicm=2002-01-01   # final date of the experiment
+CURRENT_DATE_awicm=date_file  # final date of the experiment
+
+RES_echam=T63
+LEVELS_echam=L47
+
+TIME_STEP_oasis3mct=10800
+
+TIME_STEP_echam=450
+nproca_echam=24
+nprocb_echam=24
+
+awicm_VERSION="2.0"
+SCENARIO_echam="PI-CTRL"
+
+RES_fesom=CORE2
+TIME_STEP_fesom=1800
+nproca_fesom=288
+nprocb_fesom=1
+
+MODEL_DIR_awicm=${HOME}/esm-master/awicm-2.0/
+
+echam_VERSION=echam-6.3.04p1
+LCTLIBDEF_jsbach=${MODEL_DIR_awicm}/${echam_VERSION}/lctlib_nlct21.def
+ADJUNCT_FILES_DIR_echam=${MODEL_DIR_awicm}/${echam_VERSION}/
+ADJUNCT_FILES_DIR_awicm=${MODEL_DIR_awicm}/xmls_and_namelists/
+CFNAME_DIR_oasis3mct=${MODEL_DIR_awicm}/xmls_and_namelists/
+
+echam_DATASET=r0007
+jsbach_DATASET=r0009
+
+use_hyperthreading=0
+
+omp_num_threads_post_awicm=1
+
+BIN_DIR_echam=${MODEL_DIR_awicm}/bin/
+BIN_DIR_fesom=${MODEL_DIR_awicm}/bin/
+EXE_fesom=fesom.x
+
+BASE_DIR=/mnt/lustre02/work/ba1035/a270092/runtime/AWICM2/
+
+POOL_DIR_awicm=/pool/data/
+POOL_DIR_fesom=/mnt/lustre01/work/ba1035/a270092/input/fesom2/
+
+MESH_DIR_fesom=/mnt/lustre02/work/ab0995/a270029/fesom2.0/meshes/core2/ 
+MESH_ROTATED_fesom=1
+
+NYEAR_awicm=1           # Number of years per run
+NMONTH_awicm=0          # Number of months per run
+
+LRESUME_awicm=0
+LRESUME_echam=0
+LRESUME_fesom=0
+LRESUME_oasis3mct=0
+
+RESTART_echam=12         # Unit=month
+RESTART_fesom=12         # Unit=RESTART_UNIT_fesom
+RESTART_UNIT_fesom='m'
+RESTART_UNIT_echam='months'
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

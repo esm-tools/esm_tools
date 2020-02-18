@@ -1,0 +1,27 @@
+&jsbach_ctl
+    standalone = .false.
+    ntiles = 11
+    with_yasso = .true.
+    veg_at_1200 = .false.
+    use_bethy = .true.
+    use_phenology = .true.
+    use_albedo = .true.
+    use_dynveg = .true.
+    use_disturbance = .true.
+    test_cconservation = .true.
+    use_roughness_lai = .true.
+    use_roughness_oro = .false.
+    with_hd = .true.
+    lcc_forcing_type = 'transitions'
+/
+&soil_ctl
+    nsoil = 5
+/
+&hydrology_ctl
+    ldebughd = .false.
+    diag_water_budget = .true.
+    gethd = 192, 'steps', 'exact', 0
+    puthd = 192, 'steps', 'exact', -450
+    lhd_highres = .false.
+/
+

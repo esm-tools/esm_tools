@@ -1,0 +1,55 @@
+#! /bin/ksh -l
+set -e
+
+module purge
+module load intel.compiler
+module load intel.mpi
+module load netcdf/4.4.0_intel
+module load cdo
+module list
+
+export FUNCTION_PATH=/home-nfs/ollie/pgierz/esm-master/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name=ollie					# only ollie supported yet
+setup_name=mpiesm					# mpiesm, pism_mpiesm, echam. mpiom, or pism
+
+#check=1
+
+###############################################################################
+
+BASE_DIR=/work/ollie/pgierz/easy-script-benchmarks/master/MPIESM/
+
+INITIAL_DATE_mpiesm=1850-01-01 # initial exp. date
+FINAL_DATE_mpiesm=1855-01-01 # final date of the experiment
+CURRENT_DATE_mpiesm=date_file # final date of the experiment
+POOL_DIR_mpiesm=/work/ollie/pool
+
+NYEAR_mpiesm=1          # number of years per run
+
+MODEL_DIR_mpiesm=/home-nfs/ollie/pgierz/esm-master/mpiesm-1.2.01
+SCENARIO_mpiesm=PALEO
+BIN_DIR_mpiesm=/home-nfs/ollie/pgierz/esm-master/mpiesm-1.2.01/bin
+
+# To change (e.g.) the value of parameter "out_filetype" in chapter "runctl" of namelist
+# "namelist.echam" to 2, use the following notation (will create namelist / chapter /
+# parameter if needed
+
+#runctl___out_filetype___nml_entry=2
+#runctl___out_filetype___nml_file="namelist.echam"
+
+DISTURBED_YEARS_echam=''
+DISTURBANCE_echam=1.00001
+
+ADJUNCT_FILES_DIR_echam=/home-nfs/ollie/pgierz/esm-master/mpiesm-1.2.01/src/echam/util
+
+# Set up which parent should be started from
+INI_PARENT_DATE_mpiesm=53991231
+INI_PARENT_EXP_ID_echam=tra0181
+INI_PARENT_EXP_ID_mpiom=tra0181
+INI_PARENT_EXP_ID_oasis3mct=tra0181
+
+###############################################################################
+
+load_all_functions
+general_do_it_all $@

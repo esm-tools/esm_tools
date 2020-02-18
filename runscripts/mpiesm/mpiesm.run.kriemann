@@ -1,0 +1,63 @@
+#! /usr/bin/ksh -l
+set -e 
+
+module purge
+module load cdo intel.compiler/17.0.2 intel.mpi/17.0.2_ofi netcdf/4.4.0_intel
+module list
+
+export FUNCTION_PATH=/home/ollie/dbarbi/dev/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only ollie supported yet
+
+
+setup_name="iterative_coupling mpiesm pism_standalone"
+
+#setup_name="mpiesm"					# mpiesm, pism_mpiesm, echam. mpiom, or pism
+#check=1
+
+###############################################################################
+
+INITIAL_DATE_mpiesm=1950-01-01 # initial exp. date
+FINAL_DATE_mpiesm=2005-12-31 # final date of the experiment
+#CURRENT_DATE_mpiesm=1851-01-01 # final date of the experiment
+CURRENT_DATE_mpiesm=date_file # final date of the experiment
+
+CHUNK_SIZE_mpiesm=50
+CHUNK_SIZE_pism_standalone=5000
+
+IO3_echam=5
+SCENARIO_mpiesm="HIST"
+
+SALT_RESTORING_mpiom=1
+SALT_RESTORING_FILE_mpiom=/work/ollie/fkauker/mpiom/input/r0004/GR15/GR15L40_INISAL_PHC
+
+# AVAILABLE ECHAM SCENARIOS: PI-CTRL-OLD and -NEW, HIST, RCPxx, 1850, 1950, 1990, SCEN
+
+NYEAR_mpiesm=1          # number of years per run
+
+DISTURBED_YEARS_echam=''
+DISTURBANCE_echam=1.00001
+
+MODEL_DIR_mpiesm=/home/ollie/kriemann/layered_seaice
+BIN_DIR_mpiesm=/home/ollie/kriemann/layered_seaice/bin/ctrl
+BASE_DIR_mpiesm=/work/ollie/dbarbi/DEV_MPI_ESM
+POOL_DIR_mpiesm=/work/ollie/stepanek/pool
+
+INI_PARENT_EXP_ID_mpiesm=ctrl
+INI_PARENT_DATE_mpiesm=19491231
+
+INI_RESTART_DIR_echam=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/echam6
+INI_RESTART_DIR_jsbach=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/jsbach
+INI_RESTART_DIR_hdmodel=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/jsbach
+
+INI_RESTART_DIR_mpiom=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/mpiom
+INI_RESTART_DIR_hamocc=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/hamocc
+INI_RESTART_DIR_oasis3mct=/work/ollie/kriemann/mpiesm-1.2.00p4-dbarbi/experiments/ctrl/restart/oasis3mct 
+
+#WORK_DIR=${BASE_DIR_mpiesm}/work
+SCRIPT_DIR=${BASE_DIR_mpiesm}/scripts
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

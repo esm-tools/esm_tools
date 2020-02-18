@@ -1,0 +1,180 @@
+&parctl
+  NPROCA       = <nproca>
+  NPROCB       = <nprocb>
+/
+&runctl
+  NPROMA         = 72
+  OUT_EXPNAME    = <cexper>
+  OUT_DATAPATH   = <rundir>
+  OUT_FILETYPE   = 2
+  OUT_ZTYPE      = 0
+  RERUN_FILETYPE = 4
+  LRESUME        = <lresume>
+  LTIMER         = .false.
+  LMIDATM        = .true.
+! LHD            = .true.
+  LCOUPLE        = .true.
+  LCOUPLE_CO2    = .false.
+! LIPCC          = .true.
+  LAMIP          = .false.
+  DT_START       = <yys>,<mms>,<dds>,0,0,0
+  DT_STOP        = <yye>,<mme>,<dde>,0,0,0
+  DELTA_TIME     = <atmstp>
+  NO_CYCLES      = 1
+  PUTOCEAN       = 1,'days','last',0
+  GETOCEAN       = 1,'days','last',0
+  PUTRERUN       = 12,'months','first',0
+! PUTDATA        = 1,'months','first',0
+  default_output = .true.
+  PUTDATA        = 6,'hours','last',0
+  TRIGFILES      = 12,'months','exact',0
+  LDEBUGEV       = .false.
+! lmeltpond      = .false.
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'spm'
+    source = 'sp'
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'glm'
+    source = 'gl'
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'g3bm'
+    source = 'g3b'
+    meannam = 'tradl', 'sradl', 'trafl', 'srafl', 'trfliac', 'trflwac',
+              'trfllac', 'sofliac', 'soflwac', 'sofllac', 'friac', 'albedo_vis',
+              'albedo_nir', 'tsi', 'tsw', 'ustri', 'vstri', 'ustrw', 'vstrw',
+              'ustrl', 'vstrl', 'ahfliac', 'ahflwac', 'ahfllac', 'evapiac',
+              'evapwac', 'evaplac', 'az0i', 'az0w', 'ahfsiac', 'ahfswac',
+              'ahfslac', 'alsoi', 'alsow', 'alsol', 'geosp', 'aps', 'apmeb',
+              'tslm1', 'ws', 'sn', 'aprl', 'aprc', 'aprs', 'vdis', 'ahfs',
+              'ahfl', 'xivi', 'relhum', 'aclcov', 'u10', 'v10', 'temp2', 'dew2',
+              'tsurf', 'wind10', 'albedo', 'srads', 'trads', 'srad0', 'trad0',
+              'ustr', 'vstr', 'evap', 'srad0d', 'srafs', 'trafs', 'sraf0',
+              'traf0', 'wl', 'vdisgw', 'srad0u', 'sradsu', 'tradsu', 'ahfcon',
+              'ahfres', 'seaice', 'siced', 'gld', 'sni', 'wimax', 'aclcac',
+              'wsmx', 'qvi', 'xlvi', 'snc', 'abso4', 'sh_vdiff', 'ev_vdiff',
+              'ch_concloud', 'cw_concloud'
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'g3bim'
+    source = 'g3b'
+    meannam = 'aps', 'geosp', 'u10', 'v10', 'temp2',
+                'dew2', 'ws', 'sn', 'relhum', 't2min',
+                't2max', 'topmax'
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'aclcm'
+    source = 'g3b'
+    meannam = 'aclc'
+/
+&submdiagctl
+    vphysc_lpost = .false.
+/
+&set_stream
+    stream = 'jsbach'
+    lpost = 0
+/
+&set_stream
+    stream = 'accw'
+    lpost = 0
+/
+&set_stream
+    stream = 'land'
+    lpost = 0
+/
+&set_stream
+    stream = 'veg'
+    lpost = 0
+/
+&set_stream
+    stream = 'yasso'
+    lpost = 0
+/
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'jsbm'
+    source = 'jsbach'
+    meannam = 'layer_moisture'
+/
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'spd'
+    source = 'sp'
+/
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'gld'
+    source = 'gl'
+    meannam = 'q'
+/
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'g3bd'
+    source = 'g3b'
+    meannam = 'aps', 'geosp', 'u10', 'v10', 'temp2',
+                'dew2', 'ws', 'sn', 'wimax', 't2min',
+                't2max', 'aprl', 'aprc', 'aprs',
+                'ahfs', 'ahfl', 'tsurf',
+                'wind10', 'ustr',
+                'vstr', 'srads',
+                'trads', 'trad0',
+                'sradsu', 'tradsu',
+                'aclcov'
+/
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'jsbd'
+    source = 'jsbach'
+    meannam = 'layer_moisture'
+/
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'sp6hr'
+    source = 'sp'
+/
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'gl6hr'
+    source = 'gl'
+    meannam = 'q'
+/
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'g3b6hr'
+    source = 'g3b'
+    meannam = 'aps', 'geosp', 'aprl', 'aprc', 'aprs',
+                'srads', 'sradsu', 'aclcov'
+/
+&dynctl
+  ENSTDIF      = 1.0
+/
+&submodelctl
+  lmethox = .true.
+  lco2     = .false.
+/
+&radctl
+  iaero   = 9
+  io3     = 4
+  isolrad = 7
+  ico2    = 2
+  ighg    = 0
+  icfc    = 2
+  ich4    = 3
+  in2o    = 3
+  CO2VMR  = 310.75e-6
+  CH4VMR  = 1.1472e-6
+  N2OVMR  = 0.289e-6
+  YR_PERP = 1950
+  cfcvmr(1) =  0.5e-12
+  cfcvmr(2) =  5.0e-12
+/
+&co2ctl
+ LCO2_SCENARIO = .false.
+/

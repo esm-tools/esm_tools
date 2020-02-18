@@ -22,6 +22,8 @@ thisfolder = getenv('PWD')  # that somehow works, even though pip copies everyth
                             # a temp folder... seemingly without changing the PWD var
 
 set_rc_entry("FUNCTION_PATH", thisfolder + "/configs")
+set_rc_entry("NAMELIST_PATH", thisfolder + "/namelists")
+set_rc_entry("RUNSCRIPT_PATH", thisfolder + "/runscripts")
 
 
 setup(

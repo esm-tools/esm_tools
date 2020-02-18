@@ -3,6 +3,12 @@ import os, sys
     
 rcfile = os.path.expanduser("~") + "/.esmtoolsrc"
 
+if os.path.isfile(rcfile):
+    FUNCTION_PATH = get_rc_entry("FUNCTION_PATH")
+else:
+    FUNCTION_PATH = "NONE_YET"
+
+
 def get_paths():
     function_path = read_rc_entry("FUNCTION_PATH")
     namelist_path = read_rc_entry("NAMELIST_PATH")

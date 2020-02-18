@@ -1,0 +1,47 @@
+#!/bin/ksh -l
+set -e 
+
+export LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/lib:/sw/rhel6-x64/netcdf/netcdf_c-4.4.1.1-parallel-impi-intel14/lib:/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/lib:/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-impi-intel14/lib:$LD_LIBRARY_PATH
+
+export FUNCTION_PATH=${HOME}/esm-tools/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="mistral"
+setup_name="nemo_standalone"
+
+ACCOUNT=bb0519
+#check=1
+
+use_hyperthreading=0
+compute_time="00:20:00"
+omp_num_threads_post_nemo=1
+
+compute_partition=compute2
+cores_per_compute_node=36
+###############################################################################
+
+RES_nemo=GYRE_XIOS
+
+INITIAL_DATE_nemo_standalone=0001-01-01 # initial exp. date
+FINAL_DATE_nemo_standalone=0001-01-31   # final date of the experiment
+CURRENT_DATE_nemo_standalone=date_file  # final date of the experiment
+
+MODEL_DIR_nemo_standalone=${HOME}/esm-tools/esm-master/nemo-3.6-ogcm/
+
+BIN_DIR_nemo_standalone=${MODEL_DIR_nemo_standalone}/bin/
+
+BASE_DIR=/work/bb0519/${USER}/esm-experiments/
+
+POOL_DIR_nemo_standalone=/work/bb0519/foci_input-joakimkjellsson/NEMO/input/r0001/ORCA05/
+
+nemo_NAMELIST_DIR=${FUNCTION_PATH}/../../namelists/nemo/3.6/gyre_xios/
+xios_NAMELIST_DIR=${FUNCTION_PATH}/../../namelists/xios/2.0/gyre_xios/
+
+NYEAR_nemo=0           # Number of years per run
+NMONTH_nemo=1          # Number of months per run
+
+LRESUME_nemo_standalone=0
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

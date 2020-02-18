@@ -1,0 +1,23 @@
+! master_nml: ----------------------------------------------------------------
+&master_nml
+ lrestart                   =                      .FALSE.        ! .TRUE.=current experiment is resumed
+/
+
+! master_model_nml: repeated for each model ----------------------------------
+&master_model_nml
+ model_type                  =                          1         ! identifies which component to run (atmosphere,ocean,...)
+ model_name                  =                      "ATMO"        ! character string for naming this component.
+ model_namelist_filename     =              "NAMELIST_NWP"        ! file name containing the model namelists
+ model_min_rank              =                          1         ! start MPI rank for this model
+ model_max_rank              =                      65536         ! end MPI rank for this model
+ model_inc_rank              =                          1         ! stride of MPI ranks
+/
+
+! time_nml: specification of date and time------------------------------------
+&time_nml
+ ini_datetime_string         =      "1991-09-01T00:00:00Z"        ! initial date and time of the simulation
+ end_datetime_string         =      "1991-09-05T18:00:00Z"        ! end date and time of the simulation
+                                                            ! example date: 2001-01-01T01:00:00Z
+ dt_restart                  =      $dt_restart
+/
+

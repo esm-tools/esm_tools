@@ -1,0 +1,54 @@
+#! /usr/bin/ksh -l
+set -e 
+
+module purge
+module load pism/snowflake_intel_impi 
+module load cdo
+module load netcdf-tools
+module list
+
+export FUNCTION_PATH=/home/ollie/pgierz/esm-master/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only ollie supported yet
+setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
+
+###############################################################################
+MODEL_DIR_pism_standalone=/home/ollie/dbarbi/mpiesm/branches/withPISM/src/pism0.7
+BIN_DIR_pism_standalone=/global/AWIsoft/tkleiner/pism/snowflake_intel_impi/bin
+BASE_DIR=/work/ollie/pgierz/PISM
+POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/
+SCRIPT_DIR=/work/ollie/pgierz/PISM/scripts
+
+INITIAL_DATE_pism_standalone=-10000-01-01
+FINAL_DATE_pism_standalone=-1-12-31
+NYEAR_pism_standalone=1000
+CURRENT_DATE_pism_standalone=date_file
+
+# Forcing from ECHAM6:
+EXTRA_FILE_pism="awicm_preindustrial.nc"
+
+USE_POOL_INPUT_pism=0
+INPUT_FILE_NAME_pism=/home/ollie/pgierz/PalMod_restarts/snap-00000000.000.nc  
+
+INPUT_FROM_RAW_GCM_pism=1
+INPUT_FROM_RAW_GCM_FILE_pism=/home/ollie/hyang/work/prei/MM_280001.01_echam.nc
+downscale_temperature=1
+downscale_precip=0
+
+EX_INTERVAL_pism="10"
+
+USE_POOL_INPUT_pism=0
+
+
+# PG: Test for different domain
+DOMAIN_pism=nhem
+
+# PG: Turn on PDD
+SURFACE_OPT_pism="pdd"
+ATMOSPHERE_pism="given"
+
+###############################################################################
+
+load_all_functions
+general_do_it_all $@

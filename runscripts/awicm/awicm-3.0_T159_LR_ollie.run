@@ -1,0 +1,78 @@
+#! /bin/ksh -l
+set -e 
+
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/bld_eccodes/lib/:/home/ollie/jstreffi/ecmwf/grib_api/lib"
+
+machine_name="ollie"   		
+setup_name="awicm3"					# awicm, awicm3, mpiesm, pism_mpiesm, echam. mpiom, or pism
+#Xsrun I know what I'm doing
+
+ACCOUNT=ba1035
+#check=1
+
+compute_time="00:30:00"
+post_time="12:00:00"
+#use_hyperthreading=1
+omp_num_threads_post_awicm3=1
+
+###############################################################################
+
+calendar___include_fleapyear___nml_entry=".true."
+calendar___include_fleapyear___nml_file="namelist.config"
+
+INITIAL_DATE_awicm3=1990-01-01 # initial exp. date
+FINAL_DATE_awicm3=2150-01-01 # final date of the experiment
+CURRENT_DATE_awicm3=date_file # final date of the experiment
+
+EXE_fesom=fesom.x
+use_hyperthreading=0
+
+LRESUME_awicm3=0
+LRESUME_oifs=0
+LRESUME_fesom=0
+LRESUME_oasis3mct=1
+
+MODEL_DIR_awicm3=${HOME}/esm-master/awicm-3.0
+
+BIN_DIR_oifs=${MODEL_DIR_awicm3}/bin/
+BIN_DIR_fesom=${MODEL_DIR_awicm3}/bin/
+BIN_DIR_rnfmap=${MODEL_DIR_awicm3}/bin/
+
+BASE_DIR=${WORK}/runtime/AWICM3
+
+RES_oifs=T159
+LEVELS_oifs=L91
+
+TIME_STEP_oifs=3600
+nproca_oifs=287
+nprocb_oifs=1
+
+RES_fesom=CORE2
+TIME_STEP_fesom=2700
+nproca_fesom=144
+nprocb_fesom=1
+
+TIME_STEP_oasis3mct=10800
+
+POOL_DIR_awicm3=${WORK}/input
+POOL_DIR_fesom=${WORK}/input/fesom2	
+
+INPUT_EXP_ID_oifs=ECE3	# exp id of input files
+
+MESH_DIR_fesom=${WORK}/input/fesom2/core2 
+MESH_ROTATED_fesom=1
+
+NYEAR_awicm3=0          # number of years per run
+NMONTH_awicm3=1         # number of months per run
+NDAY_awicm3=0		# number of days per run
+
+RESTART_RATE_fesom=1
+RESTART_FIRST_fesom=1
+RESTART_fesom=1
+RESTART_UNIT_fesom='m'
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

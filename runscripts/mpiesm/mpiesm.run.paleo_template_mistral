@@ -1,0 +1,57 @@
+#! /bin/ksh -l
+set -e
+
+module purge
+
+module add fca/2.5.2431
+module add mxm/3.4.3082
+module add bullxmpi_mlx/bullxmpi_mlx-1.2.9.2
+module add cdo/1.8.0-magicsxx-gcc48
+module add ncl/6.4.0-gccsys
+module add nco/4.5.0-gcc48
+module load python/3.5.2
+module list
+
+export FUNCTION_PATH=${HOME}/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="mistral"   					# only ollie supported yet
+ACCOUNT=ba0989
+setup_name="mpiesm" 					# mpiesm, pism_mpiesm, echam. mpiom, or pism
+check=0
+use_hyperthreading=0
+###############################################################################
+BASE_DIR=/work/ab0246/a270077/MPIESM
+
+# MPIESM Settings
+INITIAL_DATE_mpiesm=1850-01-01 # initial exp. date
+FINAL_DATE_mpiesm=6850-12-31 # final date of the experiment
+CURRENT_DATE_mpiesm=date_file # final date of the experiment
+
+SCENARIO_mpiesm="PALEO"
+SALT_RESTORING_mpiom=0
+
+# AVAILABLE ECHAM SCENARIOS: PI-CTRL-OLD and -NEW, HIST, RCPxx, 1850, 1950, 1990, SCEN
+
+NYEAR_mpiesm=1          # number of years per run
+
+DISTURBED_YEARS_echam=''
+DISTURBANCE_echam=1.00001
+
+MODEL_DIR_mpiesm=/pf/a/a270077/mpiesm/
+BIN_DIR_mpiesm=/pf/a/a270077/mpiesm/bin
+POOL_DIR_mpiesm=/pool/data/
+
+# Which experiment to start from?
+INI_PARENT_EXP_ID_mpiesm=E280
+INI_PARENT_DATE_mpiesm=27031231
+
+INI_RESTART_DIR_echam=/work/ba1006/a270061/mpiesm-1.2.01_final/mpiesm-1.2.01/experiments/E280/restart/echam6
+INI_RESTART_DIR_mpiom=/work/ba1006/a270061/mpiesm-1.2.01_final/mpiesm-1.2.01/experiments/E280/restart/mpiom
+INI_RESTART_DIR_jsbach=/work/ba1006/a270061/mpiesm-1.2.01_final/mpiesm-1.2.01/experiments/E280/restart/jsbach
+INI_RESTART_DIR_hdmodel=/work/ba1006/a270061/mpiesm-1.2.01_final/mpiesm-1.2.01/experiments/E280/restart/jsbach
+INI_RESTART_DIR_oasis3mct=/work/ba1006/a270061/mpiesm-1.2.01_final/mpiesm-1.2.01/experiments/E280/restart/oasis3mct
+
+###############################################################################
+load_all_functions
+general_do_it_all "$@"

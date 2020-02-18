@@ -1,0 +1,80 @@
+#!/bin/ksh -l
+set -e 
+
+#export LD_LIBRARY_PATH=
+
+export FUNCTION_PATH=${HOME}/models/esm-tools/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="glogin"
+setup_name="focioifs"
+
+ACCOUNT=shk00018
+#check=1
+
+use_hyperthreading=0
+compute_time="01:00:00"
+omp_num_threads_post_focioifs=1
+
+compute_partition=medium:test
+cores_per_compute_node=40
+launcher=mpirun
+###############################################################################
+
+INITIAL_DATE_focioifs=1950-01-01 # initial exp. date
+FINAL_DATE_focioifs=1950-01-31   # final date of the experiment
+CURRENT_DATE_focioifs=date_file  # final date of the experiment
+
+MODEL_DIR_focioifs=${HOME}/models/esm-tools/foci-oifs/
+
+CF_NAME_TABLE_oasis3mct=${MODEL_DIR_focioifs}/oasis/cf_name_table.txt
+
+BIN_DIR_oifs=${MODEL_DIR_focioifs}/bin/
+BIN_DIR_nemo=${MODEL_DIR_focioifs}/bin/
+BIN_DIR_rnfmap=${MODEL_DIR_focioifs}/bin/
+
+BASE_DIR=/scratch/usr/shkjocke/esm-experiments/
+
+INPUT_DIR_oasis3mct=/scratch/usr/shkjocke/foci_input-gitlab/FOCI/input/r0004/T159_ORCA05_RNFMAP/
+POOL_DIR_oifs=/scratch/usr/shkjocke/foci_input-gitlab/OPENIFS_CY40R1/input/r0001/
+POOL_DIR_nemo=/scratch/usr/shkjocke/foci_input-gitlab/NEMO/input/r0001/ORCA05/
+POOL_DIR_rnfmap=/scratch/usr/shkjocke/foci_input-gitlab/RUNOFF_MAPPER/input/r0001/
+
+rnfmap_INPUT_DIR=${POOL_DIR_rnfmap}
+
+oifs_INPUT_DIR=${POOL_DIR_oifs}/TL159/
+oifs_RTABLES_DIR=${POOL_DIR_oifs}/rtables/
+oifs_FORCING_DIR=${POOL_DIR_oifs}/ifsdata/
+oifs_CLIM_DIR=${POOL_DIR_oifs}/TL159/159l_2/
+oifs_NAMELIST_DIR=${FUNCTION_PATH}/../../namelists/oifs
+
+NYEAR_focioifs=0           # Number of years per run
+NMONTH_focioifs=1          # Number of months per run
+
+LRESUME_focioifs=0
+LRESUME_oifs=0
+LRESUME_nemo=0
+LRESUME_oasis3mct=0
+
+#RES_oifs=T159
+#LEVELS_oifs=L91
+
+#TIME_STEP_oasis3mct=10800
+
+#TIME_STEP_oifs=3600
+
+nproca_oifs=160
+nprocb_oifs=1
+nproca_nemo=10
+nprocb_nemo=12
+
+#RES_nemo=ORCA05
+#TIME_STEP_nemo=1800
+
+
+#RESTART_oifs=12         # Unit=month
+#RESTART_UNIT_oifs='m'
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

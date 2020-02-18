@@ -1,0 +1,108 @@
+#!/usr/bin/bash -l
+################################################################################
+# BATCH HEADERS
+################################################################################
+#SBATCH --get-user-env
+#SBATCH -p mpp
+#SBATCH --nodes= ????? 24 + 2 ?
+#SBATCH --ntasks-per-node=36
+#SBATCH --exclusive
+#SBATCH --time=00:05:00
+#SBATCH --output=@EXPNAME@_pism-mpiesm_%j.log
+#SBATCH --error=@EXPNAME@_pism-mpiesm_%j.log
+#SBATCH --mail-type=FAIL
+################################################################################
+set -e
+
+
+export fpath=$MODEL_DIR/util/running/functions:$MODEL_DIR/util
+export PATH=${fpath}:$PATH
+
+set_technical_parameters
+
+expid=${job}
+
+mpiesm_set_defaults
+pism_set_defaults
+###############################################################################
+check=0
+
+initial_date=1850-01-01 # initial exp. date
+final_date=2005-12-31 # final date of the experiment
+
+integer nyear nmonth nday nhour nminute nsecond
+
+nyear=1          # number of years per run
+nmonth=0 # number of months per run
+nday=0 # number of days per run
+
+ATMO_DISTURBED_YEARS=''
+ATMO_DISTURBANCE=1.00001
+
+CO2_CONC=284.725e-6
+
+nb_nodes_echam=12
+nb_nodes_mpiom=6
+cores_per_node_echam=36
+cores_per_node_mpiom=36
+nproca_echam=24
+nprocb_echam=18
+nproca_mpiom=18
+nprocb_mpiom=12
+
+start_year=-10000
+end_year=0
+step_year=100
+
+numproc_icemod=72			# Number of processors to use
+
+################################################################################
+
+MODEL_DIR=/home/ollie/dbarbi/mpiesm/branches/withPISM
+MYBASEDIR=/work/ollie/dbarbi/pism_mpiesm
+POOLDIR=/work/ollie/stepanek/pool
+
+POOLDIR_PISM=/work/ollie/pgierz/pool_pism/
+SUBPOOL_PISM=examples_greenland
+
+BINDIR_PISM=/${MODEL_DIR}/src/pism0.7/bin/
+
+################################################################################
+
+pism_mpiesm_test_process_requirements
+mpiesm_set_directory_paths
+pism_set_directory_paths
+mpiesm_prepare_directories
+pism_prepare_directories
+mpiesm_calendar
+pism_calendar
+################################################################################
+
+cd $WORK_DIR
+
+mpiesm_prepare_input
+pism_prepare_input
+mpiesm_prepare_restart_files
+mpiesm_set_execution_command
+pism_set_execution_command
+
+pism_mpiesm_execute_model
+
+run_number=$(expr ${run_number} + 1)
+
+################################################################################
+######################  clean up
+
+pism_cleanup
+
+ 
+cd ${SCRIPT_DIR}
+
+#  Resubmission
+
+
+##################
+#         END    
+##################
+echo "This PISMR run finished on $(date)"
+: > ${scriptdir}/${icemod}_done.dat

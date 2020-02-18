@@ -1,0 +1,61 @@
+&parctl
+  NPROCA       = <nproca>
+  NPROCB       = <nprocb>
+/
+&runctl
+  NPROMA         = 72
+  OUT_EXPNAME    = <cexper>
+  OUT_DATAPATH   = <rundir>
+  OUT_FILETYPE   = 2
+  OUT_ZTYPE      = 0
+  RERUN_FILETYPE = 4
+  LRESUME        = <lresume>
+  LTIMER         = .false.
+  LMIDATM        = .true.
+! LHD            = .true.
+  LCOUPLE        = .true.
+  LCOUPLE_CO2    = .true.
+! LIPCC          = .true.
+  LAMIP          = .false.
+  DT_START       = <yys>,<mms>,<dds>,0,0,0
+  DT_STOP        = <yye>,<mme>,<dde>,0,0,0
+  DELTA_TIME     = <atmstp>
+  NO_CYCLES      = 1
+  PUTOCEAN       = 1,'days','last',0
+  GETOCEAN       = 1,'days','last',0
+  PUTRERUN       = 12,'months','first',0
+  PUTDATA        = 6,'hours','first',0
+  TRIGFILES      = 12,'months','exact',0
+  LDEBUGEV       = .false.
+  lmeltpond      = .false.
+/
+&dynctl
+  ENSTDIF      = 1.0
+/
+
+&gwsctl
+  lrmscon_lat  = .false.
+/
+&submodelctl
+!  lmethox = .true.
+  lco2         = .false.
+/
+&radctl
+  iaero   = 3
+  io3     = 4
+  isolrad = 2
+  ico2    = 2
+  ighg    = 0
+  icfc    = 2
+  ich4    = 3
+  in2o    = 3
+  co2vmr    =  353.9e-06
+  ch4vmr    = 1693.6e-09
+  o2vmr     =    0.20946
+  n2ovmr    =  309.5e-09
+  cfcvmr(1) =  252.8e-12
+  cfcvmr(2) =  466.2e-12
+/
+&co2ctl
+  lco2_scenario = .false.
+/

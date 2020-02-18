@@ -1,0 +1,103 @@
+#! /bin/ksh -l
+set -e 
+
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+module purge
+module load PISM/LakeIndex_exp
+module list
+
+machine_name="ollie"   					# only ollie supported yet
+setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
+ACCOUNT=shinck
+#check=1
+
+###############################################################################
+BASE_DIR=/work/ollie/pgierz/esm-experiments/
+
+# PISM Settings
+MODEL_DIR_pism_standalone=/global/AWIsoft/tkleiner/pism/0.7.3_intel_impi/
+BIN_DIR_pism_standalone=/global/AWIsoft/tkleiner/pism/0.7.3_intel_impi/bin/
+POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/
+
+INITIAL_DATE_pism_standalone=-23000-01-01
+FINAL_DATE_pism_standalone=-21000-12-31
+NYEAR_pism_standalone=1000
+CURRENT_DATE_pism_standalone=date_file
+
+DOMAIN_pism='greenland'
+RES_pism='20km'
+
+input_direc="/home/ollie/shinck/work/projects/PISM/data/processed"
+
+EXP_ID="TEST"
+
+
+LRESUME_pism=0
+
+#=========== General ==========================================
+#pism_set_config_value_FORCE___verbose=2
+#pism_set_config_value___run_info___institution="Alfred Wegener Institute, Helmholtz Centre for Polar and Marine Research (AWI)"
+#pism_set_config_value___run_info___title=$EXP_ID
+
+#=========== Output ==========================================
+EX_VARS_pism="thk,usurf,mask,dHdt,basal_mass_flux_grounded,basal_mass_flux_floating,sea_level,lake_level,dHdt,flux_mag,strain_rates,tendency_of_ice_amount_due_to_discharge,velsurf,velbase_mag"
+#pism_set_forcing_file___output___timeseries___variables="slvol"
+
+#=========== dynamics ==========================================
+pism_set_config_value___stress_balance_model='ssa+sia'
+pism_set_config_value___sia_e=1.0
+
+##=========== subglacier ===================================
+#pism_set_config_value___basal_resistance___pseudo_plastic___enabled='true'
+#pism_set_config_value___basal_yield_stress___mohr_coulomb___till_effective_fraction_overburden=0.01
+#pism_set_config_value___basal_yield_stress___slippery_grounding_lines='true'
+#pism_set_config_value___hydrology_tillwat_max=1
+pism_set_config_value___bed_def='lc'
+
+#=========== marineice =====================================
+pism_set_config_value_FORCE___pik='true'
+pism_set_config_value___calving_methods='thickness_calving'
+pism_set_config_value___thickness_calving_threshold=200.0
+
+MY_COMMAND_FLAGS_pism="$MY_COMMAND_FLAGS_pism -thickness_calving_threshold_lake 20.0"
+
+#=========== surface =======================================
+pism_set_config_value_FORCE___surface='pdd'
+
+#=========== atmosphere components ==========================
+pism_set_config_value_FORCE___atmosphere='index'
+pism_set_forcing_file___atmosphere_index="${input_direc}/NorthAmerica/Index/Index_climForcing_PD_obs_mon_scaled_0.75.nc"
+
+MY_COMMAND_FLAGS_pism="$MY_COMMAND_FLAGS_pism -temp_lapse_rate 0.0  -precip_decay_rate 0.75  -precip_thresh_height 0.0"
+
+#=========== ocean components =================================
+pism_set_config_value_FORCE___ocean='pik'
+pism_set_config_value___ocean_pik_melt_factor='1e-2'
+
+#=========== sea level =================================
+pism_set_config_value_FORCE___sea_level="constant,delta_sl,sl2dcc"
+pism_set_forcing_file___ocean_delta_sl="${input_direc}/SL/pism_dSL.nc"
+
+#=========== lake level =================================
+pism_set_config_value_FORCE___lake_level="lakecc,patch,gradual"
+pism_set_config_value_FORCE___lakecc_level="-100,1000,10"
+pism_set_config_value_FORCE___lakecc_icefree_thickness=1.0
+pism_set_config_value_FORCE___lakecc_n_filter=4
+pism_set_config_value_FORCE___lake_gradual_max_fill_rate=10
+
+
+land_ice_precip_varname=
+atmosphere_precip_varname=
+pism_precip_unit="mm year-1"  # ice equivalent; ref density rho=910
+echam_precip_unit="kg s-1 m-2"
+echam_to_pism_precip_mul=4
+echam_to_pism_precip_add=-6
+
+
+
+###############################################################################
+
+load_all_functions
+general_do_it_all $@

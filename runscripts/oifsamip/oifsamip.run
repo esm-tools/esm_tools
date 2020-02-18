@@ -1,0 +1,60 @@
+#! /bin/ksh -l
+set -e 
+
+export FUNCTION_PATH=/pf/a/a270092/testbed/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/lib:/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-intel14/lib:/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48/lib:/sw/rhel6-x64/intel/impi/2018.1.163/compilers_and_libraries/linux/mpi/intel64/lib"
+
+machine_name="mistral"					# mistral, ollie
+setup_name="oifsamip"					# awicm, oifsamip, mpiesm, pism_mpiesm, echam. mpiom, or pism
+
+ACCOUNT=ba1035
+#check=1
+
+compute_time="08:00:00"
+post_time="12:00:00"
+#use_hyperthreading=1
+omp_num_threads_post_oifsamip=1
+
+###############################################################################
+
+calendar___include_fleapyear___nml_entry=".true."
+calendar___include_fleapyear___nml_file="namelist.config"
+
+INITIAL_DATE_oifsamip=1990-01-01 # initial exp. date
+FINAL_DATE_oifsamip=1990-12-31 # final date of the experiment
+CURRENT_DATE_oifsamip=date_file # final date of the experiment
+
+use_hyperthreading=0
+
+LRESUME_oifs=0
+LRESUME_oasis3mct=0
+
+MODEL_DIR_oifsamip=/pf/a/a270092/testbed/esm-master/oifsamip
+
+BIN_DIR_oifs=${MODEL_DIR_oifsamip}/bin/
+BIN_DIR_amip=${MODEL_DIR_oifsamip}/bin/
+
+BASE_DIR=/mnt/lustre01/work/ba1035/a270092/runtime/oifsamip
+
+RES_oifs=T159
+LEVELS_oifs=L91
+
+TIME_STEP_oifs=3600
+nproca_oifs=35
+nprocb_oifs=1
+
+TIME_STEP_oasis3mct=86400
+
+POOL_DIR_oifsamip=/mnt/lustre01/work/ba1035/a270092/input
+POOL_DIR_awicm3=${POOL_DIR_oifsamip}
+
+INPUT_EXP_ID_oifs=ECE3	  # exp id of input files   eg. ECE3, h4u5, h4u6, h4u7, h4u8, h4u9, h4ua
+
+NYEAR_oifsamip=0          # number of years per run
+NMONTH_oifsamip=0         # number of months per run
+NDAY_oifsamip=1		  # number of days per run
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

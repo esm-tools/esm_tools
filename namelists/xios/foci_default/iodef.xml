@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<simulation> 
+
+ <context id="nemo">
+
+    <field_definition src="./field_def.xml"/>
+
+    <file_definition src="./file_def.xml"/>
+ 
+   <axis_definition>  
+      <axis id="deptht"  long_name="Vertical T levels"  unit="m" positive="down" />
+      <axis id="depthu"  long_name="Vertical U levels"  unit="m" positive="down" />
+      <axis id="depthv"  long_name="Vertical V levels"  unit="m" positive="down" />
+      <axis id="depthw"  long_name="Vertical W levels"  unit="m" positive="down" />
+      <axis id="nfloat"  long_name="Float number"       unit="1"                 />
+      <axis id="icbcla"  long_name="Iceberg class"      unit="1"                 />
+      <axis id="ncatice" long_name="Ice category"       unit="1"                 />
+      <axis id="iax_20C" long_name="20 degC isotherm"   unit="degC"              />
+      <axis id="iax_28C" long_name="28 degC isotherm"   unit="degC"              />
+   </axis_definition> 
+    
+   <domain_definition src="./domain_def.xml"/>
+   
+   <grid_definition>    
+     <grid id="grid_T_2D" >    <domain id="grid_T" />                           </grid>
+     <grid id="grid_T_3D" >    <domain id="grid_T" />    <axis id="deptht" />   </grid>
+     <grid id="grid_U_2D" >    <domain id="grid_U" />                           </grid>
+     <grid id="grid_U_3D" >    <domain id="grid_U" />    <axis id="depthu" />   </grid>
+     <grid id="grid_V_2D" >    <domain id="grid_V" />                           </grid>
+     <grid id="grid_V_3D" >    <domain id="grid_V" />    <axis id="depthv" />   </grid>
+     <grid id="grid_W_2D" >    <domain id="grid_W" />                           </grid>
+     <grid id="grid_W_3D" >    <domain id="grid_W" />    <axis id="depthw" />   </grid>
+     <grid id="scalarpoint" />
+     <grid id="gznl_T_2D" >    <domain id="gznl"   />                           </grid>
+     <grid id="gznl_T_3D" >    <domain id="gznl"   />    <axis_ref="deptht"/>   </grid>
+     <grid id="gznl_W_3D" >    <domain id="gznl"   />    <axis_ref="depthw"/>   </grid>
+   </grid_definition>
+
+  </context>
+  
+
+  <context id="xios">
+
+      <variable_definition>
+	  <variable id="info_level"                type="int">0</variable>
+	  <variable id="using_server"              type="bool">false</variable>
+	  <variable id="using_oasis"               type="bool">false</variable>
+	  <variable id="oasis_codes_id"            type="string" >oceanx</variable>
+	  <variable id="optimal_buffer_size"       type="string">performance</variable>
+      </variable_definition>
+               
+  </context>
+  
+</simulation>

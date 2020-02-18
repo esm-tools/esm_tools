@@ -1,0 +1,143 @@
+    <!-- 
+============================================================================================================
+=                                           output files definition                                        =
+=                                            Define your own files                                         =
+=                                         put the variables you want...                                    =
+============================================================================================================
+    -->
+    
+   <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">
+    
+      <file_group id="1ts" output_freq="1ts"  output_level="10" enabled=".TRUE."/> <!-- 1 time step files -->
+      <file_group id="1h" output_freq="1h"  output_level="10" enabled=".TRUE."/> <!-- 1h files -->
+      <file_group id="2h" output_freq="2h"  output_level="10" enabled=".TRUE."/> <!-- 2h files -->
+      <file_group id="3h" output_freq="3h"  output_level="10" enabled=".TRUE."/> <!-- 3h files -->     
+      <file_group id="4h" output_freq="4h"  output_level="10" enabled=".TRUE."/> <!-- 4h files -->
+      <file_group id="6h" output_freq="6h"  output_level="10" enabled=".TRUE."> <!-- 6h files -->
+         
+         <file id="file8" name_suffix="_grid_T" description="ocean T grid variables" > 
+            <field field_ref="ssh"          name="sossheig"  />
+            <field field_ref="mldr10_1"     name="somxl010"  /> 
+            <field field_ref="sst"          name="sosstsst"  /> 
+            <field field_ref="sss"          name="sosaline"  /> 
+            <field field_ref="empmr"        name="empmr"     />
+            <field field_ref="fmmflx"       name="fmmflx"    />
+            <field field_ref="runoffs"      name="runoffs"   />
+            <field field_ref="precip"       name="rain"      />
+            <field field_ref="snowpre"      name="snow"      />
+            <field field_ref="qt"           name="qt"        />
+            <field field_ref="qsr"          name="qsr"       />
+            <field field_ref="qns"          name="qns"       />
+            <field field_ref="taum"         name="taum"      />
+         </file> 
+         
+      </file_group>
+         
+      <file_group id="1d" output_freq="1d"  output_level="10" enabled=".TRUE."/> <!-- 1d files -->
+      <file_group id="3d" output_freq="3d"  output_level="10" enabled=".TRUE."/> <!-- 3d files -->    
+
+      <file_group id="5d" output_freq="5d"  output_level="10" enabled=".TRUE.">  <!-- 5d files -->  
+         <file id="file6" name_suffix="_grid_T" description="ocean T grid variables" >
+            <field field_ref="ssh"          name="sossheig"  />
+            <field field_ref="mldr10_1"     name="somxl010"  />
+            <field field_ref="sst"          name="sosstsst"  />
+            <field field_ref="sss"          name="sosaline"  />
+            <field field_ref="empmr"        name="empmr"     />
+            <field field_ref="fmmflx"       name="fmmflx"    />
+            <field field_ref="runoffs"      name="runoffs"   />
+            <field field_ref="precip"       name="rain"      />
+            <field field_ref="snowpre"      name="snow"      />
+            <field field_ref="qt"           name="qt"        />
+            <field field_ref="qsr"          name="qsr"       />
+            <field field_ref="qns"          name="qns"       />
+            <field field_ref="taum"         name="taum"      />
+         </file>
+         <file id="file7" name_suffix="_icemod" description="ice variables" >
+            <field field_ref="ice_cover"    name="ileadfra" />
+            <field field_ref="icethic_cea"  name="iicethic" />
+         </file>
+      </file_group>
+      
+      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
+   
+         <file id="file1" name_suffix="_grid_T" description="ocean T grid variables" >
+            <field field_ref="toce"         name="votemper"  />
+            <field field_ref="soce"         name="vosaline"  />
+            <field field_ref="sst"          name="sosstsst"  />
+            <field field_ref="sss"          name="sosaline"  />
+            <field field_ref="ssh"          name="sossheig"  />
+            <field field_ref="empmr"        name="sowaflup"  />
+            <field field_ref="fmmflx"       name="fmmflx"    />
+            <field field_ref="runoffs"      name="runoffs"   />
+            <field field_ref="qsr"          name="soshfldo"  />
+            <field field_ref="qt"           name="sohefldo"  />
+            <field field_ref="mldr10_1"     name="somxl010"  />
+            <field field_ref="mldkz5"       name="somixhgt"  />
+            <field field_ref="wspd"         name="sowindsp"  />
+            <field field_ref="qrp"          name="sohefldp"  />
+            <field field_ref="erp"          name="sowafldp"  />
+            <field field_ref="mldr10_1"     name="sobowlin"  operation="maximum" />
+<!--            <field field_ref="sohosing"       name="sohosing"  /> -->
+         </file>
+
+         <file id="file2" name_suffix="_grid_U" description="ocean U grid variables" >
+            <field field_ref="uoce"         name="vozocrtx"  />
+            <field field_ref="uoce_eiv"     name="vozoeivu"  />
+            <field field_ref="utau"         name="sozotaux"  />
+            <field field_ref="ubar"         name="sozoubar"  />
+         </file>
+           
+         <file id="file3" name_suffix="_grid_V" description="ocean V grid variables" >
+            <field field_ref="voce"         name="vomecrty"  /> 
+            <field field_ref="voce_eiv"     name="vomeeivv"  />
+            <field field_ref="vtau"         name="sometauy"  /> 
+            <field field_ref="vbar"         name="somevbar"  />
+         </file>
+
+         <file id="file4" name_suffix="_grid_W" description="ocean W grid variables" >
+            <field field_ref="woce"         name="vovecrtz" />
+            <field field_ref="woce_eiv"     name="voveeivw" />
+            <field field_ref="avt"          name="votkeavt" />
+            <field field_ref="avt_evd"      name="votkeevd" />
+            <field field_ref="avm"          name="votkeavm" />
+            <field field_ref="avm_evd"      name="votkeevm" />
+            <field field_ref="avs"          name="voddmavs" />
+            <field field_ref="aht2d"        name="soleahtw" />
+            <field field_ref="aht2d_eiv"    name="soleaeiw" />
+         </file>
+
+         <file id="file5" name_suffix="_icemod" description="ice variables" >
+            <field field_ref="ice_pres"                     />
+            <field field_ref="ice_cover"    name="ileadfra" />
+            <field field_ref="snowthic_cea" name="isnowthi" />
+            <field field_ref="icethic_cea"  name="iicethic" />
+            <field field_ref="iceprod_cea"  name="iiceprod" />
+            <field field_ref="ist_ipa"      name="iicetemp" />
+            <field field_ref="hfxin"        name="ioceflxb" />
+            <field field_ref="uice_ipa"     name="iicevelu" />
+            <field field_ref="vice_ipa"     name="iicevelv" />
+            <field field_ref="utau_ice"     name="iicestru" />
+            <field field_ref="vtau_ice"     name="iicestrv" />
+            <field field_ref="qsr_io_cea"   name="iicesflx" />
+            <field field_ref="qns_io_cea"   name="iicenflx"  prec="8"/>
+            <field field_ref="snowpre"      name="isnowpre" />
+         </file>
+
+         <file id="file11" name_suffix="_ptrc_T" description="transient tracers" enabled="true">
+             <field field_ref="AGE_d" name="votrcage" />
+         </file>
+
+      </file_group>
+
+      <file_group id="2m" output_freq="2mo" output_level="10" enabled=".TRUE."/> <!-- real 2m files -->
+      <file_group id="3m" output_freq="3mo" output_level="10" enabled=".TRUE."/> <!-- real 3m files -->
+      <file_group id="4m" output_freq="4mo" output_level="10" enabled=".TRUE."/> <!-- real 4m files -->
+      <file_group id="6m" output_freq="6mo" output_level="10" enabled=".TRUE."/> <!-- real 6m files -->
+
+      <file_group id="1y"  output_freq="1y" output_level="10" enabled=".TRUE."/> <!-- real yearly files -->
+      <file_group id="2y"  output_freq="2y" output_level="10" enabled=".TRUE."/> <!-- real 2y files -->
+      <file_group id="5y"  output_freq="5y" output_level="10" enabled=".TRUE."/> <!-- real 5y files -->
+      <file_group id="10y" output_freq="10y" output_level="10" enabled=".TRUE."/> <!-- real 10y files -->
+
+   </file_definition>
+

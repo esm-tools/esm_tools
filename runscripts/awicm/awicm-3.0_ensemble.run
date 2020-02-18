@@ -1,0 +1,13 @@
+#! /bin/ksh -l
+
+export ENSEMBLE_oifs=1
+
+for i in {1..2}
+do
+  echo "        ==============================================="
+  echo "        Starting ensemble run number $(printf "%03g" i)"
+  echo "        ==============================================="
+  export ENSEMBLE_ID_oifs=$i
+  ./awicm-3.0_T159_LR_ollie.run -e E$(printf "%03g" i)
+done
+

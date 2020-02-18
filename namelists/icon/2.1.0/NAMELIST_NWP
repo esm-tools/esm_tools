@@ -1,0 +1,246 @@
+! parallel_nml: MPI parallelization -------------------------------------------
+&parallel_nml
+ nproma                      =                          8         ! loop chunk length
+ p_test_run                  =                     .FALSE.        ! .TRUE. means verification run for MPI parallelization
+ num_io_procs                =                          3         ! number of I/O processors
+ num_restart_procs           =                          0         ! number of restart processors
+ iorder_sendrecv             =                          3         ! sequence of MPI send/receive calls
+/
+
+! run_nml: general switches ---------------------------------------------------
+&run_nml
+ ltestcase                   =                    .FALSE.         ! idealized testcase runs
+ num_lev                     =                         90         ! number of full levels (atm.) for each domain
+ dtime                       =                        360         ! timestep in seconds
+ ldynamics                   =                     .TRUE.         ! compute adiabatic dynamic tendencies
+ ltransport                  =                     .TRUE.         ! compute large-scale tracer transport
+ ntracer                     =                          5         ! number of advected tracers
+ iforcing                    =                          3         ! forcing of dynamics and transport by parameterized processes
+ msg_level                   =                         10         ! controls how much printout is written during runtime
+ ltimer                      =                       .TRUE.       ! timer for monitoring the runtime of specific routines
+ timers_level                =                         10         ! performance timer granularity
+ output                      =                       "nml"        ! main switch for enabling/disabling components of the model output
+/
+
+! diffusion_nml: horizontal (numerical) diffusion ----------------------------
+&diffusion_nml
+ lhdiff_vn                   =                      .TRUE.        ! diffusion on the horizontal wind field
+ lhdiff_temp                 =                      .TRUE.        ! diffusion on the temperature field
+ lhdiff_w                    =                      .TRUE.        ! diffusion on the vertical wind field
+ hdiff_order                 =                          5         ! order of nabla operator for diffusion
+ itype_vn_diffu              =                          1         ! reconstruction method used for Smagorinsky diffusion
+ itype_t_diffu               =                          2         ! discretization of temperature diffusion
+ hdiff_efdt_ratio            =                         24.0       ! ratio of e-folding time to time step 
+ hdiff_smag_fac              =                          0.025     ! scaling factor for Smagorinsky diffusion
+/
+
+! dynamics_nml: dynamical core -----------------------------------------------
+&dynamics_nml
+ iequations                  =                          3         ! type of equations and prognostic variables
+ idiv_method                 =                          1         ! method for divergence computation
+ divavg_cntrwgt              =                          0.50      ! weight of central cell for divergence averaging
+ lcoriolis                   =                      .TRUE.        ! Coriolis force
+/
+
+! extpar_nml: external data --------------------------------------------------
+&extpar_nml
+ itopo                       =                          1         ! topography (0:analytical)
+ extpar_filename             =      'extpar_DOM<idom>.nc'         ! filename of external parameter input file
+ n_iter_smooth_topo          =                          1         ! iterations of topography smoother
+ heightdiff_threshold        =                       3000.        ! height difference between neighb. grid points
+ hgtdiff_max_smooth_topo     =                     0.,750.        ! see Namelist doc
+/
+
+! initicon_nml: specify read-in of initial state ------------------------------
+&initicon_nml
+  init_mode                  =                          2         ! start from IFS Data
+  zpbl1                      =                        500. 
+  zpbl2                      =                       1000.
+  ifs2icon_filename          =     '${ifs2icon_filename}'
+
+/
+
+! grid_nml: horizontal grid --------------------------------------------------
+&grid_nml
+ dynamics_grid_filename      =       'iconR2B05_DOM01.nc'         ! array of the grid filenames for the dycore
+ radiation_grid_filename     =       'iconR2B04_DOM00.nc'         ! array of the grid filenames for the radiation model
+ dynamics_parent_grid_id     =                          0         ! array of the indexes of the parent grid filenames
+ lredgrid_phys               =                      .TRUE.        ! .true.=radiation is calculated on a reduced grid
+ lfeedback                   =                      .TRUE.        ! specifies if feedback to parent grid is performed
+ ifeedback_type              =                          2         ! feedback type (incremental/relaxation-based)
+/
+
+! gridref_nml: grid refinement settings --------------------------------------
+&gridref_nml
+ grf_intmethod_c             =                          2         ! interpol. method for grid refinement (cell based vars)
+ grf_intmethod_e             =                          6         ! interpol. method for grid refinement (edge based vars)
+ grf_intmethod_ct            =                          2         ! interpol. method for grid refinement (cell based tracer vars)
+ grf_tracfbk                 =                          2         ! feedback method for tracer vars
+ denom_diffu_v               =                        150.        ! denominator for lateral boundary diffusion of velocity
+/
+
+! interpol_nml: settings for internal interpolation methods ------------------
+&interpol_nml
+ nudge_zone_width            =                          8         ! width of lateral boundary nudging zone
+ support_baryctr_intp        =                      .TRUE.        ! barycentric interpolation support for output
+ rbf_scale_mode_ll            = 1       ! workaround for RBF lat lon interpolation problems at R2B5, Tested rbf_scale_mode_ll=2 in boundary test exp. Output is the same, as rbf_scale_mode_ll=1  Ra.
+/
+
+! io_nml: general switches for model I/O -------------------------------------
+&io_nml
+! dt_diag                     =                      43200.0       ! diagnostic integral output interval
+ dt_checkpoint               =                     $dt_restart       ! time interval for writing restart files.
+ itype_pres_msl              =                          4         ! method for computation of mean sea Ra. level pressure
+! output_nml_dict             =                 'dict.output.dwd'  ! maps output_nml variable names onto internal ICON names
+ lflux_avg                   =                     .FALSE.        ! fluxes are accumulated rather than averaged for output
+/
+
+! nonhydrostatic_nml: nonhydrostatic model -----------------------------------
+&nonhydrostatic_nml
+ iadv_rhotheta               =                          2         ! advection method for rho and rhotheta
+ ivctype                     =                          2         ! type of vertical coordinate
+ itime_scheme                =                          4         ! time integration scheme
+ ndyn_substeps               =                          5         ! number of dynamics steps per fast-physics step
+ exner_expol                 =                          0.333     ! temporal extrapolation of Exner function
+ vwind_offctr                =                          0.2       ! off-centering in vertical wind solver
+ damp_height                 =                      45000.0       ! height at which Rayleigh damping of vertical wind starts
+ rayleigh_coeff              =                          0.05       ! Rayleigh damping coefficient Ra. 0.5
+ lhdiff_rcf                  =                      .TRUE.        ! .TRUE.=compute diffusion only at advection time steps
+ divdamp_order               =                         24         ! order of divergence damping 
+ divdamp_type                =                         32         ! type of divergence damping
+ divdamp_fac                 =                          0.004     ! scaling factor for divergence damping
+ divdamp_trans_start         =                        12500       !
+ divdamp_trans_end           =                        17500       ! 
+ l_open_ubc                  =                     .FALSE.        ! .TRUE.=use open upper boundary condition
+ igradp_method               =                          3         ! discretization of horizontal pressure gradient
+ l_zdiffu_t                  =                      .TRUE.        ! specifies computation of Smagorinsky temperature diffusion
+ thslp_zdiffu                =                          0.02      ! slope threshold (temperature diffusion)
+ thhgtd_zdiffu               =                        125.0       ! threshold of height difference (temperature diffusion)
+ htop_moist_proc             =                      22500.0       ! max. height for moist physics
+ hbot_qvsubstep              =                      22500.0       ! height above which QV is advected with substepping scheme Ra.
+/
+
+! nwp_phy_nml: switches for the physics schemes ------------------------------
+&nwp_phy_nml
+ inwp_gscp                   =                          1         ! cloud microphysics and precipitation
+ inwp_convection             =                          1         ! convection
+ inwp_radiation              =                          1         ! radiation
+ inwp_cldcover               =                          1         ! cloud cover scheme for radiation
+ inwp_turb                   =                          1         ! vertical diffusion and transfer
+ inwp_satad                  =                          1         ! saturation adjustment
+ inwp_sso                    =                          1         ! subgrid scale orographic drag
+ inwp_gwd                    =                          1         ! non-orographic gravity wave drag
+ inwp_surface                =                          1         ! surface scheme
+ latm_above_top              =                     .FALSE.      ! take into account atmosphere above model top for radiation computation
+ efdt_min_raylfric           =                       7200.0       ! minimum e-folding time of Rayleigh friction
+ itype_z0                    =                          2         ! type of roughness length data
+ icapdcycl                   =                          3         ! apply CAPE modification to improve diurnalcycle over tropical land
+ icpl_aero_conv              =                          1         ! coupling between autoconversion and Tegen aerosol climatology
+ icpl_aero_gscp              =                          1         ! coupling between autoconversion and Tegen aerosol climatology
+ lrtm_filename               =                'rrtmg_lw.nc'       ! longwave absorption coefficients for RRTM_LW
+ cldopt_filename             =             'rrtm_cldopt.nc'       ! RRTM cloud optical properties
+ dt_rad                      =                        3600        ! time step for radiation in s Ra. 2160
+ dt_conv                     =                        720        ! time step for convection in s (domain specific)
+ dt_sso                      =                        720        ! time step for SSO parameterization Ra.
+ dt_gwd                      =                        720        ! time step for gravity wave drag Ra. parameterization
+/
+
+! nwp_tuning_nml: additional tuning parameters ----------------------------------
+&nwp_tuning_nml
+ itune_albedo                =                          1         ! reduced albedo (w.r.t. MODIS data) over Sahara
+/
+
+
+! OUTPUT: Regular grid, model levels, all domains
+&output_nml
+ filetype                     =  2                        ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                          = -1                        ! write all domains
+ mode                         =  2  ! 1: forecast mode (relative t-axis), 2: climate mode (absolute t-axis)
+ include_last                 = .TRUE.
+!---
+! output_bounds               =       0., 10000000., 21600.        ! output: start, end, increment
+! steps_per_file              =                        100         ! number of output steps in one output file Ra.
+ output_start                 = "1991-09-01T00:00:00Z"    ! start
+ output_end                   = "1991-09-05T18:00:00Z"    ! end
+ output_interval              = "PT6H"                    ! increment
+ file_interval                = "P1M"                  ! monthly output files
+ output_filename              = 'NWP_lonlat'             ! file name base
+ ml_varlist                   = ${ml_varlist}
+ pl_varlist                   = ${pl_varlist}
+! hl_varlist                   = ${hl_varlist}
+ p_levels                     = 10,50,100,200,300,400,500,600,700,800,1000,2000,3000,4000,5000,6000,7000,8000,10000,15000,20000,25000,30000,40000,50000,60000,70000,77500,80000,85000,90000,92500,95000,100000
+! h_levels                     = 50000,45000,40000,35000,30000,25000,20000,18000,16000,14000,12000,
+                                10000,8000,6000,5000,4000,3000,2000,1000,800,600,400,200,100,10
+ output_grid                  = .TRUE.
+ remap                        = 1                         ! 1: latlon,  0: native grid
+ reg_lat_def                 =               -90.,0.75,90.        ! start, increment, end latitude in degrees                 
+ reg_lon_def                 =             0.,0.75,359.25         ! start, increment, end longitude in degrees
+/
+
+! sleve_nml: vertical level specification -------------------------------------
+&sleve_nml
+ min_lay_thckn               =                         20.0       ! layer thickness of lowermost layer
+ max_lay_thckn               =                        400.0       ! maximum layer thickness below htop_thcknlimit
+ htop_thcknlimit             =                      14000.        ! height below which the layer thickness does not exceed max_lay_thckn
+ top_height                  =                      75000.0       ! height of model top
+ stretch_fac                 =                          0.9       ! stretching factor to vary distribution of model levels
+ decay_scale_1               =                       4000.0       ! decay scale of large-scale topography component
+ decay_scale_2               =                       2500.0       ! decay scale of small-scale topography component
+ decay_exp                   =                          1.2       ! exponent of decay function
+ flat_height                 =                      16000.0       ! height above which the coordinate surfaces are flat
+/
+
+! radiation_nml: radiation scheme ---------------------------------------------
+&radiation_nml
+ irad_o3                     =                          7         ! ozone climatology
+ irad_aero                   =                          6         ! aerosols
+ albedo_type                 =                          2         ! type of surface albedo
+ vmr_co2                     =                   356.3e-06        ! Adapted by Raphael K. according CMIP6 VMR data (9-month mean)
+ vmr_ch4                     =                  1738.5e-09        ! Adapted by Raphael K. according CMIP6 VMR data (9-month mean)
+ vmr_n2o                     =                   309.6e-09        ! Adapted by Raphael K. according CMIP6 VMR data (9-month mean) 
+ vmr_o2                      =                     0.20946
+ vmr_cfc11                   =                   269.9e-12        ! Adapted by Raphael K. according CMIP6 VMR data (9-month mean) 
+ vmr_cfc12                   =                   500.4e-12        ! Adapted by Raphael K. according CMIP6 VMR data (9-month mean) 
+/
+
+! transport_nml: tracer transport ---------------------------------------------
+&transport_nml
+ ivadv_tracer                =              3, 3, 3, 3, 3         ! tracer specific method to compute vertical advection
+ itype_hlimit                =              3, 4, 4, 4, 4         ! type of limiter for horizontal transport
+ ihadv_tracer                =             52, 2, 2, 2, 2         ! tracer specific method to compute horizontal advection
+ llsq_svd                    =                      .TRUE.        ! use SV decomposition for least squares design matrix
+/
+
+! turbdiff_nml: turbulent diffusion -------------------------------------------
+&turbdiff_nml
+ tkhmin                      =                          0.75      ! scaling factor for minimum vertical diffusion coefficient
+ tkmmin                      =                          0.75      ! scaling factor for minimum vertical diffusion coefficient
+ pat_len                     =                        750.0       ! effective length scale of thermal surface patterns
+ c_diff                      =                          0.2       ! length scale factor for vertical diffusion of TKE
+ rat_sea                     =                          7.5       ! controls laminar resistance for sea surface
+ ltkesso                     =                        .TRUE.      ! consider TKE-production by sub-grid SSO wakes
+ frcsmot                     =                          0.2       ! these 2 switches together apply vertical smoothing of the TKE source terms
+ imode_frcsmot               =                            2       ! in the tropics (only), which reduces the moist bias in the tropical lower troposphere
+ itype_sher                  =                            3       ! type of shear forcing used in turbulence
+ ltkeshs                     =                        .TRUE.      ! include correction term for coarse grids in hor. shear production term
+ a_hshr                      =                          2.0       ! length scale factor for separated horizontal shear mode
+ icldm_turb                  =                            2       ! mode of cloud water representation in turbulence
+/
+
+! lnd_nml: land scheme switches -----------------------------------------------
+&lnd_nml
+ ntiles                      =                          3         ! number of tiles
+ nlev_snow                   =                          3         ! number of snow layers
+ lmulti_snow                 =                      .FALSE.       ! .TRUE. for use of multi-layer snow model
+ idiag_snowfrac              =                         20         ! type of snow-fraction diagnosis
+ lsnowtile                   =                       .TRUE.       ! .TRUE.=consider snow-covered and snow-free separately
+ itype_root                  =                          2         ! root density distribution
+ itype_heatcond              =                          2         ! type of soil heat conductivity
+ itype_lndtbl                =                          3         ! table for associating surface parameters
+ lseaice                     =                      .TRUE.        ! .TRUE. for use of sea-ice model
+ llake                       =                      .TRUE.        ! .TRUE. for use of lake model
+ sstice_mode                 =                          4         ! SST and sea ice fraction are updated daily, based on actual monthly means
+ sst_td_filename             = '${sst_td_filename}'
+ ci_td_filename              = '${ci_td_filename}'
+/
+

@@ -1,0 +1,130 @@
+! This is the namelist file for ocean part
+
+&viscdiff
+Ah0=0.0  			![m^2/s] Laplacian horizontal viscosity
+Ahb0=3.0e13			!3.e13 [m^4/s] biharmonic horizontal viscosity
+
+biharmonic_visc=.true.		!using bihar. 
+smagorinsky_visc=.true. 	!add smagorinsky viscosity to background visc.
+
+increase_equ_zonal_visc=.true.	!increase zonal viscosity at equator
+fac_visc_increase=2.0         	!the increase factor
+ 
+Kh0=1500.0	                !reference Lapl. horr. diffusivity 
+
+Kh_flow_depend=.true.		!adapt Kh to flow state
+
+scale_mixing_h=.true.   	!scale hor. diff/visc. coef. by resol.	
+scale_mixing_type=2		!1:\delta x^2; 2:\delta x;(bihar. always \delta x^3)
+scalevol=5.8e9	                !100km, ref. volume at which Kh=Kh0   
+
+Redi_GM=.true.        		!flag for Redi/GM scheme
+S_neutral_max=1.0e-2        	!upper slope limit for Redi/GM, 2.e-3 to 1.e-2
+
+Av0=1.0e-4			!background (or internal wave) vertical viscosity 
+Kv0=1.0e-5			!background (or internal wave) vertical diffusivity 	
+
+Kv0_const=.false.		!use Kv0 varying with depth and latitude
+
+mix_scheme='KPP'    		!vertical mixing scheme: KPP, PP, MY2p5, no   
+
+visc_sh_limit=1.0e-2		!for kpp, max visc due to shear instability
+diff_sh_limit=1.0e-2		!for kpp, max diff due to shear instability
+double_diffusion=.false.	!for KPP, double diffusion switch
+smooth_blmc=.true.		!for KPP, hori. smooth of b.l. diff.
+				!other KPP parameters not in the namelist currently!
+
+PP_max_mix_coeff=1.0e-2		!for PP, maximal Kv/Av in the PP scheme
+wndmix=0.0e-3			!for PP, missing high frequency wind mixing, @1st layer
+allow_convect_global=.true.  	!for PP, convection globally or only NH
+add_TB04_to_PP=.true. 		!for PP, TB04 switch
+modiff=0.01			!for PP, mixing coefficient within MO length
+
+tidal_mixing=.false.		!switch for tidal mixing
+use_drag_dissipation=.true. 	!barotropic
+use_wave_dissipation=.false.	!baroclinic, not coded yet!
+read_tide_speed=.true.		!read tide speed or use the default value
+default_tide_speed=0.01		!a default tide speed in case not reading data,m/s
+max_drag_diffusivity=5.0e-3	!m^2/sec
+max_wave_diffusivity=5.0e-3	!m^2/sec
+Tmix_tidalconstituent='M2'	!which tidal constituent to use
+Tmix_tidalmodelname='tpxo71'	!source model name
+				!other t.mix. parameters not in the namelist currently!
+
+brine_rejection_param=.true.	!subgrid-scale brine rejection parameterization
+
+visc_conv_limit=1.0		!visc due to convective instability
+diff_conv_limit=1.0		!diff due to convective instability
+
+C_d=0.0025             		!Quadratic bottom drag coeff.  		
+/
+
+&boundary
+ts_surfbd=.true.
+
+ref_sss_local=.true.		! cal. virtual salt flux from local SSS or ref_sss
+ref_sss=34.0                    ! ref. value for cal. virtual salt flux
+
+restore_s_surf=1.929e-06  	! 50m/300day !6.43e-7!m/s 10./(180.*86400.) 6.43e-7
+restore_t_surf=0.
+
+balance_salt_water=.true.	! balance virtual-salt or freshwater flux or not 
+
+buffer_zone=.false.
+restore_ts_buff=2.3148e-06 	! 5days; 1/s 1./(86400.*30.) 3.858e-7
+/
+
+&oce_scheme
+gamma_stab=0.99          	!stabilization for ssh	
+gamma_stab_nh=0.5       	!stabilization for nh-pressure
+gamma_fct=0.5		   	!param for tracer FCT scheme
+alpha_AB=1.55            	!when Adams-Bashforth Coriolis	
+alpha_trapez=0.55        	!when semi-implicit Coriolis
+theta_ssh=0.5		        !semi-implicit ssh when semiimpl sheme	
+theta_vel=0.5		        !semi-implicit baro. vel
+use_cori_semi=.true.		!switch for semi-implicit coriolis force      
+/
+
+&denspress
+density_linear=.false.
+use_ref_density=.true.		! user need to specify his own ref density 
+/
+
+&param_freesurf
+max_ice_loading=0.0		! m, maximal pressure from ice felt by the ocean
+/
+
+&tide_obc
+nmbr_tidal_cons=4
+tidal_constituent='M2S2K1O1' 	!M2 S2 N2 K2 K1 O1 P1 Q1
+tidemodelname='tpxo71'
+tide_opbnd_type='vel' 		!ssh, vel, Flather 
+tide_amplify_coeff=0.0		!amplify tidal amplitude by this factor
+/
+
+&passive_tracer
+use_passive_tracer=.false.    	!use passive tracer
+num_passive_tracer=3         	!only use 1 before updating the code
+ptr_start_year=1968           	!when to start having ptr
+passive_tracer_flux=.false.   	!ptr enters from sfc flux
+passive_tracer_restore=.true. 	!add ptr from restoring 
+ptr_restore_in_volume=.true.  	!restoring in the 3D region
+ptr_background_value=0.0      	!ptr init. background value
+ptr_restore_value=1.0         	!restore value for ptr
+/ 
+
+&age_tracer
+use_age_tracer=.false.        	!use age tracer, Under test!
+num_age_tracer=1              	!only use 1 before updating the code
+age_tracer_start_year=1947    	!when to start having age tr.
+age_tracer_global_surf=.true. 	!source at all surface nodes or no
+age_release_in_volume=.false. 	!age tr. release in 3D regions
+zero_age_at_release=.true.    	!keep zero age in rel. zone
+age_tracer_restore_time=86400. 	!restore time scale in rel. zone
+/
+
+&tracer_cutoff
+limit_salinity=.true.         	!set an allowed range for salinity
+salinity_min=0.5              	!minimum salinity 
+coeff_limit_salinity=0.0019   	!0.0019 0.0023 m/s, suggest to use 0.5*dz(1)/dt
+/

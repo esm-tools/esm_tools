@@ -1,0 +1,35 @@
+#! /bin/ksh -l
+set -e 
+
+
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="mistral"
+setup_name="vilma_standalone"
+ACCOUNT=ab0995
+
+compute_time="00:30:00"
+###############################################################################
+ESM_USE_C_CALENDAR=1
+
+INITIAL_DATE_vilma_standalone=-123000-01-01        # Initial exp. date
+FINAL_DATE_vilma_standalone=-122801-01-01          # Final date of the experiment
+
+MODEL_DIR_vilma_standalone=${HOME}/esm-master/vilma/
+
+#OUTPUT_INTERVAL_vilma="1.0"
+
+LRESUME_vilma=0
+
+BIN_DIR_vilma=${MODEL_DIR_vilma_standalone}/bin/
+
+BASE_DIR=/work/ab0995/a270058/esm-experiments/vilma/
+
+POOL_DIR_vilma_standalone=${MODEL_DIR_vilma_standalone}
+
+NYEAR_vilma_standalone=100          # Number of years per run
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

@@ -1,0 +1,54 @@
+#! /usr/bin/ksh -l
+set -e 
+
+module purge
+module load cdo netcdf-tools python intel.compiler/17.0.2 intel.mpi/17.0.2_ofi netcdf/4.4.0_intel centoslibs/7.3
+module list
+
+export FUNCTION_PATH=/home/ollie/pgierz/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only ollie supported yet
+setup_name="iterative_coupling pism_standalone mpiesm" 					# mpiesm, pism_mpiesm, echam. mpiom, or pism
+#check=1
+
+###############################################################################
+MODEL_DIR_pism_standalone=/home/ollie/dbarbi/mpiesm/branches/withPISM/src/pism0.7
+BIN_DIR_pism_standalone=/work/ollie/pgierz/pism0.7/bin/
+BASE_DIR_pism_standalone=/work/ollie/pgierz/pism_mpiesm
+POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/input/examples_greenland/
+
+INITIAL_DATE_pism_standalone=-200-01-01
+FINAL_DATE_pism_standalone=199-12-31
+NYEAR_pism_standalone=50
+CURRENT_DATE_pism_standalone=date_file
+DOMAIN_pism="nhem"
+
+
+INITIAL_DATE_mpiesm=1850-01-01 # initial exp. date
+FINAL_DATE_mpiesm=1850-12-31 # final date of the experiment
+#CURRENT_DATE_mpiesm=1851-01-01 # final date of the experiment
+CURRENT_DATE_mpiesm=date_file # final date of the experiment
+
+SCENARIO_mpiesm="HIST"
+SALT_RESTORING_mpiom=1
+SALT_RESTORING_FILE_mpiom=/work/ollie/fkauker/mpiom/input/r0004/GR15/GR15L40_INISAL_PHC
+
+# AVAILABLE ECHAM SCENARIOS: PI-CTRL-OLD and -NEW, HIST, RCPxx, 1850, 1950, 1990, SCEN
+
+NYEAR_mpiesm=1          # number of years per run
+
+DISTURBED_YEARS_echam=''
+DISTURBANCE_echam=1.00001
+
+MODEL_DIR_mpiesm=/home/ollie/dbarbi/mpiesm/trunk/mpiesm-1.2.00p4
+BIN_DIR_mpiesm=/home/ollie/dbarbi/mpiesm/trunk/mpiesm-1.2.00p4/bin
+BASE_DIR_mpiesm=/work/ollie/pgierz/pism_mpiesm
+POOL_DIR_mpiesm=/work/ollie/stepanek/pool
+
+CHUNK_SIZE_mpiesm=1
+CHUNK_SIZE_pism_standalone=100
+
+###############################################################################
+load_all_functions
+general_do_it_all "$@"

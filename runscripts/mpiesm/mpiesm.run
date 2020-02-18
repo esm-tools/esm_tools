@@ -1,0 +1,40 @@
+#! /usr/bin/ksh -l
+set -e 
+
+
+export FUNCTION_PATH=${WORK}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"
+setup_name="mpiesm"
+check=1
+
+compute_time="05:00:00"
+###############################################################################
+#Xsrun  I know what I am doing
+
+INITIAL_DATE_mpiesm=1850-01-01          # Initial exp. date
+FINAL_DATE_mpiesm=1851-12-31            # Final date of the experiment
+
+SCENARIO_mpiesm="HIST"
+
+SALT_RESTORING_mpiom=1
+SALT_RESTORING_FILE_mpiom=/work/ollie/fkauker/mpiom/input/r0004/GR15/GR15L40_INISAL_PHC
+
+MODEL_DIR_mpiesm=${WORK}/esm-master/mpiesm-1.2.00p4/
+
+BIN_DIR_mpiesm=${MODEL_DIR_mpiesm}/bin
+
+BASE_DIR=${work}/esm-experiments/
+
+POOL_DIR_mpiesm=/work/ollie/pool
+
+NYEAR_mpiesm=1          # number of years per run
+
+DISTURBED_YEARS_echam=''
+DISTURBANCE_echam=1.00001
+
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

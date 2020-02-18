@@ -1,0 +1,41 @@
+#! /usr/bin/ksh -l
+set -e 
+
+module purge
+module load pism_externals/0.7.x_intel_impi_2017
+module list
+
+export FUNCTION_PATH=/home/ollie/pgierz/easy-scripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only ollie supported yet
+setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
+
+check=1
+
+###############################################################################
+MODEL_DIR_pism_standalone=/home/ollie/dbarbi/mpiesm/branches/withPISM/src/pism0.7
+BIN_DIR_pism_standalone=/work/ollie/pgierz/pism0.7/bin/
+BASE_DIR_pism_standalone=/work/ollie/pgierz/PISM
+#POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/input/examples_greenland/
+#WORK_DIR=/work/ollie/dbarbi/PISM/work
+SCRIPT_DIR=/work/ollie/pgierz/PISM/scripts
+
+#pooldir=/work/ollie/pgierz/pool_pism/
+
+INITIAL_DATE_pism_standalone=-200-01-01
+FINAL_DATE_pism_standalone=-1-12-31
+NYEAR_pism_standalone=100
+CURRENT_DATE_pism_standalone=date_file
+
+# PG: Test for different domain
+DOMAIN_pism=nhem
+
+# PG: Turn on PDD
+SURFACE_OPT_pism="PDD"
+ATMOSPHERE_pism="given"
+
+###############################################################################
+
+load_all_functions
+general_do_it_all $@

@@ -1,0 +1,21 @@
+! This is the namelist file for diagnose fields
+
+&diag_flag
+
+check_run_state=.true.       	! use salinity to check blowup; takes cpu time
+
+diag_oce=.true.
+diag_oce_KE=.true.
+diag_oce_energy_conv=.false.
+diag_oce_mix_layer=.true.
+diag_oce_transp=.true.
+diag_oce_GM_vel=.false.
+diag_oce_SGS_transp=.false.
+diag_oce_Kv=.false.
+
+diag_ice=.true.
+
+diag_forcing=.true.
+
+diag_mesh=.false.		!false
+/

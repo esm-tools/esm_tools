@@ -1,0 +1,132 @@
+!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+!! NEMO/LIM-2 : 1 - dynamics/advection/thermo          (namicerun)
+!! namelists    2 - ice intialisation                  (namiceini)
+!!              3 - ice dynamic                        (namicedyn)
+!!              4 - ice advection                      (namicetrp)
+!!              5 - thermodynamic                      (namicethd)
+!!              6 - ice damping                        (namice_dmp)
+!!              7 - ice diagnostics                    (namicedia)
+!!              8 - ice outputs                        (namiceout)
+!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+!-----------------------------------------------------------------------
+&namicerun     !   Share parameters for dynamics/advection/thermo
+!-----------------------------------------------------------------------
+   cn_icerst_in  = "FOCI1.10-SWtestd_${nemotimestep_formatted}_restart_ice_${prevdate}"   !  suffix of ocean restart name (input)
+   cn_icerst_indir = "/gfs2/work/shkifmsw/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo"       !  directory from which to read input ocean restarts
+   cn_icerst_out = "restart_ice_${enddate}"   !  suffix of ocean restart name (output)
+   cn_icerst_outdir = "/gfs2/work/shkifmsw/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo"      !  directory in which to write output ocean restarts
+   ln_limdyn     = .true.             !  ice dynamics (T) or thermodynamics only (F)
+   ln_limdmp     = .false.            !  restoring ice thickness and fraction leads   (T => fill  namice_dmp)
+   acrit         = 1.0e-06 , 1.0e-06  !  minimum lead fraction in the Northern & Southern Hemispheres
+   hsndif        =  0.e0              !  computation of temperature in snow (=0.0) or not
+   hicdif        =  0.e0              !  computation of temperature in ice  (=0.0) or not (=9999.0)
+/
+!-----------------------------------------------------------------------
+&namiceini     !   ice initialisation
+!-----------------------------------------------------------------------
+   ln_limini   =  .false.   !  read the initial state in 'Ice_initialization.nc' (T) or not (F)
+   ttest       =  2.0      !  threshold water temperature for initial sea ice
+   hninn       =  0.1      !  initial snow thickness in the north
+   hginn       =  2.0      !  initial ice  thickness in the north
+   alinn       =  0.05     !  initial leads area     in the north
+   hnins       =  0.1      !  same  three parameter  in the south
+   hgins       =  1.0      !        "                 "     south   
+   alins       =  0.1      !        "                 "     south
+/
+!-----------------------------------------------------------------------
+&namicedyn     !   ice dynamic
+!-----------------------------------------------------------------------
+   epsd        =   1.0e-20 !  tolerance parameter
+   alpha       =   0.5     !  coefficient for semi-implicit coriolis
+   dm          =   0.6e+03 !  diffusion constant for dynamics
+   nbiter      =   1       !  number of sub-time steps for relaxation
+   nbitdr      = 100       !  maximum number of iterations for relaxation
+   om          =   0.5     !  relaxation constant 
+   resl        =   5.0e-05 !  maximum value for the residual of relaxation
+   cw          =   5.0e-03 !  drag coefficient for oceanic stress
+   angvg       =   0.0     !  turning angle for oceanic stress
+   pstar       =   1.5e+04 !  1st bulk-rheology parameter
+   c_rhg       =  20.0     !  2nd bulk-rhelogy parameter
+   etamn       =   0.0e+07 !  minimun value for viscosity
+   rn_creepl   =   2.0e-08 !  creep limit
+   rn_ecc      =   2.0     !  eccentricity of the elliptical yield curve
+   ahi0        = 350.e0    !  horizontal eddy diffusivity coefficient for sea-ice [m2/s]
+   nn_nevp     =   360     !  number of EVP subcycling iterations
+   telast      =   3600    !  timescale for EVP elastic waves
+   alphaevp    =   1.0     !  coefficient for the solution of EVP int. stresses
+   testlimrhg  =  10	   !cfk number of iterations in limrhg for convergence test
+/
+!-----------------------------------------------------------------------
+&namicetrp     !   ice transport
+!-----------------------------------------------------------------------
+   bound       =   0.0     !  boundary conditions (=0. no-slip, =1. free-slip)
+/
+!-----------------------------------------------------------------------
+&namicethd     !   ice thermodynamic
+!-----------------------------------------------------------------------
+   hmelt       = -0.15     !  maximum melting at the bottom
+   hiccrit     = 0.3 , 0.6 !  ice thickness for lateral accretion in the Northern (Southern) Hemisphere
+   !                       !  (caution 1.0, 1.0 best value to be used!!! (gilles G.))
+   hicmin      = 0.2       !  ice thickness corr. to max. energy stored in brine pocket
+   hiclim      = 0.05      !  minimum ice thickness
+   amax        = 0.999     !  maximum lead fraction
+   swiqst      = 1.        !  energy stored in brine pocket (=1) or not (=0)	
+   sbeta       = 1.        !  numerical caracteritic of the scheme for diffusion in ice
+                           !        Cranck-Nicholson (=0.5), implicit (=1), explicit (=0)
+   parlat      = 0.0       !  percentage of energy used for lateral ablation
+   hakspl      = 0.5       !  slope of distr. for Hakkinen-Mellor's lateral melting
+   hibspl      = 0.5       !  slope of distribution for Hibler's lateral melting
+   exld        = 2.0       !  exponent for leads-closure rate
+   hakdif      = 1.0       !  coefficient for diffusions of ice and snow
+   thth        = 0.2       !  threshold thickness for comp. of eq. thermal conductivity
+   hnzst       = 0.1       !  thickness of the surf. layer in temp. computation
+   parsub      = 0.0       !  switch for snow sublimation or not
+   alphs       = 1.0       !  coefficient for snow density when snow ice formation
+/
+!-----------------------------------------------------------------------
+&namice_dmp    !   damping of sea ice alone open boundaries
+!              !   (hard coded damping area: check if it fit your config)
+!-----------------------------------------------------------------------
+!              !  file name     ! frequency (hours) ! variable ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+!              !                !  (if <0  months)  !   name   !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_hicif    = 'ice_damping'  ,  -1.              , 'hicif'  ,   .true.     , .true. , 'yearly'  , ''       , ''       ,    ''
+   sn_frld     = 'ice_damping'  ,  -1.              , 'frld'   ,   .true.     , .true. , 'yearly'  , ''       , ''       ,    ''
+!
+   cn_dir      = './'      !  root directory for the location of the runoff files
+/
+!-----------------------------------------------------------------------
+&namicedia     !   ice diagnostics
+!-----------------------------------------------------------------------
+   fmtinf      = '1PE13.5' !  format of the output values
+   nfrinf      =  4        !  number of variables written in one line
+   ntmoy       =  1        !  instantaneous values of ice evolution or averaging
+   ninfo       =  1        !  frequency of ouputs on file ice_evolu in case of averaging
+/
+!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+&namiceout     !   parameters for outputs
+!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+!              !         title of the field           !  name     !   units   !  save  ! multipl. ! additive !
+!              !                                      !           !           ! or not !  factor  !  factor  !
+   field_1     = 'Snow thickness                     ', 'isnowthi', 'm       ',    1   ,  1.0     ,    0.0
+   field_2     = 'Ice thickness                      ', 'iicethic', 'm       ',    1   ,  1.0     ,    0.0
+   field_3     = 'Ice produced                       ', 'iiceprod', 'm/kt    ',    1   ,  1.0     ,    0.0
+   field_4     = 'Ice concentration                  ', 'ileadfra', '%       ',    1   , -1.0     ,    1.0
+   field_5     = 'Ice temperature                    ', 'iicetemp', 'C       ',    1   ,  1.0     , -273.15
+   field_6     = 'Oceanic flux at the ice base       ', 'ioceflxb', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_7     = 'Ice velocity u                     ', 'iicevelu', 'm/s     ',    1   ,  1.0     ,    0.0
+   field_8     = 'Ice velocity v                     ', 'iicevelv', 'm/s     ',    1   ,  1.0     ,    0.0
+   field_9     = 'Sea surface temperature            ', 'isstempe', 'C       ',    1   ,  1.0     , -273.15
+   field_10    = 'Sea surface salinity               ', 'isssalin', 'PSU     ',    1   ,  1.0     ,    0.0
+   field_11    = 'Total flux at ocean surface        ', 'iocetflx', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_12    = 'Solar flux at ocean surface        ', 'iocesflx', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_13    = 'Non-solar flux at ocean surface    ', 'iocwnsfl', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_14    = 'Salt flux at ocean surface         ', 'iocesafl', 'kg/m2/kt',    1   ,  1.0     ,    0.0
+   field_15    = 'Wind stress u                      ', 'iocestru', 'Pa      ',    1   ,  1.0     ,    0.0
+   field_16    = 'Wind stress v                      ', 'iocestrv', 'Pa      ',    1   ,  1.0     ,    0.0 
+   field_17    = 'Solar flux at ice/ocean surface    ', 'iicesflx', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_18    = 'Non-solar flux at ice/ocean surface', 'iicenflx', 'w/m2    ',    1   ,  1.0     ,    0.0
+   field_19    = 'Snow precipitation                 ', 'isnowpre', 'kg/day  ',    1   ,  1.0     ,    0.0
+!
+   noumef      =   19      !  number of fields
+/      

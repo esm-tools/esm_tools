@@ -1,0 +1,629 @@
+#! /bin/ksh -l
+# PISM Standalone runscript: Antarctica 16km domain
+# as part of the ESM-runscript environment
+# (c) CR, AWI Bremerhaven, 2019-01-17
+# 
+set -e 
+
+VERSION_pism="1.1" #"0.7"   # CHECK: Add here your used PISM version: 0.7, 1.0, 1.1
+
+export FUNCTION_PATH=${HOME}/src/esm-master/esm-runscripts/functions/all  # CHECK: Add here your path
+export FPATH=${FUNCTION_PATH}:$FPATH
+
+machine_name="ollie"   					# only "ollie" supported yet
+setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
+ACCOUNT=
+check=0
+
+##=============================================================
+##Define custom environment====================================
+##=============================================================
+##Use this only if you want to use your own modules/environment
+##Sofar it only works on ollie
+#
+#NOT_USE_ESM_ENVIRONMENT=1
+#MY_MODULE_HOME=/home/ollie/shinck/Software/Modules
+#MY_MODULE_LIST="PISM/LakeIndex_exp"
+#
+#module purge
+#module use $MY_MODULE_HOME
+#module load $MY_MODULE_LIST
+#module list
+
+case ${VERSION_pism}
+in
+    "0.7")
+	MODULE="pism/snowflake0.7-intel18-intelmpi"
+	;;
+    "1.0")
+	NOT_USE_ESM_ENVIRONMENT=1
+	module purge
+	module use ~shinck/Software/Modules
+	MODULE="PISM/v1.0"
+	;;
+    "1.1")
+	NOT_USE_ESM_ENVIRONMENT=1
+	module purge
+	module use ~crodehac/mymodules
+	MODULE="pism/pism-intel18-intelmpi_11"
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (1)"
+	echo " S T O P"
+	exit 1
+	MODULE=""
+	;;
+esac
+
+module load ${MODULE} && echo "[$0] LOAD module ${MODULE}" || exit 13
+PISM_BIN=$(which pismr)
+
+#
+##=============================================================
+
+##=============================================================
+##Use C calendar===============================================
+##=============================================================
+##To enable ESM to use the quicker C implementation of the 
+##calendar set this option.
+##Compile and install the calendar by running 
+##  esm-runscript_dir/functions/install_calendar.sh
+
+ESM_USE_C_CALENDAR=1
+
+##=============================================================
+
+
+###############################################################################
+
+BASE_DIR=/work/ollie/${USER}/awi/esm-experiments/awicm_pism_tests  # CHECK: Add here your path
+
+# PISM Settings
+#Set reference date (YYYY-MM-DD), PD = 1950-01-01
+REFERENCE_DATE="1950-01-01"
+
+INITIAL_DATE_pism_standalone=1700-01-01      # CHECK
+FINAL_DATE_pism_standalone=1999-12-31        # CHECK
+NYEAR_pism_standalone=100                    # CHECK
+CURRENT_DATE_pism_standalone=date_file
+if [ "${PATH_TO_pismr:-NotDefinedVariable}" != "NotDefinedVariable" ] ; then
+    # If $PATH_TO_pismr is defined, use its value
+    BIN_DIR_pism_standalone=${PATH_TO_pismr:-$(dirname $(which pismr))} # Explicit plus fallback
+    MODEL_DIR_pism_standalone=${MODEL_DIR_pism_standalone:-$(dirname ${BIN_DIR_pism_standalone})}
+else
+    BIN_DIR_pism_standalone=${PISM_BIN%%/pismr}                         # $PISM_BIN set by the module
+    MODEL_DIR_pism_standalone=${PISM_ROOT:?Unknown variable}            # $PISM_ROOT set by the module
+fi
+POOL_DIR_pism_standalone=/work/ollie/projects/PISM/ANTARCTIC_16km_PISMv07_Eq1old  # CHECK
+DOMAIN_pism='Antarctica'                                                          # CHECK
+RES_pism='16km'       # 16km: XRES_pism=381 ; YRES_pism=381 ; ZRES_pism=81 ; BZ_pism=21  # CHECK
+
+#EXP_ID=               # Please specific more appropriate name # CHECK: Add here your experiment ID
+EXP_ID="${EXP_ID:-PISM4${USER}@${DOMAIN_pism}}" # Dummy name
+
+nnodes_pism=4                        # 1, 2, 4, 8, ... [default=4]  # CHECK: Add here the number of nodes
+nproca_pism=$(( 36 * nnodes_pism ))  # We assume that each node has 36 cores
+compute_time="8:00:00"               # compute_time="0:30:00" # 30min => --qos=short on ollie
+
+#-------------------------------------------------------------
+#
+# List of input files :  # CHECK all file names below
+#
+PISM_POOL_INPUT0_INITIAL=${POOL_DIR_pism_standalone}/BEDMAPxx.nc
+PISM_POOL_INPUT0_SPINUP=${POOL_DIR_pism_standalone}/spinup.nc
+PISM_POOL_INPUT0_SPINUP=${POOL_DIR_pism_standalone}/spinup.v0.7.nc
+PISM_POOL_INPUT0_SEA_LEVEL=/work/ollie/projects/PISM/common/
+case ${VERSION_pism}
+in
+    "0.7")
+	PISM_POOL_INPUT0_CONFIG=${POOL_DIR_pism_standalone}/pism_config.v0.7.nc
+	#PISM_POOL_INPUT0_OCEAN_KILLMASK=${POOL_DIR_pism_standalone}/ocean_kill_topg2000m.yx.v0.7.nc # 1km
+	PISM_POOL_INPUT0_OCEAN_KILLMASK=${POOL_DIR_pism_standalone}/ocean_kill_mask16km.yx.v0.7.nc  # 16km
+
+	;;
+    "1.0"|"1.1")    
+	PISM_POOL_INPUT0_CONFIG=${POOL_DIR_pism_standalone}/pism_config.v1.0.nc
+	#PISM_POOL_INPUT0_OCEAN_KILLMASK=${POOL_DIR_pism_standalone}/ocean_kill_topg2000m.yx.v1.0.nc # 1km
+	PISM_POOL_INPUT0_OCEAN_KILLMASK=${POOL_DIR_pism_standalone}/ocean_kill_mask16km.yx.v1.0.nc  # 16km
+	;;
+    *)
+	PISM_POOL_INPUT0_CONFIG=${POOL_DIR_pism_standalone}/pism_config.nc
+	;;
+esac
+PISM_POOL_INPUT0_REPLACE=${POOL_DIR_pism_standalone}/config_replace.nc #SHALL NOT BEUSED
+PISM_POOL_INPUT0_ATMOS_FORCE=${POOL_DIR_pism_standalone}/RACMO2_ANT27_ERAIN_r490_1979_2011_mean_EPSG3031_16km.nc
+PISM_POOL_INPUT0_ATMOS_TOPO=${POOL_DIR_pism_standalone}/surface_elevation.nc
+PISM_POOL_INPUT0_OCEAN_FORCE=${POOL_DIR_pism_standalone}/WOA09_pism_reversed_101_levels.nc
+PISM_POOL_INPUT0_OCEAN_FACTOR=${POOL_DIR_pism_standalone}/meltfactor_A4B4F1.5_16km.nc
+PISM_POOL_INPUT0_LONLAT=${POOL_DIR_pism_standalone}/xy.lonlat.nc
+PISM_POOL_INPUT0_XY=${POOL_DIR_pism_standalone}/xy.lonlat.nc
+
+#-------------------------------------------------------------
+#
+# What kind of start do you want?  # CHECK: Check if your want a cold or warm start
+#
+#Cold Start (bootstrap) !!!
+# TODO (build pism v1.0 start and afterward we use "warm start")
+LRESUME_pism=0
+SPINUP_FILE_pism=$PISM_POOL_INPUT0_SPINUP
+INPUT_FILE_pism=$PISM_POOL_INPUT0_SPINUP
+
+# #Warm Start (from former Spin Up)
+# LRESUME_pism=1
+# INPUT_FILE_pism=$PISM_POOL_INPUT0_SPINUP
+# INPUT_FILE_pism=
+# SPINUP_FILE_pism=$PISM_POOL_INPUT0_SPINUP
+
+
+# Fix for #134: TODO
+INPUT_FILE_NAME_pism=$INPUT_FILE_pism
+
+if [ ${LRESUME_pism:-1} == 0 ] ; then
+    # Bootstrap: If not set elsewhere, these values a good for Antarctica
+    LZ_pism=5500 ; ZRES_pism=81
+fi
+
+#-------------------------------------------------------------
+#
+# Settings sofar
+#
+echo
+echo "[$0] PISM version >>${VERSION_pism}<<"
+echo "[$0] PISM_POOL_INPUT0_SEA_LEVEL     = ${PISM_POOL_INPUT0_SEA_LEVEL}"
+echo "[$0] PISM_POOL_INPUT0_CONFIG        = ${PISM_POOL_INPUT0_CONFIG}"
+echo "[$0] PISM_POOL_INPUT0_REPLACE       = ${PISM_POOL_INPUT0_REPLACE}"
+echo "[$0] PISM_POOL_INPUT0_ATMOS_FORCE   = ${PISM_POOL_INPUT0_ATMOS_FORCE}"
+echo "[$0] PISM_POOL_INPUT0_ATMOS_TOPO    = ${PISM_POOL_INPUT0_ATMOS_TOPO}"
+echo "[$0] PISM_POOL_INPUT0_OCEAN_FORCE   = ${PISM_POOL_INPUT0_OCEAN_FORCE}"
+echo "[$0] PISM_POOL_INPUT0_OCEAN_FACTOR  = ${PISM_POOL_INPUT0_OCEAN_FACTOR}"
+echo "[$0] PISM_POOL_INPUT0_OCEAN_KILLMASK= ${PISM_POOL_INPUT0_OCEAN_KILLMASK}"
+echo "[$0] PISM_POOL_INPUT0_LONLAT        = ${PISM_POOL_INPUT0_LONLAT}"
+echo "[$0] PISM_POOL_INPUT0_XY            = ${PISM_POOL_INPUT0_XY}"
+echo "[$0]"
+echo "[$0] BASE_DIR                       = ${BASE_DIR}"
+echo "[$0] MODEL_DIR_pism_standalone      = ${MODEL_DIR_pism_standalone}"
+echo "[$0] BIN_DIR_pism_standalone        = ${BIN_DIR_pism_standalone}"
+echo "[$0] POOL_DIR_pism_standalone       = ${POOL_DIR_pism_standalone}"
+echo "[$0] DOMAIN_pism                    = ${DOMAIN_pism}"
+echo "[$0] EXP_ID                         = ${EXP_ID}  (fallback)"
+echo "[$0]"
+echo "[$0] LRESUME_pism                   = ${LRESUME_pism}"
+echo "[$0] INPUT_FILE_pism                = ${INPUT_FILE_pism}"
+echo "[$0] SPINUP_FILE_pism               = ${SPINUP_FILE_pism}"
+echo "[$0]"
+echo "[$0] NOT_USE_ESM_ENVIRONMENT        = ${NOT_USE_ESM_ENVIRONMENT:-Not set}"
+echo "[$0]"
+echo "[$0] INFORMATION ABOUT PISM BINARY"
+echo "[$0] -----------------------------"
+echo "[$0]  * PISM_BIN = ${PISM_BIN}"
+echo "[$0]"
+echo "[$0] INFORMATION ABOUT PISM SIMULATION"
+echo "[$0] -----------------------------"
+echo "[$0]  * EXP_ID                       = ${EXP_ID}"
+echo "[$0]  * INITIAL_DATE_pism_standalone = ${INITIAL_DATE_pism_standalone}"
+echo "[$0]  * FINAL_DATE_pism_standalone   = ${FINAL_DATE_pism_standalone}"
+echo "[$0]  * NYEAR_pism_standalone        = ${NYEAR_pism_standalone}"
+echo "[$0]  * POOL_DIR_pism_standalone     = ${POOL_DIR_pism_standalone}"
+echo "[$0]  * DOMAIN_pism                  = ${DOMAIN_pism}"
+echo "[$0]  * RES_pism                     = ${RES_pism}"
+if [ ${LRESUME_pism} -ge 1 ] ; then
+    echo "[$0]  * Warm start : LRESUME_pism    = ${LRESUME_pism}"
+else
+    echo "[$0]  * Cold start : LRESUME_pism    = ${LRESUME_pism}"
+fi
+echo "[$0]"
+echo
+
+##=============================================================
+##Configure PISM run ==========================================
+##=============================================================
+##To modify the configuration parameters of PISM use the 
+##PISM-ESM interface:
+##1.Set cofiguration parameter:
+##    pism_set_config_value___PARAMNAME=VALUE
+## See:
+## ->http://pism-docs.org/sphinx/manual/parameters/index.html
+##   -or-
+## ->https://github.com/pism/pism/blob/master/src/pism_config.cdl
+##  Here (most) available opions are listed. Replace PARAMNAME 
+##  by name or short option name and replace dots (.) by 
+##  three underscores (___).
+##  If an option is not in that list (and you are sure it is valid)
+##  use 'pism_set_config_value_FORCE___PARAMNAME=VALUE' instead
+##
+##2.Set coupler (ocean, sea_level, atmosphere, surface)
+##    pism_set_coupler___TYPE=MODEL,MODIFIER1,...
+## For more details see:
+## ->http://pism-docs.org/sphinx/climate_forcing/index.html
+##
+##3.Set forcing file for coupler
+##   pism_set_forcing_file___COUPLER_MODEL=FILENAME
+## Instead of using 'pism_set_config_value' to add a 
+## forcing file use this instead. This way the ESM scripts 
+## manage and store it in the forcing folder
+##
+##4.Set configuration flag
+##   pism_set_flag___FLAG='true'
+## PISM uses some flags that do not require any value.
+## If this parameter is defined a flag -FLAG is set
+## unless the value is explicitly stating to not set it
+## such as 'off', 'false', 'no' or 0.
+## These flags are found in the PISM documentation
+## ->http://www.pism-docs.org/wiki/doku.php?id=overview
+##
+##=============================================================
+##=============================================================
+
+# CHECK : All PISM flags and settings until the end of the file
+
+#=========== General ==========================================
+pism_set_flag___options_left='true'
+case ${VERSION_pism}
+in
+    "0.7")
+	pism_set_config_value_FORCE___reference_date=$REFERENCE_DATE
+	pism_set_config_value___periodicity='none'                 # -periodicity none
+	pism_set_config_value___backup_interval=2.0                # -backup_interval 2.
+
+#	pism_set_config_value___maximum_time_step_years=0.25       # -max_dt 0.25
+
+	pism_set_config_value___output_variable_order=xyz          # -o_order xyz
+	pism_set_config_value___output_format=netcdf4_parallel     # -o_format netcdf4_parallel
+	pism_set_config_value___timestep_hit_multiples=1           # -timestep_hit_multiples 1
+	pism_set_config_value___climate_forcing_buffer_size=132    # -climate_forcing_buffer_size 132
+
+	pism_set_config_value_FORCE___verbose=2
+	pism_set_config_value_FORCE___institution="Alfred_Wegener_Institute,_Helmholtz_Centre_for_Polar_and_Marine_Research_(AWI)"
+	pism_set_config_value_FORCE___address="Am_Handelshafen_12,_27570_Bremerhaven,_Germany"
+	pism_set_config_value_FORCE___web="http://www.awi.de"
+	pism_set_config_value_FORCE___run_title=$EXP_ID
+	;;
+    "1.0"|"1.1")
+	pism_set_config_value_FORCE___verbose=2
+	pism_set_config_value_FORCE___time___reference_date=$REFERENCE_DATE
+	pism_set_config_value___grid___periodicity_choices='none'  # -periodicity none
+	pism_set_config_value___output___backup_interval=2.0       # -backup_interval 2.
+
+#	pism_set_config_value___time_stepping___maximum_time_step=0.25 # -max_dt 0.25
+	
+	pism_set_config_value___output___variable_order=yxz        # -o_order xyz
+	pism_set_config_value___output___format=netcdf4_parallel   # -o_format netcdf4_parallel : Requires order: yxz
+	pism_set_config_value___time_stepping___hit_multiples=1    # -timestep_hit_multiples 1
+	pism_set_config_value___climate_forcing___buffer_size=132  # -climate_forcing_buffer_size 132
+
+#	pism_set_config_value_FORCE___run_info___institution="Alfred_Wegener_Institute,_Helmholtz_Centre_for_Polar_and_Marine_Research_(AWI)"
+#	pism_set_config_value_FORCE___run_info___address="Am_Handelshafen_12,_27570_Bremerhaven,_Germany"
+#	pism_set_config_value_FORCE___run_info___web="http://www.awi.de"
+	pism_set_config_value_FORCE___run_info___title=$EXP_ID
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (2)"
+	echo " S T O P"
+	exit 2
+	;;
+esac
+
+#
+# Use this existing "pism_config" file (-> pism.functions -> pism_set_defaults)
+#
+if [ -f ${PISM_POOL_INPUT0_CONFIG} ] ; then
+    pism_config_file=${PISM_POOL_INPUT0_CONFIG}
+fi
+
+#
+# The flag -config_overrie shall not be used in the context of the
+# esm-runscripts, because is may have unwanted side effects.
+#
+##pism_set_forcing_file___config_override=$PISM_POOL_INPUT0_REPLACE # -config_override $PISM_POOL_INPUT0_REPLACE
+
+
+#=========== Output ==========================================
+case ${VERSION_pism}
+in
+    "0.7")
+	EX_VARS_pism="lon,lat,thk,topg,mask,sea_level"
+	EX_VARS_pism="lon,lat,topg,thk,usurf,mask,tauc,bmelt,tillwat,temppabase,tempicethk_basal,velsurf_mag,velbase_mag,velbar_mag,taub_mag,flux_mag,sea_level"
+	EX_VARS_pism="thk,usurf,topg,hfgeoubed,surface_mass_balance_average,basal_mass_balance_average,dHdt,velbar,velbase,velsurf,wvelsurf,wvelbase,tempbase,tempsurf,taub_mag,lat,lon,Href,mask,taub,bheatflx,climatic_mass_balance,bmelt,ice_surface_temp,climatic_mass_balance_cumulative,floating_basal_flux_cumulative,grounded_basal_flux_cumulative,discharge_flux_cumulative,sea_level"
+	EX_VARS_pism="thk,usurf,dHdt,velbase_mag,velsurf_mag,wvelsurf,wvelbase,tempbase,tempsurf,taub_mag,lat,lon,Href,mask,taub,bheatflx,climatic_mass_balance,climatic_mass_balance_cumulative,bmelt,ice_surface_temp,floating_basal_flux_cumulative,grounded_basal_flux_cumulative,discharge_flux_cumulative,air_temp,precipitation,sea_level"
+	;;
+    "1.0")
+	EX_VARS_pism="basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,cell_area,climatic_mass_balance,dHdt,dbdt,flux_mag,hfgeoubed,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf"
+	;;
+    "1.1")
+	EX_VARS_pism="basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,climatic_mass_balance,dHdt,dbdt,flux_mag,hfgeoubed,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf"
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (3)"
+	#echo " S T O P"
+	#exit 3
+	EX_VARS_pism=${EX_VARS_pism:-"bmelt,lon,lat,mask,taub,temppabase,thk,topg,velbar,usurf"}
+	;;
+esac
+EX_INTERVAL_pism=1                                  # CHECK: extra file writing frequency
+TS_VARS_pism=""
+TS_INTERVAL_pism=1     # TS_INTERVAL_pism="monthly" # CHECK: timeseries file writing frequency
+OUTPUT_SIZE_pism="big"              # -o_size big
+ #OUTPUT_SIZE_pism="big_2d"           # -o_size big_2d
+ #OUTPUT_SIZE_pism="medium"           # -o_size medium
+ #OUTPUT_SIZE_pism="small"            # -o_size small
+
+#=========== dynamics ==========================================
+case ${VERSION_pism}
+in
+    "0.7")
+	pism_set_config_value___stress_balance_model='ssa+sia'
+	pism_set_config_value___sia_enhancement_factor=2.0
+	pism_set_config_value___ssa_enhancement_factor=0.55
+	#??pism_set_config_value___stress_balance___sia___max_diffusivity=200.0
+	pism_set_config_value___ssa_method="fd"              # -ssa_method fd 
+	;;
+    "1.0"|"1.1")
+	pism_set_config_value___stress_balance___model='ssa+sia'
+	pism_set_config_value___stress_balance___sia___enhancement_factor=2.0
+	pism_set_config_value___stress_balance___ssa___enhancement_factor=0.55
+	#??pism_set_config_value___stress_balance___sia___max_diffusivity=200.0
+	pism_set_config_value___stress_balance___ssa___method="fd"
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (4)"
+	echo " S T O P"
+	exit 4
+	;;
+esac
+
+#=========== subglacier ===================================
+case ${VERSION_pism}
+in
+    "0.7")
+	pism_set_flag___tauc_slippery_grounding_lines='true'# -tauc_slippery_grounding_lines 
+	pism_set_config_value___bed_deformation_model='lc'  # 'none', 'lc', 'iso'
+	pism_set_config_value___hydrology_model='null'      # -hydrology null
+
+	pism_set_flag___cfbc='true'                         # -cfbc
+	pism_set_flag___part_grid='true'                    # -part_grid
+	pism_set_flag___part_redist='true'                  # -part_redist
+
+	pism_set_flag___subgl='true'                        # -subgl
+	pism_set_flag___pseudo_plastic='true'               # -pseudo_plastic
+	pism_set_flag___no_subgl_basal_melt='false'         # -no_subgl_basal_melt
+
+	pism_set_config_value___pseudo_plastic_uthreshold=100
+	pism_set_config_value___pseudo_plastic_q=0.6
+
+	pism_set_config_value___effective_fraction_overburden=0.02
+	pism_set_config_value___enthalpy_temperate_conductivity_ratio=0.1
+
+	pism_set_config_value___till_use_topg_to_phi="yes"
+	pism_set_config_value___till_topg_to_phi_phi_max=30.
+	pism_set_config_value___till_topg_to_phi_phi_min=10.
+	pism_set_config_value___till_topg_to_phi_topg_max=200.
+	pism_set_config_value___till_topg_to_phi_topg_min=-700.
+	pism_set_config_value___till_use_dynamic_topg_to_phi = "no"
+	;;
+    
+    "1.0"|"1.1")
+	pism_set_config_value___basal_yield_stress___slippery_grounding_lines='true'
+	pism_set_config_value___bed_deformation___model='none' # 'none', 'lc', 'iso'
+	pism_set_config_value___hydrology___model='null'
+
+	pism_set_flag___cfbc='true'                            # -cfbc
+	pism_set_config_value___geometry___part_grid___enabled="yes"
+	pism_set_flag___part_redist='true'
+
+	pism_set_config_value___geometry___grounded_cell_fraction=true
+	pism_set_config_value___basal_resistance___pseudo_plastic___enabled='yes'
+	pism_set_config_value___energy___basal_melt___use_grounded_cell_fraction='false'
+
+	#pism_set_config_value_FORCE___pseudo_plastic_uthreshold=100
+	#pism_set_config_value_FORCE___pseudo_plastic_q=0.6
+	pism_set_config_value_FORCE___basal_resistance___pseudo_plastic___uthreshold=100
+	pism_set_config_value___basal_resistance___pseudo_plastic___q=0.6
+
+	pism_set_config_value___basal_yield_stress___mohr_coulomb___till_effective_fraction_overburden=0.02
+	pism_set_config_value___energy___temperate_ice_enthalpy_conductivity_ratio=0.1
+
+	pism_set_config_value_FORCE___topg_to_phi="10.,30.,-700,200."
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___enabled="yes"
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___phi_max=30.
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___phi_min=10.
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___topg_max=200.
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___topg_min=-700.
+	#pism_set_config_value___basal_yield_stress___mohr_coulomb___topg_to_phi___enabled="no"
+	#??pism_set_config_value___till_use_dynamic_topg_to_phi = "no"
+	;;
+    
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (5)"
+	echo " S T O P"
+	exit 5
+	;;
+esac
+
+#=========== marineice =====================================
+case ${VERSION_pism}
+in
+    "0.7")
+	pism_set_config_value___eigen_calving_K=1.e+17
+	
+	pism_set_flag___pik='true'
+	pism_set_config_value___calving_methods='eigen_calving,thickness_calving,ocean_kill'
+	pism_set_config_value___thickness_calving_threshold=150.0
+	pism_set_forcing_file___ocean_kill=$PISM_POOL_INPUT0_OCEAN_KILLMASK # -ocean_kill_file $PISM_POOL_INPUT0_OCEAN_KILLMASK
+	pism_set_flag___kill_icebergs='true'
+	;;
+    "1.0"|"1.1")
+	pism_set_config_value___calving___eigen_calving___K=1.e+17
+	
+	pism_set_flag___pik='true'
+	pism_set_config_value___calving___methods='eigen_calving,thickness_calving,ocean_kill'
+	pism_set_config_value___calving___thickness_calving___threshold=150.0
+	pism_set_forcing_file___ocean_kill=$PISM_POOL_INPUT0_OCEAN_KILLMASK # -ocean_kill_file $PISM_POOL_INPUT0_OCEAN_KILLMASK
+	pism_set_config_value___geometry___remove_icebergs='true'
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (6)"
+	echo " S T O P"
+	exit 6
+	;;
+esac
+
+#=========== surface =======================================
+case ${VERSION_pism}
+in
+    "0.7")
+	#pism_set_coupler___surface='pdd'
+	#pism_set_coupler___pdd_balance_year_start_day=91 # -pdd_balance_year_start_day 91 (start of hydrological year in southern hemisphere)
+	#pism_set_config_value___pdd_factor_snow=0.003296      # -pdd_factor_snow 0.003296
+	#pism_set_config_value___pdd_factor_ice=0.008792       # -pdd_factor_ice 0.008792
+	#pism_set_config_value___pdd_std_dev=2                 # -pdd_std_dev 5
+	#pism_set_config_value___ppd_balance_year_start_day=91 # approx 1.April
+
+	pism_set_coupler___surface='given'
+	pism_set_forcing_file___surface_given=$PISM_POOL_INPUT0_ATMOS_FORCE #-surface_given_file $PISM_POOL_INPUT0_ATMOS_FORCE
+
+	#pism_set_flag___temp_lapse_rate=7.0  # -temp_lapse_rate 7.0
+	#pism_set_flag___smb_lapse_rate=0     # -smb_lapse_rate 0
+	#pism_set_flag___precip_lapse_rate=0  # -precip_lapse_rate 0
+	#pism_set_forcing_file___surface_lapse_rate_file=$PISM_POOL_INPUT0_ATMOS_TOPO    # -surface_lapse_rate_file $PISM_POOL_INPUT0_ATMOS_TOPO
+	#pism_set_forcing_file___atmosphere_lapse_rate_file=$PISM_POOL_INPUT0_ATMOS_TOPO # -atmosphere_lapse_rate_file $PISM_POOL_INPUT0_ATMOS_TOPO
+	#pism_set_config_value___surface___pdd___balance_year_start_day=91 # approx 1.April
+
+	pism_set_config_value___use_precip_linear_factor_for_temperature="no"
+	pism_set_config_value___precip_linear_factor_for_temperature=0.05
+	;;
+    
+    "1.0"|"1.1")
+	#pism_set_coupler___surface='pdd'
+	#pism_set_coupler___pdd_balance_year_start_day=91 # -pdd_balance_year_start_day 91 (start of hydrological year in southern hemisphere)
+	#pism_set_config_value___surface___pdd___factor_snow=0.003296 # -pdd_factor_snow 0.003296
+	#pism_set_config_value___surface___pdd___factor_ice=0.008792  # -pdd_factor_ice 0.008792
+	#pism_set_config_value___surface___pdd___std_dev=2            # -pdd_std_dev 5
+	
+	pism_set_coupler___surface='given'
+	pism_set_forcing_file___surface_given=$PISM_POOL_INPUT0_ATMOS_FORCE #-surface_given_file $PISM_POOL_INPUT0_ATMOS_FORCE
+
+	#pism_set_flag___temp_lapse_rate=7.0  # -temp_lapse_rate 7.0
+	#pism_set_flag___smb_lapse_rate=0     # -smb_lapse_rate 0
+	#pism_set_flag___precip_lapse_rate=0  # -precip_lapse_rate 0
+	#pism_set_forcing_file___surface_lapse_rate_file=$PISM_POOL_INPUT0_ATMOS_TOPO    # -surface_lapse_rate_file $PISM_POOL_INPUT0_ATMOS_TOPO
+	#pism_set_forcing_file___atmosphere_lapse_rate_file=$PISM_POOL_INPUT0_ATMOS_TOPO # -atmosphere_lapse_rate_file $PISM_POOL_INPUT0_ATMOS_TOPO
+
+	pism_set_config_value_FORCE___atmosphere___use_precip_linear_factor_for_temperature="no"
+	pism_set_config_value_FORCE___atmosphere___precip_linear_factor_for_temperature=0.05
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (7)"
+	echo " S T O P"
+	exit 7
+	;;
+esac
+
+#=========== atmosphere components ==========================
+case ${VERSION_pism}
+in
+    "0.7")
+	:
+	#pism_set_coupler___atmosphere='given'
+	#pism_set_forcing_file___atmosphere_given=${PISM_POOL_INPUT0_ATMOS_FORCE}
+	;;
+    "1.0"|"1.1")
+	:
+	#pism_set_coupler___atmosphere='given'
+	#pism_set_forcing_file___atmosphere_given=${PISM_POOL_INPUT0_ATMOS_FORCE}
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (8)"
+	echo " S T O P"
+	exit 8
+	;;
+esac
+
+#=========== ocean components =================================
+case ${VERSION_pism}
+in
+    "0.7")
+	#pism_set_coupler___ocean='pik' #SEE ABOVE in section "marineice"
+	pism_set_coupler___ocean='o3d,meltfactor'                       #-ocean o3d,meltfactor
+	pism_set_config_value___ocean_o3d_melt_factor=0.005
+	pism_set_forcing_file___ocean_o3d=$PISM_POOL_INPUT0_OCEAN_FORCE #-ocean_o3d_file $PISM_POOL_INPUT0_OCEAN_FORCE
+	pism_set_forcing_file___ocean_meltfactor=$PISM_POOL_INPUT0_OCEAN_FACTOR #-ocean_meltfactor_file $PISM_POOL_INPUT0_OCEAN_FACTOR
+	;;
+	  
+    "1.0")
+	#pism_set_coupler___ocean='pik' #SEE ABOVE in section "marineice"
+#TODO
+#	pism_set_coupler___ocean='o3d,meltfactor'
+#	pism_set_config_value_FORCE___ocean___o3d_melt_factor=0.005	
+#	pism_set_forcing_file___ocean_o3d=$PISM_POOL_INPUT0_OCEAN_FORCE
+#	pism_set_forcing_file___ocean_meltfactor=$PISM_POOL_INPUT0_OCEAN_FACTOR
+#TODO
+	pism_set_coupler___ocean='constant'
+	#pism_set_forcing_file___shelf_base_melt_rate
+	#pism_set_config_value___ocean___sub_shelf_heat_flux_into_ice=0.5
+	;;
+    "1.1")
+	#pism_set_coupler___ocean='pik' #SEE ABOVE in section "marineice"
+#TODO
+#	pism_set_coupler___ocean='o3d,meltfactor'
+#	pism_set_config_value_FORCE___ocean___o3d_melt_factor=0.005	
+#	pism_set_forcing_file___ocean_o3d=$PISM_POOL_INPUT0_OCEAN_FORCE
+#	pism_set_forcing_file___ocean_meltfactor=$PISM_POOL_INPUT0_OCEAN_FACTOR
+
+#TODO
+	pism_set_coupler___ocean='constant'
+	#pism_set_forcing_file___shelf_base_melt_rate
+	#pism_set_config_value___ocean___sub_shelf_heat_flux_into_ice=0.5
+	#pism_set_coupler___ocean='pico'
+	#pism_set_forcing_file___ocean_pico_file=$PISM_POOL_INPUT0_OCEAN_FORCE
+	#pism_set_config_value___ocean___pico___continental_shelf_depth=1000
+	##pism_set_config_value___ocean___pico___continental_shelf_depth=700
+    
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (9)"
+	echo " S T O P"
+	exit 9
+	;;
+esac
+
+#=========== sea level =================================
+case ${VERSION_pism}
+in
+    "0.7")
+	:
+	#pism_set_coupler___sea_level="constant,delta_sl"
+	#pism_set_forcing_file___ocean_delta_sl=${PISM_POOL_INPUT0_SEA_LEVEL}
+	;;
+    "1.0"|"1.1")
+	:
+	#pism_set_coupler___sea_level="constant,delta_sl"
+	#pism_set_forcing_file___ocean_delta_sl=${PISM_POOL_INPUT0_SEA_LEVEL}
+	;;
+    *)
+	echo " UNKNOWN PISM VERSION >>${VERSION_pism}<< (10)"
+	echo " S T O P"
+	exit 10
+	;;
+esac
+
+#=========== PetSC stuff =================================
+KSP=" "
+KSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+MY_COMMAND_FLAGS_pism="$MY_COMMAND_FLAGS_pism $KSP"
+
+
+#
+# Clean up of local variables
+#
+unset PISM_POOL_INPUT0_INITIAL
+unset PISM_POOL_INPUT0_SPINUP
+unset PISM_POOL_INPUT0_SEA_LEVEL
+unset PISM_POOL_INPUT0_CONFIG PISM_POOL_INPUT0_REPLACE
+unset PISM_POOL_INPUT0_ATMOS_FORCE PISM_POOL_INPUT0_ATMOS_TOPO
+unset PISM_POOL_INPUT0_OCEAN_FORCE PISM_POOL_INPUT0_OCEAN_FACTOR PISM_POOL_INPUT0_OCEAN_KILLMASK
+unset PISM_POOL_INPUT0_LONLAT PISM_POOL_INPUT0_XY
+###############################################################################
+
+#Xsrun  I know what I am doing
+
+load_all_functions
+general_do_it_all $@

@@ -1,0 +1,52 @@
+&JSBACH_CTL
+  STANDALONE = .false.
+  ! --- number of tiles ---
+  NTILES = 11
+
+  ! --- options to activate the different jsbach modules ---
+  USE_BETHY = .TRUE.
+  USE_PHENOLOGY = .TRUE.
+  USE_ALBEDO = .TRUE.
+  USE_ROUGHNESS_LAI = .TRUE.
+  USE_ROUGHNESS_ORO = .FALSE.
+  USE_DYNVEG = .false.
+  USE_DISTURBANCE = .false.
+  WITH_NITROGEN = .FALSE.           ! perform simulations with nitrogen cycling
+  WITH_YASSO = .true.    ! perform simulations with yasso soil carbon model
+  WITH_HD = .true.                 ! perform simulations with HD model
+  LCC_FORCING_TYPE = "transitions"
+  LCC_SCHEME = 1
+  PHENO_SCHEME = "LOGROP"
+
+  ! --- output options ---
+  FILE_TYPE = 1
+  FILE_ZTYPE = 1
+  LPOST_ECHAM = .false. ! variables in echam output will not be printed twice
+  VEG_AT_1200 = .true.
+  DEBUG = .FALSE.
+  TEST_CCONSERVATION = .TRUE.
+/
+&CBALANCE_CTL
+  READ_CPOOLS = .false.
+  READ_NPOOLS = .FALSE.        ! read npools from file at the beginning of an experiment
+  READ_NDEPO = .FALSE.         ! read nitrogen deposition field from file
+/
+&DYNVEG_CTL
+  READ_FPC = .false.
+  DYNVEG_FEEDBACK = .TRUE.
+/
+&CLIMBUF_CTL
+  INIT_RUNNING_MEANS = .false.
+  READ_CLIMBUF = .false.
+/
+&DISTURBANCE_CTL
+  FIRE_NAME="jsbach"
+/
+&WINDBREAK_JSBACH_CTL
+  WIND_DAMAGE_SCALE = 0.01
+/
+&SOIL_CTL
+  NSOIL = 5
+/
+!because of the large sensitivity of HD model discharge to the changes in HYDROLOGY_CTL
+!it is recommended not to modify HD parameters via namelist (the default values will be used)

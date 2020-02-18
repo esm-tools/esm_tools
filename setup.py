@@ -12,7 +12,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = ["esm_master @ git+https://gitlab.awi.de/esm_tools/esm_master.git" ]
 
 setup_requirements = [ ]
 

@@ -3,11 +3,6 @@ import os, sys
     
 rcfile = os.path.expanduser("~") + "/.esmtoolsrc"
 
-if os.path.isfile(rcfile):
-    FUNCTION_PATH = get_rc_entry("FUNCTION_PATH")
-else:
-    FUNCTION_PATH = "NONE_YET"
-
 
 def get_paths():
     function_path = read_rc_entry("FUNCTION_PATH")
@@ -50,4 +45,11 @@ def import_rc_file():
                 rcdict[line.split("=", 1)[0]] = line.split("=", 1)[1]
         return rcdict
     print (rcfile + " not found, exiting")
+
+
+if os.path.isfile(rcfile):
+    FUNCTION_PATH = get_rc_entry("FUNCTION_PATH")
+else:
+    FUNCTION_PATH = "NONE_YET"
+
     sys.exit(-1)

@@ -1,0 +1,47 @@
+#! /bin/ksh -l
+set -e 
+
+
+setup_name="awicm"		
+#check=1
+
+account=ab0995
+compute_time="00:25:00"
+###############################################################################
+
+INITIAL_DATE_awicm=2000-01-01       # Initial exp. date
+FINAL_DATE_awicm=2000-02-01         # Final date of the experiment
+
+awicm_VERSION="CMIP6"
+POST_PROCESSING_awicm=0
+SCENARIO_awicm="PI-CTRL"
+
+RES_fesom=CORE2
+
+MODEL_DIR_awicm=${HOME}/esm-master/awicm-test/
+
+BASE_DIR=/work/ab0995/a270058/esm_yaml_test/
+
+POOL_DIR_fesom=/work/bm0944/input/
+
+MESH_DIR_fesom=/pool/data/AWICM/FESOM1/MESHES/core/
+
+NYEAR_awicm=0           # Number of years per run
+NMONTH_awicm=1          # Number of months per run
+
+LRESUME_echam=0
+LRESUME_fesom=0
+LRESUME_oasis3mct=0
+
+RESTART_RATE_fesom=1
+RESTART_FIRST_fesom=1
+RESTART_UNIT_fesom='m'
+
+
+
+further_reading_fesom="fesom_output_control.yaml"
+
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

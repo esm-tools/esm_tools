@@ -1,0 +1,44 @@
+#! /bin/ksh -l
+set -e 
+
+
+setup_name="awicm2"		
+#check=1
+
+account=ab0995
+compute_time="00:15:00"
+###############################################################################
+
+INITIAL_DATE_awicm2=2000-01-01       # Initial exp. date
+FINAL_DATE_awicm2=2000-02-29         # Final date of the experiment
+
+awicm2_VERSION="2.0"
+POST_PROCESSING_awicm2=0
+SCENARIO_awicm2="PI-CTRL"
+
+RES_fesom2=CORE2
+
+MODEL_DIR_awicm2=${HOME}/esm-tools/awicm-2.0/
+BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
+
+POOL_DIR_fesom2=/work/ollie/pool/FESOM/
+MESH_DIR_fesom2=/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/
+
+NYEAR_awicm2=0           # Number of years per run
+NMONTH_awicm2=1          # Number of months per run
+
+LRESUME_echam=0
+LRESUME_fesom2=0
+LRESUME_oasis3mct=0
+
+RESTART_RATE_fesom2=1
+RESTART_FIRST_fesom2=1
+RESTART_UNIT_fesom2='m'
+
+
+
+
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

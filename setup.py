@@ -5,10 +5,10 @@
 from setuptools import setup, find_packages
 from os import getenv
 
-with open('README.rst') as readme_file:
+with open('stuff/README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open('stuff/HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = ["esm_master @ git+https://gitlab.awi.de/esm_tools/esm_master.git",
@@ -53,7 +53,9 @@ setup(
 )
 
 try:
-    import esm_tools 
-    esm_tools.init(thisfolder)
+    from esm_rcfile import set_rc_entry
+    set_rc_entry("FUNCTION_PATH", thisfolder + "/configs")
+    set_rc_entry("NAMELIST_PATH", thisfolder + "/namelists")
+    set_rc_entry("RUNSCRIPT_PATH", thisfolder + "/runscripts")
 except:
     print ("RCFile could not be written!")

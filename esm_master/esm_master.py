@@ -5,15 +5,7 @@ import sys, copy, os, re
 import subprocess
 import argparse
 
-try:
-    import esm_tools
-except:
-    print ("Local installation of the esm_tools configuration files missing.")
-    print ("Please try:")
-    print ("    git clone https://gitlab.awi.de/esm_tools/esm_tools.git")
-    print ("    cd esm_tools")
-    print ("    pip install --user -e .")
-    sys.exit(-1)
+import esm_rcfile
 
 import esm_parser
 import esm_environment
@@ -24,14 +16,14 @@ from .cli import verbose
 ##################################### globals ########################################
 ######################################################################################
 
-function_path = esm_tools.get_rc_entry("FUNCTION_PATH")
+function_path = esm_rcfile.get_rc_entry("FUNCTION_PATH")
 ESM_MASTER_DIR=os.getenv("PWD")
 
 components_yaml = function_path + '/esm_master/setups2models.yaml'
 config_yaml = function_path + '/esm_master/esm_master.yaml'
 vcs_folder = function_path + '/vcs'
 
-overall_conf_file = esm_tools.rcfile
+overall_conf_file = esm_rcfile.rcfile
 
 ######################################################################################
 ############################## class "general_infos" #################################

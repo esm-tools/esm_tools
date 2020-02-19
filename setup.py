@@ -4,7 +4,6 @@
 
 from setuptools import setup, find_packages
 from os import getenv
-from esm_tools import set_rc_entry
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -12,7 +11,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ["esm_master @ git+https://gitlab.awi.de/esm_tools/esm_master.git" ]
+requirements = ["esm_master @ git+https://gitlab.awi.de/esm_tools/esm_master.git",
+                "esm_runscripts @ git+https://gitlab.awi.de/esm_tools/esm_runscripts.git",
+                "esm_rcfile @ git+https://gitlab.awi.de/esm_tools/esm_rcfile.git" ]
 
 setup_requirements = [ ]
 
@@ -20,12 +21,6 @@ test_requirements = [ ]
 
 thisfolder = getenv('PWD')  # that somehow works, even though pip copies everything to 
                             # a temp folder... seemingly without changing the PWD var
-
-set_rc_entry("FUNCTION_PATH", thisfolder + "/configs")
-set_rc_entry("NAMELIST_PATH", thisfolder + "/namelists")
-set_rc_entry("RUNSCRIPT_PATH", thisfolder + "/runscripts")
-
-
 setup(
     author="Dirk Barbi",
     author_email='dirk.barbi@awi.de',
@@ -56,3 +51,9 @@ setup(
     version='0.1.0',
     zip_safe=False,
 )
+
+try:
+    import esm_tools 
+    esm_tools.init(thisfolder)
+except:
+    print ("RCFile could not be written!")

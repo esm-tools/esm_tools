@@ -1,0 +1,12 @@
+core:
+        esm_runscripts:
+                SimulationSetup:
+                        - "_create_component_folders"
+
+plugins:
+        my_plugin:
+                location: "/work/ollie/dbarbi/my_plugin"
+                git-url: ""
+                my_plugin:
+                        - "write_something"
+

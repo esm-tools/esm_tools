@@ -1,0 +1,6 @@
+choose_job_type:
+        compute:
+                recipe:
+                        - "_create_component_folders"
+                        - "write_something" 
+

@@ -1,6 +1,11 @@
 choose_job_type:
         compute:
                 recipe:
+                        - "_create_setup_folders"
                         - "_create_component_folders"
+                        - "_write_finalized_config"
+                        - "copy_tools_to_thisrun"
+                        - "_copy_preliminary_files_from_experiment_to_thisrun"
+                        - "_show_simulation_info"  
                         - "write_something" 
 

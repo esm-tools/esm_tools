@@ -530,3 +530,4 @@ check_error:
 
 further_reading:
         - echam/echam.datasets.yaml
+        - echam/echam.postprocessing.yaml

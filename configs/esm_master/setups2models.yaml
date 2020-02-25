@@ -129,15 +129,24 @@ components:
                 destination: "oasis"
                 available_versions:
                         - "foci"
+                        - "fociagrif"
                         - "ec-earth"
+                        - "2.8"
+                        - "3.0"
                         - "4.0"
                 choose_version:
                         "ec-earth":
                                 branch: "ec-earth-version"
+                        "2.8":
+                                branch: "2.8"
+                        "3.0":
+                                branch: "3.0"
+                        "4.0":
+                                branch: "4.0"
                         "foci":
                                 git-repository: "https://gitlab.dkrz.de/foci/src/oasis3mct.git"
                                 branch: "esm-tools"
-                        "4.0":
+                        "fociagrif":
                                 git-repository: "https://gitlab.dkrz.de/b350090/oasis3-mct4.git"
                                 branch: "fociagrif"
 
@@ -156,13 +165,37 @@ components:
                                 destination: "40r1"
                         40r1-agcm:
                                 compile_command: "export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg"
+                        43r3: 
+                                branch: "master"
+                                git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                                
                 available_versions:
                         - "40r1"
                         - "40r1-foci"                
                         - "40r1-agcm"                
+                        - "43r3" 
         
         "pism":
-                comp_command: "mkdir -p build; cd build; cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+                comp_command: >
+                        mkdir -p build;
+                        cd build;
+                        export PISM_INSTALL_PREFIX=$(readlink -f $(pwd)/..);
+                        cmake \
+                                -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+                                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                                -DPism_BUILD_TYPE=RelWithDebInfo \
+                                -DCMAKE_CXX_COMPILER=$CXX \
+                                -DCMAKE_CXX_FLAGS="-std=c++11 -fp-model precise -no-fast-transcendentals" \
+                                -DCMAKE_C_COMPILER=$CC  \
+                                -DCMAKE_C_FLAGS="-fp-model precise -no-fast-transcendentals" \
+                                -DPETSC_EXECUTABLE_RUNS:BOOL=ON \
+                                -DMPI_C_DIR="$I_MPI_ROOT" \
+                                -DPism_USE_JANSSON:BOOL=NO \
+                                -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \
+                                -DPism_USE_PARALLEL_HDF5:BOOL=OFF \
+                                -DPism_USE_PROJ4:BOOL=YES \
+                                -DPism_BUILD_EXTRA_EXECS:BOOL=ON \
+                                ..; make -j4; make install;
                 clean_command: "${defaults.clean_command}"
                 choose_version:
                         snowflake0.7:
@@ -171,9 +204,21 @@ components:
                         snowflake1.0:
                                 git-repository: "swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git"        
                                 branch: "stable1.0-awi-dev"
+                        github1.1.4:
+                                git-repository: "https://github.com/pism/pism.git"
+                                branch: "v1.1.4"
+                        github1.2:
+                                git-repository: "https://github.com/pism/pism.git"
+                                branch: "v1.2"
+                        index1.1:
+                                git-repository: "https://github.com/sebhinck/pism-pub"
+                                branch: "Index_dev"
                 available_versions:
                         - "snowflake0.7"
                         - "snowflake1.0"  
+                        - "github1.1.4"
+                        - "github1.2"
+                        - "index1.1"
         
         "recom":
                 git-repository: "gitlab.dkrz.de/modular_esm/recom.git"
@@ -332,6 +377,11 @@ couplings:
                 coupling_changes: 
                         - "sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90"
                         - "sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90"
+        
+        "oifs-43r3+oasis":
+                components: 
+                        - "oifs-43r3"
+                        - "oasis3-mct-4.0"
 
 
 setups:
@@ -439,5 +489,13 @@ setups:
                         - "oifs-40r1+amip"
 
         oifscl: 
-                couplings:
-                        - "oifs-40r1+oasis"
+                available_versions:
+                        - "40r1"
+                        - "43r3"
+                choose_version:
+                        40r1: 
+                                couplings:
+                                        - "oifs-40r1+oasis"
+                        43r3:
+                                couplings:
+                                        - "oifs-43r3+oasis"

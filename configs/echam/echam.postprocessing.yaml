@@ -1,89 +1,104 @@
 postprocess_method_definitions:
-  - cdo:
-    possible_flags:
-      - "f nc"
-      - "f grb1"
-      - "f grb2"
-      - "f nc1"
-      - "f nc2"
-      - "f nc4"≤
-      - "f nc4c"
-      - "f nc5"
-      - "f srv"
-      - "f ext"
-      - "f ieg"
-    stdin: "possible"
-    infile: "possible"
-    outfile: "possible"
-    operator: "required"
-  - cdo_chain:
-    - "something..."
+        cdo:
+                possible_flags:
+                        - "f nc"
+                        - "f grb1"
+                        - "f grb2"
+                        - "f nc1"
+                        - "f nc2"
+                        - "f nc4"
+                        - "f nc4c"
+                        - "f nc5"
+                        - "f srv"
+                        - "f ext"
+                        - "f ieg"
+                        - "t echam6"
+                required_args:
+                        - "operator"
+                        - "infile"
+                possible_args:
+                        - "stdin"
+                        - "stdout"
+                        - "outfile"
+                call_order:
+                        - "program"
+                        - "flags"
+                        - "operator"
+                        - "infile"
+                        - "outfile"
+        cdo_chain:
+                - "something..."
 
 postprocess_task_definitions:  # in postprocessing.yaml
-  - mm:
-      method: cdo
-      operator: "monmean"
-      flags:
-        - "f nc"
-  - BOT:
-    method: cdo
-    operator: "after"
+  mm:
+    method: "cdo"
+    args:
+        operator: "monmean"
     flags:
-      - "f nc2"
-    stdin: namelist.BOT
+      - "f nc"
+  BOT:
+  method: "cdo"
+  operator: "after"
+  flags:
+    - "f nc2"
+  stdin: "namelist.BOT"
 
 
 
 postprocess_tasks: #in echam.postprocessing.yaml
-  name.nc:
-      post_process: mm
-      infile:
-      flags:
-        # Always automatically prefixed by `-`, so to use "-t mpiom", simply add "t mpiom"
-        - "f nc"
+  "${general.expid}_${model}_[[streams-->STREAM]]_${start_date!syear!smonth!sday}-${next_date!syear!smonth!sday}_mm.nc":
+     post_process: "mm"
+     flags:
         - "t echam6"
-      switches:
-        # Always prefixed with -- and take value "--key value" when constructing command
-
-streams:  #fesom.postprocessing.yaml
-  - a
-  - b
-  - c
-
-post_process:
-  [[streams -> STREAM]]_mm.nc:
-      post_process: mm
-
-      os.system(method flags swtiches .....) # esm_sim_objects.py
-
-
-
-
-
-
-
-mm:
-	 --montly_mean--> @oldfilename@_mm.nc'
-
-BOT:
-	outstream --BOT_pp-->
+     args:
+        infile: "${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM"
+# name.nc:
+#      post_process: "mm"
+#        infile:
+#        flags:
+#          # Always automatically prefixed by `-`, so to use "-t mpiom", simply add "t mpiom"
+#          - "f nc"
+#          - "t echam6"
+#        switches:
+#          # Always prefixed with -- and take value "--key value" when constructing command
+#   "[[streams-->STREAM]]_mm.nc":
+#      post_process: "mm"
+#      infile: 
+#        "STREAM": "${general.expid}_${start_date!syear!smonth}_STREAM"
+#        "unique1": "abc_STREAM_def"
+#        "STREAM2": "lalala_${general.expid}"
+#        "evil_STREAM":
+#                "really_deep_STREAM":
+#                        "yeah_STREAM_$(( 1 + 4 ))"
 
 
 
-choose_implementation_BOT:
-	cdo:
-		'$cdo -f nc2  after $file tempout.nc << namelist.BOT'
-namelist_changes:
-  namelist.BOT:
-    select:
-      code: [64, 65, 66, 67, 83, 84, 85, 86, 87, 88, 91, 92, 93, 94, 95, 96, 97,
-             100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
-             114, 115, 116, 117, 119, 120, 121, 122, 123, 124, 134, 137, 139, 140,
-             141, 142, 143, 144, 145, 146, 147, 150, 151, 164, 165, 166, 167, 168,
-             169, 171, 175, 176, 177, 178, 179, 180, 181, 182, 184, 185, 186, 187,
-             188, 191, 192, 193, 197, 203, 204, 205, 208, 209, 210, 211, 213, 214,
-             216, 229, 230, 231, 233, 235, 260]
-      type: 20
-      level: 1
-      format: 1
-      mean: 0
+
+
+
+
+      #mm:
+      #	 --montly_mean--> @oldfilename@_mm.nc'
+      #
+      #BOT:
+      #	outstream --BOT_pp-->
+      #
+      #
+      #
+      #choose_implementation_BOT:
+      #	cdo:
+      #		'$cdo -f nc2  after $file tempout.nc << namelist.BOT'
+      #namelist_changes:
+      #  namelist.BOT:
+      #    select:
+      #      code: [64, 65, 66, 67, 83, 84, 85, 86, 87, 88, 91, 92, 93, 94, 95, 96, 97,
+      #             100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
+      #             114, 115, 116, 117, 119, 120, 121, 122, 123, 124, 134, 137, 139, 140,
+      #             141, 142, 143, 144, 145, 146, 147, 150, 151, 164, 165, 166, 167, 168,
+      #             169, 171, 175, 176, 177, 178, 179, 180, 181, 182, 184, 185, 186, 187,
+      #             188, 191, 192, 193, 197, 203, 204, 205, 208, 209, 210, 211, 213, 214,
+      #             216, 229, 230, 231, 233, 235, 260]
+      #      type: 20
+      #      level: 1
+      #      format: 1
+      #      mean: 0

@@ -49,6 +49,12 @@ hyper_flag: "" # No hyperthreading on ollie
 #
 #
 
+
+#Hey Paul,
+#please put that into pism.yaml:
+#- "load pism_externals"
+#- "I_MPI_FABRICS=shm:tmi"
+
 useMPI: intelmpi
 
 module_actions: 

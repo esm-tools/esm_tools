@@ -7,3 +7,8 @@ ollie:
 mistral:
         login_nodes: 'mlogin*'
         compute_nodes: '^m[A-Za-z0-9]+\.hpc\.dkrz\.de$'
+        post_nodes: 'mistralpp*'
+
+juwels:
+        login_nodes: '^juwels[0-9][0-9]\.fz-juelich\.de$ '
+        compute_nodes: '^juwels[0-9][0-9]\.ib.juwels.fzj.de'

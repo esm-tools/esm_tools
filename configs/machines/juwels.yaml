@@ -3,7 +3,59 @@
 batch_system: slurm
 accounting: true
 
-hyper_flag: "--ntasks-per-node: ${tasks_per_node}"
+sh_interpreteter: "/bin/bash"
+
 launcher_flags: "-l"
 
 
+jobtype: compute
+
+choose_jobtype:
+        tidy_and_resubmit:
+                partition: compute
+        post:
+                partition: compute
+        compute: 
+                partition: compute
+
+
+choose_partition: 
+        "compute":
+                cores_per_node: 48
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+module_actions:
+        - "--force purge"
+        - "load GCCcore/.8.3.0"
+        - "load CMake/3.14.0"
+        - "load Intel/2019.5.281-GCC-8.3.0" 
+        - "load IntelMPI/2019.6.154"
+        - "load imkl/2019.3.199"
+        - "load netCDF/4.6.3"
+        - "load netCDF-Fortran/4.4.5"
+        - "load parallel-netcdf/1.11.0"
+        - "load HDF5/1.10.5"
+        # PG: For PISM
+        - "load PETSc/3.11.1"
+        - "load NCO"
+        - "load FFTW/3.3.8" 
+
+export_vars:
+        - "FC=mpiifort" 
+        - "FCFLAGS=-free"
+        - "CC=mpiicc" 
+        - "CXX=mpiicpc"
+        - "NETCDF_DIR=$EBROOTNETCDF"
+        - "NETCDFF_DIR=$EBROOTNETCDFMINFORTRAN"
+        - "PNETCDF_DIR=$EBROOTPARALLELMINNETCDF"
+        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFF_DIR/include/"
+        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDF_DIR/include/"
+        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFCXX_DIR/include/"
+        # PG: For PISM:
+        - "NETCDF_ROOT=$NETCDF_DIR"
+
+
+further_reading:
+        - batch_system/slurm.yaml

@@ -17,7 +17,7 @@ SCENARIO_fesom2="PI-CTRL"
 
 RES_fesom2=CORE2
 
-MODEL_DIR_fesom2=/home/ollie/dbarbi/esm-tools/fesom-2.0/
+MODEL_DIR_fesom2=/work/ollie/dbarbi/modelcodes/fesom-2.0/
 BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
 
 POOL_DIR_fesom2=/work/ollie/pool/FESOM/

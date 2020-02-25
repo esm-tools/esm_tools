@@ -11,9 +11,9 @@ general:
 
 fesom2:
         version: 2.0
-        model_dir: "/home/ollie/dbarbi/esm-tools/fesom-2.0/"
+        model_dir: "/work/ollie/dbarbi/modelcodes/fesom-2.0/"
         pool_dir: "/work/ollie/pool/FESOM/"
-        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final"
+        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
         res: CORE2
         lresume: 0
         restart_rate: 1

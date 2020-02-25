@@ -1,5 +1,5 @@
 model: oasis3mct
-model_dir: ${esm_master_dir}/oasis
+#model_dir: ${esm_master_dir}/oasis
 cf_name_dir: ${model_dir}
 time_step: 900 # changed by coupled setup anyway
 

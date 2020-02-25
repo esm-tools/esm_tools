@@ -18,7 +18,7 @@ SCENARIO_awicm2="PI-CTRL"
 
 RES_fesom2=CORE2
 
-MODEL_DIR_awicm2=${HOME}/esm-tools/awicm-2.0/
+MODEL_DIR_awicm2=/work/ollie/dbarbi/modelcodes/awicm-2.0/
 BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
 
 POOL_DIR_fesom2=/work/ollie/pool/FESOM/

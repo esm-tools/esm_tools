@@ -244,4 +244,5 @@ grids:
                 name: feom
                 nx: ${nx}
                 ny: 1
+                oasis_grid_type: "U"
 

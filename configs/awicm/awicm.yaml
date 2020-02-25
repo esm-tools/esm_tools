@@ -4,7 +4,7 @@
 
 general:
         model: awicm
-        model_dir: ${esm_master_dir}/awicm-${version}
+        #model_dir: ${esm_master_dir}/awicm-${version}
 
         coupled_setup: True
 

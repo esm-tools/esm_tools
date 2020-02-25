@@ -37,11 +37,11 @@ choose_version:
                 dataset: r0010               
                 choose_dynamic_vegetations: 
                         true:
-                                namelist_dir: "${general.esm_master_dir}/namelists/jsbach/${version}/${echam.scenario}/dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
                                 dynveg: "_dynveg"
                                 jsbachnc_file_ending: "${dynveg_file_ending}"
                         false:
-                                namelist_dir: "${general.esm_master_dir}/namelists/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
                                 dynveg: "_no_dynveg"
                 choose_echam.scenario:
@@ -135,7 +135,7 @@ choose_version:
                         
         "3.10":
                 dataset: r0007
-                namelist_dir: "${general.esm_master_dir}/esm-runscripts/namelists/jsbach/${version}/${echam.scenario}/${resolution}"
+                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/${resolution}"
                 choose_dynamic_vegetations: 
                         true:
                                 dynveg: "_dynveg"

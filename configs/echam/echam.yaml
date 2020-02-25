@@ -51,7 +51,7 @@ restart_firstlast: "first"
 
 # default directories
 
-model_dir: "${general.esm_master.dir}/echam-${version}"
+#model_dir: "${general.esm_master.dir}/echam-${version}"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 pool_dir: "${computer.pool_directories.pool}/ECHAM6"
@@ -59,7 +59,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_master_dir}/namelists/echam/${version}/${scenario}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
 
 switch: 1
 value : "echam default"

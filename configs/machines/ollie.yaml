@@ -40,7 +40,8 @@ choose_submitted:
         true:
                 modules_needed:
                         - centoslibs
-
+        false:
+                nothing: much
 
 submitted: false
 hyper_flag: "" # No hyperthreading on ollie

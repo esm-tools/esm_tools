@@ -235,32 +235,32 @@ outdata_sources:
 
 
 
-
-export_vars:
-        AWI_FESOM_YAML:
-                output_schedules:
-                        -       
-                                vars: [restart]
-                                unit: ${restart_unit}
-                                first: ${restart_first}
-                                rate: ${restart_rate}
-                        -       
-                                vars: ${monthly_outputs}
-                                unit: m
-                                rate: 1
-                        - 
-                                vars: ${daily_outputs} 
-                                unit: d
-                                rate: 1
-                        - 
-                                vars: ${12_second_outputs}
-                                unit: s
-                                rate: 12
-                        - 
-                                vars: ${yearly_outputs}
-                                unit: y
-                                first: 1000
-                                rate: 1
+environment_changes:
+        add_export_vars:
+                AWI_FESOM_YAML:
+                        output_schedules:
+                                -       
+                                        vars: [restart]
+                                        unit: ${restart_unit}
+                                        first: ${restart_first}
+                                        rate: ${restart_rate}
+                                -       
+                                        vars: ${monthly_outputs}
+                                        unit: m
+                                        rate: 1
+                                - 
+                                        vars: ${daily_outputs} 
+                                        unit: d
+                                        rate: 1
+                                - 
+                                        vars: ${12_second_outputs}
+                                        unit: s
+                                        rate: 12
+                                - 
+                                        vars: ${yearly_outputs}
+                                        unit: y
+                                        first: 1000
+                                        rate: 1
 
 
 

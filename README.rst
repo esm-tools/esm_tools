@@ -2,7 +2,7 @@ To use the new version of the esm-tools, now rewritten in Python, clone this rep
     
     git clone git@gitlab.awi.de:esm_tools/esm_tools.git
     
-Then, run the ``install.sh``
+Then, run the ``install.sh``::
 
     ./install.sh
     

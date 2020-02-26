@@ -7,3 +7,7 @@ Then, run the ``install.sh``::
     ./install.sh
     
 You should now have the command line tools ``esm-master`` and ``esm-runscripts``, which replace the old version.
+
+You may have to add the instalation path to your ``PATH`` variable::
+
+    export PATH=~/.local/bin:$PATH

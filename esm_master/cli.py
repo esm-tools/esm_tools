@@ -59,7 +59,7 @@ def main():
     env = esm_environment.environment_infos()
     setups2models.config = setups2models.reduce(target, env)
 
-    env.apply_config_changes(setups2models.config)
+    env.apply_config_changes("compiletime", setups2models.config)
     env.add_esm_var()
 
     user_task = task(target, setups2models, vcs, main_infos)

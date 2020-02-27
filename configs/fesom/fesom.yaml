@@ -235,7 +235,7 @@ outdata_sources:
 
 
 
-environment_changes:
+runtime_environment_changes:
         add_export_vars:
                 AWI_FESOM_YAML:
                         output_schedules:

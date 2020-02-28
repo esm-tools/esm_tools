@@ -43,12 +43,12 @@ ny: 1
 
 hours: ""
 
-model_dir: ${esm_master_dir}/oifs-${version}
+#model_dir: ${esm_master_dir}/oifs-${version}
 bin_dir: ${model_dir}/bin
 input_dir: ${computer.pool_dir}/oifs-${version}/${res}${levels}/
 rtables_dir: ${input_dir}/../rtables/
 forcing_dir: ${input_dir}/../${version}/ifsdata
-namelist_dir: ${esm_master_dir}/namelists/oifs
+namelist_dir: ${esm_namelist_dir}/oifs
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 
@@ -152,3 +152,32 @@ input_in_work:
         ICMSH_INIT: ICMSH${expid}INIT
 
 
+
+environment_changes:
+        add_export_vars:        
+                - 'PERL5LIB="/usr/lib64/perl5"'
+                - 'PATH=$PATH:/home/ollie/jstreffi/fcm/bin/'
+
+                - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api/include'
+                - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api/lib -lgrib_api_f90 -lgrib_api"'
+                - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api/bin"'
+
+                - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+                - 'OIFS_OASIS_BASE=${model_dir}/../lib'
+                - 'OIFS_OASIS_INCLUDE=-I$OIFS_OASIS_BASE/../oasis/build/lib/psmile'
+                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE -lpsmile -lmct -lmpeu -lscrip"'
+
+                - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
+                - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
+                - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+                - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
+
+                - 'OIFS_FC=$FC'
+                - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian"'
+                - 'OIFS_FFIXED=""'
+                - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+
+
+                - 'OIFS_CC=$CC'
+                - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
+                - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'

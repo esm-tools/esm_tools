@@ -22,4 +22,4 @@ else
 fi
 
 
-#pip install --user -e . 
+pip install --user -e .

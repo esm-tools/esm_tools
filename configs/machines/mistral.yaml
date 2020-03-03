@@ -85,6 +85,7 @@ export_vars:
         - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
         - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
         - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
@@ -121,11 +122,13 @@ export_vars:
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
         - 'OIFS_FC=${mpifc}'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED="-fixed"'
+        - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
         - 'OIFS_CC=${cc}'

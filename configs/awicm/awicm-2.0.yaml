@@ -10,12 +10,12 @@ general:
 
         include_models:
                 - echam
-                - fesom2
+                - fesom
                 - oasis3mct
 
         version: "2.0"
         scenario: "PI-CTRL"
-        resolution: ${echam.resolution}_${fesom2.resolution}
+        resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
         choose_general.resolution:
@@ -33,10 +33,10 @@ echam:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
-        ocean_resolution: "${fesom2.resolution}"
+        ocean_resolution: "${fesom.resolution}"
         remove_forcing_files:
                 - sst
                 - sic
@@ -52,7 +52,7 @@ echam:
 
                         
 jsbach:
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:
@@ -69,7 +69,7 @@ jsbach:
 #########################################################################################
 
         
-fesom2:
+fesom:
         choose_general.version:
                 2.0:
                         version: "2.0"
@@ -80,7 +80,7 @@ fesom2:
         opbnd_dir: ""
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom2.version}
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
         leapyear: True
@@ -103,11 +103,11 @@ oasis3mct:
         model_dir: ${general.model_dir}/oasis
 
         process_ordering:
-                - fesom2
+                - fesom
                 - echam
 
         a2o_lag: "${echam.time_step}"
-        o2a_lag: "${fesom2.time_step}"
+        o2a_lag: "${fesom.time_step}"
         a2o_seq: 2
 
         coupling_time_step: 3600

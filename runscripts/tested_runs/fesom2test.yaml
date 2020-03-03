@@ -1,5 +1,5 @@
 general:
-        setup_name: fesom2
+        setup_name: fesom
         compute_time: "00:08:00"
         initial_date: '2001-01-01'
         final_date: '2001-02-28'
@@ -9,7 +9,7 @@ general:
 
         further_reading: test1.yaml
 
-fesom2:
+fesom:
         version: 2.0
         model_dir: "/work/ollie/dbarbi/modelcodes/fesom-2.0/"
         pool_dir: "/work/ollie/pool/FESOM/"

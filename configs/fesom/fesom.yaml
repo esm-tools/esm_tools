@@ -19,6 +19,7 @@ with_part_format: false
 time_dimension: "time"
 
 #model_dir: "${esm_master_dir}/fesom-${version}/"
+pool_dir: "${computer.pool_dir}"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
@@ -232,6 +233,11 @@ outdata_sources:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+
+compiletime_environment_changes:
+        add_export_vars:
+                takenfrom:      fesom1
 
 
 

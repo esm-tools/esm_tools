@@ -1,7 +1,7 @@
 # FESOM2 YAML CONFIGURATION FILE
 #
 
-model: fesom2
+model: fesom
 branch: master
 version: "2.0"
 
@@ -189,6 +189,15 @@ config_sources:
         subglobtest: "/home/ollie/dbarbi/esm-tools/functions/echam/*.yaml"
         #subfoldertest: "/home/ollie/dbarbi/esm-tools/install.sh"
         #morestuff: "/home/ollie/dbarbi/esm-tools/functions/echam/*.yaml"
+
+compiletime_environment_changes:
+        add_export_vars:
+                - taken2from:      fesom2_compile
+
+runtime_environment_changes:
+        add_export_vars:
+                - takenfrom:      fesom2_run
+                - taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"

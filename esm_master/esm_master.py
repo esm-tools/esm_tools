@@ -797,6 +797,49 @@ class setup_and_model_infos:
             self.output()
 
 
+    def write_minimal_user_config(self):
+        user_config = {}
+
+        for model in self.config["components"]:
+            version = self.config["components"][model]["version"]
+            model_dir = self.config["components"][model]["model_dir"]
+            user_config.update({model: 
+                                    {
+                                     "model": model,
+                                     "version": version,
+                                     "model_dir": model_dir
+                                     }
+                                })
+        if "setups" in self.config:
+            coupled = "true"
+            setup = list(self.config["setups"])[0]
+            version = self.config["setups"][setup]["version"]
+            model_dir = self.config["setups"][setup]["model_dir"]
+
+        else:
+            coupled = "false"
+            setup = list(self.config["components"])[0]
+            version = self.config["components"][setup]["version"]
+
+
+        user_config.update({"general":
+                                {
+                                "jobtype": "compute", 
+                                "setup_name": setup,
+                                "version" : version,
+                                "coupled" : "false",
+                                "initial_date": "2000-01-01",
+                                "final_date": "2000-01-02",
+                                "compute_time": "00:00:01",
+                                "model_dir": model_dir,
+                                "base_dir": "/on/a/road/to/nowwhere"
+                                }
+                            })
+
+        return user_config
+
+
+
     def append_to_conf(self, target, reduced_config,  toplevel = ""):
         (todo, kind, model, version, only_subtarget, raw ) = self.split_raw_target(target, self)
         if not version:
@@ -840,7 +883,8 @@ class setup_and_model_infos:
         return reduced_config 
 
 
-    def reduce(self, target, env):
+    #def reduce(self, target, env):
+    def reduce(self, target):
         blacklist = []
             #re.compile(entry)
             #for entry in [".*_dir"]
@@ -848,7 +892,7 @@ class setup_and_model_infos:
 
         reduced_config={}
         reduced_config["defaults"] = self.config["defaults"]
-        reduced_config["computer"] = copy.deepcopy(env.config)
+        #reduced_config["computer"] = copy.deepcopy(env.config)
         reduced_config = self.append_to_conf(target, reduced_config)
 
 

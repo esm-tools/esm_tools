@@ -56,11 +56,17 @@ def main():
     main_infos = general_infos()
     vcs = version_control_infos()
     setups2models = setup_and_model_infos(vcs, main_infos)
-    env = esm_environment.environment_infos()
-    setups2models.config = setups2models.reduce(target, env)
+    setups2models.config = setups2models.reduce(target)
 
-    env.apply_config_changes("compiletime", setups2models.config)
-    env.add_esm_var()
+    from esm_parser import pprint_config
+
+    user_config = setups2models.write_minimal_user_config()
+
+    from esm_runscripts.esm_sim_objects import SimulationSetup
+    complete_setup = SimulationSetup(user_config = user_config)
+    complete_config = complete_setup.config
+
+    env = esm_environment.environment_infos("compiletime", complete_config)
 
     user_task = task(target, setups2models, vcs, main_infos)
     if verbose > 0:

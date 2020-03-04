@@ -1,6 +1,7 @@
 # OIFS standalone (=AMIP?) YAML FILE
 #
 
+model: oifs
 executable: master.exe
 command: ${executable} -v ecmwf -e ${general.expid}
 version: 40r1
@@ -62,7 +63,7 @@ choose_res:
         T159:
                 nx: 35718
                 time_step: 3600
-                OASIS_GRID_name: "080"
+                oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: ""
         TL159:
@@ -151,8 +152,6 @@ input_in_work:
         ICMGG_INIUA: ICMGG${expid}INIUA
         ICMSH_INIT: ICMSH${expid}INIT
 
-
-
 environment_changes:
         add_export_vars:        
                 choose_version:
@@ -160,5 +159,7 @@ environment_changes:
                                 - 'OIFS_FFIXED="-fixed"' 
                         43r3:
                                 - 'OIFS_FFIXED=""'
+                                - 'OIFS_OASIS_BASE="$model_dir/oasis"'
+                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
 
-		

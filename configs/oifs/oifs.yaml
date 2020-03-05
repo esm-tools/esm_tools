@@ -125,7 +125,8 @@ export_vars:
         OIFS_EXPID: ${general.expid}
 
 
-bin_sources: ${bin_dir}/${executable}
+bin_sources: 
+        bin: ${bin_dir}/${executable}
 
 input_files:
         ICMGG_INIT: ICMGG_INIT

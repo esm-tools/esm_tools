@@ -42,6 +42,12 @@ components:
                         "6.3.05p2":
                                 git-repository: "https://gitlab.dkrz.de/foci/src/echam.git"
                                 branch: "esm-tools"
+                        "6.3.05p2-wiso":
+                                branch: "wiso"
+                                comp_command: "make; make install"
+                                clean_command: "make clean"
+                                conf_command: "./configure"
+
         "fesom":
                 choose_version: 
                         "1.4":

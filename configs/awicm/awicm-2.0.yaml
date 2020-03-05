@@ -70,9 +70,7 @@ jsbach:
 
         
 fesom:
-        choose_general.version:
-                2.0:
-                        version: "2.0"
+        version: "2.0"
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288

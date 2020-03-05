@@ -59,9 +59,16 @@ components:
                                         - "github.com/FESOM/fesom2.git"
                                 branch: "2.0.2"
                                 install_bins: "bin/fesom.x"
+                        "2.0-o":
+                                git-repository: 
+                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
+                                        - "github.com/FESOM/fesom2.git"
+                                branch: "oifs-deck"
+                                install_bins: "bin/fesom.x"
                 available_versions:
                         - "1.4"
                         - "2.0"
+                        - "2.0-o"
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
 
@@ -174,12 +181,17 @@ components:
                         43r3: 
                                 branch: "master"
                                 git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                        43r3-awi: 
+                                branch: "master"
+                                git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                                 
                 available_versions:
                         - "40r1"
                         - "40r1-foci"                
                         - "40r1-agcm"                
                         - "43r3" 
+                        - "43r3-awi" 
         
         "pism":
                 comp_command: >
@@ -242,7 +254,7 @@ components:
                 available_versions: 
                         - "ec-earth"
                         - "focioifs"  
-                git-repository: "gitlab.dkrz.de/ec-earth/runoff-mapper.git"
+                git-repository: "https://gitlab.dkrz.de/ec-earth/runoff-mapper.git"
                 choose_version:
                         "ec-earth":
                                 branch: "esm-tools"
@@ -290,6 +302,16 @@ couplings:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
+        "fesom-2.0+oifs-43r3-awi":
+                components:
+                        - "oifs-43r3-awi"
+                        - "fesom-2.0-o"
+                        - "oasis3-mct-3.0"
+                        - "rnfmap-ec-earth"
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt"
+                        - "sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt"
+ 
         "fesom-2.0+oifs-40r1":
                 components:
                         - "oifs-40r1"
@@ -396,6 +418,9 @@ setups:
                         - "1.0"
                         - "CMIP6"
                         - "2.0"
+                        - "3.0"
+                        - "3.1"
+
                 choose_version:
                         "1.0":
                                 couplings:                        
@@ -409,6 +434,9 @@ setups:
                         "3.0":
                                 couplings:                        
                                         - "fesom-2.0+oifs-40r1"
+                        "3.1":
+                                couplings:                        
+                                        - "fesom-2.0+oifs-43r3-awi"
 
         awicm-recom:
                 available_versions:

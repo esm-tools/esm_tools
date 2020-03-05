@@ -2,5 +2,5 @@ general:
         something: test1
         further_reading: test3.yaml
 
-fesom2:
+fesom:
         something: test1

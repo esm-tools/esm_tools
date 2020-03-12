@@ -12,6 +12,9 @@ after_script:
   - echo "For example you might do some cleanup here"
 
 build1:
+  tags:
+    - ubuntu 
+    # TODO: Add ollie and mistral here once appropriate...
   stage: build
   script:
     - ./install.sh

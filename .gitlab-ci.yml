@@ -17,6 +17,9 @@ build1:
     # TODO: Add ollie and mistral here once appropriate...
   stage: build
   script:
+    - git --version
+    - python --version
+    - pip --version
     - ./install.sh
     - which esm_master
     - which esm_runscripts

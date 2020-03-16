@@ -25,10 +25,4 @@ build1:
     - which esm_master
     - which esm_runscripts
 
-test1:
-  stage: test
-  script:
-    - echo "Do a test here"
-    - echo "For example run a test suite"
-
 

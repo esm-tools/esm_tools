@@ -21,6 +21,7 @@ build1:
     - python --version
     - pip --version
     - ./install.sh
+    - export PATH=${HOME}/.local/bin:${PATH}
     - which esm_master
     - which esm_runscripts
 

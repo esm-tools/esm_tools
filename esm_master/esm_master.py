@@ -824,7 +824,8 @@ class setup_and_model_infos:
 
         user_config.update({"general":
                                 {
-                                "jobtype": "compute", 
+                                "jobtype": "compute",
+                                "account": "none",
                                 "setup_name": setup,
                                 "version" : version,
                                 "coupled" : "false",

@@ -21,7 +21,7 @@ old_mesh_format: false
 with_part_format: false
 time_dimension: "time"
 
-pool_dir: ${computer.pool_dir}
+pool_dir: ${computer.pool_directories.pool}
 #model_dir: "${esm_master_dir}/fesom-${version}/"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"

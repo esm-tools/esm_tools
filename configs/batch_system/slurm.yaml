@@ -6,7 +6,7 @@ header_start: "#SBATCH"
 submit: sbatch
 launcher: srun
 mail_type: NONE
-#account: None   
+account: None   
 
 
 

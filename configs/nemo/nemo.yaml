@@ -27,9 +27,9 @@ restart_unit:   months
 #
 
 
-ini_restart_dir: ${computer.pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
-input_dir:      ${computer.pool_dir}/foci_input/NEMO/input/r0001/${resolution}
-namelist_dir:   ${esm_master_dir}/namelists/nemo
+ini_restart_dir: ${computer.pool_directories.pool}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
+input_dir:      ${computer.pool_directories.pool}/foci_input/NEMO/input/r0001/${resolution}
+namelist_dir:   ${esm_namelist_dir}/nemo
 bin_dir:        ${model_dir}/bin
 
 # default files

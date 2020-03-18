@@ -46,7 +46,7 @@ hours: ""
 
 #model_dir: ${esm_master_dir}/oifs-${version}
 bin_dir: ${model_dir}/bin
-input_dir: ${computer.pool_dir}/oifs-${version}/${res}${levels}/
+input_dir: ${computer.pool_directories.pool}/oifs-${version}/${res}${levels}/
 rtables_dir: ${input_dir}/../rtables/
 forcing_dir: ${input_dir}/../${version}/ifsdata
 namelist_dir: ${esm_namelist_dir}/oifs

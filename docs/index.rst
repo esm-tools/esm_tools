@@ -1,14 +1,18 @@
 Welcome to ESM Tools's documentation!
 ======================================
 
+.. figure:: ESM-TOOLS_LOGO_RGB_72dpi.jpg 
+   :scale: 50 %
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   readme
+   introduction
    installation
-   usage
-   modules
+   esm_master
+   faq
    contributing
    authors
    history

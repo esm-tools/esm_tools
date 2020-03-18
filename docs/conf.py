@@ -21,8 +21,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-#import esm_tools
-
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -48,8 +46,8 @@ master_doc = 'index'
 # General information about the project.
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
-author = "Dirk Barbi"
-
+author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini"
+version = "3.1"
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -83,7 +81,7 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'classic'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -128,8 +126,8 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools Documentation',
-     'Dirk Barbi', 'manual'),
+     'ESM Tools r3 UserManual',
+     'Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini', 'manual'),
 ]
 
 

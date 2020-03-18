@@ -57,7 +57,7 @@ choose_res:
         T95:
                 nx: 13280
                 time_step: 3600
-                OASIS_GRID_name: "048"
+                oasis_grid_name: "048"
                 res_number: 95
                 res_number_tl: ""
         T159:
@@ -69,31 +69,31 @@ choose_res:
         TL159:
                 nx: 35718
                 time_step: 3600
-                OASIS_GRID_name: "080"
+                oasis_grid_name: "080"
                 res_number: L159
                 res_number_tl: 159
         T255:
                 nx: 88838
                 time_step: 2700
-                OASIS_GRID_name: "128"
+                oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: ""
         T511:
                 nx: 348528
                 time_step: 900
-                OASIS_GRID_name: "256"
+                oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: ""
         T799:
                 nx: 843490
                 time_step: 600
-                OASIS_GRID_name: "400"
+                oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: ""
         T1279:
                 nx: 2140702
                 time_step: 600
-                OASIS_GRID_name: "640"
+                oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: ""
 

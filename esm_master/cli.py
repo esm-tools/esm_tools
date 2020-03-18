@@ -56,9 +56,9 @@ def main():
     main_infos = general_infos()
     vcs = version_control_infos()
     setups2models = setup_and_model_infos(vcs, main_infos)
-    setups2models.config = setups2models.reduce(target)
 
-    from esm_parser import pprint_config
+
+    setups2models.config = setups2models.reduce(target)
 
     user_config = setups2models.write_minimal_user_config()
 
@@ -67,6 +67,8 @@ def main():
     complete_config = complete_setup.config
 
     env = esm_environment.environment_infos("compiletime", complete_config)
+    
+    setups2models.replace_last_vars(env)
 
     user_task = task(target, setups2models, vcs, main_infos)
     if verbose > 0:

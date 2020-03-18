@@ -471,7 +471,7 @@ class task:
         self.subtasks=self.get_subtasks(setup_info, vcs, general)
         self.only_subtask=self.validate_only_subtask()
         self.ordered_tasks=self.order_subtasks(setup_info, vcs, general)
-
+   
         self.will_download = self.check_if_download_task(setup_info)
         self.folders_after_download=self.download_folders()
         self.binaries_after_compile=self.compile_binaries()
@@ -504,7 +504,8 @@ class task:
                             general,
                         )
                     )
-        if subtasks == [] and self.todo in setup_info.meta_todos:
+        #if subtasks == [] and self.todo in setup_info.meta_todos:
+        if self.todo in setup_info.meta_todos:
             for todo in todos:
                 if todo in self.package.targets:
                     subtasks.append(
@@ -881,19 +882,19 @@ class setup_and_model_infos:
             if "requires" in self.config[kind][model]:
                 for requirement in self.config[kind][model]["requires"]:
                     reduced_config = self.append_to_conf(requirement, reduced_config, toplevel)
+
         return reduced_config 
 
 
     #def reduce(self, target, env):
     def reduce(self, target):
-        blacklist = []
-            #re.compile(entry)
-            #for entry in [".*_dir"]
-        #]
+        blacklist = [
+            re.compile(entry)
+            for entry in ["computer.*"]
+        ]
 
         reduced_config={}
         reduced_config["defaults"] = self.config["defaults"]
-        #reduced_config["computer"] = copy.deepcopy(env.config)
         reduced_config = self.append_to_conf(target, reduced_config)
 
 
@@ -921,6 +922,21 @@ class setup_and_model_infos:
         #esm_parser.pprint_config(new_config)
         #sys.exit(0)
         return new_config
+
+
+    def replace_last_vars(self, env):
+
+        self.config["computer"] = copy.deepcopy(env.config)
+        esm_parser.recursive_run_function(
+            [],
+            self.config,
+            "atomic",
+            esm_parser.find_variable,
+            self.config,
+            [],
+            True,
+        )
+
 
 
     def update_packages(self, vcs, general):

@@ -153,12 +153,16 @@ input_in_work:
         ICMGG_INIUA: ICMGG${expid}INIUA
         ICMSH_INIT: ICMSH${expid}INIT
 
-environment_changes:
-        add_export_vars:        
-                choose_version:
-                        40r1:
+
+choose_version:
+        40r1:
+                environment_changes:
+                        add_export_vars:        
                                 - 'OIFS_FFIXED="-fixed"' 
-                        43r3:
+
+        43r3:
+                environment_changes:
+                        add_export_vars:        
                                 - 'OIFS_FFIXED=""'
                                 - 'OIFS_OASIS_BASE="$model_dir/oasis"'
                                 - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'

@@ -12,7 +12,7 @@ fesom:
         version: 1.4
         model_dir: "/work/ollie/dbarbi/modelcodes/fesom-1.4/"
         pool_dir: "/work/ollie/pool/FESOM/"
-        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes_default/core/"
+        mesh_dir: "/work/ollie/pool/FESOM/meshes_default/core/"
         res: CORE2
         lresume: 0
         restart_rate: 1

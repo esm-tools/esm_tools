@@ -1,0 +1,22 @@
+general:
+        setup_name: fesom
+        compute_time: "00:45:00"
+        initial_date: '2001-01-01'
+        final_date: '2002-12-31'
+        base_dir: "/work/ollie/dbarbi/esm_yaml_test/"
+        nyear: 1
+        nmonth: 0
+
+
+fesom:
+        version: 2.0
+        model_dir: "/work/ollie/dbarbi/modelcodes/fesom-2.0/"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'y'
+        post_processing: 0
+

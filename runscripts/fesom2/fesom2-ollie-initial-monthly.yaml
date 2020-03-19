@@ -7,7 +7,6 @@ general:
         nyear: 0
         nmonth: 1
 
-        further_reading: test1.yaml
 
 fesom:
         version: 2.0
@@ -21,4 +20,3 @@ fesom:
         restart_unit: 'm'
         post_processing: 0
 
-        further_reading: test2.yaml

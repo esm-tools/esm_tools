@@ -166,6 +166,8 @@ components:
                 # make sure all oasis versions are in the repo, with correct version branches          
         
         "oifs":
+                requires: 
+                        - oasis3-mct-4.0
                 install_bins: "make/esm/oifs/bin/master.exe"
                 comp_command: "cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                 clean_command: "rm -rf make/esm"                
@@ -179,8 +181,10 @@ components:
                         40r1-agcm:
                                 compile_command: "export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg"
                         43r3: 
-                                branch: "master"
-                                git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                                #branch: "master"
+                                #git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                                git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                         43r3-awi: 
                                 branch: "master"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"

@@ -3,7 +3,7 @@
 
 model: oifs
 executable: master.exe
-command: ${executable} -v ecmwf -e ${general.expid}
+command: ${executable} -v ecmwf -e ${oifs.input_expid}
 version: 40r1
 type: atmosphere
 
@@ -64,6 +64,9 @@ namelist_dir: ${esm_namelist_dir}/oifs
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 
+namelists:
+        - fort.4
+
 choose_resolution:
         TQ95:
                 nx: 13280
@@ -122,7 +125,7 @@ choose_computer.cores_per_node:
 
 before_step: 0
 next_step: 744
-#next_step: $(( ${end_date} / ${time_step} ))
+steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
 
 restart_rate: 1

@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 from os import getenv
 
-with open("stuff/README.rst") as readme_file:
+with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 with open("stuff/HISTORY.rst") as history_file:
@@ -15,6 +15,7 @@ requirements = [
     "esm_master @ git+https://gitlab.awi.de/esm_tools/esm_master.git",
     "esm_runscripts @ git+https://gitlab.awi.de/esm_tools/esm_runscripts.git",
     "esm_rcfile @ git+https://gitlab.awi.de/esm_tools/esm_rcfile.git",
+    "esm_version_checker @ git+https://gitlab.awi.de/esm_tools/esm_version_checker.git",
 ]
 
 setup_requirements = []
@@ -50,7 +51,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://gitlab.awi.de/esm_tools/esm_tools",
-    version="3.1.3",
+    version="version='3.1.5'",
     zip_safe=False,
 )
 

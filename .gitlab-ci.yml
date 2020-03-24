@@ -11,9 +11,9 @@ after_script:
   - echo "After script section"
   - echo "For example you might do some cleanup here"
 
-build1:
+install_tools:
   tags:
-    - ubuntu 
+    - ubuntu
     # TODO: Add ollie and mistral here once appropriate...
   stage: build
   script:
@@ -24,5 +24,5 @@ build1:
     - export PATH=${HOME}/.local/bin:${PATH}
     - which esm_master
     - which esm_runscripts
-
+    - which esm_versions
 

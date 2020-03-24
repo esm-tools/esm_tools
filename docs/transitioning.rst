@@ -1,7 +1,7 @@
 .. highlight:: shell
 
 =====================================
-Transistioning from the Shell Version
+Transitioning from the Shell Version
 =====================================
 
 ESM-Master
@@ -60,6 +60,14 @@ Some of the variables which had to be set in the script when using the shell ver
 Also the last two lines of the normel runscript for the shell version of the tools, ``load_all_functions`` and ``general_do_it_all``, don't do anything anymore, and can be safely removed. They don't hurt though.
 
 (...to be continued...)
+
+
+Functions --> Configs + Python Packages
+---------------------------------------
+
+The shell functions, which used to be in ``esm-runscripts/functions/all``, are gone. That was basically the whole point of re-coding the tools, to get rid of this mixture of model configuration, wild shell hacks, and in general lots of annoying problems. What used to be in the functions is now seperated into python code (which is actually doing things, but doesn't have any model-, setup- or machine specific information), and yaml configurations (which are basically structured lists of all the information we have, including mesh resolutions, scenario simulation forcings,... Anything really that you could possibly know about running a simulation belongs into the yaml configs that you can now find in ``esm_runscripts/configs``, while ESM-Tools functionality is coded in the python packages.
+
+
 
 
 Namelists

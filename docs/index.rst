@@ -10,9 +10,13 @@ Welcome to ESM Tools's documentation!
    :caption: Contents:
 
    introduction
+   ten_steps
    installation
+   transitioning
    esm_master
+   esm_versions
    faq
+   packages
    contributing
    authors
    history

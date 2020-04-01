@@ -310,9 +310,16 @@ couplings:
                         - "echam-6.3.04p1"
                         - "fesom-2.0"
                         - "oasis3-mct-2.8"
+                        - "esm-interface"
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+
+        "fesom-2.0+esm-interface":
+                components:
+                        - "fesom-2.0"
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
 
         "fesom-2.0+oifs-43r3-awi":
                 components:
@@ -452,7 +459,7 @@ setups:
                                         - "fesom-2.0+oifs-43r3-awi"
                         "esm-interface":
                                 couplings:                        
-                                        - "fesom-2.0+echam-6.3.04p1"
+                                        - "fesom-2.0+esm-interface"
 
         awicm-recom:
                 available_versions:

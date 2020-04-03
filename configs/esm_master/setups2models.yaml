@@ -282,6 +282,12 @@ components:
                                 compile_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile} --netcdf_lib netcdf4_par --full --job 24"
                         "2.0_r982":
                                 nothing: much
+        "yac":
+                git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"
+                available_versions:
+                        - "1.5.4"
+                comp_command: "${defaults.comp_command}"
+                clean_command: "${defaults.clean_command}"
 
 couplings:
         "fesom-1.4+echam-6.3.04p1":

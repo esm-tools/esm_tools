@@ -257,12 +257,12 @@ components:
                 clean_command: "rm -rf bin; cd src; make clean"
                 available_versions: 
                         - "ec-earth"
-                        - "focioifs"  
+                        - "focioifs1"  
                 git-repository: "https://gitlab.dkrz.de/ec-earth/runoff-mapper.git"
                 choose_version:
                         "ec-earth":
                                 branch: "esm-tools"
-                        "focioifs":
+                        "focioifs1":
                                 branch: "esm-tools-focioifs"
         
         "vilma":
@@ -353,15 +353,14 @@ couplings:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
                         - "oasis3-mct-foci"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
+                        - "rnfmap-focioifs1"
 
         "nemo-3.6foci+oifs40r1-foci-o3":
                 components:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
                         - "oasis3-mct-ec-earth"
-                        - "rnfmap-focioifs"
+                        - "rnfmap-focioifs1"
                 prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
 
         "nemo-3.6foci+oifs40r1":
@@ -369,7 +368,7 @@ couplings:
                         - "oifs-40r1"
                         - "nemo-3.6foci"
                         - "oasis3-mct-foci"
-                        - "rnfmap-focioifs"
+                        - "rnfmap-focioifs1"
                 prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
 
         "nemo-3.6foci+oifs40r1-foci-o4":
@@ -377,8 +376,7 @@ couplings:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
                         - "oasis3-mct-4.0"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
+                        - "rnfmap-focioifs1"
 
 
         "pism-snowflake1.0+echam-6.3.04p1":
@@ -472,55 +470,11 @@ setups:
 
         focioifs:
                 available_versions:
-                        - vvl
-                        - vvl-o3
-                        - vvl-o3-awi3
-                        - vvl-o4
-                choose_version:
-                        vvl:
+                        - "1.0"
+                choose_version:                      
+                        "1.0":
                                 couplings: 
-                                        - "nemo-3.6foci+oifs40r1-foci"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap: 
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: foci       
-                        vvl-o3:          
-                                couplings: 
-                                        - "nemo-3.6foci+oifs40r1-foci-o3"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap: 
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: ec-earth
-                        vvl-o3-awi3:          
-                                couplings: 
-                                        - "nemo-3.6foci+oifs40r1"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1
-                                rnfmap: 
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: foci       
-                        vvl-o4:          
-                                couplings: 
-                                        - "nemo-3.6foci+oifs40r1-foci-o4"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap: 
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: "4.0"       
+                                        - "nemo-3.6foci+oifs40r1-foci"                         
                 
         oifsamip:
                 couplings:

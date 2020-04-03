@@ -4,6 +4,7 @@
 
 general:
         model: foci
+        setup_dir: ${general.model_dir}
         model_dir: ${esm_master_dir}/foci-${version}
 
         coupled_setup: True

@@ -238,7 +238,27 @@ namelist_changes:
                 NAMCT0:
                         CNMEXP: ${oifs.expid}
                         NSTOP: ${oifs.next_step}
-                        
+
+foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+# TODO: CSW source and target fields are listed here, this is probably wrong 
+# This is an quick-and-dirty fix to test the compilation of FOCI-OIFS
+# I'm sure this does not work as the vars in runoff_fields are on different grids.
+# To be solved with Dirk.
+runoff_fields: [A_Runoff, R_Runoff_atm, O_Runoff, R_Runoff_oce]
+
+coupling_fields:
+        "[[foci_fields-->FIELD]]":
+                grid: atmo
+# TODO: CSW grid info for runoff mapper
+        "[[runoff_fields-->FIELD]]":
+                grid: atmo
+
+grids:
+        atmo:
+                name: atmo
+                nx: "${nx}"
+#                ny: "${_ny}"
+#                oasis_grid_type: "D"
                 
 choose_output:
         "default":

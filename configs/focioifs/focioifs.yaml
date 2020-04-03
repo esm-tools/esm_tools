@@ -1,6 +1,9 @@
 # FOCIOIFS YAML CONFIGURATION FILE
+#
+
 
 general:
+        pool_dir: "${computer.pool_directories.focipool}"
         model: focioifs
         model_dir: ${esm_master_dir}/focioifs-${version}
 
@@ -233,8 +236,6 @@ oasis3mct:
                 
         
 
-# Settings for FOCI-OpenIFS        
-resolution: ${oifs.resolution}_${nemo.resolution}
 
 
 # Set up CPU layout

@@ -36,7 +36,7 @@ components:
                         - "6.3.04p1"
                         - "6.3.02p4"
                         - "6.3.05p2"  
-                        - "esm-interface"
+                        - "6.3.04p1-esm-interface"
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
                 choose_version:
@@ -48,17 +48,22 @@ components:
                                 comp_command: "make; make install"
                                 clean_command: "make clean"
                                 conf_command: "./configure"
-                        "esm-interface":
-                                branch: "using_esm_interfaces_yac"
+                        "6.3.04p1-esm-interface":
+                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+                                branch: "using_esm_interfaces"
         "esm-interface":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
                 comp_command: "${default.comp_command}"
                 available_versions:
-                        - "default"
+                        - "1.0"
                         - "yac"
                 choose_version:
+                        "1.0":
+                                branch: "dev_prototype_awicm"
+                                comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
                         "yac":
                                 branch: "include_yac"
+                                comp_command: "${default.comp_command}"
 
         "fesom":
                 choose_version: 
@@ -77,10 +82,15 @@ components:
                                         - "github.com/FESOM/fesom2.git"
                                 branch: "oifs-deck"
                                 install_bins: "bin/fesom.x"
+                        "2.0-esm-interface":
+                                git-repository: 
+                                        - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
+                                branch: "fesom2_using_esm-interface"
                 available_versions:
                         - "1.4"
                         - "2.0"
                         - "2.0-o"
+                        - "2.0-esm-interface"
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
 
@@ -310,17 +320,20 @@ couplings:
                         - "echam-6.3.04p1"
                         - "fesom-2.0"
                         - "oasis3-mct-2.8"
-                        - "esm-interface"
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
-        "fesom-2.0+esm-interface":
+        "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface":
                 components:
-                        - "fesom-2.0"
+                        - "oasis3-mct-2.8"
+                        - "esm-interface-1.0"
+                        - "echam-6.3.04p1-esm-interface"
+                        - "fesom-2.0-esm-interface"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-esm-interface/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1-esm-interface/CMakeLists.txt"
+ 
         "fesom-2.0+oifs-43r3-awi":
                 components:
                         - "oifs-43r3-awi"
@@ -439,7 +452,7 @@ setups:
                         - "2.0"
                         - "3.0"
                         - "3.1"
-                        - "esm-interface"
+                        - "2.0-esm-interface"
 
                 choose_version:
                         "1.0":
@@ -457,9 +470,9 @@ setups:
                         "3.1":
                                 couplings:                        
                                         - "fesom-2.0+oifs-43r3-awi"
-                        "esm-interface":
+                        "2.0-esm-interface":
                                 couplings:                        
-                                        - "fesom-2.0+esm-interface"
+                                        - "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface"
 
         awicm-recom:
                 available_versions:

@@ -96,6 +96,8 @@ choose_version:
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
+        6.3.04p1-esm-interface:
+                dataset: r0007
         6.3.05p2:
                 repo_tag: 6.3.05p2
                 dataset: r0007

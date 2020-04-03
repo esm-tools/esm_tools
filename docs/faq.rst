@@ -51,3 +51,6 @@ ESM Master
                         environment_changes:
                                 add_export_vars:        
                                         - 'MY_VAR="something_else"'
+2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
+
+   **A**: Add your configuration in the file configs/esm_master/setups2models.yaml

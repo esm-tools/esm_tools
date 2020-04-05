@@ -14,8 +14,14 @@ description: |
 license_text: |
         ECMWF license. AWI and GEOMAR have licenses. 
 
+# Default is TL159L91 
+# Forcing from gu5a prepIFS forcing
 input_expid: ECE3
 resolution: TL159
+levels: L91
+prepifs_expid: gu5a
+prepifs_startdate: 19820101
+mip: "cmip5"
 scenario: "historical"
 output: "default"
 
@@ -49,16 +55,14 @@ restart_rate: 12
 restart_unit: 'months'
 
 threads: 1
-levels: L91
-res: T255
 ny: 1
 
-hours: ""
+hours: "00"
 
 #model_dir: ${esm_master_dir}/oifs-${version}
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
-input_dir: ${pool_dir}/
+input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
@@ -183,6 +187,35 @@ input_files:
         # still missing: rtables/*, globbing not available yet (fix!)
         # also missing: modify_init for ensemble stuff
 
+forcing_files:
+        choose_mip:
+                "cmip5":
+                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+        
+        choose_version:
+                40r1:
+                        C11CLIM: C11CLIM
+                        C12CLIM: C12CLIM 
+                        C22CLIM: C22CLIM
+                        CCL4CLIM: CCL4CLIM
+                        CH4CLIM: CH4CLIM
+                        CO2CLIM: CO2CLIM
+                        ECOZC: ECOZC
+                        GCH4CLIM: GCH4CLIM
+                        GCO2CLIM: GCO2CLIM
+                        GOZOCLIM: GOZOCLIM
+                        MCICA: MCICA
+                        N2OCLIM: N2OCLIM
+                        NO2CLIM: NO2CLIM
+                        OZOCLIM: OZOCLIM 
+                        RADRRTM: RADRRTM
+                        RADSRTM: RADSRTM
+                        
+                        
 choose_scenario:
         "amip-prepifs":
                 forcing_files:
@@ -206,22 +239,70 @@ choose_scenario:
 
 
 input_sources:
-        ICMGG_INIT: ${input_dir}/${start_date!syear!smonth!sday}${hours}/ICMGG${input_expid}INIT
-        ICMGG_INIUA: ${input_dir}/${start_date!syear!smonth!sday}${hours}/ICMGG${input_expid}INIUA
-        ICMSH_INIT: ${input_dir}/${start_date!syear!smonth!sday}${hours}/ICMSH${input_expid}INIT
-        wam_grid_tables: ${input_dir}/${start_date!syear!smonth!sday}${hours}/wam_grid_tables
-        wam_subgrid_0: ${input_dir}/${start_date!syear!smonth!sday}${hours}/wam_subgrid_0
-        wam_subgrid_1: ${input_dir}/${start_date!syear!smonth!sday}${hours}/wam_subgrid_1
-        wam_subgrid_2: ${input_dir}/${start_date!syear!smonth!sday}${hours}/wam_subgrid_2
-        uwavein: ${input_dir}/${start_date!syear!smonth!sday}${hours}/uwavein
-        specwavein: ${input_dir}/${start_date!syear!smonth!sday}${hours}/specwavein
-        sfcwindin: ${input_dir}/${start_date!syear!smonth!sday}${hours}/sfcwindin
-        cdwavein: ${input_dir}/${start_date!syear!smonth!sday}${hours}/cdwavein
+        ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
+        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${input_expid}INIUA
+        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${input_expid}INIT
+        wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
+        wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
+        wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
+        wam_subgrid_2: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_2
+        uwavein: ${input_dir}/${prepifs_startdate}${hours}/uwavein
+        specwavein: ${input_dir}/${prepifs_startdate}${hours}/specwavein
+        sfcwindin: ${input_dir}/${prepifs_startdate}${hours}/sfcwindin
+        cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
+
+forcing_sources:
+        # GHG data
+        PRE2005_MIDYR_CONC: ${cmip5_data_dir}/PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: ${cmip5_data_dir}/RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
+        # ifsdata
+        C11CLIM: ${forcing_dir}/ifsdata/C11CLIM
+        C12CLIM: ${forcing_dir}/ifsdata/C12CLIM 
+        C22CLIM: ${forcing_dir}/ifsdata/C22CLIM
+        CCL4CLIM: ${forcing_dir}/ifsdata/CCL4CLIM
+        CH4CLIM: ${forcing_dir}/ifsdata/CH4CLIM
+        CO2CLIM: ${forcing_dir}/ifsdata/CO2CLIM
+        ECOZC: ${forcing_dir}/ifsdata/ECOZC
+        GCH4CLIM: ${forcing_dir}/ifsdata/GCH4CLIM
+        GCO2CLIM: ${forcing_dir}/ifsdata/GCO2CLIM
+        GOZOCLIM: ${forcing_dir}/ifsdata/GOZOCLIM
+        MCICA: ${forcing_dir}/ifsdata/MCICA
+        N2OCLIM: ${forcing_dir}/ifsdata/N2OCLIM
+        NO2CLIM: ${forcing_dir}/ifsdata/NO2CLIM
+        OZOCLIM: ${forcing_dir}/ifsdata/OZOCLIM 
+        RADRRTM: ${forcing_dir}/ifsdata/RADRRTM
+        RADSRTM: ${forcing_dir}/ifsdata/RADSRTM
 
 input_in_work:
         ICMGG_INIT: ICMGG${expid}INIT
         ICMGG_INIUA: ICMGG${expid}INIUA
         ICMSH_INIT: ICMSH${expid}INIT
+
+forcing_in_work:
+        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
+        C11CLIM: ifsdata/C11CLIM
+        C12CLIM: ifsdata/C12CLIM 
+        C22CLIM: ifsdata/C22CLIM
+        CCL4CLIM: ifsdata/CCL4CLIM
+        CH4CLIM: ifsdata/CH4CLIM
+        CO2CLIM: ifsdata/CO2CLIM
+        ECOZC: ifsdata/ECOZC
+        GCH4CLIM: ifsdata/GCH4CLIM
+        GCO2CLIM: ifsdata/GCO2CLIM
+        GOZOCLIM: ifsdata/GOZOCLIM
+        MCICA: ifsdata/MCICA
+        N2OCLIM: ifsdata/N2OCLIM
+        NO2CLIM: ifsdata/NO2CLIM
+        OZOCLIM: ifsdata/OZOCLIM 
+        RADRRTM: ifsdata/RADRRTM
+        RADSRTM: ifsdata/RADSRTM
 
 
 namelist_changes:

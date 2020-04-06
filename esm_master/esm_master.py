@@ -650,9 +650,10 @@ class task:
             if not task.todo in ["get"]:
                 if task.todo in ["conf", "comp"]:
                     #if self.package.kind in ["setups", "couplings"]:
-                    if self.package.subpackages:
-                        real_command_list.append("cp ../"+task.raw_name+"_script.sh .")
-                    real_command_list.append("./"+task.raw_name+"_script.sh")
+                    if not task.package.kind in ["setups", "couplings"]:
+                        if self.package.subpackages: 
+                            real_command_list.append("cp ../"+task.raw_name+"_script.sh .")
+                        real_command_list.append("./"+task.raw_name+"_script.sh")
                 else:
                     if not task.package.command_list[task.todo] == None:
                         for command in task.package.command_list[task.todo]:
@@ -706,7 +707,8 @@ class task:
                 newfile = env.add_commands(
                     task.package.command_list[task.todo], task.raw_name
                 )
-                os.chmod(newfile, 0o755)
+                if os.path.isfile(newfile):
+                    os.chmod(newfile, 0o755)
         for command in self.command_list:
             if command.startswith("mkdir"):
                 os.system(command)

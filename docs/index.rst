@@ -14,6 +14,7 @@ Welcome to ESM Tools's documentation!
    installation
    transitioning
    esm_master
+   esm_versions
    faq
    packages
    contributing

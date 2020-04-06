@@ -10,9 +10,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ["esm_parser @ git+https://gitlab.awi.de/esm_tools/esm_parser.git",
-                "esm_environment @ git+https://gitlab.awi.de/esm_tools/esm_environment.git",
-                "esm_rcfile @ git+https://gitlab.awi.de/esm_tools/esm_rcfile.git"]
+requirements = ["esm_parser @ git+https://github.com/esm-tools/esm_parser.git",
+                "esm_environment @ git+https://github.com/esm-tools/esm_environment.git",
+                "esm_rcfile @ git+https://github.com/esm-tools/esm_rcfile.git"]
 
 setup_requirements = [ ]
 

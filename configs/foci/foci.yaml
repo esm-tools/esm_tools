@@ -82,7 +82,7 @@ nemo:
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
 
-
+        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
 
 
 

@@ -33,30 +33,23 @@ ini_restart_dir: ${computer.pool_directories.pool}/models/foci1.10.1/experiments
 namelist_dir:   ${esm_namelist_dir}/nemo
 bin_dir:        ${model_dir}/bin
 
-# default files
-#
-#
-#
-#
-#
-#
-
-
-namelists:
-        - namelist_ref
-        - namelist_cfg
-        - namelist_top_ref
-        - namelist_top_cfg
-        - namelist_ice_ref
-        - namelist_ice_cfg
 
 
 runtime: $((${end_date} - ${start_date}))
-thisstep:  1  #$(( $((${seconds_since_initial} - ${runtime})) / ${time_step}))
 timestep_per_run: $((${runtime} / ${time_step}))
-newstep: $(( ${thisstep} + ${timestep_per_run} ))
-timestep_formatted: "<--format(%08d)-- ${thisstep}"
-newtimestep_formatted: "<--format(%08d)-- ${newstep}"
+
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+prevstep: ${steps_since_initial}
+thisstep: $(( ${prevstep} + 1))
+newstep: $(( ${prevstep} + ${timestep_per_run} ))
+
+prevstep_formatted: "<--format(%08d)-- ${prevstep}"
+thisstep_formatted: "<--format(%08d)-- ${thisstep}"
+newstep_formatted: "<--format(%08d)-- ${newstep}"
+
+coupling_freq_in_steps: 6
 
 
 #environment_changes:
@@ -81,14 +74,14 @@ namelist_changes:
         namelist_cfg:
                 namrun:
                         cn_exp: ${expid}
-                        nn_it000: 1 # ${firsttimestep} 
-                        nn_itend: 1 #${newtimestep}
-                        nn_date0: ${initial_date} # ${ini_date}
-                        cn_ocerst_in: blabi  #${restart_in}
+                        nn_it000: ${thisstep}  
+                        nn_itend: ${newstep} 
+                        nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${prev_date!syear!smonth!sday}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
-                        cn_ocerst_out: blabi #restart_${end_date}
+                        cn_ocerst_out: ${expid}_${newstep_formatted}_restart_${end_date!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
-                        nn_stock: 1 #${newtimestep}
+                        nn_stock: ${newstep}
                         nn_leapy: 1
                         nn_rstctl: 2
                         namrun_rstart: 'false'
@@ -97,15 +90,15 @@ namelist_changes:
                 nam_tsd:
                         nam_tsd_init: '.true.'   
                 namdom:    
-                        rn_rdt: 1 #${timestep}
-                namsbc:        #?????? 
-                        nn_fsbc: 1 #${coupling_freq}
+                        rn_rdt: ${time_step}
+                namsbc:     
+                        nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
                         jpni: 0
                         jpnj: 0
                         jpnij: 0
-                namsbc_cpl: 
-                        sn_rcv_rnf: "'none', 'no', '', '', ''"
+                #  namsbc_cpl: 
+                #       sn_rcv_rnf: "'none', 'no', '', '', ''"
         
 
 choose_free_surface:                        
@@ -209,9 +202,9 @@ choose_use_lim2:
                 namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
-                                        cn_icerst_in: blabi #${restart_in_ice}
+                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${prev_date!syear!smonth!sday}  #${restart_in}
                                         cn_icerst_indir: '${work_dir}'
-                                        cn_icerst_out: blabi #restart_ice_${end_date}
+                                        cn_icerst_out: ${expid}_${newstep_formatted}_restart_ice_${end_date!syear!smonth!sday}
                                         cn_icerst_outdir: '${work_dir}'
                         namelist_top_cfg:
                                 namtrc_run:
@@ -237,29 +230,10 @@ choose_use_tracer:
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_run:
-                                        cn_trcrst_in: blabi #${restart_in_tracer}
+                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${prev_date!syear!smonth!sday}  #${restart_in}
                                         cn_trcrst_indir: '${work_dir}'
-                                        cn_trcrst_out: blabi #restart_trc_${end_date}
+                                        cn_trcrst_out: ${expid}_${newstep_formatted}_restart_trc_${end_date!syear!smonth!sday}
                                         cn_trcrst_outdir: '${work_dir}'
-
-# always true
-#
-# [files.nemo]
-#nemo_dir=/work/bb0519/foci_input2/NEMO_ORCA05/input/${OCE_RES}
-#ln -sfv $nemo_dir/bathy_meter.nc .
-#ln -sfv $nemo_dir/coordinates.nc .
-#ln -sfv $nemo_dir/orca05_subbasins_3.6.nc .
-#ln -sfv $nemo_dir/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc .
-#ln -sfv $nemo_dir/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc .
-#ln -sfv $nemo_dir/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc .
-#ln -sfv $nemo_dir/Ice_initialization_KKG36F13H-R.nc Ice_initialization.nc
-#ln -sfv $nemo_dir/orca05_bfr_coef-G70.nc .
-#
-## [files.nemo.xml]
-#xml_dir=/pf/b/b350071/models/foci1.21/run/standard_experiments/ORCA05_LIM2_KCM_AOW
-#cp -pv $xml_dir/domain_def.xml .
-#cp -pv $xml_dir/field_def.xml .
-#cp -pv $xml_dir/file_def.xml .
 
 
 
@@ -302,12 +276,12 @@ config_in_work:
 
 
 restart_in_work:
-        restart_in: ${expid}_${timestep_formatted}_restart_${prev_date}_*.nc
-        restart_in_ice: ${expid}_${timestep_formatted}_restart_ice_${prev_date}_*.nc
-        restart_in_tracer: ${expid}_${timestep_formatted}_restart_tracer_${prev_date}_*.nc
-        restart_out: ${expid}_${newtimestep_formatted}_restart_${end_date}_*.nc
-        restart_out_ice: ${expid}_${newtimestep_formatted}_restart_ice_${end_date}_*.nc
-        restart_out_tracer: ${expid}_${newtimestep_formatted}_restart_trc_${end_date}_*.nc
+        restart_in: ${expid}_${prevstep_formatted}_restart_${prev_date}_*.nc
+        restart_in_ice: ${expid}_${prevstep_formatted}_restart_ice_${prev_date}_*.nc
+        restart_in_tracer: ${expid}_${prevstep_formatted}_restart_tracer_${prev_date}_*.nc
+        restart_out: ${expid}_${newstep_formatted}_restart_${end_date}_*.nc
+        restart_out_ice: ${expid}_${newstep_formatted}_restart_ice_${end_date}_*.nc
+        restart_out_tracer: ${expid}_${newstep_formatted}_restart_trc_${end_date}_*.nc
 
 
 restart_files:
@@ -330,6 +304,15 @@ output_in_work:
         mesh_mask:      mesh_mask*.nc
         5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
         1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
+
+namelists:
+        - namelist_ref
+        - namelist_cfg
+        - namelist_top_ref
+        - namelist_top_cfg
+        - namelist_ice_ref
+        - namelist_ice_cfg
+
 
 
 

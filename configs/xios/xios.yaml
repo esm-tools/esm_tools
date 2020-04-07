@@ -22,3 +22,11 @@ config_sources:
         file_def: ${xml_dir}/file_def.xml
         io_def: ${xml_dir}/iodef.xml
 
+
+
+
+bin_files:
+        server: server
+
+bin_sources:
+        server: ${bin_dir}/xios_server.exe

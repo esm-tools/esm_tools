@@ -31,7 +31,10 @@ input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
 
 ini_restart_dir: ${computer.pool_directories.pool}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
 namelist_dir:   ${esm_namelist_dir}/nemo
-bin_dir:        ${model_dir}/bin
+
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
 
 
 
@@ -84,7 +87,7 @@ namelist_changes:
                         nn_stock: ${newstep}
                         nn_leapy: 1
                         nn_rstctl: 2
-                        namrun_rstart: 'false'
+                        ln_rstart: 'false'
                 namtrc_run:                        
                         nn_rsttr: 2
                 nam_tsd:
@@ -236,7 +239,8 @@ choose_use_tracer:
                                         cn_trcrst_outdir: '${work_dir}'
 
 
-
+bin_sources:
+        nemo: ${bin_dir}/nemo.exe
 
 
 ############## input files:

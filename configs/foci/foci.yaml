@@ -12,6 +12,7 @@ general:
         include_models:
                 - echam
                 - nemo
+                - xios
                 - oasis3mct
 
         version: "1.0"
@@ -161,7 +162,7 @@ oasis3mct:
                                         normalization: fracnnei
                                         order: first
                                 - mapping:
-                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
                                         map_regrid_on: src
                 conserv3:
                         time_transformation: instant
@@ -172,7 +173,7 @@ oasis3mct:
                                         normalization: fracnnei
                                         order: first
                                 - mapping:
-                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
                                         map_regrid_on: src
                         postprocessing:
                                 conserv:
@@ -186,7 +187,7 @@ oasis3mct:
                                         normalization: fracnnei
                                         order: first
                                 - mapping:
-                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
                                         map_regrid_on: src
                         postprocessing:
                                 conserv:
@@ -198,7 +199,7 @@ oasis3mct:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                 - mapping:
-                                        mapname: rmp_atmo_to_opat_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        mapname: rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
                                         map_regrid_on: src
 
         add_restart_out_files:

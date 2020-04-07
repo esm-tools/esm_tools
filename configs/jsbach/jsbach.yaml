@@ -33,6 +33,28 @@ no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "_dynveg"
 
 choose_version:
+        "3.20p1":
+                dataset: r0010               
+                choose_dynamic_vegetations: 
+                        true:
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
+                                dynveg: "_dynveg"
+                                jsbachnc_file_ending: "${dynveg_file_ending}"
+                        false:
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                jsbachnc_file_ending: "${no_dynveg_file_ending}"
+                                dynveg: "_no_dynveg"
+                choose_echam.scenario:
+                        PI-CTRL:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
         "3.20":
                 dataset: r0010               
                 choose_dynamic_vegetations: 

@@ -34,7 +34,7 @@ echam:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
-        adj_input_dir: "blabibla/tarfiles${echam.resolution}/input/echam6"
+        adj_input_dir: /work/bb0519/foci_input2/ECHAM6_${echam.resolution}/ECHAM6/input/${echam.resolution}
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         ocean_resolution: "${nemo.resolution}"
@@ -52,13 +52,16 @@ echam:
 
                         
 jsbach:
-        adj_input_dir: "blabibla/tarfiles${echam.resolution}/input/jsbach"
-        namelist_changes:
-                namelist.jsbach:
-                        hydrology_ctl:
-                                gethd: "remove_from_namelist"
-                                puthd: "remove_from_namelist"
-        version: "3.20"
+        dynamic_vegetations: True
+        adj_input_dir: /work/bb0519/foci_input2/ECHAM6_${echam.resolution}/JSBACH/input/${echam.resolution}
+        #        namelist_changes:
+        #        namelist.jsbach:
+        #                hydrology_ctl:
+        #                        gethd: "remove_from_namelist"
+        #                        puthd: "remove_from_namelist"
+        version: "3.20p1"
+        add_input_sources:
+                lctlib: /work/bb0519/foci_input2/ECHAM6_GENERAL/JSBACH/input/lctlib.def
 
         choose_computer.name:
                 ollie:

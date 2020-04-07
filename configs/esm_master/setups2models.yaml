@@ -130,7 +130,7 @@ components:
                         "3.6foci":
                                 git-repository: "https://gitlab.dkrz.de/foci/src/nemo.git"
                                 grid: "ORCA05_LIM2_KCM_AOW"
-        "oasis3-mct":
+        "oasis3mct":
                 install_libs: 
                         - "build/lib/psmile/libpsmile.a"
                         - "build/lib/psmile/mct/libmct.a"
@@ -167,7 +167,7 @@ components:
         
         "oifs":
                 requires: 
-                        - oasis3-mct-4.0
+                        - oasis3mct-4.0
                 install_bins: "make/esm/oifs/bin/master.exe"
                 comp_command: "cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                 clean_command: "rm -rf make/esm"                
@@ -292,7 +292,7 @@ couplings:
                 components:
                         - "echam-6.3.04p1"
                         - "fesom-1.4"
-                        - "oasis3-mct-2.8" 
+                        - "oasis3mct-2.8" 
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
@@ -301,7 +301,7 @@ couplings:
                 components:
                         - "echam-6.3.04p1"
                         - "fesom-2.0"
-                        - "oasis3-mct-2.8"
+                        - "oasis3mct-2.8"
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
@@ -310,7 +310,7 @@ couplings:
                 components:
                         - "oifs-43r3-awi"
                         - "fesom-2.0-o"
-                        - "oasis3-mct-3.0"
+                        - "oasis3mct-3.0"
                         - "rnfmap-ec-earth"
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt"
@@ -320,7 +320,7 @@ couplings:
                 components:
                         - "oifs-40r1"
                         - "fesom-2.0"
-                        - "oasis3-mct-ec-earth" 
+                        - "oasis3mct-ec-earth" 
 
         "fesom-1.4+recom":
                 components:
@@ -344,7 +344,7 @@ couplings:
                 components:
                         - "echam-6.3.05p2"
                         - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
+                        - "oasis3mct-foci"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
                                         
@@ -352,14 +352,14 @@ couplings:
                 components:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
+                        - "oasis3mct-foci"
                         - "rnfmap-focioifs1"
 
         "nemo-3.6foci+oifs40r1-foci-o3":
                 components:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
-                        - "oasis3-mct-ec-earth"
+                        - "oasis3mct-ec-earth"
                         - "rnfmap-focioifs1"
                 prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
 
@@ -367,7 +367,7 @@ couplings:
                 components:
                         - "oifs-40r1"
                         - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
+                        - "oasis3mct-foci"
                         - "rnfmap-focioifs1"
                 prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
 
@@ -375,7 +375,7 @@ couplings:
                 components:
                         - "oifs-40r1-foci"
                         - "nemo-3.6foci"
-                        - "oasis3-mct-4.0"
+                        - "oasis3mct-4.0"
                         - "rnfmap-focioifs1"
 
 
@@ -395,7 +395,7 @@ couplings:
                 components:
                         - "oifs-40r1"
                         - "amip"
-                        - "oasis3-mct-4.0"        
+                        - "oasis3mct-4.0"        
                 coupling_changes:
                         - "sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90"
                         - "sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90"
@@ -403,7 +403,7 @@ couplings:
         "oifs-40r1+oasis":
                 components: 
                         - "oifs-40r1"
-                        - "oasis3-mct-4.0"
+                        - "oasis3mct-4.0"
                 coupling_changes: 
                         - "sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90"
                         - "sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90"
@@ -411,7 +411,7 @@ couplings:
         "oifs-43r3+oasis":
                 components: 
                         - "oifs-43r3"
-                        - "oasis3-mct-4.0"
+                        - "oasis3mct-4.0"
 
 
 setups:

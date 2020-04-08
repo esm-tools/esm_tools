@@ -317,4 +317,5 @@ grids:
                 nx: ${nx}
                 ny: 1
                 oasis_grid_type: "U"
+                number_of_overlapping_points: 0 # oasis P-value
 

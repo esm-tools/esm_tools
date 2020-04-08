@@ -26,36 +26,33 @@ restart_unit:   months
 # default directories
 #
 
+pool_dir: /work/bb0519/foci_input2
+input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
 
 ini_restart_dir: ${computer.pool_directories.pool}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
-input_dir:      ${computer.pool_directories.pool}/foci_input/NEMO/input/r0001/${resolution}
 namelist_dir:   ${esm_namelist_dir}/nemo
-bin_dir:        ${model_dir}/bin
-
-# default files
-#
-#
-#
-#
-#
-#
 
 
-namelists:
-        - namelist_ref
-        - namelist_cfg
-        - namelist_top_ref
-        - namelist_top_cfg
-        - namelist_ice_ref
-        - namelist_ice_cfg
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+
 
 
 runtime: $((${end_date} - ${start_date}))
-thisstep:  1  #$(( $((${seconds_since_initial} - ${runtime})) / ${time_step}))
 timestep_per_run: $((${runtime} / ${time_step}))
-newstep: $(( ${thisstep} + ${timestep_per_run} ))
-timestep_formatted: "<--format(%08d)-- ${thisstep}"
-newtimestep_formatted: "<--format(%08d)-- ${newstep}"
+
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+prevstep: ${steps_since_initial}
+thisstep: $(( ${prevstep} + 1))
+newstep: $(( ${prevstep} + ${timestep_per_run} ))
+
+prevstep_formatted: "<--format(%08d)-- ${prevstep}"
+thisstep_formatted: "<--format(%08d)-- ${thisstep}"
+newstep_formatted: "<--format(%08d)-- ${newstep}"
+
+coupling_freq_in_steps: 6
 
 
 #environment_changes:
@@ -73,29 +70,6 @@ newtimestep_formatted: "<--format(%08d)-- ${newstep}"
 #                        add_module_actions:
 #                                - "load fnarc"
 
-
-restart_files:
-        restart_in: ${expid}_${timestep_formatted}_restart_${prev_date}
-        restart_in_ice: ${expid}_${timestep_formatted}_restart_ice_${prev_date}
-        restart_in_tracer: ${expid}_${timestep_formatted}_restart_trc_${prev_date}
-        restart_out: ${expid}_${newtimestep_formatted}_restart_${end_date}
-        restart_out_ice: ${expid}_${newtimestep_formatted}_restart_ice_${end_date}
-        restart_out_tracer: ${expid}_${newtimestep_formatted}_restart_trc_${end_date}
-
-config_files: 
-        namelist_ref: ${namelist_dir}/namelist_ref
-        namelist_cfg: ${namelist_dir}/namelist_cfg
-
-output_files:
-        mesh_mask:      mesh_mask*.nc
-        5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
-        1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
-
-log_files:
-        tracer:         tracer.stat
-        ocean:          '*ocean.output'
-        
-
 # calendar:
 
 
@@ -103,31 +77,31 @@ namelist_changes:
         namelist_cfg:
                 namrun:
                         cn_exp: ${expid}
-                        nn_it000: 1 # ${firsttimestep} 
-                        nn_itend: 1 #${newtimestep}
-                        nn_date0: ${initial_date} # ${ini_date}
-                        cn_ocerst_in: blabi  #${restart_in}
+                        nn_it000: ${thisstep}  
+                        nn_itend: ${newstep} 
+                        nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${prev_date!syear!smonth!sday}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
-                        cn_ocerst_out: blabi #restart_${end_date}
+                        cn_ocerst_out: ${expid}_${newstep_formatted}_restart_${end_date!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
-                        nn_stock: 1 #${newtimestep}
+                        nn_stock: ${newstep}
                         nn_leapy: 1
                         nn_rstctl: 2
-                        namrun_rstart: 'false'
+                        ln_rstart: 'false'
                 namtrc_run:                        
                         nn_rsttr: 2
                 nam_tsd:
                         nam_tsd_init: '.true.'   
                 namdom:    
-                        rn_rdt: 1 #${timestep}
-                namsbc:        #?????? 
-                        nn_fsbc: 1 #${coupling_freq}
+                        rn_rdt: ${time_step}
+                namsbc:     
+                        nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
                         jpni: 0
                         jpnj: 0
                         jpnij: 0
-                namsbc_cpl: 
-                        sn_rcv_rnf: "'none', 'no', '', '', ''"
+                #  namsbc_cpl: 
+                #       sn_rcv_rnf: "'none', 'no', '', '', ''"
         
 
 choose_free_surface:                        
@@ -197,37 +171,43 @@ choose_resolution:
                 _ny: 511
                 time_step: 1800
                 input_files:
-                        bathy_meter: bathy_meter.nc
-                        coordinates: coordinates.nc
-                        subbasins: orca05_subbasins_3.6.nc
-                        tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
-                        s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
-                        s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
-                        Ice_init: Ice_initialization_KKG36F13H-R.nc
-                        coef-G70: orca05_bfr_coef-G70.nc
+                        bathy_meter: bathy_meter
+                        coordinates: coordinates
+                        subbasins: subbasins
+                        tpot: tpot
+                        s_correc: s_correc
+                        s_correc_sss: s_correc_sss
+                        Ice_init: Ice_init
+                        coef-G70: coef-G70
                 input_in_work:
                         subbasins: orca05_subbasins_3.6.nc
                         tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
                         s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
                         s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
                         coef-G70: orca05_bfr_coef-G70.nc
+                        Ice_init: Ice_initialization.nc 
         
         GYRE_XIOS:
                 _nx: 32
                 _ny: 22
                 time_step: 7200
 
+
+
 choose_use_lim2:
         true:
-                config_files:
+                add_config_files:
+                        namelist_ice_ref: namelist_ice_ref
+                        namelist_ice_cfg: namelist_ice_cfg
+                add_config_sources:
                         namelist_ice_ref: ${namelist_dir}/namelist_ice_ref
                         namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
                 namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
-                                        cn_icerst_in: blabi #${restart_in_ice}
+                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${prev_date!syear!smonth!sday}  #${restart_in}
                                         cn_icerst_indir: '${work_dir}'
-                                        cn_icerst_out: blabi #restart_ice_${end_date}
+                                        cn_icerst_out: ${expid}_${newstep_formatted}_restart_ice_${end_date!syear!smonth!sday}
                                         cn_icerst_outdir: '${work_dir}'
                         namelist_top_cfg:
                                 namtrc_run:
@@ -244,49 +224,116 @@ choose_use_lim2:
 
 choose_use_tracer:
         true:
-                config_files:
+                add_config_files:
+                        namelist_top_ref: namelist_top_ref
+                        namelist_top_cfg: namelist_top_cfg
+                add_config_sources:
                         namelist_top_ref: ${namelist_dir}/namelist_top_ref
                         namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_run:
-                                        cn_trcrst_in: blabi #${restart_in_tracer}
+                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${prev_date!syear!smonth!sday}  #${restart_in}
                                         cn_trcrst_indir: '${work_dir}'
-                                        cn_trcrst_out: blabi #restart_trc_${end_date}
+                                        cn_trcrst_out: ${expid}_${newstep_formatted}_restart_trc_${end_date!syear!smonth!sday}
                                         cn_trcrst_outdir: '${work_dir}'
 
-# always true
-#
+
+bin_sources:
+        nemo: ${bin_dir}/nemo.exe
+
+
+############## input files:
+
+input_sources:
+        bathy_meter: ${input_dir}/bathy_meter.nc
+        coordinates: ${input_dir}/coordinates.nc
+        subbasins: ${input_dir}/orca05_subbasins_3.6.nc
+        tpot: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        s_correc: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        s_correc_sss: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+        Ice_init: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
+        coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
+
+        
+        
+############## config files:
+
+config_sources: 
+        namelist_ref: ${namelist_dir}/namelist_ref
+        namelist_cfg: ${namelist_dir}/namelist_cfg
+
+config_files: 
+        namelist_ref: namelist_ref
+        namelist_cfg: namelist_cfg
 
 config_in_work: 
         namelist_ref: namelist_ref
         namelist_cfg: namelist_cfg
-        namelist_ice_ref: namelist_ref
-        namelist_ice_cfg: namelist_cfg
-        namelist_top_ref: namelist_ref
-        namelist_top_cfg: namelist_cfg
+        namelist_ice_ref: namelist_ice_ref
+        namelist_ice_cfg: namelist_ice_cfg
+        namelist_top_ref: namelist_top_ref
+        namelist_top_cfg: namelist_top_cfg
 
-input_in_work:
-        #bathy_meter: bathy_meter.nc
-        #coordinates: coordinates.nc
-        Ice_init: Ice_initialization.nc 
+
+############## restart files:
+
 
 restart_in_work:
-        restart_in: ${expid}_${timestep_formatted}_restart_${prev_date}_*.nc
-        restart_in_ice: ${expid}_${timestep_formatted}_restart_ice_${prev_date}_*.nc
-        restart_in_tracer: ${expid}_${timestep_formatted}_restart_tracer_${prev_date}_*.nc
-        restart_out: ${expid}_${newtimestep_formatted}_restart_${end_date}_*.nc
-        restart_out_ice: ${expid}_${newtimestep_formatted}_restart_ice_${end_date}_*.nc
-        restart_out_tracer: ${expid}_${newtimestep_formatted}_restart_trc_${end_date}_*.nc
+        restart_in: ${expid}_${prevstep_formatted}_restart_${prev_date}_*.nc
+        restart_in_ice: ${expid}_${prevstep_formatted}_restart_ice_${prev_date}_*.nc
+        restart_in_tracer: ${expid}_${prevstep_formatted}_restart_tracer_${prev_date}_*.nc
+        restart_out: ${expid}_${newstep_formatted}_restart_${end_date}_*.nc
+        restart_out_ice: ${expid}_${newstep_formatted}_restart_ice_${end_date}_*.nc
+        restart_out_tracer: ${expid}_${newstep_formatted}_restart_trc_${end_date}_*.nc
+
+
+restart_files:
+        restart_in: restart_in
+        restart_in_ice: restart_in_ice
+        restart_in_tracer: restart_in_tracer
+        restart_out: restart_out
+        restart_out_ice: restart_out_ice
+        restart_out_tracer: restart_out_tracer
+
+
+############## config files:
+
+output_files:
+        mesh_mask:      mesh_mask
+        5d:             5d
+        1m:             1m
 
 output_in_work:
         mesh_mask:      mesh_mask*.nc
         5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
         1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
 
+namelists:
+        - namelist_ref
+        - namelist_cfg
+        - namelist_top_ref
+        - namelist_top_cfg
+        - namelist_ice_ref
+        - namelist_ice_cfg
+
+
+
+
+############## log files:
+
 log_in_work:
         tracer:         tracer.stat
         ocean:          '*ocean.output'
+
+log_files:
+        tracer:         tracer
+        ocean:          ocean
+
+
+
+##########################  coupling stuff
+
 
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
@@ -304,8 +351,10 @@ grids:
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
+                number_of_overlapping_points: 2 # oasis P-value
         opac:   
                 name: opac
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
+                number_of_overlapping_points: 2 # oasis P-value

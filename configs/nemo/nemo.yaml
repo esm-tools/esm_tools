@@ -351,8 +351,10 @@ grids:
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
+                number_of_overlapping_points: 2 # oasis P-value
         opac:   
                 name: opac
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
+                number_of_overlapping_points: 2 # oasis P-value

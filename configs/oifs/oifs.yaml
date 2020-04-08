@@ -62,6 +62,7 @@ hours: "00"
 #model_dir: ${esm_master_dir}/oifs-${version}
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
 input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
@@ -184,6 +185,8 @@ input_files:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
         ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
         ICMSH_INIT: ICMSH${oifs.input_expid}INIT
+        rtables: rtables
+        vtables: vtables
         # still missing: rtables/*, globbing not available yet (fix!)
         # also missing: modify_init for ensemble stuff
 
@@ -250,6 +253,8 @@ input_sources:
         specwavein: ${input_dir}/${prepifs_startdate}${hours}/specwavein
         sfcwindin: ${input_dir}/${prepifs_startdate}${hours}/sfcwindin
         cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
+        rtables: ${rtables_dir}/*
+        vtables: ${vtables_dir}/*
 
 forcing_sources:
         # GHG data
@@ -280,6 +285,8 @@ input_in_work:
         ICMGG_INIT: ICMGG${expid}INIT
         ICMGG_INIUA: ICMGG${expid}INIUA
         ICMSH_INIT: ICMSH${expid}INIT
+        rtables: rtables/*
+        vtables: vtables/*
 
 forcing_in_work:
         PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt

@@ -18,8 +18,8 @@ SCENARIO_awicm="PI-CTRL"
 
 RES_fesom=CORE2
 
-MODEL_DIR_awicm=/work/ollie/dbarbi/modelcodes/awicm-2.0/
-BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
+MODEL_DIR_awicm=/home/ollie/mandresm/model_codes/awicm-2.0/
+BASE_DIR=/work/ollie/mandresm/esm_yaml_test_awicm/
 
 POOL_DIR_fesom=/work/ollie/pool/FESOM/
 MESH_DIR_fesom=/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/

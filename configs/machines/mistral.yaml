@@ -78,20 +78,26 @@ export_vars:
 
         - 'MXM_RDMA_PORTS=mlx5_0:1'
         - 'MXM_LOG_LEVEL=FATAL'
-
-        - 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48'
+        
+        # Why are we not using MPI HDF5
+        #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48'
+        - 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         - 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
-        - 'ESM_HDF5_DIR=sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
+        #- 'ESM_HDF5_DIR=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         # NOTE(PG): The version of HDF5ROOT **WITH** an underscore is used by PISM Cmake:
         - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
-        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
-        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+        #- "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
+        #- "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+        # again, why not use MPI netCDF
+        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
-        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        #- "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+        #- "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        #- "LD_LIBRARY_PATH=$ESM_HDF5_DIR/lib/:$ESM_NETCDF_C_DIR/lib/:$ESM_NETCDF_F_DIR/lib/:$LD_LIBRARY_PATH"
 
         - "PERL5LIB=/usr/lib64/perl5"
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
@@ -113,6 +119,8 @@ export_vars:
         - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
+        # avoid GLIBCXX_3.4.15 not found error
+        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'

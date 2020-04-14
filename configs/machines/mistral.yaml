@@ -79,25 +79,22 @@ export_vars:
         - 'MXM_RDMA_PORTS=mlx5_0:1'
         - 'MXM_LOG_LEVEL=FATAL'
         
-        # Why are we not using MPI HDF5
-        #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48'
-        - 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
-        - 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
-        #- 'ESM_HDF5_DIR=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
+        # Why are we not using MPI HDF5        
+        #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
+        #- 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         # NOTE(PG): The version of HDF5ROOT **WITH** an underscore is used by PISM Cmake:
-        - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
-        #- "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
-        #- "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-        # again, why not use MPI netCDF
+        # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
+        # undefined symbol: __intel_skx_avx512_memcpy
+        # This combination was recommended by DKRZ support
+        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
+        - "HDF5_ROOT=$HDF5ROOT"
         - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/"
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
+        - 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
-        #- "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        #- "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
-        #- "LD_LIBRARY_PATH=$ESM_HDF5_DIR/lib/:$ESM_NETCDF_C_DIR/lib/:$ESM_NETCDF_F_DIR/lib/:$LD_LIBRARY_PATH"
 
         - "PERL5LIB=/usr/lib64/perl5"
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
@@ -111,8 +108,8 @@ export_vars:
         - "CC=${cc}"
         - "CXX=${cxx}"
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
+        - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+                
         - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
         - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"

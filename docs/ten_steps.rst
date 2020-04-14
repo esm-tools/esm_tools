@@ -5,7 +5,7 @@ Ten Steps to a Running Model
 1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later. Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bashrc``, ``~/.profile``, etc.::
 
      $> export PATH=$PATH:~/.local/bin 
-.. Reference to the FAQ where an explanation on how to edit your login or profile files
+     .. Reference to the FAQ where an explanation on how to edit your login or profile files \
 
 2. We recommend you use our github repository (``https://github.com/esm-tools``) for which you don't need any access permissions. Optionally you can choose to use the gitlab server at AWI. In that case you need to get access to the ``esm_tools`` group. You can request access either online at ``https://gitlab.awi.de/esm_tools``, or via e-mail to ``dirk.barbi@awi.de``.
 
@@ -58,4 +58,4 @@ Ten Steps to a Running Model
 
      $> esm_runscripts fesom-2.0-ollie-initial-monthly.yaml -e my_first_test
 
-That should really be it. Good luck!   
+That should really be it. Good luck!

@@ -30,7 +30,7 @@ Installing
 
 To use the new version of the esm-tools, now rewritten in Python, clone this repository::
 
-    git clone https://gitlab.awi.de/esm_tools/esm_tools.git
+    git clone https://github.com/esm-tools/esm_tools.git
 
 Then, run the ``install.sh``::
 

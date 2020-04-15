@@ -1,8 +1,8 @@
 Welcome to ESM Tools's documentation!
 ======================================
 
-.. figure:: ESM-TOOLS_LOGO_RGB_72dpi.jpg 
-   :scale: 50 %
+.. include:: ../README.rst
+
 
 
 .. toctree::

@@ -14,6 +14,24 @@ description: |
 license_text: |
         ECMWF license. AWI and GEOMAR have licenses. 
 
+##
+## Directories
+##
+
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
+input_dir: ${pool_dir}
+rtables_dir: ${input_dir}/../rtables/
+vtables_dir: ${input_dir}/../vtables/
+clim_dir: ${input_dir}/../
+icmcl_dir: ${input_dir}
+forcing_dir: ${input_dir}/../${version}/ifsdata/
+namelist_dir: ${esm_namelist_dir}/oifs
+cmip6_data_dir: ${input_dir}/../cmip6_data
+cmip5_data_dir: ${input_dir}/../cmip5_data
+
+
 # Default is TL159L91 
 # Forcing from gu5a prepIFS forcing
 input_expid: ECE3
@@ -58,19 +76,6 @@ threads: 1
 ny: 1
 
 hours: "00"
-
-#model_dir: ${esm_master_dir}/oifs-${version}
-model_dir: ${general.model_dir}
-bin_dir: ${model_dir}/bin
-pool_dir: "${computer.pool_directories.pool}"
-input_dir: ${pool_dir}
-rtables_dir: ${input_dir}/../rtables/
-vtables_dir: ${input_dir}/../vtables/
-clim_dir: ${input_dir}/../
-forcing_dir: ${input_dir}/../${version}/ifsdata/
-namelist_dir: ${esm_namelist_dir}/oifs
-cmip6_data_dir: ${input_dir}/../cmip6_data
-cmip5_data_dir: ${input_dir}/../cmip5_data
 
 namelists:
         - fort.4
@@ -181,6 +186,10 @@ export_vars:
 bin_sources: 
         bin: ${bin_dir}/${executable}
 
+##
+## input files
+##
+
 input_files:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
         ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
@@ -190,17 +199,14 @@ input_files:
         # still missing: rtables/*, globbing not available yet (fix!)
         # also missing: modify_init for ensemble stuff
 
-forcing_files:
-        choose_mip:
-                "cmip5":
-                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
-                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
-                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
-                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-        
-        choose_version:
-                40r1:
+
+##
+## forcing files
+##
+
+choose_version:
+        40r1:                
+                forcing_files:
                         C11CLIM: C11CLIM
                         C12CLIM: C12CLIM 
                         C22CLIM: C22CLIM
@@ -218,17 +224,25 @@ forcing_files:
                         RADRRTM: RADRRTM
                         RADSRTM: RADSRTM
                         
+choose_mip:
+        "cmip5":
+                add_forcing_files:
+                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC                        
                         
 choose_scenario:
         "amip-prepifs":
-                forcing_files:
-                        sst: ICMCL${expid}INIT
+                add_forcing_files:
+                        ICMCLINIT: ICMCLINIT
         "amip":
-                forcing_files:
-                        sst: ICMCL${expid}INIT_CMIP6
+                add_forcing_files:
+                        ICMCLINIT: ICMCLINIT_CMIP6
         "highresmip":
-                forcing_files:
-                        sst: ICMCL${expid}INIT_HIGHRESMIP
+                add_forcing_files:
+                        ICMCLINIT: ICMCLINIT_HIGHRESMIP
         "historical":
                 namelist_changes:
                         fort.4:
@@ -280,6 +294,10 @@ forcing_sources:
         OZOCLIM: ${forcing_dir}/ifsdata/OZOCLIM 
         RADRRTM: ${forcing_dir}/ifsdata/RADRRTM
         RADSRTM: ${forcing_dir}/ifsdata/RADSRTM
+        ## ICMCL
+        ICMCLINIT: ${icmcl_dir}/ICMCL${expid}INIT
+        ICMCLINIT_CMIP6: ${icmcl_dir}/ICMCL${expid}INIT_CMIP6
+        ICMCLINIT_HIGHRESMIP: ${icmcl_dir}/ICMCL${expid}INIT_HIGHRESMIP
 
 input_in_work:
         ICMGG_INIT: ICMGG${expid}INIT

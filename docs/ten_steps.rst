@@ -10,7 +10,7 @@ Ten Steps to a Running Model
 
 3. Download the git repository ``esm_tools.git``, preferably from the gitlab server at AWI::
 
-     $> git clone https://gitlab.awi.de/esm_tools/esm_tools.git
+     $> git clone https://github.com/esm-tools/esm_tools.git
  
 4. In the new folder ``esm_tools``, run the installer::
 

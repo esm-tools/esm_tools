@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://gitlab.awi.de/esm_tools/esm_tools/issues.
+Report bugs at https://github.com/esm-tools/esm_tools/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://gitlab.awi.de/esm_tools/esm_tools/issues.
+The best way to send feedback is to file an issue at https://github.com/esm-tools/esm_tools/issues.
 
 If you are proposing a feature:
 
@@ -57,37 +57,60 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `esm_tools` for local development.
+Ready to contribute? Here's how to set up `esm-tools` packages for local development (see :ref:`packages:Python Packages` for a list of available packages). Note that the procedure of contributing to the `esm_tools` package (see :ref:`contributing:Contribution to esm_tools Package`) is different from the one to contribute to the other packages (:ref:`contributing:Contribution to other Packages`).
+
+Contribution to esm_tools Package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Fork the `esm_tools` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone https://your_name_here@gitlab.awi.de/esm_tools/esm_tools.git
+    $> git clone https://github.com/your_github_username_here/esm_tools.git
 
    (or whatever subproject you want to contribute to).
 
 
-3. By default, ``git clone`` will givw you the release branch of the project. You might want to consider checking out the development branch, which might not always be as stable, but usually more up-to-date than the release branch::
+3. By default, ``git clone`` will give you the release branch of the project. You might want to consider checking out the development branch, which might not always be as stable, but usually more up-to-date than the release branch::
 
-    $ git checkout develop
+    $> git checkout develop
 
 4. Create a branch for local development::
 
-    $ git checkout -b name-of-your-bugfix-or-feature
+    $> git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass flake8::
 
-    $ flake8 esm_tools
+    $> flake8 esm_tools
 
 6. Commit your changes and push your branch to GitHub::
 
-    $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin name-of-your-bugfix-or-feature
+    $> git add .
+    $> git commit -m "Your detailed description of your changes."
+    $> git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the gitlab website.
+7. Submit a pull request through the GitHub website.
+
+Contribution to Other Packages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Follow steps 1-4 in :ref:`contributing:Contribution to esm_tools Package`
+   for the desired package, cloning your fork locally with::
+
+   $> git clone https://github.com/your_github_username_here/<PACKAGE>.git
+
+2. Proceed to do a development install of the package in the package's folder::
+
+   $> cd <package's_folder>
+   $> pip install -e .
+
+3. From now on when binaries are called, they will refer to the source code you are working
+   on, located in your local package's folder. For example, if you are editing the 
+   package `esm_master` located in ``~/esm_master`` and you run ``$> esm_master install-fesom-2.0``
+   you'll be using the edited files in ``~/esm_master`` to install FESOM 2.0.
+
+4. Follow steps 5-7 in :ref:`contributing:Contribution to esm_tools Package`.
 
 Pull Request Guidelines
 -----------------------
@@ -110,7 +133,7 @@ A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
 Then run::
 
-$ bumpversion patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+$> bumpversion patch # possible: major / minor / patch
+$> git push
+$> git push --tags
 

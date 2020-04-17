@@ -4,11 +4,12 @@ Ten Steps to a Running Model
 
 1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later. Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bashrc``, ``~/.profile``, etc.::
 
-     $> export PATH=$PATH:~/.local/bin 
+     $> export PATH=$PATH:~/.local/bin
 
-2. Get access to the ``esm_tools`` group on one of our mirrors, preferably the gitlab server at AWI. You can request access either online at ``https://gitlab.awi.de/esm_tools``, or via e-mail to ``dirk.barbi@awi.de``.
+  .. Reference to the FAQ where an explanation on how to edit your login or profile files \
+2. We recommend you use our github repository (``https://github.com/esm-tools``) for which you don't need any access permissions. Optionally you can choose to use the gitlab server at AWI. In that case you need to get access to the ``esm_tools`` group. You can request access either online at ``https://gitlab.awi.de/esm_tools``, or via e-mail to ``dirk.barbi@awi.de``.
 
-3. Download the git repository ``esm_tools.git``, preferably from the gitlab server at AWI::
+3. Download the git repository ``esm_tools.git``, preferably from the github repository::
 
      $> git clone https://github.com/esm-tools/esm_tools.git
  
@@ -20,9 +21,9 @@ Ten Steps to a Running Model
    This should install the python packages of ESM-Tools. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
    Also, a new file called ``~/.esmtoolsrc`` is added to your ``HOME``, which contains some very few details about the installation.
 
-5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works.
+5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works. Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
    
-6. Go to the toplevel folder into which you want to install you model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to run FESOM2::
+6. Go to the toplevel folder into which you want to install your model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to install FESOM2::
 
     $> mkdir ../model_codes
     $> cd ../model_codes 
@@ -37,7 +38,7 @@ Ten Steps to a Running Model
 8. Go back to the ``esm_tools`` folder, and pick a sample runscript from the ``runscripts`` subfolder. These examples are very short and can be easily adapted. Pick one that is for the model you want to run, and maybe already adapted to the HPC system you are working on. Make sure to adapt the paths to your personal settings, e.g. ``model_dir``, ``base_dir`` etc.::
 
     $> cd ../esm_tools/runscripts/fesom2
-    $> (your_favourite_editor) fesom2-ollie-initial-monthly.yaml
+    $> (your_favourite_editor) fesom-2.0-ollie-initial-monthly.yaml
 
    Notice that the examples exist with the endings ``.run`` and ``.yaml``. It doesn't matter what you pick. The files ending in ``.run`` are looking more like conventional shell scripts that you might be better used to, the ``.yaml``-files are written as yaml configuration files, which makes things much nicer and more elegant to write down. We strongly encourage you to give the ``yaml``-version a try.
 
@@ -55,7 +56,6 @@ Ten Steps to a Running Model
 
 10. Run the experiment::
 
-     $> esm_runscripts fesom2-ollie-initial-monthly.yaml -e my_first_test
+     $> esm_runscripts fesom-2.0-ollie-initial-monthly.yaml -e my_first_test
 
-That should really be it. Good luck!   
-
+That should really be it. Good luck!

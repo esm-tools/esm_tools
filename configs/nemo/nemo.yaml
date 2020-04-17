@@ -4,6 +4,11 @@
 # DEFAULT VALUES
 #
 
+#general:
+#        model: nemo
+#        setup_dir: ${general.model_dir}
+#        model_dir: ${esm_master_dir}/nemo-${version}
+
 model: nemo
 include_models: 
         - xios

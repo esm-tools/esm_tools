@@ -1,0 +1,6 @@
+# MPIOM YAML CONFIGURATION FILE
+#
+
+model: mpiom
+branch: test # FIX: change this to master
+version: "1.6.3p2"

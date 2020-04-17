@@ -136,7 +136,6 @@ components:
                                 git-repository: "https://git.geomar.de/foci/src/nemo.git"
                                 branch: "esm-tools"
                                 archfile: "ESMTOOLS_generic_oasis_intel"
-                                install_bins: "CONFIG/ORCA05_LIM2_KCM_AOW/BLD/bin/nemo.exe"
 
         "nemo":
                 available_versions:
@@ -393,6 +392,13 @@ couplings:
                         - "oasis3mct-fociagrif"
                         - "rnfmap-focioifs1"
 
+        "nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs40r1-foci":
+                components:
+                        - "oifs-40r1-foci"
+                        - "nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+                        - "oasis3mct-fociagrif"
+                        - "rnfmap-focioifs1"
+
         "pism-snowflake1.0+echam-6.3.04p1":
                 components:
                         - "echam-6.3.04p1"
@@ -485,10 +491,14 @@ setups:
         focioifs:
                 available_versions:
                         - "default"
+                        - "agrif"
                 choose_version:                      
                         "default":
                                 couplings: 
                                         - "nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs40r1-foci"
+                        "agrif":
+                                couplings: 
+                                        - "nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs40r1-foci"
                 
         oifsamip:
                 couplings:

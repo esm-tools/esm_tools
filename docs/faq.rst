@@ -37,7 +37,7 @@ ESM Master
 
 1. **Q**: How can I define different environments for different models / different versions of the same model?
    
-   **A**: You can add a choose-block in the models yaml-file, e.g.::
+   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.::
   
         choose_version:
                 40r1:

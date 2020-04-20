@@ -112,6 +112,7 @@ components:
                 comp_command: "cd data/data; gunzip -c TMM.tar.gz > TMM.tar; tar xf TMM.tar; rm -f TMM.tar"
 
         "mpiom":
+                install_bins: "bin/mpiom.x"
                 git-repository: "https://gitlab.dkrz.de/modular_esm/mpiom.git"
                 choose_version:
                         "1.6.3p2":

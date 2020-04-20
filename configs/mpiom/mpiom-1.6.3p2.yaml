@@ -4,3 +4,9 @@
 model: mpiom
 branch: test # FIX: change this to master
 version: "1.6.3p2"
+
+comp_executable: mpiom.x
+executable: mpiom
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"

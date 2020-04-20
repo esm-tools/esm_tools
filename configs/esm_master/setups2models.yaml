@@ -386,6 +386,13 @@ couplings:
                         - "rnfmap-focioifs"
                 prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}" 
 
+        "mpiom-1.6.3p2+echam-6.3.04p1":
+                components:
+                        - "echam-6.3.04p1"
+                        - "mpiom-1.6.3p2"
+                        - "oasis3-mct-2.8"
+                coupling_changes:
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
         "pism-snowflake1.0+echam-6.3.04p1":
                 components:
@@ -527,7 +534,16 @@ setups:
                                         version: focioifs
                                 oasis3-mct:
                                         version: "4.0"       
-                
+
+        mpiesm:
+                available_versions:
+                        - "1.2.00p4"
+
+                choose_version:
+                        "1.2.00p4":
+                                couplings:
+                                        - "mpiom-1.6.3p2+echam-6.3.04p1"
+
         oifsamip:
                 couplings:
                         - "oifs-40r1+amip"

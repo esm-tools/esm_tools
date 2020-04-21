@@ -54,6 +54,7 @@ components:
         "esm-interface":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
                 comp_command: "${default.comp_command}"
+                destination: "esm-interface"
                 available_versions:
                         - "1.0"
                         - "yac"

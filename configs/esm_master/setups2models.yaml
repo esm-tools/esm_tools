@@ -304,6 +304,13 @@ components:
                                 compile_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile} --netcdf_lib netcdf4_par --full --job 24"
                         "2.0_r982":
                                 nothing: much
+        "yac":
+                git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"
+                available_versions:
+                        - "1.5.4"
+                conf_command: 'autoreconf -iv; ./configure CC=mpiicc FC=mpiifort FCFLAGS="-fpp -g -O0" CFLAGS="-O0 -g" LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
+                comp_command: "make"
+                clean_command: "make clean"
 
 couplings:
         "fesom-1.4+echam-6.3.04p1":

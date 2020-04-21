@@ -26,21 +26,29 @@ rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
 icmcl_dir: ${input_dir}
+icmcl_file: ICMCLgu5aINIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
-namelist_dir: ${esm_namelist_dir}/oifs
+namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 
 
 # Default is TL159L91 
 # Forcing from gu5a prepIFS forcing
+#
+# Note: input_expid is the expid that will appear on 
+#       the input and forcing files in the work directory
+#       prepifs_expid is the expid that appears on the 
+#       input and forcing files in input_dir and forcing_dir
+#       Default is a TL159 run, input data from ECMWF has expid gu5a
+#       but I want the expid for my run to be ECE3. 
 input_expid: ECE3
 resolution: TL159
 levels: L91
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
-scenario: "historical"
+scenario: "amip-prepifs"
 output: "default"
 
 wam: True
@@ -68,8 +76,8 @@ orb_switch: False
 orb_mode: "variable_year"
 orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
 
-restart: 12
-restart_rate: 12
+restart: 1
+restart_rate: 1
 restart_unit: 'months'
 
 threads: 1
@@ -78,7 +86,7 @@ ny: 1
 hours: "00"
 
 namelists:
-        - fort.4
+        - "fort.4"
 
 choose_resolution:
         TQ95:
@@ -135,9 +143,13 @@ choose_computer.cores_per_node:
                 nproca: 96
                 nprocb: 1
                 
+runtime: "$((${end_date} - ${start_date}))"
+timestep_per_run: $((${runtime} / ${time_step}))
 
-before_step: 0
-next_step: 744
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
 
@@ -180,8 +192,10 @@ choose_levels:
                 levels_number: 137
 
 export_vars:
-        OIFS_EXPID: ${oifs.input_expid}
-
+        OIFS_EXPID: ${prepifs_expid}
+        FOCI_USE_CPLNG: "no"
+        AWICM_USE_CPLNG: "no"
+        ECE_USE_CPLNG: "no" 
 
 bin_sources: 
         bin: ${bin_dir}/${executable}
@@ -191,9 +205,9 @@ bin_sources:
 ##
 
 input_files:
-        ICMGG_INIT: ICMGG${oifs.input_expid}INIT
-        ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
-        ICMSH_INIT: ICMSH${oifs.input_expid}INIT
+        ICMGG_INIT: ICMGG_INIT
+        ICMGG_INIUA: ICMGG_INIUA
+        ICMSH_INIT: ICMSH_INIT
         rtables: rtables
         vtables: vtables
         # still missing: rtables/*, globbing not available yet (fix!)
@@ -234,15 +248,6 @@ choose_mip:
                         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC                        
                         
 choose_scenario:
-        "amip-prepifs":
-                add_forcing_files:
-                        ICMCLINIT: ICMCLINIT
-        "amip":
-                add_forcing_files:
-                        ICMCLINIT: ICMCLINIT_CMIP6
-        "highresmip":
-                add_forcing_files:
-                        ICMCLINIT: ICMCLINIT_HIGHRESMIP
         "historical":
                 namelist_changes:
                         fort.4:
@@ -254,11 +259,22 @@ choose_scenario:
                                 NAMCMIP:
                                         LGHGPI: ".true."
 
+##
+## surface forcing data
+##
+
+icmcl_files:
+        ICMCL_INIT: ICMCL_INIT
+
+
+##
+## sources
+## 
 
 input_sources:
         ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
-        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${input_expid}INIUA
-        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${input_expid}INIT
+        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
+        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
         wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
         wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
         wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
@@ -294,15 +310,18 @@ forcing_sources:
         OZOCLIM: ${forcing_dir}/ifsdata/OZOCLIM 
         RADRRTM: ${forcing_dir}/ifsdata/RADRRTM
         RADSRTM: ${forcing_dir}/ifsdata/RADSRTM
+        
+icmcl_sources:        
         ## ICMCL
-        ICMCLINIT: ${icmcl_dir}/ICMCL${expid}INIT
-        ICMCLINIT_CMIP6: ${icmcl_dir}/ICMCL${expid}INIT_CMIP6
-        ICMCLINIT_HIGHRESMIP: ${icmcl_dir}/ICMCL${expid}INIT_HIGHRESMIP
+        ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
+
+config_sources:
+        "fort.4": "${namelist_dir}/fort.4"
 
 input_in_work:
-        ICMGG_INIT: ICMGG${expid}INIT
-        ICMGG_INIUA: ICMGG${expid}INIUA
-        ICMSH_INIT: ICMSH${expid}INIT
+        ICMGG_INIT: ICMGG${oifs.input_expid}INIT
+        ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
+        ICMSH_INIT: ICMSH${oifs.input_expid}INIT
         rtables: rtables/*
         vtables: vtables/*
 
@@ -328,12 +347,14 @@ forcing_in_work:
         OZOCLIM: ifsdata/OZOCLIM 
         RADRRTM: ifsdata/RADRRTM
         RADSRTM: ifsdata/RADSRTM
-
+        
+icmcl_in_work:
+        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
 
 namelist_changes:
         fort.4:
                 NAMRES:
-                        NFRRES: ${before_step}
+                        NFRRES: ${oifs.next_step}
                         
                 NAMPAR0:
                         NPROC: ${oifs.nproca}
@@ -342,8 +363,12 @@ namelist_changes:
                         TSTEP: ${oifs.time_step}
                         
                 NAMCT0:
-                        CNMEXP: ${oifs.expid}
+                        CNMEXP: ${oifs.input_expid}
                         NSTOP: ${oifs.next_step}
+                
+                NAMECECFG:
+                        # By default, turn off coupling
+                        FOCI_CPL_NEMO_LIM: ".false." 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 # TODO: CSW source and target fields are listed here, this is probably wrong 

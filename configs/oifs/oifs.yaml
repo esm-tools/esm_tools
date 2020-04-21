@@ -74,7 +74,6 @@ onepctco2: False
 lhvolca: False
 
 supercooled_liquid_could_fix: 0
-dr_hook_ignore_signals: -1
 
 orb_switch: False
 orb_mode: "variable_year"
@@ -153,7 +152,8 @@ timestep_per_run: $((${runtime} / ${time_step}))
 seconds_since_initial: $((${start_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
-next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+#next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+next_step: 120 
 steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
 
@@ -195,11 +195,12 @@ choose_levels:
         L137:
                 levels_number: 137
 
-export_vars:
-        OIFS_EXPID: ${prepifs_expid}
-        FOCI_USE_CPLNG: "no"
-        AWICM_USE_CPLNG: "no"
-        ECE_USE_CPLNG: "no" 
+#add_export_vars:
+#        DR_HOOK_IGNORE_SIGNALS: "-1"
+#        OIFS_EXPID: ${input_expid}
+#        FOCI_USE_CPLNG: "no"
+#        AWICM_USE_CPLNG: "no"
+#        ECE_USE_CPLNG: "no" 
 
 bin_sources: 
         bin: ${bin_dir}/${executable}
@@ -446,6 +447,11 @@ choose_version:
                 environment_changes:
                         add_export_vars:        
                                 - 'OIFS_FFIXED="-fixed"' 
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+                                - 'OIFS_EXPID="${input_expid}"'
+                                - 'FOCI_USE_CPLNG="no"'
+                                - 'AWICM_USE_CPLNG="no"'
+                                - 'ECE_USE_CPLNG="no"'
 
         43r3:
                 environment_changes:

@@ -2,8 +2,8 @@
 #
 
 model: mpiom
-branch: 1.6.3p2
-version: "1.6.3p2"
+branch: 1.6.2p3
+version: "1.6.2p3"
 
 comp_executable: mpiom.x
 executable: mpiom

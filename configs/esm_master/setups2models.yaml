@@ -115,9 +115,15 @@ components:
                 install_bins: "bin/mpiom.x"
                 git-repository: "https://gitlab.dkrz.de/modular_esm/mpiom.git"
                 choose_version:
+                        "1.6.2p3":
+                                branch: "1.6.2p3"
+                        "1.6.3":
+                                branch: "1.6.3"
                         "1.6.3p2":
-                                branch: "test"
+                                branch: "1.6.3p2"
                 available_versions:
+                        - "1.6.2p3"
+                        - "1.6.3"
                         - "1.6.3p2"
                 comp_command: "./configure; make"
                 clean_command: "${defaults.clean_command}"

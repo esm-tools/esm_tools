@@ -3,12 +3,12 @@
 
 model: oifs
 executable: master.exe
-execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
+execution_command: ${executable} -e ${oifs.input_expid}
 version: 40r1
 type: atmosphere
 
 description: |
-        OpenIFS based on IFS cycle 40 release 1, ECMWF
+        The OpenIFS atmosphere model based on ECMWF IFS
         Carver et al., in prep.
 
 license_text: |
@@ -92,6 +92,8 @@ namelists:
         - "fort.4"
 
 choose_resolution:
+        # Note:
+        # Tco grids only work with version 43r3.
         TQ95:
                 nx: 13280
                 time_step: 3600
@@ -110,12 +112,24 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: 159l_2
+        TCO199:
+                nx: 167200
+                time_step: 1800
+                oasis_grid_name: "200"
+                res_number: 199
+                res_number_tl: 199_4
         TL255:
                 nx: 88838
                 time_step: 2700
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
+        TCO399: 
+                nx: 654400
+                time_step: 1200
+                oasis_grid_name: 400
+                res_number: 399
+                res_number_tl: 399_4
         TL511:
                 nx: 348528
                 time_step: 900
@@ -146,6 +160,8 @@ choose_computer.cores_per_node:
                 nproca: 96
                 nprocb: 1
                 
+# Where does end_date and start_date come from
+# Why is it set to 364 days even when I ask for a 5-day run                
 runtime: "$((${end_date} - ${start_date}))"
 timestep_per_run: $((${runtime} / ${time_step}))
 
@@ -190,6 +206,10 @@ choose_wam:
                         
 
 choose_levels:
+        L60:
+                levels_number: 60
+        L62: 
+                levels_number: 62
         L91:
                 levels_number: 91
         L137:
@@ -218,9 +238,7 @@ input_files:
         vtables: vtables
         tl_data: tl_data
         o3_data: o3_data
-        # still missing: rtables/*, globbing not available yet (fix!)
         # also missing: modify_init for ensemble stuff
-
 
 ##
 ## forcing files
@@ -244,25 +262,20 @@ forcing_files:
         RADRRTM: RADRRTM
         RADSRTM: RADSRTM
 
-#choose_version:
-#        "40r1":                
-#                forcing_files:
-#                        C11CLIM: C11CLIM
-#                        C12CLIM: C12CLIM 
-#                        C22CLIM: C22CLIM
-#                        CCL4CLIM: CCL4CLIM
-#                        CH4CLIM: CH4CLIM
-#                        CO2CLIM: CO2CLIM
-#                        ECOZC: ECOZC
-#                        GCH4CLIM: GCH4CLIM
-#                        GCO2CLIM: GCO2CLIM
-#                        GOZOCLIM: GOZOCLIM
-#                        MCICA: MCICA
-#                        N2OCLIM: N2OCLIM
-#                        NO2CLIM: NO2CLIM
-#                        OZOCLIM: OZOCLIM 
-#                        RADRRTM: RADRRTM
-#                        RADSRTM: RADSRTM
+choose_version:
+        43r3:
+                add_forcing_files:
+                        aerosol_cams_clim: aerosol_cams_clim
+                        aerosol_ifs_rrtm: aerosol_ifs_rrtm
+                        aerosol_ifs_rrtm_AB: aerosol_ifs_rrtm_AB
+                        aerosol_ifs_rrtm_tegen: aerosol_ifs_rrtm_tegen
+                        baran_ice_scattering_rrtm: baran_ice_scattering_rrtm
+                        es_droplet_scattering_rrtm: es_droplet_scattering_rrtm
+                        fu_ice_scattering_rrtm: fu_ice_scattering_rrtm
+                        mcica_gamma: mcica_gamma
+                        mcica_lognormal: mcica_lognormal
+                        slingo_droplet_scattering_rrtm: slingo_droplet_scattering_rrtm
+                        socrates_droplet_scattering_rrtm: socrates_droplet_scattering_rrtm 
                         
 choose_mip:
         "cmip5":
@@ -284,13 +297,6 @@ choose_scenario:
                         fort.4:
                                 NAMCMIP:
                                         LGHGPI: ".true."
-
-##
-## surface forcing data
-##
-
-#icmcl_files:
-#        ICMCL_INIT: ICMCL_INIT
 
 
 ##
@@ -339,10 +345,19 @@ forcing_sources:
         OZOCLIM: ${forcing_dir}/OZOCLIM 
         RADRRTM: ${forcing_dir}/RADRRTM
         RADSRTM: ${forcing_dir}/RADSRTM
+        # new radiation in 43r3
+        aerosol_cams_clim: ${forcing_dir}/aerosol_cams_climatology_43R3.nc
+        aerosol_ifs_rrtm: ${forcing_dir}/aerosol_ifs_rrtm_43R3.nc
+        aerosol_ifs_rrtm_AB: ${forcing_dir}/aerosol_ifs_rrtm_AB.nc
+        aerosol_ifs_rrtm_tegen: ${forcing_dir}/aerosol_ifs_rrtm_tegen.nc
+        baran_ice_scattering_rrtm: ${forcing_dir}/baran_ice_scattering_rrtm.nc
+        es_droplet_scattering_rrtm: ${forcing_dir}/es_droplet_scattering_rrtm.nc
+        fu_ice_scattering_rrtm: ${forcing_dir}/fu_ice_scattering_rrtm.nc
+        mcica_gamma: ${forcing_dir}/mcica_gamma.nc
+        mcica_lognormal: ${forcing_dir}/mcica_lognormal.nc
+        slingo_droplet_scattering_rrtm: ${forcing_dir}/slingo_droplet_scattering_rrtm.nc
+        socrates_droplet_scattering_rrtm: ${forcing_dir}/socrates_droplet_scattering_rrtm.nc
         
-#icmcl_sources:        
-#        ## ICMCL
-#        ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
 
 config_sources:
         "fort.4": "${namelist_dir}/fort.4"
@@ -379,9 +394,18 @@ forcing_in_work:
         OZOCLIM: ifsdata/OZOCLIM 
         RADRRTM: ifsdata/RADRRTM
         RADSRTM: ifsdata/RADSRTM
+        aerosol_cams_clim: ifsdata/aerosol_cams_climatology_43R3.nc
+        aerosol_ifs_rrtm: ifsdata/aerosol_ifs_rrtm_43R3.nc
+        aerosol_ifs_rrtm_AB: ifsdata/aerosol_ifs_rrtm_AB.nc
+        aerosol_ifs_rrtm_tegen: ifsdata/aerosol_ifs_rrtm_tegen.nc
+        baran_ice_scattering_rrtm: ifsdata/baran_ice_scattering_rrtm.nc
+        es_droplet_scattering_rrtm: ifsdata/es_droplet_scattering_rrtm.nc
+        fu_ice_scattering_rrtm: ifsdata/fu_ice_scattering_rrtm.nc
+        mcica_gamma: ifsdata/mcica_gamma.nc
+        mcica_lognormal: ifsdata/mcica_lognormal.nc
+        slingo_droplet_scattering_rrtm: ifsdata/slingo_droplet_scattering_rrtm.nc
+        socrates_droplet_scattering_rrtm: ifsdata/socrates_droplet_scattering_rrtm.nc
         
-#icmcl_in_work:
-#        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
 
 namelist_changes:
         fort.4:
@@ -455,7 +479,8 @@ choose_version:
 
         43r3:
                 environment_changes:
-                        add_export_vars:        
+                        add_export_vars: 
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'       
                                 - 'OIFS_FFIXED=""'
                                 - 'OIFS_OASIS_BASE="${general.model_dir}"'
                                 - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'

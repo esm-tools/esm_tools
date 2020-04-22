@@ -195,14 +195,16 @@ choose_wam:
                         
                 namelist_changes:
                         fort.4:
-                                LWCOU: ".true."
-                                LWCOU2W: ".true."
+                                NAEPHY:
+                                        LWCOU: ".true."
+                                        LWCOU2W: ".true."
                         
         0:
                 namelist_changes:
                         fort.4:
-                                LWCOU: ".false."
-                                LWCOU2W: ".false." 
+                                NAEPHY:
+                                        LWCOU: ".false."
+                                        LWCOU2W: ".false." 
                         
 
 choose_levels:
@@ -262,8 +264,63 @@ forcing_files:
         RADRRTM: RADRRTM
         RADSRTM: RADSRTM
 
+##
+## specifics for 40r1 and 43r3
+##
+
 choose_version:
+        40r1:
+                namelist_changes:
+                        fort.4:
+                                NAMRES:
+                                        NFRRES: ${oifs.next_step}
+                                        
+                                NAMPAR0:
+                                        NPROC: ${oifs.nproca}
+                                        
+                                NAMDYN:
+                                        TSTEP: ${oifs.time_step}
+                        
+                                NAMCT0:
+                                        CNMEXP: ${oifs.input_expid}
+                                        NSTOP: ${oifs.next_step}
+                
+                                NAMECECFG:
+                                        # By default, turn off coupling
+                                        FOCI_CPL_NEMO_LIM: ".false." 
+                
+                environment_changes:
+                        add_export_vars:        
+                                - 'OIFS_FFIXED="-fixed"' 
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+                                - 'OIFS_EXPID="${input_expid}"'
+                                - 'FOCI_USE_CPLNG="no"'
+                                - 'AWICM_USE_CPLNG="no"'
+                                - 'ECE_USE_CPLNG="no"'
+                                
         43r3:
+                namelist_changes:
+                        fort.4:
+                                NAMRES:
+                                        NFRRES: ${oifs.next_step}
+                                        
+                                NAMPAR0:
+                                        NPROC: ${oifs.nproca}
+                                        
+                                NAMARG:
+                                        UTSTEP: ${oifs.time_step}
+                                        CNMEXP: ${oifs.input_expid}
+                                        CUSTOP: ${oifs.next_step}
+                
+                environment_changes:
+                        add_export_vars: 
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'       
+                                - 'OIFS_FFIXED=""'
+                                - 'OIFS_OASIS_BASE="${general.model_dir}"'
+                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+                                        
+                
                 add_forcing_files:
                         aerosol_cams_clim: aerosol_cams_clim
                         aerosol_ifs_rrtm: aerosol_ifs_rrtm
@@ -276,7 +333,11 @@ choose_version:
                         mcica_lognormal: mcica_lognormal
                         slingo_droplet_scattering_rrtm: slingo_droplet_scattering_rrtm
                         socrates_droplet_scattering_rrtm: socrates_droplet_scattering_rrtm 
-                        
+
+##
+## specifics for scenarios
+##                        
+
 choose_mip:
         "cmip5":
                 add_forcing_files:
@@ -288,15 +349,19 @@ choose_mip:
                         
 choose_scenario:
         "historical":
-                namelist_changes:
-                        fort.4:
-                                NAMCMIP:
-                                        LGHGCMIP5: ".true."
+                choose_version:
+                        40r1:
+                                namelist_changes:
+                                        fort.4:
+                                              NAMCMIP:
+                                                    LGHGCMIP5: ".true."
         "piControl":
-                namelist_changes:
-                        fort.4:
-                                NAMCMIP:
-                                        LGHGPI: ".true."
+                choose_version:
+                        40r1:
+                                namelist_changes:
+                                        fort.4:
+                                              NAMCMIP:
+                                                    LGHGPI: ".true."
 
 
 ##
@@ -407,24 +472,9 @@ forcing_in_work:
         socrates_droplet_scattering_rrtm: ifsdata/socrates_droplet_scattering_rrtm.nc
         
 
-namelist_changes:
-        fort.4:
-                NAMRES:
-                        NFRRES: ${oifs.next_step}
-                        
-                NAMPAR0:
-                        NPROC: ${oifs.nproca}
-                        
-                NAMDYN:
-                        TSTEP: ${oifs.time_step}
-                        
-                NAMCT0:
-                        CNMEXP: ${oifs.input_expid}
-                        NSTOP: ${oifs.next_step}
-                
-                NAMECECFG:
-                        # By default, turn off coupling
-                        FOCI_CPL_NEMO_LIM: ".false." 
+##
+## coupling
+##
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 # TODO: CSW source and target fields are listed here, this is probably wrong 
@@ -465,24 +515,4 @@ choose_output:
                         
 
 
-
-choose_version:
-        40r1:
-                environment_changes:
-                        add_export_vars:        
-                                - 'OIFS_FFIXED="-fixed"' 
-                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-                                - 'OIFS_EXPID="${input_expid}"'
-                                - 'FOCI_USE_CPLNG="no"'
-                                - 'AWICM_USE_CPLNG="no"'
-                                - 'ECE_USE_CPLNG="no"'
-
-        43r3:
-                environment_changes:
-                        add_export_vars: 
-                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'       
-                                - 'OIFS_FFIXED=""'
-                                - 'OIFS_OASIS_BASE="${general.model_dir}"'
-                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
 

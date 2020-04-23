@@ -21,6 +21,29 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+
+
+
+# PG: Here, we grab the main yaml for each model stated in configs, and get a metadata chapter:
+import yaml
+
+config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
+configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
+with open("Supported_Models.rst", "w") as rst:
+    rst.write("================\n")
+    rst.write("Supported Models\n")
+    rst.write("================\n")
+for config in configs:
+    with open(os.path.join("../configs/", config, config+".yaml")) as f:
+        d = yaml.load(f, Loader=yaml.FullLoader)
+        metadata = d.get("metadata")
+        if metadata:
+            with open(config+"_metadata.csv", "w") as table:
+                for key in metadata:
+                    table.write("%s, %s\n" % (key, metadata[key]))
+            with open("Supported_Models.rst", "a") as rst:
+                rst.write(".. csv-table:: %s\n" % config)
+                rst.write("   :file: %s\n" % (config+"_metadata.csv"))
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

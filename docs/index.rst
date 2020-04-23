@@ -13,6 +13,7 @@ Welcome to ESM Tools's documentation!
    ten_steps
    installation
    transitioning
+   Supported_Models
    esm_master
    esm_versions
    faq

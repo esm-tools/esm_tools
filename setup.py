@@ -50,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/dbarbi/esm_master',
-    version='3.1.5',
+    version='3.2.0',
     zip_safe=False,
 )

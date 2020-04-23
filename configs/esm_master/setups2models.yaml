@@ -51,6 +51,7 @@ components:
                         "6.3.04p1-esm-interface":
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
                                 branch: "using_esm_interfaces"
+                                destination: "echam-6.3.04p1"
         "esm-interface":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
                 comp_command: "${default.comp_command}"
@@ -87,6 +88,7 @@ components:
                                 git-repository: 
                                         - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
                                 branch: "fesom2_using_esm-interface"
+                                destination: "fesom-2.0"
                                 install_bins: "bin/fesom.x"
                 available_versions:
                         - "1.4"
@@ -340,8 +342,8 @@ couplings:
                         - "echam-6.3.04p1-esm-interface"
                         - "fesom-2.0-esm-interface"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-esm-interface/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1-esm-interface/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
  
         "fesom-2.0+oifs-43r3-awi":
                 components:

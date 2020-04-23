@@ -8,28 +8,24 @@ Installation
 Downloading
 -----------
 
-``esm_tools`` is hosted on https://github.com/esm-tools with mirrors on https://gitlab.awi.de and https://gitlab.dkrz.de . To get access to the software, you need to be able to login to one of these servers. 
+``esm_tools`` is hosted on https://github.com/esm-tools. To get access to the software you need to be able to log into GitHub.
 
-github.com:
-        Open for everyone with a GitHub account.
-
-gitlab.awi.de:
-        - DMAWI login: open to all employees of the Alfred Wegener Helmholtz Institute for Polar and Climate Research.   Make sure the DMAWI tab is active, then use your normal AWI LDAP login and password to sign in.
-        - Shibboleth Login: open to employees of member organizations of the DFN-AAI (see https://tools.aai.dfn.de/entities/ for a list of participating identity providers). Click "Federated Login" on the right side, and choose your organization from the list. User your affiliations username and password to identify yourself, and navigate through the upcoming questionaire. You should then be directed to the server gitlab.awi.de. Please notice that you are asked to choose a password for this server, so that from that moment on you can use your e-mail address and the new password for login / git access. Shibboleth login should work for hundreds of institues, including e.g. DKRZ and GEOMAR.
-       
-gitlab.dkrz.de: 
-        Open for everyone with a DKRZ account, and activated gitlab acess in the project page.
-
-If you encounter any problems with getting access to gitlab.awi.de, please feel free to contact dirk.barbi@awi.de.
-
-
-If you are trying to access the gitlab.awi.de or the gitlab.dkrz.de servers, you will need to become a member of the group ``esm_tools``. Either look for the group and request membership, or directly contact dirk.barbi@awi.de.
-
-Now that you have access to one of the download servers, and to the ``esm_tools`` group, you can start by cloning the repository ``esm_tools.git``::
+Then you can start by cloning the repository ``esm_tools.git``::
 
 $> git clone https://github.com/esm-tools/esm_tools.git
 
-This gives you a collection of yaml configuration files containing all the information on models, coupled setups, machines etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
+This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
+
+Accessing components in DKRZ server
+-----------------------------------
+
+Some of the ``esm_tools`` components are hosted in the gitlab.dkrz.de servers. To be able to reach these components you will need:
+
+1. A DKRZ account (https://www.dkrz.de/up/my-dkrz/getting-started/account/DKRZ-user-account).
+
+2. Become a member of the group ``esm_tools``. Either look for the group and request membership, or directly contact dirk.barbi@awi.de.
+
+3. Request access from the corresponding author of the component. Feel free to contact us if you don't know who the model developers are.
 
 .. include:: ../README.rst
 
@@ -46,3 +42,5 @@ Running it for the first time after installation, you will be asked to type in y
 
 $> Please enter your username for gitlab.dkrz.de (default: anonymous)
 $> Please enter your username for swrepo1.awi.de (default: anonymous)
+
+Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).

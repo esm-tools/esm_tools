@@ -2,7 +2,6 @@
 # import fileinput, os, sys, getopt
 
 import sys, copy, os, re
-import subprocess
 import argparse
 
 import esm_rcfile
@@ -701,7 +700,6 @@ class task:
         self.check_requirements()
 
     def execute(self, env):
-        import subprocess
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 newfile = env.add_commands(
@@ -719,7 +717,11 @@ class task:
             else:
                 os.system(command)
 
-        sys.exit(0)
+        #print ("Still here")
+        #try:
+        #    sys.exit(0)
+        #except:
+        #    pass
 
     def output(self):
         print()

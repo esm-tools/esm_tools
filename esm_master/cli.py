@@ -2,11 +2,14 @@
 import argparse
 import sys
 
+
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 check = False
 verbose = 0
 
 from .esm_master import *
-
+from . import database_actions
 
 def main():
 
@@ -82,16 +85,9 @@ def main():
     env.write_dummy_script()
 
     user_task.execute(env)
+    database = database_actions.database_entry(user_task.todo, user_task.package.raw_name, "blabla")
+    database.connection.close()
 
-    sys.exit(0)
-    """Console script for esm_master."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('_', nargs='*')
-    args = parser.parse_args()
-
-    print("Arguments: " + str(args._))
-    print("Replace this message by putting your code into "
-          "esm_master.cli.main")
     return 0
 
 

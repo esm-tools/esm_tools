@@ -20,4 +20,5 @@ formats: all
 python:
   version: 3.7
   install:
-      - pyyaml
+        - method: pip
+          path: pyyaml

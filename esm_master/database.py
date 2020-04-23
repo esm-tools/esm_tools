@@ -4,7 +4,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
 import os
-database_file = os.path.dirname(os.path.abspath(__file__)) + "/../database/esm_master.db"
+database_file = os.path.expanduser("~") + "/.esm_tools/esm_master.db"
+if not os.path.isdir(os.path.expanduser("~") + "/.esm_tools"):
+    os.mkdir(os.path.expanduser("~") + "/.esm_tools")
 
 from esm_database import location_database
 

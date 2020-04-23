@@ -85,7 +85,7 @@ def main():
     env.write_dummy_script()
 
     user_task.execute(env)
-    database = database_actions.database_entry(user_task.todo, user_task.package.raw_name, "blabla")
+    database = database_actions.database_entry(user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR)
     database.connection.close()
 
     return 0

@@ -87,6 +87,7 @@ components:
                                 git-repository: 
                                         - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
                                 branch: "fesom2_using_esm-interface"
+                                install_bins: "bin/fesom.x"
                 available_versions:
                         - "1.4"
                         - "2.0"

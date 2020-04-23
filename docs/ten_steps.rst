@@ -6,12 +6,12 @@ Ten Steps to a Running Model
 
      $> export PATH=$PATH:~/.local/bin
 
-2. We recommend you use our github repository (``https://github.com/esm-tools``) for which you don't need any access permissions. Optionally you can choose to use the gitlab server at AWI. In that case you need to get access to the ``esm_tools`` group. You can request access either online at ``https://gitlab.awi.de/esm_tools``, or via e-mail to ``dirk.barbi@awi.de``.
+2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
 
-3. Download the git repository ``esm_tools.git``, preferably from the github repository::
+3. Download the git repository ``esm_tools.git`` from GitHub::
 
      $> git clone https://github.com/esm-tools/esm_tools.git
- 
+
 4. In the new folder ``esm_tools``, run the installer::
 
      $> cd esm_tools
@@ -21,11 +21,11 @@ Ten Steps to a Running Model
    Also, a new file called ``~/.esmtoolsrc`` is added to your ``HOME``, which contains some very few details about the installation.
 
 5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works. Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
-   
+
 6. Go to the toplevel folder into which you want to install your model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to install FESOM2::
 
     $> mkdir ../model_codes
-    $> cd ../model_codes 
+    $> cd ../model_codes
     $> esm_master install-fesom-2.0
 
   You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access. Feel free to contact us if you don't know who the model developers are.

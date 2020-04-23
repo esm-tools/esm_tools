@@ -39,6 +39,7 @@ jobs:
        ./install.sh
     - name: Check binaries
       run: |
+        export PATH=${HOME}/.local/bin:${PATH}
         which esm_master
         which esm_runscripts
         which esm_versions

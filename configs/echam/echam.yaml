@@ -6,13 +6,14 @@ type: atmosphere
 
 metadata:
         Institute: MPI-Met
-        description: |
+        Description:
                 The ECHAM atmosphere model, major version 6
-                (someone from Hamburg)
-                paper citation
-        license_text: |
+        Authors: (someone in hamburg)
+        Publications:
+                a publication with a link <link.com>
+        License:
                 Please make sure you have a licence to use echam.In case you are
-                unsure, please contact redmine....
+                unsure, please contact redmine...
 bla: 999
 
 standalone_model: True

@@ -48,16 +48,22 @@ for config in configs:
             if metadata:
                 for key in metadata:
                     if key=="Publications":
-                        table.write("%s; `%s`_\n" % (key, metadata[key]))
+                        if type(metadata[key]) is list:
+                            public_string = key + '; '
+                            for publication in metadata[key]:
+                                public_string = public_string + "`{0}`_;".format(publication)
+                            table.write(public_string+'\n')
+                        else:
+                            table.write("%s; `%s`_\n" % (key, metadata[key]))
                     else:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:
-            rst.write("%s\n" % config)
+            rst.write("%s\n" % config.upper())
             rst.write("-"*len(config) + "\n")
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
             rst.write("   :delim: ;\n")
-            rst.write("   :stub-columns: 1\n")
+            rst.write("   :stub-columns: 1\n\n")
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

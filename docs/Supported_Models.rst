@@ -1,45 +1,52 @@
 ================
 Supported Models
 ================
-echam
+ECHAM
 -----
 .. csv-table::
    :file: metadata/echam.csv
    :delim: ;
    :stub-columns: 1
-fesom
+
+FESOM
 -----
 .. csv-table::
    :file: metadata/fesom.csv
    :delim: ;
    :stub-columns: 1
-icon
+
+ICON
 ----
 .. csv-table::
    :file: metadata/icon.csv
    :delim: ;
    :stub-columns: 1
-nemo
+
+NEMO
 ----
 .. csv-table::
    :file: metadata/nemo.csv
    :delim: ;
    :stub-columns: 1
-oifs
+
+OIFS
 ----
 .. csv-table::
    :file: metadata/oifs.csv
    :delim: ;
    :stub-columns: 1
-pism
+
+PISM
 ----
 .. csv-table::
    :file: metadata/pism.csv
    :delim: ;
    :stub-columns: 1
-xios
+
+XIOS
 ----
 .. csv-table::
    :file: metadata/xios.csv
    :delim: ;
    :stub-columns: 1
+

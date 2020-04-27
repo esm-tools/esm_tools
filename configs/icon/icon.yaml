@@ -19,7 +19,7 @@ metadata:
         Institute: MPI-Met
         Description: The ICON atmosphere model, major version 2
         Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
-        Publications:
+        Publications: paper citation
         License:
                 Please make sure you have a license to use ICON. In case you are
                 unsure, please contact redmine...

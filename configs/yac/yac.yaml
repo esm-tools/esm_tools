@@ -1,0 +1,15 @@
+model: yac
+environment_changes:
+    choose_computer.name:
+#        mistral:
+#            module_actions:
+#                - "purge"
+#                - "load intel/17.0.6"
+#                - "load intelmpi/2017.3.196"
+#            export_vars: []                       
+        ollie:
+            add_export_vars:
+                - "FCFLAGS=-fpp -g -O0"
+                - "CFLAGS=-O0 -g"
+#            add_module_actions:
+#                - "load fnarc"

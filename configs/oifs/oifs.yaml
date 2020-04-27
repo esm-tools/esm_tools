@@ -1,9 +1,18 @@
 # OIFS standalone (=AMIP?) YAML FILE
 #
 
+model: oifs
 executable: master.exe
 command: ${executable} -v ecmwf -e ${general.expid}
 version: 40r1
+type: atmosphere
+
+description: |
+        OpenIFS based on IFS cycle 40 release 1, ECMWF
+        Carver et al., in prep.
+
+license_text: |
+        ECMWF license. AWI and GEOMAR have licenses. 
 
 metadata:
         Institute: ECMWF
@@ -17,6 +26,9 @@ metadata:
                 unsure, please contact redmine...
 
 input_expid: ECE3
+resolution: TL159
+scenario: "historical"
+output: "default"
 
 wam: True
 wam_2w: True
@@ -63,51 +75,69 @@ namelist_dir: ${esm_namelist_dir}/oifs
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 
-choose_res:
-        T95:
+choose_resolution:
+        TQ95:
                 nx: 13280
                 time_step: 3600
-                OASIS_GRID_name: "048"
+                oasis_grid_name: "048"
                 res_number: 95
-                res_number_tl: ""
-        T159:
-                nx: 35718
-                time_step: 3600
-                OASIS_GRID_name: "080"
-                res_number: 159
                 res_number_tl: ""
         TL159:
                 nx: 35718
                 time_step: 3600
-                OASIS_GRID_name: "080"
+                oasis_grid_name: "080"
+                res_number: 159
+                res_number_tl: ""
+        TCO159:
+                nx: 35718
+                time_step: 3600
+                oasis_grid_name: "080"
                 res_number: L159
                 res_number_tl: 159
-        T255:
+        TL255:
                 nx: 88838
                 time_step: 2700
-                OASIS_GRID_name: "128"
+                oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: ""
-        T511:
+        TL511:
                 nx: 348528
                 time_step: 900
-                OASIS_GRID_name: "256"
+                oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: ""
-        T799:
+        TL799:
                 nx: 843490
                 time_step: 600
-                OASIS_GRID_name: "400"
+                oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: ""
-        T1279:
+        TL1279:
                 nx: 2140702
                 time_step: 600
-                OASIS_GRID_name: "640"
+                oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: ""
 
+choose_computer.cores_per_node:
+        24:
+                nproca: 96
+                nprocb: 1
+        36:
+                nproca: 108
+                nprocb: 1
+        48:
+                nproca: 96
+                nprocb: 1
+                
 
+before_step: 0
+next_step: 744
+#next_step: $(( ${end_date} / ${time_step} ))
+lresume: false
+
+restart_rate: 1
+restart_unit: "months"
 
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
@@ -125,24 +155,60 @@ choose_wam:
                         specwavein: specwavein
                         sfcwindin: sfcwindin
                         cdwavein: cdwavein
-
+                        
+                namelist_changes:
+                        fort.4:
+                                LWCOU: ".true."
+                                LWCOU2W: ".true."
+                        
+        0:
+                namelist_changes:
+                        fort.4:
+                                LWCOU: ".false."
+                                LWCOU2W: ".false." 
+                        
 
 choose_levels:
         L91:
                 levels_number: 91
+        L137:
+                levels_number: 137
 
 export_vars:
-        OIFS_EXPID: ${general.expid}
+        OIFS_EXPID: ${oifs.input_expid}
 
 
-bin_sources: ${bin_dir}/${executable}
+bin_sources: 
+        bin: ${bin_dir}/${executable}
 
 input_files:
-        ICMGG_INIT: ICMGG_INIT
-        ICMGG_INIUA: ICMGG_INIUA
-        ICMSH_INIT: ICMSH_INIT
+        ICMGG_INIT: ICMGG${oifs.input_expid}INIT
+        ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
+        ICMSH_INIT: ICMSH${oifs.input_expid}INIT
         # still missing: rtables/*, globbing not available yet (fix!)
         # also missing: modify_init for ensemble stuff
+
+choose_scenario:
+        "amip-prepifs":
+                forcing_files:
+                        sst: ICMCL${expid}INIT
+        "amip":
+                forcing_files:
+                        sst: ICMCL${expid}INIT_CMIP6
+        "highresmip":
+                forcing_files:
+                        sst: ICMCL${expid}INIT_HIGHRESMIP
+        "historical":
+                namelist_changes:
+                        fort.4:
+                                NAMCMIP:
+                                        LGHGCMIP5: ".true."
+        "piControl":
+                namelist_changes:
+                        fort.4:
+                                NAMCMIP:
+                                        LGHGPI: ".true."
+
 
 input_sources:
         ICMGG_INIT: ${input_dir}/${start_date!syear!smonth!sday}${hours}/ICMGG${input_expid}INIT
@@ -163,32 +229,52 @@ input_in_work:
         ICMSH_INIT: ICMSH${expid}INIT
 
 
+namelist_changes:
+        fort.4:
+                NAMRES:
+                        NFRRES: ${before_step}
+                        
+                NAMPAR0:
+                        NPROC: ${oifs.nproca}
+                        
+                NAMDYN:
+                        TSTEP: ${oifs.time_step}
+                        
+                NAMCT0:
+                        CNMEXP: ${oifs.expid}
+                        NSTOP: ${oifs.next_step}
+                        
+                
+choose_output:
+        "default":
+                namelist_changes:
+                        fort.4:
+                                NAMCT0:
+                                        NFRPOS: 6
+                                        NFRHIS: 6
+                                
+        "12hr":
+                namelist_changes:
+                        fort.4:
+                                NAMCT0:
+                                        NFRPOS: 12
+                                        NFRHIS: 12
+                                
+                        
 
-environment_changes:
-        add_export_vars:        
-                - 'PERL5LIB="/usr/lib64/perl5"'
-                - 'PATH=$PATH:/home/ollie/jstreffi/fcm/bin/'
-
-                - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api/include'
-                - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api/lib -lgrib_api_f90 -lgrib_api"'
-                - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api/bin"'
-
-                - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-                - 'OIFS_OASIS_BASE=${model_dir}/../lib'
-                - 'OIFS_OASIS_INCLUDE=-I$OIFS_OASIS_BASE/../oasis/build/lib/psmile'
-                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE -lpsmile -lmct -lmpeu -lscrip"'
-
-                - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
-                - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
-                - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
-                - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
-
-                - 'OIFS_FC=$FC'
-                - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian"'
-                - 'OIFS_FFIXED=""'
-                - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
 
 
-                - 'OIFS_CC=$CC'
-                - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
-                - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+choose_version:
+        40r1:
+                environment_changes:
+                        add_export_vars:        
+                                - 'OIFS_FFIXED="-fixed"' 
+
+        43r3:
+                environment_changes:
+                        add_export_vars:        
+                                - 'OIFS_FFIXED=""'
+                                - 'OIFS_OASIS_BASE="${general.model_dir}"'
+                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+

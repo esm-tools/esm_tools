@@ -67,7 +67,10 @@ value : "echam default"
 choose_switch:
         1:
                 value: "echam switch"
-# choices
+# choice
+#
+
+nprocrad: 0 
 
 choose_resolution:
         T63:
@@ -80,14 +83,10 @@ choose_resolution:
                                 nproca: 24
                                 nprocb: 18
  
-# kh 20.03.20 nprocrad must not be set here, because it will then also be used for the standard ECHAM
-#                               nprocrad: 432
                         36:
                                 nproca: 24
                                 nprocb: 18
 
-# kh 20.03.20 nprocrad must not be set here, because it will then also be used for the standard ECHAM
-#                               nprocrad: 432
         T31:
                 levels: "L19"
                 time_step: 450
@@ -118,9 +117,13 @@ choose_version:
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable 
                 dataset: r0007
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+                                        nprocrad: "${nprocrad}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
 
-                nproca: 24
-                nprocb: 18
                 nprocrad: 432
                 lrad_async: true
 
@@ -472,16 +475,7 @@ namelist_changes:
                 parctl:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
-                        nprocrad: "${nprocrad}"
 
-                        #couplflds: [sst_atmo, sit_atmo, sie_atmo]
-
-                        #coupling_files:
-                        #[[couplflds --> field]]: 
-                        #grid: atmo
-
-                radctl:
-                        lrad_async: "${lrad_async}"
 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]

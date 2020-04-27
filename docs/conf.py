@@ -49,9 +49,9 @@ for config in configs:
                 for key in metadata:
                     if key=="Publications":
                         if type(metadata[key]) is list:
-                            public_string = key + '; '
+                            public_string = key
                             for publication in metadata[key]:
-                                public_string = public_string + "`{0}`_;".format(publication)
+                                public_string = public_string + "; `{0}`_".format(publication)
                             table.write(public_string+'\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))

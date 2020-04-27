@@ -8,6 +8,13 @@ ECHAM
    :delim: ;
    :stub-columns: 1
 
+ESM-INTERFACE
+-------------
+.. csv-table::
+   :file: metadata/esm-interface.csv
+   :delim: ;
+   :stub-columns: 1
+
 FESOM
 -----
 .. csv-table::
@@ -47,6 +54,13 @@ XIOS
 ----
 .. csv-table::
    :file: metadata/xios.csv
+   :delim: ;
+   :stub-columns: 1
+
+YAC
+---
+.. csv-table::
+   :file: metadata/yac.csv
    :delim: ;
    :stub-columns: 1
 

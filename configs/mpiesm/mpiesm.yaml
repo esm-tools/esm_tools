@@ -59,7 +59,7 @@ mpiom:
 #########################################################################################
 
 oasis3mct:
-        
+
         model_dir: ${general.model_dir}/oasis
 
         process_ordering: #V1?
@@ -71,7 +71,31 @@ oasis3mct:
         o2a_seq: 1 #V3?
         a2o_seq: 1 #V3?
 
-        coupling_time_step: 86400
+        coupling_time_step: 86400 #V17
+        coupling_target_fields:
+                o2a_flux: #V5
+                        - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
+                        - 'SITATMOS <--conserv-- SITOCEAN'
+                        - 'SICATMOS <--conserv-- SICOCEAN'
+                        - 'SNTATMOS <--conserv-- SNTOCEAN'
+                        - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector?
+                        - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
+                        - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
+                        - 'CO2ATMOS <--conserv-- CO2OCEAN'
+                a2o_flux: #V10
+                        - 'FRIOCEAN <--conserv-- FRIATMOS' #V11? conserv scalar?
+                        - 'FRWOCEAN <--conserv-- FRWATMOS'
+                        - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
+                        - 'TYWOCEAS <--bicubic-- TYWATMOU'
+                        - 'TXIOCEAS <--bicubic-- TXIATMOU'
+                        - 'TYIOCEAS <--bicubic-- TYIATMOU'
+                        - 'RHIOCEAN <--conserv-- RHIATMOS' #V14? V15? conserv scalar?
+                        - 'CHIOCEAN <--conserv-- CHIATMOS'
+                        - 'NHWOCEAN <--conserv-- NHWATMOS'
+                        - 'SHWOCEAN <--conserv-- SHWATMOS'
+                        - 'WSVOCEAN <--conserv-- WSVATMOS'
+                        - 'CO2CONOC <--conserv-- CO2CONAT'
+                        - 'CO2FLXOC <--conserv-- CO2FLXAT' #V16? V15?
 
         coupling_directions:
                 'mpiom->atmo':
@@ -80,3 +104,65 @@ oasis3mct:
                 'atmo->mpiom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average #?
+                        remapping:
+                                - conserv:
+                                        search_bin: latitude #V7
+                                        nb_of_search_bins: 40 #V7
+                                        normalization: fracarea #V7?
+                                        order: first #V7
+                                - mapping:
+                                        mapname: rmp_oces_to_atmo_CONSERV_FRACAREA_${RES_mpiesm}.nc #V19?
+                                        map_regrid_on: src #V19?
+                conserv2:
+                        time_transformation: instant
+                        remapping:
+                                - conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                conserv3:
+                        time_transformation: instant
+                        remapping:
+                                - conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                conserv4:
+                        time_transformation: instant
+                        remapping:
+                                - conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_T63_ORCA05.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: global
+                bicubic:
+                        time_transformation: instant #?
+                        remapping:
+                                - bicubic:
+                                        search_bin: latitude #V13
+                                        nb_of_search_bins: 40 #V13
+                                - mapping:
+                                        mapname: rmp_atmo_to_oces_BICUBIC_D_${RES_mpiesm}.nc #V18?
+                                        map_regrid_on: dst #V18?
+

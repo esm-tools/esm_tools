@@ -79,9 +79,15 @@ choose_resolution:
                         24:
                                 nproca: 24
                                 nprocb: 18
+ 
+# kh 20.03.20 nprocrad must not be set here, because it will then also be used for the standard ECHAM
+#                               nprocrad: 432
                         36:
                                 nproca: 24
                                 nprocb: 18
+
+# kh 20.03.20 nprocrad must not be set here, because it will then also be used for the standard ECHAM
+#                               nprocrad: 432
         T31:
                 levels: "L19"
                 time_step: 450
@@ -99,9 +105,24 @@ choose_version:
                 dataset: r0007
         6.3.04p1-esm-interface:
                 dataset: r0007
+        6.3.04p1-esm-interface-yac:
+                dataset: r0007
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
         6.3.05p2:
                 repo_tag: 6.3.05p2
                 dataset: r0007
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+
+        6.3.05p2-concurrent_radiation:
+                repo_tag: not_applicable 
+                dataset: r0007
+
+                nproca: 24
+                nprocb: 18
+                nprocrad: 432
+                lrad_async: true
 
 choose_scenario:
         "PI-CTRL":
@@ -451,13 +472,16 @@ namelist_changes:
                 parctl:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
-
+                        nprocrad: "${nprocrad}"
 
                         #couplflds: [sst_atmo, sit_atmo, sie_atmo]
 
                         #coupling_files:
                         #[[couplflds --> field]]: 
                         #grid: atmo
+
+                radctl:
+                        lrad_async: "${lrad_async}"
 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]

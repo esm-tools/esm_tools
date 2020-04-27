@@ -37,6 +37,8 @@ components:
                         - "6.3.02p4"
                         - "6.3.05p2"  
                         - "6.3.04p1-esm-interface"
+                        - "6.3.04p1-esm-interface-yac"
+                        - "6.3.05p2-concurrent_radiation"
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
                 choose_version:
@@ -52,6 +54,16 @@ components:
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
                                 branch: "using_esm_interfaces"
                                 destination: "echam-6.3.04p1"
+                        "6.3.04p1-esm-interface-yac":
+                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+                                branch: "using_esm_interfaces_yac"
+                                destination: "echam-6.3.04p1"
+
+                        "6.3.05p2-concurrent_radiation":
+                                git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
+                                branch: "concurrent_radiation_cpl_feom"
+                                comp_command: "./config/createMakefiles.pl; autoreconf -i --force; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6"
+                                clean_command: "rm -rf src/echam/bin; make clean"
         "esm-interface":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
                 comp_command: "${default.comp_command}"
@@ -65,7 +77,7 @@ components:
                                 comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
                         "yac":
                                 branch: "include_yac"
-                                comp_command: "${default.comp_command}"
+                                comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
 
         "fesom":
                 choose_version: 
@@ -90,11 +102,18 @@ components:
                                 branch: "fesom2_using_esm-interface"
                                 destination: "fesom-2.0"
                                 install_bins: "bin/fesom.x"
+                        "2.0-esm-interface-yac":
+                                git-repository: 
+                                        - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
+                                branch: "using_esm_interfaces_yac"
+                                destination: "fesom-2.0"
+                                install_bins: "bin/fesom.x"
                 available_versions:
                         - "1.4"
                         - "2.0"
                         - "2.0-o"
                         - "2.0-esm-interface"
+                        - "2.0-esm-interface-yac"
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
 
@@ -192,6 +211,8 @@ components:
                 # make sure all oasis versions are in the repo, with correct version branches          
         
         "oifs":
+                requires: 
+                        - oasis3-mct-4.0
                 install_bins: "make/esm/oifs/bin/master.exe"
                 comp_command: "cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                 clean_command: "rm -rf make/esm"                
@@ -205,8 +226,10 @@ components:
                         40r1-agcm:
                                 compile_command: "export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg"
                         43r3: 
-                                branch: "master"
-                                git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                                #branch: "master"
+                                #git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                                git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                         43r3-awi: 
                                 branch: "master"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
@@ -312,7 +335,8 @@ components:
                 git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"
                 available_versions:
                         - "1.5.4"
-                conf_command: 'autoreconf -iv; ./configure CC=mpiicc FC=mpiifort FCFLAGS="-fpp -g -O0" CFLAGS="-O0 -g" LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
+                #conf_command: 'autoreconf -iv; ./configure CC=mpiicc FC=mpiifort FCFLAGS="-fpp -g -O0" CFLAGS="-O0 -g" LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
+                conf_command: 'autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
                 comp_command: "make"
                 clean_command: "make clean"
 
@@ -324,7 +348,16 @@ couplings:
                         - "oasis3-mct-2.8" 
                 coupling_changes:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt" 
+
+        "fesom-1.4+echam-6.3.05p2-concurrent_radiation":
+                components:
+                        - "echam-6.3.05p2-concurrent_radiation"
+                        - "fesom-1.4"
+                        - "oasis3-mct-2.8" 
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux"
 
         "fesom-2.0+echam-6.3.04p1":
                 components:
@@ -345,6 +378,26 @@ couplings:
                         - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
  
+        "fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac":
+                components:
+                        - "oasis3-mct-2.8"
+                        - "yac-1.5.4"
+                        - "esm-interface-yac"
+                        - "echam-6.3.04p1-esm-interface-yac"
+                        - "fesom-2.0-esm-interface-yac"
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+ 
+        "fesom-2.0+echam-6.3.05p2-concurrent_radiation":
+                components:
+                        - "echam-6.3.05p2-concurrent_radiation"
+                        - "fesom-2.0"
+                        - "oasis3-mct-2.8" 
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux"
+
         "fesom-2.0+oifs-43r3-awi":
                 components:
                         - "oifs-43r3-awi"
@@ -464,6 +517,7 @@ setups:
                         - "3.0"
                         - "3.1"
                         - "2.0-esm-interface"
+                        - "2.0-esm-interface-yac"
 
                 choose_version:
                         "1.0":
@@ -484,6 +538,25 @@ setups:
                         "2.0-esm-interface":
                                 couplings:                        
                                         - "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface"
+                        "2.0-esm-interface-yac":
+                                couplings:                        
+                                        - "fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac"
+
+        awicmcr:
+                available_versions: 
+                        - "1.0"
+                        - "CMIP6"
+                        - "2.0"
+                choose_version:
+                        "1.0":
+                                couplings:                        
+                                        - "fesom-1.4+echam-6.3.05p2-concurrent_radiation"
+                        "CMIP6":
+                                couplings:                        
+                                        - "fesom-1.4+echam-6.3.05p2-concurrent_radiation"
+                        "2.0":
+                                couplings:                        
+                                        - "fesom-2.0+echam-6.3.05p2-concurrent_radiation"
 
         awicm-recom:
                 available_versions:

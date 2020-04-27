@@ -67,3 +67,6 @@ Frequent Errors
         $> export LC_ALL=en_US.utf-8
         $> export LANG=en_US.utf-8
 
+2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
+
+   **A**: Add your configuration in the file configs/esm_master/setups2models.yaml

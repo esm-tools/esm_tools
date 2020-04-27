@@ -3,8 +3,8 @@
 #########################################################################################
 
 general:
-        model: awicm
-        #model_dir: ${esm_master_dir}/awicm-${version}
+        model: awicmcr
+        #model_dir: ${esm_master_dir}/awicmcr-${version}
 
         coupled_setup: True
 
@@ -44,20 +44,23 @@ echam:
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.04p1"
+        version: "6.3.05p2-concurrent_radiation"
 
-# kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
+# kh 20.03.20 parameter values may be superseded by section choose_computer.cores_per_node: ... nproca ...,
+# or by section choose_version: ... nproca ..., ... in esm_tools/configs/echam/echam.yaml
         choose_general.resolution:
                 T63_CORE2:
-                        nproca: 24
-                        nprocb: 18
+                       nproca: 24
+                       nprocb: 18
+                       nprocrad: 432
                 T63_REF87K:
                         nproca: 24
                         nprocb: 18
+                        nprocrad: 432
                 T63_REF:
                         nproca: 24
                         nprocb: 18
-
+                        nprocrad: 432
 
 #########################################################################################
 

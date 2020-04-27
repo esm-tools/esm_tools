@@ -11,6 +11,21 @@ include_models:
 executable:     nemo.exe
 version:        3.6
 
+metadata:
+        Organization: Nucleus for European Modelling of the Ocean
+        Institute: IPSL
+        Description:
+                NEMO standing for Nucleus for European Modelling of the Ocean is a
+                state-of-the-art modelling framework for research activities and
+                forecasting services in ocean and climate sciences, developed in a
+                sustainable way by a European consortium.
+        Authors: Gurvan Madec and NEMO System Team (nemo_st@locean-ipsl.umpc.fr
+        Publications:
+                NEMO ocean engine <http://doi.org/10.5281/zenodo.1464816>
+        License:
+                Please make sure you have a license to use NEMO. In case you are
+                unsure, please contact redmine...
+
 resolution:     ORCA05
 time_step:      1800
 

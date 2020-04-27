@@ -85,11 +85,13 @@ export_vars:
         - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
         - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
         - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        - "ZLIBROOT=/usr"
 
         - "PERL5LIB=/usr/lib64/perl5"
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
@@ -115,17 +117,22 @@ export_vars:
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
         - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
         - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
         - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
         - 'OIFS_FC=${mpifc}'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED="-fixed"'
+        - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
         - 'OIFS_CC=${cc}'
@@ -138,6 +145,8 @@ choose_useMPI:
                         - "unload intel"
                         - "load intel/18.0.4 intelmpi/2018.5.288"
                         - "load autoconf/2.69"
+                        - "load libtool/2.4.6"
+                        - "load automake/1.14.1"
                 fc: mpiifort
                 f77: mpiifort
                 mpifc: mpiifort

@@ -20,6 +20,7 @@ Contributors
 * Sara Khosravi <sara.khosravi@awi.de>
 * Fatemeh Chegini <fatemeh.chegini@mpimet.mpg.de>
 * Joakim Kjellsson <jkjellsson@geomar.de>
+* Miguel Andrés-Martínez <miguel.andres-martinez@awi.de>
 * ...
 
 Beta Testers

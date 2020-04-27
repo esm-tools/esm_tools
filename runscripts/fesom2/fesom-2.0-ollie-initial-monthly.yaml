@@ -1,0 +1,21 @@
+general:
+        setup_name: fesom
+        compute_time: "00:08:00"
+        initial_date: '2000-01-01'
+        final_date: '2000-03-31' 
+        base_dir: "/work/ollie/mandresm/esm_yaml_test/"
+        nyear: 0
+        nmonth: 1
+
+fesom:
+        version: 2.0
+        model_dir: "/home/ollie/mandresm/model_codes/fesom-2.0/"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        post_processing: 0
+        scenario: "PI-CTRL"

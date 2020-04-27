@@ -1,0 +1,12 @@
+# MPIOM YAML CONFIGURATION FILE
+#
+
+model: mpiom
+branch: 1.6.3
+version: "1.6.3"
+
+comp_executable: mpiom.x
+executable: mpiom
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"

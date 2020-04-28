@@ -29,6 +29,13 @@ import yaml
 
 config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
 configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
+with open(os.path.join("../configs/esm_master/setups2models.yaml")) as setups2models:
+    d = yaml.load(setups2models, Loader=yaml.FullLoader)
+    components = d.get("components")
+    configs = []
+    for comp in components:
+        if os.path.exists("../configs/"+comp+"/"+comp+".yaml"):
+            configs.append(comp)
 with open("Supported_Models.rst", "w") as rst:
     rst.write("================\n")
     rst.write("Supported Models\n")
@@ -37,13 +44,26 @@ for config in configs:
     with open(os.path.join("../configs/", config, config+".yaml")) as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
         metadata = d.get("metadata")
-        if metadata:
-            with open(config+"_metadata.csv", "w") as table:
+        with open("metadata/"+config+".csv", "w") as table:
+            if metadata:
                 for key in metadata:
-                    table.write("%s, %s\n" % (key, metadata[key]))
-            with open("Supported_Models.rst", "a") as rst:
-                rst.write(".. csv-table:: %s\n" % config)
-                rst.write("   :file: %s\n" % (config+"_metadata.csv"))
+                    if key=="Publications":
+                        if type(metadata[key]) is list:
+                            public_string = key
+                            for publication in metadata[key]:
+                                public_string = public_string + "; `{0}`_".format(publication)
+                            table.write(public_string+'\n')
+                        else:
+                            table.write("%s; `%s`_\n" % (key, metadata[key]))
+                    else:
+                        table.write("%s; %s\n" % (key, metadata[key]))
+        with open("Supported_Models.rst", "a") as rst:
+            rst.write("%s\n" % config.upper())
+            rst.write("-"*len(config) + "\n")
+            rst.write(".. csv-table::\n")
+            rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
+            rst.write("   :delim: ;\n")
+            rst.write("   :stub-columns: 1\n\n")
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

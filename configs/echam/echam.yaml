@@ -74,13 +74,8 @@ choose_resolution:
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 18
-                        36:
-                                nproca: 24
-                                nprocb: 18
+                nproca: 24
+                nprocb: 18
         T31:
                 levels: "L19"
                 time_step: 450
@@ -98,7 +93,7 @@ choose_version:
                 dataset: r0007
         6.3.05p2:
                 repo_tag: 6.3.05p2
-                dataset: r0007
+                dataset: r0008
 
 choose_scenario:
         "PI-CTRL":
@@ -318,17 +313,17 @@ forcing_in_work:
 
 forcing_additional_information:
         aerocoarse:
-                - need_year_before
-                - need_year_after
+                - need_timestep_before
+                - need_timestep_after
         aerofin:
-                - need_year_before
-                - need_year_after
+                - need_timestep_before
+                - need_timestep_after
         aerofarir:
-                - need_year_before
-                - need_year_after
+                - need_timestep_before
+                - need_timestep_after
         ozone:
-                - need_year_before
-                - need_year_after
+                - need_timestep_before
+                - need_timestep_after
 
 streams:
         - echam

@@ -29,6 +29,13 @@ ICON
    :delim: ;
    :stub-columns: 1
 
+MPIOM
+-----
+.. csv-table::
+   :file: metadata/mpiom.csv
+   :delim: ;
+   :stub-columns: 1
+
 NEMO
 ----
 .. csv-table::

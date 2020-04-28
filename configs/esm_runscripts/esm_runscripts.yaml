@@ -7,8 +7,9 @@ choose_job_type:
                         - "_write_finalized_config"
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
-                        - "_show_simulation_info"  
-                        - "write_something" 
+                        - "_show_simulation_info"
+                        # call your plugin whereever it is needed  
+                        #- "write_something" 
                         - "copy_files_to_thisrun"
                         - "modify_namelists"  
                         - "modify_files"

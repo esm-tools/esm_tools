@@ -24,11 +24,11 @@ core:
                         - "write_simple_runscript"
                         - "submit"
 
-
-plugins:
-        my_plugin:
-                location: "/work/ollie/dbarbi/my_plugin"
-                git-url: ""
-                my_plugin:
-                        - "write_something"
+# include plugins like this:
+#plugins:
+#        my_plugin:
+#                location: "/work/ollie/dbarbi/my_plugin"
+#                git-url: ""
+#                my_plugin:
+#                        - "write_something"
 

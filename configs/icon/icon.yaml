@@ -19,7 +19,8 @@ metadata:
         Institute: MPI-Met
         Description: The ICON atmosphere model, major version 2
         Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
-        Publications: paper citation
+        Publications:
+                'ICON‐A, the Atmosphere Component of the ICON Earth System Model: I. Model Description <https://doi.org/10.1029/2017MS001242>'
         License:
                 Please make sure you have a license to use ICON. In case you are
                 unsure, please contact redmine...

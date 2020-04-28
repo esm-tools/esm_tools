@@ -8,9 +8,9 @@ metadata:
         Institute: MPI-Met
         Description:
                 The ECHAM atmosphere model, major version 6
-        Authors: (someone in hamburg)
+        Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
         Publications:
-                a publication with a link <link.com>
+                'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
                 Please make sure you have a license to use ECHAM. In case you are
                 unsure, please contact redmine...

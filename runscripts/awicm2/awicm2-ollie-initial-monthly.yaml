@@ -1,0 +1,24 @@
+general:
+    setup_name: "awicm"
+    compute_time: "00:15:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-02-29"
+    base_dir: "/work/ollie/dbarbi/esm_yaml_test/"
+    nmonth: 1
+    nyear: 0
+
+awicm:
+    version: "2.0"
+    postprocessing: false
+    scenario: "PI-CTRL"
+    model_dir: "/work/ollie/dbarbi/modelcodes/awicm-2.0/"
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/work/ollie/pool/FESOM/"
+    mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: 0

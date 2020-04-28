@@ -3,7 +3,7 @@ general:
     compute_time: "00:15:00"
     initial_date: "2000-01-01"
     final_date: "2000-02-29"
-    base_dir: "/work/ollie/pgierz/esm_tools_dev/"
+    base_dir: "/work/ollie/dbarbi/esm_yaml_tests/"
     nmonth: 1
     nyear: 0
 
@@ -11,7 +11,7 @@ awicm:
     version: "CMIP6"
     postprocessing: false
     scenario: "PI-CTRL"
-    model_dir: "/home/ollie/pgierz/Models/awicm-CMIP6/"
+    model_dir: "/work/ollie/dbarbi/modelcodes/awicm-CMIP6/"
 
 fesom:
     pool_dir: "/work/ollie/pool/FESOM/"

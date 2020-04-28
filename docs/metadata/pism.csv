@@ -1,0 +1,5 @@
+Institute; UAF and PIK
+Description; The Parallel Ice Sheet Model (PISM) is an open source, parallel, high-resolution ice sheet model.
+Authors; Ed Bueler, Jed Brown, Anders Levermann, Ricarda Winkelmann and many more (uaf-pism@alaska.edu)
+Publications; `Shallow shelf approximation as a "sliding law" in a thermomechanically coupled ice sheet model <https://doi.org/10.1029/2008JF001179>`_; `The Potsdam parallel ice sheet model (PISM-PIK) - Part 1. Model description <https://doi.org/10.5194/tc-5-715-2011>`_
+License; GPL 3.0

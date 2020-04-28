@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # PG: Here, we grab the main yaml for each model stated in configs, and get a metadata chapter:
 import yaml
-
+os.mkdir('./metadata')
 config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
 configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
 with open(os.path.join("../configs/esm_master/setups2models.yaml")) as setups2models:

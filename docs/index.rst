@@ -1,10 +1,6 @@
 Welcome to ESM Tools's documentation!
 ======================================
 
-.. include:: ../README.rst
-
-
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -22,6 +18,8 @@ Welcome to ESM Tools's documentation!
    contributing
    authors
    history
+
+.. exclude:: ../README.rst
 
 Indices and tables
 ==================

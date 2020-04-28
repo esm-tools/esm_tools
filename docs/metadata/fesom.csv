@@ -1,5 +1,0 @@
-Institute; Alfred Wegener Institute
-Description; Multiresolution sea ice-ocean model that solves the equations of motion on unestructured meshes
-Authors; Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
-Publications; `Scalability and some optimization of the Finite-volumE Sea ice–Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>`_
-License; Please make sure you have a licence to use FESOM. In case you are unsure, please contact redmine...

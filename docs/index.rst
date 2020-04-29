@@ -1,10 +1,6 @@
 Welcome to ESM Tools's documentation!
 ======================================
 
-.. figure:: ESM-TOOLS_LOGO_RGB_72dpi.jpg 
-   :scale: 50 %
-
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -13,13 +9,17 @@ Welcome to ESM Tools's documentation!
    ten_steps
    installation
    transitioning
+   Supported_Models
    esm_master
    esm_versions
+   esm_runscripts
    faq
    packages
    contributing
    authors
    history
+
+.. exclude:: ../README.rst
 
 Indices and tables
 ==================

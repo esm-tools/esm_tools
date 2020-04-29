@@ -103,7 +103,7 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
-                repo_tag: 6.3.05p2-foci
+                repo_tag: not_set 
                 dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"

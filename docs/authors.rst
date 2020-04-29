@@ -8,6 +8,7 @@ Development Lead
 * Dirk Barbi <dirk.barbi@awi.de>
 * Paul Gierz <paul.gierz@awi.de>
 * Nadine Wieters <nadine.wieters@awi.de>
+* Miguel Andrés-Martínez <miguel.andres-martinez@awi.de>
 
 Project Management
 ------------------

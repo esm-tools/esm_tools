@@ -27,7 +27,7 @@ Apart from that, the new esm_master offers certain new functionality::
 
 If the user wants to define own shortcut commands, that can be done by editing ``esm_tools/configs/esm_master/esm_master.yaml``. New wrappers for the version control software can be e.g. added in ``esm_tools/configs/vcs/git.yaml``. Adding commands in these configuration files is sufficient that they show up in the list of targets.
 
-The details about models, setups, etc. are now to be found in ``esm_tools/configs/esm_master/setups2models.yaml``. This file is a strucutred list instead of a barely readable, and rapidly growing, makefile. If you want to change details of your model, or add new components, this is where it should be put. Please refer to the chapter ESM-Master down below for further details.
+The details about models, setups, etc. are now to be found in ``esm_tools/configs/esm_master/setups2models.yaml``. This file is a strucutred list instead of a barely readable, and rapidly growing, makefile. If you want to change details of your model, or add new components, this is where it should be put. Please refer to the chapter :ref:`esm_master:ESM Master` for further details.
 
 
 ESM-Environment
@@ -65,7 +65,7 @@ Also the last two lines of the normel runscript for the shell version of the too
 Functions --> Configs + Python Packages
 ---------------------------------------
 
-The shell functions, which used to be in ``esm-runscripts/functions/all``, are gone. That was basically the whole point of re-coding the tools, to get rid of this mixture of model configuration, wild shell hacks, and in general lots of annoying problems. What used to be in the functions is now seperated into python code (which is actually doing things, but doesn't have any model-, setup- or machine specific information), and yaml configurations (which are basically structured lists of all the information we have, including mesh resolutions, scenario simulation forcings,... Anything really that you could possibly know about running a simulation belongs into the yaml configs that you can now find in ``esm_runscripts/configs``, while ESM-Tools functionality is coded in the python packages.
+The shell functions, which used to be in ``esm-runscripts/functions/all``, are gone. That was basically the whole point of re-coding the tools, to get rid of this mixture of model configuration, wild shell hacks, and in general lots of annoying problems. What used to be in the functions is now seperated into python code (which is actually doing things, but doesn't have any model-, setup- or machine specific information), and yaml configurations (which are basically structured lists of all the information we have, including mesh resolutions, scenario simulation forcings,...). Anything really that you could possibly know about running a simulation belongs into the yaml configs that you can now find in ``esm_runscripts/configs``, while ESM-Tools functionality is coded in the python packages.
 
 
 

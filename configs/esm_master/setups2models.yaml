@@ -35,6 +35,7 @@ components:
                 available_versions:
                         - "6.3.04p1"
                         - "6.3.02p4"
+                        - "6.3.05p2"  
                         - "6.3.05p2-foci"  
                         - "6.3.04p1-esm-interface"
                         - "6.3.04p1-esm-interface-yac"
@@ -278,9 +279,8 @@ components:
                                 comp_command: "cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg"
                         40r1-agcm:
                                 compile_command: "export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg"
-                        43r3: 
-                                #branch: "master"
-                                #git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
+                        43r3:
+                                branch: "oifs-deck"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
                                 comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                         43r3-awi: 
@@ -530,13 +530,29 @@ couplings:
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
-        "mpiom-1.6.3p2+echam-6.3.05p2":
+        "mpiom-1.6.2p3+echam-6.3.02p4":
                 components:
-                        - "echam-6.3.05p2"
+                        - "echam-6.3.02p4"
+                        - "mpiom-1.6.2p3"
+                        - "oasis3mct-2.8"
+                coupling_changes:
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt"
+
+        "mpiom-1.6.3+echam-6.3.04p1":
+                components:
+                        - "echam-6.3.04p1"
+                        - "mpiom-1.6.3"
+                        - "oasis3mct-2.8"
+                coupling_changes:
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+
+        "mpiom-1.6.3p2+echam-6.3.05p2-foci":
+                components:
+                        - "echam-6.3.05p2-foci"
                         - "mpiom-1.6.3p2"
                         - "oasis3mct-2.8"
                 coupling_changes:
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-foci/CMakeLists.txt"
 
         "pism-snowflake1.0+echam-6.3.04p1":
                 components:
@@ -663,6 +679,24 @@ setups:
                                 couplings: 
                                         - "nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs40r1-foci"
                 
+
+        mpiesm:
+                available_versions:
+                        - "1.2.00p4"
+                        - "1.2.01"
+                        - "1.2.01p1"
+
+                choose_version:
+                        "1.2.00p4":
+                                couplings:
+                                        - "mpiom-1.6.2p3+echam-6.3.02p4"
+                        "1.2.01":
+                                couplings:
+                                        - "mpiom-1.6.3+echam-6.3.04p1"
+                        "1.2.01p1":
+                                couplings:
+                                        - "mpiom-1.6.3p2+echam-6.3.05p2"
+
         oifsamip:
                 couplings:
                         - "oifs-40r1+amip"

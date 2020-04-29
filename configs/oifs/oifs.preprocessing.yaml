@@ -30,6 +30,20 @@ postprocess_method_definitions:
         cdo_chain:
                 - "something..."
 
+#
+# Here are the commands we need to change date of initial conditions
+#
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMGG${INPUT_EXP_ID_oifs}INIUA ICMGG${OIFS_EXP_ID}INIUA
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMGG${INPUT_EXP_ID_oifs}INIT ICMGG${OIFS_EXP_ID}INIT
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMSH${INPUT_EXP_ID_oifs}INIT ICMSH${OIFS_EXP_ID}INIT
+# For WAM:
+# for file in cdwavein sfcwindin specwavein uwavein
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/${file} ${file}
+# 
+# Crop the surface forcing file
+# cdo -seldate,${start_date},${end_date} ${oifs_INPUT_DIR}/${y}/${ICMCL_FILE} ICMCL${OIFS_EXP_ID}INIT
+#
+
 postprocess_task_definitions:  # in postprocessing.yaml
   mm:
     method: "cdo"

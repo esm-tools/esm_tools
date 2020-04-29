@@ -32,6 +32,7 @@ clim_dir: ${input_dir}/../
 icmcl_dir: ${input_dir}
 icmcl_file: ICMCLgu5aINIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
+ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
@@ -124,13 +125,13 @@ choose_resolution:
                 time_step: 3600
                 oasis_grid_name: "080"
                 res_number: 159
-                res_number_tl: 159l_2
+                res_number_tl: "159_4"
         TCO199:
                 nx: 167200
                 time_step: 1800
                 oasis_grid_name: "200"
                 res_number: 199
-                res_number_tl: 199_4
+                res_number_tl: "199_4"
         TL255:
                 nx: 88838
                 time_step: 2700
@@ -142,7 +143,7 @@ choose_resolution:
                 time_step: 1200
                 oasis_grid_name: 400
                 res_number: 399
-                res_number_tl: 399_4
+                res_number_tl: "399_4"
         TL511:
                 nx: 348528
                 time_step: 900
@@ -248,7 +249,7 @@ input_files:
         ICMGG_INIT: ICMGG_INIT
         ICMGG_INIUA: ICMGG_INIUA
         ICMSH_INIT: ICMSH_INIT
-        ICMCL_INIT: ICMCL_INIT
+        ifsdata: ifsdata
         rtables: rtables
         vtables: vtables
         tl_data: tl_data
@@ -260,22 +261,7 @@ input_files:
 ##
 
 forcing_files:
-        C11CLIM: C11CLIM
-        C12CLIM: C12CLIM 
-        C22CLIM: C22CLIM
-        CCL4CLIM: CCL4CLIM
-        CH4CLIM: CH4CLIM
-        CO2CLIM: CO2CLIM
-        ECOZC: ECOZC
-        GCH4CLIM: GCH4CLIM
-        GCO2CLIM: GCO2CLIM
-        GOZOCLIM: GOZOCLIM
-        MCICA: MCICA
-        N2OCLIM: N2OCLIM
-        NO2CLIM: NO2CLIM
-        OZOCLIM: OZOCLIM 
-        RADRRTM: RADRRTM
-        RADSRTM: RADSRTM
+        ICMCL_INIT: ICMCL_INIT
 
 ##
 ## specifics for 40r1 and 43r3
@@ -322,8 +308,8 @@ choose_version:
                                         
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
-                                        CNMEXP: ${oifs.input_expid}
-                                        CUSTOP: ${oifs.next_step}
+                                        CNMEXP: "${oifs.input_expid}"
+                                        CUSTOP: "t${oifs.next_step}"
                 
                 environment_changes:
                         add_export_vars: 
@@ -334,18 +320,7 @@ choose_version:
                                 - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
                                         
                 
-                add_forcing_files:
-                        aerosol_cams_clim: aerosol_cams_clim
-                        aerosol_ifs_rrtm: aerosol_ifs_rrtm
-                        aerosol_ifs_rrtm_AB: aerosol_ifs_rrtm_AB
-                        aerosol_ifs_rrtm_tegen: aerosol_ifs_rrtm_tegen
-                        baran_ice_scattering_rrtm: baran_ice_scattering_rrtm
-                        es_droplet_scattering_rrtm: es_droplet_scattering_rrtm
-                        fu_ice_scattering_rrtm: fu_ice_scattering_rrtm
-                        mcica_gamma: mcica_gamma
-                        mcica_lognormal: mcica_lognormal
-                        slingo_droplet_scattering_rrtm: slingo_droplet_scattering_rrtm
-                        socrates_droplet_scattering_rrtm: socrates_droplet_scattering_rrtm 
+                
 
 ##
 ## specifics for scenarios
@@ -385,7 +360,6 @@ input_sources:
         ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
         ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
         ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
-        ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
         wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
         wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
         wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
@@ -396,6 +370,7 @@ input_sources:
         cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
         rtables: ${rtables_dir}/*
         vtables: ${vtables_dir}/*
+        ifsdata: ${ifsdata_dir}/*
         tl_data: ${input_dir}/${res_number_tl}/*
         o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
 
@@ -406,35 +381,9 @@ forcing_sources:
         RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
-        # ifsdata
-        C11CLIM: ${forcing_dir}/C11CLIM
-        C12CLIM: ${forcing_dir}/C12CLIM 
-        C22CLIM: ${forcing_dir}/C22CLIM
-        CCL4CLIM: ${forcing_dir}/CCL4CLIM
-        CH4CLIM: ${forcing_dir}/CH4CLIM
-        CO2CLIM: ${forcing_dir}/CO2CLIM
-        ECOZC: ${forcing_dir}/ECOZC
-        GCH4CLIM: ${forcing_dir}/GCH4CLIM
-        GCO2CLIM: ${forcing_dir}/GCO2CLIM
-        GOZOCLIM: ${forcing_dir}/GOZOCLIM
-        MCICA: ${forcing_dir}/MCICA
-        N2OCLIM: ${forcing_dir}/N2OCLIM
-        NO2CLIM: ${forcing_dir}/NO2CLIM
-        OZOCLIM: ${forcing_dir}/OZOCLIM 
-        RADRRTM: ${forcing_dir}/RADRRTM
-        RADSRTM: ${forcing_dir}/RADSRTM
-        # new radiation in 43r3
-        aerosol_cams_clim: ${forcing_dir}/aerosol_cams_climatology_43R3.nc
-        aerosol_ifs_rrtm: ${forcing_dir}/aerosol_ifs_rrtm_43R3.nc
-        aerosol_ifs_rrtm_AB: ${forcing_dir}/aerosol_ifs_rrtm_AB.nc
-        aerosol_ifs_rrtm_tegen: ${forcing_dir}/aerosol_ifs_rrtm_tegen.nc
-        baran_ice_scattering_rrtm: ${forcing_dir}/baran_ice_scattering_rrtm.nc
-        es_droplet_scattering_rrtm: ${forcing_dir}/es_droplet_scattering_rrtm.nc
-        fu_ice_scattering_rrtm: ${forcing_dir}/fu_ice_scattering_rrtm.nc
-        mcica_gamma: ${forcing_dir}/mcica_gamma.nc
-        mcica_lognormal: ${forcing_dir}/mcica_lognormal.nc
-        slingo_droplet_scattering_rrtm: ${forcing_dir}/slingo_droplet_scattering_rrtm.nc
-        socrates_droplet_scattering_rrtm: ${forcing_dir}/socrates_droplet_scattering_rrtm.nc
+        # ICMCL
+        ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
+        
         
 
 config_sources:
@@ -444,45 +393,19 @@ input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
         ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
         ICMSH_INIT: ICMSH${oifs.input_expid}INIT
-        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
         rtables: rtables/*
         vtables: vtables/*
+        ifsdata: ifsdata/*
         tl_data: ${res_number_tl}/*
         o3_data: ${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_in_work:
+        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
         PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
         RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-        C11CLIM: ifsdata/C11CLIM
-        C12CLIM: ifsdata/C12CLIM 
-        C22CLIM: ifsdata/C22CLIM
-        CCL4CLIM: ifsdata/CCL4CLIM
-        CH4CLIM: ifsdata/CH4CLIM
-        CO2CLIM: ifsdata/CO2CLIM
-        ECOZC: ifsdata/ECOZC
-        GCH4CLIM: ifsdata/GCH4CLIM
-        GCO2CLIM: ifsdata/GCO2CLIM
-        GOZOCLIM: ifsdata/GOZOCLIM
-        MCICA: ifsdata/MCICA
-        N2OCLIM: ifsdata/N2OCLIM
-        NO2CLIM: ifsdata/NO2CLIM
-        OZOCLIM: ifsdata/OZOCLIM 
-        RADRRTM: ifsdata/RADRRTM
-        RADSRTM: ifsdata/RADSRTM
-        aerosol_cams_clim: ifsdata/aerosol_cams_climatology_43R3.nc
-        aerosol_ifs_rrtm: ifsdata/aerosol_ifs_rrtm_43R3.nc
-        aerosol_ifs_rrtm_AB: ifsdata/aerosol_ifs_rrtm_AB.nc
-        aerosol_ifs_rrtm_tegen: ifsdata/aerosol_ifs_rrtm_tegen.nc
-        baran_ice_scattering_rrtm: ifsdata/baran_ice_scattering_rrtm.nc
-        es_droplet_scattering_rrtm: ifsdata/es_droplet_scattering_rrtm.nc
-        fu_ice_scattering_rrtm: ifsdata/fu_ice_scattering_rrtm.nc
-        mcica_gamma: ifsdata/mcica_gamma.nc
-        mcica_lognormal: ifsdata/mcica_lognormal.nc
-        slingo_droplet_scattering_rrtm: ifsdata/slingo_droplet_scattering_rrtm.nc
-        socrates_droplet_scattering_rrtm: ifsdata/socrates_droplet_scattering_rrtm.nc
         
 
 ##

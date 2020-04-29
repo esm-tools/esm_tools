@@ -17,6 +17,17 @@ license_text: |
 
 # Default is TL159L91 
 # Forcing from gu5a prepIFS forcing
+metadata:
+        Institute: ECMWF
+        Description:
+                OpenIFS provides research institutions with an easy-to-use version
+                of the ECMWF IFS (Integrated Forecasting System).
+        Authors: Glenn Carver (openifs-support@ecmwf.int)
+        Website: https://www.ecmwf.int/en/research/projects/openifs
+        License:
+                Please make sure you have a licence to use OIFS. In case you are
+                unsure, please contact redmine...
+
 input_expid: ECE3
 resolution: TL159
 levels: L91

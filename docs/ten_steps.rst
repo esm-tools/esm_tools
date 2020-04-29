@@ -2,16 +2,16 @@
 Ten Steps to a Running Model
 ============================
 
-1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later. Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bashrc``, ``~/.profile``, etc.::
+1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later (see :ref:`installation:Before you continue`). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-     $> export PATH=$PATH:~/.local/bin 
+     $> export PATH=$PATH:~/.local/bin
 
-2. Get access to the ``esm_tools`` group on one of our mirrors, preferably the gitlab server at AWI. You can request access either online at ``https://gitlab.awi.de/esm_tools``, or via e-mail to ``dirk.barbi@awi.de``.
+2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
 
-3. Download the git repository ``esm_tools.git``, preferably from the gitlab server at AWI::
+3. Download the git repository ``esm_tools.git`` from GitHub::
 
-     $> git clone https://gitlab.awi.de/esm_tools/esm_tools.git
- 
+     $> git clone https://github.com/esm-tools/esm_tools.git
+
 4. In the new folder ``esm_tools``, run the installer::
 
      $> cd esm_tools
@@ -20,15 +20,15 @@ Ten Steps to a Running Model
    This should install the python packages of ESM-Tools. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
    Also, a new file called ``~/.esmtoolsrc`` is added to your ``HOME``, which contains some very few details about the installation.
 
-5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works.
-   
-6. Go to the toplevel folder into which you want to install you model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to run FESOM2::
+5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works. Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
+
+6. Go to the toplevel folder into which you want to install your model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to install FESOM2::
 
     $> mkdir ../model_codes
-    $> cd ../model_codes 
+    $> cd ../model_codes
     $> esm_master install-fesom-2.0
 
-  You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access. Feel free to contact us if you don't know who the model developers are.
+  You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access (:ref:`Supported_Models:Supported Models`). Feel free to contact us if you don't know who the model developers are.
 
 7. Check if the installation process worked; if so, you should find the model executable in the subfolder ``bin`` of the model folder. E.g.::
 
@@ -37,7 +37,7 @@ Ten Steps to a Running Model
 8. Go back to the ``esm_tools`` folder, and pick a sample runscript from the ``runscripts`` subfolder. These examples are very short and can be easily adapted. Pick one that is for the model you want to run, and maybe already adapted to the HPC system you are working on. Make sure to adapt the paths to your personal settings, e.g. ``model_dir``, ``base_dir`` etc.::
 
     $> cd ../esm_tools/runscripts/fesom2
-    $> (your_favourite_editor) fesom2-ollie-initial-monthly.yaml
+    $> (your_favourite_editor) fesom-2.0-ollie-initial-monthly.yaml
 
    Notice that the examples exist with the endings ``.run`` and ``.yaml``. It doesn't matter what you pick. The files ending in ``.run`` are looking more like conventional shell scripts that you might be better used to, the ``.yaml``-files are written as yaml configuration files, which makes things much nicer and more elegant to write down. We strongly encourage you to give the ``yaml``-version a try.
 
@@ -55,7 +55,6 @@ Ten Steps to a Running Model
 
 10. Run the experiment::
 
-     $> esm_runscripts fesom2-ollie-initial-monthly.yaml -e my_first_test
+     $> esm_runscripts fesom-2.0-ollie-initial-monthly.yaml -e my_first_test
 
-That should really be it. Good luck!   
-
+That should really be it. Good luck!

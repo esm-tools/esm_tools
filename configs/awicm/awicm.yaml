@@ -46,6 +46,7 @@ echam:
                 - sic
         version: "6.3.04p1"
 
+# kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24

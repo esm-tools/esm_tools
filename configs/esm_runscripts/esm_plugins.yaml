@@ -1,17 +1,34 @@
 core:
         esm_runscripts:
-                SimulationSetup:
+                compute:
                         - "_create_setup_folders"
                         - "_create_component_folders"
+                        - "initialize_experiment_logfile"  
                         - "_write_finalized_config"
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"  
+                        - "copy_files_to_thisrun"
+                        - "modify_namelists"  
+                        - "modify_files"
+                        - "create_new_files"
+                        - "prepare_coupler_files"
+                        - "add_batch_hostfile"
+                        - "copy_files_to_work"
+                        - "report_missing_files"
 
-plugins:
-        my_plugin:
-                location: "/work/ollie/dbarbi/my_plugin"
-                git-url: ""
-                my_plugin:
-                        - "write_something"
+                database_actions:
+                        - "database_entry"
+
+                esm_batch_system:
+                        - "write_simple_runscript"
+                        - "submit"
+
+# include plugins like this:
+#plugins:
+#        my_plugin:
+#                location: "/work/ollie/dbarbi/my_plugin"
+#                git-url: ""
+#                my_plugin:
+#                        - "write_something"
 

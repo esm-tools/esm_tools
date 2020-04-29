@@ -1,0 +1,101 @@
+#! /bin/ksh -l
+set -e
+
+module purge
+
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=$FUNCTION_PATH
+
+machine_name=mistral
+setup_name="awicm"			# mpiesm, pism_mpiesm, echam. mpiom, or pism
+ACCOUNT=ab0246
+check=0								# run job in check mode, without submitting and / or launching
+
+
+# the executable. Set to 0 to turn off
+#compute_time="00:20:00"  # this will cause walltime barriers, bu the job should start right away...
+compute_time="03:00:00"
+post_time="01:00:00"
+ESM_USE_C_CALENDAR=1
+###############################################################################
+awicm_VERSION="1.1"
+MODEL_DIR_awicm=${HOME}/esm-master/awicm-test/
+
+
+##########################
+## GENERAL SECTION #######
+##########################
+expid="LGM_TEST"
+
+BASE_DIR=/work/ba0989/a270077/esm_tools_dev
+
+INITIAL_DATE=1850-01-01 # initial exp. date
+FINAL_DATE=1852-01-01 # final date of the experiment
+
+
+NYEAR_echam=1          # number of years per run
+NMONTH_echam=0
+
+
+##########################
+## ECHAM/JSBACH SECTION ##
+##########################
+RES_echam=T63
+SCENARIO_echam=PALEO
+
+echam_DATASET=r0007
+jsbach_DATASET=r0009
+
+#BIN_DIR_echam=${HOME}/esm-master/echam-test/bin
+
+# if you want to start from echam restarts, use:
+LRESUME_echam=1
+INI_RESTART_DIR_echam=/work/ab0246/a270064/esm-experiments/lgm_anm/restart/echam
+INI_PARENT_DATE_echam=39281231 #, for example 24001231235640
+INI_PARENT_EXP_ID_echam=lgm_anm # of spinup experiment, for example TST
+
+nproca_echam=12
+nprocb_echam=24
+
+INI_RESTART_DIR_jsbach=/work/ab0246/a270064/esm-experiments/lgm_anm/restart/jsbach
+INI_RESTART_DIR_hdmodel=/work/ab0246/a270064/esm-experiments/lgm_anm/restart/hdmodel
+
+JAN_SURF_echam=/work/ab0246/a270064/esm-experiments/lgm_anm/input/echam/T63LGM_jan_surf.nc
+VGRATCLIM_echam=/work/ab0246/a270064/esm-experiments/lgm_anm/input/echam/T63LGM_VGRATCLIM.nc
+VLTCLIM_echam=/work/ab0246/a270064/esm-experiments/lgm_anm/input/echam/T63LGM_VLTCLIM.nc
+
+HDPARA_FILE_hdmodel=/work/ab0246/a270064/esm-experiments/lgm_anm/input/hdmodel/hdpara.nc
+LAND_BOUNDARY_CONDITIONS_jsbach=/work/ab0246/a270064/esm-experiments/lgm_anm/input/jsbach/jsbach_T63LGM_11tiles_5layers_1850.nc
+DYNVEG_jsbach=dynveg
+
+CO2_echam=190.0e-6
+CH4_echam=0.375e-6
+N2O_echam=0.200e-6
+CECC_echam=0.018994
+COBLD_echam=22.949
+CLONP_echam=294.42
+DISTURBED_YEARS_echam='1894'
+DISTURBANCE_echam=1.00001
+
+###################
+## FESOM SECTION ##
+###################
+
+RES_fesom=LGM
+MESH_DIR_fesom=/mnt/lustre02/work/ba0989/a270077/FESOM_meshes/CORE2_LGM
+
+INI_RESTART_DIR_fesom=/work/ab0246/a270064/esm-experiments/lgm_anm/restart/fesom
+INI_PARENT_DATE_fesom=39281231 #, for example 24001231235640
+
+RESTART_RATE_fesom=1
+RESTART_FIRST_fesom=1
+RESTART_UNIT_fesom='y'
+
+
+
+further_reading_fesom="fesom_output_control.yaml"
+###############################################################################
+
+
+load_all_functions
+general_do_it_all $@

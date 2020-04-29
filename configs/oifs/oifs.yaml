@@ -25,7 +25,7 @@ namelist_case: "uppercase"
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
 pool_dir: "${computer.pool_directories.pool}"
-input_dir: ${pool_dir}
+input_dir: ${computer.pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
@@ -100,18 +100,6 @@ threads: 1
 ny: 1
 
 hours: "00"
-
-#model_dir: ${esm_master_dir}/oifs-${version}
-model_dir: ${general.model_dir}
-bin_dir: ${model_dir}/bin
-input_dir: ${computer.pool_dir}
-rtables_dir: ${input_dir}/../rtables/
-vtables_dir: ${input_dir}/../vtables/
-clim_dir: ${input_dir}/../
-forcing_dir: ${input_dir}/../${version}/ifsdata/
-namelist_dir: ${esm_namelist_dir}/oifs
-cmip6_data_dir: ${input_dir}/../cmip6_data
-cmip5_data_dir: ${input_dir}/../cmip5_data
 
 namelists:
         - "fort.4"

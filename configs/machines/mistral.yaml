@@ -39,6 +39,9 @@ pool_directories:
         pool: "/pool/data"
         focipool: "/work/bb0519/foci_input2"
 
+pool_dir:  "/pool/data"
+
+
 #nemoarchfile: BULL_MISTRAL_INTEL_uncoupled_esmtools
 nemoarchfile: BULL_MISTRAL_INTEL
 #xiosarchfile: BULL_MISTRAL_intel_NetcdfParallel_uncoupled

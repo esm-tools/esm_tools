@@ -1,4 +1,5 @@
-# OIFS standalone (=AMIP?) YAML FILE
+#
+#OIFS standalone (=AMIP?) YAML FILE
 #
 
 model: oifs
@@ -62,7 +63,7 @@ hours: "00"
 #model_dir: ${esm_master_dir}/oifs-${version}
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
-input_dir: ${pool_dir}
+input_dir: ${computer.pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../

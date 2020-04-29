@@ -7,7 +7,7 @@ Usage: esm_master
 
 To use the command line tool ``esm_master``, just enter at a prompt::
 
-    $> esm_master
+    $ esm_master
 
 The tool may ask you to configure your settings; which are stored in your home folder under ``${HOME}/.esmtoolsrc``. A list of avaiable models, coupled setups, and available operations are printed to the screen, e.g.::
 
@@ -20,11 +20,11 @@ The tool may ask you to configure your settings; which are stored in your home f
 
 As can be seen in this example, ``esm_master`` supports operations on the coupled setup awicm in the versions 1.0, CMIP6 and 2.0; and what the tool can do with that setup. You execute ``esm_master`` by calling::
 
-$> esm_master operation-software-version,
+$ esm_master operation-software-version,
 
 e.g.::
 
-$> esm_master install-awicm-2.0
+$ esm_master install-awicm-2.0
 
 
 
@@ -52,7 +52,7 @@ By default, ``esm_master`` supports the following operations:
 
 To download, compile, and install ``awicm-2.0``; you can say::
 
-    $> esm_master install-awicm-2.0
+    $ esm_master install-awicm-2.0
 
 This will trigger a download, if needed a configuration, and a compilation process. Similarly, you can recompile with ``recomp-XXX``, clean with ``clean-XXX``, or do individual steps, e.g. ``get``, ``configure``, ``comp``.
 
@@ -60,4 +60,4 @@ The download and installation will always occur in the **current working directo
 
 You can get further help with::
 
-    $> esm_master --help
+    $ esm_master --help

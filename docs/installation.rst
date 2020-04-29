@@ -12,7 +12,7 @@ Downloading
 
 Then you can start by cloning the repository ``esm_tools.git``::
 
-$> git clone https://github.com/esm-tools/esm_tools.git
+$ git clone https://github.com/esm-tools/esm_tools.git
 
 This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
 
@@ -36,11 +36,11 @@ If you have installed ``esm_tools`` you need to configure it before the first us
 
 To configure esm_master you should run the executable::
 
-$> esm_master
+$ esm_master
 
 Running it for the first time after installation, you will be asked to type in your user settings. This interactive configuration includes the following steps::
 
-$> Please enter your username for gitlab.dkrz.de (default: anonymous)
-$> Please enter your username for swrepo1.awi.de (default: anonymous)
+$ Please enter your username for gitlab.dkrz.de (default: anonymous)
+$ Please enter your username for swrepo1.awi.de (default: anonymous)
 
 Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).

@@ -19,11 +19,11 @@ ESM Runscripts
 
 1. **Q**: I get the error: ``load_all_functions: not found [No such file or directory]`` when calling my runscript like this::
   
-        $> ./my_run_script.sh -e some_expid 
+        $ ./my_run_script.sh -e some_expid 
    
    **A**: You are trying to call your runscript the old-fashioned way that worked with the shell-script version, until revision 3. With the new python version, you get a new executable ``esm_runscripts`` that should be in your PATH already. Call your runscript like this::
 
-        $> esm_runscripts my_run_script.sh -e some_expid
+        $ esm_runscripts my_run_script.sh -e some_expid
 
    All the command line options still apply. By the way, "load_all_function" doesn't hurt to have in the runscript, but can savely be removed.
 
@@ -62,11 +62,11 @@ Frequent Errors
 
        RuntimeError: Click will abort further execution because Python 3 was configured to use ASCII as encoding for the environment. Consult https://click.palletsprojects.com/en/7.x/python3/ for mitigation steps.
 
-   **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales to ``en_US.utf-8`` either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
+   **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales respectively to ``en_US`` and ``en_US.utf-8``, either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
 
-        $> export LC_ALL=en_US.utf-8
-        $> export LANG=en_US.utf-8
+        $ export LC_ALL=en_US
+        $ export LANG=en_US.utf-8
 
 2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
 
-   **A**: Add your configuration in the file configs/esm_master/setups2models.yaml
+   **A**: Add your configuration in the file ``configs/esm_master/setups2models.yaml`` (see :ref:`contributing:Implementing a New Model` and :ref:`contributing:Implementing a New Coupled Setup`)

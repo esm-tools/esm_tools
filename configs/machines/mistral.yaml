@@ -39,6 +39,9 @@ pool_directories:
         pool: "/pool/data"
         focipool: "/work/bb0519/foci_input2"
 
+pool_dir:  "/pool/data"
+
+
 #nemoarchfile: BULL_MISTRAL_INTEL_uncoupled_esmtools
 nemoarchfile: BULL_MISTRAL_INTEL
 #xiosarchfile: BULL_MISTRAL_intel_NetcdfParallel_uncoupled
@@ -95,6 +98,9 @@ export_vars:
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
+        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        - "ZLIBROOT=/usr"
 
         - "PERL5LIB=/usr/lib64/perl5"
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
@@ -150,6 +156,8 @@ choose_useMPI:
                         - "unload intel"
                         - "load intel/18.0.4 intelmpi/2018.5.288"
                         - "load autoconf/2.69"
+                        - "load libtool/2.4.6"
+                        - "load automake/1.14.1"
                 fc: mpiifort
                 f77: mpiifort
                 mpifc: mpiifort

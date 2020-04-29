@@ -4,6 +4,17 @@
 
 model: xios
 version: 2.0r982 
+
+metadata:
+        Institute: IPSL and CEA
+        Description:
+                A library dedicated to I/O management in climate codes.
+        Authors: Yann Meurdesoif (yann.meurdesoif@cea.fr)
+        Website: https://portal.enes.org/models/software-tools/xios
+        License:
+                Please make sure you have a licence to use XIOS. In case you are
+                unsure, please contact redmine...
+
 executable: xios_server.exe
 
 setup_dir: "${model_dir}"

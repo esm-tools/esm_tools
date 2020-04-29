@@ -37,7 +37,7 @@ ESM Master
 
 1. **Q**: How can I define different environments for different models / different versions of the same model?
    
-   **A**: You can add a choose-block in the models yaml-file, e.g.::
+   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.::
   
         choose_version:
                 40r1:
@@ -51,3 +51,22 @@ ESM Master
                         environment_changes:
                                 add_export_vars:        
                                         - 'MY_VAR="something_else"'
+2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
+
+   **A**: Add your configuration in the file configs/esm_master/setups2models.yaml
+
+Frequent Errors
+---------------
+
+1. **Q**: When I use ``esm_versions`` I get the following error::
+
+       RuntimeError: Click will abort further execution because Python 3 was configured to use ASCII as encoding for the environment. Consult https://click.palletsprojects.com/en/7.x/python3/ for mitigation steps.
+
+   **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales to ``en_US.utf-8`` either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
+
+        $> export LC_ALL=en_US.utf-8
+        $> export LANG=en_US.utf-8
+
+2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
+
+   **A**: Add your configuration in the file configs/esm_master/setups2models.yaml

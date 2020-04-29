@@ -21,6 +21,48 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+
+
+
+# PG: Here, we grab the main yaml for each model stated in configs, and get a metadata chapter:
+import yaml
+config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
+configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
+with open(os.path.join("../configs/esm_master/setups2models.yaml")) as setups2models:
+    d = yaml.load(setups2models, Loader=yaml.FullLoader)
+    components = d.get("components")
+    configs = []
+    for comp in components:
+        if os.path.exists("../configs/"+comp+"/"+comp+".yaml"):
+            configs.append(comp)
+with open("Supported_Models.rst", "w") as rst:
+    rst.write("================\n")
+    rst.write("Supported Models\n")
+    rst.write("================\n")
+for config in configs:
+    with open(os.path.join("../configs/", config, config+".yaml")) as f:
+        d = yaml.load(f, Loader=yaml.FullLoader)
+        metadata = d.get("metadata")
+        with open("metadata/"+config+".csv", "w") as table:
+            if metadata:
+                for key in metadata:
+                    if key=="Publications":
+                        if type(metadata[key]) is list:
+                            public_string = key
+                            for publication in metadata[key]:
+                                public_string = public_string + "; `{0}`_".format(publication)
+                            table.write(public_string+'\n')
+                        else:
+                            table.write("%s; `%s`_\n" % (key, metadata[key]))
+                    else:
+                        table.write("%s; %s\n" % (key, metadata[key]))
+        with open("Supported_Models.rst", "a") as rst:
+            rst.write("%s\n" % config.upper())
+            rst.write("-"*len(config) + "\n")
+            rst.write(".. csv-table::\n")
+            rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
+            rst.write("   :delim: ;\n")
+            rst.write("   :stub-columns: 1\n\n")
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -29,7 +71,8 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', "sphinx.ext.napoleon",
+    'sphinx.ext.autosectionlabel']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -46,7 +89,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
-author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini"
+author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez"
 version = "3.1"
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -81,19 +124,23 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
-
+html_theme_options = {
+    "style_nav_header_background": "white",
+    "logo_only": True,
+    "prev_next_buttons_location": "both",
+}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
 # -- Options for HTMLHelp output ---------------------------------------
 
@@ -155,6 +202,14 @@ texinfo_documents = [
      'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+# -- Options for labelling ---------------------------------------------
+
+# This allows referencing different sections of the document by using
+# :ref:`rst_file_name:title of the section` avoiding problems with
+# duplicated sections across different rst files.
+autosectionlabel_prefix_document = True
 
 
 

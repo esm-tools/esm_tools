@@ -1,4 +1,5 @@
-# OIFS standalone (=AMIP?) YAML FILE
+#
+#OIFS standalone (=AMIP?) YAML FILE
 #
 
 model: oifs
@@ -45,6 +46,18 @@ cmip5_data_dir: ${input_dir}/../cmip5_data
 #       input and forcing files in input_dir and forcing_dir
 #       Default is a TL159 run, input data from ECMWF has expid gu5a
 #       but I want the expid for my run to be ECE3. 
+
+metadata:
+        Institute: ECMWF
+        Description:
+                OpenIFS provides research institutions with an easy-to-use version
+                of the ECMWF IFS (Integrated Forecasting System).
+        Authors: Glenn Carver (openifs-support@ecmwf.int)
+        Website: https://www.ecmwf.int/en/research/projects/openifs
+        License:
+                Please make sure you have a licence to use OIFS. In case you are
+                unsure, please contact redmine...
+
 input_expid: ECE3
 resolution: TL159
 levels: L91
@@ -87,6 +100,18 @@ threads: 1
 ny: 1
 
 hours: "00"
+
+#model_dir: ${esm_master_dir}/oifs-${version}
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+input_dir: ${computer.pool_dir}
+rtables_dir: ${input_dir}/../rtables/
+vtables_dir: ${input_dir}/../vtables/
+clim_dir: ${input_dir}/../
+forcing_dir: ${input_dir}/../${version}/ifsdata/
+namelist_dir: ${esm_namelist_dir}/oifs
+cmip6_data_dir: ${input_dir}/../cmip6_data
+cmip5_data_dir: ${input_dir}/../cmip5_data
 
 namelists:
         - "fort.4"

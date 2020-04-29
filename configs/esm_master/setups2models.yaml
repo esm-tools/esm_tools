@@ -120,9 +120,9 @@ components:
                 # TODO esm tools fail if git-repository entry is missing
                 git-repository: None 
                 archfile: "ESMTOOLS_generic_intel"
-                comp_command: "export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24"
+                comp_command: "export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe ${nemo.version}/BLD/bin/oceanx"
                 clean_command: "cd CONFIG; ./makenemo -n ${nemo.version} clean"
-                install_bins: "CONFIG/${nemo.version}/BLD/bin/nemo.exe"
+                install_bins: "CONFIG/${nemo.version}/BLD/bin/oceanx"
                 choose_nemobasemodel.version:
                         "3.6.3.x":
                                 git-repository: "https://git.geomar.de/NEMO/NEMOGCM.git"
@@ -307,7 +307,7 @@ components:
                 clean_command: "${defaults.clean_command}"
         
         "xios":
-                install_bins: "bin/xios_server.exe"
+                install_bins: "bin/xios.x"
                 # TODO the version names are still used in the arch files, so don't change unless you know what you are doing 
                 available_versions:
                         - "2.0_r982" # version with oasis libs compiled in (required for coupled atm ocn setups)
@@ -316,13 +316,16 @@ components:
                 destination: "xios-${version}"
                 branch: "esm-tools"
                 archfile: "ESMTOOLS_generic_intel"
-                comp_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full --job 24"
+                use_oasis: ""
+                comp_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x"
                 clean_command: "rm -rf bin lib obj ppsrc"
                 choose_version:
                         "2.0_r982_ogcm":
                                 archfile: "ESMTOOLS_generic_intel" 
+                                use_oasis: ""
                         "2.0_r982":
                                 archfile: "ESMTOOLS_generic_oasis_intel" 
+                                use_oasis: "--use_oasis oasis3_mct"
 
 couplings:
         "fesom-1.4+echam-6.3.04p1":

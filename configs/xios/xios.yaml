@@ -4,11 +4,11 @@
 
 model: xios
 version: 2.0r982 
-executable: xios_server.exe
+executable: xios.x
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-xml_dir: ${esm_namelist_dir}/xios/
+xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00
 
 config_files:
         domain_def: domain_def
@@ -22,11 +22,5 @@ config_sources:
         file_def: ${xml_dir}/file_def.xml
         io_def: ${xml_dir}/iodef.xml
 
-
-
-
-bin_files:
-        server: server
-
 bin_sources:
-        server: ${bin_dir}/xios_server.exe
+        server: ${bin_dir}/xios.x

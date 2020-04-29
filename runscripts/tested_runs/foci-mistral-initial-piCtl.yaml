@@ -1,0 +1,23 @@
+
+general:
+   setup_name: "foci"      
+   #resolution: "T63_ORCA05"
+   compute_time: "01:30:00"
+   account: "bb0519"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   #nmonth: 1
+   #nyear: 0
+   model_dir: /work/bb0519/b350071/esm-tools-foci2/foci-default
+   lresume: False
+
+computer:
+   mail_type: "FAIL"
+   mail_user: "swahl@geomar.de"
+echam:
+   resolution: "T63"
+nemo:
+   resolution: "ORCA05"

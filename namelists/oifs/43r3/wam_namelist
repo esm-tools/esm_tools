@@ -151,5 +151,7 @@
  LGRHDIFS = T,
  LNEWLVTP = F,
  LODBRALT = F,
-GFLAG(:)=F,
+ GFLAG(1)=T,
+ GFLAG(2)=T,
+ GFLAG(3)=T,
 /

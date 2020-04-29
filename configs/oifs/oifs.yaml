@@ -36,6 +36,7 @@ ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
+restart_dir: ""
 
 
 # Default is TL159L91 
@@ -96,6 +97,10 @@ orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date
 restart: 1
 restart_rate: 1
 restart_unit: 'months'
+ndays_restart: 0
+elapsed_ndays: 0
+run_number_minus1: 0
+run_number: 1
 
 threads: 1
 ny: 1
@@ -184,7 +189,7 @@ seconds_since_initial: $((${start_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 #next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
-next_step: 120 
+next_step: 48 
 steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
 
@@ -263,6 +268,51 @@ input_files:
 
 forcing_files:
         ICMCL_INIT: ICMCL_INIT
+
+
+##
+## log files
+##
+
+log_files:
+        NODE: NODE
+        ifsstat: ifsstat
+        
+log_sources:        
+        NODE: NODE.001_01
+        ifsstat: ifs.stat
+
+log_in_work:
+        NODE: NODE.001_01
+        ifsstat: ifs.stat
+
+##
+## restart files
+##
+
+restart_in_files:
+        srf: srf
+        rcf: rcf
+
+restart_in_in_work:
+        srf: srf${ndays_restart}0000.*
+        rcf: rcf
+
+restart_in_sources:
+        srf: ${restart_dir}/${run_number_minus1}/srf${ndays_restart}0000.*
+        rcf: rcf
+
+restart_out_files:
+        srf: srf
+        rcf: rcf
+
+restart_out_in_work:
+        srf: srf${elapsed_ndays}0000.*
+        rcf: rcf
+
+restart_out_sources:
+        srf: ${restart_dir}/${run_number}/srf${elapsed_ndays}0000.*
+        rcf: rcf
 
 ##
 ## specifics for 40r1 and 43r3

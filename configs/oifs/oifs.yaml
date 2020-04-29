@@ -104,6 +104,7 @@ hours: "00"
 
 namelists:
         - "fort.4"
+        - "wam_namelist"
 
 choose_resolution:
         # Note:
@@ -388,6 +389,7 @@ forcing_sources:
 
 config_sources:
         "fort.4": "${namelist_dir}/fort.4"
+        "wam_namelist": "${namelist_dir}/wam_namelist"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT

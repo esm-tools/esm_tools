@@ -206,14 +206,14 @@ choose_wam:
                         sfcwindin: sfcwindin
                         cdwavein: cdwavein
                         
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LWCOU: ".true."
                                         LWCOU2W: ".true."
                         
         0:
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LWCOU: ".false."
@@ -283,7 +283,7 @@ forcing_files:
 
 choose_version:
         40r1:
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAMRES:
                                         NFRRES: ${oifs.next_step}
@@ -312,7 +312,7 @@ choose_version:
                                 - 'ECE_USE_CPLNG="no"'
                                 
         43r3:
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAMRES:
                                         NFRRES: ${oifs.next_step}
@@ -364,14 +364,14 @@ choose_scenario:
         "historical":
                 choose_version:
                         40r1:
-                                namelist_changes:
+                                add_namelist_changes:
                                         fort.4:
                                               NAMCMIP:
                                                     LGHGCMIP5: ".true."
         "piControl":
                 choose_version:
                         40r1:
-                                namelist_changes:
+                                add_namelist_changes:
                                         fort.4:
                                               NAMCMIP:
                                                     LGHGPI: ".true."
@@ -512,14 +512,14 @@ grids:
                 
 choose_output:
         "default":
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAMCT0:
                                         NFRPOS: 6
                                         NFRHIS: 6
                                 
         "12hr":
-                namelist_changes:
+                add_namelist_changes:
                         fort.4:
                                 NAMCT0:
                                         NFRPOS: 12

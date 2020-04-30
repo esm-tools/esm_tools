@@ -38,6 +38,7 @@ time_step:      1800
 use_lim2:       true
 use_tracer:     true
 hosing:         false
+lresume:        false
 free_surface:   linear
 correct_neg_tracer_conc: true
 

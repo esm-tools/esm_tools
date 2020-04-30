@@ -34,6 +34,7 @@ transient_advance_forcing: false
 ocean_resolution: 'GR15'
 disturbance: "1.000001"
 lresume: false
+dataset: "r0007"
 
 ini_parent_date: 22941231
 ini_parent_expid: khw0030

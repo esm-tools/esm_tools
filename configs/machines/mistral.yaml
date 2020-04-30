@@ -149,23 +149,24 @@ export_vars:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'       
 
-		  # (additional) settings used in FOCI up to v1.21
-        #- 'I_MPI_SLURM_EXT=0'
-        #- 'I_MPI_DYNAMIC_CONNECTION=1'
-        #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
+        # (additional) settings used in FOCI up to v1.21
+        # TODO: move settings for OpenIFS and FOCI to their resp yaml files via environment_changes
+        - 'I_MPI_SLURM_EXT=0'
+        - 'I_MPI_DYNAMIC_CONNECTION=1'
+        - 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
         # Intel MPI
-        #- 'DAPL_UCM_REP_TIME=8000'
-        #- 'DAPL_UCM_RTU_TIME=8000'
-        #- 'DAPL_UCM_CQ_SIZE=2000'
-        #- 'DAPL_UCM_QP_SIZE=2000'
-        #- 'DAPL_UCM_DREQ_RETRY=4'
-        #- 'DAPL_UCM_WAIT_TIME=10000'
-        #- 'I_MPI_HARD_FINALIZE=1'
+        - 'DAPL_UCM_REP_TIME=8000'
+        - 'DAPL_UCM_RTU_TIME=8000'
+        - 'DAPL_UCM_CQ_SIZE=2000'
+        - 'DAPL_UCM_QP_SIZE=2000'
+        - 'DAPL_UCM_DREQ_RETRY=4'
+        - 'DAPL_UCM_WAIT_TIME=10000'
+        - 'I_MPI_HARD_FINALIZE=1'
         # Intel OpenMP
-        #- 'KMP_STACKSIZE=64m'
-        #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
+        - 'KMP_STACKSIZE=64m'
+        - 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
         # OpenMP
-        #- 'OMP_NUM_THREADS=1'
+        - 'OMP_NUM_THREADS=1'
 
 choose_useMPI:
         intelmpi:

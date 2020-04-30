@@ -695,7 +695,7 @@ setups:
                                         - "mpiom-1.6.3+echam-6.3.04p1"
                         "1.2.01p1":
                                 couplings:
-                                        - "mpiom-1.6.3p2+echam-6.3.05p2"
+                                        - "mpiom-1.6.3p2+echam-6.3.05p2-foci"
 
         oifsamip:
                 couplings:

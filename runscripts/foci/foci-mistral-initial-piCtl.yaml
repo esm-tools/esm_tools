@@ -11,7 +11,7 @@ general:
    scenario: "PI-CTRL"
    #nmonth: 1
    #nyear: 0
-   model_dir: /work/bb0519/b350071/esm-tools-foci2/foci-default
+   model_dir: /work/bb0519/b350071/esm-tools-foci2-seb-wahl/foci-default
    lresume: False
 
 computer:

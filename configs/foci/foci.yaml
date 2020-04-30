@@ -24,7 +24,7 @@ general:
         compute_time: "01:30:00"
 
 computer:
-        additional_flags: "--ntasks-per-core=1"
+        #additional_flags: "--ntasks-per-core=1"
         launcher: "srun" # default, but set it to make clear what the launcher flags are used for
         launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
 
@@ -33,7 +33,7 @@ computer:
 #########################################################################################
 
 echam:
-        version: "6.3.05p2"
+        version: "6.3.05p2-foci"
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
 
@@ -91,6 +91,21 @@ echam:
                      _ny: 96
                      nproca: 24
                      nprocb: 24 
+
+        forcing_additional_information:
+                aerocoarse:
+                     - need_timestep_before
+                     - need_timestep_after
+                aerofin:
+                     - need_timestep_before
+                     - need_timestep_after
+                aerofarir:
+                     - need_timestep_before
+                     - need_timestep_after
+                ozone:
+                     - need_timestep_before
+                     - need_timestep_after
+
         check_error:
               "wind speed":
                      method: "warn"

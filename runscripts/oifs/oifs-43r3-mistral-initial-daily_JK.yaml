@@ -8,7 +8,7 @@ general:
         base_dir: "/work/bb0519/b350090/esm-experiments/"
         nyear: 0
         nmonth: 0
-        ndays: 5
+        nday: 5
         restart_rate: 1
         restart_unit: "months"
 

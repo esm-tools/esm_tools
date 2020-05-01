@@ -97,10 +97,6 @@ orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date
 restart: 1
 restart_rate: 1
 restart_unit: 'months'
-ndays_restart: 0
-elapsed_ndays: 0
-run_number_minus1: 0
-run_number: 1
 
 threads: 1
 ny: 1
@@ -182,16 +178,59 @@ choose_computer.cores_per_node:
                 
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run                
-runtime: "$((${end_date} - ${start_date}))"
-timestep_per_run: $((${runtime} / ${time_step}))
+runtime_seconds: "$((${end_date} - ${start_date}))"
+timestep_per_run: $((${runtime_seconds} / ${time_step}))
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
-#next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
-next_step: 48 
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
+
+start_seconds: "$((${start_date} - ${initial_date}))"
+start_ndays: "$(( ${start_seconds} / 86400 ))"
+start_ndays_string: "<--format(%08d)-- ${start_ndays}" 
+end_seconds: "$((${end_date} - ${initial_date}))"
+end_ndays: "$(( ${end_seconds} / 86400 ))"
+end_ndays_string: "<--format(%08d)-- ${end_ndays}" 
+
+# WAM restart files are named with the number of 
+# days, hours, minutes, seconds since the last run
+# with one time step subtracted. 
+# So restarting after 8 days with 30 min time step has
+# time stamp 000007233000
+# Here we calculate this
+#
+# how do we subtract one time step
+#start_seconds_wam: "$(( ${start_seconds} - ${time_step} ))"
+#start_ndays_wam: "$(( ${start_seconds_wam} / 86400 ))"
+#start_nhours_wam: "$(( $(( ${start_seconds_wam} - $(( ${start_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
+#start_remaining_seconds: "$(( ${start_seconds_wam} - $(( ${start_nhours_wam} * 3600 )) - $(( ${start_ndays_wam} * 86400 )) ))"
+#start_nmins_wam: "$(( ${start_remaining_seconds} / 60 ))"
+#start_ndays_string_wam: "<--format(%06d)-- ${start_ndays_wam}"
+#start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
+#start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
+#start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
+#start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+
+#end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
+#end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
+#end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
+#end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
+#end_nmins_wam: "$(( ${end_remaining_seconds} / 60 ))"
+#end_ndays_string_wam: "<--format(%06d)-- ${end_ndays_wam}"
+#end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
+#end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
+#end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
+#end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+
+run_number_minus1: "$(( ${run_number} - 1 ))"
+run_number_string: "<--format(%05d)-- ${run_number}" 
+run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}" 
+
 
 restart_rate: 1
 restart_unit: "months"
@@ -288,6 +327,8 @@ log_in_work:
 
 ##
 ## restart files
+## srf files are for OpenIFS
+## BLS, LAW files are for ECWAM
 ##
 
 restart_in_files:
@@ -295,25 +336,61 @@ restart_in_files:
         rcf: rcf
 
 restart_in_in_work:
-        srf: srf${ndays_restart}0000.*
+        srf: srf${start_ndays_string}0000.*
         rcf: rcf
+        BLS: "BLS${start_filebase_wam}.*" 
+        LAW: "LAW${start_filebase_wam}.*"
 
 restart_in_sources:
-        srf: ${restart_dir}/${run_number_minus1}/srf${ndays_restart}0000.*
+        srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
         rcf: rcf
+        BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
+        LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
 
 restart_out_files:
         srf: srf
         rcf: rcf
 
 restart_out_in_work:
-        srf: srf${elapsed_ndays}0000.*
+        srf: srf${end_ndays_string}0000.*
         rcf: rcf
+        BLS: "LAW${end_filebase_wam}.*"
+        LAW: "LAW${end_filebase_wam}.*"
 
 restart_out_sources:
-        srf: ${restart_dir}/${run_number}/srf${elapsed_ndays}0000.*
+        srf: ${run_number_string}/srf${end_ndays_string}0000.*
         rcf: rcf
+        BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
+        LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
 
+choose_wam:
+        1:
+                add_restart_in_files:
+                        BLS: BLS
+                        LAW: LAW
+                add_restart_out_files:
+                        BLS: BLS
+                        LAW: LAW
+
+##
+## output
+##
+
+outdata_files:
+        ICMGG: ICMGG
+        ICMSH: ICMSH
+
+outdata_in_work:
+        ICMGG: ICMGG${expid}+*
+        ICMSH: ICMSH${expid}+*
+        ICMUA: ICMUA${expid}+*
+        
+outdata_sources:
+        ICMGG: ICMGG${expid}+*
+        ICMSH: ICMSH${expid}+*
+        ICMUA: ICMUA${expid}+*
+
+        
 ##
 ## specifics for 40r1 and 43r3
 ##
@@ -370,7 +447,8 @@ choose_version:
                                 - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
                                 - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
                                         
-                
+                add_outdata_files:
+                        ICMUA: ICMUA
                 
 
 ##

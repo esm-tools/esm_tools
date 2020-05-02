@@ -238,32 +238,6 @@ restart_unit: "months"
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
-
-
-choose_wam:
-        1:
-                add_input_files:
-                        wam_grid_tables: wam_grid_tables
-                        wam_subgrid_0: wam_subgrid_0
-                        wam_subgrid_1: wam_subgrid_1
-                        wam_subgrid_2: wam_subgrid_2
-                        uwavein: uwavein
-                        specwavein: specwavein
-                        sfcwindin: sfcwindin
-                        cdwavein: cdwavein
-                        
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LWCOU: ".true."
-                                        LWCOU2W: ".true."
-                        
-        0:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LWCOU: ".false."
-                                        LWCOU2W: ".false." 
                         
 
 choose_levels:
@@ -362,15 +336,7 @@ restart_out_sources:
         rcf: rcf
         BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
         LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
-
-choose_wam:
-        1:
-                add_restart_in_files:
-                        BLS: BLS
-                        LAW: LAW
-                add_restart_out_files:
-                        BLS: BLS
-                        LAW: LAW
+        
 
 ##
 ## output
@@ -384,12 +350,54 @@ outdata_in_work:
         ICMGG: ICMGG${expid}+*
         ICMSH: ICMSH${expid}+*
         ICMUA: ICMUA${expid}+*
+        MPP: MPP*
         
 outdata_sources:
         ICMGG: ICMGG${expid}+*
         ICMSH: ICMSH${expid}+*
         ICMUA: ICMUA${expid}+*
+        MPP: MPP*
 
+
+##
+## would that we with or without ECWAM, sir? 
+##
+
+choose_wam:
+        1:
+                add_input_files:
+                        wam_grid_tables: wam_grid_tables
+                        wam_subgrid_0: wam_subgrid_0
+                        wam_subgrid_1: wam_subgrid_1
+                        wam_subgrid_2: wam_subgrid_2
+                        uwavein: uwavein
+                        specwavein: specwavein
+                        sfcwindin: sfcwindin
+                        cdwavein: cdwavein
+                        
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LWCOU: ".true."
+                                        LWCOU2W: ".true."
+                
+                add_restart_in_files:
+                        BLS: BLS
+                        LAW: LAW
+                add_restart_out_files:
+                        BLS: BLS
+                        LAW: LAW
+                
+                add_outdata_files:
+                        MPP: MPP
+                        
+        0:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LWCOU: ".false."
+                                        LWCOU2W: ".false." 
+                                        
         
 ##
 ## specifics for 40r1 and 43r3

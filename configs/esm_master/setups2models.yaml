@@ -172,7 +172,7 @@ components:
                         - "1.6.2p3"
                         - "1.6.3"
                         - "1.6.3p2"
-                comp_command: './configure --prefix=$configPrefix --disable-mh-file --enable-HAMOCC; make' #  --with-coupler=oasis3-mct
+                comp_command: './configure --disable-mh-file --enable-HAMOCC; make' # --prefix=$configPrefix --with-coupler=oasis3-mct
                 clean_command: "${defaults.clean_command}"
 
         "nemo":

@@ -103,7 +103,7 @@ export_vars:
         - 'ARFLAGS=crv'
         - 'SZIPROOT=""'
         #- 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        #- 'OASIS3MCTROOT="$configPrefix"'
+        #- 'OASIS3MCTROOT=$(pwd)/oasis'
         - 'QUEUE_SUBMIT=""'
         - 'cross_compiling=""'
         - 'FORT_REAL_LEN=""'

@@ -696,7 +696,8 @@ setups:
                         "1.2.01p1":
                                 couplings:
                                         - "mpiom-1.6.3p2+echam-6.3.05p2"
-
+                mpiom:
+                        comp_command: './configure --disable-mh-file --with-coupler=oasis3-mct --enable-HAMOCC; make' # --prefix=$configPrefix
         oifsamip:
                 couplings:
                         - "oifs-40r1+amip"

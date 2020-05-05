@@ -10,6 +10,7 @@ choose_job_type:
                         - "_show_simulation_info"
                         # call your plugin whereever it is needed  
                         #- "write_something" 
+                        - "preprocess" 
                         - "copy_files_to_thisrun"
                         - "modify_namelists"  
                         - "modify_files"

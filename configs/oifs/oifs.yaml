@@ -586,6 +586,11 @@ choose_output:
                                         NFRPOS: 12
                                         NFRHIS: 12
                                 
+
+preprocess:
+        arbitrary_name:
+                method: "${general.esm_namelist_dir}/../config/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours} ECE3 ${startdate} ${enddate} ${work_dir}"
+			type: shell
                         
 
 

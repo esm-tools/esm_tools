@@ -24,6 +24,15 @@ core:
                         - "write_simple_runscript"
                         - "submit"
 
+plugins:
+        preprocess:
+                location: "/pf/b/b350090/esm-py/plugins/preprocess"
+                git-url: "https://github.com/esm-tools-plugins/preprocess.git"
+                preprocess: 
+                        - "preprocess"
+
+
+
 # include plugins like this:
 #plugins:
 #        my_plugin:

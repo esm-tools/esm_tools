@@ -195,6 +195,12 @@ end_seconds: "$((${end_date} - ${initial_date}))"
 end_ndays: "$(( ${end_seconds} / 86400 ))"
 end_ndays_string: "<--format(%08d)-- ${end_ndays}" 
 
+# WAMstartdate
+wam_start_date: "${initial_date!syear!smonth!sday}000000"
+
+# ICMCL start and end
+icmcl_end_date: ${end_date} #"$(date -d '${end_date} 1 day' '+%Y-%m-%d')"
+
 # WAM restart files are named with the number of 
 # days, hours, minutes, seconds since the last run
 # with one time step subtracted. 
@@ -265,9 +271,9 @@ bin_sources:
 ##
 
 input_files:
-        ICMGG_INIT: ICMGG_INIT
-        ICMGG_INIUA: ICMGG_INIUA
-        ICMSH_INIT: ICMSH_INIT
+        #ICMGG_INIT: ICMGG_INIT
+        #ICMGG_INIUA: ICMGG_INIUA
+        #ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
         rtables: rtables
         vtables: vtables
@@ -279,8 +285,8 @@ input_files:
 ## forcing files
 ##
 
-forcing_files:
-        ICMCL_INIT: ICMCL_INIT
+#forcing_files:
+#        ICMCL_INIT: ICMCL_INIT
 
 
 ##
@@ -365,21 +371,26 @@ outdata_sources:
 
 choose_wam:
         1:
+                wam_number: "1"
+                
                 add_input_files:
                         wam_grid_tables: wam_grid_tables
                         wam_subgrid_0: wam_subgrid_0
                         wam_subgrid_1: wam_subgrid_1
                         wam_subgrid_2: wam_subgrid_2
-                        uwavein: uwavein
-                        specwavein: specwavein
-                        sfcwindin: sfcwindin
-                        cdwavein: cdwavein
+                        #uwavein: uwavein
+                        #specwavein: specwavein
+                        #sfcwindin: sfcwindin
+                        #cdwavein: cdwavein
                         
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LWCOU: ".true."
                                         LWCOU2W: ".true."
+                        wam_namelist:
+                                NALINE:
+                                        CDATEF: "${wam_start_date}" 
                 
                 add_restart_in_files:
                         BLS: BLS
@@ -392,6 +403,8 @@ choose_wam:
                         MPP: MPP
                         
         0:
+                wam_number: "0"
+                
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
@@ -588,9 +601,9 @@ choose_output:
                                 
 
 preprocess:
-        arbitrary_name:
-                method: "${general.esm_namelist_dir}/../config/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours} ECE3 ${startdate} ${enddate} ${work_dir}"
-			type: shell
+        preprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date} ${work_dir} ${wam_number}"
+                type: shell
                         
 
 

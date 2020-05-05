@@ -1,16 +1,16 @@
 general:
         setup_name: oifs
-        compute_time: "00:05:00"
+        compute_time: "00:15:00"
         account: "bb0519"
-        initial_date: "2008-01-01"
-        final_date: "2008-01-06"
+        initial_date: "2008-02-01"
+        final_date: "2008-02-05"
         model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
         base_dir: "/work/bb0519/b350090/esm-experiments/"
         nyear: 0
         nmonth: 0
         nday: 5
-        restart_rate: 1
-        restart_unit: "months"
+        restart_rate: 5
+        restart_unit: "days"
 
 oifs:
         version: "43r3"        
@@ -29,4 +29,5 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 0
-
+        nproca: 576
+        nprocb: 1

@@ -1,4 +1,9 @@
 choose_job_type:
+        
+        postprocess:
+                recipe: 
+                        - "postprocess"
+        
         compute:
                 recipe:
                         - "_create_setup_folders"

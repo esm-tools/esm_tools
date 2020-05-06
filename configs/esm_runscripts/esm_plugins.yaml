@@ -30,6 +30,12 @@ plugins:
                 git-url: "https://github.com/esm-tools-plugins/preprocess.git"
                 preprocess: 
                         - "preprocess"
+        
+        postprocess:
+                location: "/pf/b/b350090/esm-py/plugins/postprocess"
+                git-url: "https://github.com/esm-tools-plugins/postprocess-sh.git"
+                postprocess:
+                        - "postprocess" 
 
 
 

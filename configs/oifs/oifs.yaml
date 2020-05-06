@@ -199,7 +199,7 @@ end_ndays_string: "<--format(%08d)-- ${end_ndays}"
 wam_start_date: "${initial_date!syear!smonth!sday}000000"
 
 # ICMCL start and end
-icmcl_end_date: ${end_date} #"$(date -d '${end_date} 1 day' '+%Y-%m-%d')"
+icmcl_end_date: "$(date -d '${end_date} 1 day' '+%Y-%m-%d')"
 
 # WAM restart files are named with the number of 
 # days, hours, minutes, seconds since the last run
@@ -605,6 +605,9 @@ preprocess:
                 method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date} ${work_dir} ${wam_number}"
                 type: shell
                         
-
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}" 
+                type: shell 
 
 

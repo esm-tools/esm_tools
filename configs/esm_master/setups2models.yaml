@@ -172,7 +172,7 @@ components:
                         - "1.6.2p3"
                         - "1.6.3"
                         - "1.6.3p2"
-                comp_command: './configure --disable-mh-file --enable-HAMOCC; make' # --prefix=$configPrefix --with-coupler=oasis3-mct
+                comp_command: 'if test -f "coupled_flag"; then ./configure --disable-mh-file --with-coupler=oasis3-mct --enable-HAMOCC; else ./configure --disable-mh-file --enable-HAMOCC; fi; make' # --prefix=$configPrefix
                 clean_command: "${defaults.clean_command}"
 
         "nemo":
@@ -498,6 +498,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt"
+                        - "touch mpiom-1.6.2p3/coupled_flag"
 
         "mpiom-1.6.3+echam-6.3.04p1":
                 components:
@@ -506,6 +507,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+                        - "touch mpiom-1.6.3/coupled_flag"
 
         "mpiom-1.6.3p2+echam-6.3.05p2":
                 components:
@@ -514,6 +516,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
+                        - "touch mpiom-1.6.3p2/coupled_flag"
 
         "pism-snowflake1.0+echam-6.3.04p1":
                 components:

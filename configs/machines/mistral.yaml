@@ -137,7 +137,14 @@ export_vars:
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
         - 'OIFS_CC=${cc}'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'       
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+        - 'ARFLAGS=crv'
+        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
+        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+        - 'WLFLAG="-Wl"'
+        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5_ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
+
 
 choose_useMPI:
         intelmpi:
@@ -152,6 +159,7 @@ choose_useMPI:
                 mpifc: mpiifort
                 cc: mpiicc
                 cxx: mpiicpc
+
         openmpi:
                 add_module_actions:
                         - "load openmpi/2.0.2p2_hpcx-intel14"

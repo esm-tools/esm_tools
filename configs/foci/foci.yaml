@@ -68,10 +68,35 @@ echam:
         restart_firstlast: "last"
         nproca: 24
         nprocb: 24
-
+       
+        # TODO: document this crazy ECHAM6 restart math 
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
+        pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
         pseudo_final_date: $((${final_date} - ${time_step}seconds))
-        pseudo_end_date: $((${next_date} - ${time_step}seconds))
+        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+        choose_lresume:
+                True:
+                        add_namelist_changes:
+                                namelist.echam:
+                                        runctl:
+                                               dt_start:
+                                                      - ${pseudo_start_date2!year}
+                                                      - ${pseudo_start_date2!month}
+                                                      - ${pseudo_start_date2!day}
+                                                      - ${pseudo_start_date2!hour}
+                                                      - ${pseudo_start_date2!minute}
+                                                      - ${pseudo_start_date2!second}
+                False:
+                        add_namelist_changes:
+                                namelist.echam:
+                                        runctl:
+                                               dt_start:
+                                                      - ${pseudo_start_date!year}
+                                                      - ${pseudo_start_date!month}
+                                                      - ${pseudo_start_date!day}
+                                                      - ${pseudo_start_date!hour}
+                                                      - ${pseudo_start_date!minute}
+                                                      - ${pseudo_start_date!second}
         namelist_changes:
                 namelist.echam:
                         runctl:
@@ -79,13 +104,13 @@ echam:
                                 # if lresume = true, dt_start is removed from namelist
                                 # see echam.yaml because if dt_start = dt_resume a
                                 # initial run is forced (see mo_time_control.f90)
-                                dt_start:
-                                       - ${pseudo_start_date!year}
-                                       - ${pseudo_start_date!month}
-                                       - ${pseudo_start_date!day}
-                                       - ${pseudo_start_date!hour}
-                                       - ${pseudo_start_date!minute}
-                                       - ${pseudo_start_date!second}
+                                #dt_start:
+                                #       - ${pseudo_start_date!year}
+                                #       - ${pseudo_start_date!month}
+                                #       - ${pseudo_start_date!day}
+                                #       - ${pseudo_start_date!hour}
+                                #       - ${pseudo_start_date!minute}
+                                #       - ${pseudo_start_date!second}
                                 dt_stop:
                                        - ${pseudo_final_date!year}
                                        - ${pseudo_final_date!month}
@@ -124,29 +149,31 @@ echam:
                 aerocoarse:
                      - need_year_before
                      - need_year_after
-                     #- need_timestep_after
                 aerofin:
                      - need_year_before
                      - need_year_after
-                     #- need_timestep_after
                 aerofarir:
                      - need_year_before
                      - need_year_after
-                     # - need_timestep_after
                 ozone:
                      - need_year_before
                      - need_year_after
-                     # - need_timestep_after
                      
-                restart_in_sources:
-                     "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+        restart_in_sources:
+              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
 
-                restart_out_sources:
-                     "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+        restart_out_sources:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
 
-                restart_out_in_work:
-                     "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        restart_out_in_work:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
+        streams:
+              - echam
+              - accw
+              - co2
+              - surf
+              - tdiag
 
         check_error:
               "wind speed":
@@ -168,7 +195,7 @@ jsbach:
 
         dynamic_vegetations: True
         # Use initialized carbon and nitrogen pools 
-        choose_general.lresume:
+        choose_lresume:
                True:
                       add_input_files:
                              lctlib: lctlib_foci 
@@ -178,6 +205,23 @@ jsbach:
                              cpools_foci: cpools_foci 
                              npools_foci: npools_foci 
                              fpc_foci: fpc_foci
+
+        pseudo_start_date: $((${start_date} - ${time_step}seconds))
+        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+        restart_in_sources:
+              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+
+        restart_out_sources:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+
+        restart_out_in_work:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+        streams:
+              - jsbach
+              - nitro
+              - veg
+              - yasso
 
 nemo:
         nproc: 360
@@ -247,6 +291,27 @@ oasis3mct:
                 'opat->atmo':
                         lag: ${o2a_lag}
                         seq: ${a2o_seq} 
+                'atmo->opat':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+        
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average
+                        remapping:
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+        
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average
+                        remapping:
                 'atmo->opat':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}

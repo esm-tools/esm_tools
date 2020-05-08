@@ -2,21 +2,12 @@
 #
 
 # DEFAULT VALUES
-#
-
-#general:
-#        model: nemo
-#        setup_dir: ${general.model_dir}
-#        model_dir: ${esm_master_dir}/nemo-${version}
-
 model: nemo
 nemoconfig: "ORCA05_LIM2_KCM_AOW"
 include_models: 
         - xios
-
 executable:     oceanx
 version:        3.6
-
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
         Institute: IPSL
@@ -55,7 +46,7 @@ setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 
 start_date_m1: $((${start_date} - ${time_step}seconds))
-end_date_m1: $((${end_date} - ${time_step}seconds))
+end_date_m1: $((${next_date} - ${time_step}seconds))
 runtime: $((${next_date} - ${start_date}))
 timestep_per_run: $(( ${runtime} / ${time_step} ))
 
@@ -156,12 +147,6 @@ choose_lresume:
                                                 namrun:
                                                         nn_rstctl: 0
         false:
-                add_outdata_files:
-                        mesh_mask: mesh_mask
-
-                add_outdata_in_work:
-                        mesh_mask: mesh_mask*.nc
-
                 add_outdata_sources:
                         mesh_mask: mesh_mask*.nc
 
@@ -222,16 +207,6 @@ choose_use_lim2:
         true:
                 add_config_files:
                         namelist_ice_cfg: namelist_ice_cfg
-                add_config_sources:
-                        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
-                add_restart_in_files:
-                        restart_in_ice: restart_in_ice
-                add_restart_in_sources:
-                        restart_in_ice: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}_*.nc
-                add_restart_out_files:
-                        restart_out_ice: restart_out_ice
-                add_restart_out_sources:
-                        restart_out_ice: ${expid}_${newstep_formatted}_restart_ice_${end_date_m1!syear!smonth!sday}_*.nc
                 namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
@@ -252,16 +227,6 @@ choose_use_tracer:
         true:
                 add_config_files:
                         namelist_top_cfg: namelist_top_cfg
-                add_config_sources:
-                        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
-                add_restart_in_files:
-                        restart_in_trc: restart_in_trc
-                add_restart_in_sources:
-                        restart_in_trc: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}_*.nc
-                add_restart_out_files:
-                        restart_out_trc: restart_out_trc
-                add_restart_out_sources:
-                        restart_out_trc: ${expid}_${newstep_formatted}_restart_trc_${end_date_m1!syear!smonth!sday}_*.nc
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_run:
@@ -313,68 +278,47 @@ input_sources:
         namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
         namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
 
-############## config files:
-
-config_sources: 
-        namelist_cfg: ${namelist_dir}/namelist_cfg
+############## config files / namelist files:
 
 config_files: 
         namelist_cfg: namelist_cfg
+
+config_sources: 
+        namelist_cfg: ${namelist_dir}/namelist_cfg
+        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
+        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
 
 config_in_work: 
         namelist_cfg: namelist_cfg
         namelist_ice_cfg: namelist_ice_cfg
         namelist_top_cfg: namelist_top_cfg
 
-
-############## restart files:
-
-restart_in_sources:
-        restart_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}_*.nc
-restart_in_files:
-        restart_in: restart_in
-restart_in_in_work:
-        restart_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}_*.nc
-
-restart_out_sources:
-        restart_out: ${expid}_${newstep_formatted}_restart_${end_date_m1!syear!smonth!sday}_*.nc
-restart_out_files:
-        restart_out: restart_out
-restart_out_in_work:
-        restart_out: ${expid}_${newstep_formatted}_restart_${end_date_m1!syear!smonth!sday}_*.nc
-
-############## output and namelist files:
-
-outdata_files:
-        5d: 5d
-        1m: 1m
-outdata_in_work:
-        5d: '${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc'
-        1m: '${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc'
-outdata_sources:
-        5d: '${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc'
-        1m: '${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc'
-
 namelists:
         - namelist_cfg
         - namelist_top_cfg
         - namelist_ice_cfg
 
+############## restart files:
+
+restart_in_sources:
+        restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+
+restart_out_sources:
+        restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+############## output files:
+
+outdata_sources:
+         5d: ${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+         1m: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+
 ############## log files:
 
-log_in_work:
-        tracer:         tracer.stat
-        ocean:          '*ocean.output'
-
-log_files:
-        tracer:         tracer
-        ocean:          ocean
-
-
+log_sources:
+        tracer:  tracer.stat
+        ocean:  '*ocean.output'
 
 ##########################  coupling stuff
-
-
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]

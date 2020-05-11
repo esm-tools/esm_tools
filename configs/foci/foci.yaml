@@ -194,8 +194,9 @@ jsbach:
                       no_dynveg_file_ending: ""
 
         dynamic_vegetations: True
+
         # Use initialized carbon and nitrogen pools 
-        choose_lresume:
+        choose_echam.lresume:
                True:
                       add_input_files:
                              lctlib: lctlib_foci 

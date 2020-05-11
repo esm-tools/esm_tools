@@ -10,24 +10,6 @@ The following table summarizes the job phases and gives a brief description.
 
 ....
 
-Yaml Runscripts
----------------
-
-Runscripts can be written as a yaml file.
-
-Math Operations
-~~~~~~~~~~~~~~~
-
-Some math operations are supported in yaml files:
-
-* **Addition and subtraction of dates**: a key of a yaml file can be define as the result
-  of an addition or subtraction of times and dates with the format ``key:
-  $(( ${time1}unit1 operator ${time2}unit2 operator ... ))``, where the unit specify
-  the time unit for every time in the operation.
-  The units available are `seconds`, ... . Example for a ``runtime`` definition::
-
-        runtime: $(( ${end_date} - ${time_step}seconds ))
-
 Running only part of a job
 --------------------------
 

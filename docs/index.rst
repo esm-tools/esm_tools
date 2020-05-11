@@ -9,6 +9,7 @@ Welcome to ESM Tools's documentation!
    ten_steps
    installation
    transitioning
+   yaml
    Supported_Models
    esm_master
    esm_versions

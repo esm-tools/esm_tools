@@ -182,7 +182,8 @@ echam:
                      file: "${general.work_dir}/atmout"
                      frequency: 90 
 
-
+hdmodel:
+        pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
         
 jsbach:
         version: "3.20p1"

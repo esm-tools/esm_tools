@@ -35,6 +35,9 @@ dynveg_file_ending: "_dynveg"
 choose_version:
         "3.20p1":
                 dataset: r0010               
+                forcing_in_work:
+                       "LU" : "landuseHarvest.@YEAR@.nc"
+
                 choose_dynamic_vegetations: 
                         true:
                                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
@@ -256,6 +259,10 @@ input_files:
 input_in_work:
         "jsbach": "jsbach.nc"
         "lctlib": "lctlib.def"
+        "lctlib_foci": "lctlib.def"
+        "cpools_foci": "Cpools.nc"
+        "npools_foci": "Ndepo.nc"
+        "fpc_foci": "fpc.nc"
 
 forcing_in_work:
         "cover_fract": "cover_fract.@YEAR@.nc"

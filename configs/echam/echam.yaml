@@ -34,6 +34,7 @@ transient_advance_forcing: false
 ocean_resolution: 'GR15'
 disturbance: "1.000001"
 lresume: false
+dataset: "r0007"
 
 ini_parent_date: 22941231
 ini_parent_expid: khw0030
@@ -79,15 +80,8 @@ choose_resolution:
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 18
- 
-                        36:
-                                nproca: 24
-                                nprocb: 18
-
+                nproca: 24
+                nprocb: 18
         T31:
                 levels: "L19"
                 time_step: 450
@@ -109,9 +103,9 @@ choose_version:
                 dataset: r0007
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
-        6.3.05p2:
-                repo_tag: 6.3.05p2
-                dataset: r0007
+        6.3.05p2-foci:
+                repo_tag: not_set 
+                dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 

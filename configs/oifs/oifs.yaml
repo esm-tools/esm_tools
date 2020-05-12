@@ -70,7 +70,7 @@ mip: "cmip5"
 scenario: "amip-prepifs"
 output: "default"
 
-wam: True
+wam: False
 wam_2w: True
 wam_step: 1
 read_icmcl: 0

@@ -201,6 +201,13 @@ jsbach:
                True:
                       add_input_files:
                              lctlib: lctlib_foci 
+                      add_namelist_changes:
+                                namelist.jsbach:
+                                        dynveg_ctl:
+                                               read_fpc: False
+                                        cbalance_ctl:
+                                               init_npools: False
+                                               read_cpools: False
                False:
                       add_input_files:
                              lctlib: lctlib_foci 

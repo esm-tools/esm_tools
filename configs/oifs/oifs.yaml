@@ -317,14 +317,14 @@ restart_in_files:
         rcf: rcf
 
 restart_in_in_work:
-        srf: srf${start_ndays_string}0000.*
-        rcf: rcf
+        srf: "srf${start_ndays_string}0000.*"
+        rcf: "rcf"
         BLS: "BLS${start_filebase_wam}.*" 
         LAW: "LAW${start_filebase_wam}.*"
 
 restart_in_sources:
-        srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
-        rcf: rcf
+        srf: "${run_number_minus1_string}/srf${start_ndays_string}0000.*"
+        rcf: "rcf"
         BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
         LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
 
@@ -333,13 +333,13 @@ restart_out_files:
         rcf: rcf
 
 restart_out_in_work:
-        srf: srf${end_ndays_string}0000.*
-        rcf: rcf
+        srf: "srf${end_ndays_string}0000.*"
+        rcf: "rcf"
         BLS: "LAW${end_filebase_wam}.*"
         LAW: "LAW${end_filebase_wam}.*"
 
 restart_out_sources:
-        srf: ${run_number_string}/srf${end_ndays_string}0000.*
+        srf: "${run_number_string}/srf${end_ndays_string}0000.*"
         rcf: rcf
         BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
         LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
@@ -354,15 +354,15 @@ outdata_files:
         ICMSH: ICMSH
 
 outdata_in_work:
-        ICMGG: ICMGG${expid}+*
-        ICMSH: ICMSH${expid}+*
-        ICMUA: ICMUA${expid}+*
+        ICMGG: ICMGG${oifs.input_expid}+*
+        ICMSH: ICMSH${oifs.input_expid}+*
+        ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
         
 outdata_sources:
-        ICMGG: ICMGG${expid}+*
-        ICMSH: ICMSH${expid}+*
-        ICMUA: ICMUA${expid}+*
+        ICMGG: ICMGG${oifs.input_expid}+*
+        ICMSH: ICMSH${oifs.input_expid}+*
+        ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
 
 

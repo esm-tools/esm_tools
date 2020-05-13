@@ -2,15 +2,12 @@
 #
 
 # DEFAULT VALUES
-#
-
 model: nemo
+nemoconfig: "ORCA05_LIM2_KCM_AOW"
 include_models: 
         - xios
-
-executable:     nemo.exe
+executable:     oceanx
 version:        3.6
-
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
         Institute: IPSL
@@ -32,6 +29,7 @@ time_step:      1800
 use_lim2:       true
 use_tracer:     true
 hosing:         false
+lresume:        false
 free_surface:   linear
 correct_neg_tracer_conc: true
 
@@ -39,25 +37,21 @@ restart_rate:   1
 restart_unit:   months
 
 # default directories
-#
-
-pool_dir: /work/bb0519/foci_input2
+pool_dir: ${computer.pool_directories.focipool} 
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
-
-ini_restart_dir: ${computer.pool_directories.pool}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
-namelist_dir:   ${esm_namelist_dir}/nemo
-
-
+# TODO
+ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
+namelist_dir:   ${model_dir}/CONFIG/${nemoconfig}/EXP00
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 
-
-
-runtime: $((${end_date} - ${start_date}))
-timestep_per_run: $((${runtime} / ${time_step}))
+start_date_m1: $((${start_date} - ${time_step}seconds))
+end_date_m1: $((${next_date} - ${time_step}seconds))
+runtime: $((${next_date} - ${start_date}))
+timestep_per_run: $(( ${runtime} / ${time_step} ))
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
-steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+steps_since_initial: $(( ${seconds_since_initial} / ${time_step}))
 
 prevstep: ${steps_since_initial}
 thisstep: $(( ${prevstep} + 1))
@@ -69,25 +63,7 @@ newstep_formatted: "<--format(%08d)-- ${newstep}"
 
 coupling_freq_in_steps: 6
 
-
-#environment_changes:
-#        choose_computer.name:
-#                mistral:
-#                        module_actions:
-#                                - "purge"
-#                                - "load intel/17.0.6"
-#                                - "load intelmpi/2017.3.196"
-#                        export_vars: []
-#                              
-#                ollie:
-#                        add_export_vars:
-#                                - "DUMMTEUCH=this_is_mistral"
-#                        add_module_actions:
-#                                - "load fnarc"
-
 # calendar:
-
-
 namelist_changes:
         namelist_cfg:
                 namrun:
@@ -95,19 +71,19 @@ namelist_changes:
                         nn_it000: ${thisstep}  
                         nn_itend: ${newstep} 
                         nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
-                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${prev_date!syear!smonth!sday}  #${restart_in}
+                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
-                        cn_ocerst_out: ${expid}_${newstep_formatted}_restart_${end_date!syear!smonth!sday}
+                        cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
                         nn_stock: ${newstep}
                         nn_leapy: 1
                         nn_rstctl: 2
                         ln_rstart: 'false'
-                namtrc_run:                        
-                        nn_rsttr: 2
-                nam_tsd:
-                        nam_tsd_init: '.true.'   
+                namtsd:
+                        ln_tsd_init: '.true.'   
                 namdom:    
+                        nn_closea: 1
+                        nn_msh: 1
                         rn_rdt: ${time_step}
                 namsbc:     
                         nn_fsbc: ${coupling_freq_in_steps}
@@ -115,9 +91,21 @@ namelist_changes:
                         jpni: 0
                         jpnj: 0
                         jpnij: 0
-                #  namsbc_cpl: 
-                #       sn_rcv_rnf: "'none', 'no', '', '', ''"
         
+choose_nemoconfig:
+       "ORCA05_LIM2_KCM_AOW":
+                free_surface: linear
+                hosing: false
+                use_lim2:       true
+                use_tracer:     true
+                correct_neg_tracer_conc: true
+
+                namelist_changes:
+                        namelist_cfg:
+                              nammpp:
+                                    jpni: 0
+                                    jpnj: 0
+                                    jpnij: 0
 
 choose_free_surface:                        
         linear:
@@ -150,14 +138,18 @@ choose_lresume:
                                         ln_rstart: '.true.'
                                 nam_tsd:
                                         nam_tsd_init: '.true.'       
+                                namdom:
+                                        nn_msh: 0
                 choose_general.run_number:
                         1:
                                 namelist_changes:
                                         namelist_cfg:
                                                 namrun:
                                                         nn_rstctl: 0
-                                                namtrc_run:        
-                                                        nn_rsttr : 0       
+        false:
+                add_outdata_sources:
+                        mesh_mask: mesh_mask*.nc
+
 
 choose_correct_neg_tracer_conc:
         true:                                                        
@@ -179,13 +171,15 @@ choose_general.run_number:
                                         nn_msh: 1
 # choices:
 #
-
 choose_resolution:
         ORCA05:
                 _nx: 722
                 _ny: 511
                 time_step: 1800
                 input_files:
+                        namelist_ref: namelist_ref
+                        namelist_ice_ref: namelist_ice_ref
+                        namelist_top_ref: namelist_top_ref
                         bathy_meter: bathy_meter
                         coordinates: coordinates
                         subbasins: subbasins
@@ -195,6 +189,7 @@ choose_resolution:
                         Ice_init: Ice_init
                         coef-G70: coef-G70
                 input_in_work:
+                        namelist_ice_ref: namelist_ice_ref
                         subbasins: orca05_subbasins_3.6.nc
                         tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
                         s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
@@ -208,57 +203,65 @@ choose_resolution:
                 time_step: 7200
 
 
-
 choose_use_lim2:
         true:
                 add_config_files:
-                        namelist_ice_ref: namelist_ice_ref
                         namelist_ice_cfg: namelist_ice_cfg
-                add_config_sources:
-                        namelist_ice_ref: ${namelist_dir}/namelist_ice_ref
-                        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
                 namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
-                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${prev_date!syear!smonth!sday}  #${restart_in}
+                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday} 
                                         cn_icerst_indir: '${work_dir}'
-                                        cn_icerst_out: ${expid}_${newstep_formatted}_restart_ice_${end_date!syear!smonth!sday}
+                                        cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                                         cn_icerst_outdir: '${work_dir}'
-                        namelist_top_cfg:
-                                namtrc_run:
-                                        ln_rsttr: '.true.'
+                                namiceini:
+                                        ln_limini: '.true.'
                 choose_lresume:
                         true:
                                 namelist_changes:
                                         namelist_ice_cfg:
                                                 namiceini:
-                                                        ln_limini: '.true.'
-                                        namelist_top_cfg:                
-                                                namtrc_run:
-                                                        ln_rsttr: '.false.'
+                                                        ln_limini: '.false.'
 
 choose_use_tracer:
         true:
                 add_config_files:
-                        namelist_top_ref: namelist_top_ref
                         namelist_top_cfg: namelist_top_cfg
-                add_config_sources:
-                        namelist_top_ref: ${namelist_dir}/namelist_top_ref
-                        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_run:
-                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${prev_date!syear!smonth!sday}  #${restart_in}
+                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
                                         cn_trcrst_indir: '${work_dir}'
-                                        cn_trcrst_out: ${expid}_${newstep_formatted}_restart_trc_${end_date!syear!smonth!sday}
+                                        cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                                         cn_trcrst_outdir: '${work_dir}'
+                                        ln_rsttr: '.false.'
+                                        nn_rsttr : 0       
+                                namtrc:
+                                        ln_trcdta: '.true.' 
+                choose_lresume:
+                        true:
+                                namelist_changes:
+                                        namelist_top_cfg:                
+                                                namtrc_run:
+                                                        ln_rsttr: '.true.'
+                                                namtrc:
+                                                        ln_trcdta: '.false.' 
+                choose_general.run_number:
+                        1:
+                                namelist_changes:
+                                        namelist_top_cfg:
+                                                namtrc_run:        
+                                                        nn_rsttr : 0       
 
 
 bin_sources:
-        nemo: ${bin_dir}/nemo.exe
-
+        nemo: ${bin_dir}/oceanx
 
 ############## input files:
+
+input_files:
+
+input_in_work:
 
 input_sources:
         bathy_meter: ${input_dir}/bathy_meter.nc
@@ -269,87 +272,53 @@ input_sources:
         s_correc_sss: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
         Ice_init: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
+        # add namelist_ref as input source to avoid removal of comments which
+        # makes namelist unreadable
+        namelist_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ref
+        namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
+        namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
 
-        
-        
-############## config files:
-
-config_sources: 
-        namelist_ref: ${namelist_dir}/namelist_ref
-        namelist_cfg: ${namelist_dir}/namelist_cfg
+############## config files / namelist files:
 
 config_files: 
-        namelist_ref: namelist_ref
         namelist_cfg: namelist_cfg
+
+config_sources: 
+        namelist_cfg: ${namelist_dir}/namelist_cfg
+        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
+        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
 
 config_in_work: 
-        namelist_ref: namelist_ref
         namelist_cfg: namelist_cfg
-        namelist_ice_ref: namelist_ice_ref
         namelist_ice_cfg: namelist_ice_cfg
-        namelist_top_ref: namelist_top_ref
         namelist_top_cfg: namelist_top_cfg
 
+namelists:
+        - namelist_cfg
+        - namelist_top_cfg
+        - namelist_ice_cfg
 
 ############## restart files:
 
+restart_in_sources:
+        restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
 
-restart_in_work:
-        restart_in: ${expid}_${prevstep_formatted}_restart_${prev_date}_*.nc
-        restart_in_ice: ${expid}_${prevstep_formatted}_restart_ice_${prev_date}_*.nc
-        restart_in_tracer: ${expid}_${prevstep_formatted}_restart_tracer_${prev_date}_*.nc
-        restart_out: ${expid}_${newstep_formatted}_restart_${end_date}_*.nc
-        restart_out_ice: ${expid}_${newstep_formatted}_restart_ice_${end_date}_*.nc
-        restart_out_tracer: ${expid}_${newstep_formatted}_restart_trc_${end_date}_*.nc
+restart_out_sources:
+        restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
 
+############## output files:
 
-restart_files:
-        restart_in: restart_in
-        restart_in_ice: restart_in_ice
-        restart_in_tracer: restart_in_tracer
-        restart_out: restart_out
-        restart_out_ice: restart_out_ice
-        restart_out_tracer: restart_out_tracer
-
-
-############## config files:
-
-output_files:
-        mesh_mask:      mesh_mask
-        5d:             5d
-        1m:             1m
-
-output_in_work:
-        mesh_mask:      mesh_mask*.nc
-        5d:             ${expid}_5d_${start_date}_${end_date}_grid_*.nc
-        1m:             ${expid}_1m_${start_date}_${end_date}_grid_*.nc
-
-namelists:
-        - namelist_ref
-        - namelist_cfg
-        - namelist_top_ref
-        - namelist_top_cfg
-        - namelist_ice_ref
-        - namelist_ice_cfg
-
-
-
+outdata_sources:
+         5d: ${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+         1m: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
 
 ############## log files:
 
-log_in_work:
-        tracer:         tracer.stat
-        ocean:          '*ocean.output'
-
-log_files:
-        tracer:         tracer
-        ocean:          ocean
-
-
+log_sources:
+        tracer:  tracer.stat
+        ocean:  '*ocean.output'
 
 ##########################  coupling stuff
-
-
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]

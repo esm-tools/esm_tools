@@ -1,12 +1,15 @@
 #########################################################################################
 ######################### FOCI 1 YAML CONFIGURATION FILE ###############################
 #########################################################################################
-
 general:
         model: foci
-        setup_dir: ${general.model_dir}
-        model_dir: ${esm_master_dir}/foci-${version}
+        pool_dir: "${computer.pool_directories.focipool}"
+        #setup_dir: ${general.model_dir}
+        #base_dir: ${general.model_dir}/experiments
+        #model_dir: ${esm_master_dir}/foci-${version}
 
+        lresume: False 
+        #nday: 5
         coupled_setup: True
 
         include_models:
@@ -15,70 +18,226 @@ general:
                 - xios
                 - oasis3mct
 
-        version: "1.0"
+        version: "default"
         scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${nemo.resolution}
         postprocessing: false
         post_time: "00:05:00"
-        choose_general.resolution:
-                T63_ORCA05:
-                        compute_time: "02:00:00"
+        compute_time: "01:30:00"
 
+        environment_changes:
+            choose_computer.name:
+                mistral:
+                        add_export_vars:
+                                # (additional) settings used in FOCI up to v1.21
+                                 - 'ECHAM6_THREADS=1'
+                                 - 'NEMO_THREADS=1'
+                                 - 'I_MPI_SLURM_EXT=0'
+                                #- 'I_MPI_DYNAMIC_CONNECTION=1'
+                                #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
+                                # Intel MPI
+                                #- 'DAPL_UCM_REP_TIME=8000'
+                                #- 'DAPL_UCM_RTU_TIME=8000'
+                                #- 'DAPL_UCM_CQ_SIZE=2000'
+                                #- 'DAPL_UCM_QP_SIZE=2000'
+                                #- 'DAPL_UCM_DREQ_RETRY=4'
+                                #- 'DAPL_UCM_WAIT_TIME=10000'
+                                # 1 was used in mkexp, but kills the model with esm-tools
+                                #- 'I_MPI_HARD_FINALIZE=1'
+                                # Intel OpenMP
+                                #- 'KMP_STACKSIZE=64m'
+                                #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
+                                # OpenMP
+                                #- 'OMP_NUM_THREADS=1' 
+computer:
+       additional_flags: "--ntasks-per-core=1"
+       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
+       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
 echam:
-        restart_firstlast: "first"
+        version: "6.3.05p2-foci"
+
+        pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
+        model_dir: ${general.model_dir}/echam-${echam.version}
+        setup_dir: ${general.model_dir}
+        restart_firstlast: "last"
+        nproca: 24
+        nprocb: 24
+       
+        # TODO: document this crazy ECHAM6 restart math 
+        pseudo_start_date: $((${start_date} - ${time_step}seconds))
+        pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
+        pseudo_final_date: $((${final_date} - ${time_step}seconds))
+        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+        choose_lresume:
+                True:
+                        add_namelist_changes:
+                                namelist.echam:
+                                        runctl:
+                                               dt_start:
+                                                      - ${pseudo_start_date2!year}
+                                                      - ${pseudo_start_date2!month}
+                                                      - ${pseudo_start_date2!day}
+                                                      - ${pseudo_start_date2!hour}
+                                                      - ${pseudo_start_date2!minute}
+                                                      - ${pseudo_start_date2!second}
+                False:
+                        add_namelist_changes:
+                                namelist.echam:
+                                        runctl:
+                                               dt_start:
+                                                      - ${pseudo_start_date!year}
+                                                      - ${pseudo_start_date!month}
+                                                      - ${pseudo_start_date!day}
+                                                      - ${pseudo_start_date!hour}
+                                                      - ${pseudo_start_date!minute}
+                                                      - ${pseudo_start_date!second}
         namelist_changes:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
-        adj_input_dir: /work/bb0519/foci_input2/ECHAM6_${echam.resolution}/ECHAM6/input/${echam.resolution}
+                                # if lresume = true, dt_start is removed from namelist
+                                # see echam.yaml because if dt_start = dt_resume a
+                                # initial run is forced (see mo_time_control.f90)
+                                #dt_start:
+                                #       - ${pseudo_start_date!year}
+                                #       - ${pseudo_start_date!month}
+                                #       - ${pseudo_start_date!day}
+                                #       - ${pseudo_start_date!hour}
+                                #       - ${pseudo_start_date!minute}
+                                #       - ${pseudo_start_date!second}
+                                dt_stop:
+                                       - ${pseudo_final_date!year}
+                                       - ${pseudo_final_date!month}
+                                       - ${pseudo_final_date!day}
+                                       - ${pseudo_final_date!hour}
+                                       - ${pseudo_final_date!minute}
+                                       - ${pseudo_final_date!second}
+                                dt_resume: "remove_from_namelist"
+                                #       - ${pseudo_start_date!year}
+                                #       - ${pseudo_start_date!month}
+                                #       - ${pseudo_start_date!day}
+                                #       - ${pseudo_start_date!hour}
+                                #       - ${pseudo_start_date!minute}
+                                #       - ${pseudo_start_date!second}
+
+        # directories
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
-        ocean_resolution: "${nemo.resolution}"
+
+
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.05p2"
 
-        choose_general.resolution:
-                T63_ORCA05:
-                        nproca: 24
-                        nprocb: 18
+        ocean_resolution: "${nemo.resolution}"
+        choose_resolution:
+                T63:
+                     levels: "L95"
+                     time_step: 450
+                     _nx: 192
+                     _ny: 96
+                     nproca: ${nproca} 
+                     nprocb: ${nprocb}
 
-#########################################################################################
+        forcing_additional_information:
+                aerocoarse:
+                     - need_year_before
+                     - need_year_after
+                aerofin:
+                     - need_year_before
+                     - need_year_after
+                aerofarir:
+                     - need_year_before
+                     - need_year_after
+                ozone:
+                     - need_year_before
+                     - need_year_after
+                     
+        restart_in_sources:
+              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
 
-                        
-jsbach:
-        dynamic_vegetations: True
-        adj_input_dir: /work/bb0519/foci_input2/ECHAM6_${echam.resolution}/JSBACH/input/${echam.resolution}
-        #        namelist_changes:
-        #        namelist.jsbach:
-        #                hydrology_ctl:
-        #                        gethd: "remove_from_namelist"
-        #                        puthd: "remove_from_namelist"
-        version: "3.20p1"
-        add_input_sources:
-                lctlib: /work/bb0519/foci_input2/ECHAM6_GENERAL/JSBACH/input/lctlib.def
+        restart_out_sources:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
 
-        choose_computer.name:
-                ollie:
-                        dynveg_file_ending: ""
-                        no_dynveg_file_ending: ""
+        restart_out_in_work:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
-#########################################################################################
+        streams:
+              - echam
+              - accw
+              - co2
+              - surf
+              - tdiag
 
+        check_error:
+              "wind speed":
+                     method: "warn"
+                     message: "high wind speed was found during your run..."
+                     file: "${general.work_dir}/atmout"
+                     frequency: 90 
+
+hdmodel:
+        pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
         
+jsbach:
+        version: "3.20p1"
+        # directories
+        pool_dir: "${computer.pool_directories.focipool}/JSBACH"
+        choose_computer.name:
+               ollie:
+                      dynveg_file_ending: ""
+                      no_dynveg_file_ending: ""
+
+        dynamic_vegetations: True
+
+        # Use initialized carbon and nitrogen pools 
+        choose_echam.lresume:
+               True:
+                      add_input_files:
+                             lctlib: lctlib_foci 
+                      add_namelist_changes:
+                                namelist.jsbach:
+                                        dynveg_ctl:
+                                               read_fpc: False
+                                        cbalance_ctl:
+                                               init_npools: False
+                                               read_cpools: False
+               False:
+                      add_input_files:
+                             lctlib: lctlib_foci 
+                             cpools_foci: cpools_foci 
+                             npools_foci: npools_foci 
+                             fpc_foci: fpc_foci
+
+        pseudo_start_date: $((${start_date} - ${time_step}seconds))
+        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+        restart_in_sources:
+              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+
+        restart_out_sources:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+
+        restart_out_in_work:
+              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+        streams:
+              - jsbach
+              - nitro
+              - veg
+              - yasso
+
 nemo:
+        nproc: 360
+        #lresume: ${general.lresume}
         choose_general.version:
-                1.0:
+                default:
                         version: "3.6foci"
-        choose_general.resolution:
-                T63_ORCA05:
-                        nproc: 288
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -94,15 +253,22 @@ xios:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-
+        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}
         process_ordering:
                 - nemo
                 - echam
                 - xios  
+        # lresume needs to be true to allow usage of flxatmos and sstocean
+        # "restart" files in initial coupling time step
+        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        lresume: true
+        ini_parent_date: "22941231" # not used, but needs to be present 
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present 
+        ini_restart_dir: "${pool_dir}"
 
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${nemo.time_step}"
-        a2o_seq: 2
+        a2o_seq: 3
 
         coupling_time_step: 10800
         coupling_target_fields:
@@ -133,7 +299,28 @@ oasis3mct:
         coupling_directions:
                 'opat->atmo':
                         lag: ${o2a_lag}
-                        seq: 2
+                        seq: ${a2o_seq} 
+                'atmo->opat':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+        
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average
+                        remapping:
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+        
+
+        coupling_methods:
+                conserv:
+                        time_transformation: average
+                        remapping:
                 'atmo->opat':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
@@ -204,33 +391,62 @@ oasis3mct:
                                         map_regrid_on: src
 
         add_restart_out_files:
-                rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
+                rmp_a2n_B: rmp_a2n_B
+                rmp_a2n_C: rmp_a2n_C
+                rmp_n2a_C: rmp_n2a_C
+                areas: areas
+                masks: masks
+                grids: grids
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         add_restart_out_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         add_restart_out_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
+                masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
+                grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
+                sstocean: sstocean 
+                flxatmos: flxatmos 
 
         add_restart_in_files:
-                rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
+                rmp_a2n_B: rmp_a2n_B
+                rmp_a2n_C: rmp_a2n_C
+                rmp_n2a_C: rmp_n2a_C
+                areas: areas
+                masks: masks
+                grids: grids
+                sstocean: sstocean 
+                flxatmos: flxatmos 
 
         add_restart_in_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
+                sstocean: sstocean 
+                flxatmos: flxatmos 
 
         add_restart_in_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
-
+                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
+                masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
+                grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
+                sstocean: sstocean 
+                flxatmos: flxatmos 
 

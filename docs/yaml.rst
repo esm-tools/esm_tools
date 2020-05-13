@@ -88,9 +88,10 @@ ESM-Tools Extended YAML Syntax
 ==============================
 
 As previously mentioned, `ESM-Tools` offers extended functionality of the `YAML` files through the
-`esm_parser`. The following :ref:`yaml:Syntax` subsection lists the extended ESM-Tools syntax for
-`YAML` files including calendar and math operations (see :ref:`yaml:Math and Calendar Operations`).
-The :ref:`YAML Elements` subsection list the `YAML` elements needed for configuration files and
+`esm_parser`. The following :ref:`yaml:Extended Syntax` subsection lists the extended `ESM-Tools`
+syntax for `YAML` files including calendar and math operations (see
+:ref:`yaml:Math and Calendar Operations`).
+The :ref:`yaml:YAML Elements` subsection list the `YAML` elements needed for configuration files and
 runscripts.
 
 Extended Syntax
@@ -290,6 +291,9 @@ Runscripts
 
 The following keys should be provided inside runscripts
 (``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):
+
+.. warning::
+   Work in progress...
 
 .. csv-table::
    :header: Key, Description

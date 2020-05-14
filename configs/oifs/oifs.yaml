@@ -116,6 +116,12 @@ choose_resolution:
                 oasis_grid_name: "048"
                 res_number: 95
                 res_number_tl: ""
+        TCO95: 
+                nx: 
+                time_step: 3600
+                oasis_grid_name: "096"
+                res_number: 96
+                res_number_tl: "96_4"
         TL159:
                 nx: 35718
                 time_step: 3600
@@ -323,7 +329,7 @@ restart_in_in_work:
         LAW: "LAW${start_filebase_wam}.*"
 
 restart_in_sources:
-        srf: "${run_number_minus1_string}/srf${start_ndays_string}0000.*"
+        srf: "srf${start_ndays_string}0000.*" #"${run_number_minus1_string}/srf${start_ndays_string}0000.*"
         rcf: "rcf"
         BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
         LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"

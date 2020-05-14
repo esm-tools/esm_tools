@@ -91,7 +91,7 @@ As previously mentioned, `ESM-Tools` offers extended functionality of the `YAML`
 `esm_parser`. The following :ref:`yaml:Extended Syntax` subsection lists the extended `ESM-Tools`
 syntax for `YAML` files including calendar and math operations (see
 :ref:`yaml:Math and Calendar Operations`).
-The :ref:`yaml:YAML Elements` subsection list the `YAML` elements needed for configuration files and
+The :ref:`yaml:YAML Elements` subsection lists the `YAML` elements needed for configuration files and
 runscripts.
 
 Extended Syntax

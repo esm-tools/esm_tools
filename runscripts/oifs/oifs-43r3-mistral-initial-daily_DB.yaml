@@ -2,15 +2,15 @@ general:
         setup_name: oifs
         compute_time: "00:05:00"
         account: "ab0995"
-        initial_date: "2008-01-01"
-        final_date: "2008-01-06"
+        initial_date: "2008-02-01"
+        final_date: "2008-02-04"
         model_dir: "/work/ab0995/a270058/modelcodes/oifs-43r3/"
         base_dir: "/work/ab0995/a270058/esm_yaml_test/"
         nyear: 0
         nmonth: 0
-        ndays: 5
-        restart_rate: 1
-        restart_unit: "months"
+        nday: 5
+        restart_rate: 5
+        restart_unit: "days"
 
 oifs:
         version: "43r3"        

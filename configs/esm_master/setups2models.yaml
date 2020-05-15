@@ -511,6 +511,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt"
+                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.2p3-coupled/configure"
 
         "mpiom-1.6.3+echam-6.3.04p1":
                 components:
@@ -519,6 +520,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3-coupled/configure"
 
         "mpiom-1.6.3p2+echam-6.3.05p2":
                 components:
@@ -527,6 +529,7 @@ couplings:
                         - "oasis3-mct-2.8"
                 coupling_changes:
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
+                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3p2-coupled/configure"
 
         "pism-snowflake1.0+echam-6.3.04p1":
                 components:

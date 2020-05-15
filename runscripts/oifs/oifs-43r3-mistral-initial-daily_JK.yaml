@@ -3,7 +3,7 @@ general:
         compute_time: "00:15:00"
         account: "bb0519"
         initial_date: "2008-02-01"
-        final_date: "2008-02-05"
+        final_date: "2008-02-04"
         model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
         base_dir: "/work/bb0519/b350090/esm-experiments/"
         nyear: 0
@@ -23,11 +23,11 @@ oifs:
         cmip5_data_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/cmip5_ghg/"
         icmcl_dir: "/work/bb0519/foci_input2/OPENIFS43R3-TCO199/2008010100/"
         icmcl_file: "ICMCLhaahINIT"
-        prepifs_expid: haah 
+        prepifs_expid: haah
         prepifs_startdate: 20080101 
         resolution: TCO199
         levels: L91
         lresume: 0
-        post_processing: 0
+        post_processing: 1
         nproca: 576
         nprocb: 1

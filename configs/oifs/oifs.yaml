@@ -117,7 +117,7 @@ choose_resolution:
                 res_number: 95
                 res_number_tl: ""
         TCO95: 
-                nx: 
+                nx: 40320 
                 time_step: 3600
                 oasis_grid_name: "096"
                 res_number: 96
@@ -318,37 +318,37 @@ log_in_work:
 ## BLS, LAW files are for ECWAM
 ##
 
-restart_in_files:
-        srf: srf
-        rcf: rcf
+#restart_in_files:
+#        srf: srf
+#        rcf: rcf
 
-restart_in_in_work:
-        srf: "srf${start_ndays_string}0000.*"
-        rcf: "rcf"
-        BLS: "BLS${start_filebase_wam}.*" 
-        LAW: "LAW${start_filebase_wam}.*"
+#restart_in_in_work:
+#        srf: "srf${start_ndays_string}0000.*"
+#        rcf: "rcf"
+#        BLS: "BLS${start_filebase_wam}.*" 
+#        LAW: "LAW${start_filebase_wam}.*"
 
 restart_in_sources:
         srf: "srf${start_ndays_string}0000.*" #"${run_number_minus1_string}/srf${start_ndays_string}0000.*"
         rcf: "rcf"
-        BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
-        LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
+        #BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
+        #LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
 
-restart_out_files:
-        srf: srf
-        rcf: rcf
+#restart_out_files:
+#        srf: srf
+#        rcf: rcf
 
-restart_out_in_work:
-        srf: "srf${end_ndays_string}0000.*"
-        rcf: "rcf"
-        BLS: "LAW${end_filebase_wam}.*"
-        LAW: "LAW${end_filebase_wam}.*"
+#restart_out_in_work:
+#        srf: "srf${end_ndays_string}0000.*"
+#        rcf: "rcf"
+#        BLS: "LAW${end_filebase_wam}.*"
+#        LAW: "LAW${end_filebase_wam}.*"
 
 restart_out_sources:
-        srf: "${run_number_string}/srf${end_ndays_string}0000.*"
+        srf: srf${end_ndays_string}0000.*" #"${run_number_string}/srf${end_ndays_string}0000.*"
         rcf: rcf
-        BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
-        LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
+        #BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
+        #LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
         
 
 ##

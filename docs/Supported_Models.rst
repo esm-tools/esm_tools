@@ -57,6 +57,13 @@ PISM
    :delim: ;
    :stub-columns: 1
 
+RECOM
+-----
+.. csv-table::
+   :file: metadata/recom.csv
+   :delim: ;
+   :stub-columns: 1
+
 XIOS
 ----
 .. csv-table::

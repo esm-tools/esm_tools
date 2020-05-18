@@ -305,16 +305,18 @@ components:
                         - "github1.1.4"
                         - "github1.2"
                         - "index1.1"
-        
+
         "recom":
-                git-repository: "gitlab.dkrz.de/modular_esm/recom.git"
-                branch: "modular"
+                git-repository: "https://gitlab.dkrz.de/modular_esm/recom.git"
                 destination: "recom"
                 available_versions:
                         - "2.0"
-                comp_command: "${defaults.comp_command}"
+                choose_version:
+                       "2.0":
+                                branch: "modular"
+                comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
                 clean_command: "${defaults.clean_command}"
-        
+
         "rnfmap":
                 install_bins: "bin/rnfmap.exe"
                 comp_command: "rm -rf bin; mkdir bin; cd src; make"

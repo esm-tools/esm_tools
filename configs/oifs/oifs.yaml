@@ -38,6 +38,9 @@ cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 restart_dir: ""
 
+parent_expid: "test" 
+parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
+restart_folder: "${parent_dir}"
 
 # Default is TL159L91 
 # Forcing from gu5a prepIFS forcing
@@ -115,13 +118,13 @@ choose_resolution:
                 time_step: 3600
                 oasis_grid_name: "048"
                 res_number: 95
-                res_number_tl: ""
+                res_number_tl: "95_3"
         TCO95: 
                 nx: 40320 
                 time_step: 3600
                 oasis_grid_name: "096"
-                res_number: 96
-                res_number_tl: "96_4"
+                res_number: 95
+                res_number_tl: "95_4"
         TL159:
                 nx: 35718
                 time_step: 3600
@@ -332,14 +335,14 @@ choose_run_number:
         1: 
                 restart_folder: "${parent_dir}"
         "*":    
-                restart_folder: "${parent_dir}/${run_number_minus1_string}"
+                restart_folder: "${${general.work_dir}/../restart/oifs/${run_number_minus1_string}"
 
 
 restart_in_sources:
-        srf: "${restart_folder}/srf${start_ndays_string}0000.*"
-        rcf: "rcf"
-        #BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
-        #LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
+        srf: ${restart_folder}/srf${start_ndays_string}0000.*
+        rcf: ${restart_folder}/rcf
+        BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
+        LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
 
 #restart_out_files:
 #        srf: srf
@@ -355,13 +358,7 @@ restart_out_targets:
         BLS: ${run_number_string}/*
         LAW: ${run_number_string}/*
         srf: ${run_number_string}/*
-
-        
-        #restart_out_sources:
-        #srf: srf${end_ndays_string}0000.*" #"${run_number_string}/srf${end_ndays_string}0000.*"
-        #rcf: rcf
-        #BLS: "${run_number_string}/BLS${end_filebase_wam}.*"
-        #LAW: "${run_number_string}/LAW${end_filebase_wam}.*"
+        rcf: ${run_number_string}/rcf        
         
 
 ##

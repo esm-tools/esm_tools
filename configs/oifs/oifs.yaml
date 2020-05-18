@@ -328,8 +328,15 @@ log_in_work:
 #        BLS: "BLS${start_filebase_wam}.*" 
 #        LAW: "LAW${start_filebase_wam}.*"
 
+choose_run_number:
+        1: 
+                restart_folder: "${parent_dir}"
+        "*":    
+                restart_folder: "${parent_dir}/${run_number_minus1_string}"
+
+
 restart_in_sources:
-        srf: "srf${start_ndays_string}0000.*" #"${run_number_minus1_string}/srf${start_ndays_string}0000.*"
+        srf: "${restart_folder}/srf${start_ndays_string}0000.*"
         rcf: "rcf"
         #BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
         #LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"

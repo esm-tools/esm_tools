@@ -1,0 +1,26 @@
+model: fesom_mesh_part
+version: "2.0"
+
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+namelist_dir: "${esm_namelist_dir}/fesom2/"
+
+pool_dir: "${computer.pool_directories.pool}"
+mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+
+executable: fesom_ini
+namelists:
+    - "namelist.config"
+
+bin_in_work:
+    fesom_ini: "${executable}"
+
+bin_sources:
+    fesom_ini: ${bin_dir}/${executable}
+
+input_files:
+    mesh: mesh
+
+input_sources:
+    mesh: ${mesh_dir}

@@ -9,6 +9,7 @@ check = False
 verbose = 0
 
 from .esm_master import *
+from . import __version__
 from . import database_actions
 
 def main():
@@ -37,7 +38,7 @@ def main():
         "--verbose", "-v", action="count", default=0, help="toggle verbose mode"
     )
     parser.add_argument(
-        "--version", action="version", version="%(prog)s 3.0 (Oct 01, 2019)"
+        "--version", action="version", version="%(prog)s "+__version__
     )
     parsed_args = vars(parser.parse_args())
 
@@ -70,7 +71,7 @@ def main():
     complete_config = complete_setup.config
 
     env = esm_environment.environment_infos("compiletime", complete_config)
-    
+
     setups2models.replace_last_vars(env)
 
     user_task = task(target, setups2models, vcs, main_infos)

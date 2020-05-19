@@ -8,3 +8,6 @@ environment_changes:
                 ollie:
                         add_module_actions:
                                 - "load automake"
+
+metadata:
+    Information: "For more information about YAC please go to the webpage: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html"

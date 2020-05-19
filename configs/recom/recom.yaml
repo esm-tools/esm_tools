@@ -15,7 +15,7 @@ metadata:
                 - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
         License:
                 Please make sure you have a licence to use REcoM. In case you are unsure,
-                please contact redmine…
+                please contact redmine...
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"

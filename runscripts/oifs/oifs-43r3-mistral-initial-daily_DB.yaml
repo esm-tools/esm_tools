@@ -4,7 +4,8 @@ general:
         account: "ab0995"
         initial_date: "2008-02-01"
         final_date: "2008-02-09"
-        model_dir: "/work/ab0995/a270058/modelcodes/oifs-43r3/"
+        #model_dir: "/work/ab0995/a270058/modelcodes/oifs-43r3/"
+        model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
         base_dir: "/work/ab0995/a270058/esm_yaml_test/"
         nyear: 0
         nmonth: 0

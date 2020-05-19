@@ -40,6 +40,10 @@ def main():
     parser.add_argument(
         "--version", action="version", version="%(prog)s "+__version__
     )
+    parser.add_argument(
+            "--keep-task-script", "-k", dest="keep", action="store_true", default=False,
+            help="Keep shell script generated to perform compilation/configuration jobs"
+            )
     parsed_args = vars(parser.parse_args())
 
     check = False
@@ -53,6 +57,8 @@ def main():
             check = parsed_args["check"]
         if "verbose" in parsed_args:
             verbose = parsed_args["verbose"]
+        if "keep" in parsed_args:
+            keep = parsed_args["keep"]
 
     if not target:
         target = ""
@@ -81,13 +87,17 @@ def main():
     user_task.output_steps()
 
     if check:
-        sys.exit(0)
+        return 0
     user_task.validate()
     env.write_dummy_script()
 
     user_task.execute(env)
     database = database_actions.database_entry(user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR)
     database.connection.close()
+
+    if not keep:
+        env.cleanup_dummy_script()
+        user_task.cleanup_script()
 
     return 0
 

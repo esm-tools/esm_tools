@@ -257,19 +257,19 @@ class software_package:
         elif self.kind == "setups":
             couplings = setup_info.get_config_entry(self, "couplings")
             if couplings:
-                for coupling in couplings: 
+                for coupling in couplings:
                     changes = []
                     if "coupling_changes" in config["couplings"][coupling]:
-                        these_changes = config["couplings"][coupling]["coupling_changes"]       
+                        these_changes = config["couplings"][coupling]["coupling_changes"]
                         if these_changes:
                             changes = changes + these_changes
         return changes
-        
+
 
     def get_subpackages(self, setup_info, vcs, general):
         subpackages = []
         config = setup_info.config
-       
+
 
         if self.kind == "setups":
             couplings = setup_info.get_config_entry(self, "couplings")
@@ -277,7 +277,7 @@ class software_package:
                 for coupling in couplings:
                     newpackage = software_package(coupling, setup_info, vcs, general)
                     subpackages += newpackage.get_subpackages(setup_info, vcs, general)
-                            
+
         if self.kind == "couplings":
             components = setup_info.get_config_entry(self, "components")
             if components:
@@ -293,7 +293,7 @@ class software_package:
                         subpackages.append(newpackage)
 
         elif self.kind == "components":
-            requirements = setup_info.get_config_entry(self, "requires") 
+            requirements = setup_info.get_config_entry(self, "requires")
             if requirements:
                 for component in requirements:
                     found = False
@@ -329,7 +329,7 @@ class software_package:
         #                        software_package(component, setup_info, vcs, general)
         #                    )
         #elif self.kind == "components":
-        #    requirements = setup_info.get_config_entry(self, "requires") 
+        #    requirements = setup_info.get_config_entry(self, "requires")
         ##    if requirements:
         #        for requirement in requirements:
         #            found = False
@@ -422,7 +422,7 @@ class software_package:
             print ("    Coupling Changes:")
             for todo in self.coupling_changes:
                 print ("        ", todo)
-    
+
 
 
 
@@ -470,7 +470,7 @@ class task:
         self.subtasks=self.get_subtasks(setup_info, vcs, general)
         self.only_subtask=self.validate_only_subtask()
         self.ordered_tasks=self.order_subtasks(setup_info, vcs, general)
-   
+
         self.will_download = self.check_if_download_task(setup_info)
         self.folders_after_download=self.download_folders()
         self.binaries_after_compile=self.compile_binaries()
@@ -562,7 +562,7 @@ class task:
             todos = setup_info.meta_command_order[self.todo]
         else:
             todos = [self.todo]
-        
+
         ordered_tasks = []
         for todo in todos:
             for task in subtasks:
@@ -650,7 +650,7 @@ class task:
                 if task.todo in ["conf", "comp"]:
                     #if self.package.kind in ["setups", "couplings"]:
                     if not task.package.kind in ["setups", "couplings"]:
-                        if self.package.subpackages: 
+                        if self.package.subpackages:
                             real_command_list.append("cp ../"+task.raw_name+"_script.sh .")
                         real_command_list.append("./"+task.raw_name+"_script.sh")
                 else:
@@ -677,7 +677,15 @@ class task:
             real_command_list.append("cd ..")
 
         return real_command_list, command_list
-            
+
+    def cleanup_script(self):
+        for task in self.ordered_tasks:
+            if task.todo in ["conf", "comp"]:
+                try:
+                    os.remove("./"+task.raw_name+"_script.sh")
+                except OSError:
+                    print("No file to remove for ", task.raw_name)
+
 
     def check_if_target(self, setup_info):
         if not setup_info.has_target2(self.package, self.todo):
@@ -808,7 +816,7 @@ class setup_and_model_infos:
         for model in self.config["components"]:
             version = self.config["components"][model]["version"]
             model_dir = self.config["components"][model]["model_dir"]
-            user_config.update({model: 
+            user_config.update({model:
                                     {
                                      "model": model,
                                      "version": version,
@@ -873,7 +881,7 @@ class setup_and_model_infos:
             sep = ""
             if toplevel == "":
                 if "requires" in self.config[kind][model]:
-                    toplevel = model + "-" + version 
+                    toplevel = model + "-" + version
                     sep = "/"
             else:
                 sep = "/"
@@ -887,7 +895,7 @@ class setup_and_model_infos:
                 for requirement in self.config[kind][model]["requires"]:
                     reduced_config = self.append_to_conf(requirement, reduced_config, toplevel)
 
-        return reduced_config 
+        return reduced_config
 
 
     #def reduce(self, target, env):

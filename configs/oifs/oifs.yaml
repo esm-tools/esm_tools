@@ -328,11 +328,11 @@ log_in_work:
 #        BLS: "BLS${start_filebase_wam}.*" 
 #        LAW: "LAW${start_filebase_wam}.*"
 
-choose_run_number:
+choose_general.run_number:
         1: 
-                restart_folder: "${parent_dir}"
+                restart_folder: "${parent_restart_dir}"
         "*":    
-                restart_folder: "${parent_dir}/${run_number_minus1_string}"
+                restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
 
 
 restart_in_sources:

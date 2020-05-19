@@ -38,11 +38,18 @@ RESTART_RATE_fesom=1
 RESTART_FIRST_fesom=1
 RESTART_UNIT_fesom='m'
 
-# defaults: nproca_echam=24 nprocb_echam=18 nprocrad_echam=432 lrad_async_echam=true
+# defaults: npromar=nproma=8 nproca_echam=24 nprocb_echam=18 nprocar=24 nprocbr=18 lrad_async_echam=true lrestart_from_old=false 
+#npromar_echam=4
+
 #nproca_echam=12
 #nprocb_echam=18
-#nprocrad_echam=216
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#nprocar_echam=12
+#nprocbr_echam=18
+
 #lrad_async_echam=false
+#lrestart_from_old=true
 
 further_reading_fesom="fesom_output_control.yaml"
 

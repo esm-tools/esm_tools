@@ -63,7 +63,7 @@ components:
 
                         "6.3.05p2-concurrent_radiation":
                                 git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
-                                branch: "concurrent_radiation_cpl_feom"
+                                branch: "concurrent_radiation"
                                 comp_command: "./config/createMakefiles.pl; autoreconf -i --force; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6"
                                 clean_command: "rm -rf src/echam/bin; make clean"
         "esm-interface":

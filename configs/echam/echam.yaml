@@ -71,7 +71,13 @@ choose_switch:
 # choice
 #
 
-nprocrad: 0 
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#nprocrad: 0
+nprocar: 0
+nprocbr: 0
+npromar: 0
+lrad_async: false
+lrestart_from_old: false
 
 choose_resolution:
         T63:
@@ -107,26 +113,37 @@ choose_version:
                 dataset: r0007
         6.3.04p1-esm-interface-yac:
                 dataset: r0007
-                nprocrad: "remove_from_namelist"
-                lrad_async: "remove_from_namelist"
         6.3.05p2:
                 repo_tag: 6.3.05p2
                 dataset: r0007
-                nprocrad: "remove_from_namelist"
-                lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable 
                 dataset: r0007
                 add_namelist_changes:
                         namelist.echam:
+                                runctl:
+                                        npromar: "${npromar}"
                                 parctl:
-                                        nprocrad: "${nprocrad}"
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
                                 radctl:
                                         lrad_async: "${lrad_async}"
+                                        lrestart_from_old: "${lrestart_from_old}"
 
-                nprocrad: 432
-                lrad_async: true
+# kh 30.04.20 parameter values below (nprocar..lrestart_from_old) would supersed corresponding parameter values
+# in section choose_general.resolution: ... nproca ..., ... in esm_tools/configs/awicmcr/awicmcr.yaml
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+##              nprocrad: 432
+#               nprocar: 24
+#               nprocbr: 18
+#               npromar: 8
+#               lrad_async: true
+#               lrestart_from_old: false
 
 choose_scenario:
         "PI-CTRL":
@@ -340,7 +357,6 @@ forcing_in_work:
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
-        volcsw: "strat_aerosol_sw_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
 

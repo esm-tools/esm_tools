@@ -186,7 +186,7 @@ choose_computer.cores_per_node:
                 
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run                
-runtime_seconds: "$((${end_date} - ${start_date}))"
+runtime_seconds: "$((${end_date} - ${start_date} + 1))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
@@ -437,7 +437,9 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${oifs.next_step}
+                                        #NFRRES: ${oifs.next_step}
+                                        NFRRES: 1
+                                        NREST: "-1, -${oifs.next_step}"
                                         
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}

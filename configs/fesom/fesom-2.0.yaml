@@ -84,12 +84,10 @@ restart_out_sources:
 
 outputs: [a_ice,alpha,atmice_x,atmice_y,atmoce_x,atmoce_y,beta,Bo,evap,fer_C,fer_K,fh,fw,hbl,iceoce_x,iceoce_y,m_ice,MLD1,MLD2,m_snow,prec,Redi_K,reso,ssh,sss,sst,tx_sur,ty_sur,uice,vice,vve]
 
-outdata_files:
-        "[[outputs-->OUTPUT]]": OUTPUT
-outdata_in_work:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
 outdata_sources:
         "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
+outdata_targets:
+        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
 
 log_files:
         clock: clock

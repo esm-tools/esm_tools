@@ -6,6 +6,9 @@
 YAML File Syntax
 ================
 
+.. warning::
+   Work in progress. Chapters might be incomplete. Red statements might be imprecise or not true.
+
 What Is YAML?
 =============
 
@@ -101,7 +104,7 @@ Variable calls and ESM-Tools variables
 --------------------------------------
 
 Variables defined in a `YAML` file can be invoked later on the same file or in oder files
-(provided that the file defining the variable is the first to be read :red:`(is that true?)`).
+(provided that the file defining the variable has been previously read :red:`(is that true?)`).
 The syntax for calling an already defined variable is::
 
   "${name_of_the_variable}"
@@ -219,6 +222,50 @@ The following math and calendar operations are supported in `YAML` files:
   sdoy      Day of the year, counting from Jan. 1.
   ========= ======================================
 
+Globbing
+--------
+
+List loops
+----------
+
+This functionality allows for basic looping through a `YAML list`. The syntax for this is::
+
+  "[[list_to_loop_through-->ELEMENT_OF_THE_LIST]]"
+
+where ``ELEMENT_OF_THE_LIST`` can be used in the same line as a variable. This is
+particularly useful to handle files with shared strings (i.e. `outdata` and `restart` files).
+
+The following example uses the list loop functionality inside the ``fesom-2.0.yaml``
+configuration file to specify which files need to be copied from the `work` directory
+of runs into the general experiment `outdata` directory. The files to be copied for runs
+modeling a couple of months in year 2001 are ``a_ice.fesom.2001.nc``, ``alpha.fesom.2001.nc``,
+``atmice_x.fesom.2001.nc``, etc. The string ``.fesom.2001.nc`` is present in all files so we
+can use the list loop functionality together with calendar operations (:ref:`yaml:Math and Calendar
+Operations`) to have a cleaner and more generalized configure file. First, you need to declare the
+list of unshared names::
+
+  outputs: [a_ice,alpha,atmice_x, ... ]
+
+Then, you need to declare the ``outdata_sources`` dictionary::
+
+  outdata_sources:
+        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
+
+Here, ``"[[outputs-->OUTPUT]]":`` provides the `keys` for this dictionary as ``a_ice``, ``alpha``,
+``atmice_x``, etc., and ``OUTPUT`` is later used in the `value` to construct the complete file name
+(``a_ice.fesom.2001.nc``, ``alpha.fesom.2001.nc``, ``atmice_x.fesom.2001.nc``, etc.).
+
+Finally, ``outdata_targets`` dictionary can be defined to give different names to `outdata` files
+from different runs using `calendar operations`::
+
+  outdata_targets:
+        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+
+The values for the `keys` ``a_ice``, ``alpha``, ``atmice_x``, ..., will be
+``a_ice.fesom.200101.01.nc``, ``alpha.fesom.200101.01.nc``, ``atmice_x.fesom.200101.01.nc``, ...,
+for a January run, and ``a_ice.fesom.200102.01.nc``, ``alpha.fesom.200102.01.nc``,
+``atmice_x.fesom.200102.01.nc``, ..., for a February run.
+
 YAML Elements
 ~~~~~~~~~~~~~
 
@@ -282,7 +329,8 @@ The following keys should be provided inside configuration files for models and 
    ignore_sources,      
    outdata_files,       
    outdata_in_work,     
-   outdata_sources,     
+   outdata_sources,     "`Dictionary` containing as `values` the names of files to be transferred from the work directory of a given run (``<base_dir>/<experiment_name>/run_date1_date2/work``) to the general data directory of the experiment (``<base_dir>/<experiment_name>/outdata/<model>``). The `keys` for this dictionary need to be different from each other and, if ``outdata_files`` exists, equal to its `values`. **Without this dictionary files won't be transferred to the outdata experiment directory**. The other `outdata` configurations are optional. If ``outdata_targets`` is not defined, the files are copied into the `outdata` directory with the same name as in the `source` directory. In that case, if two files have the same name they are both renamed to end in the dates corresponding to their run (``file_name.extension_date1_date2``)."
+   outdata_targets,     "`Dictionary` containing as `values` the new names to be given to files transferred from the `work` directory of a run to the general data directory of the experiment. The `keys` of this `dictionary` need to be the same as the ones defined in ``outdata_sources`` or, if ``outdata_files`` exists, :red:`the same as its `values`?.`"
    coupling_fields,     List of coupling field dictionaries containing coupling field variables.
    grids,               List of grid dictionaries containing grid parameters.
 
@@ -291,9 +339,6 @@ Runscripts
 
 The following keys should be provided inside runscripts
 (``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):
-
-.. warning::
-   Work in progress...
 
 .. csv-table::
    :header: Key, Description

@@ -20,7 +20,13 @@ bin_sources:
     fesom_ini: ${bin_dir}/${executable}
 
 input_files:
-    mesh: mesh
+    aux3d: aux3d
+    nod2d: nod2d
+    elem2d: elem2d
+    nodhn: nodhn
 
 input_sources:
-    mesh: ${mesh_dir}
+    aux3d: ${mesh_dir}/aux3d.out
+    nod2d: ${mesh_dir}/nod2d.out
+    elem3d: ${mesh_dir}/elem2d.out
+    nodhn: ${mesh_dir}/nodhn.out

@@ -60,6 +60,10 @@ components:
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
                                 branch: "using_esm_interfaces_yac"
                                 destination: "echam-6.3.04p1"
+                        "6.3.04p1-paleodyn":
+                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+                                branch: "paleodyn"
+                                destination: "echam-6.3.04p1"
 
                         "6.3.05p2-concurrent_radiation":
                                 git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
@@ -360,6 +364,16 @@ components:
                 clean_command: "make clean"
 
 couplings:
+        "fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2":
+                components:
+                        - "echam-6.3.04p1-paleodyn"
+                        - "fesom-1.4"
+                        - "oasis3-mct-2.8"
+                        - "pism-github1.2"
+                coupling_changes:
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
+
         "fesom-1.4+echam-6.3.04p1":
                 components:
                         - "echam-6.3.04p1"
@@ -551,6 +565,14 @@ couplings:
 
 
 setups:
+        awiesm:
+                available_versions:
+                        - "paleodyn"
+
+                choose_version:
+                        "paleodyn":
+                                couplings:
+                                        - "fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2"
         awicm:
                 available_versions: 
                         - "1.0"

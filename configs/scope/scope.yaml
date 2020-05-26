@@ -1,0 +1,8 @@
+# SCOPE Default Config file
+model: "scope"
+version: "dev"
+metadata:
+    Institute: Alfred Wegener Institute
+    Description: The Script-Based Coupler
+    Authors: Paul Gierz (pgierz@awi.de)
+

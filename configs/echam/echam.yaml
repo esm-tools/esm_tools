@@ -71,7 +71,7 @@ choose_switch:
 # choice
 #
 
-nprocrad: 0 
+nprocrad: 0
 
 choose_resolution:
         T63:
@@ -83,7 +83,7 @@ choose_resolution:
                         24:
                                 nproca: 24
                                 nprocb: 18
- 
+
                         36:
                                 nproca: 24
                                 nprocb: 18
@@ -103,6 +103,9 @@ choose_version:
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
+        6.3.04p1-paleodyn:
+                repo_tag: 6.3.04p1
+                dataset: r0007
         6.3.04p1-esm-interface:
                 dataset: r0007
         6.3.04p1-esm-interface-yac:
@@ -116,7 +119,7 @@ choose_version:
                 lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation:
-                repo_tag: not_applicable 
+                repo_tag: not_applicable
                 dataset: r0007
                 add_namelist_changes:
                         namelist.echam:
@@ -432,8 +435,8 @@ log_files:
         atmout: atmout
         stderr: stderr
         stdout: stdout
-        
-log_sources:        
+
+log_sources:
         atmout: atmout
         stderr: echam.stderr
         stdout: echam.stdout

@@ -84,7 +84,6 @@ Some relevant **properties** of the ``YAML`` format are:
   * It is possible to add **comments** to ``YAML`` files using ``#`` before the comment (same as in
     Python).
 
-==============================
 ESM-Tools Extended YAML Syntax
 ==============================
 
@@ -99,10 +98,10 @@ The :ref:`yaml:YAML Elements` subsection lists the `YAML` elements needed for co
 runscripts.
 
 Extended Syntax
-===============
+~~~~~~~~~~~~~~~
 
 Variable calls and ESM-Tools variables
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 Variables defined in a `YAML` file can be invoked later on the same file or in oder files
 (provided that the file defining the variable has been previously read :red:`(is that true?)`).
@@ -132,7 +131,7 @@ declaration:
    model_dir,           Absolute path of the model directory (where it was installed by `esm_master`).
 
 Lists starting with choose\_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 Lists named as ``choose_<name_of_a_property>`` can be used to nest ``configurations`` under a
 ``configuration_key`` that can be then invoked from the ``property`` itself::
@@ -167,7 +166,7 @@ but we could choose the ``GLOB`` configuration in another `YAML` file (i.e. a ru
 this default choice.
 
 Math and Calendar Operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 The following math and calendar operations are supported in `YAML` files:
 
@@ -224,10 +223,10 @@ The following math and calendar operations are supported in `YAML` files:
   ========= ======================================
 
 Globbing
-~~~~~~~~
+--------
 
 List loops
-~~~~~~~~~~
+----------
 
 This functionality allows for basic looping through a `YAML list`. The syntax for this is::
 
@@ -268,64 +267,14 @@ The values for the `keys` ``a_ice``, ``alpha``, ``atmice_x``, ..., will be
 for a January run, and ``a_ice.fesom.200102.01.nc``, ``alpha.fesom.200102.01.nc``,
 ``atmice_x.fesom.200102.01.nc``, ..., for a February run.
 
-YAML Elements
-=============
-
-The `esm_parser` is used to read the multiple types of `YAML` files contained in `ESM-Tools`
-(i.e. model and coupling configuration files, machine configurations, runscripts, etc.). Each of
-these `YAML` files can contain two type of `YAML` elements:
-
-  * **Tool-specific elements**: `YAML-scalars`, `lists` or `dictionaries` that include instructions and
-    information used by `ESM-Tools`. These elements are predefined inside the `esm_parser` :red:`(are
-    they really defined in esm_master?)` or other
-    packages inside `ESM-Tools` and are used to control the `ESM-Tools` functionality.
-
-  * **Model-specific elements**: `YAML-scalars`, `lists` of `dictionaries` that contain information
-    specific to a given model, coupled setup, or machine. Thus, these elements have no meaning to
-    the `esm_parser` itself and have no impact in the `ESM-Tools` behavior. :red:`Here, there
-    should be something about what is done with the model-specific elements (i.e. written into BASH
-    files, converted into model input, ... ?)`.
-
-The following subsections list and describe the **Tool-specific elements** used to operate `ESM-Tools`
-from different files.
-
-Configuration Files
-~~~~~~~~~~~~~~~~~~~
-
-The following keys should be provided inside configuration files for models and coupled setups
-(``<PATH>/esm_tools/configs/<model_or_setup>``):
-
-.. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
-
-   model,               Name of the model.
-   version,             Version of the model.
-   repository,          Address of the model's repository.
-   metadata,            "List to incude descriptive information about the model (i.e. ``Authors``, ``Institute``, ``Publications``, etc.) used to produce the content of :ref:`Supported_Models:Supported Models`. This information should be organized in nested `keys` followed by the corresponding description. Nested `keys` do not receive a special treatment meaning that you can include here any kind of information about the model. Only the `Publications` `key` is treated in a particular way: it can consist of a single element or a `list`, in which each element contains a link to the publication inside ``<>`` (i.e. ``- Title, Authors, Journal, Year. <https://doi.org/...>``)."
-   restart_rate,        
-   restart_unit,        
-   resolution,          "Name for the desired resolution configuration defined inside the ``choose_resolution`` list."
-   pool_dir,            Absolute path of the pool directory.
-   setup_dir,           Absolute path of the setup directory.
-   bin_dir,             Absolute path of the binary folder containing the model binaries.
-   namelist_dir,        Absolute path of the namelists directory for the model.
-   namelists,           "List of namelist files required for the model, and contained in ``namelist_dir`` folder."
-   executable,          Name of the model executable file.
-   choose_resolution,   List of dictionaries containing different resolution configurations.
-   namelist_changes,    
-   choose_lresume,      
-   coupling_fields,     List of coupling field dictionaries containing coupling field variables.
-   grids,               List of grid dictionaries containing grid parameters.
-
 File Dictionaries
 -----------------
 
 File dictionaries are a special type of `YAML` elements that are useful to handle input, output,
-forcing and restart files, and that are normally defined inside the `configuration files` of the
-model. File dictionary's `keys` are composed by a file dictionary ``type`` followed by ``_`` and
-an ``option``, and the `elements` consist of a list of ``file_tags`` as `keys` with their respective
-``file_paths`` as `values`::
+forcing, logging, binary and restart files, and that are normally defined inside the
+`configuration files` of the model. File dictionary's `keys` are composed by a file dictionary
+``type`` followed by ``_`` and an ``option``, and the `elements` consist of a list of ``file_tags``
+as `keys` with their respective ``file_paths`` as `values`::
 
   type_option:
         - file_tag1: file_path1
@@ -380,10 +329,114 @@ assigned, so that you can choose to specify only the file name. The default fold
 
 **Example for ECHAM forcing files**
 
+The `ECHAM` configuration file (``<PATH>/configs/echam/echam.yaml``) allows for choosing different
+scenarios for a run. These scenarios depend on different combinations of forcing files. File sources
+for all cases are first stored in ``echam.datasets.yaml`` (a ``further_reading`` file) as::
 
+  forcing_sources:
+        # sst
+        "amipsst":
+                "${forcing_dir}/amip/${resolution}_amipsst_@YEAR@.nc":
+                        from: 1870
+                        to: 2016
+        "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"
+
+        # sic
+        "amipsic":
+                "${forcing_dir}/amip/${resolution}_amipsic_@YEAR@.nc":
+                        from: 1870
+                        to: 2016
+        "pisic": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sic_1880-2379.nc"
+
+        [ ... ]
+
+Here ``forcing_sources`` store **all the sources** necessary for all `ECHAM` scenarios, and tag
+them with source `keys` (``amipsst``, ``pisst``, ...). Then, it is possible to choose among
+these source files inside the scenarios defined in ``echam.yaml`` using ``forcing_files``::
+
+  choose_scenario:
+        "PI-CTRL":
+                forcing_files:
+                        sst: pisst
+                        sic: pisic
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+        PALEO:
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+        [ ... ]
+
+This means that for an scenario ``PI-CTRL`` the files that are handled by ESM-Tools will be
+**exclusively** the ones specified inside ``forcing_files``, defined in the
+``forcing_sources`` as ``pisst``, ``pisic``, ``piaerocoarse``, ``piaerofin``, ``piaerofarir``
+and ``piozone``, and they are tagged with new general `keys` (``sst``, ``sic``, ...) that
+are common to all scenarios. The source files not included in ``forcing_files`` won't be
+used.
+
+YAML Elements
+~~~~~~~~~~~~~
+
+The `esm_parser` is used to read the multiple types of `YAML` files contained in `ESM-Tools`
+(i.e. model and coupling configuration files, machine configurations, runscripts, etc.). Each of
+these `YAML` files can contain two type of `YAML` elements:
+
+  * **Tool-specific elements**: `YAML-scalars`, `lists` or `dictionaries` that include instructions and
+    information used by `ESM-Tools`. These elements are predefined inside the `esm_parser` or other
+    packages inside `ESM-Tools` and are used to control the `ESM-Tools` functionality.
+
+  * **User-defined elements**: `YAML-scalars`, `lists` of `dictionaries` that contain information
+    defined by the user for later use as variables in the same `YAML` file or other `YAML` files.
+
+The following subsections list and describe the **Tool-specific elements** used to operate `ESM-Tools`
+from different files.
+
+.. Note::
+   Most of the **Tool-specific elements** can be defined in any file (i.e. `configuration file`,
+   `runscript`, ...) and, if present in two files used by ESM-Tools at a time, the value is chosen
+   depending on the ESM-Tools file priority/read order (:red:`reference here to that section`).
+   Ideally, you would like to declare as many elements as possible inside the `configuration files`,
+   to be used by default, and change them in the `runscripts` when necessary. However, it is ultimately
+   up to the user where to setup the Tool-specific elements; the element classification in the following
+   sections is just suggestion on how to organize ESM-Tools input.
+
+Configuration Files
+-------------------
+
+The following keys should/can be provided inside configuration files for models and coupled setups
+(``<PATH>/esm_tools/configs/<model_or_setup>``):
+
+.. csv-table::
+   :header: Key, Description
+   :widths: 15, 85
+
+   model,               Name of the model.
+   version,             Version of the model.
+   repository,          Address of the model's repository.
+                                destination: "fesom-1.4"
+   metadata,            "List to incude descriptive information about the model (i.e. ``Authors``, ``Institute``, ``Publications``, etc.) used to produce the content of :ref:`Supported_Models:Supported Models`. This information should be organized in nested `keys` followed by the corresponding description. Nested `keys` do not receive a special treatment meaning that you can include here any kind of information about the model. Only the `Publications` `key` is treated in a particular way: it can consist of a single element or a `list`, in which each element contains a link to the publication inside ``<>`` (i.e. ``- Title, Authors, Journal, Year. <https://doi.org/...>``)."
+   restart_rate,        
+   restart_unit,        
+   resolution,          "Name for the desired resolution configuration defined inside the ``choose_resolution`` list."
+   pool_dir,            Absolute path of the pool directory.
+   setup_dir,           Absolute path of the setup directory.
+   bin_dir,             Absolute path of the binary folder containing the model binaries.
+   namelist_dir,        Absolute path of the namelists directory for the model.
+   namelists,           "List of namelist files required for the model, and contained in ``namelist_dir`` folder."
+   executable,          Name of the model executable file.
+   choose_resolution,   List of dictionaries containing different resolution configurations.
+   namelist_changes,    
+   choose_lresume,      
+   coupling_fields,     List of coupling field dictionaries containing coupling field variables.
+   grids,               List of grid dictionaries containing grid parameters.
+   ":ref:`yaml:File dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files."
 
 Runscripts
-~~~~~~~~~~
+----------
 
 The following keys should be provided inside runscripts
 (``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):

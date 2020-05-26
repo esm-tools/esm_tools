@@ -1076,17 +1076,18 @@ class setup_and_model_infos:
             display_info = self.all_packages
         else:
             for package in self.all_packages:
-                for target in package.targets:
-                    if search_keyword in target + "-" + package.raw_name:
-                        if package not in display_info:
-                            display_info.append(package)
+                if package.targets:
+                    for target in package.targets:
+                        if search_keyword in target + "-" + package.raw_name:
+                            if package not in display_info:
+                                display_info.append(package)
 
         if display_info == []:
             print()
             print(
                 "No targets found for keyword "
                 + search_keyword
-                + ". Type 'make' to get a full list"
+                + ". Type 'esm_master' to get a full list"
             )
             print("of available targets.")
             print()

@@ -86,10 +86,12 @@ components:
                         "1.4":
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
                                 install_bins: "bin/fesom"
+                                comp_command: 'mkdir -p build; cd build; cmake ..;   make install'
                         "1.4-recom-mocsy-slp":
                                 branch: "fesom-recom-mocsy-slp"
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
                                 install_bins: "bin/fesom"
+                                comp_command: 'mkdir -p build; cd build; cmake ..;   make install'
                         "2.0":
                                 git-repository:
                                         - "https://gitlab.dkrz.de/FESOM/fesom2.git"
@@ -317,7 +319,7 @@ components:
                         - "2.0"
                 choose_version:
                         "2.0":
-                                branch: "fixed_cmake"
+                                branch: "master"
                 comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
                 clean_command: "${defaults.clean_command}"
 
@@ -391,9 +393,9 @@ couplings:
                         - "fesom-1.4-recom-mocsy-slp"
                         - "oasis3-mct-2.8"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
+                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
+                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
         "fesom-2.0+echam-6.3.04p1":
@@ -468,9 +470,9 @@ couplings:
                         - "recom-2.0"
                         - "fesom-1.4-recom-mocsy-slp"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/ON/OFF/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
+                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
+                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4-recom-mocsy-slp/CMakeLists.txt"
 
         "fesom-2.0+recom":
                 components:

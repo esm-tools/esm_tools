@@ -82,7 +82,7 @@ components:
                                 comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
 
         "fesom":
-                choose_version: 
+                choose_version:
                         "1.4":
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
                                 install_bins: "bin/fesom"
@@ -91,25 +91,25 @@ components:
                                 git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
                                 install_bins: "bin/fesom"
                         "2.0":
-                                git-repository: 
+                                git-repository:
                                         - "https://gitlab.dkrz.de/FESOM/fesom2.git"
                                         - "github.com/FESOM/fesom2.git"
                                 branch: "2.0.2"
                                 install_bins: "bin/fesom.x"
                         "2.0-o":
-                                git-repository: 
+                                git-repository:
                                         - "https://gitlab.dkrz.de/FESOM/fesom2.git"
                                         - "github.com/FESOM/fesom2.git"
                                 branch: "oifs-deck"
                                 install_bins: "bin/fesom.x"
                         "2.0-esm-interface":
-                                git-repository: 
+                                git-repository:
                                         - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
                                 branch: "fesom2_using_esm-interface"
                                 destination: "fesom-2.0"
                                 install_bins: "bin/fesom.x"
                         "2.0-esm-interface-yac":
-                                git-repository: 
+                                git-repository:
                                         - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
                                 branch: "using_esm_interfaces_yac"
                                 destination: "fesom-2.0"
@@ -316,7 +316,7 @@ components:
                 available_versions:
                         - "2.0"
                 choose_version:
-                       "2.0":
+                        "2.0":
                                 branch: "fixed_cmake"
                 comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
                 clean_command: "${defaults.clean_command}"

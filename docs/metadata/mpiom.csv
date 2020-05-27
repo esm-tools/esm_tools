@@ -1,5 +1,0 @@
-Institute; MPI-Met
-Description; The ocean-sea ice component of the MPI-ESM. MPIOM is a primitive equation model (C-Grid, z-coordinates, free surface) with the hydrostatic and Boussinesq assumptions made.
-Authors; Till Maier-Reimer, Helmuth Haak, Johann Jungclaus
-Publications; `The Max-Planck-Institute global ocean/sea ice model with orthogonal curvilinear coordinates <https://doi.org/10.1016/S1463-5003(02)00015-X>`_
-License; Please make sure you have a licence to use echam. In case you are unsure, please contact redmine…

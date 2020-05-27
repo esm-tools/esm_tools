@@ -69,7 +69,6 @@ module_actions:
         - "load hdf5" 
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
         - "load python3" 
-        - "list"
 
 export_vars:
 

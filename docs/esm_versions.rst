@@ -33,21 +33,21 @@ As was said before, if you have the Tools with a version newer than 3.1.4, you s
 
 2. Remove the installed python libs::
 
-    $> rm -rf ~/.local/lib/python-whatever_your_version/site-packages/esm*
+    $ rm -rf ~/.local/lib/python-whatever_your_version/site-packages/esm*
 
 3. Remove the installed executables::
 
-    $> rm -rf ~/.local/bin/esm*
+    $ rm -rf ~/.local/bin/esm*
 
 4. Upgrade the repository esm_tools::
 
-    $> cd path/to/esm_tools
-    $> git checkout release
-    $> git pull
+    $ cd path/to/esm_tools
+    $ git checkout release
+    $ git pull
 
 5. Re-install the python packages::
 
-    $> ./install.sh
+    $ ./install.sh
 
 You should now be on the most recent released version of the tools, and ``esm_versions`` should be in your ``PATH``.
 

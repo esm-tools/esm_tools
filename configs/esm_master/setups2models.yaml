@@ -479,7 +479,9 @@ couplings:
                         - "recom-2.0"
                         - "fesom-2.0"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
+                        - "git -C fesom-2.0 checkout recom-update"  # MA: This should be here only provisionally
+                        - "git -C recom checkout recom-update"      # MA: This should be here only provisionally
+                        - "sed -i '/FESOM_COUPLED/s/ON/OFF/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
         

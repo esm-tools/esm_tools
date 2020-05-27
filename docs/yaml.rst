@@ -18,7 +18,7 @@ idea behind the implementation of the `YAML` format in `ESM-Tools` is that the u
 needs to create or edit easy-to-write `YAML` files to run a model or a coupled setup,
 speeding up the configuration process, avoiding bugs and complex syntax.
 The same should apply to developers that would like to implement their models
-in `ESM-Tools`: the implementation consist on the configuration of a few `YAML` files.
+in `ESM-Tools`: the implementation consists on the configuration of a few `YAML` files.
 
 YAML-Specific Syntax
 ~~~~~~~~~~~~~~~~~~~~
@@ -208,6 +208,8 @@ The following math and calendar operations are supported in `YAML` files:
 
     yearnew: "${initial_date!syear}"
 
+  If ``initial_date`` was 2001-01-01T00:00:00, then ``yearnew`` would be 2001.
+
   The date components available are:
 
   ========= ======================================
@@ -234,7 +236,7 @@ This functionality allows for basic looping through a `YAML list`. The syntax fo
 
 where ``ELEMENT_OF_THE_LIST`` can be used in the same line as a variable. This is
 particularly useful to handle files which names contain common strings (i.e. `outdata` and
-`restart` files).
+`restart` files, see :ref:`yaml:File Dictionaries`).
 
 The following example uses the list loop functionality inside the ``fesom-2.0.yaml``
 configuration file to specify which files need to be copied from the `work` directory
@@ -371,7 +373,7 @@ these source files inside the scenarios defined in ``echam.yaml`` using ``forcin
                         ozone: piozone
         [ ... ]
 
-This means that for an scenario ``PI-CTRL`` the files that are handled by ESM-Tools will be
+This means that for a scenario ``PI-CTRL`` the files that are handled by ESM-Tools will be
 **exclusively** the ones specified inside ``forcing_files``, defined in the
 ``forcing_sources`` as ``pisst``, ``pisic``, ``piaerocoarse``, ``piaerofin``, ``piaerofarir``
 and ``piozone``, and they are tagged with new general `keys` (``sst``, ``sic``, ...) that

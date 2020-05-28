@@ -116,6 +116,15 @@ components:
                                 branch: "using_esm_interfaces_yac"
                                 destination: "fesom-2.0"
                                 install_bins: "bin/fesom.x"
+                        "2.0-r":
+                                # OG: This will be the master branch for fesom-recom-2.0. All the recom related
+                                # files will be cleared from the src folder. After Dima's update we will return
+                                # fesom-2.0 master branch back and remove this part
+                                git-repository:
+                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
+                                        - "github.com/FESOM/fesom2.git"
+                                branch: "recom-update"
+                                install_bins: "bin/fesom.x"
                 available_versions:
                         - "1.4"
                         - "1.4-recom-mocsy-slp"
@@ -123,6 +132,7 @@ components:
                         - "2.0-o"
                         - "2.0-esm-interface"
                         - "2.0-esm-interface-yac"
+                        - "2.0-r" # OG: temporarily here
                 comp_command: "${defaults.comp_command}"
                 clean_command: "${defaults.clean_command}"
 
@@ -314,12 +324,16 @@ components:
                         - "index1.1"
         "recom":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/recom.git"
-                destination: "recom"
+                destination: "recom" # Should we include different destinations for 2.0 and 2.0-r?
                 available_versions:
                         - "2.0"
+                        - "2.0-r"
                 choose_version:
                         "2.0":
-                                branch: "master"
+                                branch: "fixed_cmake"
+                        "2.0-r":
+                                # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
+                                branch: "recom-update"
                 comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
                 clean_command: "${defaults.clean_command}"
 
@@ -410,13 +424,12 @@ couplings:
         "fesom-2.0+recom+echam-6.3.04p1":
                 components:
                         - "echam-6.3.04p1"
-                        - "recom-2.0"
-                        - "fesom-2.0"
+                        - "recom-2.0-r"
+                        - "fesom-2.0-r"
                         - "oasis3-mct-2.8"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-r/CMakeLists.txt"
+                        - "sed -i '/RECOM_COUPLED/s/OFF/ON/g' fesom-2.0-r/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
 
         "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface":
@@ -476,14 +489,11 @@ couplings:
 
         "fesom-2.0+recom":
                 components:
-                        - "recom-2.0"
-                        - "fesom-2.0"
+                        - "recom-2.0-r"
+                        - "fesom-2.0-r"
                 coupling_changes:
-                        - "git -C fesom-2.0 checkout recom-update"  # MA: This should be here only provisionally
-                        - "git -C recom checkout recom-update"      # MA: This should be here only provisionally
-                        - "sed -i '/FESOM_COUPLED/s/ON/OFF/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/ON/OFF/g' fesom-2.0-r/CMakeLists.txt"
+                        - "sed -i '/RECOM_COUPLED/s/OFF/ON/g' fesom-2.0-r/CMakeLists.txt"
         
         "nemo-3.6foci+echam-6.3.05p2":
                 components:

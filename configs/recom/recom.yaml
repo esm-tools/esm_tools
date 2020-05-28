@@ -2,7 +2,7 @@
 #
 
 model: recom
-branch: modular
+branch: master
 version: 2.0
 
 metadata:

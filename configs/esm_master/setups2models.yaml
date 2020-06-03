@@ -323,6 +323,8 @@ components:
                         - "github1.2"
                         - "index1.1"
         "recom":
+                install_libs:
+                        - "build/librecom.a"
                 git-repository: "https://gitlab.dkrz.de/modular_esm/recom.git"
                 destination: "recom" # Should we include different destinations for 2.0 and 2.0-r?
                 available_versions:

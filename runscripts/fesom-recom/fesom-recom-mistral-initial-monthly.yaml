@@ -1,0 +1,28 @@
+general:
+        setup_name: fesom-recom
+        account: ab0995
+        compute_time: "00:16:00"
+        initial_date: '2000-01-01'
+        final_date: '2000-02-29'
+        base_dir: "/work/ab0995/a270152/esm_yaml_test/"
+        nyear: 0
+        nmonth: 1
+
+fesom-recom:
+        version: 1.4
+        model_dir: "/pf/a/a270152/model_codes/fesom-recom-1.4/"
+
+fesom:
+        version: "1.4-recom-mocsy-slp"
+        pool_dir: "/work/bm0944/input/"
+        mesh_dir: "/pool/data/AWICM/FESOM1/MESHES/core/"
+        recom_data_path: "/work/ab0995/a270152/recom_data/CORE2mesh/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        post_processing: 0
+
+        further_reading: "fesom_output_control.yaml"
+

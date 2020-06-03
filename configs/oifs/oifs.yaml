@@ -186,7 +186,7 @@ choose_computer.cores_per_node:
                 
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run                
-runtime_seconds: "$((${end_date} - ${start_date} + 1))"
+runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
@@ -197,9 +197,10 @@ steps_per_day: "$(( 86400 / ${time_step} ))"
 lresume: false
 
 start_seconds: "$((${start_date} - ${initial_date}))"
-start_ndays: "$(( ${start_seconds} / 86400 - 1))"
+#start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
+start_ndays: "$(( ${start_seconds} / 86400 ))"
 start_ndays_string: "<--format(%08d)-- ${start_ndays}" 
-end_seconds: "$((${end_date} - ${initial_date}))"
+end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
 end_ndays: "$(( ${end_seconds} / 86400 ))"
 end_ndays_string: "<--format(%08d)-- ${end_ndays}" 
 
@@ -207,7 +208,7 @@ end_ndays_string: "<--format(%08d)-- ${end_ndays}"
 wam_start_date: "${initial_date!syear!smonth!sday}000000"
 
 # ICMCL start and end
-icmcl_end_date: $(( ${end_date} + 1days ))
+icmcl_end_date: $(( ${end_date} + 2days ))
 icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 
 # WAM restart files are named with the number of 
@@ -439,7 +440,7 @@ choose_version:
                                 NAMRES:
                                         #NFRRES: ${oifs.next_step}
                                         NFRRES: 1
-                                        NREST: "-1, -${oifs.next_step}"
+                                        NRESTS: "-1, -${oifs.next_step}"
                                         
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}
@@ -468,7 +469,10 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${oifs.next_step}
+                                        NFRRES: ${timestep_per_run} #${oifs.next_step}
+                                        #NRESTS: -1, -${timestep_per_run} #"-1, -${oifs.next_step}"
+                                        NRESTS(1): -1
+                                        NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
                                         
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}
@@ -476,6 +480,7 @@ choose_version:
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
+                                        #CUSTOP: "t${timestep_per_run}" 
                                         CUSTOP: "t${oifs.next_step}"
                 
                 environment_changes:

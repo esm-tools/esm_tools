@@ -3,7 +3,7 @@ general:
         compute_time: "00:15:00"
         account: "bb0519"
         initial_date: "2008-02-01"
-        final_date: "2008-02-09"
+        final_date: "2008-02-10"
         model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
         base_dir: "/work/bb0519/b350090/esm-experiments/"
         nyear: 0

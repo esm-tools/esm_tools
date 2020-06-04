@@ -84,6 +84,9 @@ def main():
             tab_comp.write("_esm_master_completions() {\n")
             tab_comp.write('\tCOMPREPLY=($(compgen -W "$(esm_master --list_all_targets)" "${COMP_WORDS[1]}"))')
             tab_comp.write('\n}\n\ncomplete -F _esm_master_completions esm_master\n')
+        print("Wrote file: esm_master_tabcomplete.bash")
+        print("Have your shell source this file to allow tab completion of available targets")
+        print("This works for both bash and zsh")
         sys.exit()
 
     setups2models.config = setups2models.reduce(target)

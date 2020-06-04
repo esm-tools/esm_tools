@@ -44,6 +44,8 @@ def main():
             "--keep-task-script", "-k", dest="keep", action="store_true", default=False,
             help="Keep shell script generated to perform compilation/configuration jobs"
             )
+    parser.add_argument("--generate_tab_complete", action="store_true")
+    parser.add_argument("--list_all_targets", action="store_true")
     parsed_args = vars(parser.parse_args())
 
     check = False
@@ -63,10 +65,26 @@ def main():
     if not target:
         target = ""
 
+
     main_infos = general_infos()
     vcs = version_control_infos()
     setups2models = setup_and_model_infos(vcs, main_infos)
 
+    if parsed_args["list_all_targets"]:
+        all_commands = []
+        for package in setups2models.all_packages:
+            for command in package.command_list:
+                all_commands.append(command + "-" + package.raw_name)
+        print("\n".join(all_commands))
+        sys.exit()
+
+    if parsed_args["generate_tab_complete"]:
+        with open("esm_master_tabcomplete.bash", "w") as tab_comp:
+            tab_comp.write("#/usr/bin/env bash\n")
+            tab_comp.write("_esm_master_completions() {\n")
+            tab_comp.write('\tCOMPREPLY=($(compgen -W $(esm_master --list_all_targets) "${COMP_WORDS[1]}"))')
+            tab_comp.write('\n}\n\ncomplete -F _esm_master_completions esm_master\n')
+        sys.exit()
 
     setups2models.config = setups2models.reduce(target)
 

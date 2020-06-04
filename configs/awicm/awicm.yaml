@@ -33,7 +33,7 @@ general:
 
 echam:
         restart_firstlast: "first"
-        namelist_changes:
+        namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.echam:
                         runctl:
                                 lcouple: .true.

@@ -29,14 +29,40 @@ fesom:
         add_namelists:
                 - namelist.recom
 
-        namelist_changes:
+        time_step: 900
+        output_unit: "m"
+
+        opbnd_dir: ""
+        tide_forcing_dir: ""
+
+        maschine: "${computer.name}"
+        choose_maschine:
+                mistral:
+                        forcing_data_dir: "/work/ab0995/a270152/recom_data/forcing_clim61" # "${pool_dir}/forcing/"
+                ollie:
+                        forcing_data_dir: "/work/ollie/projects/MarESys/forcing_clim61/" # "${pool_dir}/forcing/"
+
+        asforcing: JRA55
+        asforcing_runoff: CORE2
+
+        namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.config:
                         inout:
-                                output_length_unit_restart: "${restart_unit}"
-        #add_namelist_changes:
-        #        namelist.recom:
-        #                pavariables:
-        #                        REcoMDataPath: "${recom_data_path}"
+                                output_length_unit: "${output_unit}"
+                                output_length_unit_restart: "${output_unit}"
+                namelist.forcing:
+                        forcing_source:
+                                runoff_data_source: "${asforcing_runoff}"
+                                sss_data_source: "${asforcing_runoff}"
+                namelist.recom:
+                        pavariables:
+                          REcoMDataPath: "${recom_data_path}"
+
+        add_config_files:
+                 recom:  recom
+
+        add_config_sources:
+                 recom:  "${namelist_dir}/namelist.recom"
 
 #########################################################################################
 

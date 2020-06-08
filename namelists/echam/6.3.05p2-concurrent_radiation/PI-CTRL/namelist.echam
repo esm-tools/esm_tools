@@ -10,6 +10,7 @@
     delta_time = 450
     putdata = 1, 'months', 'last', 0
     nproma = 8
+    npromar = 8
     lcouple = .true.
     getocean = 1, 'days', 'last', 0
     putocean = 1, 'days', 'last', 0
@@ -19,7 +20,8 @@
 &parctl
     nproca = 24
     nprocb = 24
-    nprocrad = 576
+    nprocar = 24
+    nprocbr = 24
 
 /
 &submodelctl
@@ -122,4 +124,5 @@
     n2ovmr = 273.0210571289e-09
     yr_perp = 1850
     lrad_async = .true.
+    lrestart_from_old = .false.
 /

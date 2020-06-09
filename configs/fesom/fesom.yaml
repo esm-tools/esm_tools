@@ -12,8 +12,8 @@ metadata:
                 of motion on unestructured meshes
         Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
         Publications:
-                - The Finite-volumE Sea ice–Ocean Model (FESOM2) <https://doi.org/10.5194/gmd-10-765-2017>
-                - Scalability and some optimization of the Finite-volumE Sea ice–Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>
+                - "The Finite-volumE Sea ice-Ocean Model (FESOM2) <https://doi.org/10.5194/gmd-10-765-2017>"
+                - "Scalability and some optimization of the Finite-volumE Sea ice-Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>"
         License:
                 Please make sure you have a licence to use FESOM. In case you are unsure,
                 please contact redmine...
@@ -38,7 +38,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/${model}"                        
+namelist_dir: "${esm_namelist_dir}/${model}"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -59,7 +59,7 @@ choose_asforcing:
                 leapyear: false
         ECHAM5:
                 leapyear: true
-                
+
 executable: fesom
 choose_resolution:
         CORE2:
@@ -148,7 +148,7 @@ namelist_changes:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout: 
+                inout:
                         restartflag: "${restart_flag}"
                         output_length: "${restart_rate}"
                         output_length_unit: "${restart_unit}"
@@ -180,16 +180,16 @@ choose_currentday:
                 startday: "$(( ${start_date!sdoy} - 1 ))"
 
 choose_lresume:
-        false:                                
+        false:
                 create_config:
                         fesom.clock:
-                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"  
                                 - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
-        true:   
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+        true:
                 create_config:
-                        fesom.clock: 
+                        fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
-                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"     
+                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"
 
 
 
@@ -237,12 +237,12 @@ outdata_files:
         "[[monthly_outputs-->OUTPUT]]": OUTPUT
         "[[daily_outputs-->OUTPUT]]": OUTPUT
 
-outdata_in_work: 
+outdata_in_work:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-outdata_sources: 
+outdata_sources:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
@@ -258,24 +258,24 @@ runtime_environment_changes:
         add_export_vars:
                 AWI_FESOM_YAML:
                         output_schedules:
-                                -       
+                                -
                                         vars: [restart]
                                         unit: ${restart_unit}
                                         first: ${restart_first}
                                         rate: ${restart_rate}
-                                -       
+                                -
                                         vars: ${monthly_outputs}
                                         unit: m
                                         rate: 1
-                                - 
-                                        vars: ${daily_outputs} 
+                                -
+                                        vars: ${daily_outputs}
                                         unit: d
                                         rate: 1
-                                - 
+                                -
                                         vars: ${12_second_outputs}
                                         unit: s
                                         rate: 12
-                                - 
+                                -
                                         vars: ${yearly_outputs}
                                         unit: y
                                         first: 1000

@@ -114,6 +114,9 @@ except FileExistsError:
     os.makedirs("tmp_clone")
 
 ESM_TOOLS_PROJECT_ADDRESS = "https://github.com/esm-tools/"
+
+mods_to_skip = []
+
 with open("API.rst", "w") as rst:
     rst.write("============================\n")
     rst.write("ESM Tools Code Documentation\n")
@@ -146,10 +149,21 @@ with open("API.rst", "w") as rst:
         # rst.write("-"*len(esm_mod)+"\n")
         # rst.write("\n")
         # rst.write()
+        # Skip a few hings for testing:
+        if esm_mod in mods_to_skip:
+            continue
 
         # Ensure that importing works correctly when running apidoc
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--user", "tmp_clone/" + esm_mod]
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--no-warn-script-location",
+                # "--user",
+                "tmp_clone/" + esm_mod,
+            ]
         )
         # sys.path.append(os.path.abspath("tmp_clone/" + esm_mod))
 shutil.rmtree("tmp_clone")

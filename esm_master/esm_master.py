@@ -15,12 +15,12 @@ from .cli import verbose
 ##################################### globals ########################################
 ######################################################################################
 
-function_path = esm_rcfile.get_rc_entry("FUNCTION_PATH")
-ESM_MASTER_DIR=os.getenv("PWD")
+function_path = esm_rcfile.get_rc_entry("FUNCTION_PATH", default="/dev/null")
+ESM_MASTER_DIR = os.getenv("PWD")
 
-components_yaml = function_path + '/esm_master/setups2models.yaml'
-config_yaml = function_path + '/esm_master/esm_master.yaml'
-vcs_folder = function_path + '/vcs'
+components_yaml = function_path + "/esm_master/setups2models.yaml"
+config_yaml = function_path + "/esm_master/esm_master.yaml"
+vcs_folder = function_path + "/vcs"
 
 overall_conf_file = esm_rcfile.rcfile
 
@@ -154,7 +154,12 @@ class version_control_infos:
             else:
                 repo = package.repo
             if "https://gitlab.dkrz.de" in repo:
-                repo = "https://" + general.emc["GITLAB_DKRZ_USER_NAME"] +"@"+ repo.replace("https://", "")
+                repo = (
+                    "https://"
+                    + general.emc["GITLAB_DKRZ_USER_NAME"]
+                    + "@"
+                    + repo.replace("https://", "")
+                )
             raw_command = raw_command.replace("${repository}", repo)
             if todo == "get":
                 if package.destination:
@@ -225,8 +230,8 @@ class software_package:
             self.destination = self.raw_name
 
         self.coupling_changes = self.get_coupling_changes(setup_info)
-        self.repo = replace_var(self.repo, self.model+".version", self.version)
-        self.branch = replace_var(self.branch, self.model+".version", self.version)
+        self.repo = replace_var(self.repo, self.model + ".version", self.version)
+        self.branch = replace_var(self.branch, self.model + ".version", self.version)
 
         self.bin_type, self.bin_names = self.get_comp_type(setup_info)
         self.command_list = self.get_command_list(setup_info, vcs, general)
@@ -246,7 +251,6 @@ class software_package:
                     if todo not in self.targets:
                         self.targets.append(todo)
 
-
     def get_coupling_changes(self, setup_info):
         config = setup_info.config
         changes = []
@@ -260,16 +264,16 @@ class software_package:
                 for coupling in couplings:
                     changes = []
                     if "coupling_changes" in config["couplings"][coupling]:
-                        these_changes = config["couplings"][coupling]["coupling_changes"]
+                        these_changes = config["couplings"][coupling][
+                            "coupling_changes"
+                        ]
                         if these_changes:
                             changes = changes + these_changes
         return changes
 
-
     def get_subpackages(self, setup_info, vcs, general):
         subpackages = []
         config = setup_info.config
-
 
         if self.kind == "setups":
             couplings = setup_info.get_config_entry(self, "couplings")
@@ -288,8 +292,12 @@ class software_package:
                             found = True
                             break
                     if not found:
-                        newpackage = software_package(component, setup_info, vcs, general)
-                        subpackages += newpackage.get_subpackages(setup_info, vcs, general)
+                        newpackage = software_package(
+                            component, setup_info, vcs, general
+                        )
+                        subpackages += newpackage.get_subpackages(
+                            setup_info, vcs, general
+                        )
                         subpackages.append(newpackage)
 
         elif self.kind == "components":
@@ -302,25 +310,28 @@ class software_package:
                             found = True
                             break
                     if not found:
-                        newpackage = software_package(component, setup_info, vcs, general)
-                        subpackages += newpackage.get_subpackages(setup_info, vcs, general)
+                        newpackage = software_package(
+                            component, setup_info, vcs, general
+                        )
+                        subpackages += newpackage.get_subpackages(
+                            setup_info, vcs, general
+                        )
                         subpackages.append(newpackage)
 
-
-        #if self.kind == "couplings":
+        # if self.kind == "couplings":
         #    components = setup_info.get_config_entry(self, "components")
         #    if components:
         #        for component in components:
         #            comp_tupel = software_package(component, setup_info, vcs, general)
         #            if comp_tupel not in subpackages:
         #                subpackages.append(comp_tupel)
-        #elif self.kind == "setups":
+        # elif self.kind == "setups":
         #    couplings = setup_info.get_config_entry(self, "couplings")
         #    if couplings:
         #        for coupling in couplings:
         #            for component in config["couplings"][coupling]["components"]:
-       #                 found = False
-       #                 for package in subpackages:
+        #                 found = False
+        #                 for package in subpackages:
         #                    if component == package.raw_name:
         #                        found = True
         #                        break
@@ -328,7 +339,7 @@ class software_package:
         #                    subpackages.append(
         #                        software_package(component, setup_info, vcs, general)
         #                    )
-        #elif self.kind == "components":
+        # elif self.kind == "components":
         #    requirements = setup_info.get_config_entry(self, "requires")
         ##    if requirements:
         #        for requirement in requirements:
@@ -382,7 +393,7 @@ class software_package:
                 if type(commands) == str:
                     commands = [commands]
                 if not todo == "get":
-                    commands.insert(0, "cd "+self.destination)
+                    commands.insert(0, "cd " + self.destination)
                     commands.append("cd ..")
             if todo == "get":
                 if self.coupling_changes:
@@ -417,13 +428,11 @@ class software_package:
         if self.command_list:
             print("    Commands:")
             for todo in self.command_list.keys():
-                print ("        ", todo, self.command_list[todo])
+                print("        ", todo, self.command_list[todo])
         if self.coupling_changes:
-            print ("    Coupling Changes:")
+            print("    Coupling Changes:")
             for todo in self.coupling_changes:
-                print ("        ", todo)
-
-
+                print("        ", todo)
 
 
 ######################################################################################
@@ -467,15 +476,15 @@ class task:
         if not self.todo in setup_info.meta_todos:
             self.check_if_target(setup_info)
 
-        self.subtasks=self.get_subtasks(setup_info, vcs, general)
-        self.only_subtask=self.validate_only_subtask()
-        self.ordered_tasks=self.order_subtasks(setup_info, vcs, general)
+        self.subtasks = self.get_subtasks(setup_info, vcs, general)
+        self.only_subtask = self.validate_only_subtask()
+        self.ordered_tasks = self.order_subtasks(setup_info, vcs, general)
 
         self.will_download = self.check_if_download_task(setup_info)
-        self.folders_after_download=self.download_folders()
-        self.binaries_after_compile=self.compile_binaries()
-        self.dir_list=self.list_required_dirs()
-        self.command_list, self.shown_command_list =self.assemble_command_list()
+        self.folders_after_download = self.download_folders()
+        self.binaries_after_compile = self.compile_binaries()
+        self.dir_list = self.list_required_dirs()
+        self.command_list, self.shown_command_list = self.assemble_command_list()
 
         if verbose > 1:
             self.output()
@@ -503,7 +512,7 @@ class task:
                             general,
                         )
                     )
-        #if subtasks == [] and self.todo in setup_info.meta_todos:
+        # if subtasks == [] and self.todo in setup_info.meta_todos:
         if self.todo in setup_info.meta_todos:
             for todo in todos:
                 if todo in self.package.targets:
@@ -570,8 +579,8 @@ class task:
                     ordered_tasks.append(task)
             for task in subtasks:
                 if task.todo == todo and not task.package.bin_type == "lib":
-                    ordered_tasks.append(task)#
-        if self.package.kind=="components" and not self.only_subtask:
+                    ordered_tasks.append(task)  #
+        if self.package.kind == "components" and not self.only_subtask:
             ordered_tasks.append(self)
         return ordered_tasks
 
@@ -584,12 +593,17 @@ class task:
         return False
 
     def download_folders(self):
-        #if self.package.kind in ["setups", "couplings"]:
+        # if self.package.kind in ["setups", "couplings"]:
         if self.package.subpackages:
             dir_list = [self.package.raw_name]
             for task in self.ordered_tasks:
-                if self.package.raw_name+"/"+task.package.destination not in dir_list:
-                    dir_list.append(self.package.raw_name+"/"+task.package.destination)
+                if (
+                    self.package.raw_name + "/" + task.package.destination
+                    not in dir_list
+                ):
+                    dir_list.append(
+                        self.package.raw_name + "/" + task.package.destination
+                    )
         else:
             dir_list = []
             for task in self.ordered_tasks:
@@ -601,8 +615,21 @@ class task:
         file_list = []
         for task in self.ordered_tasks:
             for binfile in task.package.bin_names:
-                if self.package.raw_name+"/"+task.package.bin_type+"/"+binfile.split("/")[-1] not in file_list:
-                    file_list.append(self.package.raw_name+"/"+task.package.bin_type+"/"+binfile.split("/")[-1])
+                if (
+                    self.package.raw_name
+                    + "/"
+                    + task.package.bin_type
+                    + "/"
+                    + binfile.split("/")[-1]
+                    not in file_list
+                ):
+                    file_list.append(
+                        self.package.raw_name
+                        + "/"
+                        + task.package.bin_type
+                        + "/"
+                        + binfile.split("/")[-1]
+                    )
         return file_list
 
     def list_required_dirs(self):
@@ -622,8 +649,8 @@ class task:
     def assemble_command_list(self):
         command_list = []
         toplevel = self.package.destination
-        #if self.package.kind in ["setups", "couplings"]:
-        if self.package.subpackages: #???
+        # if self.package.kind in ["setups", "couplings"]:
+        if self.package.subpackages:  # ???
             command_list.append("mkdir -p " + toplevel)
             command_list.append("cd " + toplevel)
             toplevel = "."
@@ -640,19 +667,16 @@ class task:
                 command_list.append(change)
                 real_command_list.append(change)
 
-
-
-
-
-
         for task in self.ordered_tasks:
             if not task.todo in ["get"]:
                 if task.todo in ["conf", "comp"]:
-                    #if self.package.kind in ["setups", "couplings"]:
+                    # if self.package.kind in ["setups", "couplings"]:
                     if not task.package.kind in ["setups", "couplings"]:
                         if self.package.subpackages:
-                            real_command_list.append("cp ../"+task.raw_name+"_script.sh .")
-                        real_command_list.append("./"+task.raw_name+"_script.sh")
+                            real_command_list.append(
+                                "cp ../" + task.raw_name + "_script.sh ."
+                            )
+                        real_command_list.append("./" + task.raw_name + "_script.sh")
                 else:
                     if not task.package.command_list[task.todo] == None:
                         for command in task.package.command_list[task.todo]:
@@ -662,16 +686,52 @@ class task:
                         command_list.append(command)
                 if task.todo == "comp":
                     if task.package.bin_names:
-                        command_list.append("mkdir -p "+toplevel+"/"+task.package.bin_type)
-                        real_command_list.append("mkdir -p "+toplevel+"/"+task.package.bin_type)
+                        command_list.append(
+                            "mkdir -p " + toplevel + "/" + task.package.bin_type
+                        )
+                        real_command_list.append(
+                            "mkdir -p " + toplevel + "/" + task.package.bin_type
+                        )
                         for binfile in task.package.bin_names:
-                            command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
-                            real_command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
+                            command_list.append(
+                                "cp "
+                                + task.package.destination
+                                + "/"
+                                + binfile
+                                + " "
+                                + toplevel
+                                + "/"
+                                + task.package.bin_type
+                            )
+                            real_command_list.append(
+                                "cp "
+                                + task.package.destination
+                                + "/"
+                                + binfile
+                                + " "
+                                + toplevel
+                                + "/"
+                                + task.package.bin_type
+                            )
                 elif task.todo == "clean":
                     if task.package.bin_names:
                         for binfile in task.package.bin_names:
-                            command_list.append("rm "+toplevel+"/"+task.package.bin_type+"/"+binfile.split("/", -1)[-1])
-                            real_command_list.append("rm "+toplevel+"/"+task.package.bin_type+"/"+binfile.split("/", -1)[-1])
+                            command_list.append(
+                                "rm "
+                                + toplevel
+                                + "/"
+                                + task.package.bin_type
+                                + "/"
+                                + binfile.split("/", -1)[-1]
+                            )
+                            real_command_list.append(
+                                "rm "
+                                + toplevel
+                                + "/"
+                                + task.package.bin_type
+                                + "/"
+                                + binfile.split("/", -1)[-1]
+                            )
         if self.package.kind in ["setups", "couplings"]:
             command_list.append("cd ..")
             real_command_list.append("cd ..")
@@ -682,10 +742,9 @@ class task:
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 try:
-                    os.remove("./"+task.raw_name+"_script.sh")
+                    os.remove("./" + task.raw_name + "_script.sh")
                 except OSError:
                     print("No file to remove for ", task.raw_name)
-
 
     def check_if_target(self, setup_info):
         if not setup_info.has_target2(self.package, self.todo):
@@ -698,9 +757,15 @@ class task:
         requirements = self.folders_after_download
         for folder in requirements:
             if not os.path.isdir(folder):
-                print ()
-                print ("Missing folder "+ folder + " detected. Please run 'make get-"+self.package.raw_name+ "' first.")
-                print ()
+                print()
+                print(
+                    "Missing folder "
+                    + folder
+                    + " detected. Please run 'make get-"
+                    + self.package.raw_name
+                    + "' first."
+                )
+                print()
                 sys.exit(0)
         return True
 
@@ -725,10 +790,10 @@ class task:
             else:
                 os.system(command)
 
-        #print ("Still here")
-        #try:
+        # print ("Still here")
+        # try:
         #    sys.exit(0)
-        #except:
+        # except:
         #    pass
 
     def output(self):
@@ -763,11 +828,9 @@ class task:
 
     def output_steps(self):
         if not self.command_list == []:
-            print ("    Executing commands in this order:")
+            print("    Executing commands in this order:")
             for command in self.shown_command_list:
-                print ("        ", command)
-
-
+                print("        ", command)
 
 
 ######################################################################################
@@ -809,20 +872,15 @@ class setup_and_model_infos:
         if verbose > 1:
             self.output()
 
-
     def write_minimal_user_config(self):
         user_config = {}
 
         for model in self.config["components"]:
             version = self.config["components"][model]["version"]
             model_dir = self.config["components"][model]["model_dir"]
-            user_config.update({model:
-                                    {
-                                     "model": model,
-                                     "version": version,
-                                     "model_dir": model_dir
-                                     }
-                                })
+            user_config.update(
+                {model: {"model": model, "version": version, "model_dir": model_dir}}
+            )
         if "setups" in self.config:
             coupled = "true"
             setup = list(self.config["setups"])[0]
@@ -834,28 +892,29 @@ class setup_and_model_infos:
             setup = list(self.config["components"])[0]
             version = self.config["components"][setup]["version"]
 
-
-        user_config.update({"general":
-                                {
-                                "jobtype": "compute",
-                                "account": "none",
-                                "setup_name": setup,
-                                "version" : version,
-                                "coupled" : "false",
-                                "initial_date": "2000-01-01",
-                                "final_date": "2000-01-02",
-                                "compute_time": "00:00:01",
-                                "model_dir": model_dir,
-                                "base_dir": "/on/a/road/to/nowwhere"
-                                }
-                            })
+        user_config.update(
+            {
+                "general": {
+                    "jobtype": "compute",
+                    "account": "none",
+                    "setup_name": setup,
+                    "version": version,
+                    "coupled": "false",
+                    "initial_date": "2000-01-01",
+                    "final_date": "2000-01-02",
+                    "compute_time": "00:00:01",
+                    "model_dir": model_dir,
+                    "base_dir": "/on/a/road/to/nowwhere",
+                }
+            }
+        )
 
         return user_config
 
-
-
-    def append_to_conf(self, target, reduced_config,  toplevel = ""):
-        (todo, kind, model, version, only_subtarget, raw ) = self.split_raw_target(target, self)
+    def append_to_conf(self, target, reduced_config, toplevel=""):
+        (todo, kind, model, version, only_subtarget, raw) = self.split_raw_target(
+            target, self
+        )
         if not version:
             version = "default"
 
@@ -869,14 +928,18 @@ class setup_and_model_infos:
             reduced_config[model]["model_dir"] = ESM_MASTER_DIR + "/" + toplevel
             if "couplings" in self.config[kind][model]:
                 for coupling in self.config[kind][model]["couplings"]:
-                    reduced_config = self.append_to_conf(coupling, reduced_config, toplevel)
+                    reduced_config = self.append_to_conf(
+                        coupling, reduced_config, toplevel
+                    )
         elif kind == "couplings":
             if toplevel == "":
                 toplevel = model + "-" + version
             reduced_config[model]["model_dir"] = ESM_MASTER_DIR + "/" + toplevel
             if "components" in self.config[kind][model]:
                 for component in self.config[kind][model]["components"]:
-                    reduced_config = self.append_to_conf(component, reduced_config, toplevel)
+                    reduced_config = self.append_to_conf(
+                        component, reduced_config, toplevel
+                    )
         elif kind == "components":
             sep = ""
             if toplevel == "":
@@ -887,28 +950,33 @@ class setup_and_model_infos:
                 sep = "/"
 
             if "destination" in reduced_config[model]:
-                reduced_config[model]["model_dir"] = ESM_MASTER_DIR + "/" + toplevel + sep + reduced_config[model]["destination"]
+                reduced_config[model]["model_dir"] = (
+                    ESM_MASTER_DIR
+                    + "/"
+                    + toplevel
+                    + sep
+                    + reduced_config[model]["destination"]
+                )
             else:
-                reduced_config[model]["model_dir"] = ESM_MASTER_DIR + "/" + toplevel + sep + model + "-" + version
+                reduced_config[model]["model_dir"] = (
+                    ESM_MASTER_DIR + "/" + toplevel + sep + model + "-" + version
+                )
 
             if "requires" in self.config[kind][model]:
                 for requirement in self.config[kind][model]["requires"]:
-                    reduced_config = self.append_to_conf(requirement, reduced_config, toplevel)
+                    reduced_config = self.append_to_conf(
+                        requirement, reduced_config, toplevel
+                    )
 
         return reduced_config
 
-
-    #def reduce(self, target, env):
+    # def reduce(self, target, env):
     def reduce(self, target):
-        blacklist = [
-            re.compile(entry)
-            for entry in ["computer.*"]
-        ]
+        blacklist = [re.compile(entry) for entry in ["computer.*"]]
 
-        reduced_config={}
+        reduced_config = {}
         reduced_config["defaults"] = self.config["defaults"]
         reduced_config = self.append_to_conf(target, reduced_config)
-
 
         esm_parser.choose_blocks(reduced_config)
         esm_parser.recursive_run_function(
@@ -925,31 +993,26 @@ class setup_and_model_infos:
         for headline in reduced_config:
             if "kind" in reduced_config[headline]:
                 if not reduced_config[headline]["kind"] in new_config:
-                    new_config[reduced_config[headline]["kind"]] = {headline: reduced_config[headline]}
+                    new_config[reduced_config[headline]["kind"]] = {
+                        headline: reduced_config[headline]
+                    }
                 else:
-                    new_config[reduced_config[headline]["kind"]].update({headline: reduced_config[headline]})
+                    new_config[reduced_config[headline]["kind"]].update(
+                        {headline: reduced_config[headline]}
+                    )
             else:
                 new_config.update({headline: reduced_config[headline]})
 
-        #esm_parser.pprint_config(new_config)
-        #sys.exit(0)
+        # esm_parser.pprint_config(new_config)
+        # sys.exit(0)
         return new_config
-
 
     def replace_last_vars(self, env):
 
         self.config["computer"] = copy.deepcopy(env.config)
         esm_parser.recursive_run_function(
-            [],
-            self.config,
-            "atomic",
-            esm_parser.find_variable,
-            self.config,
-            [],
-            True,
+            [], self.config, "atomic", esm_parser.find_variable, self.config, [], True
         )
-
-
 
     def update_packages(self, vcs, general):
         for package in self.all_packages:
@@ -1161,5 +1224,3 @@ class setup_and_model_infos:
         print("All known todos: " + str(self.known_todos))
         for package in self.all_packages:
             package.output()
-
-

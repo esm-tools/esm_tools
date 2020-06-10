@@ -14,12 +14,12 @@ sh_interpreter: "/usr/bin/bash"
 choose_jobtype:
         post:
                 partition: smp
-        compute: 
+        compute:
                 partition: mpp
-        tidy_and_resubmit: 
+        tidy_and_resubmit:
                 partition: mpp
 
-choose_partition: 
+choose_partition:
         "mpp":
                 cores_per_node: 36
         "smp":
@@ -35,7 +35,7 @@ pool_directories:
         pool: "/work/ollie/pool"
         projects: "/work/ollie/projects"
 
-# ????? 
+# ?????
 choose_submitted:
         true:
                 modules_needed:
@@ -58,18 +58,18 @@ hyper_flag: "" # No hyperthreading on ollie
 
 useMPI: intelmpi
 
-module_actions: 
+module_actions:
         - "purge"
-        - "load cmake" 
+        - "load cmake"
         - "load udunits"
-        - "load gribapi/1.28.0" 
+        - "load gribapi/1.28.0"
         - "unload intel.compiler"
-        - "load intel.compiler"  
-        - "unload netcdf" 
-        - "load hdf5" 
+        - "load intel.compiler"
+        - "unload netcdf"
+        - "load hdf5"
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
-        - "load python3" 
-        - "load automake" 
+        - "load python3"
+        - "load automake"
         - "list"
 
 export_vars:

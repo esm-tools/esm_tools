@@ -63,7 +63,7 @@ postprocess_tasks: #in echam.postprocessing.yaml
 #          # Always prefixed with -- and take value "--key value" when constructing command
 #   "[[streams-->STREAM]]_mm.nc":
 #      post_process: "mm"
-#      infile: 
+#      infile:
 #        "STREAM": "${general.expid}_${start_date!syear!smonth}_STREAM"
 #        "unique1": "abc_STREAM_def"
 #        "STREAM2": "lalala_${general.expid}"

@@ -1,6 +1,6 @@
 
 general:
-   setup_name: "foci"      
+   setup_name: "foci"
    #resolution: "T63_ORCA05"
    compute_time: "00:05:00"
    account: "bb0519"
@@ -23,7 +23,7 @@ computer:
 
 echam:
    resolution: "T63"
-   restart_rate: 1 
+   restart_rate: 1
    restart_unit: "days"
    nproca: 4
    nprocb: 24

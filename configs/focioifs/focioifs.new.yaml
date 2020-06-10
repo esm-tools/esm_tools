@@ -7,9 +7,9 @@ general:
         model_dir: ${esm_master_dir}/focioifs-${version}
         #setup_dir: ${general.model_dir}
         #base_dir: ${general.model_dir}/experiments
-        
 
-        lresume: False 
+
+        lresume: False
         #nday: 5
         coupled_setup: True
 
@@ -49,7 +49,7 @@ general:
                                         #- 'KMP_STACKSIZE=64m'
                                         #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                         # OpenMP
-                                        - 'OMP_NUM_THREADS=1' 
+                                        - 'OMP_NUM_THREADS=1'
 computer:
        additional_flags: "--ntasks-per-core=1"
        launcher: "srun" # default, but set it to make clear what the launcher flags are used for
@@ -67,7 +67,7 @@ oifs:
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
-        
+
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -79,25 +79,25 @@ oifs:
         # 575 would also be ok (575 = 23 * 25)
         nproca: 287
         nprocb: 1
-        
+
         # By default we turn off ECWAM wave model
         wam: False
-        
+
         namelist_changes:
                 fort.4:
                         NAMECECFG:
                                 # Turn on coupling
                                 # TODO: Add variable for AGRIF coupling
-                                FOCI_CPL_NEMO_LIM: ".true." 
-                
+                                FOCI_CPL_NEMO_LIM: ".true."
+
         environment_changes:
                 add_export_vars:
-                        # Turn on FOCI coupling        
+                        # Turn on FOCI coupling
                         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                         - 'FOCI_USE_CPLNG="active"'
                         - 'AWICM_USE_CPLNG="no"'
                         - 'ECE_USE_CPLNG="no"'
-        
+
         choose_resolution:
                 TCO95:
                      nproca: 287
@@ -110,7 +110,7 @@ oifs:
 nemo:
         nproca: 24
         nprocb: 20
-        
+
         #lresume: ${general.lresume}
         choose_general.version:
                 default:
@@ -125,14 +125,14 @@ nemo:
 xios:
         model_dir: ${general.model_dir}/xios-${nemo.version}
         setup_dir: ${general.model_dir}
-        
+
         nproca: ${computer.cores_per_node}
         nprocb: 1
-        
 
-#rnfmap: 
+
+#rnfmap:
 #        nproca: 1
-#        nprocb: 1        
+#        nprocb: 1
 
 #########################################################################################
 
@@ -143,13 +143,13 @@ oasis3mct:
                 - nemo
                 - oifs
                 - xios
-        
+
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
         lresume: true
-        ini_parent_date: "19500101" # not used, but needs to be present 
-        ini_parent_exp_id: "khw0030" # not used, but needs to be present 
+        ini_parent_date: "19500101" # not used, but needs to be present
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present
         ini_restart_dir: "${pool_dir}"
 
         a2o_lag: "${oifs.time_step}"
@@ -167,15 +167,15 @@ oasis3mct:
                         - 'A_SnwTck <--o2agauswgt-- O_SnwTck'
                         - 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
                         - 'A_OCury1 <--o2agauswgt-- O_OCury1'
-                
+
                 # Couple HTESSEL runoff to river routing
                 rnfatm:
                         - 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
-                
+
                 # Coupled river routing to ocean runoff mask
                 rnrunoff:
                         - 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
-                
+
                 # Couple atm fluxes to ocean (non-conserving)
                 flxatmos:
                         - 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
@@ -183,21 +183,21 @@ oasis3mct:
                         - 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
                         - 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
                         - 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
-                
+
                 # Coupled atm stress to ocean (non-conserving)
-                atmtau:         
+                atmtau:
                         - 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
                         - 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
                         - 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
                         - 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
-                
+
                 # Couple atm fluxes to ocean (conserving)
-                atmflx: 
+                atmflx:
                         - 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
                         - 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
                         - 'OTotRain <--a2ogauswgtcn-- ATotRain'
-                        
-                
+
+
         coupling_directions:
                 'atmo->rnfa':
                         lag: ${a2r_lag}
@@ -214,7 +214,7 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 conserv:
@@ -223,7 +223,7 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 conserv:
@@ -235,7 +235,7 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 # NEMO to OpenIFS (Lgrid)
@@ -243,18 +243,18 @@ oasis3mct:
                 o2agauswgt:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
                                         mapname: rmp_opat_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: dst
                 # OpenIFS (HTESSEL, Rgrid) to runoff mapper
-                # GAUSWGT remapping. GLBPOS conservation.                         
+                # GAUSWGT remapping. GLBPOS conservation.
                 a2rgauswgt:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
@@ -269,7 +269,7 @@ oasis3mct:
                 r2ogauswgt:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
@@ -277,100 +277,100 @@ oasis3mct:
                                         map_regrid_on: dst
                         postprocessing:
                                 conserv:
-                                        method: glbpos                                        
+                                        method: glbpos
                 # OpenIFS (Lgrid) to NEMO
-                # GAUSWGT remapping. No conservation post processing. 
+                # GAUSWGT remapping. No conservation post processing.
                 a2ogauswgtnc:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
                                         mapname: rmp_${oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
-                        
+
                 # OpenIFS (Agrid) to NEMO
-                # GAUSWGT remapping. GLBPOS conservation. 
+                # GAUSWGT remapping. GLBPOS conservation.
                 a2ogauswgtcn:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 9                                        
+                                        nb_of_neighbours: 9
                                 - mapping:
                                         mapname: rmp_${oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
                         postprocessing:
                                 conserv:
                                         method: glbpos
-                
+
                 # OpenIFS (Lgrid) to AGRIF
-                # GAUSWGT remapping. No conservation post processing. 
+                # GAUSWGT remapping. No conservation post processing.
                 a2agrgauswgtnc:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
                                         mapname: rmp_${oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
-                
+
                 # OpenIFS (Agrid) to AGRIF
-                # GAUSWGT remapping. No conservation post processing. 
+                # GAUSWGT remapping. No conservation post processing.
                 a2agrgauswgtcn:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                 - mapping:
                                         mapname: rmp_${oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
-                
+
                 # AGRIF to OpenIFS (Lgrid)
                 # GAUSWGT remapping. No conservation post processing
                 agr2agauswgt:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 25
                                 - mapping:
                                         mapname: rmp_agr1_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: dst
-                
+
                 # AGRIF mask to OpenIFS (Lgrid)
                 # GAUSWGT remapping. No conservation post processing
                 agr22agauswgt:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - gauswgt:
                                         search_bin: latitude
                                         nb_of_neighbours: 25
                                 - mapping:
                                         mapname: rmp_agr2_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                                        map_regrid_on: dst                        
-                
+                                        map_regrid_on: dst
+
         add_restart_out_files:
                 rmp_o2a_TL: rmp_o2a_TL
                 rmp_a2r_RR: rmp_a2r_RR
                 rmp_r2f_RF: rmp_r2f_RF
                 rmp_a2o_LT: rmp_a2o_LT
                 rmp_a2o_AC: rmp_a2o_AC
-                
+
                 areas: areas
                 masks: masks
                 grids: grids
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
                 rnrunoff: rnrunoff
                 atmtau: atmtau
                 atmflx: atmflx
-                
+
         add_restart_out_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
@@ -382,18 +382,18 @@ oasis3mct:
                 rmp_a2agr_A1: rmp_${oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_1L: rmp_agr1_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                
+
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
                 rnrunoff: rnrunoff
                 atmtau: atmtau
                 atmflx: atmflx
-                
+
 
         add_restart_out_sources:
                 rmp_o2a_TL: rmp_opat_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
@@ -405,11 +405,11 @@ oasis3mct:
                 rmp_a2agr_A1: rmp_${oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_1L: rmp_agr1_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                
+
                 areas: areas_${oifs.resolution}_${nemo.resolution}_frac.nc
                 masks: masks_${oifs.resolution}_${nemo.resolution}_frac.nc
                 grids: grids_${oifs.resolution}_${nemo.resolution}_frac.nc
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
@@ -423,11 +423,11 @@ oasis3mct:
                 rmp_r2f_RF: rmp_r2f_RF
                 rmp_a2o_LT: rmp_a2o_LT
                 rmp_a2o_AC: rmp_a2o_AC
-                
+
                 areas: areas
                 masks: masks
                 grids: grids
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
@@ -445,11 +445,11 @@ oasis3mct:
                 rmp_a2agr_A1: rmp_${oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_1L: rmp_agr1_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                
+
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
@@ -467,11 +467,11 @@ oasis3mct:
                 rmp_a2agr_A1: rmp_${oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_1L: rmp_agr1_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                
+
                 areas: areas_${oifs.resolution}_${nemo.resolution}_frac.nc
                 masks: masks_${oifs.resolution}_${nemo.resolution}_frac.nc
                 grids: grids_${oifs.resolution}_${nemo.resolution}_frac.nc
-                
+
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm

@@ -23,11 +23,11 @@ choose_jobtype:
                 partition: compute
         post:
                 partition: compute
-        compute: 
+        compute:
                 partition: compute
 
 
-choose_partition: 
+choose_partition:
         "compute":
                 cores_per_node: 24
         "compute2":
@@ -62,9 +62,9 @@ export_vars:
         - "CC=${cc}"
         - "CXX=${cxx}"
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
-        
-        # Why are we not using MPI HDF5        
+        - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+        # Why are we not using MPI HDF5
         #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         #- 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         # NOTE(PG): The version of HDF5ROOT **WITH** an underscore is used by PISM Cmake:
@@ -87,7 +87,7 @@ export_vars:
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "LAPACK_LIB='-mkl=sequential'"
         - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
-                
+
         # mostly OpenIFS stuff
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
@@ -123,15 +123,15 @@ export_vars:
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
         - 'OIFS_CC=${cc}'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'       
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
         # MPI environent variables important at runtime
         - 'I_MPI_FABRICS=shm:dapl'
         - 'I_MPI_FALLBACK=disable'
         - 'I_MPI_SLURM_EXT=1'
-        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192' 
+        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
         - 'I_MPI_DYNAMIC_CONNECTION=1'
-        
+
         - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
         - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
         - 'DAPL_WR_MAX=500'
@@ -189,7 +189,7 @@ choose_useMPI:
                 add_module_actions:
                         - "load mxm/3.4.3082"
                         - "load fca/2.5.2431"
-                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"  
+                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
                 add_export_vars:
                         - 'FC=mpif90'
                         - 'F77=mpif90'

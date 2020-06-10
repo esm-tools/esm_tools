@@ -11,5 +11,5 @@
 "<--scriptname--":
         method: basename "$0" | cut -f1 -d' '
 
-"<--script_dir--": 
+"<--script_dir--":
         method: "$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )

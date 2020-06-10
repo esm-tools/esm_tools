@@ -4,7 +4,7 @@
 # DEFAULT VALUES
 model: nemo
 nemoconfig: "ORCA05_LIM2_KCM_AOW"
-include_models: 
+include_models:
         - xios
 executable:     oceanx
 version:        3.6
@@ -37,7 +37,7 @@ restart_rate:   1
 restart_unit:   months
 
 # default directories
-pool_dir: ${computer.pool_directories.focipool} 
+pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
 # TODO
 ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
@@ -68,8 +68,8 @@ namelist_changes:
         namelist_cfg:
                 namrun:
                         cn_exp: ${expid}
-                        nn_it000: ${thisstep}  
-                        nn_itend: ${newstep} 
+                        nn_it000: ${thisstep}
+                        nn_itend: ${newstep}
                         nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
                         cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
@@ -80,18 +80,18 @@ namelist_changes:
                         nn_rstctl: 2
                         ln_rstart: 'false'
                 namtsd:
-                        ln_tsd_init: '.true.'   
-                namdom:    
+                        ln_tsd_init: '.true.'
+                namdom:
                         nn_closea: 1
                         nn_msh: 1
                         rn_rdt: ${time_step}
-                namsbc:     
+                namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
                         jpni: 0
                         jpnj: 0
                         jpnij: 0
-        
+
 choose_nemoconfig:
        "ORCA05_LIM2_KCM_AOW":
                 free_surface: linear
@@ -107,14 +107,14 @@ choose_nemoconfig:
                                     jpnj: 0
                                     jpnij: 0
 
-choose_free_surface:                        
+choose_free_surface:
         linear:
                 namelist_changes:
                         namelist_cfg:
                                 namdyn_hpg:
                                         ln_hpg_zps: '.true.'
                                         ln_hpg_sco: '.false.'
-                                        ln_dynhpg_imp: '.true.'                
+                                        ln_dynhpg_imp: '.true.'
         nonlinear:
                 namelist_changes:
                         namelist_cfg:
@@ -122,22 +122,22 @@ choose_free_surface:
                                         ln_hpg_zps: '.false.'
                                         ln_hpg_sco: '.true.'
                                         ln_dynhpg_imp: '.false.'
-                                        
+
 choose_hosing:
         true:
                 namelist_changes:
                         namelist_cfg:
                                 namdyn_sbc:
-                                        ln_hosing: '.true.'        
+                                        ln_hosing: '.true.'
 
 choose_lresume:
         true:
                 namelist_changes:
-                        namelist_cfg: 
+                        namelist_cfg:
                                 namrun:
                                         ln_rstart: '.true.'
                                 nam_tsd:
-                                        nam_tsd_init: '.true.'       
+                                        nam_tsd_init: '.true.'
                                 namdom:
                                         nn_msh: 0
                 choose_general.run_number:
@@ -152,17 +152,17 @@ choose_lresume:
 
 
 choose_correct_neg_tracer_conc:
-        true:                                                        
+        true:
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_rad:
                                         ln_trcrad: ".true."
-        false:                                                        
+        false:
                 namelist_changes:
                         namelist_top_cfg:
                                 namtrc_rad:
                                         ln_trcrad: ".false."
-                                                        
+
 choose_general.run_number:
         1:
                 namelist_changes:
@@ -195,8 +195,8 @@ choose_resolution:
                         s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
                         s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
                         coef-G70: orca05_bfr_coef-G70.nc
-                        Ice_init: Ice_initialization.nc 
-        
+                        Ice_init: Ice_initialization.nc
+
         GYRE_XIOS:
                 _nx: 32
                 _ny: 22
@@ -210,7 +210,7 @@ choose_use_lim2:
                 namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
-                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday} 
+                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}
                                         cn_icerst_indir: '${work_dir}'
                                         cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                                         cn_icerst_outdir: '${work_dir}'
@@ -235,23 +235,23 @@ choose_use_tracer:
                                         cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                                         cn_trcrst_outdir: '${work_dir}'
                                         ln_rsttr: '.false.'
-                                        nn_rsttr : 0       
+                                        nn_rsttr : 0
                                 namtrc:
-                                        ln_trcdta: '.true.' 
+                                        ln_trcdta: '.true.'
                 choose_lresume:
                         true:
                                 namelist_changes:
-                                        namelist_top_cfg:                
+                                        namelist_top_cfg:
                                                 namtrc_run:
                                                         ln_rsttr: '.true.'
                                                 namtrc:
-                                                        ln_trcdta: '.false.' 
+                                                        ln_trcdta: '.false.'
                 choose_general.run_number:
                         1:
                                 namelist_changes:
                                         namelist_top_cfg:
-                                                namtrc_run:        
-                                                        nn_rsttr : 0       
+                                                namtrc_run:
+                                                        nn_rsttr : 0
 
 
 bin_sources:
@@ -280,15 +280,15 @@ input_sources:
 
 ############## config files / namelist files:
 
-config_files: 
+config_files:
         namelist_cfg: namelist_cfg
 
-config_sources: 
+config_sources:
         namelist_cfg: ${namelist_dir}/namelist_cfg
         namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
         namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
 
-config_in_work: 
+config_in_work:
         namelist_cfg: namelist_cfg
         namelist_ice_cfg: namelist_ice_cfg
         namelist_top_cfg: namelist_top_cfg
@@ -323,10 +323,10 @@ log_sources:
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
 
-coupling_fields: 
-        "[[opat_fields-->FIELD]]": 
+coupling_fields:
+        "[[opat_fields-->FIELD]]":
                 grid: opat
-        "[[opac_fields-->FIELD]]": 
+        "[[opac_fields-->FIELD]]":
                 grid: opac
 
 grids:
@@ -336,7 +336,7 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 2 # oasis P-value
-        opac:   
+        opac:
                 name: opac
                 nx: ${_nx}
                 ny: ${_ny}

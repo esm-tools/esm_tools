@@ -1,6 +1,6 @@
 
 general:
-   setup_name: "foci"      
+   setup_name: "foci"
    #resolution: "T63_ORCA05"
    compute_time: "01:00:00"
    account: "bb0519"
@@ -22,7 +22,7 @@ computer:
    mail_user: "swahl@geomar.de"
 echam:
    resolution: "T63"
-   restart_rate: 12 
+   restart_rate: 12
    restart_unit: "months"
 nemo:
    resolution: "ORCA05"

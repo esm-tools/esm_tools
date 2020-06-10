@@ -41,6 +41,7 @@ echam:
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         ocean_resolution: "${fesom.resolution}"
+
         remove_forcing_files:
                 - sst
                 - sic
@@ -55,10 +56,10 @@ echam:
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #                       nprocrad: 432
-                        nprocar: 24
-                        nprocbr: 18
+                        nprocar: 48
+                        nprocbr: 36
 
-                        npromar: 8
+                        npromar: 16
                         lrad_async: true
                         lrestart_from_old: false
 
@@ -91,7 +92,7 @@ echam:
 
 #########################################################################################
 
-                        
+
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
@@ -108,14 +109,14 @@ jsbach:
 
 #########################################################################################
 
-        
+
 fesom:
         choose_general.version:
-                1.1:
+                "1.1":
                         version: "1.4"
-                CMIP6:
+                "CMIP6":
                         version: "1.4"
-                2.0:
+                "2.0":
                         version: "2.0"
         choose_general.resolution:
                 T63_CORE2:
@@ -182,7 +183,7 @@ oasis3mct:
                 'atmo->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 distwgt:

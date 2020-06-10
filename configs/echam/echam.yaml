@@ -123,6 +123,8 @@ choose_version:
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007
+                add_streams:
+                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:

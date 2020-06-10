@@ -34,6 +34,7 @@ pool_dir: "/work/ollie/pool"
 pool_directories:
         pool: "/work/ollie/pool"
         projects: "/work/ollie/projects"
+        focipool: "/dev/null"
 
 # ?????
 choose_submitted:

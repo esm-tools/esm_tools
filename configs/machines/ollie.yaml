@@ -68,7 +68,7 @@ module_actions:
         - "unload netcdf"
         - "load hdf5"
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
-        - "load python3/3.7.7_intel2020"
+        # - "load python3/3.7.7_intel2020"
         - "load automake"
         - "list"
 

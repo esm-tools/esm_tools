@@ -1,10 +1,9 @@
 #########################################################################################
-######################### AWICM 1 YAML CONFIGURATION FILE ###############################
+######################### AWIESM 2 YAML CONFIGURATION FILE ##############################
 #########################################################################################
 
 general:
-        model: awicm
-        #model_dir: ${esm_master_dir}/awicm-${version}
+        model: awiesm
 
         coupled_setup: True
 
@@ -13,8 +12,8 @@ general:
                 - fesom
                 - oasis3mct
 
-        version: "1.1"
-        scenario: "PI-CTRL"
+        version: "2.1"
+        scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -69,6 +68,8 @@ jsbach:
                         hydrology_ctl:
                                 gethd: "remove_from_namelist"
                                 puthd: "remove_from_namelist"
+                        jsbach_ctl:
+                            use_dynveg: true
         version: "3.20"
 
         choose_computer.name:
@@ -80,12 +81,13 @@ jsbach:
 
 
 fesom:
+        version: "2.0"
         choose_general.version:
-                "1.1":
+                1.1:
                         version: "1.4"
-                "CMIP6":
+                CMIP6:
                         version: "1.4"
-                "2.0":
+                2.0:
                         version: "2.0"
         choose_general.resolution:
                 T63_CORE2:

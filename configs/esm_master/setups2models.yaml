@@ -68,8 +68,9 @@ components:
 
                         "6.3.05p2-concurrent_radiation":
                                 git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
-                                branch: "concurrent_radiation_cpl_feom"
-                                comp_command: "./config/createMakefiles.pl; autoreconf -i --force; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6"
+                                branch: "concurrent_radiation"
+                                conf_command: "export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel INSTALL='/usr/bin/install -p'"
+                                comp_command: "make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6"
                                 clean_command: "rm -rf src/echam/bin; make clean"
         "esm-interface":
                 git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
@@ -214,7 +215,19 @@ components:
                         - "build/lib/psmile/mct/libmct.a"
                         - "build/lib/psmile/mct/mpeu/libmpeu.a"
                         - "build/lib/psmile/scrip/libscrip.a"
-                comp_command: 'mkdir -p build; cd build; cmake ..;   make -j `nproc --all`'
+                comp_command: >
+                    mkdir -p build;
+                    cd build;
+                    cmake ..;
+                    make -j `nproc --all`;
+                    mkdir ../include;
+                    ln -s ../lib/psmile/include/oasis_os.h ../include/;
+                    cp ../build/lib/psmile/*mod ../include/;
+                    ln -s ../lib/psmile/include/oasis_os.h ../include/;
+                    ln -s ../build/lib/psmile/libpsmile.a ../lib;
+                    ln -s ../build/lib/psmile/mct/libmct.a ../lib;
+                    ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib;
+                    ln -s ../build/lib/psmile/scrip/libscrip.a ../lib;
                 clean_command: "${defaults.clean_command}"
                 git-repository: "https://gitlab.dkrz.de/modular_esm/oasis3-mct.git"
                 destination: "oasis"
@@ -477,8 +490,9 @@ couplings:
                         - "fesom-2.0"
                         - "oasis3-mct-2.8"
                 coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
+                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
                         - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux"
+                        - "sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation/configure.ac"
 
         "fesom-2.0+oifs-43r3-awi":
                 components:

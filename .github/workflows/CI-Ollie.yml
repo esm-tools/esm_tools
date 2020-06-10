@@ -1,0 +1,43 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI-Ollie
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ release, CI-Ollie ]
+  pull_request:
+    branches: [ release, CI-Ollie ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "install as user"
+  install_as_user:
+    # The type of runner that the job will run on
+    runs-on: [self-hosted, ollie]
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    - name: Set up environment
+      run: |
+        module purge
+        module load git
+        module load python3
+    - name: Check versions and env
+      run: |
+        git --version
+        python --version
+        pip --version
+        env
+    # Runs a set of commands using the runners shell
+    - name: Install project
+      run: 
+       ./install.sh
+    - name: Check binaries
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        which esm_master
+        which esm_runscripts
+        which esm_versions

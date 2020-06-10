@@ -16,9 +16,9 @@ Welcome to ESM Tools's documentation!
    esm_runscripts
    faq
    packages
-   API
    contributing
    authors
+   history
 
 .. exclude:: ../README.rst
 

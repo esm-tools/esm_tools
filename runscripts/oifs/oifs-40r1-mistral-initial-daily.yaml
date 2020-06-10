@@ -1,0 +1,30 @@
+general:
+        setup_name: oifs
+        compute_time: "00:05:00"
+        account: "bb0519"
+        initial_date: "1982-01-01"
+        final_date: "1982-01-02"
+        base_dir: "/work/bb0519/b350090/esm-experiments/"
+        nyear: 0
+        nmonth: 0
+        ndays: 1
+        restart_rate: 1
+        restart_unit: "months"
+
+oifs:
+        version: "40r1"
+        model_dir: "/pf/b/b350090/esm-py/esm_tools/oifs-40r1/"
+        pool_dir: "/work/bb0519/foci_input2/"
+        input_dir: "/work/bb0519/foci_input2/OPENIFS40R1-TL159/"
+        rtables_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/rtables/"
+        vtables_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/vtables/"
+        clim_dir: "/work/bb0519/foci_input2/OPENIFS40R1-TL159/159l_2/"
+        forcing_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/ifsdata/"
+        cmip5_data_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/cmip5_ghg/"
+        icmcl_dir: "/work/bb0519/foci_input2/OPENIFS40R1-TL159/1982010100/"
+        icmcl_file: "ICMCLgu5aINIT"
+        res: T159
+        levels: L91
+        lresume: 0
+        post_processing: 0
+

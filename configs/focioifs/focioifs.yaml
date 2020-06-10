@@ -1,47 +1,254 @@
 # FOCIOIFS YAML CONFIGURATION FILE
+#
 
 
-submodels:
-        - nemo
-        - oifs
-        - oasis3mct
-        - rnfmap
-        - xios
+general:
+        pool_dir: "${computer.pool_directories.focipool}"
+        model: focioifs
+        model_dir: ${esm_master_dir}/focioifs-${version}
+
+        coupled_setup: True
+
+        include_models:
+                - oifs
+                - nemo
+                - oasis3mct
+
+        version: "1.0"
+        scenario: "PI-CTRL"
+        resolution: ${oifs.resolution}_${nemo.resolution}
+        postprocessing: false
+        post_time: "00:20:00"
+        choose_general.resolution:
+                T159_ORCA05:
+                        compute_time: "02:00:00"
+
+# Components
+
+#submodels:
+#        - nemo
+#        - oifs
+#        - oasis3mct
+#        - rnfmap
+#        - xios
 
 # default values
-          
-oasis3mct:
-        time_step: 10800
 
+# Settings for OpenIFS for coupled runs
 oifs:
-        version: '40r1'
-        resolution: T159
-        levels: L91
+        namelist_changes:
+                fort.4:
+                        namececfg:
+                                foci_cpl_nemo_lim: .true.
+        model_dir: ${general.model_dir}/oifs-${oifs.version}
 
+        choose_general.resolution:
+                T159_ORCA05:
+                        nproca: 279
+                        nprocb: 1
+
+# Settings for NEMO
 nemo:
-        version: '3.6'
+        choose_general.version:
+                1.0:
+                        version: "3.6foci"
+        choose_general.resolution:
+                T159_ORCA05:
+                        nproca: 24
+                        nprocb: 20
+
+        namelist_changes:
+                namelist_cfg:
+                        namsbc_cpl:
+                                sn_rcv_rnf: "'coupled', 'no', '', '', ''"
+
+
         resolution: ORCA05
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
+        model_dir: ${general.model_dir}/nemo-${nemo.version}
+        setup_dir: ${general.model_dir}
+
+# Settings for OASIS
+oasis3mct:
+        model_dir: ${general.model_dir}/oasis
+
+        process_ordering:
+                - nemo
+                - oifs
+                - xios
+
+        output_exchanged_vars: false
+
+        a2o_lag: "${oifs.time_step}"
+        a2r_lag: ${oifs.time_step}
+        o2a_lag: "${nemo.time_step}"
+        a2o_seq: 1
+        o2a_seq: 1
+
+        coupled_target_fields:
+        a2r:
+
+        coupling_time_step: 10800
+        coupling_target_fields:
+                # Coupling ocean fields to atm
+                sstocean:
+                        - 'AIceFrac <--o2agauswgt-- OIceFrac'
+                        - 'A_SSTSST <--o2agauswgt-- O_SSTSST'
+                        - 'A_TepIce <--o2agauswgt-- O_TepIce'
+                        - 'A_IceTck <--o2agauswgt-- O_IceTck'
+                        - 'A_SnwTck <--o2agauswgt-- O_SnwTck'
+                        - 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
+                        - 'A_OCury1 <--o2agauswgt-- O_OCury1'
+
+                # Couple HTESSEL runoff to river routing
+                rnfatm:
+                        - 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
+
+                # Coupled river routing to ocean runoff mask
+                rnrunoff:
+                        - 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
+
+                # Couple atm fluxes to ocean (non-conserving)
+                flxatmos:
+                        - 'O_QsrIce <--a2ogauswgt1-- A_QsrIce'
+                        - 'O_QnsIce <--a2ogauswgt1-- A_QnsIce'
+                        - 'OTotSnow <--a2ogauswgt1-- ATotSnow'
+                        - 'OIceEvap <--a2ogauswgt1-- AIceEvap'
+                        - 'O_dQnsdT <--a2ogauswgt1-- A_dQnsdT'
+
+                # Coupled atm stress to ocean (non-conserving)
+                atmtau:
+                        - 'O_OTaux1 <--a2ogauswgt1-- A_OTaux1'
+                        - 'O_OTauy1 <--a2ogauswgt1-- A_OTauy1'
+                        - 'O_ITaux1 <--a2ogauswgt1-- A_ITaux1'
+                        - 'O_ITauy1 <--a2ogauswgt1-- A_ITauy1'
+
+                # Couple atm fluxes to ocean (conserving)
+                atmflx:
+                        - 'O_QsrMix <--a2ogauswgt2-- A_QsrMix'
+                        - 'O_QnsMix <--a2ogauswgt2-- A_QnsMix'
+                        - 'OTotRain <--a2ogauswgt2-- ATotRain'
+
+        coupling_directions:
+                'atmo->rnfa':
+                        lag: ${a2r_lag}
+                        seq: 1
+                'opar->opaf':
+                        lag: 0
+                        seq: 1
+                'opat->atmo':
+                        lag: ${o2a_lag}
+                        seq: 1
+                'atmo->opat':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
 
 
-resolution: ${oifs.resolution}_${nemo.resolution}
+        coupling_methods:
+                o2agauwgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                - mapping:
+                                        mapname: rmp_opat_to_atmo_GAUSWGT_ORCA05.nc
+                                        map_regrid_on: dst
+                a2rgauswgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                - mapping:
+                                        mapname: rmp_atmr_to_opac_GAUSWGT.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                r2ogauswgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                - mapping:
+                                        mapname: rmp_rnf_to_opaf_GAUSWGT.nc
+                                        map_regrid_on: dst
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                a2ogauswgt1:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                - mapping:
+                                        mapname: rmp_atmo_to_opat_GAUSWGT_ORCA05.nc
+                                        map_regrid_on: src
 
-compute_time: "03:00:00"
-post_time: "02:00:00"
+                a2ogauswgt2:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_GAUSWGT_ORCA05.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+
+        add_restart_out_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_out_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_out_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_in_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
 
 
-# choices
 
+
+
+# Set up CPU layout
 choose_cores_per_node:
         24:
                 choose_resolution:
                         T159_ORCA05:
                                 oifs:
-                                        nproca: 383
+                                        nproca: 287
                                         nprocb: 1
-                                nemo: 
-                                        nproca: 16
-                                        nprocb: 24       
+                                nemo:
+                                        nproca: 24
+                                        nprocb: 20
                                 xios:
                                         nproca: 24
                                         nprocb: 1
@@ -52,9 +259,9 @@ choose_cores_per_node:
                                 oifs:
                                         nproca: 1536
                                         nprocb: 1
-                                nemo: 
+                                nemo:
                                         nproca: 16
-                                        nprocb: 24       
+                                        nprocb: 24
                                 xios:
                                         nproca: 24
                                         nprocb: 1
@@ -67,9 +274,9 @@ choose_cores_per_node:
                                 oifs:
                                         nproca: 395
                                         nprocb: 1
-                                nemo: 
+                                nemo:
                                         nproca: 22
-                                        nprocb: 18       
+                                        nprocb: 18
                                 xios:
                                         nproca: 36
                                         nprocb: 1
@@ -80,9 +287,9 @@ choose_cores_per_node:
                                 oifs:
                                         nproca: 1512
                                         nprocb: 1
-                                nemo: 
+                                nemo:
                                         nproca: 22
-                                        nprocb: 18       
+                                        nprocb: 18
                                 xios:
                                         nproca: 36
                                         nprocb: 1
@@ -95,9 +302,9 @@ choose_cores_per_node:
                                 oifs:
                                         nproca: 400
                                         nprocb: 1
-                                nemo: 
+                                nemo:
                                         nproca: 20
-                                        nprocb: 20       
+                                        nprocb: 20
                                 xios:
                                         nproca: 40
                                         nprocb: 1
@@ -108,9 +315,9 @@ choose_cores_per_node:
                                 oifs:
                                         nproca: 2000
                                         nprocb: 1
-                                nemo: 
+                                nemo:
                                         nproca: 20
-                                        nprocb: 20       
+                                        nprocb: 20
                                 xios:
                                         nproca: 40
                                         nprocb: 1
@@ -119,20 +326,7 @@ choose_cores_per_node:
                                         nprocb: 1
 
 
-output_exchanged_vars: false
-a2o_lag: ${oifs.time_step}
-a2r_lag: ${oifs.time_step}
-o2a_lag: ${nemo.time_step}
-a2o_seq: 1
-o2a_seq: 1
-
-coupled_fields:
-        a2r:
 
 
 
-namelist_changes:
-        nemo:
-                namelist_cfg:
-                        namsbc_cpl:
-                                sn_rcv_rnf: "'coupled', 'no', '', '', ''"
+

@@ -1,4 +1,9 @@
 choose_job_type:
+
+        postprocess:
+                recipe:
+                        - "postprocess"
+
         compute:
                 recipe:
                         #- "mesh_part_prep"
@@ -12,6 +17,7 @@ choose_job_type:
                         # call your plugin whereever it is needed
                         #- "write_something"
                         - "copy_files_to_thisrun"
+                        - "preprocess"
                         - "modify_namelists"
                         - "modify_files"
                         - "create_new_files"

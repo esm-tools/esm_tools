@@ -68,6 +68,7 @@ module_actions:
         - "unload netcdf"
         - "load hdf5"
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
+        # NOTE(PG): Using this model breaks ECHAM6-Concurrent Rad compilation
         # - "load python3/3.7.7_intel2020"
         - "load automake"
         - "list"

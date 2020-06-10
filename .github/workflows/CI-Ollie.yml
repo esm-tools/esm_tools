@@ -60,8 +60,9 @@ jobs:
           export PATH=${HOME}/.local/bin:${PATH}
           which esm_master
           esm_master --version
-          mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}
-          cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}
+          rm -rf /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+          mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+          cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
           esm_master install-${{ matrix.model }}
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # import fileinput, os, sys, getopt
 
-import sys, copy, os, re
+import sys, copy, os, re, subprocess
 import argparse
 
 import esm_rcfile
@@ -717,13 +717,16 @@ class task:
                     os.chmod(newfile, 0o755)
         for command in self.command_list:
             if command.startswith("mkdir"):
-                os.system(command)
+                #os.system(command)
+                subprocess.check_output(command, shell=True)
             elif command.startswith("cp "):
-                os.system(command)
+                #os.system(command)
+                subprocess.check_output(command, shell=True)
             elif command.startswith("cd ") and not ";" in command:
                 os.chdir(command.replace("cd ", ""))
             else:
-                os.system(command)
+                #os.system(command)
+                subprocess.check_output(command, shell=True)
 
         #print ("Still here")
         #try:

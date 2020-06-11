@@ -466,6 +466,7 @@ couplings:
     coupling_changes:
     - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
     - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux
+    - sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation/configure.ac
   fesom-1.4+recom:
     components:
     - fesom-1.4
@@ -846,7 +847,6 @@ setups:
       1.2.01p1:
         couplings:
         - mpiom-1.6.3p2+echam-6.3.05p2
-        - mpiom-1.6.3p2+echam-6.3.05p2-foci
   oifsamip:
     couplings:
     - oifs-40r1+amip

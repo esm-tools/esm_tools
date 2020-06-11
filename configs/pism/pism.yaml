@@ -23,6 +23,11 @@ description: |
 license_text: |
         "GPL 3.0"
 
+
+module_actions:
+    - load pism_externals
+    - I_MPI_FABRICS=shm:tmi
+
 executable: pismr
 version: 1.1.4
 domain: "greenland"

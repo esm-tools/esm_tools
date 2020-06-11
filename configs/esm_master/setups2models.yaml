@@ -175,20 +175,15 @@ components:
     git-repository: "https://gitlab.dkrz.de/modular_esm/mpiom.git"
     install_bins: "bin/mpiom.x"
   nemo:
+    requires:
+    - xios-2.0_r982
+    - nemobasemodel-3.6foci
     available_versions:
     - ORCA05_LIM2_KCM_AOW
     - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
-    - 3.6foci
     - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
     - GYRE_XIOS
-    - 3.6-ogcm
-    branch: "esm-tools"
     choose_nemo.version:
-      3.6-ogcm:
-        grid: "GYRE_XIOS"
-      3.6foci:
-        git-repository: "https://gitlab.dkrz.de/foci/src/nemo.git"
-        grid: "ORCA05_LIM2_KCM_AOW"
       GYRE_XIOS:
         requires:
         - xios-2.0_r982_ogcm
@@ -205,19 +200,7 @@ components:
         branch: "esm-tools"
         destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
         git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
-    clean_command: |-
-      cd CONFIG; ./makenemo -n ${nemo.grid} clean
-    comp_command: |-
-      export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; ./makenemo -n ${grid} -m ${computer.nemoarchfile} -j 24
-    destination: "nemo-3.6"
-    git-repository: "https://gitlab.dkrz.de/foci/src/NEMOGCM.git"
-    install_bins: "CONFIG/${nemo.grid}/BLD/bin/nemo.exe"
-    requires:
-    - xios-2.0_r982
-    - nemobasemodel-3.6foci
-    version: "3.6-ogcm"
   nemobasemodel:
-    archfile: "ESMTOOLS_generic_intel"
     available_versions:
     - 3.6.3.x
     - 3.6ogcm
@@ -260,11 +243,11 @@ components:
       ec-earth:
         branch: "ec-earth-version"
       foci:
-        branch: "esm-tools"
-        git-repository: "https://gitlab.dkrz.de/foci/src/oasis3mct.git"
+        git-repository: "https://git.geomar.de/foci/src/oasis3mct.git"
+        branch: "oasis3mct2.8-foci"
       fociagrif:
+        git-repository: "https://git.geomar.de/foci/src/oasis3-mct4.git"
         branch: "fociagrif"
-        git-repository: "https://gitlab.dkrz.de/b350090/oasis3-mct4.git"
     clean_command: "${defaults.clean_command}"
     comp_command: |
       mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a ../lib;
@@ -578,46 +561,6 @@ couplings:
     - mpiom-1.6.3p2
     coupling_changes:
     - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-foci/CMakeLists.txt
-  nemo-3.6foci+echam-6.3.05p2:
-    components:
-    - echam-6.3.05p2
-    - nemo-3.6foci
-    - oasis3-mct-foci
-    coupling_changes:
-    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt
-  nemo-3.6foci+oifs40r1:
-    components:
-    - oifs-40r1
-    - nemo-3.6foci
-    - oasis3-mct-foci
-    - rnfmap-focioifs
-    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-  nemo-3.6foci+oifs40r1-foci:
-    components:
-    - oifs-40r1-foci
-    - nemo-3.6foci
-    - oasis3-mct-foci
-    - rnfmap-focioifs
-    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-  nemo-3.6foci+oifs40r1-foci-o3:
-    components:
-    - oifs-40r1-foci
-    - nemo-3.6foci
-    - oasis3-mct-ec-earth
-    - rnfmap-focioifs
-    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-  nemo-3.6foci+oifs40r1-foci-o4:
-    components:
-    - oifs-40r1-foci
-    - nemo-3.6foci
-    - oasis3-mct-4.0
-    - rnfmap-focioifs
-    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-  nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci:
-    components:
-    - oifs-43r3-foci
-    - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4
-    - rnfmap-focioifs1
   nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci:
     components:
     - echam-6.3.05p2-foci
@@ -628,6 +571,13 @@ couplings:
     components:
     - oifs-43r3-foci
     - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    - oasis3-mct-fociagrif
+    - rnfmap-focioifs1
+  nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci:
+    components:
+    - oifs-43r3-foci
+    - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+    - oasis3-mct-fociagrif
     - rnfmap-focioifs1
   oifs-40r1+amip:
     components:
@@ -765,21 +715,13 @@ setups:
   foci:
     available_versions:
     - default
-    - '1.0'
     choose_version:
-      '1.0':
-        couplings:
-        - nemo-3.6foci+echam-6.3.05p2
       default:
         couplings:
         - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
   focioifs:
     available_versions:
-    - vvl-o3
-    - vvl
     - agrif
-    - vvl-o3-awi3
-    - vvl-o4
     - '2.0'
     choose_version:
       '2.0':
@@ -788,50 +730,6 @@ setups:
       agrif:
         couplings:
         - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci
-      vvl:
-        couplings:
-        - nemo-3.6foci+oifs40r1-foci
-        nemo:
-          version: "3.6foci"
-        oasis3-mct:
-          version: "foci"
-        oifs:
-          version: "40r1-foci"
-        rnfmap:
-          version: "focioifs"
-      vvl-o3:
-        couplings:
-        - nemo-3.6foci+oifs40r1-foci-o3
-        nemo:
-          version: "3.6foci"
-        oasis3-mct:
-          version: "ec-earth"
-        oifs:
-          version: "40r1-foci"
-        rnfmap:
-          version: "focioifs"
-      vvl-o3-awi3:
-        couplings:
-        - nemo-3.6foci+oifs40r1
-        nemo:
-          version: "3.6foci"
-        oasis3-mct:
-          version: "foci"
-        oifs:
-          version: "40r1"
-        rnfmap:
-          version: "focioifs"
-      vvl-o4:
-        couplings:
-        - nemo-3.6foci+oifs40r1-foci-o4
-        nemo:
-          version: "3.6foci"
-        oasis3-mct:
-          version: "4.0"
-        oifs:
-          version: "40r1-foci"
-        rnfmap:
-          version: "focioifs"
   mpiesm:
     available_versions:
     - 1.2.00p4

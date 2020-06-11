@@ -55,10 +55,9 @@ jobs:
                 - awicmcr-1.0
                 - awicmcr-2.0
                 - awiesm-1.1
-                - awiesm-1.2
                 - awiesm-2.1
-                - awiesm-2.2
                 - pism-github1.2
+                - fesom-2.0
       steps:
       - name: Install Model
         run: |

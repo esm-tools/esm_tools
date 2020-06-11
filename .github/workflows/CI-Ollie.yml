@@ -50,6 +50,8 @@ jobs:
       runs-on: [self-hosted, ollie]
       needs: install_as_user
       strategy:
+        # Try to compile ALL models, even if one fails:
+        fail-fast: false
         matrix:
             model:
                 - awicmcr-1.0
@@ -58,6 +60,8 @@ jobs:
                 - awiesm-2.1
                 - pism-github1.2
                 - fesom-2.0
+                - scope-dev
+                - mpiesm-1.2.01
       steps:
       - name: Install Model
         run: |

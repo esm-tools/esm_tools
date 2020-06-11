@@ -72,7 +72,7 @@ choose_switch:
 # choice
 #
 
-nprocrad: 0 
+nprocrad: 0
 
 choose_resolution:
         T63:
@@ -104,13 +104,13 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
-                repo_tag: not_set 
+                repo_tag: not_set
                 dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation:
-                repo_tag: not_applicable 
+                repo_tag: not_applicable
                 dataset: r0007
                 add_namelist_changes:
                         namelist.echam:
@@ -426,8 +426,8 @@ log_files:
         atmout: atmout
         stderr: stderr
         stdout: stdout
-        
-log_sources:        
+
+log_sources:
         atmout: atmout
         stderr: echam.stderr
         stdout: echam.stdout

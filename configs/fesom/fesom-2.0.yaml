@@ -28,7 +28,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/"                        
+namelist_dir: "${esm_namelist_dir}/fesom2/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -50,7 +50,7 @@ choose_asforcing:
                 leapyear: false
         ECHAM5:
                 leapyear: true
-             
+
 
 
 choose_resolution:
@@ -118,7 +118,7 @@ namelist_changes:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout: 
+                inout:
                         restartflag: "${restart_flag}"
                         output_length: "${restart_rate}"
                         output_length_unit: "${restart_unit}"
@@ -149,16 +149,16 @@ choose_currentday:
                 startday: "$(( ${start_date!sdoy} - 1 ))"
 
 choose_lresume:
-        false:                                
+        false:
                 create_config:
                         fesom.clock:
-                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"  
                                 - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
-        true:   
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+        true:
                 create_config:
-                        fesom.clock: 
+                        fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
-                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"     
+                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"
 
 bin_in_work:
         fesom: "${executable}"

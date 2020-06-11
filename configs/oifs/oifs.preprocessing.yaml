@@ -39,7 +39,7 @@ postprocess_method_definitions:
 # For WAM:
 # for file in cdwavein sfcwindin specwavein uwavein
 # grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/${file} ${file}
-# 
+#
 # Crop the surface forcing file
 # cdo -seldate,${start_date},${end_date} ${oifs_INPUT_DIR}/${y}/${ICMCL_FILE} ICMCL${OIFS_EXP_ID}INIT
 #
@@ -67,4 +67,4 @@ postprocess_tasks: #in echam.postprocessing.yaml
         - "t echam6"
      args:
         infile: "${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM"
-        
+

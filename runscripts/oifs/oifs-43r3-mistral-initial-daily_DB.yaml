@@ -14,7 +14,7 @@ general:
         restart_unit: "days"
 
 oifs:
-        version: "43r3"        
+        version: "43r3"
         pool_dir: "/work/ab0995/a270058/foci_input2/"
         input_dir: "${pool_dir}/OPENIFS43R3-TCO199/"
         rtables_dir: "${pool_dir}/OPENIFS43R3_GENERAL/rtables/"
@@ -24,8 +24,8 @@ oifs:
         cmip5_data_dir: "${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/"
         icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO199/2008010100/"
         icmcl_file: "ICMCLhaahINIT"
-        prepifs_expid: haah 
-        prepifs_startdate: 20080101 
+        prepifs_expid: haah
+        prepifs_startdate: 20080101
         resolution: TCO199
         levels: L91
         lresume: 0

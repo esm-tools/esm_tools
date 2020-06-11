@@ -13,9 +13,9 @@ general:
         restart_unit: "days"
 
 oifs:
-        version: "43r3"        
+        version: "43r3"
         pool_dir: "/work/bb0519/b350090/foci_input_for_dirk/"
-        input_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3-TCO95/" 
+        input_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3-TCO95/"
         rtables_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3_GENERAL/rtables/"
         vtables_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3_GENERAL/vtables/"
         clim_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3-TCO95/95_4/"
@@ -24,7 +24,7 @@ oifs:
         icmcl_dir: "/work/bb0519/b350090/foci_input_for_dirk/OPENIFS43R3-TCO95/2008010100/"
         icmcl_file: "ICMCLhagwINIT"
         prepifs_expid: hagw
-        prepifs_startdate: 20080101 
+        prepifs_startdate: 20080101
         resolution: TCO95
         levels: L91
         lresume: 0

@@ -135,7 +135,7 @@ ignore_in_workdir:
         "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
 
-outdata_files: 
+outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
 

@@ -8,7 +8,7 @@ general:
         #base_dir: ${general.model_dir}/experiments
         #model_dir: ${esm_master_dir}/foci-${version}
 
-        lresume: False 
+        lresume: False
         #nday: 5
         coupled_setup: True
 
@@ -48,7 +48,7 @@ general:
                                 #- 'KMP_STACKSIZE=64m'
                                 #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                 # OpenMP
-                                #- 'OMP_NUM_THREADS=1' 
+                                #- 'OMP_NUM_THREADS=1'
 computer:
        additional_flags: "--ntasks-per-core=1"
        launcher: "srun" # default, but set it to make clear what the launcher flags are used for
@@ -68,8 +68,8 @@ echam:
         restart_firstlast: "last"
         nproca: 24
         nprocb: 24
-       
-        # TODO: document this crazy ECHAM6 restart math 
+
+        # TODO: document this crazy ECHAM6 restart math
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
         pseudo_final_date: $((${final_date} - ${time_step}seconds))
@@ -142,7 +142,7 @@ echam:
                      time_step: 450
                      _nx: 192
                      _ny: 96
-                     nproca: ${nproca} 
+                     nproca: ${nproca}
                      nprocb: ${nprocb}
 
         forcing_additional_information:
@@ -158,7 +158,7 @@ echam:
                 ozone:
                      - need_year_before
                      - need_year_after
-                     
+
         restart_in_sources:
               "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
 
@@ -180,11 +180,11 @@ echam:
                      method: "warn"
                      message: "high wind speed was found during your run..."
                      file: "${general.work_dir}/atmout"
-                     frequency: 90 
+                     frequency: 90
 
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
-        
+
 jsbach:
         version: "3.20p1"
         # directories
@@ -196,11 +196,11 @@ jsbach:
 
         dynamic_vegetations: True
 
-        # Use initialized carbon and nitrogen pools 
+        # Use initialized carbon and nitrogen pools
         choose_echam.lresume:
                True:
                       add_input_files:
-                             lctlib: lctlib_foci 
+                             lctlib: lctlib_foci
                       add_namelist_changes:
                                 namelist.jsbach:
                                         dynveg_ctl:
@@ -210,9 +210,9 @@ jsbach:
                                                read_cpools: False
                False:
                       add_input_files:
-                             lctlib: lctlib_foci 
-                             cpools_foci: cpools_foci 
-                             npools_foci: npools_foci 
+                             lctlib: lctlib_foci
+                             cpools_foci: cpools_foci
+                             npools_foci: npools_foci
                              fpc_foci: fpc_foci
 
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
@@ -257,13 +257,13 @@ oasis3mct:
         process_ordering:
                 - nemo
                 - echam
-                - xios  
+                - xios
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
         lresume: true
-        ini_parent_date: "22941231" # not used, but needs to be present 
-        ini_parent_exp_id: "khw0030" # not used, but needs to be present 
+        ini_parent_date: "22941231" # not used, but needs to be present
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present
         ini_restart_dir: "${pool_dir}"
 
         a2o_lag: "${echam.time_step}"
@@ -299,14 +299,14 @@ oasis3mct:
         coupling_directions:
                 'opat->atmo':
                         lag: ${o2a_lag}
-                        seq: ${a2o_seq} 
+                        seq: ${a2o_seq}
                 'atmo->opat':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 conserv:
@@ -315,7 +315,7 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 conserv:
@@ -327,13 +327,13 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 conserv:
                         time_transformation: average
                         remapping:
-                                - conserv: 
+                                - conserv:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                         normalization: fracnnei
@@ -344,7 +344,7 @@ oasis3mct:
                 conserv2:
                         time_transformation: instant
                         remapping:
-                                - conserv: 
+                                - conserv:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                         normalization: fracnnei
@@ -355,7 +355,7 @@ oasis3mct:
                 conserv3:
                         time_transformation: instant
                         remapping:
-                                - conserv: 
+                                - conserv:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                         normalization: fracnnei
@@ -369,7 +369,7 @@ oasis3mct:
                 conserv4:
                         time_transformation: instant
                         remapping:
-                                - conserv: 
+                                - conserv:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                         normalization: fracnnei
@@ -417,8 +417,8 @@ oasis3mct:
                 areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean: sstocean 
-                flxatmos: flxatmos 
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         add_restart_in_files:
                 rmp_a2n_B: rmp_a2n_B
@@ -427,8 +427,8 @@ oasis3mct:
                 areas: areas
                 masks: masks
                 grids: grids
-                sstocean: sstocean 
-                flxatmos: flxatmos 
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         add_restart_in_in_work:
                 rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
@@ -437,8 +437,8 @@ oasis3mct:
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                sstocean: sstocean 
-                flxatmos: flxatmos 
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         add_restart_in_sources:
                 rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
@@ -447,6 +447,6 @@ oasis3mct:
                 areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean: sstocean 
-                flxatmos: flxatmos 
+                sstocean: sstocean
+                flxatmos: flxatmos
 

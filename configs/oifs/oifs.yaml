@@ -13,7 +13,7 @@ description: |
         Carver et al., in prep.
 
 license_text: |
-        ECMWF license. AWI and GEOMAR have licenses. 
+        ECMWF license. AWI and GEOMAR have licenses.
 
 # Force namelist fort.4 to be written in uppercase
 namelist_case: "uppercase"
@@ -38,18 +38,18 @@ cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 restart_dir: ""
 
-parent_expid: "test" 
+parent_expid: "test"
 parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
 
-# Default is TL159L91 
+# Default is TL159L91
 # Forcing from gu5a prepIFS forcing
 #
-# Note: input_expid is the expid that will appear on 
+# Note: input_expid is the expid that will appear on
 #       the input and forcing files in the work directory
-#       prepifs_expid is the expid that appears on the 
+#       prepifs_expid is the expid that appears on the
 #       input and forcing files in input_dir and forcing_dir
 #       Default is a TL159 run, input data from ECMWF has expid gu5a
-#       but I want the expid for my run to be ECE3. 
+#       but I want the expid for my run to be ECE3.
 
 metadata:
         Institute: ECMWF
@@ -154,7 +154,7 @@ choose_resolution:
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
-        TCO399: 
+        TCO399:
                 nx: 654400
                 ny: 1
                 time_step: 1200
@@ -193,9 +193,9 @@ choose_computer.cores_per_node:
         48:
                 nproca: 96
                 nprocb: 1
-                
+
 # Where does end_date and start_date come from
-# Why is it set to 364 days even when I ask for a 5-day run                
+# Why is it set to 364 days even when I ask for a 5-day run
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 
@@ -209,10 +209,10 @@ lresume: false
 start_seconds: "$((${start_date} - ${initial_date}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
-start_ndays_string: "<--format(%08d)-- ${start_ndays}" 
+start_ndays_string: "<--format(%08d)-- ${start_ndays}"
 end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
 end_ndays: "$(( ${end_seconds} / 86400 ))"
-end_ndays_string: "<--format(%08d)-- ${end_ndays}" 
+end_ndays_string: "<--format(%08d)-- ${end_ndays}"
 
 # WAMstartdate
 wam_start_date: "${initial_date!syear!smonth!sday}000000"
@@ -221,9 +221,9 @@ wam_start_date: "${initial_date!syear!smonth!sday}000000"
 icmcl_end_date: $(( ${end_date} + 2days ))
 icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 
-# WAM restart files are named with the number of 
+# WAM restart files are named with the number of
 # days, hours, minutes, seconds since the last run
-# with one time step subtracted. 
+# with one time step subtracted.
 # So restarting after 8 days with 30 min time step has
 # time stamp 000007233000
 # Here we calculate this
@@ -254,8 +254,8 @@ start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
 end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
 
 run_number_minus1: "$(( ${run_number} - 1 ))"
-run_number_string: "<--format(%05d)-- ${run_number}" 
-run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}" 
+run_number_string: "<--format(%05d)-- ${run_number}"
+run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
 
 
 restart_rate: 1
@@ -264,12 +264,12 @@ restart_unit: "months"
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
-                        
+
 
 choose_levels:
         L60:
                 levels_number: 60
-        L62: 
+        L62:
                 levels_number: 62
         L91:
                 levels_number: 91
@@ -281,9 +281,9 @@ choose_levels:
 #        OIFS_EXPID: ${input_expid}
 #        FOCI_USE_CPLNG: "no"
 #        AWICM_USE_CPLNG: "no"
-#        ECE_USE_CPLNG: "no" 
+#        ECE_USE_CPLNG: "no"
 
-bin_sources: 
+bin_sources:
         bin: ${bin_dir}/${executable}
 
 ##
@@ -316,8 +316,8 @@ input_files:
 log_files:
         NODE: NODE
         ifsstat: ifsstat
-        
-log_sources:        
+
+log_sources:
         NODE: NODE.001_01
         ifsstat: ifs.stat
 
@@ -338,13 +338,13 @@ log_in_work:
 #restart_in_in_work:
 #        srf: "srf${start_ndays_string}0000.*"
 #        rcf: "rcf"
-#        BLS: "BLS${start_filebase_wam}.*" 
+#        BLS: "BLS${start_filebase_wam}.*"
 #        LAW: "LAW${start_filebase_wam}.*"
 
 choose_general.run_number:
-        1: 
+        1:
                 restart_folder: "${parent_restart_dir}"
-        "*":    
+        "*":
                 restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
 
 
@@ -368,8 +368,8 @@ restart_out_targets:
         BLS: ${run_number_string}/*
         LAW: ${run_number_string}/*
         srf: ${run_number_string}/*
-        rcf: ${run_number_string}/rcf        
-        
+        rcf: ${run_number_string}/rcf
+
 
 ##
 ## output
@@ -384,7 +384,7 @@ outdata_in_work:
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
-        
+
 outdata_sources:
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
@@ -393,13 +393,13 @@ outdata_sources:
 
 
 ##
-## would that we with or without ECWAM, sir? 
+## would that we with or without ECWAM, sir?
 ##
 
 choose_wam:
         1:
                 wam_number: "1"
-                
+
                 add_input_files:
                         wam_grid_tables: wam_grid_tables
                         wam_subgrid_0: wam_subgrid_0
@@ -409,7 +409,7 @@ choose_wam:
                         #specwavein: specwavein
                         #sfcwindin: sfcwindin
                         #cdwavein: cdwavein
-                        
+
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
@@ -417,28 +417,28 @@ choose_wam:
                                         LWCOU2W: ".true."
                         wam_namelist:
                                 NALINE:
-                                        CDATEF: "${wam_start_date}" 
-                
+                                        CDATEF: "${wam_start_date}"
+
                 add_restart_in_files:
                         BLS: BLS
                         LAW: LAW
                 add_restart_out_files:
                         BLS: BLS
                         LAW: LAW
-                
+
                 add_outdata_files:
                         MPP: MPP
-                        
+
         0:
                 wam_number: "0"
-                
+
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LWCOU: ".false."
-                                        LWCOU2W: ".false." 
-                                        
-        
+                                        LWCOU2W: ".false."
+
+
 ##
 ## specifics for 40r1 and 43r3
 ##
@@ -451,30 +451,30 @@ choose_version:
                                         #NFRRES: ${oifs.next_step}
                                         NFRRES: 1
                                         NRESTS: "-1, -${oifs.next_step}"
-                                        
+
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}
-                                        
+
                                 NAMDYN:
                                         TSTEP: ${oifs.time_step}
-                        
+
                                 NAMCT0:
                                         CNMEXP: ${oifs.input_expid}
                                         NSTOP: ${oifs.next_step}
-                
+
                                 NAMECECFG:
                                         # By default, turn off coupling
-                                        FOCI_CPL_NEMO_LIM: ".false." 
-                
+                                        FOCI_CPL_NEMO_LIM: ".false."
+
                 environment_changes:
-                        add_export_vars:        
-                                - 'OIFS_FFIXED="-fixed"' 
+                        add_export_vars:
+                                - 'OIFS_FFIXED="-fixed"'
                                 - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                                 - 'OIFS_EXPID="${input_expid}"'
                                 - 'FOCI_USE_CPLNG="no"'
                                 - 'AWICM_USE_CPLNG="no"'
                                 - 'ECE_USE_CPLNG="no"'
-                                
+
         43r3:
                 add_namelist_changes:
                         fort.4:
@@ -483,31 +483,31 @@ choose_version:
                                         #NRESTS: -1, -${timestep_per_run} #"-1, -${oifs.next_step}"
                                         NRESTS(1): -1
                                         NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-                                        
+
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}
-                                        
+
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        #CUSTOP: "t${timestep_per_run}" 
+                                        #CUSTOP: "t${timestep_per_run}"
                                         CUSTOP: "t${oifs.next_step}"
-                
+
                 environment_changes:
-                        add_export_vars: 
-                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'       
+                        add_export_vars:
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                                 - 'OIFS_FFIXED=""'
                                 - 'OIFS_OASIS_BASE="${general.model_dir}"'
                                 - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
                                 - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-                                        
+
                 add_outdata_files:
                         ICMUA: ICMUA
-                
+
 
 ##
 ## specifics for scenarios
-##                        
+##
 
 choose_mip:
         "cmip5":
@@ -516,8 +516,8 @@ choose_mip:
                         RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
                         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
                         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC                        
-                        
+                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+
 choose_scenario:
         "historical":
                 choose_version:
@@ -537,7 +537,7 @@ choose_scenario:
 
 ##
 ## sources
-## 
+##
 
 input_sources:
         ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
@@ -566,8 +566,8 @@ forcing_sources:
         RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
         # ICMCL
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
-        
-        
+
+
 
 config_sources:
         "fort.4": "${namelist_dir}/fort.4"
@@ -590,7 +590,7 @@ forcing_in_work:
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-        
+
 
 ##
 ## coupling
@@ -638,23 +638,23 @@ choose_output:
                                 NAMCT0:
                                         NFRPOS: 6
                                         NFRHIS: 6
-                                
+
         "12hr":
                 add_namelist_changes:
                         fort.4:
                                 NAMCT0:
                                         NFRPOS: 12
                                         NFRHIS: 12
-                                
+
 
 preprocess:
         preprocess_shell:
                 method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number}"
                 type: shell
-                        
+
 postprocess:
         postprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}" 
-                type: shell 
+                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
 
 

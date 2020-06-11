@@ -15,6 +15,11 @@ jobs:
   # This workflow contains a single job called "install as user"
   install_as_user:
     # The type of runner that the job will run on
+    # To activate this sort of job for both ollie and mistral, we can do:
+    # run-on ${{ matrix.supercomputers }}
+    # strategy:
+    #   matrix:
+    #     supercomputers: ["ollie", "mistral"]
     runs-on: [self-hosted, ollie]
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -64,5 +69,3 @@ jobs:
           mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
           cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
           esm_master install-${{ matrix.model }}
-
-

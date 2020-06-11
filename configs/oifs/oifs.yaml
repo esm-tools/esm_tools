@@ -114,60 +114,70 @@ choose_resolution:
         # Tco grids only work with version 43r3.
         TQ95:
                 nx: 13280
+                ny: 1
                 time_step: 3600
                 oasis_grid_name: "048"
                 res_number: 95
                 res_number_tl: "95_3"
         TCO95: 
                 nx: 40320 
+                ny: 1
                 time_step: 3600
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
         TL159:
                 nx: 35718
+                ny: 1
                 time_step: 3600
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159l_2"
         TCO159:
                 nx: 35718
+                ny: 1
                 time_step: 3600
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159_4"
         TCO199:
                 nx: 167200
+                ny: 1
                 time_step: 1800
                 oasis_grid_name: "200"
                 res_number: 199
                 res_number_tl: "199_4"
         TL255:
                 nx: 88838
+                ny: 1
                 time_step: 2700
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
         TCO399: 
                 nx: 654400
+                ny: 1
                 time_step: 1200
                 oasis_grid_name: 400
                 res_number: 399
                 res_number_tl: "399_4"
         TL511:
                 nx: 348528
+                ny: 1
                 time_step: 900
                 oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: "511l_2"
         TL799:
                 nx: 843490
+                ny: 1
                 time_step: 600
                 oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: "799l_2"
         TL1279:
                 nx: 2140702
+                ny: 1
                 time_step: 600
                 oasis_grid_name: "640"
                 res_number: 799
@@ -604,8 +614,8 @@ grids:
         atmo:
                 name: atmo
                 nx: "${nx}"
-#                ny: "${_ny}"
-#                oasis_grid_type: "D"
+                ny: "${ny}"
+                oasis_grid_type: "D"
                 
 choose_output:
         "default":

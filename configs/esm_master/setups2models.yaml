@@ -297,8 +297,6 @@ components:
       cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
     git-repository: "https://gitlab.dkrz.de/modular_esm/oifs-40r1.git"
     install_bins: "make/esm/oifs/bin/master.exe"
-    requires:
-    - oasis3-mct-4.0
   pism:
     available_versions:
     - snowflake0.7

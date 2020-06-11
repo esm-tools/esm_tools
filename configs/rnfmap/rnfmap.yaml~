@@ -1,0 +1,96 @@
+#
+# Runoff mapper YAML file
+#
+
+model: rnfmap
+executable: rnfmap.exe
+execution_command: rnfmap.exe
+version: 2.0
+type: river
+
+description: |
+        River routing scheme taken from EC-Earth
+        Modified for use in FOCI
+
+##
+## Directories
+##
+
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
+namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
+
+parent_expid: "test" 
+parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
+
+resolution: 512x256
+
+generate_namelist: 1
+
+restart: 1
+restart_rate: 1
+restart_unit: 'months'
+
+namelists:
+        - "fort.4"
+        - "wam_namelist"
+
+choose_resolution:
+        512x256:
+                nx: 512
+                ny: 256
+                time_step: ${oasis3mct.time_step}
+
+nproca: 1
+nprocb: 1
+                
+# Where does end_date and start_date come from
+# Why is it set to 364 days even when I ask for a 5-day run                
+runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+timestep_per_run: $((${runtime_seconds} / ${time_step}))
+
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+steps_per_day: "$(( 86400 / ${time_step} ))"
+lresume: false
+
+start_seconds: "$((${start_date} - ${initial_date}))"
+#start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
+start_ndays: "$(( ${start_seconds} / 86400 ))"
+start_ndays_string: "<--format(%08d)-- ${start_ndays}" 
+end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
+end_ndays: "$(( ${end_seconds} / 86400 ))"
+end_ndays_string: "<--format(%08d)-- ${end_ndays}" 
+
+bin_sources: 
+        bin: ${bin_dir}/${executable}
+
+config_sources:
+        "namelist.runoff": "${namelist_dir}/namelist.runoff"
+
+runoff_fields_recv: [R_Runoff_atm] 
+runoff_fields_send: [R_Runoff_oce]
+
+coupling_fields:
+        "[[runoff_fields_recv-->FIELD]]":
+                grid: rnfa
+        "[[runoff_fields_send-->FIELD]]":
+                grid: opar
+
+grids:
+        rnfa:
+                name: rnfa
+                nx: 512
+                ny: 256
+                oasis_grid_type: "LR"
+        opar:
+                name: opar
+                nx: "${nemo.nx}"
+                ny: "${nemo.ny}"
+                oasis_grid_type: "LR"
+   
+
+

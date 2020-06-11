@@ -18,6 +18,7 @@ general:
                 - nemo
                 - xios
                 - oasis3mct
+                - rnfmap
 
         version: "2.0"
         scenario: "PI-CTRL"
@@ -200,43 +201,42 @@ oasis3mct:
                         
                 
         coupling_directions:
+                # OIFS dry points to runoff mapper
                 'atmr->rnfa':
                         lag: ${a2r_lag}
-                        seq: 1
+                        seq: 1                
+                # Runoff mapper to runoff points in NEMO
                 'opar->opaf':
                         lag: 0
                         seq: 1
-                'opat->atmo':
+                # NEMO to OIFS wet points including lakes 
+                'opat->atml':
                         lag: ${o2a_lag}
                         seq: 1
-                'atmo->opat':
+                # OIFS wet points including lakes to NEMO including cyclic points
+                'atml->opat':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-                'atmo->opac':
+                # OIFS wet points excluding lakes to NEMO excluding cyclic points
+                'atma->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
-
-        #coupling_methods:
-        #        conserv:
-        #                time_transformation: average
-        #                remapping:
-        #        'atmo->opac':
-        #                lag: ${a2o_lag}
-        #                seq: ${a2o_seq}
-        #
-        #
-        #coupling_methods:
-        #        conserv:
-        #                time_transformation: average
-        #                remapping:
-        #        'atmo->opat':
-        #                lag: ${a2o_lag}
-        #                seq: ${a2o_seq}
-        #        'atmo->opac':
-        #                lag: ${a2o_lag}
-        #                seq: ${a2o_seq}
-        
+                # OIFS wet points including lakes to NEMO excluding cyclic points
+                'atml->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_lag} 
+                # OIFS wet points including lakes to AGRIF 
+                'atml->agr1':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                # AGRIF to OIFS wet points including lakes
+                'agr1->atml':
+                        lag: ${o2a_lag}
+                        seq: 1
+                # AGRIF mask to OIFS (all points)
+                'agr2->atml':
+                        lag: ${o2a_lag}
+                        seq: 1        
 
         coupling_methods:
                 # NEMO to OpenIFS (Lgrid)

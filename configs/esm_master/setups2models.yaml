@@ -267,7 +267,7 @@ components:
         git-repository: "https://gitlab.dkrz.de/b350090/oasis3-mct4.git"
     clean_command: "${defaults.clean_command}"
     comp_command: |
-      mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include; ln -s ../lib/psmile/include/oasis_os.h ../include/; cp ../build/lib/psmile/*mod ../include/; ln -s ../lib/psmile/include/oasis_os.h ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a ../lib;
+      mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a ../lib;
     destination: "oasis"
     git-repository: "https://gitlab.dkrz.de/modular_esm/oasis3-mct.git"
     install_libs:

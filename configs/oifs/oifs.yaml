@@ -23,7 +23,9 @@ namelist_case: "uppercase"
 ##
 
 model_dir: ${general.model_dir}
-bin_dir: ${model_dir}/bin
+setup_dir: ${model_dir}
+bin_dir: ${setup_dir}/bin
+#bin_dir: ${model_dir}/bin
 pool_dir: "${computer.pool_directories.pool}"
 input_dir: ${computer.pool_dir}
 rtables_dir: ${input_dir}/../rtables/

@@ -14,6 +14,7 @@ general:
                 - oasis3mct
 
         version: "1.2"
+        resolution: ${echam.resolution}_${mpiom.resolution}
         post_time: "00:60:00"
         choose_general.resolution:
                 T31_GR30:
@@ -35,26 +36,54 @@ forcing_sources:
 
 echam:
 
-        choose_general.resolution:
-                T31_GR30:
-                        nproca: 24
-                        nprocb: 18
-                T63_GR15:
-                        nproca: 24
-                        nprocb: 24
+        choose_computer.cores_per_node:
+                24:
+                        choose_general.resolution:
+                                T31_GR30:
+                                        nnodes: 18
+                                        nproca: 24
+                                        nprocb: 18
+                                T63_GR15:
+                                        nnodes: 24
+                                        nproca: 24
+                                        nprocb: 24
+                36:
+                        choose_general.resolution:
+                                T31_GR30:
+                                        nnodes: 12
+                                        nproca: 24
+                                        nprocb: 18
+                                T63_GR15:
+                                        nnodes: 12
+                                        nproca: 18
+                                        nprocb: 20
 
 
 #########################################################################################
 
 mpiom:
 
-        choose_general.resolution:
-                T31_GR30:
-                        nproca: 18
-                        nprocb: 12
-                T63_GR15:
-                        nproca: 16
-                        nprocb: 24
+        choose_computer.cores_per_node:
+                24:
+                        choose_general.resolution:
+                                T31_GR30:
+                                        nnodes: 9
+                                        nproca: 18
+                                        nprocb: 12
+                                T63_GR15:
+                                        nnodes: 16
+                                        nproca: 16
+                                        nprocb: 24
+                36:
+                        choose_general.resolution:
+                                T31_GR30:
+                                        nnodes: 6
+                                        nproca: 18
+                                        nprocb: 12
+                                T63_GR15:
+                                        nnodes: 6
+                                        nproca: 18
+                                        nprocb: 12
 
 #########################################################################################
 

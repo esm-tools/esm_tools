@@ -57,6 +57,15 @@ hyper_flag: "" # No hyperthreading on ollie
 #- "load pism_externals"
 #- "I_MPI_FABRICS=shm:tmi"
 
+choose_general.setup_name:
+        pism:
+                add_module_actions:
+                    - "unload netcdf"
+                    - "unload intel.compiler"
+                    - "load pism_externals"
+                add_export_vars:
+                    - "I_MPI_FABRICS=shm:tmi"
+
 useMPI: intelmpi
 
 module_actions:

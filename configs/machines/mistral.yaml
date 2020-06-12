@@ -51,6 +51,7 @@ choose_general.setup_name:
                 add_module_actions:
                     - "unload netcdf"
                     - "load netcdf_c/4.3.2-gcc48"
+                add_export_vars:
                     - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
 
 useMPI: intelmpi

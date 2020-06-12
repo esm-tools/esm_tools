@@ -665,8 +665,12 @@ class task:
                         command_list.append("mkdir -p "+toplevel+"/"+task.package.bin_type)
                         real_command_list.append("mkdir -p "+toplevel+"/"+task.package.bin_type)
                         for binfile in task.package.bin_names:
-                            command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
-                            real_command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
+                            # PG: Only copy if source and dest aren't the same!
+                            # (Prevents cp: ‘/temp/test.txt’ and
+                            # ‘/temp/test/test.txt’ are the same file)
+                            if task.package.destination != toplevel:
+                                command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
+                                real_command_list.append("cp "+task.package.destination+"/"+binfile + " "+ toplevel+"/"+task.package.bin_type)
                 elif task.todo == "clean":
                     if task.package.bin_names:
                         for binfile in task.package.bin_names:
@@ -718,15 +722,21 @@ class task:
         for command in self.command_list:
             if command.startswith("mkdir"):
                 #os.system(command)
-                subprocess.check_output(command, shell=True)
+                subprocess.run(command.split(), check=True)
             elif command.startswith("cp "):
                 #os.system(command)
-                subprocess.check_output(command, shell=True)
+                subprocess.run(command.split(), check=True)
             elif command.startswith("cd ") and not ";" in command:
                 os.chdir(command.replace("cd ", ""))
             else:
                 #os.system(command)
-                subprocess.check_output(command, shell=True)
+                for command in command.split(";"):
+                    if "sed" in command:
+                        command = command.replace("'", "")
+                    subprocess.run(command.split(),
+                            check=True,
+                            shell=(command.startswith("./") and command.endswith(".sh"))
+                            )
 
         #print ("Still here")
         #try:

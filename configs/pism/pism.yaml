@@ -26,13 +26,15 @@ license_text: |
 
 choose_computer.name:
     ollie:
-        add_module_actions:
+        add_computer.module_actions:
             - "load pism_externals"
-        add_export_vars:
+        add_computer.export_vars:
             - "I_MPI_FABRICS=shm:tmi"
     "*":
         add_module_actions:
+            - "None"
         add_export_vars:
+            - "None"
 
 executable: pismr
 version: 1.1.4
@@ -51,15 +53,17 @@ choose_domain:
         "greenland":
                 choose_resolution:
                         20km:
-                                - a
-                                - b
-                                - c
+                                nx: 50
+                                ny: 30
+                                nz: 100
+
+
         "nhem":
                 choose_resolution:
                         20km:
-                                - a
-                                - b
-                                - b
+                                nx: 50
+                                ny: 30
+                                nz: 100
 
 bin_files:
         "pism_bin": "pism_bin"

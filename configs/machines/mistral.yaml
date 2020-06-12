@@ -46,10 +46,17 @@ pool_dir:  "/pool/data"
 #
 #
 
+choose_general.setup_name:
+        mpiesm:
+                add_module_actions:
+                    - "unload netcdf"
+                    - "load netcdf_c/4.3.2-gcc48"
+
 useMPI: intelmpi
 module_actions:
         - "unload netcdf_c"
         - "unload intel intelmpi"
+        - "load netcdf_c/4.3.2-gcc48"
         - "load python/3.5.2"
         - "load cmake/3.13.3"
         - "load autoconf/2.69"

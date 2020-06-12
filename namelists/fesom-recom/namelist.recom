@@ -2,7 +2,7 @@
 
 &pavariables
 use_REcoM             =.true.
-REcoM_restart         =.true.
+REcoM_restart         =.false.
 recom_binary_write    =.false.      ! Determines if tracervalue snapshots are saved. For fine grids it may crash the model to set this to true
 
 recom_binary_init     = .false.     ! Restart from binary

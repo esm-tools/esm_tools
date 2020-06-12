@@ -31,11 +31,13 @@ fesom:
 
         time_step: 900
         output_unit: "m"
+        leapyear: false
 
         opbnd_dir: ""
         tide_forcing_dir: ""
+        recom_data_path: ""
 
-        maschine: "${computer.name}"
+        maschine: "${computer.name}"    # This section below is just for testing
         choose_maschine:
                 mistral:
                         forcing_data_dir: "/work/ab0995/a270152/recom_data/forcing_clim61" # "${pool_dir}/forcing/"
@@ -44,6 +46,7 @@ fesom:
 
         asforcing: JRA55
         asforcing_runoff: CORE2
+
 
         namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.config:
@@ -56,13 +59,33 @@ fesom:
                                 sss_data_source: "${asforcing_runoff}"
                 namelist.recom:
                         pavariables:
-                          REcoMDataPath: "${recom_data_path}"
+                                REcoMDataPath: "${recom_data_path}"
+                                #recom_restart: false
+
 
         add_config_files:
-                 recom:  recom
+                recom:  recom
 
         add_config_sources:
-                 recom:  "${namelist_dir}/namelist.recom"
+                recom:  "${namelist_dir}/namelist.recom"
+
+
+        add_restart_in_files:
+                bio_restart: bio_restart
+
+        add_restart_in_in_work:
+                bio_restart: fesom.${parent_date!syear}.bio.nc
+        add_restart_in_sources:
+                bio_restart: fesom.${parent_date!syear}.bio.nc
+
+        add_restart_out_files:
+                bio_restart: bio_restart
+
+        add_restart_out_in_work:
+                bio_restart: fesom.${end_date!syear}.bio.nc
+
+        add_restart_out_sources:
+                bio_restart: fesom.${end_date!syear}.bio.nc
 
 #########################################################################################
 

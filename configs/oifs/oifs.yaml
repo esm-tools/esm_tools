@@ -3,7 +3,7 @@
 #
 
 model: oifs
-executable: master.exe
+executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere

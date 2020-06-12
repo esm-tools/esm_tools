@@ -3,8 +3,8 @@
 #
 
 model: rnfmap
-executable: rnfmap.exe
-execution_command: rnfmap.exe
+executable: rnfma
+execution_command: rnfma
 version: focioifs1
 type: river
 

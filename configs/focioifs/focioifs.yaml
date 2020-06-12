@@ -163,8 +163,8 @@ oasis3mct:
         process_ordering:
                 - nemo
                 - oifs
-                - xios
                 - rnfmap
+                - xios
         
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -228,39 +228,39 @@ oasis3mct:
                 # OIFS dry points to runoff mapper
                 'atmr->rnfa':
                         lag: ${a2r_lag}
-                        seq: 1                
+                        seq: 3                
                 # Runoff mapper to runoff points in NEMO
                 'opar->opaf':
                         lag: 0
-                        seq: 1
+                        seq: 3
                 # NEMO to OIFS wet points including lakes 
                 'opat->atml':
                         lag: ${o2a_lag}
-                        seq: 1
+                        seq: 3
                 # OIFS wet points including lakes to NEMO including cyclic points
                 'atml->opat':
                         lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+                        seq: 3
                 # OIFS wet points excluding lakes to NEMO excluding cyclic points
                 'atma->opac':
                         lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+                        seq: 3
                 # OIFS wet points including lakes to NEMO excluding cyclic points
                 'atml->opac':
                         lag: ${a2o_lag}
-                        seq: ${a2o_lag} 
+                        seq: 3
                 # OIFS wet points including lakes to AGRIF 
                 'atml->agr1':
                         lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+                        seq: 3
                 # AGRIF to OIFS wet points including lakes
                 'agr1->atml':
                         lag: ${o2a_lag}
-                        seq: 1
+                        seq: 3
                 # AGRIF mask to OIFS (all points)
                 'agr2->atml':
                         lag: ${o2a_lag}
-                        seq: 1        
+                        seq: 3        
 
         coupling_methods:
                 # NEMO to OpenIFS (Lgrid)

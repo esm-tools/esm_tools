@@ -267,7 +267,7 @@ components:
         "oifs":
                 requires:
                         - oasis3mct-4.0
-                install_bins: "make/esm/oifs/bin/master.exe"
+                install_bins: "make/esm/oifs/bin/oifs"
                 comp_command: "cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
                 clean_command: "rm -rf make/esm"
                 git-repository: "https://gitlab.dkrz.de/modular_esm/oifs-40r1.git"
@@ -290,7 +290,7 @@ components:
                         43r3-foci:
                                 branch: "oifs-foci"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
-                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
+                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
 
                 available_versions:
                         - "40r1"
@@ -355,8 +355,8 @@ components:
                 clean_command: "${defaults.clean_command}"
 
         "rnfmap":
-                install_bins: "bin/rnfmap.exe"
-                comp_command: "rm -rf bin; mkdir bin; cd src; make"
+                install_bins: "bin/rnfma"
+                comp_command: "rm -rf bin; mkdir bin; cd src; make ; cp -v ../bin/rnfmap.exe ../bin/rnfma"
                 clean_command: "rm -rf bin; cd src; make clean"
                 available_versions:
                         - "ec-earth"

@@ -37,3 +37,13 @@ oifs:
    
 nemo:
    resolution: "ORCA05"
+   nproca: 24
+   nprocb: 20
+
+rnfmap:
+   nproca: 1
+   nprocb: 1
+
+xios: 
+   nproca: 48
+   nprocb: 1

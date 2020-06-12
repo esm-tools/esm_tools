@@ -34,12 +34,6 @@ domain: "greenland"
 resolution: 20km
 lresume: false
 
-parent_date: 22941231
-parent_expid: khw0030
-parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
-
-
-# default directories
 
 model_dir: "${general.esm_master.dir}/pism-${version}"
 setup_dir: "${model_dir}"
@@ -60,29 +54,6 @@ choose_domain:
                                 - a
                                 - b
                                 - b
-choose_resolution:
-        T63:
-                levels: "L47"
-                time_step: 450
-                _nx: 192
-                _ny: 96
-                choose_computer.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 18
-                        36:
-                                nproca: 24
-                                nprocb: 18
-        T31:
-                levels: "L19"
-                time_step: 450
-                _nx: 96
-                _ny: 48
-        T127:
-                levels: "L47"
-                time_step: 200
-                _nx: 384
-                _ny: 192
 
 bin_files:
         "pism_bin": "pism_bin"
@@ -90,100 +61,3 @@ bin_sources:
         "pism_bin": "${bin_dir}/pismr"
 bin_in_work:
         "pism_bin": "pismr"
-
-input_files:
-        "cldoptprops": "cldoptprops"
-        "janspec": "janspec"
-        "jansurf": "jansurf"
-        "rrtmglw": "rrtmglw"
-        "rrtmgsw": "rrtmgsw"
-        "tslclim": "tslclim"
-        "vgratclim": "vgratclim"
-        "vltclim": "vltclim"
-
-input_in_work:
-        "cldoptprops": "ECHAM6_CldOptProps.nc"
-        "janspec": "unit.23"
-        "jansurf": "unit.24"
-        "rrtmglw": "rrtmg_lw.nc"
-        "rrtmgsw": "rrtmg_sw.nc"
-        "tslclim": "unit.92"
-        "vgratclim": "unit.91"
-        "vltclim": "unit.90"
-        "MAC-SP": "MAC-SP.nc"
-
-forcing_in_work:
-        sic: "unit.96"
-        sst: "unit.20"
-        aerocoarse: "aero_coarse_@YEAR@.nc"
-        aerofin: "aero_fine_@YEAR@.nc"
-        aerofarir: "aero_farir_@YEAR@.nc"
-        ozone: "ozon@YEAR@"
-        greenhouse: "greenhouse_gases.nc"
-        volcir: "strat_aerosol_ir_@YEAR@.nc"
-        volcsw: "strat_aerosol_sw_@YEAR@.nc"
-        volcsw: "strat_aerosol_sw_@YEAR@.nc"
-        swflux: "swflux_@YEAR@.nc"
-
-ignore_files:
-        "[[streams-->STREAM]]": STREAM
-        "[[streams-->STREAM]]_restart": STREAM_restart
-        "[[streams-->STREAM]]_codes": STREAM_codes
-
-ignore_sources:
-        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
-        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
-        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
-
-ignore_in_workdir:
-        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
-        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
-        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
-
-outdata_files:
-        "[[streams-->STREAM]]": STREAM
-        "[[streams-->STREAM]]_codes": STREAM_codes
-
-outdata_sources:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
-
-outdata_in_workdir:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
-
-restart_out_files:
-        "[[streams-->STREAM]]": STREAM
-
-restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-
-restart_out_in_workdir:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-
-# Configuration Files:
-config_sources:
-        "pism_config.nc": "${namelist_dir}/namelist.echam"
-
-config_generate:
-        "pism_overrides.nc": null
-
-errors:
-        mo_exception:
-                check_frequency: 300
-                detection_method: "<--grep(mo_exeption.f90)-- standard_out"
-                error_message: |
-                        !!! DETECTED ERROR !!!
-                        Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry.
-                action_method:
-                        - "<--kill_job--"
-
-        wind_speed:
-                check_frequency: 300
-                detection_method: "<--grep(wind speed)-- standard_out"
-                error_message: |
-                        !!! DETECTED ERROR !!!
-                        high wind speed was found during your run, applying wind speed fix and resubmitting...
-                action_method:
-                        - "<--repair_job_after_windspeed--"
-

@@ -132,6 +132,14 @@ export_vars:
         - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
         - 'I_MPI_DYNAMIC_CONNECTION=1'
 
+        # MPIOM vars
+        - 'ARFLAGS=crv'
+        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
+        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+        - 'WLFLAG="-Wl"'
+        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
+        - 'OASIS3MCTROOT=${model_dir}'
+
         - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
         - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
         - 'DAPL_WR_MAX=500'

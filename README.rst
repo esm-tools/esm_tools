@@ -30,6 +30,20 @@ You can get further help with::
 
     esm_master --help
 
+Tab Completion
+--------------
+A tab completion script can be generated for the user::
+
+    $ esm_master --generate_tab_complete
+    Wrote file: esm_master_tabcomplete.bash
+    Have your shell source this file to allow tab completion of available targets
+    This works for both bash and zsh
+    $ source esm_master_tabcomplete.bash
+    $ esm_master <tab>
+
+Voila! 🎉
+
+
 Configuration
 -------------
 

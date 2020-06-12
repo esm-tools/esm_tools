@@ -15,7 +15,7 @@ from .cli import verbose
 ##################################### globals ########################################
 ######################################################################################
 
-function_path = esm_rcfile.get_rc_entry("FUNCTION_PATH")
+function_path = esm_rcfile.get_rc_entry("FUNCTION_PATH", default="/dev/null")
 ESM_MASTER_DIR = os.getenv("PWD")
 
 components_yaml = function_path + "/esm_master/setups2models.yaml"

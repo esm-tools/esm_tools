@@ -3,8 +3,8 @@ import argparse
 import sys
 
 
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 check = False
 verbose = 0
 
@@ -12,9 +12,10 @@ from .esm_master import *
 from . import __version__
 from . import database_actions
 
+
 def main():
 
-    #global check, verbose
+    # global check, verbose
 
     parser = argparse.ArgumentParser(
         prog="esm_master",
@@ -38,12 +39,16 @@ def main():
         "--verbose", "-v", action="count", default=0, help="toggle verbose mode"
     )
     parser.add_argument(
-        "--version", action="version", version="%(prog)s "+__version__
+        "--version", action="version", version="%(prog)s " + __version__
     )
     parser.add_argument(
-            "--keep-task-script", "-k", dest="keep", action="store_true", default=False,
-            help="Keep shell script generated to perform compilation/configuration jobs"
-            )
+        "--keep-task-script",
+        "-k",
+        dest="keep",
+        action="store_true",
+        default=False,
+        help="Keep shell script generated to perform compilation/configuration jobs",
+    )
     parser.add_argument("--generate_tab_complete", action="store_true")
     parser.add_argument("--list_all_targets", action="store_true")
     parsed_args = vars(parser.parse_args())
@@ -65,7 +70,6 @@ def main():
     if not target:
         target = ""
 
-
     main_infos = general_infos()
     vcs = version_control_infos()
     setups2models = setup_and_model_infos(vcs, main_infos)
@@ -82,10 +86,14 @@ def main():
         with open("esm_master_tabcomplete.bash", "w") as tab_comp:
             tab_comp.write("#/usr/bin/env bash\n")
             tab_comp.write("_esm_master_completions() {\n")
-            tab_comp.write('\tCOMPREPLY=($(compgen -W "$(esm_master --list_all_targets)" "${COMP_WORDS[1]}"))')
-            tab_comp.write('\n}\n\ncomplete -F _esm_master_completions esm_master\n')
+            tab_comp.write(
+                '\tCOMPREPLY=($(compgen -W "$(esm_master --list_all_targets)" "${COMP_WORDS[1]}"))'
+            )
+            tab_comp.write("\n}\n\ncomplete -F _esm_master_completions esm_master\n")
         print("Wrote file: esm_master_tabcomplete.bash")
-        print("Have your shell source this file to allow tab completion of available targets")
+        print(
+            "Have your shell source this file to allow tab completion of available targets"
+        )
         print("This works for both bash and zsh")
         sys.exit()
 
@@ -94,7 +102,8 @@ def main():
     user_config = setups2models.write_minimal_user_config()
 
     from esm_runscripts.esm_sim_objects import SimulationSetup
-    complete_setup = SimulationSetup(user_config = user_config)
+
+    complete_setup = SimulationSetup(user_config=user_config)
     complete_config = complete_setup.config
 
     env = esm_environment.environment_infos("compiletime", complete_config)
@@ -113,7 +122,9 @@ def main():
     env.write_dummy_script()
 
     user_task.execute(env)
-    database = database_actions.database_entry(user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR)
+    database = database_actions.database_entry(
+        user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR
+    )
     database.connection.close()
 
     if not keep:

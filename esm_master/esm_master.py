@@ -226,7 +226,6 @@ class software_package:
 
     def fill_in_infos(self, setup_info, vcs, general):
 
-        import pdb; pdb.set_trace()
         self.targets = self.get_targets(setup_info, vcs)
         self.subpackages = self.get_subpackages(setup_info, vcs, general)
         self.complete_targets(setup_info)

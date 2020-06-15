@@ -98,29 +98,9 @@ Automatic testing for Mistral is not yet available.
 +--------------------------------------------------------------------------------------------------------------------+
 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-fesom-recom-2.0/badge.svg             |
 +--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-foci-1.0/badge.svg                    |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-foci-default/badge.svg                |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-2.0/badge.svg                |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-agrif/badge.svg              |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-vvl-o3-awi3/badge.svg        |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-vvl-o3/badge.svg             |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-vvl-o4/badge.svg             |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-focioifs-vvl/badge.svg                |
-+--------------------------------------------------------------------------------------------------------------------+
 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.00p4/badge.svg             |
 +--------------------------------------------------------------------------------------------------------------------+
 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01/badge.svg               |
 +--------------------------------------------------------------------------------------------------------------------+
 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01p1/badge.svg             |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-oifscl-40r1/badge.svg                 |
-+--------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-oifscl-43r3/badge.svg                 |
 +--------------------------------------------------------------------------------------------------------------------+

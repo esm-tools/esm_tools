@@ -1,0 +1,24 @@
+archfile: ESMTOOLS_generic_intel
+available_versions:
+- ogcm
+- 2.0_r982_ogcm
+- 2.0_r982
+branch: esm-tools
+choose_version:
+  2.0_r982:
+    archfile: ESMTOOLS_generic_oasis_intel
+    nothing: much
+    use_oasis: --use_oasis oasis3_mct
+  2.0_r982_ogcm:
+    archfile: ESMTOOLS_generic_intel
+    use_oasis: ''
+  ogcm:
+    compile_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile}
+      --netcdf_lib netcdf4_par --full --job 24
+clean_command: rm -rf bin lib obj ppsrc
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib
+  netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+destination: xios-${version}
+git-repository: https://git.geomar.de/foci/src/xios.git
+install_bins: bin/xios.x
+use_oasis: ''

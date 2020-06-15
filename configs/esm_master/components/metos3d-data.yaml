@@ -1,0 +1,3 @@
+comp_command: cd data/data; gunzip -c TMM.tar.gz > TMM.tar; tar xf TMM.tar; rm -f
+  TMM.tar
+git-repository: https://github.com/metos3d/data.git

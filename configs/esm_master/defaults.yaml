@@ -1,0 +1,2 @@
+clean_command: rm -rf build CMakeCache.txt
+comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`

@@ -1,0 +1,16 @@
+esm-tools:
+  available_versions:
+  - r3
+  git-repository: gitlab.dkrz.de/esm-tools/esm-tools.git
+esm-usermanual:
+  available_versions:
+  - r3
+  git-repository: gitlab.dkrz.de/esm-tools/esm-usermanual.git
+esm-workshop:
+  available_versions:
+  - Mai 2019
+  git-repository: gitlab.dkrz.de/esm-tools/esm-workshop.git
+git-workshop:
+  available_versions:
+  - Mai 2019
+  git-repository: gitlab.dkrz.de/esm-tools/git-workshop.git

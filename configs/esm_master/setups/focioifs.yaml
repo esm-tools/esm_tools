@@ -1,0 +1,58 @@
+available_versions:
+- vvl-o3
+- vvl-o3-awi3
+- vvl-o4
+- agrif
+- vvl
+- '2.0'
+choose_version:
+  '2.0':
+    couplings:
+    - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
+  agrif:
+    couplings:
+    - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci
+  vvl:
+    couplings:
+    - nemo-3.6foci+oifs40r1-foci
+    nemo:
+      version: 3.6foci
+    oasis3-mct:
+      version: foci
+    oifs:
+      version: 40r1-foci
+    rnfmap:
+      version: focioifs
+  vvl-o3:
+    couplings:
+    - nemo-3.6foci+oifs40r1-foci-o3
+    nemo:
+      version: 3.6foci
+    oasis3-mct:
+      version: ec-earth
+    oifs:
+      version: 40r1-foci
+    rnfmap:
+      version: focioifs
+  vvl-o3-awi3:
+    couplings:
+    - nemo-3.6foci+oifs40r1
+    nemo:
+      version: 3.6foci
+    oasis3-mct:
+      version: foci
+    oifs:
+      version: 40r1
+    rnfmap:
+      version: focioifs
+  vvl-o4:
+    couplings:
+    - nemo-3.6foci+oifs40r1-foci-o4
+    nemo:
+      version: 3.6foci
+    oasis3-mct:
+      version: '4.0'
+    oifs:
+      version: 40r1-foci
+    rnfmap:
+      version: focioifs

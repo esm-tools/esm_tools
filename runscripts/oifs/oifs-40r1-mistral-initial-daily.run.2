@@ -1,0 +1,50 @@
+#! /bin/ksh -l
+set -e 
+
+
+setup_name="oifs"		
+#check=1
+
+account=bb0519
+compute_time="00:05:00"
+###############################################################################
+
+INITIAL_DATE_oifs=2000-01-01       # Initial exp. date
+FINAL_DATE_oifs=2000-02-01         # Final date of the experiment
+initial_date=2000-01-01
+final_date=2000-02-01
+
+oifs_VERSION="40r1"
+version=40r1
+POST_PROCESSING_oifs=1
+
+model_dir=${HOME}/esm-py/esm_tools/oifs-40r1/
+
+base_dir=/work/bb0519/b350090/esm-experiments/
+
+pool_dir=/work/bb0519/foci_input2/
+input_dir=/work/bb0519/foci_input2/OPENIFS40R1-TL159/
+rtables_dir=/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/rtables/
+vtables_dir=/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/vtables/
+clim_dir=/work/bb0519/foci_input2/OPENIFS40R1-TL159/159l_2/
+forcing_dir=/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/ifsdata/
+cmip5_data_dir=/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/cmip5_ghg/
+
+res_oifs=T159
+lev_oifs=L91
+res=T159
+levels=L91
+
+NYEAR_oifs=0           # Number of years per run
+NMONTH_oifs=0          # Number of months per run
+NDAY_oifs=1
+
+LRESUME_oifs=0
+LRESUME_oasis3mct=0
+
+#further_reading_fesom="fesom_output_control.yaml"
+
+
+###############################################################################
+load_all_functions
+general_do_it_all $@

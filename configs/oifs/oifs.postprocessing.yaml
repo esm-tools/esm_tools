@@ -1,0 +1,165 @@
+postprocess_method_definitions:
+        cdo:
+                possible_flags:
+                        - "f nc"
+                        - "f grb1"
+                        - "f grb2"
+                        - "f nc1"
+                        - "f nc2"
+                        - "f nc4"
+                        - "f nc4c"
+                        - "f nc5"
+                        - "f srv"
+                        - "f ext"
+                        - "f ieg"
+                        - "t ecmwf"
+                        - "-eccodes"
+                required_args:
+                        - "operator"
+                        - "infile"
+                possible_args:
+                        - "stdin"
+                        - "stdout"
+                        - "outfile"
+                call_order:
+                        - "program"
+                        - "flags"
+                        - "operator"
+                        - "infile"
+                        - "outfile"
+        cdo_chain:
+                - "something..."
+
+#
+# Post processing from old esm tools
+#
+
+#		grib_copy=${OIFS_GRIB_API_BIN}/grib_copy
+#
+#                cd ${TOPLEVEL}/outdata/oifs/$(printf "%05d" ${RUN_NUMBER_oifs})
+#                rm -f *0000000000*
+#
+#                cat ICMGG* > ICMGGCAT
+#                cat ICMSH* > ICMSHCAT
+#		if [[ "x${oifs_VERSION}" == "x43r3" ]] ; then
+#		    cat ICMUA* > ICMUACAT
+#		fi
+#		if [[ "x${oifs_WITH_WAM}" == "x1" ]]; then
+#		    # WAM output comes in two files
+#		    # One for all time steps except the last, and one for the last
+#  			cat MPP* > MPPCAT
+#		fi
+#
+#		POST_FORMAT_oifs="nc4c" # compressed netCDF4
+#		CDO_ECCODES_oifs="--eccodes" # CDO compiled with ecCodes?
+#		MPP_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_WAM.nc
+#
+#		levelTypes="surface hybrid isobaricInhPa theta isobaricInPa"
+#		for typeOfLevel in ${levelTypes}
+#		do
+#		    $grib_copy -w typeOfLevel=$typeOfLevel ICMGGCAT ICMGGCAT_${typeOfLevel}
+#		    $grib_copy -w typeOfLevel=$typeOfLevel ICMSHCAT ICMSHCAT_${typeOfLevel}
+#		    if [[ "x${oifs_VERSION}" == "x43r3" ]] ; then
+#			$grib_copy -w typeOfLevel=$typeOfLevel ICMUACAT ICMUACAT_${typeOfLevel}
+#		    fi
+#		    if [[ -e ICMGGCAT_${typeOfLevel} ]]; then
+#			ICMGG_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_GG_${typeOfLevel}.nc
+#			cdo ${CDO_ECCODES_oifs} -f ${POST_FORMAT_oifs} ${NC4_ZIP} -t ecmwf copy ${POST_REMAP_oifs} -setgridtype,regular ICMGGCAT_${typeOfLevel} ${TOPLEVEL}/outdata/oifs/${ICMGG_NAME_oifs}
+#			rm -rf ICMGGCAT_${typeOfLevel}
+#		    fi
+#		    if [[ -e ICMSHCAT_${typeOfLevel} ]]; then
+#			ICMSH_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_SH_${typeOfLevel}.nc
+#			cdo ${CDO_ECCODES_oifs} -f ${POST_FORMAT_oifs} ${NC4_ZIP} -t ecmwf copy ${POST_REMAP_oifs} -setgridtype,regular -sp2gpl ICMSHCAT_${typeOfLevel} ${TOPLEVEL}/outdata/oifs/${ICMSH_NAME_oifs}
+#			rm -rf ICMSHCAT_${typeOfLevel}
+#		    fi
+#		    if [[ "x${oifs_VERSION}" == "x43r3" ]] ; then
+#			if [[ -e ICMUACAT_${typeOfLevel} ]]; then
+#                           ICMUA_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_UA_${typeOfLevel}.nc
+#                          cdo ${CDO_ECCODES_oifs} -f ${POST_FORMAT_oifs} ${NC4_ZIP} -t ecmwf copy ${POST_REMAP_oifs} -setgridtype,regular -sp2gpl ICMUACAT_${typeOfLevel} ${TOPLEVEL}/outdata/oifs/${ICMUA_NAME_oifs}
+#                            rm -rf ICMUACAT_${typeOfLevel}
+#			fi
+#		    fi
+#		done
+#
+#		if [[ "x${oifs_WITH_WAM}" == "x1" ]]; then
+#		    if [[ -e MPPCAT ]] ; then
+#   			cdo ${CDO_ECCODES_oifs} -f ${POST_FORMAT_oifs} ${NC4_ZIP} -t ecmwf copy ${POST_REMAP_oifs} -setgridtype,regular MPPCAT ${TOPLEVEL}/outdata/oifs/${MPP_NAME_oifs}
+#		    else
+#			echo " No MPPCAT file found "
+#		    fi
+#		fi
+#
+# 		echo "Removing raw OIFS output"
+#                rm -f ICMGG* ICMSH* ICMUA* MPP*
+#
+#
+#		cd ${TOPLEVEL}/outdata/oifs/
+#
+#                echo "Cutting off the last OIFS timestep that we write because of ifs_lastout"
+#                ncdump -h ${ICMGG_NAME_oifs} >> temp
+#                INPUT=$(awk 'NR==3' temp)
+#                rm temp
+#                SUBSTRING=$(echo $INPUT| cut -d'(' -f2 )
+#                LAST_TIME_STEP=$(echo $SUBSTRING| cut -d' ' -f1 )
+#                SECOND_LAST_TIME_STEP=$((LAST_TIME_STEP - 1))
+#               for typeOfLevel in ${levelTypes}
+#                do
+#		    ICMGG_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_GG_${typeOfLevel}.nc
+#		    ICMSH_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_SH_${typeOfLevel}.nc
+#                    if [[ -e ${ICMGG_NAME_oifs} ]] ; then
+#                        cdo seltimestep,1/$SECOND_LAST_TIME_STEP ${ICMGG_NAME_oifs} ${ICMGG_NAME_oifs}_cut.nc
+#			rm -f ${ICMGG_NAME_oifs}
+#			mv ${ICMGG_NAME_oifs}_cut.nc ${ICMGG_NAME_oifs}
+#
+#			echo "Calculating day/monthly mean values for OIFS output ${ICMGG_NAME_oifs}"
+#			cdo daymean ${ICMGG_NAME_oifs} ${EXP_ID}_1d_${START_DATE_oifs}_${END_DATE_oifs}_GG_${typeOfLevel}.nc
+#			cdo monmean ${ICMGG_NAME_oifs} ${EXP_ID}_1m_${START_DATE_oifs}_${END_DATE_oifs}_GG_${typeOfLevel}.nc
+#                   fi
+#                    if [[ -e ${ICMSH_NAME_oifs} ]]; then
+#			cdo seltimestep,1/$SECOND_LAST_TIME_STEP ${ICMSH_NAME_oifs} ${ICMSH_NAME_oifs}_cut.nc
+#			rm -f ${ICMSH_NAME_oifs}
+#                        mv ${ICMSH_NAME_oifs}_cut.nc ${ICMSH_NAME_oifs}
+#
+#                        echo "Calculating day/monthly mean values for OIFS output ${ICMSH_NAME_oifs}"
+#                        cdo daymean ${ICMSH_NAME_oifs} ${EXP_ID}_1d_${START_DATE_oifs}_${END_DATE_oifs}_SH_${typeOfLevel}.nc
+#                        cdo monmean ${ICMSH_NAME_oifs} ${EXP_ID}_1m_${START_DATE_oifs}_${END_DATE_oifs}_SH_${typeOfLevel}.nc
+#		    fi
+#		    if [[ "x${oifs_VERSION}" == "x43r3" ]] ; then
+#			ICMUA_NAME_oifs=${EXP_ID}_${START_DATE_oifs}_${END_DATE_oifs}_UA_${typeOfLevel}.nc
+#			if [[ -e ${ICMUA_NAME_oifs} ]] ; then
+#                            cdo seltimestep,1/$SECOND_LAST_TIME_STEP ${ICMUA_NAME_oifs} ${ICMUA_NAME_oifs}_cut.nc
+#                            rm -f ${ICMUA_NAME_oifs}
+#                            mv ${ICMUA_NAME_oifs}_cut.nc ${ICMUA_NAME_oifs}
+#
+#                            echo "Calculating day/monthly mean values for OIFS output ${ICMUA_NAME_oifs}"
+#                            cdo daymean ${ICMUA_NAME_oifs} ${EXP_ID}_1d_${START_DATE_oifs}_${END_DATE_oifs}_UA_${typeOfLevel}.nc
+#                            cdo monmean ${ICMUA_NAME_oifs} ${EXP_ID}_1m_${START_DATE_oifs}_${END_DATE_oifs}_UA_${typeOfLevel}.nc
+#			fi
+#		    fi
+#		done
+
+
+postprocess_task_definitions:  # in postprocessing.yaml
+  mm:
+    method: "cdo"
+    args:
+        operator: "monmean"
+    flags:
+      - "f nc"
+  BOT:
+  method: "cdo"
+  operator: "after"
+  flags:
+    - "f nc2"
+  stdin: "namelist.BOT"
+
+
+
+postprocess_tasks: #in echam.postprocessing.yaml
+  "${general.expid}_${model}_[[streams-->STREAM]]_${start_date!syear!smonth!sday}-${next_date!syear!smonth!sday}_mm.nc":
+     post_process: "mm"
+     flags:
+        - "t echam6"
+     args:
+        infile: "${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM"
+

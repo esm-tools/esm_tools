@@ -3,12 +3,12 @@ model: oasis3mct
 cf_name_dir: ${model_dir}
 time_step: 900 # changed by coupled setup anyway
 
-config_files: 
+config_files:
         cf: cf
 
 config_in_work:
         cf: "cf_name_table.txt"
-       
+
 config_sources:
         cf: "${cf_name_dir}/cf_name_table.txt"
 
@@ -49,7 +49,7 @@ restart_out_sources:
         areas: areas.nc
         masks: masks.nc
         grids: grids.nc
-        
+
 restart_in_files:
         areas: areas
         masks: masks
@@ -80,7 +80,7 @@ restart_in_sources:
 # remapping:
 #       - mapping:
 #               mapname: %filename with mapping matrix%
-#               map_regrid_on: src / dst 
+#               map_regrid_on: src / dst
 #               mapstrategy:
 #       - bilinear:
 #               oasis_grid_type: LR / D / U, needs to be defined in model.yaml

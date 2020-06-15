@@ -34,6 +34,7 @@ pool_dir: "/work/ollie/pool"
 pool_directories:
         pool: "/work/ollie/pool"
         projects: "/work/ollie/projects"
+        focipool: "/dev/null"
 
 # ?????
 choose_submitted:
@@ -56,6 +57,28 @@ hyper_flag: "" # No hyperthreading on ollie
 #- "load pism_externals"
 #- "I_MPI_FABRICS=shm:tmi"
 
+choose_general.setup_name:
+        pism:
+                add_module_actions:
+                    - "unload netcdf"
+                    - "unload intel.compiler"
+                    - "load pism_externals"
+                add_export_vars:
+                    - "I_MPI_FABRICS=shm:tmi"
+        mpiesm:
+                add_export_vars:
+                   # MPIOM vars
+                   - 'ARFLAGS=crv'
+                   - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                   - 'OASIS3MCTROOT=${model_dir}'
+                   - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
+                   - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+                   - 'FFLAGS="$FCFLAGS"'
+                   - 'WLFLAG="-Wl"'
+                   - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
+
+                    
+
 useMPI: intelmpi
 
 module_actions:
@@ -68,7 +91,8 @@ module_actions:
         - "unload netcdf"
         - "load hdf5"
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
-        - "load python3/3.7.7_intel2020"
+        # NOTE(PG): Using this model breaks ECHAM6-Concurrent Rad compilation
+        # - "load python3/3.7.7_intel2020"
         - "load automake"
         - "list"
 
@@ -108,7 +132,6 @@ export_vars:
         - 'FFLAGS="$FCFLAGS"'
         - 'WLFLAG="-Wl"'
         - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
-
 
 choose_useMPI:
         intelmpi:

@@ -48,10 +48,10 @@ for config in configs:
                 for key in metadata:
                     if key=="Publications":
                         if type(metadata[key]) is list:
-                            public_string = key
+                            public_string = key + '; "\n'
                             for publication in metadata[key]:
-                                public_string = public_string + "; `{0}`_".format(publication)
-                            table.write(public_string+'\n')
+                                public_string = public_string + "`{0}`_\n\n".format(publication.replace('"', '""'))
+                            table.write(public_string+'"\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
                     else:
@@ -62,6 +62,7 @@ for config in configs:
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
             rst.write("   :delim: ;\n")
+            rst.write("   :widths: 20, 80\n")
             rst.write("   :stub-columns: 1\n\n")
 # -- General configuration ---------------------------------------------
 
@@ -90,7 +91,7 @@ master_doc = 'index'
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
 author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez"
-version = "3.1"
+version = "4.0"
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -142,6 +143,10 @@ html_static_path = ['_static']
 
 html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
+# Add custom css (to disable the horizontal scrolling in tables).
+def setup(app):
+    app.add_stylesheet('custom.css')
+
 # -- Options for HTMLHelp output ---------------------------------------
 
 # Output file base name for HTML help builder.
@@ -173,8 +178,9 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools r3 UserManual',
-     'Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini', 'manual'),
+     'ESM Tools r4 UserManual',
+     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez',
+     'manual'),
 ]
 
 

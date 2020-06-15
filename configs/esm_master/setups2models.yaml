@@ -1,811 +1,884 @@
-esm-software:
-        "esm-tools":
-                git-repository: "gitlab.dkrz.de/esm-tools/esm-tools.git"
-                available_versions:
-                        - "r3"
-        "esm-workshop":
-                git-repository: "gitlab.dkrz.de/esm-tools/esm-workshop.git"
-                available_versions:
-                        - "Mai 2019"
-        "esm-usermanual":
-                git-repository: "gitlab.dkrz.de/esm-tools/esm-usermanual.git"
-                available_versions:
-                        - "r3"
-        "git-workshop":
-                git-repository: "gitlab.dkrz.de/esm-tools/git-workshop.git"
-                available_versions:
-                        - "Mai 2019"
-
-
-defaults:
-        comp_command: 'mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`'
-        clean_command: 'rm -rf build CMakeCache.txt'
-
-
 components:
-        "amip":
-                git-repository: "gitlab.dkrz.de/ec-earth/amip-forcing.git"
-                comp_command: "mkdir bin; cd src; make"
-                clean_command: "rm -rf bin; cd src; make clean"
-
-        "echam":
-                install_bins: "src/echam/bin/echam6"
-                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
-                branch: "${echam.version}"
-                available_versions:
-                        - "6.3.04p1"
-                        - "6.3.02p4"
-                        - "6.3.05p2"
-                        - "6.3.04p1-esm-interface"
-                        - "6.3.04p1-esm-interface-yac"
-                        - "6.3.04p1-paleodyn"
-                        - "6.3.05p2-concurrent_radiation"
-                comp_command: "${defaults.comp_command}"
-                clean_command: "${defaults.clean_command}"
-                choose_version:
-                        "6.3.02p4":
-                                install_bins: "src/bin/echam6"
-                        "6.3.05p2":
-                                git-repository: "https://gitlab.dkrz.de/foci/src/echam.git"
-                                branch: "esm-tools"
-                        "6.3.05p2-wiso":
-                                branch: "wiso"
-                                comp_command: "make; make install"
-                                clean_command: "make clean"
-                                conf_command: "./configure"
-                        "6.3.04p1-esm-interface":
-                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
-                                branch: "using_esm_interfaces"
-                                destination: "echam-6.3.04p1"
-                        "6.3.04p1-esm-interface-yac":
-                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
-                                branch: "using_esm_interfaces_yac"
-                                destination: "echam-6.3.04p1"
-                        "6.3.04p1-paleodyn":
-                                git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
-                                branch: "paleodyn"
-                                destination: "echam-6.3.04p1"
-
-                        "6.3.05p2-concurrent_radiation":
-                                git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
-                                branch: "concurrent_radiation_cpl_feom"
-                                comp_command: "./config/createMakefiles.pl; autoreconf -i --force; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6"
-                                clean_command: "rm -rf src/echam/bin; make clean"
-        "esm-interface":
-                git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
-                comp_command: "${default.comp_command}"
-                destination: "esm-interface"
-                available_versions:
-                        - "1.0"
-                        - "yac"
-                choose_version:
-                        "1.0":
-                                branch: "dev_prototype_awicm"
-                                comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
-                        "yac":
-                                branch: "include_yac"
-                                comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`'
-
-        "fesom":
-                choose_version:
-                        "1.4":
-                                git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
-                                install_bins: "bin/fesom"
-                        "2.0":
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-                                        - "github.com/FESOM/fesom2.git"
-                                branch: "2.0.2"
-                                install_bins: "bin/fesom.x"
-                        "2.0-paleodyn":
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-                                        - "github.com/FESOM/fesom2.git"
-                                branch: "paleodyn_frozen"
-                                install_bins: "bin/fesom.x"
-                        "2.0-o":
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-                                        - "github.com/FESOM/fesom2.git"
-                                branch: "oifs-deck"
-                                install_bins: "bin/fesom.x"
-                        "2.0-esm-interface":
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
-                                branch: "fesom2_using_esm-interface"
-                                destination: "fesom-2.0"
-                                install_bins: "bin/fesom.x"
-                        "2.0-esm-interface-yac":
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git"
-                                branch: "using_esm_interfaces_yac"
-                                destination: "fesom-2.0"
-                                install_bins: "bin/fesom.x"
-                available_versions:
-                        - "1.4"
-                        - "2.0"
-                        - "2.0-paleodyn"
-                        - "2.0-o"
-                        - "2.0-esm-interface"
-                        - "2.0-esm-interface-yac"
-                comp_command: "mkdir -p build; cd build; cmake ..;   make install"
-                clean_command: "${defaults.clean_command}"
-
-        "fesom_mesh_part":
-                install_bins: "bin/fesom.x.ini"
-                choose_version:
-                        1.4:
-                                git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
-                        2.0:
-                                git-repository:
-                                        - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-                                        - "github.com/FESOM/fesom2.git"
-                                branch: "2.0.2"
-                available_versions:
-                        - "1.4"
-                        - "2.0"
-                comp_command: "cd mesh_part; mkdir build -p; cd build; cmake ..; make install -j `nproc --all`"
-                clean_command: "rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt"
-
-        "icon":
-                git-repository: "gitlab.dkrz.de/modular_esm/ICON-ATM.git"
-                branch: "${icon.version}"
-                conf_command: "./configure --with-fortran=gcc --with-openmp --with-grib_api"
-                comp_command: "make -j `nproc --all"
-                clean_command: "make distclean"
-                available_versions:
-                        - "2.1.0"
-                        - "2.3.0-nwp5"
-                        - "2.4.0"
-
-        "metos3d":
-                git-repository: "https://github.com/metos3d/metos3d.git"
-                git-subrepositories:
-                        - "https://github.com/metos3d/simpack.git"
-                        - "https://github.com/metos3d/model.git"
-                comp_command: "${defaults.comp_command}"
-                clean_command: "${defaults.clean_command}"
-
-        "metos3d-data":
-                git-repository: "https://github.com/metos3d/data.git"
-                comp_command: "cd data/data; gunzip -c TMM.tar.gz > TMM.tar; tar xf TMM.tar; rm -f TMM.tar"
-
-        "mpiom":
-                install_bins: "bin/mpiom.x"
-                git-repository: "https://gitlab.dkrz.de/modular_esm/mpiom.git"
-                choose_version:
-                        "1.6.2p3":
-                                branch: "1.6.2p3"
-                        "1.6.3":
-                                branch: "1.6.3"
-                        "1.6.3p2":
-                                branch: "1.6.3p2"
-                        "1.6.2p3-coupled":
-                                branch: "1.6.2p3"
-                                conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct --enable-HAMOCC"
-                        "1.6.3-coupled":
-                                branch: "1.6.3"
-                                conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct --enable-HAMOCC"
-                        "1.6.3p2-coupled":
-                                branch: "1.6.3p2"
-                                conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct --enable-HAMOCC"
-                available_versions:
-                        - "1.6.2p3"
-                        - "1.6.3"
-                        - "1.6.3p2"
-                        - "1.6.2p3-coupled"
-                        - "1.6.3-coupled"
-                        - "1.6.3p2-coupled"
-                conf_command: "./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC"
-                comp_command: "make"
-                clean_command: "make clean"
-
-        "nemo":
-                version: 3.6-ogcm
-                available_versions:
-                        - "3.6foci"
-                        - "3.6-ogcm"
-                git-repository: "https://gitlab.dkrz.de/foci/src/NEMOGCM.git"
-                branch: "esm-tools"
-                destination: "nemo-3.6"
-                comp_command: "export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; ./makenemo -n ${grid} -m ${computer.nemoarchfile} -j 24"
-                clean_command: "cd CONFIG; ./makenemo -n ${nemo.grid} clean"
-                install_bins: "CONFIG/${nemo.grid}/BLD/bin/nemo.exe"
-                requires:
-                        - xios-2.0_r982
-                choose_nemo.version:
-                        "3.6-ogcm":
-                                grid: "GYRE_XIOS"
-                        "3.6foci":
-                                git-repository: "https://gitlab.dkrz.de/foci/src/nemo.git"
-                                grid: "ORCA05_LIM2_KCM_AOW"
-        "oasis3-mct":
-                install_libs:
-                        - "build/lib/psmile/libpsmile.a"
-                        - "build/lib/psmile/mct/libmct.a"
-                        - "build/lib/psmile/mct/mpeu/libmpeu.a"
-                        - "build/lib/psmile/scrip/libscrip.a"
-                comp_command: 'mkdir -p build; cd build; cmake ..;   make -j `nproc --all`'
-                clean_command: "${defaults.clean_command}"
-                git-repository: "https://gitlab.dkrz.de/modular_esm/oasis3-mct.git"
-                destination: "oasis"
-                available_versions:
-                        - "foci"
-                        - "fociagrif"
-                        - "ec-earth"
-                        - "2.8"
-                        - "3.0"
-                        - "4.0"
-                choose_version:
-                        "ec-earth":
-                                branch: "ec-earth-version"
-                        "2.8":
-                                branch: "2.8"
-                        "3.0":
-                                branch: "3.0"
-                        "4.0":
-                                branch: "4.0"
-                        "foci":
-                                git-repository: "https://gitlab.dkrz.de/foci/src/oasis3mct.git"
-                                branch: "esm-tools"
-                        "fociagrif":
-                                git-repository: "https://gitlab.dkrz.de/b350090/oasis3-mct4.git"
-                                branch: "fociagrif"
-
-                # make sure all oasis versions are in the repo, with correct version branches
-
-        "oifs":
-                requires:
-                        - oasis3-mct-4.0
-                install_bins: "make/esm/oifs/bin/master.exe"
-                comp_command: "cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
-                clean_command: "rm -rf make/esm"
-                git-repository: "https://gitlab.dkrz.de/modular_esm/oifs-40r1.git"
-                choose_version:
-                        40r1:
-                                branch: "foci_conserv"
-                        40r1-foci:
-                                branch: "dirk_on_mistral"
-                                destination: "40r1"
-                        40r1-agcm:
-                                compile_command: "export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg"
-                        43r3:
-                                #branch: "master"
-                                #git-repository: "https://git.ecmwf.int/scm/~de1a/oifs43r3.git"
-                                git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
-                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
-                        43r3-awi:
-                                branch: "master"
-                                git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
-                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
-
-                available_versions:
-                        - "40r1"
-                        - "40r1-foci"
-                        - "40r1-agcm"
-                        - "43r3"
-                        - "43r3-awi"
-
-        "pism":
-                comp_command: >
-                        mkdir -p build;
-                        cd build;
-                        export PISM_INSTALL_PREFIX=$(readlink -f $(pwd)/..);
-                        cmake \
-                                -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-                                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-                                -DPism_BUILD_TYPE=RelWithDebInfo \
-                                -DCMAKE_CXX_COMPILER=$CXX \
-                                -DCMAKE_CXX_FLAGS="-std=c++11 -fp-model precise -no-fast-transcendentals" \
-                                -DCMAKE_C_COMPILER=$CC  \
-                                -DCMAKE_C_FLAGS="-fp-model precise -no-fast-transcendentals" \
-                                -DPETSC_EXECUTABLE_RUNS:BOOL=ON \
-                                -DMPI_C_DIR="$I_MPI_ROOT" \
-                                -DPism_USE_JANSSON:BOOL=NO \
-                                -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \
-                                -DPism_USE_PARALLEL_HDF5:BOOL=OFF \
-                                -DPism_USE_PROJ4:BOOL=YES \
-                                -DPism_BUILD_EXTRA_EXECS:BOOL=ON \
-                                ..; make -j4; make install;
-                clean_command: "${defaults.clean_command}"
-                choose_version:
-                        snowflake0.7:
-                                git-repository: "swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git"
-                                branch: "awi0.7-dev"
-                        snowflake1.0:
-                                git-repository: "swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git"
-                                branch: "stable1.0-awi-dev"
-                        github1.1.4:
-                                git-repository: "https://github.com/pism/pism.git"
-                                branch: "v1.1.4"
-                        github1.2:
-                                git-repository: "https://github.com/pism/pism.git"
-                                branch: "v1.2"
-                        index1.1:
-                                git-repository: "https://github.com/sebhinck/pism-pub"
-                                branch: "Index_dev"
-                available_versions:
-                        - "snowflake0.7"
-                        - "snowflake1.0"
-                        - "github1.1.4"
-                        - "github1.2"
-                        - "index1.1"
-
-        "scope":
-            comp_command: >
-                    pip install --user .
-            clean_command:
-                    pip uninstall scope-coupler
-            choose_version:
-                dev:
-                    git-repository: "https://gitlab.awi.de/pgierz/scope.git"
-            available_versions:
-                    - "dev"
-        "recom":
-                git-repository: "gitlab.dkrz.de/modular_esm/recom.git"
-                branch: "modular"
-                destination: "recom"
-                available_versions:
-                        - "2.0"
-                comp_command: "${defaults.comp_command}"
-                clean_command: "${defaults.clean_command}"
-
-        "rnfmap":
-                install_bins: "bin/rnfmap.exe"
-                comp_command: "rm -rf bin; mkdir bin; cd src; make"
-                clean_command: "rm -rf bin; cd src; make clean"
-                available_versions:
-                        - "ec-earth"
-                        - "focioifs"
-                git-repository: "https://gitlab.dkrz.de/ec-earth/runoff-mapper.git"
-                choose_version:
-                        "ec-earth":
-                                branch: "esm-tools"
-                        "focioifs":
-                                branch: "esm-tools-focioifs"
-
-        "vilma":
-                git-repository: "gitlab.dkrz.de/modular_esm/vilma.git vilma_1d"
-                available_versions:
-                        - "1d"
-                comp_command: "${defaults.comp_command}"
-                clean_command: "${defaults.clean_command}"
-
-        "xios":
-                install_bins: "bin/xios_server.exe"
-                available_versions:
-                        - "2.0_r982"
-                        - "ogcm"
-                git-repository: "https://gitlab.dkrz.de/foci/src/xios.git"
-                branch: "esm-tools"
-                comp_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile} --netcdf_lib netcdf4_par --full --job 24"
-                clean_command: "rm -rf bin lib obj ppsrc"
-                choose_version:
-                        "ogcm":
-                                compile_command: "export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile} --netcdf_lib netcdf4_par --full --job 24"
-                        "2.0_r982":
-                                nothing: much
-        "yac":
-                git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"
-                available_versions:
-                        - "1.5.4"
-                #conf_command: 'autoreconf -iv; ./configure CC=mpiicc FC=mpiifort FCFLAGS="-fpp -g -O0" CFLAGS="-O0 -g" LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
-                conf_command: 'autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules'
-                comp_command: "make"
-                clean_command: "make clean"
-
+  amip:
+    clean_command: |-
+      rm -rf bin; cd src; make clean
+    comp_command: |-
+      mkdir bin; cd src; make
+    git-repository: "gitlab.dkrz.de/ec-earth/amip-forcing.git"
+  echam:
+    available_versions:
+    - 6.3.04p1-esm-interface-yac
+    - 6.3.05p2
+    - 6.3.05p2-foci
+    - 6.3.02p4
+    - 6.3.04p1-esm-interface
+    - 6.3.05p2-concurrent_radiation
+    - 6.3.04p1-paleodyn
+    - 6.3.04p1
+    branch: "${echam.version}"
+    choose_version:
+      6.3.02p4:
+        install_bins: "src/bin/echam6"
+      6.3.04p1-esm-interface:
+        branch: "using_esm_interfaces"
+        destination: "echam-6.3.04p1"
+        git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+      6.3.04p1-esm-interface-yac:
+        branch: "using_esm_interfaces_yac"
+        destination: "echam-6.3.04p1"
+        git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+      6.3.04p1-paleodyn:
+        branch: "paleodyn"
+        destination: "echam-6.3.04p1"
+        git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+      6.3.05p2:
+        branch: "esm-tools"
+        git-repository: "https://gitlab.dkrz.de/foci/src/echam.git"
+      6.3.05p2-concurrent_radiation:
+        branch: "concurrent_radiation"
+        clean_command: |-
+          rm -rf src/echam/bin; make clean
+        comp_command: |-
+          make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+        conf_command: |-
+          export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel INSTALL='/usr/bin/install -p'
+        git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
+      6.3.05p2-foci:
+        branch: "esm-tools"
+        git-repository: "https://git.geomar.de/foci/src/echam.git"
+      6.3.05p2-wiso:
+        branch: "wiso"
+        clean_command: "make clean"
+        comp_command: |-
+          make; make install
+        conf_command: "./configure"
+    clean_command: "${defaults.clean_command}"
+    comp_command: "${defaults.comp_command}"
+    git-repository: "https://gitlab.dkrz.de/modular_esm/echam6.git"
+    install_bins: "src/echam/bin/echam6"
+  esm-interface:
+    available_versions:
+    - '1.0'
+    - yac
+    choose_version:
+      '1.0':
+        branch: "dev_prototype_awicm"
+        comp_command: |-
+          mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+      yac:
+        branch: "include_yac"
+        comp_command: |-
+          mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+    comp_command: "${default.comp_command}"
+    destination: "esm-interface"
+    git-repository: "https://gitlab.dkrz.de/modular_esm/esm-interfaces.git"
+  fesom:
+    available_versions:
+    - 2.0-o
+    - 2.0-esm-interface
+    - '1.4'
+    - 2.0-esm-interface-yac
+    - 2.0-paleodyn
+    - '2.0'
+    choose_version:
+      '1.4':
+        git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
+        install_bins: "bin/fesom"
+      '2.0':
+        branch: "2.0.2"
+        git-repository:
+        - https://gitlab.dkrz.de/FESOM/fesom2.git
+        - github.com/FESOM/fesom2.git
+        install_bins: "bin/fesom.x"
+      2.0-esm-interface:
+        branch: "fesom2_using_esm-interface"
+        destination: "fesom-2.0"
+        git-repository:
+        - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
+        install_bins: "bin/fesom.x"
+      2.0-esm-interface-yac:
+        branch: "using_esm_interfaces_yac"
+        destination: "fesom-2.0"
+        git-repository:
+        - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
+        install_bins: "bin/fesom.x"
+      2.0-o:
+        branch: "oifs-deck"
+        git-repository:
+        - https://gitlab.dkrz.de/FESOM/fesom2.git
+        - github.com/FESOM/fesom2.git
+        install_bins: "bin/fesom.x"
+      2.0-paleodyn:
+        branch: "paleodyn_frozen"
+        destination: "fesom-2.0"
+        git-repository:
+        - https://gitlab.dkrz.de/FESOM/fesom2.git
+        - github.com/FESOM/fesom2.git
+        install_bins: "bin/fesom.x"
+    clean_command: "${defaults.clean_command}"
+    comp_command: |-
+      mkdir -p build; cd build; cmake ..;   make install
+  fesom_mesh_part:
+    available_versions:
+    - '1.4'
+    - '2.0'
+    choose_version:
+      1.4:
+        git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
+      2.0:
+        branch: "2.0.2"
+        git-repository:
+        - https://gitlab.dkrz.de/FESOM/fesom2.git
+        - github.com/FESOM/fesom2.git
+      '1.4':
+        git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
+        install_bins: "mesh_part/build/fesom.x.ini"
+      '2.0':
+        branch: "2.0.2"
+        git-repository:
+        - https://gitlab.dkrz.de/FESOM/fesom2.git
+        - github.com/FESOM/fesom2.git
+        install_bins: "mesh_part/build/fesom_ini"
+    clean_command: "rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt"
+    comp_command: |-
+      cd mesh_part; mkdir build -p; cd build; cmake ..; make install -j `nproc --all`
+    install_bins: "bin/fesom.x.ini"
+  icon:
+    available_versions:
+    - 2.1.0
+    - 2.3.0-nwp5
+    - 2.4.0
+    branch: "${icon.version}"
+    clean_command: "make distclean"
+    comp_command: "make -j `nproc --all"
+    conf_command: "./configure --with-fortran=gcc --with-openmp --with-grib_api"
+    git-repository: "gitlab.dkrz.de/modular_esm/ICON-ATM.git"
+  metos3d:
+    clean_command: "${defaults.clean_command}"
+    comp_command: "${defaults.comp_command}"
+    git-repository: "https://github.com/metos3d/metos3d.git"
+    git-subrepositories:
+    - https://github.com/metos3d/simpack.git
+    - https://github.com/metos3d/model.git
+  metos3d-data:
+    comp_command: |-
+      cd data/data; gunzip -c TMM.tar.gz > TMM.tar; tar xf TMM.tar; rm -f TMM.tar
+    git-repository: "https://github.com/metos3d/data.git"
+  mpiom:
+    available_versions:
+    - 1.6.2p3
+    - 1.6.3
+    - 1.6.3p2
+    - 1.6.2p3-coupled
+    - 1.6.3-coupled
+    - 1.6.3p2-coupled
+    choose_version:
+      1.6.2p3:
+        branch: "1.6.2p3"
+      1.6.2p3-coupled:
+        branch: "1.6.2p3"
+        conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct\
+          \ --enable-HAMOCC"
+      1.6.3:
+        branch: "1.6.3"
+      1.6.3-coupled:
+        branch: "1.6.3"
+        conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct\
+          \ --enable-HAMOCC"
+      1.6.3p2:
+        branch: "1.6.3p2"
+      1.6.3p2-coupled:
+        branch: "1.6.3p2"
+        conf_command: "./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct\
+          \ --enable-HAMOCC"
+    clean_command: "make clean"
+    comp_command: "make"
+    conf_command: "./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC"
+    git-repository: "https://gitlab.dkrz.de/modular_esm/mpiom.git"
+    install_bins: "bin/mpiom.x"
+  nemo:
+    available_versions:
+    - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    - 3.6-ogcm
+    - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+    - ORCA05_LIM2_KCM_AOW
+    - GYRE_XIOS
+    - 3.6foci
+    branch: "esm-tools"
+    choose_nemo.version:
+      3.6-ogcm:
+        grid: "GYRE_XIOS"
+      3.6foci:
+        git-repository: "https://gitlab.dkrz.de/foci/src/nemo.git"
+        grid: "ORCA05_LIM2_KCM_AOW"
+      GYRE_XIOS:
+        requires:
+        - xios-2.0_r982_ogcm
+        - nemobasemodel-3.6ogcm
+      ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+        branch: "esm-tools"
+        destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
+        git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
+      ORCA05_LIM2_KCM_AOW:
+        branch: "master"
+        destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
+        git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
+      ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+        branch: "esm-tools"
+        destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
+        git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
+    clean_command: |-
+      cd CONFIG; ./makenemo -n ${nemo.grid} clean
+    comp_command: |-
+      export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; ./makenemo -n ${grid} -m ${computer.nemoarchfile} -j 24
+    destination: "nemo-3.6"
+    git-repository: "https://gitlab.dkrz.de/foci/src/NEMOGCM.git"
+    install_bins: "CONFIG/${nemo.grid}/BLD/bin/nemo.exe"
+    requires:
+    - xios-2.0_r982
+    - nemobasemodel-3.6foci
+    version: "3.6-ogcm"
+  nemobasemodel:
+    available_versions:
+    - 3.6.3.x
+    - 3.6ogcm
+    - 3.6foci
+    choose_nemobasemodel.version:
+      3.6.3.x:
+        archfile: "ESMTOOLS_generic_intel"
+        branch: "release-3.6.3.x"
+        git-repository: "https://git.geomar.de/NEMO/NEMOGCM.git"
+      3.6foci:
+        archfile: "ESMTOOLS_generic_oasis_intel"
+        branch: "esm-tools"
+        git-repository: "https://git.geomar.de/foci/src/nemo.git"
+      3.6ogcm:
+        archfile: "ESMTOOLS_generic_intel"
+        branch: "esm-tools"
+        git-repository: "https://git.geomar.de/foci/src/nemo.git"
+    clean_command: |-
+      cd CONFIG; ./makenemo -n ${nemo.version} clean
+    comp_command: |-
+      export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe ${nemo.version}/BLD/bin/oceanx
+    destination: "nemo-${version}"
+    git-repository: "None"
+    install_bins: "CONFIG/${nemo.version}/BLD/bin/oceanx"
+  oasis3-mct:
+    available_versions:
+    - foci
+    - fociagrif
+    - ec-earth
+    - '2.8'
+    - '3.0'
+    - '4.0'
+    choose_version:
+      '2.8':
+        branch: "2.8"
+      '3.0':
+        branch: "3.0"
+      '4.0':
+        branch: "4.0"
+      ec-earth:
+        branch: "ec-earth-version"
+      foci:
+        branch: "oasis3mct2.8-foci"
+        git-repository: "https://git.geomar.de/foci/src/oasis3mct.git"
+      fociagrif:
+        branch: "fociagrif"
+        git-repository: "https://git.geomar.de/foci/src/oasis3-mct4.git"
+    clean_command: "${defaults.clean_command}"
+    comp_command: |
+      mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a ../lib;
+    destination: "oasis"
+    git-repository: "https://gitlab.dkrz.de/modular_esm/oasis3-mct.git"
+    install_libs:
+    - build/lib/psmile/libpsmile.a
+    - build/lib/psmile/mct/libmct.a
+    - build/lib/psmile/mct/mpeu/libmpeu.a
+    - build/lib/psmile/scrip/libscrip.a
+  oifs:
+    available_versions:
+    - 43r3-awi
+    - 43r3
+    - 40r1-foci
+    - 43r3-foci
+    - 40r1-agcm
+    - 40r1
+    choose_version:
+      40r1:
+        branch: "foci_conserv"
+      40r1-agcm:
+        compile_command: |-
+          export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg
+      40r1-foci:
+        branch: "foci_conserv"
+        comp_command: |-
+          cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
+        destination: "40r1"
+      43r3:
+        branch: "oifs-deck"
+        comp_command: |-
+          export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+        git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+      43r3-awi:
+        branch: "master"
+        comp_command: |-
+          export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+        git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+      43r3-foci:
+        branch: "oifs-foci"
+        comp_command: |-
+          export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+        git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
+    clean_command: "rm -rf make/esm"
+    comp_command: |-
+      cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+    git-repository: "https://gitlab.dkrz.de/modular_esm/oifs-40r1.git"
+    install_bins: "make/esm/oifs/bin/master.exe"
+    requires:
+    - oasis3-mct-4.0
+  pism:
+    available_versions:
+    - snowflake0.7
+    - snowflake1.0
+    - github1.1.4
+    - github1.2
+    - index1.1
+    choose_version:
+      github1.1.4:
+        branch: "v1.1.4"
+        git-repository: "https://github.com/pism/pism.git"
+      github1.2:
+        branch: "v1.2"
+        git-repository: "https://github.com/pism/pism.git"
+      index1.1:
+        branch: "Index_dev"
+        git-repository: "https://github.com/sebhinck/pism-pub"
+      snowflake0.7:
+        branch: "awi0.7-dev"
+        git-repository: "swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git"
+      snowflake1.0:
+        branch: "stable1.0-awi-dev"
+        git-repository: "swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git"
+    clean_command: "${defaults.clean_command}"
+    comp_command: |
+      mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -f $(pwd)/..); cmake \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DPism_BUILD_TYPE=RelWithDebInfo \
+              -DCMAKE_CXX_COMPILER=$CXX \
+              -DCMAKE_CXX_FLAGS="-std=c++11 -fp-model precise -no-fast-transcendentals" \
+              -DCMAKE_C_COMPILER=$CC  \
+              -DCMAKE_C_FLAGS="-fp-model precise -no-fast-transcendentals" \
+              -DPETSC_EXECUTABLE_RUNS:BOOL=ON \
+              -DMPI_C_DIR="$I_MPI_ROOT" \
+              -DPism_USE_JANSSON:BOOL=NO \
+              -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \
+              -DPism_USE_PARALLEL_HDF5:BOOL=OFF \
+              -DPism_USE_PROJ4:BOOL=YES \
+              -DPism_BUILD_EXTRA_EXECS:BOOL=ON \
+              ..; make -j4; make install;
+  recom:
+    available_versions:
+    - '2.0'
+    branch: "modular"
+    clean_command: "${defaults.clean_command}"
+    comp_command: "${defaults.comp_command}"
+    destination: "recom"
+    git-repository: "gitlab.dkrz.de/modular_esm/recom.git"
+  rnfmap:
+    available_versions:
+    - ec-earth
+    - focioifs
+    - focioifs1
+    choose_version:
+      ec-earth:
+        branch: "esm-tools"
+      focioifs:
+        branch: "esm-tools-focioifs"
+      focioifs1:
+        branch: "esm-tools-focioifs"
+    clean_command: |-
+      rm -rf bin; cd src; make clean
+    comp_command: |-
+      rm -rf bin; mkdir bin; cd src; make
+    git-repository: "https://gitlab.dkrz.de/ec-earth/runoff-mapper.git"
+    install_bins: "bin/rnfmap.exe"
+  scope:
+    available_versions:
+    - dev
+    choose_version:
+      dev:
+        git-repository: "https://gitlab.awi.de/pgierz/scope.git"
+    clean_command: "pip uninstall scope-coupler"
+    comp_command: |
+      pip install --user .
+  vilma:
+    available_versions:
+    - 1d
+    clean_command: "${defaults.clean_command}"
+    comp_command: "${defaults.comp_command}"
+    git-repository: "gitlab.dkrz.de/modular_esm/vilma.git vilma_1d"
+  xios:
+    archfile: "ESMTOOLS_generic_intel"
+    available_versions:
+    - ogcm
+    - 2.0_r982_ogcm
+    - 2.0_r982
+    branch: "esm-tools"
+    choose_version:
+      2.0_r982:
+        archfile: "ESMTOOLS_generic_oasis_intel"
+        nothing: "much"
+        use_oasis: "--use_oasis oasis3_mct"
+      2.0_r982_ogcm:
+        archfile: "ESMTOOLS_generic_intel"
+        use_oasis: ""
+      ogcm:
+        compile_command: |-
+          export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${computer.xiosarchfile} --netcdf_lib netcdf4_par --full --job 24
+    clean_command: "rm -rf bin lib obj ppsrc"
+    comp_command: |-
+      export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+    destination: "xios-${version}"
+    git-repository: "https://git.geomar.de/foci/src/xios.git"
+    install_bins: "bin/xios.x"
+    use_oasis: ""
+  yac:
+    available_versions:
+    - 1.5.4
+    clean_command: "make clean"
+    comp_command: "make"
+    conf_command: |-
+      autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules
+    git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"
 couplings:
-        "fesom-1.4+echam-6.3.04p1-paleodyn":
-                components:
-                        - "echam-6.3.04p1-paleodyn"
-                        - "fesom-1.4"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-        "fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev":
-                components:
-                        - "echam-6.3.04p1-paleodyn"
-                        - "fesom-1.4"
-                        - "oasis3-mct-2.8"
-                        - "pism-github1.2"
-                        - "scope-dev"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-1.4+echam-6.3.04p1":
-                components:
-                        - "echam-6.3.04p1"
-                        - "fesom-1.4"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-1.4+echam-6.3.05p2-concurrent_radiation":
-                components:
-                        - "echam-6.3.05p2-concurrent_radiation"
-                        - "fesom-1.4"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux"
-
-        "fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn":
-                components:
-                        - "echam-6.3.04p1-paleodyn"
-                        - "fesom-2.0-paleodyn"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev":
-                components:
-                        - "echam-6.3.04p1-paleodyn"
-                        - "fesom-2.0-paleodyn"
-                        - "oasis3-mct-2.8"
-                        - "pism-github1.2"
-                        - "scope-dev"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-2.0+echam-6.3.04p1":
-                components:
-                        - "echam-6.3.04p1"
-                        - "fesom-2.0"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface":
-                components:
-                        - "oasis3-mct-2.8"
-                        - "esm-interface-1.0"
-                        - "echam-6.3.04p1-esm-interface"
-                        - "fesom-2.0-esm-interface"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac":
-                components:
-                        - "oasis3-mct-2.8"
-                        - "yac-1.5.4"
-                        - "esm-interface-yac"
-                        - "echam-6.3.04p1-esm-interface-yac"
-                        - "fesom-2.0-esm-interface-yac"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-
-        "fesom-2.0+echam-6.3.05p2-concurrent_radiation":
-                components:
-                        - "echam-6.3.05p2-concurrent_radiation"
-                        - "fesom-2.0"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux"
-
-        "fesom-2.0+oifs-43r3-awi":
-                components:
-                        - "oifs-43r3-awi"
-                        - "fesom-2.0-o"
-                        - "oasis3-mct-3.0"
-                        - "rnfmap-ec-earth"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt"
-                        - "sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt"
-
-        "fesom-2.0+oifs-40r1":
-                components:
-                        - "oifs-40r1"
-                        - "fesom-2.0"
-                        - "oasis3-mct-ec-earth"
-
-        "fesom-1.4+recom":
-                components:
-                        - "fesom-1.4"
-                        - "recom-2.0"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt"
-
-        "fesom-2.0+recom":
-                components:
-                        - "fesom-2.0"
-                        - "recom-2.0"
-                coupling_changes:
-                        - "sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-                        - "sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-2.0/CMakeLists.txt"
-
-        "nemo-3.6foci+echam-6.3.05p2":
-                components:
-                        - "echam-6.3.05p2"
-                        - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
-                coupling_changes:
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
-
-        "nemo-3.6foci+oifs40r1-foci":
-                components:
-                        - "oifs-40r1-foci"
-                        - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-
-        "nemo-3.6foci+oifs40r1-foci-o3":
-                components:
-                        - "oifs-40r1-foci"
-                        - "nemo-3.6foci"
-                        - "oasis3-mct-ec-earth"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-
-        "nemo-3.6foci+oifs40r1":
-                components:
-                        - "oifs-40r1"
-                        - "nemo-3.6foci"
-                        - "oasis3-mct-foci"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-
-        "nemo-3.6foci+oifs40r1-foci-o4":
-                components:
-                        - "oifs-40r1-foci"
-                        - "nemo-3.6foci"
-                        - "oasis3-mct-4.0"
-                        - "rnfmap-focioifs"
-                prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
-
-        "mpiom-1.6.2p3+echam-6.3.02p4":
-                components:
-                        - "echam-6.3.02p4"
-                        - "mpiom-1.6.2p3-coupled"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt"
-                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.2p3-coupled/configure"
-
-        "mpiom-1.6.3+echam-6.3.04p1":
-                components:
-                        - "echam-6.3.04p1"
-                        - "mpiom-1.6.3-coupled"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt"
-                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3-coupled/configure"
-
-        "mpiom-1.6.3p2+echam-6.3.05p2":
-                components:
-                        - "echam-6.3.05p2"
-                        - "mpiom-1.6.3p2-coupled"
-                        - "oasis3-mct-2.8"
-                coupling_changes:
-                        - "sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt"
-                        - "sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3p2-coupled/configure"
-
-        "pism-snowflake1.0+echam-6.3.04p1":
-                components:
-                        - "echam-6.3.04p1"
-                        - "pism-snowflake1.0"
-                          # - "scope"
-
-        "pism-snowflake1.0+fesom-1.4":
-                components:
-                        - "fesom-1.4"
-                        - "pism-snowflake1.0"
-                          #- "scope"
-
-        "oifs-40r1+amip":
-                components:
-                        - "oifs-40r1"
-                        - "amip"
-                        - "oasis3-mct-4.0"
-                coupling_changes:
-                        - "sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90"
-                        - "sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90"
-
-        "oifs-40r1+oasis":
-                components:
-                        - "oifs-40r1"
-                        - "oasis3-mct-4.0"
-                coupling_changes:
-                        - "sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90"
-                        - "sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90"
-
-        "oifs-43r3+oasis":
-                components:
-                        - "oifs-43r3"
-                        - "oasis3-mct-4.0"
-
-
+  fesom-1.4+echam-6.3.04p1:
+    components:
+    - echam-6.3.04p1
+    - fesom-1.4
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-1.4+echam-6.3.04p1-paleodyn:
+    components:
+    - echam-6.3.04p1-paleodyn
+    - fesom-1.4
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev:
+    components:
+    - echam-6.3.04p1-paleodyn
+    - fesom-1.4
+    - oasis3-mct-2.8
+    - pism-github1.2
+    - scope-dev
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-1.4+echam-6.3.05p2-concurrent_radiation:
+    components:
+    - echam-6.3.05p2-concurrent_radiation
+    - fesom-1.4
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation/configure.ac
+  fesom-1.4+recom:
+    components:
+    - fesom-1.4
+    - recom-2.0
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+  fesom-2.0+echam-6.3.04p1:
+    components:
+    - echam-6.3.04p1
+    - fesom-2.0
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-2.0+echam-6.3.05p2-concurrent_radiation:
+    components:
+    - echam-6.3.05p2-concurrent_radiation
+    - fesom-2.0
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation/config/mh-linux
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation/configure.ac
+  fesom-2.0+oifs-40r1:
+    components:
+    - oifs-40r1
+    - fesom-2.0
+    - oasis3-mct-ec-earth
+  fesom-2.0+oifs-43r3-awi:
+    components:
+    - rnfmap-ec-earth
+    - oifs-43r3-awi
+    - fesom-2.0-o
+    - oasis3-mct-3.0
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
+    - sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
+  fesom-2.0+recom:
+    components:
+    - fesom-2.0
+    - recom-2.0
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+  fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface:
+    components:
+    - esm-interface-1.0
+    - oasis3-mct-2.8
+    - fesom-2.0-esm-interface
+    - echam-6.3.04p1-esm-interface
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac:
+    components:
+    - oasis3-mct-2.8
+    - yac-1.5.4
+    - esm-interface-yac
+    - echam-6.3.04p1-esm-interface-yac
+    - fesom-2.0-esm-interface-yac
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn:
+    components:
+    - echam-6.3.04p1-paleodyn
+    - fesom-2.0-paleodyn
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev:
+    components:
+    - echam-6.3.04p1-paleodyn
+    - fesom-2.0-paleodyn
+    - oasis3-mct-2.8
+    - pism-github1.2
+    - scope-dev
+    coupling_changes:
+    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  mpiom-1.6.2p3+echam-6.3.02p4:
+    components:
+    - echam-6.3.02p4
+    - mpiom-1.6.2p3-coupled
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt
+    - sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.2p3-coupled/configure
+  mpiom-1.6.3+echam-6.3.04p1:
+    components:
+    - echam-6.3.04p1
+    - mpiom-1.6.3-coupled
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+    - sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3-coupled/configure
+  mpiom-1.6.3p2+echam-6.3.05p2:
+    components:
+    - echam-6.3.05p2
+    - mpiom-1.6.3p2-coupled
+    - oasis3-mct-2.8
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt
+    - sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.3p2-coupled/configure
+  nemo-3.6foci+echam-6.3.05p2:
+    components:
+    - echam-6.3.05p2
+    - nemo-3.6foci
+    - oasis3-mct-foci
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/CMakeLists.txt
+  nemo-3.6foci+oifs40r1:
+    components:
+    - oifs-40r1
+    - nemo-3.6foci
+    - oasis3-mct-foci
+    - rnfmap-focioifs
+    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
+  nemo-3.6foci+oifs40r1-foci:
+    components:
+    - oifs-40r1-foci
+    - nemo-3.6foci
+    - oasis3-mct-foci
+    - rnfmap-focioifs
+    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
+  nemo-3.6foci+oifs40r1-foci-o3:
+    components:
+    - oifs-40r1-foci
+    - nemo-3.6foci
+    - oasis3-mct-ec-earth
+    - rnfmap-focioifs
+    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
+  nemo-3.6foci+oifs40r1-foci-o4:
+    components:
+    - oifs-40r1-foci
+    - nemo-3.6foci
+    - oasis3-mct-4.0
+    - rnfmap-focioifs
+    prepend_compile_command: "export FOCI_TOPLEVEL=${setup_dir}"
+  nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci:
+    components:
+    - oifs-43r3-foci
+    - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+    - oasis3-mct-fociagrif
+    - rnfmap-focioifs1
+  nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci:
+    components:
+    - echam-6.3.05p2-foci
+    - nemo-ORCA05_LIM2_KCM_AOW
+    coupling_changes:
+    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-foci/CMakeLists.txt
+  nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci:
+    components:
+    - oifs-43r3-foci
+    - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    - oasis3-mct-fociagrif
+    - rnfmap-focioifs1
+  oifs-40r1+amip:
+    components:
+    - oifs-40r1
+    - amip
+    - oasis3-mct-4.0
+    coupling_changes:
+    - sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90
+    - sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90
+  oifs-40r1+oasis:
+    components:
+    - oifs-40r1
+    - oasis3-mct-4.0
+    coupling_changes:
+    - sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90
+    - sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90
+  oifs-43r3+oasis:
+    components:
+    - oifs-43r3
+    - oasis3-mct-4.0
+  pism-snowflake1.0+echam-6.3.04p1:
+    components:
+    - echam-6.3.04p1
+    - pism-snowflake1.0
+  pism-snowflake1.0+fesom-1.4:
+    components:
+    - fesom-1.4
+    - pism-snowflake1.0
+defaults:
+  clean_command: "rm -rf build CMakeCache.txt"
+  comp_command: |-
+    mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+esm-software:
+  esm-tools:
+    available_versions:
+    - r3
+    git-repository: "gitlab.dkrz.de/esm-tools/esm-tools.git"
+  esm-usermanual:
+    available_versions:
+    - r3
+    git-repository: "gitlab.dkrz.de/esm-tools/esm-usermanual.git"
+  esm-workshop:
+    available_versions:
+    - Mai 2019
+    git-repository: "gitlab.dkrz.de/esm-tools/esm-workshop.git"
+  git-workshop:
+    available_versions:
+    - Mai 2019
+    git-repository: "gitlab.dkrz.de/esm-tools/git-workshop.git"
 setups:
-        awiesm:
-                available_versions:
-                        - "1.1"
-                        - "1.2"
-                        - "2.1"
-                        - "2.2"
-
-                choose_version:
-                        "1.1":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.04p1-paleodyn"
-                        "1.2":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev"
-                        "2.1":
-                                couplings:
-                                        - "fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn"
-                        "2.2":
-                                couplings:
-                                        - "fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev"
-        awicm:
-                available_versions:
-                        - "1.0"
-                        - "CMIP6"
-                        - "2.0"
-                        - "3.0"
-                        - "3.1"
-                        - "2.0-esm-interface"
-                        - "2.0-esm-interface-yac"
-
-                choose_version:
-                        "1.0":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.04p1"
-                        "CMIP6":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.04p1"
-                        "2.0":
-                                couplings:
-                                        - "fesom-2.0+echam-6.3.04p1"
-                        "3.0":
-                                couplings:
-                                        - "fesom-2.0+oifs-40r1"
-                        "3.1":
-                                couplings:
-                                        - "fesom-2.0+oifs-43r3-awi"
-                        "2.0-esm-interface":
-                                couplings:
-                                        - "fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface"
-                        "2.0-esm-interface-yac":
-                                couplings:
-                                        - "fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac"
-
-        awicmcr:
-                available_versions:
-                        - "1.0"
-                        - "CMIP6"
-                        - "2.0"
-                choose_version:
-                        "1.0":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.05p2-concurrent_radiation"
-                        "CMIP6":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.05p2-concurrent_radiation"
-                        "2.0":
-                                couplings:
-                                        - "fesom-2.0+echam-6.3.05p2-concurrent_radiation"
-
-        awicm-recom:
-                available_versions:
-                        - "1.0"
-                choose_version:
-                        "1.0":
-                                couplings:
-                                        - "fesom-1.4+echam-6.3.04p1"
-                                        - "fesom-1.4+recom"
-
-        fesom-recom:
-                available_versions:
-                        - "1.4"
-                        - "2.0"
-                choose_version:
-                        "1.0":
-                                couplings:
-                                        - "fesom-1.4+recom"
-                        "2.0":
-                                couplings:
-                                        - "fesom-2.0+recom"
-        "foci":
-                available_versions:
-                        - "1.0"
-                choose_version:
-                        "1.0":
-                                couplings:
-                                        - "nemo-3.6foci+echam-6.3.05p2"
-
-        focioifs:
-                available_versions:
-                        - vvl
-                        - vvl-o3
-                        - vvl-o3-awi3
-                        - vvl-o4
-                choose_version:
-                        vvl:
-                                couplings:
-                                        - "nemo-3.6foci+oifs40r1-foci"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap:
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: foci
-                        vvl-o3:
-                                couplings:
-                                        - "nemo-3.6foci+oifs40r1-foci-o3"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap:
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: ec-earth
-                        vvl-o3-awi3:
-                                couplings:
-                                        - "nemo-3.6foci+oifs40r1"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1
-                                rnfmap:
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: foci
-                        vvl-o4:
-                                couplings:
-                                        - "nemo-3.6foci+oifs40r1-foci-o4"
-                                nemo:
-                                        version: 3.6foci
-                                oifs:
-                                        version: 40r1-foci
-                                rnfmap:
-                                        version: focioifs
-                                oasis3-mct:
-                                        version: "4.0"
-
-        mpiesm:
-                available_versions:
-                        - "1.2.00p4"
-                        - "1.2.01"
-                        - "1.2.01p1"
-
-                choose_version:
-                        "1.2.00p4":
-                                couplings:
-                                        - "mpiom-1.6.2p3+echam-6.3.02p4"
-                        "1.2.01":
-                                couplings:
-                                        - "mpiom-1.6.3+echam-6.3.04p1"
-                        "1.2.01p1":
-                                couplings:
-                                        - "mpiom-1.6.3p2+echam-6.3.05p2"
-
-        oifsamip:
-                couplings:
-                        - "oifs-40r1+amip"
-
-        oifscl:
-                available_versions:
-                        - "40r1"
-                        - "43r3"
-                choose_version:
-                        40r1:
-                                couplings:
-                                        - "oifs-40r1+oasis"
-                        43r3:
-                                couplings:
-                                        - "oifs-43r3+oasis"
+  awicm:
+    available_versions:
+    - '1.0'
+    - CMIP6
+    - '2.0'
+    - '3.0'
+    - '3.1'
+    - 2.0-esm-interface
+    - 2.0-esm-interface-yac
+    choose_version:
+      '1.0':
+        couplings:
+        - fesom-1.4+echam-6.3.04p1
+      '2.0':
+        couplings:
+        - fesom-2.0+echam-6.3.04p1
+      2.0-esm-interface:
+        couplings:
+        - fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface
+      2.0-esm-interface-yac:
+        couplings:
+        - fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac
+      '3.0':
+        couplings:
+        - fesom-2.0+oifs-40r1
+      '3.1':
+        couplings:
+        - fesom-2.0+oifs-43r3-awi
+      CMIP6:
+        couplings:
+        - fesom-1.4+echam-6.3.04p1
+  awicm-recom:
+    available_versions:
+    - '1.0'
+    choose_version:
+      '1.0':
+        couplings:
+        - fesom-1.4+echam-6.3.04p1
+        - fesom-1.4+recom
+  awicmcr:
+    available_versions:
+    - '1.0'
+    - CMIP6
+    - '2.0'
+    choose_version:
+      '1.0':
+        couplings:
+        - fesom-1.4+echam-6.3.05p2-concurrent_radiation
+      '2.0':
+        couplings:
+        - fesom-2.0+echam-6.3.05p2-concurrent_radiation
+      CMIP6:
+        couplings:
+        - fesom-1.4+echam-6.3.05p2-concurrent_radiation
+  awiesm:
+    available_versions:
+    - '1.1'
+    - '1.2'
+    - '2.1'
+    - '2.2'
+    choose_version:
+      '1.1':
+        couplings:
+        - fesom-1.4+echam-6.3.04p1-paleodyn
+      '1.2':
+        couplings:
+        - fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
+      '2.1':
+        couplings:
+        - fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn
+      '2.2':
+        couplings:
+        - fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
+  fesom-recom:
+    available_versions:
+    - '1.4'
+    - '2.0'
+    choose_version:
+      '1.0':
+        couplings:
+        - fesom-1.4+recom
+      '2.0':
+        couplings:
+        - fesom-2.0+recom
+  foci:
+    available_versions:
+    - default
+    - '1.0'
+    choose_version:
+      '1.0':
+        couplings:
+        - nemo-3.6foci+echam-6.3.05p2
+      default:
+        couplings:
+        - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+  focioifs:
+    available_versions:
+    - vvl-o3
+    - vvl-o3-awi3
+    - vvl-o4
+    - agrif
+    - vvl
+    - '2.0'
+    choose_version:
+      '2.0':
+        couplings:
+        - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
+      agrif:
+        couplings:
+        - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci
+      vvl:
+        couplings:
+        - nemo-3.6foci+oifs40r1-foci
+        nemo:
+          version: "3.6foci"
+        oasis3-mct:
+          version: "foci"
+        oifs:
+          version: "40r1-foci"
+        rnfmap:
+          version: "focioifs"
+      vvl-o3:
+        couplings:
+        - nemo-3.6foci+oifs40r1-foci-o3
+        nemo:
+          version: "3.6foci"
+        oasis3-mct:
+          version: "ec-earth"
+        oifs:
+          version: "40r1-foci"
+        rnfmap:
+          version: "focioifs"
+      vvl-o3-awi3:
+        couplings:
+        - nemo-3.6foci+oifs40r1
+        nemo:
+          version: "3.6foci"
+        oasis3-mct:
+          version: "foci"
+        oifs:
+          version: "40r1"
+        rnfmap:
+          version: "focioifs"
+      vvl-o4:
+        couplings:
+        - nemo-3.6foci+oifs40r1-foci-o4
+        nemo:
+          version: "3.6foci"
+        oasis3-mct:
+          version: "4.0"
+        oifs:
+          version: "40r1-foci"
+        rnfmap:
+          version: "focioifs"
+  mpiesm:
+    available_versions:
+    - 1.2.00p4
+    - 1.2.01
+    - 1.2.01p1
+    choose_version:
+      1.2.00p4:
+        couplings:
+        - mpiom-1.6.2p3+echam-6.3.02p4
+      1.2.01:
+        couplings:
+        - mpiom-1.6.3+echam-6.3.04p1
+      1.2.01p1:
+        couplings:
+        - mpiom-1.6.3p2+echam-6.3.05p2
+  oifsamip:
+    couplings:
+    - oifs-40r1+amip
+  oifscl:
+    available_versions:
+    - 40r1
+    - 43r3
+    choose_version:
+      40r1:
+        couplings:
+        - oifs-40r1+oasis
+      43r3:
+        couplings:
+        - oifs-43r3+oasis

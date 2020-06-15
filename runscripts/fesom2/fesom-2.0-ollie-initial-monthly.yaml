@@ -2,7 +2,7 @@ general:
         setup_name: fesom
         compute_time: "00:08:00"
         initial_date: '2000-01-01'
-        final_date: '2000-03-31' 
+        final_date: '2000-03-31'
         base_dir: "/work/ollie/mandresm/esm_yaml_test/"
         nyear: 0
         nmonth: 1

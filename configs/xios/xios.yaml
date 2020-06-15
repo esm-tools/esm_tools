@@ -3,6 +3,8 @@
 #
 
 model: xios
+version: 2.0r982
+executable: xios.x
 
 metadata:
         Institute: IPSL and CEA
@@ -14,4 +16,21 @@ metadata:
                 Please make sure you have a licence to use XIOS. In case you are
                 unsure, please contact redmine...
 
-executable: xios_server.exe
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00
+
+config_files:
+        domain_def: domain_def
+        field_def: field_def
+        file_def: file_def
+        io_def: io_def
+
+config_sources:
+        domain_def: ${xml_dir}/domain_def.xml
+        field_def: ${xml_dir}/field_def.xml
+        file_def: ${xml_dir}/file_def.xml
+        io_def: ${xml_dir}/iodef.xml
+
+bin_sources:
+        server: ${bin_dir}/xios.x

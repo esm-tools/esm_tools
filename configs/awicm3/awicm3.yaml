@@ -50,7 +50,7 @@ echam:
 
 #########################################################################################
 
-                        
+
 jsbach:
         adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
@@ -68,7 +68,7 @@ jsbach:
 
 #########################################################################################
 
-        
+
 fesom2:
         choose_general.version:
                 2.0:
@@ -135,7 +135,7 @@ oasis3mct:
                 'atmo->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
         coupling_methods:
                 distwgt:
                         time_transformation: instant

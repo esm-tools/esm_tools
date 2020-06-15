@@ -41,30 +41,58 @@ echam:
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         ocean_resolution: "${fesom.resolution}"
+
         remove_forcing_files:
                 - sst
                 - sic
         version: "6.3.05p2-concurrent_radiation"
 
-# kh 20.03.20 parameter values may be superseded by section choose_computer.cores_per_node: ... nproca ...,
+# kh 20.03.20 parameter values below may be superseded by section choose_computer.cores_per_node: ... nproca ...,
 # or by section choose_version: ... nproca ..., ... in esm_tools/configs/echam/echam.yaml
         choose_general.resolution:
                 T63_CORE2:
-                       nproca: 24
-                       nprocb: 18
-                       nprocrad: 432
+                        nproca: 24
+                        nprocb: 18
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                       nprocrad: 432
+                        nprocar: 48
+                        nprocbr: 36
+
+                        npromar: 16
+                        lrad_async: true
+                        lrestart_from_old: false
+
                 T63_REF87K:
                         nproca: 24
                         nprocb: 18
-                        nprocrad: 432
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                       nprocrad: 432
+                        nprocar: 24
+                        nprocbr: 18
+
+                        npromar: 8
+                        lrad_async: true
+                        lrestart_from_old: false
+
                 T63_REF:
                         nproca: 24
                         nprocb: 18
-                        nprocrad: 432
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                       nprocrad: 432
+                        nprocar: 24
+                        nprocbr: 18
+
+                        npromar: 8
+                        lrad_async: true
+                        lrestart_from_old: false
+
 
 #########################################################################################
 
-                        
+
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
@@ -81,14 +109,14 @@ jsbach:
 
 #########################################################################################
 
-        
+
 fesom:
         choose_general.version:
-                1.1:
+                "1.1":
                         version: "1.4"
-                CMIP6:
+                "CMIP6":
                         version: "1.4"
-                2.0:
+                "2.0":
                         version: "2.0"
         choose_general.resolution:
                 T63_CORE2:
@@ -155,7 +183,7 @@ oasis3mct:
                 'atmo->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 distwgt:

@@ -1,0 +1,33 @@
+
+general:
+   setup_name: "foci"
+   #resolution: "T63_ORCA05"
+   compute_time: "00:05:00"
+   account: "bb0519"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nday: 1
+   base_dir: /work/bb0519/b350071/esm-tools-foci2-seb-wahl/foci-default/experiments
+   #lresume: False
+
+foci:
+   model_dir: /work/bb0519/b350071/esm-tools-foci2-seb-wahl/foci-default/
+
+# does not work
+computer:
+   mail_type: "FAIL"
+   mail_user: "swahl@geomar.de"
+
+echam:
+   resolution: "T63"
+   restart_rate: 1
+   restart_unit: "days"
+   nproca: 4
+   nprocb: 24
+
+nemo:
+   resolution: "ORCA05"
+   nproc: 24

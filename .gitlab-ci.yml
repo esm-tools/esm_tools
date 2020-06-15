@@ -14,7 +14,8 @@ after_script:
 install_tools:
   tags:
     - ubuntu
-    # TODO: Add ollie and mistral here once appropriate...
+    - mistral, xen
+    # TODO: Add ollie
   stage: build
   script:
     - git --version

@@ -1,0 +1,32 @@
+general:
+        setup_name: oifs
+        compute_time: "00:05:00"
+        account: "bb0519"
+        initial_date: "2008-01-01"
+        final_date: "2008-01-06"
+        model_dir: "/pf/b/b350090/esm-py/esm_tools/oifs-43r3/"
+        base_dir: "/work/bb0519/b350090/esm-experiments/"
+        nyear: 0
+        nmonth: 0
+        ndays: 5
+        restart_rate: 1
+        restart_unit: "months"
+
+oifs:
+        version: "43r3"
+        pool_dir: "/work/bb0519/foci_input2/"
+        input_dir: "/work/bb0519/foci_input2/OPENIFS43R3-TCO199/"
+        rtables_dir: "/work/bb0519/foci_input2/OPENIFS43R3_GENERAL/rtables/"
+        vtables_dir: "/work/bb0519/foci_input2/OPENIFS43R3_GENERAL/vtables/"
+        clim_dir: "/work/bb0519/foci_input2/OPENIFS43R3-TCO199/199_4/"
+        forcing_dir: "/work/bb0519/foci_input2/OPENIFS43R3_GENERAL/ifsdata/"
+        cmip5_data_dir: "/work/bb0519/foci_input2/OPENIFS40R1_GENERAL/cmip5_ghg/"
+        icmcl_dir: "/work/bb0519/foci_input2/OPENIFS43R3-TCO199/2008010100/"
+        icmcl_file: "ICMCLhaahINIT"
+        prepifs_expid: haah
+        prepifs_startdate: 20080101
+        res: TCO199
+        levels: L91
+        lresume: 0
+        post_processing: 0
+

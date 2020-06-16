@@ -50,8 +50,8 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
-    url="https://gitlab.awi.de/esm_tools/esm_tools",
-    version="4.0.4",
+    url="https://github.com/esm_tools/esm_tools",
+    version="4.1.2",
     zip_safe=False,
 )
 

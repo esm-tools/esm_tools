@@ -15,11 +15,11 @@ choose_jobtype:
                 partition: compute
         post:
                 partition: compute
-        compute: 
+        compute:
                 partition: compute
 
 
-choose_partition: 
+choose_partition:
         "compute":
                 cores_per_node: 48
 
@@ -30,7 +30,7 @@ module_actions:
         - "--force purge"
         - "load GCCcore/.8.3.0"
         - "load CMake/3.14.0"
-        - "load Intel/2019.5.281-GCC-8.3.0" 
+        - "load Intel/2019.5.281-GCC-8.3.0"
         - "load IntelMPI/2019.6.154"
         - "load imkl/2019.3.199"
         - "load netCDF/4.6.3"
@@ -40,12 +40,12 @@ module_actions:
         # PG: For PISM
         - "load PETSc/3.11.1"
         - "load NCO"
-        - "load FFTW/3.3.8" 
+        - "load FFTW/3.3.8"
 
 export_vars:
-        - "FC=mpiifort" 
+        - "FC=mpiifort"
         - "FCFLAGS=-free"
-        - "CC=mpiicc" 
+        - "CC=mpiicc"
         - "CXX=mpiicpc"
         - "NETCDF_DIR=$EBROOTNETCDF"
         - "NETCDFF_DIR=$EBROOTNETCDFMINFORTRAN"

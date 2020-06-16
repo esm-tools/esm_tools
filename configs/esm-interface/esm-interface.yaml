@@ -1,1 +1,8 @@
 model: esm-interface
+
+metadata:
+        Institute: Alfred Wegener Institute
+        Description: Coupling interface for a modular coupling approach of ESMs.
+        Authors: Nadine Wieters (nadine.wieters@awi.de)
+        Publications:
+        License:

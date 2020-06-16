@@ -1,0 +1,6 @@
+clean_command: ${defaults.clean_command}
+comp_command: ${defaults.comp_command}
+git-repository: https://github.com/metos3d/metos3d.git
+git-subrepositories:
+- https://github.com/metos3d/simpack.git
+- https://github.com/metos3d/model.git

@@ -15,7 +15,7 @@ display_kinds:
         - esm-software
 
 basic_infos:
-        "GITLAB_DKRZ_USER_NAME": 
+        "GITLAB_DKRZ_USER_NAME":
                 question: "User name on gitlab.dkrz.de"
                 default: "anonymous"
         "SWREPO_AWI_USER_NAME":

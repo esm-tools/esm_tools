@@ -1,0 +1,33 @@
+available_versions:
+- snowflake0.7
+- snowflake1.0
+- github1.1.4
+- github1.2
+- index1.1
+choose_version:
+  github1.1.4:
+    branch: v1.1.4
+    git-repository: https://github.com/pism/pism.git
+  github1.2:
+    branch: v1.2
+    git-repository: https://github.com/pism/pism.git
+  index1.1:
+    branch: Index_dev
+    git-repository: https://github.com/sebhinck/pism-pub
+  snowflake0.7:
+    branch: awi0.7-dev
+    git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
+  snowflake1.0:
+    branch: stable1.0-awi-dev
+    git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
+clean_command: ${defaults.clean_command}
+comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -f\
+  \ $(pwd)/..); cmake \\\n        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \\\n        -DCMAKE_BUILD_TYPE=RelWithDebInfo\
+  \ \\\n        -DPism_BUILD_TYPE=RelWithDebInfo \\\n        -DCMAKE_CXX_COMPILER=$CXX\
+  \ \\\n        -DCMAKE_CXX_FLAGS=\"-std=c++11 -fp-model precise -no-fast-transcendentals\"\
+  \ \\\n        -DCMAKE_C_COMPILER=$CC  \\\n        -DCMAKE_C_FLAGS=\"-fp-model precise\
+  \ -no-fast-transcendentals\" \\\n        -DPETSC_EXECUTABLE_RUNS:BOOL=ON \\\n  \
+  \      -DMPI_C_DIR=\"$I_MPI_ROOT\" \\\n        -DPism_USE_JANSSON:BOOL=NO \\\n \
+  \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=OFF\
+  \ \\\n        -DPism_USE_PROJ4:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
+  \ \\\n        ..; make -j4; make install;\n"

@@ -1,0 +1,40 @@
+available_versions:
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- 3.6-ogcm
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AOW
+- GYRE_XIOS
+- 3.6foci
+branch: esm-tools
+choose_nemo.version:
+  3.6-ogcm:
+    grid: GYRE_XIOS
+  3.6foci:
+    git-repository: https://gitlab.dkrz.de/foci/src/nemo.git
+    grid: ORCA05_LIM2_KCM_AOW
+  GYRE_XIOS:
+    requires:
+    - xios-2.0_r982_ogcm
+    - nemobasemodel-3.6ogcm
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW:
+    branch: master
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+clean_command: cd CONFIG; ./makenemo -n ${nemo.grid} clean
+comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; ./makenemo -n ${grid}
+  -m ${computer.nemoarchfile} -j 24
+destination: nemo-3.6
+git-repository: https://gitlab.dkrz.de/foci/src/NEMOGCM.git
+install_bins: CONFIG/${nemo.grid}/BLD/bin/nemo.exe
+requires:
+- xios-2.0_r982
+- nemobasemodel-3.6foci
+version: 3.6-ogcm

@@ -1,0 +1,5 @@
+available_versions:
+- 1d
+clean_command: ${defaults.clean_command}
+comp_command: ${defaults.comp_command}
+git-repository: gitlab.dkrz.de/modular_esm/vilma.git vilma_1d

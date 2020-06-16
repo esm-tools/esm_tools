@@ -1,0 +1,70 @@
+postprocess_method_definitions:
+        cdo:
+                possible_flags:
+                        - "f nc"
+                        - "f grb1"
+                        - "f grb2"
+                        - "f nc1"
+                        - "f nc2"
+                        - "f nc4"
+                        - "f nc4c"
+                        - "f nc5"
+                        - "f srv"
+                        - "f ext"
+                        - "f ieg"
+                        - "t ecmwf"
+                        - "-eccodes"
+                required_args:
+                        - "operator"
+                        - "infile"
+                possible_args:
+                        - "stdin"
+                        - "stdout"
+                        - "outfile"
+                call_order:
+                        - "program"
+                        - "flags"
+                        - "operator"
+                        - "infile"
+                        - "outfile"
+        cdo_chain:
+                - "something..."
+
+#
+# Here are the commands we need to change date of initial conditions
+#
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMGG${INPUT_EXP_ID_oifs}INIUA ICMGG${OIFS_EXP_ID}INIUA
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMGG${INPUT_EXP_ID_oifs}INIT ICMGG${OIFS_EXP_ID}INIT
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/ICMSH${INPUT_EXP_ID_oifs}INIT ICMSH${OIFS_EXP_ID}INIT
+# For WAM:
+# for file in cdwavein sfcwindin specwavein uwavein
+# grib_set -s dataDate=${timestamp} ${oifs_INPUT_DIR}/${PIFS_START_DATE_oifs}${HOURS}/${file} ${file}
+#
+# Crop the surface forcing file
+# cdo -seldate,${start_date},${end_date} ${oifs_INPUT_DIR}/${y}/${ICMCL_FILE} ICMCL${OIFS_EXP_ID}INIT
+#
+
+postprocess_task_definitions:  # in postprocessing.yaml
+  mm:
+    method: "cdo"
+    args:
+        operator: "monmean"
+    flags:
+      - "f nc"
+  BOT:
+  method: "cdo"
+  operator: "after"
+  flags:
+    - "f nc2"
+  stdin: "namelist.BOT"
+
+
+
+postprocess_tasks: #in echam.postprocessing.yaml
+  "${general.expid}_${model}_[[streams-->STREAM]]_${start_date!syear!smonth!sday}-${next_date!syear!smonth!sday}_mm.nc":
+     post_process: "mm"
+     flags:
+        - "t echam6"
+     args:
+        infile: "${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM"
+

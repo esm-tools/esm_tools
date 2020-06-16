@@ -1,0 +1,7 @@
+components:
+- echam-6.3.04p1-paleodyn
+- fesom-2.0-paleodyn
+- oasis3-mct-2.8
+coupling_changes:
+- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt

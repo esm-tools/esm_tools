@@ -61,7 +61,7 @@ echam:
 
 #########################################################################################
 
-                        
+
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
@@ -78,14 +78,14 @@ jsbach:
 
 #########################################################################################
 
-        
+
 fesom:
         choose_general.version:
-                1.1:
+                "1.1":
                         version: "1.4"
-                CMIP6:
+                "CMIP6":
                         version: "1.4"
-                2.0:
+                "2.0":
                         version: "2.0"
         choose_general.resolution:
                 T63_CORE2:
@@ -152,7 +152,7 @@ oasis3mct:
                 'atmo->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-        
+
 
         coupling_methods:
                 distwgt:

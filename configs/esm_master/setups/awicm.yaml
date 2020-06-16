@@ -1,0 +1,30 @@
+available_versions:
+- '1.0'
+- CMIP6
+- '2.0'
+- '3.0'
+- '3.1'
+- 2.0-esm-interface
+- 2.0-esm-interface-yac
+choose_version:
+  '1.0':
+    couplings:
+    - fesom-1.4+echam-6.3.04p1
+  '2.0':
+    couplings:
+    - fesom-2.0+echam-6.3.04p1
+  2.0-esm-interface:
+    couplings:
+    - fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface
+  2.0-esm-interface-yac:
+    couplings:
+    - fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac
+  '3.0':
+    couplings:
+    - fesom-2.0+oifs-40r1
+  '3.1':
+    couplings:
+    - fesom-2.0+oifs-43r3-awi
+  CMIP6:
+    couplings:
+    - fesom-1.4+echam-6.3.04p1

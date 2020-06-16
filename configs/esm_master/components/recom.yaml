@@ -1,0 +1,7 @@
+available_versions:
+- '2.0'
+branch: modular
+clean_command: ${defaults.clean_command}
+comp_command: ${defaults.comp_command}
+destination: recom
+git-repository: gitlab.dkrz.de/modular_esm/recom.git

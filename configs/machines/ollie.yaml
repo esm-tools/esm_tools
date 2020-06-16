@@ -77,7 +77,7 @@ choose_general.setup_name:
                    - 'WLFLAG="-Wl"'
                    - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
 
-                    
+
 
 useMPI: intelmpi
 
@@ -123,15 +123,6 @@ export_vars:
         - "MPI_LIB=$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
         - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
-
-        - 'ARFLAGS=crv'
-        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        - 'OASIS3MCTROOT=${model_dir}'
-        - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
-        - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
-        - 'FFLAGS="$FCFLAGS"'
-        - 'WLFLAG="-Wl"'
-        - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
 
 choose_useMPI:
         intelmpi:

@@ -77,7 +77,7 @@ choose_general.setup_name:
                    - 'WLFLAG="-Wl"'
                    - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
 
-                    
+
 
 useMPI: intelmpi
 
@@ -123,8 +123,6 @@ export_vars:
         - "MPI_LIB=$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
         - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
-
-
 
 choose_useMPI:
         intelmpi:

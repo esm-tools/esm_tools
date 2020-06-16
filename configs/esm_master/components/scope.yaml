@@ -1,0 +1,9 @@
+available_versions:
+- dev
+choose_version:
+  dev:
+    git-repository: https://gitlab.awi.de/pgierz/scope.git
+clean_command: pip uninstall scope-coupler
+comp_command: 'pip install --user .
+
+  '

@@ -1,0 +1,8 @@
+components:
+- rnfmap-ec-earth
+- oifs-43r3-awi
+- fesom-2.0-o
+- oasis3-mct-3.0
+coupling_changes:
+- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
+- sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt

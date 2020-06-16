@@ -101,7 +101,8 @@ export_vars:
         - "PERL5LIB=/usr/lib64/perl5"
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "LAPACK_LIB='-mkl=sequential'"
-        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
+        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
         # mostly OpenIFS stuff
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"

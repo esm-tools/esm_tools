@@ -1,0 +1,3 @@
+clean_command: rm -rf bin; cd src; make clean
+comp_command: mkdir bin; cd src; make
+git-repository: gitlab.dkrz.de/ec-earth/amip-forcing.git

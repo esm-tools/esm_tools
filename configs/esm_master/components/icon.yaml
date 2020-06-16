@@ -1,0 +1,9 @@
+available_versions:
+- 2.1.0
+- 2.3.0-nwp5
+- 2.4.0
+branch: ${icon.version}
+clean_command: make distclean
+comp_command: make -j `nproc --all
+conf_command: ./configure --with-fortran=gcc --with-openmp --with-grib_api
+git-repository: gitlab.dkrz.de/modular_esm/ICON-ATM.git

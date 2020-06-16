@@ -102,18 +102,54 @@ fesom:
         yearly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
 
         monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff]
-        
-        add_monthly_outputs: ["${recom.outputs}"]
-        
+
         daily_outputs: []
         12_second_outputs: []
 
-#        add_outdata_files:
-#                "[[recom.outputs-->OUTPUT]]": OUTPUT
-#        add_outdata_in_work: 
-#                "[[recom.outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-#        add_outdata_sources: 
-#                "[[recom.outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+        runtime_environment_changes:
+                add_export_vars:
+                        AWI_FESOM_YAML:
+                                output_schedules:
+                                        -
+                                                vars: [restart]
+                                                unit: ${restart_unit}
+                                                first: ${restart_first}
+                                                rate: ${restart_rate}
+                                        -
+                                                vars: ${monthly_outputs}
+                                                unit: m
+                                                rate: 1
+                                        -
+                                                vars: ${daily_outputs}
+                                                unit: d
+                                                rate: 1
+                                        -
+                                                vars: ${12_second_outputs}
+                                                unit: s
+                                                rate: 12
+                                        -
+                                                vars: ${yearly_outputs}
+                                                unit: y
+                                                first: 1000
+                                                rate: 1
+                                        -
+                                                vars: ${recom.monthly_outputs}
+                                                unit: m
+                                                rate: 1
+                                        -
+                                                vars: ${recom.daily_outputs}
+                                                unit: d
+                                                rate: 1
+                                        -
+                                                vars: ${recom.12_second_outputs}
+                                                unit: s
+                                                rate: 12
+                                        -
+                                                vars: ${recom.yearly_outputs}
+                                                unit: y
+                                                first: 1000
+                                                rate: 1
 
 
 #########################################################################################

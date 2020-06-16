@@ -24,21 +24,14 @@ fesom:
         model_dir: "${general.model_dir}/fesom-${fesom.version}/"
         setup_dir: "${general.model_dir}"
 
-        namelist_dir: "${general.esm_namelist_dir}/${general.model}"
-
-        add_namelists:
-                - namelist.recom
-
         time_step: 900
         output_unit: "m"
         leapyear: false
 
         opbnd_dir: ""
         tide_forcing_dir: ""
-        recom_data_path: ""
 
-        maschine: "${computer.name}"    # This section below is just for testing
-        choose_maschine:
+        choose_computer.name:           # This section below is just for testing
                 mistral:
                         forcing_data_dir: "/work/ab0995/a270152/recom_data/forcing_clim61" # "${pool_dir}/forcing/"
                 ollie:
@@ -51,41 +44,77 @@ fesom:
         namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.config:
                         inout:
+                                levelwise_output: true
                                 output_length_unit: "${output_unit}"
                                 output_length_unit_restart: "${output_unit}"
+                        #mesh_def:
+                                #part_format=0  #this option is required because of two ways
+                                                #of storring mapping arrays are currently in use
+                                                #option with part_format=0 shall be used in future!
+                namelist.diag:
+                        diag_flag:
+                                diag_oce_KE: "remove_from_namelist"
+                                diag_oce_energy_conv: "remove_from_namelist"
+                                diag_oce_Kv: "remove_from_namelist"
+                                diag_mesh: "remove_from_namelist"
                 namelist.forcing:
+                        forcing_exchange_coeff:
+                                Cd_atm_ice: 1.3e-3
                         forcing_source:
                                 runoff_data_source: "${asforcing_runoff}"
                                 sss_data_source: "${asforcing_runoff}"
-                namelist.recom:
-                        pavariables:
-                                REcoMDataPath: "${recom_data_path}"
-                                #recom_restart: false
+                                wind_ttp_ind: 5
+                                rad_ttp_ind: 5
+                                precip_ttp_ind: 5
+                                runoff_ttp_ind: 3
+                        forcing_reso:
+                                forcing_grid: 'T319'    #'T62','T319', 'other'
+                                forcing_dx: 0.4         #degree; from here required for 'other'
+                                forcing_dy: 0.4
+                                forcing_ni: 900         #number of grid points
+                                forcing_nj: 451
+                        forcing_bulk:
+                                AOMIP_drag_coeff: true
+                namelist.ice:
+                        ice_stress:
+                                Pstar: 27500.0          #23000. 27500. 30000.
+                                c_pressure: 15.0        #20.0
+                        ice_fric:
+                                Cd_oce_ice: 1.0e-2      #5.5e-3  3.0e-3  !Qiang ab 1964
+                        ice_rheology:
+                                evp_rheol_steps: 300
+                        ice_scheme:
+                                ice_gamma_fct: 0.05
+                        ice_therm:
+                                Sice: 5.0
+                                h0: 0.6
+                namelist.oce:
+                        viscdiff:
+                                Kh0: 800.0
+                                brine_rejection_param: false
+                        oce_scheme:
+                                gamma_fct: 0.4
+                        tracer_cutoff:
+                                limit_salinity: false
+                                salinity_min: 5.0
 
 
-        add_config_files:
-                recom:  recom
+        yearly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
 
-        add_config_sources:
-                recom:  "${namelist_dir}/namelist.recom"
+        monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff]
+        
+        add_monthly_outputs: ["${recom.outputs}"]
+        
+        daily_outputs: []
+        12_second_outputs: []
 
+#        add_outdata_files:
+#                "[[recom.outputs-->OUTPUT]]": OUTPUT
+#        add_outdata_in_work: 
+#                "[[recom.outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+#        add_outdata_sources: 
+#                "[[recom.outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-        add_restart_in_files:
-                bio_restart: bio_restart
-
-        add_restart_in_in_work:
-                bio_restart: fesom.${parent_date!syear}.bio.nc
-        add_restart_in_sources:
-                bio_restart: fesom.${parent_date!syear}.bio.nc
-
-        add_restart_out_files:
-                bio_restart: bio_restart
-
-        add_restart_out_in_work:
-                bio_restart: fesom.${end_date!syear}.bio.nc
-
-        add_restart_out_sources:
-                bio_restart: fesom.${end_date!syear}.bio.nc
 
 #########################################################################################
 

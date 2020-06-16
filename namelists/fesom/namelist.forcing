@@ -22,6 +22,9 @@ runoff_ttp_ind=4
 sss_ttp_ind=4
 /
 
+&forcing_reso
+/
+
 &forcing_bulk
 AOMIP_drag_coeff=.false.
 ncar_bulk_formulae=.true.

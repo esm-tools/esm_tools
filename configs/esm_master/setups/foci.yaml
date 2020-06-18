@@ -1,10 +1,6 @@
 available_versions:
 - default
-- '1.0'
 choose_version:
-  '1.0':
-    couplings:
-    - nemo-3.6foci+echam-6.3.05p2
   default:
     couplings:
     - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci

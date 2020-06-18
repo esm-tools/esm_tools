@@ -1,6 +1,0 @@
-components:
-- oifs-40r1-foci
-- nemo-3.6foci
-- oasis3-mct-foci
-- rnfmap-focioifs
-prepend_compile_command: export FOCI_TOPLEVEL=${setup_dir}

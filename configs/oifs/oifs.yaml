@@ -464,7 +464,7 @@ choose_version:
                                         CNMEXP: ${oifs.input_expid}
                                         NSTOP: ${oifs.next_step}
 
-                                NAMECECFG:
+                                NAMFOCICFG:
                                         # By default, turn off coupling
                                         FOCI_CPL_NEMO_LIM: ".false."
 

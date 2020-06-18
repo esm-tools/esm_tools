@@ -79,7 +79,8 @@ namelist_changes:
                         nn_leapy: 1
                         nn_rstctl: 2
                         ln_rstart: 'false'
-                namtsd:
+                namtsd:                                                
+                        ln_tsd_tradmp: '.true.' 
                         ln_tsd_init: '.true.'
                 namdom:
                         nn_closea: 1
@@ -100,7 +101,21 @@ choose_nemoconfig:
                 use_tracer:     true
                 correct_neg_tracer_conc: true
 
-                namelist_changes:
+                add_namelist_changes:
+                        namelist_cfg:
+                              nammpp:
+                                    jpni: 0
+                                    jpnj: 0
+                                    jpnij: 0
+
+       "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
+                free_surface: linear
+                hosing: false
+                use_lim2:       true
+                use_tracer:     true
+                correct_neg_tracer_conc: true
+
+                add_namelist_changes:
                         namelist_cfg:
                               nammpp:
                                     jpni: 0
@@ -109,14 +124,14 @@ choose_nemoconfig:
 
 choose_free_surface:
         linear:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_cfg:
                                 namdyn_hpg:
                                         ln_hpg_zps: '.true.'
                                         ln_hpg_sco: '.false.'
                                         ln_dynhpg_imp: '.true.'
         nonlinear:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_cfg:
                                 namdyn_hpg:
                                         ln_hpg_zps: '.false.'
@@ -125,14 +140,14 @@ choose_free_surface:
 
 choose_hosing:
         true:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_cfg:
                                 namdyn_sbc:
                                         ln_hosing: '.true.'
 
 choose_lresume:
         true:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_cfg:
                                 namrun:
                                         ln_rstart: '.true.'
@@ -142,7 +157,7 @@ choose_lresume:
                                         nn_msh: 0
                 choose_general.run_number:
                         1:
-                                namelist_changes:
+                                add_namelist_changes:
                                         namelist_cfg:
                                                 namrun:
                                                         nn_rstctl: 0
@@ -153,19 +168,19 @@ choose_lresume:
 
 choose_correct_neg_tracer_conc:
         true:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_top_cfg:
                                 namtrc_rad:
                                         ln_trcrad: ".true."
         false:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_top_cfg:
                                 namtrc_rad:
                                         ln_trcrad: ".false."
 
 choose_general.run_number:
         1:
-                namelist_changes:
+                add_namelist_changes:
                         namelist_cfg:
                                 namdom:
                                         nn_msh: 1
@@ -207,7 +222,7 @@ choose_use_lim2:
         true:
                 add_config_files:
                         namelist_ice_cfg: namelist_ice_cfg
-                namelist_changes:
+                add_namelist_changes:
                         namelist_ice_cfg:
                                 namicerun:
                                         cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}
@@ -218,7 +233,7 @@ choose_use_lim2:
                                         ln_limini: '.true.'
                 choose_lresume:
                         true:
-                                namelist_changes:
+                                add_namelist_changes:
                                         namelist_ice_cfg:
                                                 namiceini:
                                                         ln_limini: '.false.'
@@ -227,7 +242,7 @@ choose_use_tracer:
         true:
                 add_config_files:
                         namelist_top_cfg: namelist_top_cfg
-                namelist_changes:
+                add_namelist_changes:
                         namelist_top_cfg:
                                 namtrc_run:
                                         cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
@@ -240,7 +255,7 @@ choose_use_tracer:
                                         ln_trcdta: '.true.'
                 choose_lresume:
                         true:
-                                namelist_changes:
+                                add_namelist_changes:
                                         namelist_top_cfg:
                                                 namtrc_run:
                                                         ln_rsttr: '.true.'
@@ -248,7 +263,7 @@ choose_use_tracer:
                                                         ln_trcdta: '.false.'
                 choose_general.run_number:
                         1:
-                                namelist_changes:
+                                add_namelist_changes:
                                         namelist_top_cfg:
                                                 namtrc_run:
                                                         nn_rsttr : 0

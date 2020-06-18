@@ -32,7 +32,7 @@ oifs:
    levels: L91
    lresume: 0
    post_processing: 1
-   nproca: 288
+   nproca: 287
    nprocb: 1
    
 nemo:

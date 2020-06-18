@@ -86,7 +86,7 @@ oifs:
         
         namelist_changes:
                 fort.4:
-                        NAMECECFG:
+                        NAMFOCICFG:
                                 # Turn on coupling
                                 # TODO: Add variable for AGRIF coupling
                                 FOCI_CPL_NEMO_LIM: ".true." 

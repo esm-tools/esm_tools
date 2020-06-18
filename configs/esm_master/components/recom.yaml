@@ -1,7 +1,17 @@
 available_versions:
 - '2.0'
-branch: modular
+- '2.0-r'
+branch: oxygen
 clean_command: ${defaults.clean_command}
-comp_command: ${defaults.comp_command}
+comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
 destination: recom
-git-repository: gitlab.dkrz.de/modular_esm/recom.git
+git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
+install_libs:
+        - "build/librecom.a"
+choose_version:
+        "2.0":
+                branch: "fixed_cmake"
+        "2.0-r":
+                # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
+                branch: "recom-update"
+

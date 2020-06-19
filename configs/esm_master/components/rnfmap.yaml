@@ -1,0 +1,15 @@
+available_versions:
+- ec-earth
+- focioifs
+- focioifs1
+choose_version:
+  ec-earth:
+    branch: esm-tools
+  focioifs:
+    branch: esm-tools-focioifs
+  focioifs1:
+    branch: esm-tools-focioifs
+clean_command: rm -rf bin; cd src; make clean
+comp_command: rm -rf bin; mkdir bin; cd src; make
+git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
+install_bins: bin/rnfmap.exe

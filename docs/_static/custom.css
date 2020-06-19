@@ -1,0 +1,7 @@
+.wy-table-responsive table td {
+white-space: normal;
+vertical-align: top !important;
+}
+.red {
+    color: red;
+}

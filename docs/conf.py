@@ -28,13 +28,15 @@ sys.path.insert(0, os.path.abspath('..'))
 import yaml
 config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
 configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
-with open(os.path.join("../configs/esm_master/setups2models.yaml")) as setups2models:
-    d = yaml.load(setups2models, Loader=yaml.FullLoader)
-    components = d.get("components")
-    configs = []
-    for comp in components:
-        if os.path.exists("../configs/"+comp+"/"+comp+".yaml"):
-            configs.append(comp)
+components = {}
+for component in ["../configs/esm_master/components/"+c for c in os.listdir("../configs/esm_master/components")]:
+    d = yaml.load(component, Loader=yaml.FullLoader)
+    comp_name = component.split("/")[-1].replace(".yaml", "")
+    components[comp_name] = d
+configs = []
+for comp in components:
+    if os.path.exists("../configs/"+comp+"/"+comp+".yaml"):
+        configs.append(comp)
 with open("Supported_Models.rst", "w") as rst:
     rst.write("================\n")
     rst.write("Supported Models\n")
@@ -48,10 +50,10 @@ for config in configs:
                 for key in metadata:
                     if key=="Publications":
                         if type(metadata[key]) is list:
-                            public_string = key
+                            public_string = key + '; "\n'
                             for publication in metadata[key]:
-                                public_string = public_string + "; `{0}`_".format(publication)
-                            table.write(public_string+'\n')
+                                public_string = public_string + "`{0}`_\n\n".format(publication.replace('"', '""'))
+                            table.write(public_string+'"\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
                     else:
@@ -62,7 +64,100 @@ for config in configs:
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
             rst.write("   :delim: ;\n")
+            rst.write("   :widths: 20, 80\n")
             rst.write("   :stub-columns: 1\n\n")
+
+# -- Unified API of subpackages ----------------------------------------
+
+# TODO: If this could come directly from github, that'd be nice...
+
+import subprocess
+import shutil
+import sphinx.ext.apidoc
+
+esm_tools_modules = [
+ "esm_archiving",
+ "esm_calendar",
+ "esm_database",
+ "esm_environment",
+ "esm_master",
+ "esm_parser",
+ "esm_profile",
+ "esm_rcfile",
+ "esm_runscripts",
+ "esm_tools",
+ "esm_version_checker",
+]
+esm_tools_modules.remove("esm_tools")
+
+# Ensure the API folder exists:
+try:
+ os.makedirs("api")
+except FileExistsError:
+ shutil.rmtree("api")
+ os.makedirs("api")
+try:
+ os.makedirs("tmp_clone")
+except FileExistsError:
+ shutil.rmtree("tmp_clone")
+ os.makedirs("tmp_clone")
+
+ESM_TOOLS_PROJECT_ADDRESS = "https://github.com/esm-tools/"
+
+mods_to_skip = []
+
+with open("API.rst", "w") as rst:
+ rst.write("============================\n")
+ rst.write("ESM Tools Code Documentation\n")
+ rst.write("============================\n")
+ rst.write(".. toctree::\n")
+ rst.write("   :glob:\n\n")
+ rst.write("   api/*")
+
+ for esm_mod in sorted(esm_tools_modules):
+     # Clone:
+     subprocess.call(
+         "git clone "
+         + ESM_TOOLS_PROJECT_ADDRESS
+         + esm_mod
+         + " tmp_clone/"
+         + esm_mod,
+         shell=True,
+     )
+     # Run apidoc. Need the name twice to go into the actual part where the code is
+     sphinx.ext.apidoc.main(
+         [
+             "--no-toc",
+             "--module-first",
+             "--output-dir",
+             "api",
+             "tmp_clone/" + esm_mod + "/" + esm_mod,
+         ]
+     )
+     # rst.write(esm_mod+"\n")
+     # rst.write("-"*len(esm_mod)+"\n")
+     # rst.write("\n")
+     # rst.write()
+     # Skip a few hings for testing:
+     if esm_mod in mods_to_skip:
+         continue
+
+     # Ensure that importing works correctly when running apidoc
+     subprocess.check_call(
+         [
+             sys.executable,
+             "-m",
+             "pip",
+             "install",
+             "--no-warn-script-location",
+             # "--user",
+             "tmp_clone/" + esm_mod,
+         ]
+     )
+     # sys.path.append(os.path.abspath("tmp_clone/" + esm_mod))
+shutil.rmtree("tmp_clone")
+
+
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -90,7 +185,7 @@ master_doc = 'index'
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
 author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez"
-version = "3.1"
+version = "4.0"
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -142,6 +237,10 @@ html_static_path = ['_static']
 
 html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
+# Add custom css (to disable the horizontal scrolling in tables).
+def setup(app):
+    app.add_stylesheet('custom.css')
+
 # -- Options for HTMLHelp output ---------------------------------------
 
 # Output file base name for HTML help builder.
@@ -173,8 +272,9 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools r3 UserManual',
-     'Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini', 'manual'),
+     'ESM Tools r4 UserManual',
+     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez',
+     'manual'),
 ]
 
 

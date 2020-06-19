@@ -9,15 +9,16 @@ Welcome to ESM Tools's documentation!
    ten_steps
    installation
    transitioning
+   yaml
    Supported_Models
    esm_master
    esm_versions
    esm_runscripts
    faq
    packages
+   API
    contributing
    authors
-   history
 
 .. exclude:: ../README.rst
 

@@ -33,9 +33,34 @@ no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "_dynveg"
 
 choose_version:
+        "3.20p1":
+                dataset: r0010
+                forcing_in_work:
+                       "LU" : "landuseHarvest.@YEAR@.nc"
+
+                choose_dynamic_vegetations:
+                        true:
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
+                                dynveg: "_dynveg"
+                                jsbachnc_file_ending: "${dynveg_file_ending}"
+                        false:
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                jsbachnc_file_ending: "${no_dynveg_file_ending}"
+                                dynveg: "_no_dynveg"
+                choose_echam.scenario:
+                        PI-CTRL:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
         "3.20":
-                dataset: r0010               
-                choose_dynamic_vegetations: 
+                dataset: r0010
+                choose_dynamic_vegetations:
                         true:
                                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
                                 dynveg: "_dynveg"
@@ -124,19 +149,19 @@ choose_version:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
                                         cover_fract: cover_fract_HIST
-                        1950:                
+                        1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
-                        
-                        
-                        
+
+
+
         "3.10":
                 dataset: r0007
                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/${resolution}"
-                choose_dynamic_vegetations: 
+                choose_dynamic_vegetations:
                         true:
                                 dynveg: "_dynveg"
                         false:
@@ -220,7 +245,7 @@ choose_version:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
                                         cover_fract: cover_fract_HIST
-                        1950:                
+                        1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
                                 forcing_files:
@@ -234,6 +259,10 @@ input_files:
 input_in_work:
         "jsbach": "jsbach.nc"
         "lctlib": "lctlib.def"
+        "lctlib_foci": "lctlib.def"
+        "cpools_foci": "Cpools.nc"
+        "npools_foci": "Ndepo.nc"
+        "fpc_foci": "fpc.nc"
 
 forcing_in_work:
         "cover_fract": "cover_fract.@YEAR@.nc"
@@ -245,7 +274,7 @@ forcing_in_work:
         "LU_trans": "landuseTransitions.@YEAR@.nc"
 
 forcing_modifications:
-        Ndepo:  "<--setyear-- @YEAR@"                
+        Ndepo:  "<--setyear-- @YEAR@"
 
 
 forcing_additional_information:
@@ -291,7 +320,7 @@ ignore_in_work:
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
 
 
-outdata_files: 
+outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
 

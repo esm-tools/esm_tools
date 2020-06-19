@@ -6,7 +6,7 @@ header_start: "#SBATCH"
 submit: sbatch
 launcher: srun
 mail_type: NONE
-account: None   
+account: None
 
 
 
@@ -22,10 +22,10 @@ choose_accounting:
                 accounting_flag: "--account=${general.account}"
 
 choose_mail_type:
-        "*": 
+        "*":
                 mail1:  "--mail_type=${mail_type}"
 choose_mail_user:
-        "*": 
+        "*":
                 mail2:  "--mail_user=${mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
@@ -40,7 +40,7 @@ name_flag: "--job-name=${expid}"
 choose_launcher:
         srun:
                 launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
-        mpiexec.hydra:  
+        mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:
                 launcher_flags: "-l"
@@ -58,24 +58,24 @@ choose_SLURM_NNODES:
                 total_nnodes: ${SLURM_NNODES}
                 hostname_list: "<--show_hostnames--"
 
-                #"<--scriptname--": 
+                #"<--scriptname--":
                 #method: "squeue --job ${JOB_ID} -o '%o' | cut -f1 -d' ' | basename | cut -f1 -d' '"
-                #"<--scriptdir--": 
+                #"<--scriptdir--":
                 #method: "squeue --job ${JOB_ID} --format '%Z' squeue --job ${JOB_ID} --format '%Z'"
                 #"<--show_hostnames--":
                 #method: "scontrol show hostnames"
 
-config_files:        
+config_files:
         hostfile: hostfile_srun
 
         #config_create:
         #hostfile:
-        #        - "[[setup.orderedexecs-->MODEL]]<--startproc-- - MODEL<--endproc-- ./MODEL<--exe-- <--append--"        
+        #        - "[[setup.orderedexecs-->MODEL]]<--startproc-- - MODEL<--endproc-- ./MODEL<--exe-- <--append--"
 
 execution_command: "${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 check_error:
-        "srun: error:" : 
+        "srun: error:" :
                 frequency: 30
                 method: "kill"
                 message: "SLURM ERROR: slurm endet with an error, exiting."

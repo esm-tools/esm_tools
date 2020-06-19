@@ -1,0 +1,8 @@
+available_versions:
+- 1.5.4
+clean_command: make clean
+comp_command: make
+conf_command: autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2
+  --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack
+  --disable-lib-only --enable-silent-rules
+git-repository: https://gitlab.dkrz.de/dkrz-sw/yac.git

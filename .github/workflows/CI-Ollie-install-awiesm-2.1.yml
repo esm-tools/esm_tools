@@ -1,0 +1,86 @@
+jobs:
+  install_as_user:
+    runs-on:
+    - self-hosted
+    - ollie
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up environment
+      run: 'module purge
+
+        module load git
+
+        module load python3
+
+        '
+    - name: Check versions and env
+      run: 'git --version
+
+        python --version
+
+        pip --version
+
+        env
+
+        '
+    - name: Install project
+      run: ./install.sh
+    - name: Check binaries
+      run: 'export PATH=${HOME}/.local/bin:${PATH}
+
+        which esm_master
+
+        which esm_runscripts
+
+        which esm_versions
+
+        '
+  install_models:
+    needs: install_as_user
+    runs-on:
+    - self-hosted
+    - ollie
+    steps:
+    - name: Install Model
+      run: 'export PATH=${HOME}/.local/bin:${PATH}
+
+        which esm_master
+
+        esm_master --version
+
+        rm -rf /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+
+        mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+
+        cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
+
+        esm_master install-${{ matrix.model }}
+
+        '
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+        - awiesm-2.1
+name: CI-Ollie-install-awiesm-2.1
+'on':
+  pull_request:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    paths:
+    - configs/esm_master/setups/awiesm.yaml
+    - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn.yaml
+  push:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    paths:
+    - configs/esm_master/setups/awiesm.yaml
+    - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn.yaml

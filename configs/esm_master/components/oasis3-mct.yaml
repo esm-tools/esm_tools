@@ -1,0 +1,38 @@
+available_versions:
+- foci
+- fociagrif
+- ec-earth
+- '2.8'
+- '3.0'
+- '4.0'
+choose_version:
+  '2.8':
+    branch: '2.8'
+  '3.0':
+    branch: '3.0'
+  '4.0':
+    branch: '4.0'
+  ec-earth:
+    branch: ec-earth-version
+  foci:
+    branch: oasis3mct2.8-foci
+    git-repository: https://git.geomar.de/foci/src/oasis3mct.git
+  fociagrif:
+    branch: fociagrif
+    git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
+clean_command: ${defaults.clean_command}
+comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include;
+  [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/;
+  cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h
+  ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a
+  ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a
+  ../lib;
+
+  '
+destination: oasis
+git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+install_libs:
+- build/lib/psmile/libpsmile.a
+- build/lib/psmile/mct/libmct.a
+- build/lib/psmile/mct/mpeu/libmpeu.a
+- build/lib/psmile/scrip/libscrip.a

@@ -1,0 +1,13 @@
+available_versions:
+- '1.0'
+- yac
+choose_version:
+  '1.0':
+    branch: dev_prototype_awicm
+    comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+  yac:
+    branch: include_yac
+    comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+comp_command: ${default.comp_command}
+destination: esm-interface
+git-repository: https://gitlab.dkrz.de/modular_esm/esm-interfaces.git

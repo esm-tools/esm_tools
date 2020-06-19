@@ -1,0 +1,24 @@
+available_versions:
+- 3.6.3.x
+- 3.6ogcm
+- 3.6foci
+choose_nemobasemodel.version:
+  3.6.3.x:
+    archfile: ESMTOOLS_generic_intel
+    branch: release-3.6.3.x
+    git-repository: https://git.geomar.de/NEMO/NEMOGCM.git
+  3.6foci:
+    archfile: ESMTOOLS_generic_oasis_intel
+    branch: esm-tools
+    git-repository: https://git.geomar.de/foci/src/nemo.git
+  3.6ogcm:
+    archfile: ESMTOOLS_generic_intel
+    branch: esm-tools
+    git-repository: https://git.geomar.de/foci/src/nemo.git
+clean_command: cd CONFIG; ./makenemo -n ${nemo.version} clean
+comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc
+  cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe
+  ${nemo.version}/BLD/bin/oceanx
+destination: nemo-${version}
+git-repository: None
+install_bins: CONFIG/${nemo.version}/BLD/bin/oceanx

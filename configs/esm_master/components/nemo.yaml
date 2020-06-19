@@ -1,0 +1,25 @@
+available_versions:
+- ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- GYRE_XIOS
+choose_nemo.version:
+  GYRE_XIOS:
+    requires:
+    - xios-2.0_r982_ogcm
+    - nemobasemodel-3.6ogcm
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW:
+    branch: master
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+requires:
+- xios-2.0_r982
+- nemobasemodel-3.6foci

@@ -12,10 +12,10 @@ jobtype: compute
 choose_jobtype:
         post:
                 partition: compute
-        compute: 
+        compute:
                 partition: compute
 
-choose_partition: 
+choose_partition:
         "compute":
                 cores_per_node: 24
 
@@ -37,7 +37,7 @@ module_actions:
 export_vars:
 
 
-        
+
 choose_useMPI:
         intelmpi:
                 add_module_actions:
@@ -68,11 +68,11 @@ choose_useMPI:
                 add_module_actions:
                         - "load mxm/3.4.3082"
                         - "load fca/2.5.2431"
-                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"  
+                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
                 add_export_vars:
                         FC: mpif90
                         F77: mpif90
                         MPIFC: mpif90
                         CC: mpicc
                         CXX: mpicxx
-                          
+

@@ -94,14 +94,17 @@ fesom:
                                 brine_rejection_param: false
                         oce_scheme:
                                 gamma_fct: 0.4
+                        age_tracer:
+                                use_age_tracer: true
+                                age_tracer_start_year: "${general.initial_date!syear}"
                         tracer_cutoff:
                                 limit_salinity: false
                                 salinity_min: 5.0
 
 
-        yearly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
+        yearly_outputs: [evs,fsitherm,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uso,uto,v2o,volo,vso,vto,w2o,wfo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
 
-        monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff]
+        monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
 
         daily_outputs: []
         12_second_outputs: []

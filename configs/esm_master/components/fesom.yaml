@@ -6,10 +6,12 @@ available_versions:
 - 2.0-esm-interface-yac
 - 2.0-paleodyn
 - '2.0'
+- '2.0-r' # OG: temporarily here
 choose_version:
   '1.4':
     git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
     install_bins: bin/fesom
+    comp_command: 'mkdir -p build; cd build; cmake ..;   make install'
   '1.4-recom-mocsy-slp':
     branch: "fesom-recom-mocsy-slp"
     git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
@@ -46,5 +48,14 @@ choose_version:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     - github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
+  2.0-r:
+    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
+    # files will be cleared from the src folder. After Dima's update we will return
+    # fesom-2.0 master branch back and remove this part
+    git-repository:
+    - "https://gitlab.dkrz.de/FESOM/fesom2.git"
+    - "github.com/FESOM/fesom2.git"
+    branch: "recom-update"
+    install_bins: "bin/fesom.x"
 clean_command: ${defaults.clean_command}
-comp_command: mkdir -p build; cd build; cmake ..;   make install
+comp_command: ${defaults.comp_command}

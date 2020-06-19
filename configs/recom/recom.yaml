@@ -9,7 +9,7 @@ metadata:
         Institute: AWI
         Description:
                 REcoM (Regulated Ecosystem Model) is an ecosystem and biogeochemistry model.
-        Authors: Judith Hauck
+        Authors: Judith Hauck, Ozgur Gurses
         Publications:
                 - "Seasonally different carbon flux changes in the Southern Ocean in response to the southern annular mode <https://doi.org/10.1002/2013GB004600>"
                 - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
@@ -45,6 +45,7 @@ namelists:
 namelist_changes:
         namelist.recom:
                 pavariables:
+                        bgc_num: 22
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         REcoM_PI: "${REcoM_PI}"
@@ -92,7 +93,7 @@ restart_out_sources:
 
 yearly_outputs: []
 
-monthly_outputs: [diags3d01,diags3d02,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPPd,GPPn,GPPd,NNAn,NNAd,GNAn,GNAd,benCalc,benSi,benC,benN,denb,aN,aFe,Hp,CO2f,dpCO2s,pCO2s,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,slp]
+monthly_outputs: [diags3d01,diags3d02,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPPd,GPPn,GPPd,NNAn,NNAd,GNAn,GNAd,benCalc,benSi,benC,benN,denb,aN,aFe,Hp,CO2f,dpCO2s,pCO2s,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,slp,age01,Kw,alphaCO2,O2f]
 
 daily_outputs: []
 

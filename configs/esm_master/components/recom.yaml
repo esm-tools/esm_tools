@@ -1,7 +1,6 @@
 available_versions:
 - '2.0'
 - '2.0-r'
-branch: oxygen
 clean_command: ${defaults.clean_command}
 comp_command: "mkdir -p build; cd build; cmake ..;  make -j `nproc --all`"
 destination: recom
@@ -10,7 +9,7 @@ install_libs:
         - "build/librecom.a"
 choose_version:
         "2.0":
-                branch: "fixed_cmake"
+                branch: "oxygen"
         "2.0-r":
                 # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
                 branch: "recom-update"

@@ -23,6 +23,8 @@ data_path: ""
 
 scenario: "preindustrial"
 
+time_step: 1800
+
 
 choose_scenario:
         preindustrial:

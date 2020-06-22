@@ -161,3 +161,6 @@ recom:
         version: "2.0"
         model_dir: "${general.model_dir}/recom/"
         setup_dir: "${general.model_dir}"
+
+        time_step: "${fesom.time_step}"
+        parent_date: "${fesom.parent_date}"

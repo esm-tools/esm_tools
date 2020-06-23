@@ -22,14 +22,16 @@ general:
                 T63_GR15:
                         compute_time: "00:60:00"
 
-choose_lresume:
-        true:
-                echam:
-                        pseudo_resume_date: $(( ${echam.start_date} - ${echam.time_step}))
-                        pseudo_end_date: $(( ${echam.next_date} - ${echam.time_step}))
+        postprocessing: -1 #V19?, what does it mean -1?
 
-forcing_sources:
-        lctlib: "${model_dir}/util/running/adjunct_files/jsbach/lctlib_nlct21.def"
+        #choose_lresume:
+        #        true:
+        #                echam:
+        #                        pseudo_resume_date: $(( ${echam.start_date} - ${echam.time_step}))
+        #                        pseudo_end_date: $(( ${echam.next_date} - ${echam.time_step}))
+
+        #forcing_sources:
+        #        lctlib: "${model_dir}/util/running/adjunct_files/jsbach/lctlib_nlct21.def"
 
 
 #########################################################################################
@@ -101,30 +103,30 @@ oasis3mct:
         a2o_seq: 1 #V3?
 
         coupling_time_step: 86400 #V17
-        coupling_target_fields:
-                o2a_flux: #V5
-                        - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
-                        - 'SITATMOS <--conserv-- SITOCEAN'
-                        - 'SICATMOS <--conserv-- SICOCEAN'
-                        - 'SNTATMOS <--conserv-- SNTOCEAN'
-                        - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector?
-                        - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
-                        - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
-                        - 'CO2ATMOS <--conserv-- CO2OCEAN'
-                a2o_flux: #V10
-                        - 'FRIOCEAN <--conserv-- FRIATMOS' #V11? conserv scalar?
-                        - 'FRWOCEAN <--conserv-- FRWATMOS'
-                        - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
-                        - 'TYWOCEAS <--bicubic-- TYWATMOU'
-                        - 'TXIOCEAS <--bicubic-- TXIATMOU'
-                        - 'TYIOCEAS <--bicubic-- TYIATMOU'
-                        - 'RHIOCEAN <--conserv-- RHIATMOS' #V14? V15? conserv scalar?
-                        - 'CHIOCEAN <--conserv-- CHIATMOS'
-                        - 'NHWOCEAN <--conserv-- NHWATMOS'
-                        - 'SHWOCEAN <--conserv-- SHWATMOS'
-                        - 'WSVOCEAN <--conserv-- WSVATMOS'
-                        - 'CO2CONOC <--conserv-- CO2CONAT'
-                        - 'CO2FLXOC <--conserv-- CO2FLXAT' #V16? V15?
+        #coupling_target_fields:
+        #        o2a_flux: #V5
+        #                - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
+        #                - 'SITATMOS <--conserv-- SITOCEAN'
+        #                - 'SICATMOS <--conserv-- SICOCEAN'
+        #                - 'SNTATMOS <--conserv-- SNTOCEAN'
+        #                - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector?
+        #                - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
+        #                - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
+        #                - 'CO2ATMOS <--conserv-- CO2OCEAN'
+        #        a2o_flux: #V10
+        #                - 'FRIOCEAN <--conserv-- FRIATMOS' #V11? conserv scalar?
+        #                - 'FRWOCEAN <--conserv-- FRWATMOS'
+        #                - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
+        #                - 'TYWOCEAS <--bicubic-- TYWATMOU'
+        #                - 'TXIOCEAS <--bicubic-- TXIATMOU'
+        #                - 'TYIOCEAS <--bicubic-- TYIATMOU'
+        #                - 'RHIOCEAN <--conserv-- RHIATMOS' #V14? V15? conserv scalar?
+        #                - 'CHIOCEAN <--conserv-- CHIATMOS'
+        #                - 'NHWOCEAN <--conserv-- NHWATMOS'
+        #                - 'SHWOCEAN <--conserv-- SHWATMOS'
+        #                - 'WSVOCEAN <--conserv-- WSVATMOS'
+        #                - 'CO2CONOC <--conserv-- CO2CONAT'
+        #                - 'CO2FLXOC <--conserv-- CO2FLXAT' #V16? V15?
 
         coupling_directions:
                 'mpiom->atmo':
@@ -144,7 +146,7 @@ oasis3mct:
                                         normalization: fracarea #V7?
                                         order: first #V7
                                 - mapping:
-                                        mapname: rmp_oces_to_atmo_CONSERV_FRACAREA_${RES_mpiesm}.nc #V19?
+                                        mapname: rmp_oces_to_atmo_CONSERV_FRACAREA_${general.resolution}.nc #V19?
                                         map_regrid_on: src #V19?
                 conserv2:
                         time_transformation: instant
@@ -192,6 +194,6 @@ oasis3mct:
                                         search_bin: latitude #V13
                                         nb_of_search_bins: 40 #V13
                                 - mapping:
-                                        mapname: rmp_atmo_to_oces_BICUBIC_D_${RES_mpiesm}.nc #V18?
+                                        mapname: rmp_atmo_to_oces_BICUBIC_D_${general.resolution}.nc #V18?
                                         map_regrid_on: dst #V18?
 

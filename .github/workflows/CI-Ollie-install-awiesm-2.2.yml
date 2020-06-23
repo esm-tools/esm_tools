@@ -75,21 +75,33 @@ name: CI-Ollie-install-awiesm-2.2
     - develop
     - '*prep-release*'
     paths:
-    - configs/esm_master/setups/awiesm.yaml
+    - configs/awiesm/awiesm.compiletime_env_changes.yaml
+    - configs/echam/echam.compiletime_env_changes.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/pism.yaml
     - configs/esm_master/components/scope.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev.yaml
+    - configs/esm_master/setups/awiesm.yaml
+    - configs/fesom/fesom.compiletime_env_changes.yaml
+    - configs/pism/pism.compiletime_env_changes.yaml
+    - configs/scope/scope.compiletime_env_changes.yaml
   push:
     branches:
     - release
     - develop
     - '*prep-release*'
     paths:
-    - configs/esm_master/setups/awiesm.yaml
+    - configs/awiesm/awiesm.compiletime_env_changes.yaml
+    - configs/echam/echam.compiletime_env_changes.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/pism.yaml
     - configs/esm_master/components/scope.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev.yaml
+    - configs/esm_master/setups/awiesm.yaml
+    - configs/fesom/fesom.compiletime_env_changes.yaml
+    - configs/pism/pism.compiletime_env_changes.yaml
+    - configs/scope/scope.compiletime_env_changes.yaml
+    - configs/esm_master/setups/awiesm.yaml
+    - configs/awiesm/awiesm.compiletime_env_changes.yaml

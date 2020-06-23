@@ -12,13 +12,15 @@ choose_version:
   '1.4':
     git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
     install_bins: mesh_part/build/fesom.x.ini
+    comp_command: cd fesom_mesh_partitioning; mkdir build -p; cd build; cmake ..; make -j `nproc
+      --all`
+    clean_command: rm -rf bin/fesom.x.ini fesom_mesh_partitioning/build mesh_part/CMakeCache.txt
   '2.0':
     branch: 2.0.2
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     - github.com/FESOM/fesom2.git
     install_bins: mesh_part/build/fesom_ini
-clean_command: rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt
-comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make -j `nproc
-  --all`
-install_bins: bin/fesom.x.ini
+    comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make -j `nproc
+      --all`
+    clean_command: rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt

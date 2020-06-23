@@ -19,6 +19,6 @@ choose_version:
     - github.com/FESOM/fesom2.git
     install_bins: mesh_part/build/fesom_ini
 clean_command: rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt
-comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make install -j `nproc
+comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make -j `nproc
   --all`
 install_bins: bin/fesom.x.ini

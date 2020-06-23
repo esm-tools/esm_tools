@@ -61,3 +61,15 @@ The download and installation will always occur in the **current working directo
 You can get further help with::
 
     $ esm_master --help
+    
+ 
+Configuring esm-master for Compile-Time Overrides
+-------------------------------------------------
+
+It is possible that some models have special compile-time settings that need to be included, overriding the machine defaults. Rather than placing these changes in ``configs/machines/NAME.yaml``, they can be instead placed in special blocks of the component or model configurations, e.g.:
+
+.. code-block:: yaml
+    
+    runtime_environment_changes:
+            add_export_vars:
+                    [ ... ]

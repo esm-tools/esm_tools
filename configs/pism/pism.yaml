@@ -73,13 +73,5 @@ bin_sources:
 bin_in_work:
         "pism_bin": "pismr"
 
-compiletime_environment_changes:
-    add_module_actions:
-        - "unload netcdf"
-        - "unload intel.compiler"
-        - "load pism_externals"
-    add_export_vars:
-        - "I_MPI_FABRICS=shm:tmi"
-
 further_reading:
     - pism/pism.compiletime_env_changes.yaml

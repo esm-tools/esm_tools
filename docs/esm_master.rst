@@ -70,6 +70,8 @@ It is possible that some models have special compile-time settings that need to 
 
 .. code-block:: yaml
     
-    runtime_environment_changes:
+    compiletime_environment_changes:
             add_export_vars:
                     [ ... ]
+
+The same is also possible for specifying ``runtime_environment_changes``.

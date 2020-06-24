@@ -80,6 +80,7 @@ grids:
                 nx: "${nemo._nx}"
                 ny: "${nemo._ny}"
                 oasis_grid_type: "LR"
+                number_of_overlapping_points: 2
    
 
 

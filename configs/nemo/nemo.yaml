@@ -109,7 +109,7 @@ choose_nemoconfig:
                                     jpnij: 0
 
        "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
-                free_surface: linear
+                free_surface: nonlinear
                 hosing: false
                 use_lim2:       true
                 use_tracer:     true

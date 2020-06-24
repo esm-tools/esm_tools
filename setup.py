@@ -12,6 +12,7 @@ with open("stuff/HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
+    "pyyaml>=5.1",
     "esm_master @ git+https://github.com/esm-tools/esm_master.git",
     "esm_runscripts @ git+https://github.com/esm-tools/esm_runscripts.git",
     "esm_rcfile @ git+https://github.com/esm-tools/esm_rcfile.git",
@@ -46,7 +47,9 @@ setup(
     include_package_data=True,
     keywords="esm_tools",
     name="esm_tools",
-    packages=find_packages(include=["esm_tools", "esm_tools.*"]),
+    packages=["esm_tools", "esm_tools.configs"],
+    package_dir={'esm_tools.configs': 'configs'},
+    package_data={'esm_tools.configs': ['../configs/*']},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,

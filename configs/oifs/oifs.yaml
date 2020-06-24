@@ -83,10 +83,10 @@ ensemble: 0
 ensemble_id: 1
 post_processing: 0
 
-cmip6: True
-cmip5: False
-cmip6_scenario: "historical"
-cmip5_scenario: 0
+#cmip6: True
+#cmip5: False
+#cmip6_scenario: "pictrl"
+#cmip5_scenario: 0
 cmip_fix_year: 0
 a4xco2: False
 onepctco2: False
@@ -307,10 +307,6 @@ input_files:
 ## forcing files
 ##
 
-#forcing_files:
-#        ICMCL_INIT: ICMCL_INIT
-
-
 ##
 ## log files
 ##
@@ -511,6 +507,12 @@ choose_version:
 ## specifics for scenarios
 ##
 
+# NOTE: We can only have one choose_mip
+# Therefore, we must put choose_scenario under this choose_mip
+# If one yaml file has two choose_mip, I think the code will only
+# evaluate one of the branches
+# NOTE 2: Im leaving CMIP5 in here, but I dont think we will ever use it
+
 choose_mip:
         "cmip5":
                 add_forcing_files:
@@ -519,22 +521,38 @@ choose_mip:
                         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
                         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
                         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-
-choose_scenario:
-        "historical":
-                choose_version:
-                        40r1:
+        "cmip6": 
+                add_forcing_files:
+                        # Add CO2 etc for all scenarios and years
+                        CMIP6DATA: CMIP6DATA
+                        
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        LCMIP6: ".true."
+                                        CMIP6DATADIR: "./cmip6_data/"        
+                choose_scenario:
+                        "piControl":
+                                add_forcing_files:
+                                        # O3 concentrations for piControl
+                                        O3PI: O3PI
                                 add_namelist_changes:
                                         fort.4:
-                                              NAMCMIP:
-                                                    LGHGCMIP5: ".true."
-        "piControl":
-                choose_version:
-                        40r1:
+                                                NAERAD:
+                                                        NCMIPFIXYR: 1850
+                        "historical":
+                                add_forcing_files: 
+                                        # Add historical O3
+                                        O3HIST: O3HIST
+                        "SSP5-8.5":
+                                add_forcing_files:
+                                        # Add O3 for all scenarios
+                                        O3SCEN: O3SCEN
                                 add_namelist_changes:
                                         fort.4:
-                                              NAMCMIP:
-                                                    LGHGPI: ".true."
+                                                NAERAD:
+                                                        SSPNAME: "SSP5-8.5"
+                                
 
 
 ##
@@ -566,13 +584,18 @@ forcing_sources:
         RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
+        # CMIP6
+        CMIP6DATA: ${cmip6_data_dir}/*
+        O3PI: ${cmip6_data_dir}/o3_pi/*
+        O3HIST: ${cmip6_data_dir}/o3_histo/*
+        O3SCEN: ${cmip6_data_dir}/o3_scenarios/*
         # ICMCL
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
 
 
 
 config_sources:
-        "fort.4": "${namelist_dir}/fort.4"
+        "fort.4": "${namelist_dir}/pictl/fort.4"
         "wam_namelist": "${namelist_dir}/wam_namelist"
 
 input_in_work:
@@ -592,7 +615,10 @@ forcing_in_work:
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-
+        CMIP6DATA: cmip6_data/* 
+        O3PI: cmip6_data/o3_pi/* 
+        O3HIST: cmip6_data/o3_histo/* 
+        O3SCEN: cmip6_data/o3_scenarios/*
 
 ##
 ## coupling

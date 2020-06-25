@@ -46,6 +46,9 @@ jobs:
         which esm_master
         which esm_runscripts
         which esm_versions
+    - name: Check esm versions
+      run: |
+        esm_versions check
   install_models:
       runs-on: [self-hosted, ollie]
       needs: install_as_user

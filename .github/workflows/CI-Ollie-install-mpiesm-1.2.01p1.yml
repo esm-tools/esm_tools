@@ -34,7 +34,7 @@ jobs:
 
         '
     - name: Install project
-      run: ./install.sh
+      run: pip install .
     - name: Check binaries
       run: 'export PATH=${HOME}/.local/bin:${PATH}
 

@@ -1,5 +1,5 @@
 jobs:
-  install_as_user:
+  install_models:
     runs-on:
     - self-hosted
     - ollie
@@ -13,6 +13,16 @@ jobs:
         module load python3
 
         '
+    - name: Generate virtualenv
+      run: 'python -m venv env
+
+        source env/bin/activate
+
+        which python
+
+        which pip
+
+        echo $PATH'
     - name: Check versions and env
       run: 'git --version
 
@@ -35,12 +45,10 @@ jobs:
         which esm_versions
 
         '
-  install_models:
-    needs: install_as_user
-    runs-on:
-    - self-hosted
-    - ollie
-    steps:
+    - name: Check esm versions
+      run: 'esm_versions check
+
+        '
     - name: Install Model
       run: 'export PATH=${HOME}/.local/bin:${PATH}
 
@@ -71,8 +79,8 @@ name: CI-Ollie-install-fesom-recom-2.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-2.0+recom.yaml
   push:
     branches:
@@ -81,6 +89,6 @@ name: CI-Ollie-install-fesom-recom-2.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-2.0+recom.yaml

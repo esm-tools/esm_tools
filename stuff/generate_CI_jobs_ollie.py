@@ -22,6 +22,10 @@ def main():
     generate_env_step = {"name": "Generate virtualenv", "run": "python -m venv env\nsource env/bin/activate\nwhich python\nwhich pip\necho $PATH"}
     steps.insert(idx+1, generate_env_step)
     install_model['steps'] = steps + install_model['steps']
+    # Throw away the virtual environemtn:
+    thowaway_step = {"name": "Cleanup Virtualenv", "run": "rm -r env"}
+    install_model['steps'].append(thowaway_step)
+
     for setup_yaml in os.listdir("../configs/esm_master/setups/"):
         setup_name = setup_yaml.replace(".yaml", "")
         setup = yaml_file_to_dict("../configs/esm_master/setups/" + setup_name)

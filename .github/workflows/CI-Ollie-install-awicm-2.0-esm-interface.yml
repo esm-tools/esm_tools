@@ -65,6 +65,8 @@ jobs:
         esm_master install-${{ matrix.model }}
 
         '
+    - name: Cleanup Virtualenv
+      run: rm -r env
     strategy:
       fail-fast: false
       matrix:
@@ -79,8 +81,8 @@ name: CI-Ollie-install-awicm-2.0-esm-interface
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface.yaml
   push:
     branches:
@@ -89,6 +91,6 @@ name: CI-Ollie-install-awicm-2.0-esm-interface
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface.yaml

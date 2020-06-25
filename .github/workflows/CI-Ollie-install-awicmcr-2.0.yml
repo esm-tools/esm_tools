@@ -65,6 +65,8 @@ jobs:
         esm_master install-${{ matrix.model }}
 
         '
+    - name: Cleanup Virtualenv
+      run: rm -r env
     strategy:
       fail-fast: false
       matrix:
@@ -79,8 +81,8 @@ name: CI-Ollie-install-awicmcr-2.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicmcr.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0+echam-6.3.05p2-concurrent_radiation.yaml
   push:
     branches:
@@ -89,6 +91,6 @@ name: CI-Ollie-install-awicmcr-2.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicmcr.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0+echam-6.3.05p2-concurrent_radiation.yaml

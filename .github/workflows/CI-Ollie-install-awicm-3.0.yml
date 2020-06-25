@@ -65,6 +65,8 @@ jobs:
         esm_master install-${{ matrix.model }}
 
         '
+    - name: Cleanup Virtualenv
+      run: rm -r env
     strategy:
       fail-fast: false
       matrix:

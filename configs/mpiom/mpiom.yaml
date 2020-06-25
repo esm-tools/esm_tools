@@ -30,11 +30,11 @@ choose_computer.name:
                                 - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
                                 - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
                                 - 'FFLAGS="$FCFLAGS"'
-                                - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
                                 - 'ARFLAGS=crv'
                                 - 'WLFLAG="-Wl"'
                                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                                - 'OASIS3MCTROOT=${model_dir}'
+                                - 'OASIS3MCTROOT=${general.model_dir}'
+                                - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
         mistral:
                 compiletime_environment_changes:
                         add_module_actions:
@@ -46,12 +46,12 @@ choose_computer.name:
                         add_export_vars:
                                 - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
                                 - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
-                                - 'LD_LIBRARY_PATH="/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"'
                                 - 'HDF5_ROOT="/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"'
                                 - 'NETCDFFROOT="/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"'
                                 - 'NETCDFROOT="/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"'
-                                - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
                                 - 'ARFLAGS=crv'
                                 - 'WLFLAG="-Wl"'
                                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                                - 'OASIS3MCTROOT=${model_dir}'
+                                - 'OASIS3MCTROOT=${general.model_dir}'
+                                - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
+                                - 'LD_LIBRARY_PATH="/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"'

@@ -5,6 +5,7 @@ time_step: 900 # changed by coupled setup anyway
 
 mct_version: 3.0
 norestart: "F"
+use_lucia: False
 
 config_files:
         cf: cf

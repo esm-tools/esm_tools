@@ -82,6 +82,7 @@ generate_namelist: 1
 ensemble: 0
 ensemble_id: 1
 post_processing: 0
+use_ocean_currents: 0
 
 #cmip6: True
 #cmip5: False
@@ -436,6 +437,18 @@ choose_wam:
                                         LWCOU: ".false."
                                         LWCOU2W: ".false."
 
+# For coupled setups we can use ocean currents 
+choose_use_ocean_currents:
+        1: 
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY: 
+                                        LECURR: ".true."
+        0:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LECURR: ".false."
 
 ##
 ## specifics for 40r1 and 43r3
@@ -477,8 +490,7 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${timestep_per_run} #${oifs.next_step}
-                                        #NRESTS: -1, -${timestep_per_run} #"-1, -${oifs.next_step}"
+                                        NFRRES: ${timestep_per_run} #${oifs.next_step}                                    
                                         NRESTS(1): -1
                                         NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 
@@ -488,8 +500,9 @@ choose_version:
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        #CUSTOP: "t${timestep_per_run}"
-                                        CUSTOP: "t${oifs.next_step}"
+                                        CUSTOP: "t${oifs.next_step}" 
+                                NAMPPC:
+                                        LRSACC: ".true." # reset accumulation of fluxes
 
                 environment_changes:
                         add_export_vars:

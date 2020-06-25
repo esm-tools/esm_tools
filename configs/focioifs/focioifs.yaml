@@ -167,7 +167,8 @@ oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${computer.pool_directories.focipool}/OASIS3_OPENIFS43R3-${oifs.resolution}_${nemo.resolution}/
         mct_version: 4.0
-        norestart: "T"
+        norestart: "F"
+        use_lucia: True
         
         process_ordering:
                 - nemo

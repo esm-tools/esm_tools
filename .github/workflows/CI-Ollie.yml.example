@@ -13,65 +13,52 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "install as user"
-  install_as_user:
+  install_models:
     # The type of runner that the job will run on
     # To activate this sort of job for both ollie and mistral, we can do:
     # run-on ${{ matrix.supercomputers }}
     # strategy:
     #   matrix:
     #     supercomputers: ["ollie", "mistral"]
+    strategy:
+      # Try to compile ALL models, even if one fails:
+      fail-fast: false
+      matrix:
+          model:
+              - awicmcr-1.0
+              - awicmcr-2.0
+              - awiesm-1.1
+              - awiesm-2.1
+              - pism-github1.2
+              - fesom-2.0
+              - scope-dev
+              - mpiesm-1.2.01
     runs-on: [self-hosted, ollie]
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - name: Set up environment
+    - name: Compile Model
       run: |
         module purge
         module load git
         module load python3
-    - name: Check versions and env
-      run: |
         git --version
+        python -m venv env
+        source env/bin/activate
+        which python
+        which pip
         python --version
         pip --version
-        env
-    # Runs a set of commands using the runners shell
-    - name: Install project
-      run:
-       pip install .
-    - name: Check binaries
-      run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        pip install .
         which esm_master
         which esm_runscripts
         which esm_versions
-    - name: Check esm versions
-      run: |
         esm_versions check
-  install_models:
-      runs-on: [self-hosted, ollie]
-      needs: install_as_user
-      strategy:
-        # Try to compile ALL models, even if one fails:
-        fail-fast: false
-        matrix:
-            model:
-                - awicmcr-1.0
-                - awicmcr-2.0
-                - awiesm-1.1
-                - awiesm-2.1
-                - pism-github1.2
-                - fesom-2.0
-                - scope-dev
-                - mpiesm-1.2.01
-      steps:
-      - name: Install Model
-        run: |
-          export PATH=${HOME}/.local/bin:${PATH}
-          which esm_master
-          esm_master --version
-          rm -rf /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
-          mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
-          cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
-          esm_master install-${{ matrix.model }}
+        rm -rf /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+        mkdir -p /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
+        cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
+        esm_master install-${{ matrix.model }}
+    - name: Cleanup venv
+      run: |
+        rm -rf env

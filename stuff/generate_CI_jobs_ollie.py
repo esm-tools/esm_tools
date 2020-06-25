@@ -11,21 +11,6 @@ def main():
     workflow["on"] = workflow[True]
     del workflow[True]
 
-    install_as_user = workflow['jobs']['install_as_user']
-    install_model = workflow['jobs']['install_models']
-    del workflow['jobs']['install_as_user']
-    del install_model['needs']
-    steps = install_as_user['steps']
-    for idx, step_config in enumerate(steps):
-        if step_config.get("name") == "Set up environment":
-            break
-    generate_env_step = {"name": "Generate virtualenv", "run": "python -m venv env\nsource env/bin/activate\nwhich python\nwhich pip\necho $PATH"}
-    steps.insert(idx+1, generate_env_step)
-    install_model['steps'] = steps + install_model['steps']
-    # Throw away the virtual environemtn:
-    thowaway_step = {"name": "Cleanup Virtualenv", "run": "rm -r env"}
-    install_model['steps'].append(thowaway_step)
-
     for setup_yaml in os.listdir("../configs/esm_master/setups/"):
         setup_name = setup_yaml.replace(".yaml", "")
         setup = yaml_file_to_dict("../configs/esm_master/setups/" + setup_name)

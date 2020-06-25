@@ -15,6 +15,8 @@ general:
                 - recom
                 - fesom
 
+        yearly_outputs_start: 3000   # Year in which the yearly output starts to be saved
+
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -37,8 +39,8 @@ fesom:
                 ollie:
                         forcing_data_dir: "/work/ollie/projects/MarESys/forcing_clim61/" # "${pool_dir}/forcing/"
 
-        asforcing: JRA55
-        asforcing_runoff: CORE2
+        asforcing: CORE2
+        asforcing_wind_rad_precip: JRA55
 
 
         namelist_changes:   # Change to add_namelist_changes when the bug is fixed
@@ -61,8 +63,9 @@ fesom:
                         forcing_exchange_coeff:
                                 Cd_atm_ice: 1.3e-3
                         forcing_source:
-                                runoff_data_source: "${asforcing_runoff}"
-                                sss_data_source: "${asforcing_runoff}"
+                                wind_data_source: "${asforcing_wind_rad_precip}"
+                                rad_data_source: "${asforcing_wind_rad_precip}"
+                                precip_data_source: "${asforcing_wind_rad_precip}"
                                 wind_ttp_ind: 5
                                 rad_ttp_ind: 5
                                 precip_ttp_ind: 5
@@ -134,7 +137,7 @@ fesom:
                                         -
                                                 vars: ${yearly_outputs}
                                                 unit: y
-                                                first: 1000
+                                                first: ${general.yearly_outputs_start}
                                                 rate: 1
                                         -
                                                 vars: ${recom.monthly_outputs}
@@ -151,7 +154,7 @@ fesom:
                                         -
                                                 vars: ${recom.yearly_outputs}
                                                 unit: y
-                                                first: 1000
+                                                first: ${general.yearly_outputs_start}
                                                 rate: 1
 
 

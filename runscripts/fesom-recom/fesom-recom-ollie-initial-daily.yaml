@@ -26,3 +26,5 @@ fesom:
 recom:
         data_path: "/work/ollie/projects/MarESys/forcing/CORE2mesh/"
         scenario: "preindustrial"
+        f_year_fesom_cycle: 1948
+        l_year_fesom_cycle: 2009

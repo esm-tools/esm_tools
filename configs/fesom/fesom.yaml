@@ -59,6 +59,8 @@ choose_asforcing:
                 leapyear: false
         ECHAM5:
                 leapyear: true
+        JRA55:
+                leapyear: true
 
 executable: fesom
 choose_resolution:

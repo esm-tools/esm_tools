@@ -16,7 +16,7 @@ choose_version:
     branch: "fesom-recom-mocsy-slp"
     git-repository: "https://gitlab.dkrz.de/modular_esm/fesom-1.4.git"
     install_bins: "bin/fesom"
-    comp_command: 'mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`'
+    comp_command: 'mkdir -p build; cd build; cmake ..;   make install'
   '2.0':
     branch: 2.0.2
     git-repository:

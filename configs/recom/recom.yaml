@@ -31,14 +31,26 @@ choose_scenario:
                 constant_CO2: true
                 REcoM_PI: true
                 CO2_for_spinup: 278
+                firstyearoffesomcycle: "${f_year_fesom_cycle}"
+                lastyearoffesomcycle: "${l_year_fesom_cycle}"
+                numofCO2cycles: 1
+                currentCO2cycle: 1
         modern:
                 constant_CO2: true
                 REcoM_PI: false
                 CO2_for_spinup: 400
+                firstyearoffesomcycle: "${f_year_fesom_cycle}"
+                lastyearoffesomcycle: "${l_year_fesom_cycle}"
+                numofCO2cycles: 1
+                currentCO2cycle: 1
         historical:
                 constant_CO2: false
                 REcoM_PI: true
-                # forcing
+                CO2_for_spinup: ""
+                firstyearoffesomcycle: "${f_year_fesom_cycle}"
+                lastyearoffesomcycle: "${l_year_fesom_cycle}"
+                numofCO2cycles: "?"
+                currentCO2cycle: "some time dependent variable"
 
 
 namelist_dir: "${esm_namelist_dir}/${model}"
@@ -52,6 +64,10 @@ namelist_changes:
                         bgc_num: 22
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
+                        firstyearoffesomcycle: "${firstyearoffesomcycle}"
+                        lastyearoffesomcycle: "${lastyearoffesomcycle}"
+                        numofCO2cycles: "${numofCO2cycles}"
+                        currentCO2cycle: "${currentCO2cycle}"
                         REcoM_PI: "${REcoM_PI}"
                 paco2_flux_param:
                         CO2_for_spinup: "${CO2_for_spinup}"
@@ -101,7 +117,7 @@ monthly_outputs: [diags3d01,diags3d02,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPP
 
 daily_outputs: []
 
-12_step_outputs: []
+12_second_outputs: []
 
 outdata_files:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT

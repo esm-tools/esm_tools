@@ -39,7 +39,7 @@ jobs:
     # Runs a set of commands using the runners shell
     - name: Install project
       run:
-       ./install.sh
+       pip install .
     - name: Check binaries
       run: |
         export PATH=${HOME}/.local/bin:${PATH}

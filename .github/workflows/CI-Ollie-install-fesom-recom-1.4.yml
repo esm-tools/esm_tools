@@ -34,7 +34,7 @@ jobs:
 
         '
     - name: Install project
-      run: ./install.sh
+      run: pip install .
     - name: Check binaries
       run: 'export PATH=${HOME}/.local/bin:${PATH}
 
@@ -81,8 +81,8 @@ name: CI-Ollie-install-fesom-recom-1.4
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/recom.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml
   push:
     branches:
@@ -91,6 +91,6 @@ name: CI-Ollie-install-fesom-recom-1.4
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/recom.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml

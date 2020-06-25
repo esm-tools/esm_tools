@@ -34,7 +34,7 @@ jobs:
 
         '
     - name: Install project
-      run: ./install.sh
+      run: pip install .
     - name: Check binaries
       run: 'export PATH=${HOME}/.local/bin:${PATH}
 
@@ -82,9 +82,9 @@ name: CI-Ollie-install-awiesm-2.2
     paths:
     - configs/esm_master/setups/awiesm.yaml
     - configs/esm_master/components/echam.yaml
-    - configs/esm_master/components/fesom.yaml
-    - configs/esm_master/components/scope.yaml
     - configs/esm_master/components/pism.yaml
+    - configs/esm_master/components/scope.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev.yaml
   push:
     branches:
@@ -94,7 +94,7 @@ name: CI-Ollie-install-awiesm-2.2
     paths:
     - configs/esm_master/setups/awiesm.yaml
     - configs/esm_master/components/echam.yaml
-    - configs/esm_master/components/fesom.yaml
-    - configs/esm_master/components/scope.yaml
     - configs/esm_master/components/pism.yaml
+    - configs/esm_master/components/scope.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev.yaml

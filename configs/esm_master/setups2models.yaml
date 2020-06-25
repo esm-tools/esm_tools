@@ -221,6 +221,9 @@ components:
                                 destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
                                 git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
                         "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
+                                requires:
+                                        - xios-2.5_r1910
+                                        - nemobasemodel-3.6foci
                                 branch: "esm-tools"
                                 destination: "nemo-${nemobasemodel.version}/CONFIG/${nemo.version}"
                                 git-repository: "https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git"
@@ -381,6 +384,7 @@ components:
                 available_versions:
                         - "2.0_r982" # version with oasis libs compiled in (required for coupled atm ocn setups)
                         - "2.0_r982_ogcm"
+                        - "2.5_r1910"
                 git-repository: "https://git.geomar.de/foci/src/xios.git"
                 destination: "xios-${version}"
                 branch: "esm-tools"
@@ -395,6 +399,10 @@ components:
                         "2.0_r982":
                                 archfile: "ESMTOOLS_generic_oasis_intel"
                                 use_oasis: "--use_oasis oasis3_mct"
+                        "2.5_r1910":
+                                archfile: "ESMTOOLS_generic_oasis_intel"
+                                use_oasis: "--use_oasis oasis3_mct"
+                                branch: "2.5_r1910"
 
         "yac":
                 git-repository: "https://gitlab.dkrz.de/dkrz-sw/yac.git"

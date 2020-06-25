@@ -5,16 +5,16 @@ jobs:
     - ollie
     steps:
     - uses: actions/checkout@v2
-    - name: Set up environment
+    - name: Compile Model
       run: 'module purge
 
         module load git
 
         module load python3
 
-        '
-    - name: Generate virtualenv
-      run: 'python -m venv env
+        git --version
+
+        python -m venv env
 
         source env/bin/activate
 
@@ -22,21 +22,11 @@ jobs:
 
         which pip
 
-        echo $PATH'
-    - name: Check versions and env
-      run: 'git --version
-
         python --version
 
         pip --version
 
-        env
-
-        '
-    - name: Install project
-      run: pip install .
-    - name: Check binaries
-      run: 'export PATH=${HOME}/.local/bin:${PATH}
+        pip install .
 
         which esm_master
 
@@ -44,17 +34,7 @@ jobs:
 
         which esm_versions
 
-        '
-    - name: Check esm versions
-      run: 'esm_versions check
-
-        '
-    - name: Install Model
-      run: 'export PATH=${HOME}/.local/bin:${PATH}
-
-        which esm_master
-
-        esm_master --version
+        esm_versions check
 
         rm -rf /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources
 
@@ -65,8 +45,10 @@ jobs:
         esm_master install-${{ matrix.model }}
 
         '
-    - name: Cleanup Virtualenv
-      run: rm -r env
+    - name: Cleanup venv
+      run: 'rm -rf env
+
+        '
     strategy:
       fail-fast: false
       matrix:
@@ -81,8 +63,8 @@ name: CI-Ollie-install-awicm-3.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/oifs.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0+oifs-40r1.yaml
   push:
     branches:
@@ -91,6 +73,6 @@ name: CI-Ollie-install-awicm-3.0
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/oifs.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-2.0+oifs-40r1.yaml

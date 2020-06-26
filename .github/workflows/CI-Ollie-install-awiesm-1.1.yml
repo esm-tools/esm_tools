@@ -57,7 +57,8 @@ jobs:
         esm_master install-${{ matrix.model }}
 
         '
-    - name: Cleanup venv
+    - if: ${{ always() }}
+      name: Cleanup venv
       run: 'rm -rf env
 
         '
@@ -75,8 +76,8 @@ name: CI-Ollie-install-awiesm-1.1
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awiesm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-1.4+echam-6.3.04p1-paleodyn.yaml
   push:
     branches:
@@ -85,6 +86,6 @@ name: CI-Ollie-install-awiesm-1.1
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awiesm.yaml
-    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/fesom.yaml
     - configs/esm_master/couplings/fesom-1.4+echam-6.3.04p1-paleodyn.yaml

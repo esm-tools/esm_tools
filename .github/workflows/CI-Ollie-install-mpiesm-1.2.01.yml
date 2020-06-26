@@ -10,7 +10,7 @@ jobs:
 
         module load git
 
-        module load python3
+        module load python3/3.7.7_intel2020
 
         git --version
 
@@ -75,8 +75,8 @@ name: CI-Ollie-install-mpiesm-1.2.01
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/mpiesm.yaml
-    - configs/esm_master/components/echam.yaml
     - configs/esm_master/components/mpiom.yaml
+    - configs/esm_master/components/echam.yaml
     - configs/esm_master/couplings/mpiom-1.6.3+echam-6.3.04p1.yaml
   push:
     branches:
@@ -85,6 +85,6 @@ name: CI-Ollie-install-mpiesm-1.2.01
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/mpiesm.yaml
-    - configs/esm_master/components/echam.yaml
     - configs/esm_master/components/mpiom.yaml
+    - configs/esm_master/components/echam.yaml
     - configs/esm_master/couplings/mpiom-1.6.3+echam-6.3.04p1.yaml

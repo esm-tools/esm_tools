@@ -10,7 +10,7 @@ jobs:
 
         module load git
 
-        module load python3
+        module load python3/3.7.7_intel2020
 
         git --version
 
@@ -75,8 +75,8 @@ name: CI-Ollie-install-awicm-2.0-esm-interface-yac
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/echam.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/echam.yaml
     - configs/esm_master/couplings/fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac.yaml
   push:
     branches:
@@ -85,6 +85,6 @@ name: CI-Ollie-install-awicm-2.0-esm-interface-yac
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/awicm.yaml
-    - configs/esm_master/components/echam.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/echam.yaml
     - configs/esm_master/couplings/fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac.yaml

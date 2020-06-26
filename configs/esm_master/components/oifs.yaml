@@ -34,3 +34,4 @@ clean_command: rm -rf make/esm
 comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
 git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
 install_bins: make/esm/oifs/bin/master.exe
+# PG: Dummy change to trigger CI

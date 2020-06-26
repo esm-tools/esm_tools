@@ -6,3 +6,4 @@ components:
 coupling_changes:
 - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
 - sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
+# PG: Dummy change to trigger CI

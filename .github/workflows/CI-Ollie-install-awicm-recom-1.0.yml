@@ -14,6 +14,18 @@ jobs:
 
         git --version
 
+        which git
+
+        python --version
+
+        which python
+
+        pwd
+
+        ls -ratl
+
+        rm -rf env
+
         python -m venv env
 
         source env/bin/activate
@@ -64,8 +76,8 @@ name: CI-Ollie-install-awicm-recom-1.0
     paths:
     - configs/esm_master/setups/awicm-recom.yaml
     - configs/esm_master/components/echam.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-1.4+echam-6.3.04p1.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml
   push:
@@ -76,7 +88,7 @@ name: CI-Ollie-install-awicm-recom-1.0
     paths:
     - configs/esm_master/setups/awicm-recom.yaml
     - configs/esm_master/components/echam.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-1.4+echam-6.3.04p1.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml

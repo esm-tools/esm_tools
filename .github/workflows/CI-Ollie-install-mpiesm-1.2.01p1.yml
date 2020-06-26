@@ -14,9 +14,15 @@ jobs:
 
         git --version
 
-        which python
+        which git
 
         python --version
+
+        which python
+
+        pwd
+
+        ls -ratl
 
         rm -rf env
 

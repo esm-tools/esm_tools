@@ -31,16 +31,16 @@ choose_scenario:
                 constant_CO2: true
                 REcoM_PI: true
                 CO2_for_spinup: 278
-                firstyearoffesomcycle: "${f_year_fesom_cycle}"
-                lastyearoffesomcycle: "${l_year_fesom_cycle}"
+                firstyearoffesomcycle: "${general.initial_date!syear}"
+                lastyearoffesomcycle: "${general.final_datel!syear}"
                 numofCO2cycles: 1
                 currentCO2cycle: 1
         modern:
                 constant_CO2: true
                 REcoM_PI: false
                 CO2_for_spinup: 400
-                firstyearoffesomcycle: "${f_year_fesom_cycle}"
-                lastyearoffesomcycle: "${l_year_fesom_cycle}"
+                firstyearoffesomcycle: "${general.initial_date!syear}"
+                lastyearoffesomcycle: "${general.final_datel!syear}"
                 numofCO2cycles: 1
                 currentCO2cycle: 1
         historical:
@@ -49,8 +49,8 @@ choose_scenario:
                 CO2_for_spinup: ""
                 firstyearoffesomcycle: "${f_year_fesom_cycle}"
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
-                numofCO2cycles: "?"
-                currentCO2cycle: "some time dependent variable"
+                numofCO2cycles: "${num_CO2_cycles}"
+                currentCO2cycle: "${current_CO2_cycle}"
 
 
 namelist_dir: "${esm_namelist_dir}/${model}"

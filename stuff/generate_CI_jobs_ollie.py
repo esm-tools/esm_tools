@@ -3,12 +3,14 @@ from esm_parser.yaml_to_dict import yaml_file_to_dict
 import yaml
 
 import os
+import sys
 
 
 def main():
-    workflow = yaml_file_to_dict("../.github/workflows/CI-Ollie.yml")
+    workflow = yaml_file_to_dict("../.github/workflows/CI-Ollie.yml.example")
     workflow["on"] = workflow[True]
     del workflow[True]
+
     for setup_yaml in os.listdir("../configs/esm_master/setups/"):
         setup_name = setup_yaml.replace(".yaml", "")
         setup = yaml_file_to_dict("../configs/esm_master/setups/" + setup_name)

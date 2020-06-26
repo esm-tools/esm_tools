@@ -44,6 +44,12 @@ jobs:
         module load git
         module load python3
         git --version
+        which git
+        python --version
+        which python
+        pwd
+        ls -ratl
+        rm -rf env
         python -m venv env
         source env/bin/activate
         which python

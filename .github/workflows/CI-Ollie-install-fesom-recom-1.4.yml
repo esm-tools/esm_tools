@@ -10,7 +10,7 @@ jobs:
 
         module load git
 
-        module load python3
+        module load python3/3.7.7_intel2020
 
         git --version
 
@@ -75,8 +75,8 @@ name: CI-Ollie-install-fesom-recom-1.4
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml
   push:
     branches:
@@ -85,6 +85,6 @@ name: CI-Ollie-install-fesom-recom-1.4
     - '*prep-release*'
     paths:
     - configs/esm_master/setups/fesom-recom.yaml
-    - configs/esm_master/components/recom.yaml
     - configs/esm_master/components/fesom.yaml
+    - configs/esm_master/components/recom.yaml
     - configs/esm_master/couplings/fesom-1.4+recom.yaml

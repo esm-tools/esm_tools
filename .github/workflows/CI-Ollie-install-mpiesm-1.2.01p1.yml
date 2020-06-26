@@ -14,6 +14,12 @@ jobs:
 
         git --version
 
+        which python
+
+        python --version
+
+        rm -rf env
+
         python -m venv env
 
         source env/bin/activate

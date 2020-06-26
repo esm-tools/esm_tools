@@ -66,5 +66,6 @@ jobs:
         cd /work/ollie/pgierz/esm_tools_ollie_ci/${{ matrix.model }}/model_sources/
         esm_master install-${{ matrix.model }}
     - name: Cleanup venv
+      if: ${{ always() }}
       run: |
         rm -rf env

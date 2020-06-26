@@ -48,3 +48,4 @@ clean_command: ${defaults.clean_command}
 comp_command: ${defaults.comp_command}
 git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
 install_bins: src/echam/bin/echam6
+# Minichange to trigger CI (PG: write randowm stuff here and commit it to trigger CI builds with ECHAM as a component)

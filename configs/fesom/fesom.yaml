@@ -220,7 +220,7 @@ monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siar
 
 daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
 
-12_second_outputs: [tso]
+12_step_outputs: [tso]
 
 ignore_files:
         gf: gf
@@ -274,7 +274,7 @@ runtime_environment_changes:
                                         unit: d
                                         rate: 1
                                 -
-                                        vars: ${12_second_outputs}
+                                        vars: ${12_step_outputs}
                                         unit: s
                                         rate: 12
                                 -

@@ -110,7 +110,7 @@ fesom:
         monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
 
         daily_outputs: []
-        12_second_outputs: []
+        12_step_outputs: []
 
 
         runtime_environment_changes:
@@ -131,13 +131,13 @@ fesom:
                                                 unit: d
                                                 rate: 1
                                         -
-                                                vars: ${12_second_outputs}
+                                                vars: ${12_step_outputs}
                                                 unit: s
                                                 rate: 12
                                         -
                                                 vars: ${yearly_outputs}
                                                 unit: y
-                                                first: ${general.yearly_outputs_start}
+                                                first: 1    # ${general.yearly_outputs_start}
                                                 rate: 1
                                         -
                                                 vars: ${recom.monthly_outputs}
@@ -148,7 +148,7 @@ fesom:
                                                 unit: d
                                                 rate: 1
                                         -
-                                                vars: ${recom.12_second_outputs}
+                                                vars: ${recom.12_step_outputs}
                                                 unit: s
                                                 rate: 12
                                         -

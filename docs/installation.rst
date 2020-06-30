@@ -44,3 +44,13 @@ $ Please enter your username for gitlab.dkrz.de (default: anonymous)
 $ Please enter your username for swrepo1.awi.de (default: anonymous)
 
 Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
+
+Uninstall ESM-tools
+-------------------
+
+To uninstall and remove your current installation of ESM-tools, you need to remove the installed python libs and deltete the esm_* executables. Following commands will do the trick (unix-based system)::
+
+$ rm ~/.local/bin/esm*
+$ rm ~/.local/lib/python3.6/site-packages/esm*
+$ rm ~/.local/lib/python3.6/site-packages/easy-*
+

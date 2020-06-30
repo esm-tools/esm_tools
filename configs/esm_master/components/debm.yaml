@@ -1,0 +1,17 @@
+available_versions:
+- "1.0"
+- "fortran"
+- "update"
+
+choose_version:
+    "1.0":
+        branch: "1.0"
+    "fortran":
+        branch: "fortran"
+    "update":
+        branch: "update"
+
+clean_command: ${defaults.clean_command}
+comp_command: ${defaults.comp_command}
+git-repository: https://github.com/ukrebska/dEBM
+

@@ -128,6 +128,24 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 
+        6.3.05p2-concurrent_radiation-paleodyn:
+                repo_tag: not_applicable
+                dataset: r0007
+                add_streams:
+                    - rad
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        npromar: "${npromar}"
+                                parctl:
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                        lrestart_from_old: "${lrestart_from_old}"
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007

@@ -1,7 +1,11 @@
-compiletime_environment_changes:
-    add_module_actions:
-        - "unload netcdf"
-        - "unload intel.compiler"
-        - "load pism_externals"
-    add_export_vars:
-        - "I_MPI_FABRICS=shm:tmi"
+# PG: BUG!! This doesn't work, but should:
+choose_computer.name:
+    ollie:
+        environment_changes:
+            add_module_actions:
+                - "unload netcdf"
+                - "unload intel.compiler"
+                - "unload intel.mpi"
+                - "load pism_externals"
+            add_export_vars:
+                - "I_MPI_FABRICS=shm:tmi"

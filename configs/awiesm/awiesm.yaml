@@ -12,6 +12,8 @@ general:
                 - echam
                 - fesom
                 - oasis3mct
+                - pism
+                - scope
 
                   #version: "1.1"
         scenario: "PALEO"

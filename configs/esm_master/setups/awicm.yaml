@@ -1,5 +1,6 @@
 available_versions:
 - '1.0'
+- '1.0-recom'
 - CMIP6
 - '2.0'
 - '3.0'
@@ -10,6 +11,9 @@ choose_version:
   '1.0':
     couplings:
     - fesom-1.4+echam-6.3.04p1
+  '1.0-recom':
+    couplings:
+    - fesom-1.4+recom-2.0+echam-6.3.04p1
   '2.0':
     couplings:
     - fesom-2.0+echam-6.3.04p1

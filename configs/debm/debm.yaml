@@ -1,0 +1,10 @@
+model: debm
+type: surface mass balance
+metadata:
+    Institute: AWI
+    Description:
+        dEBM is a surface melt scheme to couple ice and climate models in paleo applications.
+    Publications:
+        "Krebs-Kanzow, U., Gierz, P., and Lohmann, G., Brief communication: An Ice surface melt scheme including the diurnal cycle of solar radiation, The Cryosphere Discuss., https://doi.org/10.5194/tc-2018-130, accepted for publication"
+    License:
+        MIT

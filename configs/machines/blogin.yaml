@@ -1,0 +1,105 @@
+# BLOGIN YAML CONFIGURATION FILES
+
+name: blogin 
+account: shk00018 
+
+choose_general.use_hyperthreading:
+        "0":
+                hyperthreading_flag: "--ntasks-per-core=1"
+        "*":
+                hyperthreading_flag: ""
+
+accounting: true
+
+"batch_system": "slurm"
+
+jobtype: compute
+sh_interpreter: "/bin/bash"
+
+choose_jobtype:
+        tidy_and_resubmit:
+                partition: standard96
+        post:
+                partition: standard96
+        compute:
+                partition: standard96
+
+
+choose_partition:
+        standard96:
+                cores_per_node: 96
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+
+pool_directories:
+        pool: "/pool/data/not/available/on/blogin"
+        focipool: "/scratch/usr/shkifmsw/foci_input2"
+
+pool_dir:  "/pool/data/not/available/on/blogin"
+
+# standard environment setup
+#
+module_actions:
+        - "purge"
+        - "load slurm"
+        - "load  HLRNenv" 
+        - "load sw.skl"
+        - "load cmake"
+        - "load intel/19.0.5"
+        # don't load intelmpi, we need to source the 
+        # release_mt version, see below
+        # - "load impi/2019.5"
+        # dirty workaround, removed after rewrite of esm_environment (Sebastian Wahl 2020-06-26)
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+
+export_vars:
+
+        - "FC=mpiifort"
+        - "F77=mpiifort"
+        - "MPIFC=mpiifort"
+        - "CC=mpiicc"
+        - "CXX=mpiicpc"
+        - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        - "IO_LIB_ROOT=/home/shkifmms/HPC_libraries/TARGETS/HLRN4B/intel-19.0.5/impi-2019.5"
+        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+
+        - "HDF5ROOT=$IO_LIB_ROOT"
+        - "HDF5_ROOT=$HDF5ROOT"
+        - "NETCDFROOT=$IO_LIB_ROOT"
+        - "NETCDFFROOT=$IO_LIB_ROOT"
+        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+
+        - "SZIPROOT=$IO_LIB_ROOT"
+        - "LAPACK_LIB='-mkl=sequential'"
+        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+
+        # mostly OpenIFS stuff
+        # TODO: re-add from mistral after feedback from Joakim
+        # ask on grib api, isn't this part of ECCODES
+
+        # MPIOM vars
+        - 'ARFLAGS=crv'
+        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
+        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+        - 'WLFLAG="-Wl"'
+        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
+        - 'OASIS3MCTROOT=${model_dir}'
+
+        - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
+        - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
+        - 'DAPL_WR_MAX=500'
+
+        - 'OMPI_MCA_pml=cm'
+        - 'OMPI_MCA_mtl=mxm'
+        - 'OMPI_MCA_coll=^ghc'
+        - 'OMPI_MCA_mtl_mxm_np=0'
+
+further_reading:
+        - batch_system/slurm.yaml

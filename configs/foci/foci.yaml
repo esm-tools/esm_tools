@@ -49,6 +49,16 @@ general:
                                 #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                 # OpenMP
                                 #- 'OMP_NUM_THREADS=1'
+# This does not work but should...
+# Sebastian Wahl 2020-06-26
+#environment_changes:
+#        choose_computer.name:
+#                blogin:
+#                        add_module_actions:
+#                                - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+#                glogin:
+#                        add_module_actions:
+#                                - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
 computer:
        additional_flags: "--ntasks-per-core=1"
        launcher: "srun" # default, but set it to make clear what the launcher flags are used for

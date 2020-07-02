@@ -1,0 +1,94 @@
+jobs:
+  install_models:
+    runs-on:
+    - self-hosted
+    - blogin3 
+    steps:
+    - uses: actions/checkout@v2
+    - name: Compile Model
+      run: 'module purge
+
+        module load git
+
+        module load anaconda3/2019.10
+
+        git --version
+
+        which git
+
+        python --version
+
+        which python
+
+        pwd
+
+        ls -ratl
+
+        rm -rf env
+
+        python -m venv env
+
+        source env/bin/activate
+
+        which python
+
+        which pip
+
+        python --version
+
+        pip --version
+
+        pip install .
+
+        which esm_master
+
+        which esm_runscripts
+
+        which esm_versions
+
+        esm_versions check
+
+        rm -rf /home/shkifmsw/actions-runner/work/${{ matrix.model }}/model_sources
+
+        mkdir -p /home/shkifmsw/actions-runner/work/${{ matrix.model }}/model_sources
+
+        cd /home/shkifmsw/actions-runner/work/${{ matrix.model }}/model_sources/
+
+        esm_master install-${{ matrix.model }}
+
+        '
+    - if: ${{ always() }}
+      name: Cleanup venv
+      run: 'rm -rf env
+
+        '
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+        - foci-default 
+name: CI-blogin-install-foci-default
+'on':
+  pull_request:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    paths:
+    - configs/esm_master/setups/foci.yaml
+    - configs/esm_master/components/xios.yaml
+    - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/nemo.yaml
+    - configs/esm_master/couplings/nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci.yaml
+  push:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    - add-blogin-support-and-CI-foci
+    paths:
+    - configs/esm_master/setups/foci.yaml
+    - configs/esm_master/components/xios.yaml
+    - configs/esm_master/components/echam.yaml
+    - configs/esm_master/components/nemo.yaml
+    - configs/esm_master/couplings/nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci.yaml

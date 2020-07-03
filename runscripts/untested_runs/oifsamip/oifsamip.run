@@ -30,10 +30,10 @@ use_hyperthreading=0
 LRESUME_oifs=0
 LRESUME_oasis3mct=0
 
-MODEL_DIR_oifsamip=/pf/a/a270092/testbed/esm-master/oifsamip
+MODEL_DIR=/pf/a/a270092/testbed/esm-master/oifsamip
 
-BIN_DIR_oifs=${MODEL_DIR_oifsamip}/bin/
-BIN_DIR_amip=${MODEL_DIR_oifsamip}/bin/
+BIN_DIR_oifs=${MODEL_DIR}/bin/
+BIN_DIR_amip=${MODEL_DIR}/bin/
 
 BASE_DIR=/mnt/lustre01/work/ba1035/a270092/runtime/oifsamip
 

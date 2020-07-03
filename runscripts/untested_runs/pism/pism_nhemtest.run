@@ -14,7 +14,7 @@ setup_name="pism_standalone"				# mpiesm, pism_mpiesm, echam. mpiom, or pism
 check=1
 
 ###############################################################################
-MODEL_DIR_pism_standalone=/home/ollie/dbarbi/mpiesm/branches/withPISM/src/pism0.7
+MODEL_DIR=/home/ollie/dbarbi/mpiesm/branches/withPISM/src/pism0.7
 BIN_DIR_pism_standalone=/work/ollie/pgierz/pism0.7/bin/
 BASE_DIR_pism_standalone=/work/ollie/pgierz/PISM
 #POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/input/examples_greenland/

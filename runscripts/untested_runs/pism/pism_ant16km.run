@@ -89,10 +89,10 @@ CURRENT_DATE_pism_standalone=date_file
 if [ "${PATH_TO_pismr:-NotDefinedVariable}" != "NotDefinedVariable" ] ; then
     # If $PATH_TO_pismr is defined, use its value
     BIN_DIR_pism_standalone=${PATH_TO_pismr:-$(dirname $(which pismr))} # Explicit plus fallback
-    MODEL_DIR_pism_standalone=${MODEL_DIR_pism_standalone:-$(dirname ${BIN_DIR_pism_standalone})}
+    MODEL_DIR=${MODEL_DIR:-$(dirname ${BIN_DIR_pism_standalone})}
 else
     BIN_DIR_pism_standalone=${PISM_BIN%%/pismr}                         # $PISM_BIN set by the module
-    MODEL_DIR_pism_standalone=${PISM_ROOT:?Unknown variable}            # $PISM_ROOT set by the module
+    MODEL_DIR=${PISM_ROOT:?Unknown variable}            # $PISM_ROOT set by the module
 fi
 POOL_DIR_pism_standalone=/work/ollie/projects/PISM/ANTARCTIC_16km_PISMv07_Eq1old  # CHECK
 DOMAIN_pism='Antarctica'                                                          # CHECK
@@ -181,7 +181,7 @@ echo "[$0] PISM_POOL_INPUT0_LONLAT        = ${PISM_POOL_INPUT0_LONLAT}"
 echo "[$0] PISM_POOL_INPUT0_XY            = ${PISM_POOL_INPUT0_XY}"
 echo "[$0]"
 echo "[$0] BASE_DIR                       = ${BASE_DIR}"
-echo "[$0] MODEL_DIR_pism_standalone      = ${MODEL_DIR_pism_standalone}"
+echo "[$0] MODEL_DIR                      = ${MODEL_DIR}"
 echo "[$0] BIN_DIR_pism_standalone        = ${BIN_DIR_pism_standalone}"
 echo "[$0] POOL_DIR_pism_standalone       = ${POOL_DIR_pism_standalone}"
 echo "[$0] DOMAIN_pism                    = ${DOMAIN_pism}"

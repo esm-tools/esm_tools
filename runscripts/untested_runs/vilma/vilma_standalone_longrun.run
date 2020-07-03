@@ -16,17 +16,17 @@ ESM_USE_C_CALENDAR=1
 INITIAL_DATE_vilma_standalone=-123000-01-01        # Initial exp. date
 FINAL_DATE_vilma_standalone=-1-01-01          # Final date of the experiment
 
-MODEL_DIR_vilma_standalone=${HOME}/esm-master/vilma/
+MODEL_DIR=${HOME}/esm-master/vilma/
 
 OUTPUT_INTERVAL_vilma="1.0"
 
 LRESUME_vilma=0
 
-BIN_DIR_vilma=${MODEL_DIR_vilma_standalone}/bin/
+BIN_DIR_vilma=${MODEL_DIR}/bin/
 
 BASE_DIR=/work/ab0995/a270058/esm-experiments/vilma/
 
-POOL_DIR_vilma_standalone=${MODEL_DIR_vilma_standalone}
+POOL_DIR_vilma_standalone=${MODEL_DIR}
 
 NYEAR_vilma_standalone=1000          # Number of years per run
 

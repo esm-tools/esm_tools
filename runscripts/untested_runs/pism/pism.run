@@ -45,7 +45,7 @@ check=0
 BASE_DIR=
 
 # PISM Settings
-MODEL_DIR_pism_standalone=$PISM_ROOT
+MODEL_DIR=$PISM_ROOT
 BIN_DIR_pism_standalone=$PISM_BIN
 POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism
 

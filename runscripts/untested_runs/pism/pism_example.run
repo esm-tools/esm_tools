@@ -17,7 +17,7 @@ ACCOUNT=shinck
 BASE_DIR=/work/ollie/pgierz/esm-experiments/
 
 # PISM Settings
-MODEL_DIR_pism_standalone=/global/AWIsoft/tkleiner/pism/0.7.3_intel_impi/
+MODEL_DIR=/global/AWIsoft/tkleiner/pism/0.7.3_intel_impi/
 BIN_DIR_pism_standalone=/global/AWIsoft/tkleiner/pism/0.7.3_intel_impi/bin/
 POOL_DIR_pism_standalone=/work/ollie/pgierz/pool_pism/
 

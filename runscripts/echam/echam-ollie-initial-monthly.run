@@ -18,7 +18,7 @@ SCENARIO_echam="PI-CTRL"
 
 RES_echam=T63
 
-MODEL_DIR_echam=/work/ollie/dbarbi/modelcodes/echam-6.3.04p1//
+MODEL_DIR=/work/ollie/dbarbi/modelcodes/echam-6.3.04p1//
 BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
 
 NYEAR=0           # Number of years per run

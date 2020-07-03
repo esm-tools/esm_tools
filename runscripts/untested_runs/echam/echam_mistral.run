@@ -25,11 +25,11 @@ FINAL_DATE_echam_standalone=1853-12-31          # Final date of the experiment
 
 SCENARIO_echam="PI-CTRL"
 
-MODEL_DIR_echam_standalone=${HOME}/esm-master/echam-6.3.04p1/
+MODEL_DIR=${HOME}/esm-master/echam-6.3.04p1/
 
-LCTLIBDEF_jsbach=${MODEL_DIR_echam_standalone}/lctlib_nlct21.def
+LCTLIBDEF_jsbach=${MODEL_DIR}/lctlib_nlct21.def
 
-BIN_DIR_echam_standalone=${MODEL_DIR_echam_standalone}/src/echam/bin/
+BIN_DIR_echam_standalone=${MODEL_DIR}/src/echam/bin/
 
 BASE_DIR=${WORK}/esm-experiments/
 

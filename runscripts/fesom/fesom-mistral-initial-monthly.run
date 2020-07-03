@@ -18,7 +18,7 @@ SCENARIO_fesom="PI-CTRL"
 
 RES_fesom=CORE2
 
-MODEL_DIR_fesom=${HOME}/esm-tools/fesom-1.4/
+MODEL_DIR=${HOME}/esm-tools/fesom-1.4/
 BASE_DIR=/mnt/lustre02/work/ab0995/a270058/esm_yaml_test/
 
 POOL_DIR_fesom=/mnt/lustre02//work/bm0944/input/

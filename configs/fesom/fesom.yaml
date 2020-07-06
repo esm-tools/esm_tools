@@ -249,11 +249,14 @@ outdata_sources:
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-
 compiletime_environment_changes:
         add_export_vars:
                 takenfrom:      fesom1
-
+choose_computer.name:
+        mistral:
+                add_compiletime_environment_changes:
+                        add_module_actions:
+                                - "load gcc/4.8.2"
 
 
 runtime_environment_changes:

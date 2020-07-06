@@ -2,6 +2,8 @@
 ######################### AWICM 1 YAML CONFIGURATION FILE ###############################
 #########################################################################################
 
+
+
 general:
         model: awicm
         #model_dir: ${esm_master_dir}/awicm-${version}
@@ -25,6 +27,15 @@ general:
                         compute_time: "02:00:00"
                 T63_REF:
                         compute_time: "02:00:00"
+        available_versions:
+        - '1.0'
+        choose_version:
+          '1.0':
+            couplings:
+            - fesom-1.4+echam-6.3.04p1
+          CMIP6:
+            couplings:
+            - fesom-1.4+echam-6.3.04p1
 
 
 #########################################################################################

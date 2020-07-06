@@ -21,6 +21,16 @@ general:
         choose_general.resolution:
                 T63_CORE2:
                         compute_time: "02:00:00"
+        available_versions:
+        - '3.0'
+        - '3.1'
+        choose_version:
+          '3.0':
+            couplings:
+            - fesom-2.0+oifs-40r1
+          '3.1':
+            couplings:
+            - fesom-2.0+oifs-43r3-awi
 
 
 #########################################################################################

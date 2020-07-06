@@ -13,6 +13,16 @@ general:
                 - oasis3mct
 
         version: "2.1"
+        available_versions:
+        - '2.1'
+        - '2.2'
+        choose_version:
+          '2.1':
+            couplings:
+            - fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn
+          '2.2':
+            couplings:
+            - fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false

@@ -1,6 +1,0 @@
-available_versions:
-- default
-choose_version:
-  default:
-    couplings:
-    - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci

@@ -4,3 +4,9 @@
 
 model: mpiesm
 version: "1.2.00p4"
+available_versions:
+- 1.2.00p4
+choose_version:
+  1.2.00p4:
+    couplings:
+    - mpiom-1.6.2p3+echam-6.3.02p4

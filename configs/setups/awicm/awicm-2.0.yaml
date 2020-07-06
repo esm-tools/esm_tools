@@ -21,6 +21,20 @@ general:
         choose_general.resolution:
                 T63_CORE2:
                         compute_time: "02:00:00"
+        available_versions:
+        - '2.0'
+        - 2.0-esm-interface
+        - 2.0-esm-interface-yac
+        choose_version:
+          '2.0':
+            couplings:
+            - fesom-2.0+echam-6.3.04p1
+          2.0-esm-interface:
+            couplings:
+            - fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface
+          2.0-esm-interface-yac:
+            couplings:
+            - fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac
 
 
 #########################################################################################

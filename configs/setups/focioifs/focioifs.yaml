@@ -14,6 +14,17 @@ general:
                 - nemo
                 - oasis3mct
 
+        available_versions:
+        - agrif
+        - '2.0'
+        choose_version:
+          '2.0':
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
+          agrif:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci
+
         version: "1.0"
         scenario: "PI-CTRL"
         resolution: ${oifs.resolution}_${nemo.resolution}

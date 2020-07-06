@@ -13,6 +13,16 @@ general:
                 - fesom
                 - oasis3mct
 
+        available_versions:
+        - '1.1'
+        - '1.2'
+        choose_version:
+          '1.1':
+            couplings:
+            - fesom-1.4+echam-6.3.04p1-paleodyn
+          '1.2':
+            couplings:
+            - fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
                   #version: "1.1"
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}

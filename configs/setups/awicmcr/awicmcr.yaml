@@ -14,6 +14,20 @@ general:
                 - oasis3mct
 
         version: "1.1"
+        available_versions:
+        - '1.0'
+        - CMIP6
+        - '2.0'
+        choose_version:
+          '1.0':
+            couplings:
+            - fesom-1.4+echam-6.3.05p2-concurrent_radiation
+          '2.0':
+            couplings:
+            - fesom-2.0+echam-6.3.05p2-concurrent_radiation
+          CMIP6:
+            couplings:
+            - fesom-1.4+echam-6.3.05p2-concurrent_radiation
         scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false

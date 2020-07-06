@@ -1,0 +1,57 @@
+# XIOS YAML CONFIGURATION FILE
+#
+#
+
+model: xios
+version: 2.0r982
+executable: xios.x
+
+metadata:
+        Institute: IPSL and CEA
+        Description:
+                A library dedicated to I/O management in climate codes.
+        Authors: Yann Meurdesoif (yann.meurdesoif@cea.fr)
+        Website: https://portal.enes.org/models/software-tools/xios
+        License:
+                Please make sure you have a licence to use XIOS. In case you are
+                unsure, please contact redmine...
+
+archfile: ESMTOOLS_generic_intel
+available_versions:
+- 2.0_r982_ogcm
+- 2.0_r982
+branch: esm-tools
+choose_version:
+  2.0_r982:
+    archfile: ESMTOOLS_generic_oasis_intel
+    nothing: much
+    use_oasis: --use_oasis oasis3_mct
+  2.0_r982_ogcm:
+    archfile: ESMTOOLS_generic_intel
+    use_oasis: ''
+clean_command: rm -rf bin lib obj ppsrc
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib
+  netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+destination: xios-${version}
+git-repository: https://git.geomar.de/foci/src/xios.git
+install_bins: bin/xios.x
+use_oasis: ''
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00
+
+config_files:
+        domain_def: domain_def
+        field_def: field_def
+        file_def: file_def
+        io_def: io_def
+
+config_sources:
+        domain_def: ${xml_dir}/domain_def.xml
+        field_def: ${xml_dir}/field_def.xml
+        file_def: ${xml_dir}/file_def.xml
+        io_def: ${xml_dir}/iodef.xml
+
+bin_sources:
+        server: ${bin_dir}/xios.x

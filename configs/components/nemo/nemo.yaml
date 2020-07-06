@@ -1,0 +1,371 @@
+# NEMO YAML CONFIGURATION FILE
+#
+
+# DEFAULT VALUES
+model: nemo
+nemoconfig: "ORCA05_LIM2_KCM_AOW"
+include_models:
+        - xios
+executable:     oceanx
+version:        3.6
+
+available_versions:
+- ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- GYRE_XIOS
+choose_nemo.version:
+  GYRE_XIOS:
+    requires:
+    - xios-2.0_r982_ogcm
+    - nemobasemodel-3.6ogcm
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW:
+    branch: master
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    requires:
+- xios-2.0_r982
+- nemobasemodel-3.6foci
+metadata:
+        Organization: Nucleus for European Modelling of the Ocean
+        Institute: IPSL
+        Description:
+                NEMO standing for Nucleus for European Modelling of the Ocean is a
+                state-of-the-art modelling framework for research activities and
+                forecasting services in ocean and climate sciences, developed in a
+                sustainable way by a European consortium.
+        Authors: Gurvan Madec and NEMO System Team (nemo_st@locean-ipsl.umpc.fr)
+        Publications:
+                NEMO ocean engine <http://doi.org/10.5281/zenodo.1464816>
+        License:
+                Please make sure you have a license to use NEMO. In case you are
+                unsure, please contact redmine...
+
+resolution:     ORCA05
+time_step:      1800
+
+use_lim2:       true
+use_tracer:     true
+hosing:         false
+lresume:        false
+free_surface:   linear
+correct_neg_tracer_conc: true
+
+restart_rate:   1
+restart_unit:   months
+
+# default directories
+pool_dir: ${computer.pool_directories.focipool}
+input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
+# TODO
+ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
+namelist_dir:   ${model_dir}/CONFIG/${nemoconfig}/EXP00
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+
+start_date_m1: $((${start_date} - ${time_step}seconds))
+end_date_m1: $((${next_date} - ${time_step}seconds))
+runtime: $((${next_date} - ${start_date}))
+timestep_per_run: $(( ${runtime} / ${time_step} ))
+
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $(( ${seconds_since_initial} / ${time_step}))
+
+prevstep: ${steps_since_initial}
+thisstep: $(( ${prevstep} + 1))
+newstep: $(( ${prevstep} + ${timestep_per_run} ))
+
+prevstep_formatted: "<--format(%08d)-- ${prevstep}"
+thisstep_formatted: "<--format(%08d)-- ${thisstep}"
+newstep_formatted: "<--format(%08d)-- ${newstep}"
+
+coupling_freq_in_steps: 6
+
+# calendar:
+namelist_changes:
+        namelist_cfg:
+                namrun:
+                        cn_exp: ${expid}
+                        nn_it000: ${thisstep}
+                        nn_itend: ${newstep}
+                        nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
+                        cn_ocerst_indir: '${work_dir}/'
+                        cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+                        cn_ocerst_outdir: '${work_dir}/'
+                        nn_stock: ${newstep}
+                        nn_leapy: 1
+                        nn_rstctl: 2
+                        ln_rstart: 'false'
+                namtsd:
+                        ln_tsd_init: '.true.'
+                namdom:
+                        nn_closea: 1
+                        nn_msh: 1
+                        rn_rdt: ${time_step}
+                namsbc:
+                        nn_fsbc: ${coupling_freq_in_steps}
+                nammpp:
+                        jpni: 0
+                        jpnj: 0
+                        jpnij: 0
+
+choose_nemoconfig:
+       "ORCA05_LIM2_KCM_AOW":
+                free_surface: linear
+                hosing: false
+                use_lim2:       true
+                use_tracer:     true
+                correct_neg_tracer_conc: true
+
+                namelist_changes:
+                        namelist_cfg:
+                              nammpp:
+                                    jpni: 0
+                                    jpnj: 0
+                                    jpnij: 0
+
+choose_free_surface:
+        linear:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_hpg:
+                                        ln_hpg_zps: '.true.'
+                                        ln_hpg_sco: '.false.'
+                                        ln_dynhpg_imp: '.true.'
+        nonlinear:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_hpg:
+                                        ln_hpg_zps: '.false.'
+                                        ln_hpg_sco: '.true.'
+                                        ln_dynhpg_imp: '.false.'
+
+choose_hosing:
+        true:
+                namelist_changes:
+                        namelist_cfg:
+                                namdyn_sbc:
+                                        ln_hosing: '.true.'
+
+choose_lresume:
+        true:
+                namelist_changes:
+                        namelist_cfg:
+                                namrun:
+                                        ln_rstart: '.true.'
+                                nam_tsd:
+                                        nam_tsd_init: '.true.'
+                                namdom:
+                                        nn_msh: 0
+                choose_general.run_number:
+                        1:
+                                namelist_changes:
+                                        namelist_cfg:
+                                                namrun:
+                                                        nn_rstctl: 0
+        false:
+                add_outdata_sources:
+                        mesh_mask: mesh_mask*.nc
+
+
+choose_correct_neg_tracer_conc:
+        true:
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_rad:
+                                        ln_trcrad: ".true."
+        false:
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_rad:
+                                        ln_trcrad: ".false."
+
+choose_general.run_number:
+        1:
+                namelist_changes:
+                        namelist_cfg:
+                                namdom:
+                                        nn_msh: 1
+# choices:
+#
+choose_resolution:
+        ORCA05:
+                _nx: 722
+                _ny: 511
+                time_step: 1800
+                input_files:
+                        namelist_ref: namelist_ref
+                        namelist_ice_ref: namelist_ice_ref
+                        namelist_top_ref: namelist_top_ref
+                        bathy_meter: bathy_meter
+                        coordinates: coordinates
+                        subbasins: subbasins
+                        tpot: tpot
+                        s_correc: s_correc
+                        s_correc_sss: s_correc_sss
+                        Ice_init: Ice_init
+                        coef-G70: coef-G70
+                input_in_work:
+                        namelist_ice_ref: namelist_ice_ref
+                        subbasins: orca05_subbasins_3.6.nc
+                        tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+                        s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+                        s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+                        coef-G70: orca05_bfr_coef-G70.nc
+                        Ice_init: Ice_initialization.nc
+
+        GYRE_XIOS:
+                _nx: 32
+                _ny: 22
+                time_step: 7200
+
+
+choose_use_lim2:
+        true:
+                add_config_files:
+                        namelist_ice_cfg: namelist_ice_cfg
+                namelist_changes:
+                        namelist_ice_cfg:
+                                namicerun:
+                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}
+                                        cn_icerst_indir: '${work_dir}'
+                                        cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                                        cn_icerst_outdir: '${work_dir}'
+                                namiceini:
+                                        ln_limini: '.true.'
+                choose_lresume:
+                        true:
+                                namelist_changes:
+                                        namelist_ice_cfg:
+                                                namiceini:
+                                                        ln_limini: '.false.'
+
+choose_use_tracer:
+        true:
+                add_config_files:
+                        namelist_top_cfg: namelist_top_cfg
+                namelist_changes:
+                        namelist_top_cfg:
+                                namtrc_run:
+                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
+                                        cn_trcrst_indir: '${work_dir}'
+                                        cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
+                                        cn_trcrst_outdir: '${work_dir}'
+                                        ln_rsttr: '.false.'
+                                        nn_rsttr : 0
+                                namtrc:
+                                        ln_trcdta: '.true.'
+                choose_lresume:
+                        true:
+                                namelist_changes:
+                                        namelist_top_cfg:
+                                                namtrc_run:
+                                                        ln_rsttr: '.true.'
+                                                namtrc:
+                                                        ln_trcdta: '.false.'
+                choose_general.run_number:
+                        1:
+                                namelist_changes:
+                                        namelist_top_cfg:
+                                                namtrc_run:
+                                                        nn_rsttr : 0
+
+
+bin_sources:
+        nemo: ${bin_dir}/oceanx
+
+############## input files:
+
+input_files:
+
+input_in_work:
+
+input_sources:
+        bathy_meter: ${input_dir}/bathy_meter.nc
+        coordinates: ${input_dir}/coordinates.nc
+        subbasins: ${input_dir}/orca05_subbasins_3.6.nc
+        tpot: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        s_correc: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        s_correc_sss: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+        Ice_init: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
+        coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
+        # add namelist_ref as input source to avoid removal of comments which
+        # makes namelist unreadable
+        namelist_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ref
+        namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
+        namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
+
+############## config files / namelist files:
+
+config_files:
+        namelist_cfg: namelist_cfg
+
+config_sources:
+        namelist_cfg: ${namelist_dir}/namelist_cfg
+        namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
+        namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
+
+config_in_work:
+        namelist_cfg: namelist_cfg
+        namelist_ice_cfg: namelist_ice_cfg
+        namelist_top_cfg: namelist_top_cfg
+
+namelists:
+        - namelist_cfg
+        - namelist_top_cfg
+        - namelist_ice_cfg
+
+############## restart files:
+
+restart_in_sources:
+        restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+
+restart_out_sources:
+        restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+############## output files:
+
+outdata_sources:
+         5d: ${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+         1m: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+
+############## log files:
+
+log_sources:
+        tracer:  tracer.stat
+        ocean:  '*ocean.output'
+
+##########################  coupling stuff
+
+opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
+
+coupling_fields:
+        "[[opat_fields-->FIELD]]":
+                grid: opat
+        "[[opac_fields-->FIELD]]":
+                grid: opac
+
+grids:
+        opat:
+                name: opat
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 2 # oasis P-value
+        opac:
+                name: opac
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR" #??? not sure, doesn't matter
+                number_of_overlapping_points: 2 # oasis P-value

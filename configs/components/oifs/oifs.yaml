@@ -1,0 +1,672 @@
+#
+#OIFS standalone (=AMIP?) YAML FILE
+#
+
+model: oifs
+executable: master.exe
+execution_command: ${executable} -e ${oifs.input_expid}
+version: 40r1
+type: atmosphere
+
+description: |
+        The OpenIFS atmosphere model based on ECMWF IFS
+        Carver et al., in prep.
+
+license_text: |
+        ECMWF license. AWI and GEOMAR have licenses.
+
+# Force namelist fort.4 to be written in uppercase
+namelist_case: "uppercase"
+
+available_versions:
+- 40r1
+- 43r3-awi
+- 43r3
+- 40r1-foci
+- 43r3-foci
+- 40r1-agcm
+choose_version:
+  40r1:
+    branch: foci_conserv
+  40r1-agcm:
+    compile_command: export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f
+      oifs-agcm.cfg
+  40r1-foci:
+    branch: foci_conserv
+    comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
+    destination: 40r1
+  43r3:
+    branch: oifs-deck
+    comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+      -v -j8 -f oifs.cfg
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+  43r3-awi:
+    branch: master
+    comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+      -v -j8 -f oifs.cfg
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+  43r3-foci:
+    branch: oifs-foci
+    comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+      -v -j8 -f oifs.cfg
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+clean_command: rm -rf make/esm
+comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
+install_bins: make/esm/oifs/bin/master.exe
+##
+## Directories
+##
+
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
+input_dir: ${computer.pool_dir}
+rtables_dir: ${input_dir}/../rtables/
+vtables_dir: ${input_dir}/../vtables/
+clim_dir: ${input_dir}/../
+icmcl_dir: ${input_dir}
+icmcl_file: ICMCLgu5aINIT
+forcing_dir: ${input_dir}/../${version}/ifsdata/
+ifsdata_dir: ${input_dir}/../${version}/ifsdata/
+namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
+cmip6_data_dir: ${input_dir}/../cmip6_data
+cmip5_data_dir: ${input_dir}/../cmip5_data
+restart_dir: ""
+
+parent_expid: "test"
+parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
+
+# Default is TL159L91
+# Forcing from gu5a prepIFS forcing
+#
+# Note: input_expid is the expid that will appear on
+#       the input and forcing files in the work directory
+#       prepifs_expid is the expid that appears on the
+#       input and forcing files in input_dir and forcing_dir
+#       Default is a TL159 run, input data from ECMWF has expid gu5a
+#       but I want the expid for my run to be ECE3.
+
+metadata:
+        Institute: ECMWF
+        Description:
+                OpenIFS provides research institutions with an easy-to-use version
+                of the ECMWF IFS (Integrated Forecasting System).
+        Authors: Glenn Carver (openifs-support@ecmwf.int)
+        Website: https://www.ecmwf.int/en/research/projects/openifs
+        License:
+                Please make sure you have a licence to use OIFS. In case you are
+                unsure, please contact redmine...
+
+input_expid: ECE3
+resolution: TL159
+levels: L91
+nlev: 91
+prepifs_expid: gu5a
+prepifs_startdate: 19820101
+mip: "cmip5"
+scenario: "amip-prepifs"
+output: "default"
+
+wam: False
+wam_2w: True
+wam_step: 1
+read_icmcl: 0
+generate_namelist: 1
+ensemble: 0
+ensemble_id: 1
+post_processing: 0
+
+cmip6: True
+cmip5: False
+cmip6_scenario: "historical"
+cmip5_scenario: 0
+cmip_fix_year: 0
+a4xco2: False
+onepctco2: False
+lhvolca: False
+
+supercooled_liquid_could_fix: 0
+
+orb_switch: False
+orb_mode: "variable_year"
+orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
+
+restart: 1
+restart_rate: 1
+restart_unit: 'months'
+
+threads: 1
+ny: 1
+
+hours: "00"
+
+namelists:
+        - "fort.4"
+        - "wam_namelist"
+
+choose_resolution:
+        # Note:
+        # Tco grids only work with version 43r3.
+        TQ95:
+                nx: 13280
+                time_step: 3600
+                oasis_grid_name: "048"
+                res_number: 95
+                res_number_tl: "95_3"
+        TCO95:
+                nx: 40320
+                time_step: 3600
+                oasis_grid_name: "096"
+                res_number: 95
+                res_number_tl: "95_4"
+        TL159:
+                nx: 35718
+                time_step: 3600
+                oasis_grid_name: "080"
+                res_number: 159
+                res_number_tl: "159l_2"
+        TCO159:
+                nx: 35718
+                time_step: 3600
+                oasis_grid_name: "080"
+                res_number: 159
+                res_number_tl: "159_4"
+        TCO199:
+                nx: 167200
+                time_step: 1800
+                oasis_grid_name: "200"
+                res_number: 199
+                res_number_tl: "199_4"
+        TL255:
+                nx: 88838
+                time_step: 2700
+                oasis_grid_name: "128"
+                res_number: 255
+                res_number_tl: "255l_2"
+        TCO399:
+                nx: 654400
+                time_step: 1200
+                oasis_grid_name: 400
+                res_number: 399
+                res_number_tl: "399_4"
+        TL511:
+                nx: 348528
+                time_step: 900
+                oasis_grid_name: "256"
+                res_number: 511
+                res_number_tl: "511l_2"
+        TL799:
+                nx: 843490
+                time_step: 600
+                oasis_grid_name: "400"
+                res_number: 799
+                res_number_tl: "799l_2"
+        TL1279:
+                nx: 2140702
+                time_step: 600
+                oasis_grid_name: "640"
+                res_number: 799
+                res_number_tl: "1279l_2"
+
+choose_computer.cores_per_node:
+        24:
+                nproca: 96
+                nprocb: 1
+        36:
+                nproca: 108
+                nprocb: 1
+        48:
+                nproca: 96
+                nprocb: 1
+
+# Where does end_date and start_date come from
+# Why is it set to 364 days even when I ask for a 5-day run
+runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+timestep_per_run: $((${runtime_seconds} / ${time_step}))
+
+seconds_since_initial: $((${start_date} - ${initial_date}))
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+steps_per_day: "$(( 86400 / ${time_step} ))"
+lresume: false
+
+start_seconds: "$((${start_date} - ${initial_date}))"
+#start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
+start_ndays: "$(( ${start_seconds} / 86400 ))"
+start_ndays_string: "<--format(%08d)-- ${start_ndays}"
+end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
+end_ndays: "$(( ${end_seconds} / 86400 ))"
+end_ndays_string: "<--format(%08d)-- ${end_ndays}"
+
+# WAMstartdate
+wam_start_date: "${initial_date!syear!smonth!sday}000000"
+
+# ICMCL start and end
+icmcl_end_date: $(( ${end_date} + 2days ))
+icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
+
+# WAM restart files are named with the number of
+# days, hours, minutes, seconds since the last run
+# with one time step subtracted.
+# So restarting after 8 days with 30 min time step has
+# time stamp 000007233000
+# Here we calculate this
+#
+# how do we subtract one time step
+#start_seconds_wam: "$(( ${start_seconds} - ${time_step} ))"
+#start_ndays_wam: "$(( ${start_seconds_wam} / 86400 ))"
+#start_nhours_wam: "$(( $(( ${start_seconds_wam} - $(( ${start_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
+#start_remaining_seconds: "$(( ${start_seconds_wam} - $(( ${start_nhours_wam} * 3600 )) - $(( ${start_ndays_wam} * 86400 )) ))"
+#start_nmins_wam: "$(( ${start_remaining_seconds} / 60 ))"
+#start_ndays_string_wam: "<--format(%06d)-- ${start_ndays_wam}"
+#start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
+#start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
+#start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
+#start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+
+#end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
+#end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
+#end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
+#end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
+#end_nmins_wam: "$(( ${end_remaining_seconds} / 60 ))"
+#end_ndays_string_wam: "<--format(%06d)-- ${end_ndays_wam}"
+#end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
+#end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
+#end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
+#end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+
+run_number_minus1: "$(( ${run_number} - 1 ))"
+run_number_string: "<--format(%05d)-- ${run_number}"
+run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
+
+
+restart_rate: 1
+restart_unit: "months"
+
+oasis_grid_name_a: "A${oasis_grid_name}"
+oasis_grid_name_r: "R${oasis_grid_name}"
+oasis_grid_name_l: "L${oasis_grid_name}"
+
+
+choose_levels:
+        L60:
+                levels_number: 60
+        L62:
+                levels_number: 62
+        L91:
+                levels_number: 91
+        L137:
+                levels_number: 137
+
+#add_export_vars:
+#        DR_HOOK_IGNORE_SIGNALS: "-1"
+#        OIFS_EXPID: ${input_expid}
+#        FOCI_USE_CPLNG: "no"
+#        AWICM_USE_CPLNG: "no"
+#        ECE_USE_CPLNG: "no"
+
+bin_sources:
+        bin: ${bin_dir}/${executable}
+
+##
+## input files
+##
+
+input_files:
+        #ICMGG_INIT: ICMGG_INIT
+        #ICMGG_INIUA: ICMGG_INIUA
+        #ICMSH_INIT: ICMSH_INIT
+        ifsdata: ifsdata
+        rtables: rtables
+        vtables: vtables
+        tl_data: tl_data
+        o3_data: o3_data
+        # also missing: modify_init for ensemble stuff
+
+##
+## forcing files
+##
+
+#forcing_files:
+#        ICMCL_INIT: ICMCL_INIT
+
+
+##
+## log files
+##
+
+log_files:
+        NODE: NODE
+        ifsstat: ifsstat
+
+log_sources:
+        NODE: NODE.001_01
+        ifsstat: ifs.stat
+
+log_in_work:
+        NODE: NODE.001_01
+        ifsstat: ifs.stat
+
+##
+## restart files
+## srf files are for OpenIFS
+## BLS, LAW files are for ECWAM
+##
+
+#restart_in_files:
+#        srf: srf
+#        rcf: rcf
+
+#restart_in_in_work:
+#        srf: "srf${start_ndays_string}0000.*"
+#        rcf: "rcf"
+#        BLS: "BLS${start_filebase_wam}.*"
+#        LAW: "LAW${start_filebase_wam}.*"
+
+choose_general.run_number:
+        1:
+                restart_folder: "${parent_restart_dir}"
+        "*":
+                restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
+
+
+restart_in_sources:
+        srf: ${restart_folder}/srf${start_ndays_string}0000.*
+        rcf: ${restart_folder}/rcf
+        BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
+        LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
+
+#restart_out_files:
+#        srf: srf
+#        rcf: rcf
+
+restart_out_in_work:
+        srf: "srf${end_ndays_string}0000.*"
+        rcf: "rcf"
+        BLS: "LAW${end_filebase_wam}.*"
+        LAW: "LAW${end_filebase_wam}.*"
+
+restart_out_targets:
+        BLS: ${run_number_string}/*
+        LAW: ${run_number_string}/*
+        srf: ${run_number_string}/*
+        rcf: ${run_number_string}/rcf
+
+
+##
+## output
+##
+
+outdata_files:
+        ICMGG: ICMGG
+        ICMSH: ICMSH
+
+outdata_in_work:
+        ICMGG: ICMGG${oifs.input_expid}+*
+        ICMSH: ICMSH${oifs.input_expid}+*
+        ICMUA: ICMUA${oifs.input_expid}+*
+        MPP: MPP*
+
+outdata_sources:
+        ICMGG: ICMGG${oifs.input_expid}+*
+        ICMSH: ICMSH${oifs.input_expid}+*
+        ICMUA: ICMUA${oifs.input_expid}+*
+        MPP: MPP*
+
+
+##
+## would that we with or without ECWAM, sir?
+##
+
+choose_wam:
+        1:
+                wam_number: "1"
+
+                add_input_files:
+                        wam_grid_tables: wam_grid_tables
+                        wam_subgrid_0: wam_subgrid_0
+                        wam_subgrid_1: wam_subgrid_1
+                        wam_subgrid_2: wam_subgrid_2
+                        #uwavein: uwavein
+                        #specwavein: specwavein
+                        #sfcwindin: sfcwindin
+                        #cdwavein: cdwavein
+
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LWCOU: ".true."
+                                        LWCOU2W: ".true."
+                        wam_namelist:
+                                NALINE:
+                                        CDATEF: "${wam_start_date}"
+
+                add_restart_in_files:
+                        BLS: BLS
+                        LAW: LAW
+                add_restart_out_files:
+                        BLS: BLS
+                        LAW: LAW
+
+                add_outdata_files:
+                        MPP: MPP
+
+        0:
+                wam_number: "0"
+
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LWCOU: ".false."
+                                        LWCOU2W: ".false."
+
+
+##
+## specifics for 40r1 and 43r3
+##
+
+choose_version:
+        40r1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMRES:
+                                        #NFRRES: ${oifs.next_step}
+                                        NFRRES: 1
+                                        NRESTS: "-1, -${oifs.next_step}"
+
+                                NAMPAR0:
+                                        NPROC: ${oifs.nproca}
+
+                                NAMDYN:
+                                        TSTEP: ${oifs.time_step}
+
+                                NAMCT0:
+                                        CNMEXP: ${oifs.input_expid}
+                                        NSTOP: ${oifs.next_step}
+
+                                NAMECECFG:
+                                        # By default, turn off coupling
+                                        FOCI_CPL_NEMO_LIM: ".false."
+
+                environment_changes:
+                        add_export_vars:
+                                - 'OIFS_FFIXED="-fixed"'
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+                                - 'OIFS_EXPID="${input_expid}"'
+                                - 'FOCI_USE_CPLNG="no"'
+                                - 'AWICM_USE_CPLNG="no"'
+                                - 'ECE_USE_CPLNG="no"'
+
+        43r3:
+                add_namelist_changes:
+                        fort.4:
+                                NAMRES:
+                                        NFRRES: ${timestep_per_run} #${oifs.next_step}
+                                        #NRESTS: -1, -${timestep_per_run} #"-1, -${oifs.next_step}"
+                                        NRESTS(1): -1
+                                        NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
+
+                                NAMPAR0:
+                                        NPROC: ${oifs.nproca}
+
+                                NAMARG:
+                                        UTSTEP: ${oifs.time_step}
+                                        CNMEXP: "${oifs.input_expid}"
+                                        #CUSTOP: "t${timestep_per_run}"
+                                        CUSTOP: "t${oifs.next_step}"
+
+                environment_changes:
+                        add_export_vars:
+                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+                                - 'OIFS_FFIXED=""'
+                                - 'OIFS_OASIS_BASE="${general.model_dir}"'
+                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+
+                add_outdata_files:
+                        ICMUA: ICMUA
+
+
+##
+## specifics for scenarios
+##
+
+choose_mip:
+        "cmip5":
+                add_forcing_files:
+                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+
+choose_scenario:
+        "historical":
+                choose_version:
+                        40r1:
+                                add_namelist_changes:
+                                        fort.4:
+                                              NAMCMIP:
+                                                    LGHGCMIP5: ".true."
+        "piControl":
+                choose_version:
+                        40r1:
+                                add_namelist_changes:
+                                        fort.4:
+                                              NAMCMIP:
+                                                    LGHGPI: ".true."
+
+
+##
+## sources
+##
+
+input_sources:
+        ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
+        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
+        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
+        wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
+        wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
+        wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
+        wam_subgrid_2: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_2
+        uwavein: ${input_dir}/${prepifs_startdate}${hours}/uwavein
+        specwavein: ${input_dir}/${prepifs_startdate}${hours}/specwavein
+        sfcwindin: ${input_dir}/${prepifs_startdate}${hours}/sfcwindin
+        cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
+        rtables: ${rtables_dir}/*
+        vtables: ${vtables_dir}/*
+        ifsdata: ${ifsdata_dir}/*
+        tl_data: ${input_dir}/${res_number_tl}/*
+        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
+
+forcing_sources:
+        # GHG data
+        PRE2005_MIDYR_CONC: ${cmip5_data_dir}/PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: ${cmip5_data_dir}/RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
+        # ICMCL
+        ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
+
+
+
+config_sources:
+        "fort.4": "${namelist_dir}/fort.4"
+        "wam_namelist": "${namelist_dir}/wam_namelist"
+
+input_in_work:
+        ICMGG_INIT: ICMGG${oifs.input_expid}INIT
+        ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
+        ICMSH_INIT: ICMSH${oifs.input_expid}INIT
+        rtables: rtables/*
+        vtables: vtables/*
+        ifsdata: ifsdata/*
+        tl_data: ${res_number_tl}/*
+        o3_data: ${res_number_tl}/o3chem_l${nlev}/*
+
+forcing_in_work:
+        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
+        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
+
+
+##
+## coupling
+##
+
+foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+# TODO: CSW source and target fields are listed here, this is probably wrong
+# This is an quick-and-dirty fix to test the compilation of FOCI-OIFS
+# I'm sure this does not work as the vars in runoff_fields are on different grids.
+# To be solved with Dirk.
+runoff_fields: [A_Runoff, R_Runoff_atm, O_Runoff, R_Runoff_oce]
+
+coupling_fields:
+        "[[foci_fields-->FIELD]]":
+                grid: atmo
+# TODO: CSW grid info for runoff mapper
+        "[[runoff_fields-->FIELD]]":
+                grid: atmo
+
+grids:
+        atmo:
+                name: atmo
+                nx: "${nx}"
+#                ny: "${_ny}"
+#                oasis_grid_type: "D"
+
+choose_output:
+        "default":
+                add_namelist_changes:
+                        fort.4:
+                                NAMCT0:
+                                        NFRPOS: 6
+                                        NFRHIS: 6
+
+        "12hr":
+                add_namelist_changes:
+                        fort.4:
+                                NAMCT0:
+                                        NFRPOS: 12
+                                        NFRHIS: 12
+
+
+preprocess:
+        preprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number}"
+                type: shell
+
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
+
+

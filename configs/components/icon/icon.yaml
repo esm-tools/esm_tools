@@ -1,0 +1,219 @@
+# ICON YAML DEFAULT CONFIGURATION FILE
+
+model: ICON
+repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
+type: atmosphere
+
+standalone_model: True
+
+description: |
+        The ICON atmosphere model, major version 2
+        (someone from Hamburg)
+        paper citation
+
+license_text: |
+        Please make sure you have a licence to use ICON. In case you are
+        unsure, please contact redmine....
+
+metadata:
+        Institute: MPI-Met
+        Description: The ICON atmosphere model, major version 2
+        Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
+        Publications:
+                'ICON‐A, the Atmosphere Component of the ICON Earth System Model: I. Model Description <https://doi.org/10.1029/2017MS001242>'
+        License:
+                Please make sure you have a license to use ICON. In case you are
+                unsure, please contact redmine...
+
+
+
+available_versions:
+- 2.1.0
+- 2.3.0-nwp5
+- 2.4.0
+branch: ${icon.version}
+clean_command: make distclean
+comp_command: make -j `nproc --all
+conf_command: ./configure --with-fortran=gcc --with-openmp --with-grib_api
+git-repository: gitlab.dkrz.de/modular_esm/ICON-ATM.git
+
+
+executable: icon
+scenario: NWP
+
+ml_varlist: "'pres','pres_sfc','pres_msl','o3','h_ice','fr_seaice','t_ice','w_so_ice','t_g','t_2m','t_seasfc','lhfl_s','shfl_s','clct','clch','clcm','clcl','snowfrac','h_snow','sob_s','sou_s','thb_s','thu_s'"
+
+pl_varlist: "'u','v','w','temp','geopot','rh','qv'"
+
+
+restart:
+        frequency: 12
+        unit: "months"
+
+
+choose_scenario:
+        NWP:
+                version: 2.1.0
+                resolution: R02B05
+
+                pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
+                input_dir: "${pool_dir}/input"
+                grid_dir: "${input_dir}/grid"
+                bound_dir: "${input_dir}/bound"
+                external_parameter_dir: "${input_dir}/extpar"
+                initial_dir: "${input_dir}/initial"
+                mapping_dir: "${model_dir}/run"
+
+                filenames:
+                        "cldoptprops": "ECHAM6_CldOptProps.nc"
+                        "rrtmglw": "rrtmg_lw.nc"
+                        "extpar": "extpar_DOM01.nc"
+                        "grid": "icon${resolution}_DOM01.nc"
+                        "redradgrid": "icon${reduced_radiation_resolution}_DOM00.nc"
+                        "mapping": "map_file.ana"
+                        "dictionary": "dict.output.dwd"
+                        "initial": "eraint_init_0014_${resolution}_G_1991090100.nc"
+                add_namelist_changes:
+                        NAMELIST_NWP:
+                                initicon_nml:
+                                        ifs2icon_filename: "${filenames.initial}"
+                                lnd_nml:
+                                        sst_td_filename: "${sst_td_filename}"
+                                        ci_td_filename: "${ci_td_filename}"
+
+        LES:
+                version: 2.3.0-nwp5
+                resolution: R3B11
+                dt_restart: 21600
+
+                pool_dir: "/work/ollie/dlittman/icon"
+                input_dir: "${pool_dir}/arctic/input"
+                grid_dir: "${input_dir}"
+                bound_dir: "${pool_dir}/test_cases/case_les/arctic/input/R3B11_CanadaI"
+                external_parameter_dir: "${input_dir}"
+                initial_dir: "${bound_dir}"
+                mapping_dir: "${bound_dir}/run"
+                lbc_dir: "${bound_dir}"
+
+                filenames:
+                        "cldoptprops": "ECHAM6_CldOptProps.nc"
+                        "rrtmglw": "rrtmg_lw.nc"
+                        "extpar": "extpar_${resolution}_CanadaI.nc"
+                        "grid": "icon${resolution}_CanadaI.nc"
+                        "redradgrid": "icon${resolution}_CanadaI_parent.nc"
+                        "mapping": "map_file.latbc"
+                        "initial": "init_DOM01_ML_20190504T000000Z.nc"
+                        "latbc_grid": "lateral_boundary.grid.nc"
+                        "latbc_forcing": "forcing_DOM01_ML_<y><m><d>T<h>0000Z_lbc.nc"
+                remove_input_sources:
+                        - dictionary
+                add_namelist_changes:
+                        NAMELIST_NWP:
+                                initicon_nml:
+                                        dwdfg_filename: "${filenames.initial}"
+                                limarea_nml:
+                                        latbc_boundary_grid: "${filenames.latbc_grid}"
+                                        latbc_path: "${latbc_dir}"
+                                        latbc_varnames_map_file: "${filenames.mapping}"
+                                        latbc_filename: "${filenames.forcing}"
+# default directories
+
+model_dir: "${esm_master_dir}/icon-${version}"
+bin_dir: "${model_dir}/build/x86_64-unknown-linux-gnu/bin"
+namelist_dir: "${esm_master_dir}/esm_runscripts/namelists/icon/${version}"
+
+# choices
+
+choose_resolution:
+        R02B05:
+                levels: 90
+                Timestep: 360
+                cells: unknown
+                nlat: unknown
+                nlon: unknown
+                choose_cores_per_node:
+                        24:
+                                nproc: 288
+                        36:
+                                nproc: 288
+                reduced_radiation_resolution: R02B04
+        R3B11:
+                choose_cores_per_node:
+                        24:
+                                nproc: 900
+                        36:
+                                nproc: 900
+
+
+
+choose_version:
+        2.1.0:
+                repo_tag: 2.1.0
+        2.3.0-nwp5:
+                repo_tag: 2.3.0-nwp5
+        2.4.0:
+                repo_tag: 2.4.0
+
+
+
+input_sources:
+        "cldoptprops": "${model_dir}/data/${filenames.cldoptprops}"
+        "rrtmglw": "${model_dir}/data/${filenames.rrtmglw}"
+        "extpar": "${external_parameter_dir}/${filenames.extpar}"
+        "grid": "${grid_dir}/${filenames.grid}"
+        "redradgrid": "${grid_dir}/${filenames.redradgrid}"
+        "mapping": "${model_dir}/run/${filenames.mapping}"
+        "dictionary": "${model_dir}/run/${filenames.dictionary}"
+        "initial": "${initial_dir}/${filenames.initial}"
+
+sst_td_filename: "SST_cmip6_midmonth_${resolution}_<year>-<month>.nc"
+ci_td_filename: "CI_cmip6_midmonth_${resolution}_<year>-<month>.nc"
+
+forcing_in_workdir:
+        sic: "CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+        sst: "SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+        "latbc_forcing": "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
+
+forcing_sources:
+        sic: "${bound_dir}/CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+        sst: "${bound_dir}/SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+        "latbc_forcing": "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
+
+bin_in_workdir:
+        icon: icon
+
+bin_sources:
+        icon: "${bin_dir}/${executable}"
+
+config_sources:
+        master: "${namelist_dir}/icon_master.namelist"
+        nwp: "${namelist_dir}/NAMELIST_NWP"
+
+config_in_work:
+        master: "icon_master.namelist"
+        nwp: "NAMELIST_NWP"
+
+
+namelist_changes:
+        NAMELIST_NWP:
+                extpar_nml:
+                        extpar_filename: "${filenames.extpar}"
+                grid_nml:
+                        dynamics_grid_filename: "${filenames.grid}"
+                        radiation_grid_filename: "${filenames.redradgrid}"
+                io_nml:
+                        dt_checkpoint: "$dt_restart"
+                output_nml:
+                        ml_varlist: "${ml_varlist}"
+                        pl_varlist: "${pl_varlist}"
+                        output_start: "${dt_start}Z"
+                        output_end: "${dt_end}Z"
+                nwp_phy_nml:
+                        lrtm_filename: "${filenames.rrtmglw}"
+                        cldopt_filename: "${filenames.cldoptprops}"
+        icon_master.namelist:
+                time_nml:
+                        ini_datetime_string: "${dt_start}Z"
+                        end_datetime_string: "${dt_end}Z"
+                        dt_restart: "${dt_restart}"
+

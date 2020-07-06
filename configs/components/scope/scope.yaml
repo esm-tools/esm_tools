@@ -1,0 +1,17 @@
+# SCOPE Default Config file
+model: "scope"
+version: "dev"
+metadata:
+    Institute: Alfred Wegener Institute
+    Description: The Script-Based Coupler
+    Authors: Paul Gierz (pgierz@awi.de)
+
+available_versions:
+- dev
+choose_version:
+  dev:
+    git-repository: https://gitlab.awi.de/pgierz/scope.git
+clean_command: pip uninstall scope-coupler
+comp_command: 'pip install --user .
+
+  '

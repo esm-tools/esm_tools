@@ -1,0 +1,640 @@
+# ECHAM YAML DEFAULT CONFIGURATION FILE:
+
+model: echam
+repository: https://gitlab.dkrz.de/modular_esm/echam6
+type: atmosphere
+
+
+
+
+available_versions:
+- 6.3.04p1-esm-interface-yac
+- 6.3.05p2
+- 6.3.05p2-foci
+- 6.3.02p4
+- 6.3.04p1-esm-interface
+- 6.3.05p2-concurrent_radiation
+- 6.3.04p1-paleodyn
+- 6.3.04p1
+branch: ${echam.version}
+choose_version:
+  6.3.02p4:
+    install_bins: src/bin/echam6
+  6.3.04p1-esm-interface:
+    branch: using_esm_interfaces
+    destination: echam-6.3.04p1
+    git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+  6.3.04p1-esm-interface-yac:
+    branch: using_esm_interfaces_yac
+    destination: echam-6.3.04p1
+    git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+  6.3.04p1-paleodyn:
+    branch: paleodyn
+    destination: echam-6.3.04p1
+    git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+  6.3.05p2:
+    branch: esm-tools
+    git-repository: https://gitlab.dkrz.de/foci/src/echam.git
+  6.3.05p2-concurrent_radiation:
+    branch: concurrent_radiation
+    clean_command: rm -rf src/echam/bin; make clean
+    comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin;
+      cp  bin/echam6 src/echam/bin/echam6
+    conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/;
+      ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
+      yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
+      INSTALL='/usr/bin/install -p'
+    git-repository: https://gitlab.dkrz.de/PalMod/echam6-PalMod.git
+  6.3.05p2-foci:
+    branch: esm-tools
+    git-repository: https://git.geomar.de/foci/src/echam.git
+  6.3.05p2-wiso:
+    branch: wiso
+    clean_command: make clean
+    comp_command: make; make install
+    conf_command: ./configure
+clean_command: ${defaults.clean_command}
+comp_command: ${defaults.comp_command}
+git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+install_bins: src/echam/bin/echam6
+
+
+
+metadata:
+        Institute: MPI-Met
+        Description:
+                The ECHAM atmosphere model, major version 6
+        Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
+        Publications:
+                'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
+        License:
+                Please make sure you have a license to use ECHAM. In case you are
+                unsure, please contact redmine...
+bla: 999
+
+standalone_model: True
+
+include_models:
+        - jsbach
+        - hdmodel
+
+
+
+executable: echam6
+version: 6.3.04p1
+resolution: T63
+scenario: "PI-CTRL"
+postprocessing_stream: 'BOT ATM LOG'
+yr_perp_off: false
+transient_advance_forcing: false
+ocean_resolution: 'GR15'
+disturbance: "1.000001"
+lresume: false
+dataset: "r0007"
+
+ini_parent_date: 22941231
+ini_parent_expid: khw0030
+ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
+
+pseudo_start_date: ${start_date}
+pseudo_end_date: ${next_date}
+pseudo_resume_date: ${start_date}
+#year_before_date: $(( ${start_date} - "1 years" )) # irgendwie so
+#year_before_length: $((${start_date} - ${year_before_date} ))
+#steps_in_year_before: $(( ${year_before_length} / ${time_step} - 1 ))
+
+restart_rate: 1
+restart_unit: "months"
+restart_firstlast: "first"
+
+
+# default directories
+
+#model_dir: "${general.esm_master.dir}/echam-${version}"
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+pool_dir: "${computer.pool_directories.pool}/ECHAM6"
+input_dir: "${pool_dir}/input/${dataset}"
+adj_input_dir: "${input_dir}/${resolution}"
+forcing_dir: "${input_dir}/${resolution}"
+greenhouse_dir: "${pool_dir}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
+
+switch: 1
+value : "echam default"
+choose_switch:
+        1:
+                value: "echam switch"
+# choice
+#
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#nprocrad: 0
+nprocar: 0
+nprocbr: 0
+npromar: 0
+lrad_async: false
+lrestart_from_old: false
+
+choose_resolution:
+        T63:
+                levels: "L47"
+                time_step: 450
+                _nx: 192
+                _ny: 96
+                choose_computer.cores_per_node:
+                        24:
+                                nproca: 24
+                                nprocb: 18
+
+                        36:
+                                nproca: 24
+                                nprocb: 18
+
+        T31:
+                levels: "L19"
+                time_step: 450
+                _nx: 96
+                _ny: 48
+        T127:
+                levels: "L47"
+                time_step: 200
+                _nx: 384
+                _ny: 192
+
+choose_version:
+        6.3.04p1:
+                repo_tag: 6.3.04p1
+                dataset: r0007
+        6.3.04p1-paleodyn:
+                repo_tag: 6.3.04p1
+                dataset: r0007
+        6.3.04p1-esm-interface:
+                dataset: r0007
+        6.3.04p1-esm-interface-yac:
+                dataset: r0007
+        6.3.05p2:
+                repo_tag: 6.3.05p2
+                dataset: r0007
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+        6.3.05p2-foci:
+                repo_tag: not_set
+                dataset: r0008
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+
+        6.3.05p2-concurrent_radiation:
+                repo_tag: not_applicable
+                dataset: r0007
+                add_streams:
+                    - rad
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        npromar: "${npromar}"
+                                parctl:
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                        lrestart_from_old: "${lrestart_from_old}"
+
+# kh 30.04.20 parameter values below (nprocar..lrestart_from_old) would supersed corresponding parameter values
+# in section choose_general.resolution: ... nproca ..., ... in esm_tools/configs/awicmcr/awicmcr.yaml
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+##              nprocrad: 432
+#               nprocar: 24
+#               nprocbr: 18
+#               npromar: 8
+#               lrad_async: true
+#               lrestart_from_old: false
+
+choose_scenario:
+        "PI-CTRL":
+                forcing_files:
+                        sst: pisst
+                        sic: pisic
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+        PALEO:
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+        4CO2:
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+        1percCO2:
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
+                        greenhouse: 1percCO2greenh
+        1850:
+                forcing_files:
+                        sst: pisst
+                        sic: pisic
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: 1850ozone
+        1950:
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: 1950ozone
+                add_input_files:
+                        MAC-SP: MAC-SP
+        HIST:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofarir: piaerofarir
+                        aerofin: histaerofin
+                        sst: amipsst
+                        sic: amipsic
+                        ozone: histozone
+                        greenhouse: histgreenh
+                        volcanir: histvolcanir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP
+        RCP26:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofarir: piaerofarir
+                        aerofin: rcp26aerofin
+                        ozone: rcp26ozone
+                        greenhouse: rcp26greenh
+                        volcanir: histvolcanir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP
+        RCP45:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofarir: piaerofarir
+                        aerofin: rcp45aerofin
+                        ozone: rcp45ozone
+                        greenhouse: rcp45greenh
+                        volcanir: histvolcanir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP
+        RCP85:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse: piaerocoarse
+                        aerofarir: piaerofarir
+                        aerofin: rcp85aerofin
+                        ozone: rcp85ozone
+                        greenhouse: rcp85greenh
+                        volcanir: histvolcanir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP
+
+
+choose_lresume:
+        False:
+                restart_in_modifications:
+                        "[[streams-->STREAM]]":
+                                - "vdate <--set_global_attr-- ${start_date!syear!smonth!sday}"
+                                  # - fdate "<--set_dim--" ${year_before_date}
+                                  # - ndate "<--set_dim--" ${steps_in_year_before}
+        True:
+                # pseudo_start_date: $(( ${start_date} - ${time_step} ))
+                namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        dt_start: "remove_from_namelist"
+
+
+
+choose_CO2:
+        '*':
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        co2vmr: ${CO2}
+
+choose_CH4:
+        '*':
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        ch4vmr: ${CH4}
+choose_N2O:
+        '*':
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        c2ovmr: ${N2O}
+
+choose_CECC:
+        '*':
+                yr_perp_off: true
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        cecc: ${CECC}
+choose_COBLD:
+        '*':
+                yr_perp_off: true
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        cobld: ${COBLD}
+choose_CLONP:
+        '*':
+                yr_perp_off: true
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        clonp: ${CLONP}
+
+choose_yr_perp_off:
+        true:
+                namelist_changes:
+                        namelist.echam:
+                                radctl:
+                                        yr_perp: "remove_from_namelist"
+                                runctl:
+                                        l_orbsvop87: ".false."
+
+#choose_transient_advance_forcing:
+        #true:
+                #"[year, co2vmr, ch4vmr, n2ovmr, cecc, cobld, clonp]": "<--grep(${start_date!year})-- ${forcing_table}"
+
+
+
+
+
+bin_files:
+        "echam_bin": "echam_bin"
+bin_sources:
+        "echam_bin": "${bin_dir}/echam6"
+bin_in_work:
+        "echam_bin": "echam6"
+
+input_files:
+        "cldoptprops": "cldoptprops"
+        "janspec": "janspec"
+        "jansurf": "jansurf"
+        "rrtmglw": "rrtmglw"
+        "rrtmgsw": "rrtmgsw"
+        "tslclim": "tslclim"
+        "vgratclim": "vgratclim"
+        "vltclim": "vltclim"
+
+input_in_work:
+        "cldoptprops": "ECHAM6_CldOptProps.nc"
+        "janspec": "unit.23"
+        "jansurf": "unit.24"
+        "rrtmglw": "rrtmg_lw.nc"
+        "rrtmgsw": "rrtmg_sw.nc"
+        "tslclim": "unit.92"
+        "vgratclim": "unit.91"
+        "vltclim": "unit.90"
+        "MAC-SP": "MAC-SP.nc"
+
+forcing_in_work:
+        sic: "unit.96"
+        sst: "unit.20"
+        aerocoarse: "aero_coarse_@YEAR@.nc"
+        aerofin: "aero_fine_@YEAR@.nc"
+        aerofarir: "aero_farir_@YEAR@.nc"
+        ozone: "ozon@YEAR@"
+        greenhouse: "greenhouse_gases.nc"
+        volcir: "strat_aerosol_ir_@YEAR@.nc"
+        volcsw: "strat_aerosol_sw_@YEAR@.nc"
+        swflux: "swflux_@YEAR@.nc"
+
+forcing_additional_information:
+        aerocoarse:
+                - need_year_before
+                - need_year_after
+        aerofin:
+                - need_year_before
+                - need_year_after
+        aerofarir:
+                - need_year_before
+                - need_year_after
+        ozone:
+                - need_year_before
+                - need_year_after
+
+streams:
+        - echam
+        - accw
+        - co2
+        - g3bid
+        - g3bim
+        - g3bday
+        - g3b1hi
+        - glday
+        - aclcim
+        - sp6h
+        - glim
+        - spim
+
+          #prev_date: 18500101
+# BUG: PG Why do we need lists here?
+
+
+
+other_date: $(( ${next_date} - ${time_step}seconds ))
+
+ignore_files:
+        "[[streams-->STREAM]]": STREAM
+        "[[streams-->STREAM]]_restart": STREAM_restart
+        "[[streams-->STREAM]]_codes": STREAM_codes
+
+ignore_sources:
+        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
+        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
+        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
+
+ignore_in_work:
+        "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
+        "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
+        "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
+
+
+outdata_files:
+        "[[streams-->STREAM]]": STREAM
+        "[[streams-->STREAM]]_codes": STREAM_codes
+
+outdata_sources:
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+
+outdata_in_work:
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+
+
+restart_in_files:
+        "[[streams-->STREAM]]": STREAM
+
+restart_in_sources:
+        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+
+restart_in_in_work:
+        "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
+
+
+restart_out_files:
+        "[[streams-->STREAM]]": STREAM
+
+restart_out_sources:
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+
+restart_out_in_work:
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+
+
+log_files:
+        atmout: atmout
+        stderr: stderr
+        stdout: stdout
+
+log_sources:
+        atmout: atmout
+        stderr: echam.stderr
+        stdout: echam.stdout
+
+log_in_work:
+        atmout: atmout
+        stderr: echam.stderr
+        stdout: echam.stdout
+
+namelists:
+        - "namelist.echam"
+
+
+namelist_changes:
+        namelist.echam:
+                runctl:
+                        out_expname: ${general.expid}
+                        dt_start:
+                                - ${pseudo_start_date!year}
+                                - ${pseudo_start_date!month}
+                                - ${pseudo_start_date!day}
+                        dt_stop:
+                                - ${pseudo_end_date!syear}
+                                - ${pseudo_end_date!smonth}
+                                - ${pseudo_start_date!sday}
+                        dt_resume:
+                                - ${pseudo_resume_date!syear}
+                                - ${pseudo_resume_date!smonth}
+                                - ${pseudo_resume_date!sday}
+                        lresume: "${lresume}"
+                        lcouple: ".false."
+                        delta_time: ${time_step}
+                        putrerun:
+                                - ${restart_rate}
+                                - ${restart_unit}
+                                - ${restart_firstlast}
+                                - 0
+                        out_datapath: '${work_dir}'
+                parctl:
+                        nproca: "${nproca}"
+                        nprocb: "${nprocb}"
+
+
+
+foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+coupling_fields:
+        sst_atmo:
+                grid: atmo
+        sit_atmo:
+                grid: atmo
+        sie_atmo:
+                grid: atmo
+        snt_atmo:
+                grid: atmo
+                #description: |
+                #       whatever snt means
+                #unit: kg m s
+                #standard_cf_name: 'shit no tuna?'
+                #cf_code: 42
+        taux_atm:
+                grid: atmo
+        tauy_atm:
+                grid: atmo
+        taux_ica:
+                grid: atmo
+        tauy_ica:
+                grid: atmo
+        prec_atm:
+                grid: atmo
+        snow_atm:
+                grid: atmo
+        evap_atm:
+                grid: atmo
+        subl_atm:
+                grid: atmo
+        heat_atm:
+                grid: atmo
+        heat_ica:
+                grid: atmo
+        heat_swa:
+                grid: atmo
+        hydr_atm:
+                grid: atmo
+
+        "[[foci_fields-->FIELD]]":
+                grid: atmo
+
+grids:
+        atmo:
+                name: atmo
+                nx: "${_nx}"
+                ny: "${_ny}"
+                oasis_grid_type: "D"
+                number_of_overlapping_points: 0 # oasis P-value
+
+
+
+# Configuration Files:
+config_sources:
+        "namelist.echam": "${namelist_dir}/namelist.echam"
+
+check_error:
+        "mo_exception.f90":
+                method: "kill"
+                message: "Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry."
+                file: "${general.work_dir}/atmout"
+                frequency: 90
+        "wind speed":
+                method: "kill"
+                message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
+                file: "${general.work_dir}/atmout"
+                frequency: 90
+
+
+
+further_reading:
+        - echam/echam.datasets.yaml
+        - echam/echam.postprocessing.yaml

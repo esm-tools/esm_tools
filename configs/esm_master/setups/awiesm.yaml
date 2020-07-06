@@ -6,13 +6,13 @@ available_versions:
 choose_version:
   '1.1':
     couplings:
-    - fesom-1.4+echam-6.3.04p1-paleodyn
+    - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn
   '1.2':
     couplings:
-    - fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
+    - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools
   '2.1':
     couplings:
     - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
   '2.2':
     couplings:
-    - fesom-2.0-paleodyn+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
+    - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools

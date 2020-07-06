@@ -1,0 +1,41 @@
+
+general:
+   setup_name: "foci"
+   #resolution: "T63_ORCA05"
+   compute_time: "00:15:00"
+   account: "esmtst"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-02T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nday: 1
+   base_dir: /p/home/jusers/wahl1/juwels/esm/esm-experiments/
+   #lresume: False
+   #not working
+   #mail_type: "FAIL"
+   #mail_user: "swahl@geomar.de"
+   partition: devel
+   #choose_general.jobtype:
+   #     compute:
+   #           partition: devel
+
+foci:
+   model_dir: /p/home/jusers/wahl1/juwels/esm/models/foci-default 
+
+# does not work
+#computer:
+#mail_type: "FAIL"
+#mail_user: "swahl@geomar.de"
+#partition: "devel"
+
+echam:
+   resolution: "T63"
+   restart_rate: 1
+   restart_unit: "days"
+   nproca: 4
+   nprocb: 24
+
+nemo:
+   resolution: "ORCA05"
+   nproc: 24

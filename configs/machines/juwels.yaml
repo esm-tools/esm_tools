@@ -1,61 +1,87 @@
 # JUWELS YAML CONFIGURATION FILE
 
 batch_system: slurm
+
+name: juwels 
+account: esmtst
+jobtype: compute
 accounting: true
 
-sh_interpreteter: "/bin/bash"
-
+sh_interpreter: "/usr/bin/bash"
 launcher_flags: "-l"
+hyperthreading_flag: "--ntasks-per-core=1"
 
+pool_directories:
+        pool: "/pool/data/not/available/on/blogin"
+        focipool: "/p/project/cesmtst/esmtst22/foci_input2"
 
-jobtype: compute
+pool_dir:  "/pool/data/not/available/on/blogin"
 
 choose_jobtype:
         tidy_and_resubmit:
-                partition: compute
+                partition: devel 
         post:
-                partition: compute
+                partition: devel
         compute:
-                partition: compute
+                partition: devel
 
 
 choose_partition:
-        "compute":
-                cores_per_node: 48
+        batch:
+                cores_per_node: 24
+        devel:
+                cores_per_node: 24
 
 logical_cpus_per_core: 2
 
 threads_per_core: 1
+
+useCompiler: bareIntel19mpi
+
 module_actions:
         - "--force purge"
+        - "use /gpfs/software/juwels/otherstages"
+        - "load Stages/Devel-2019a"
         - "load GCCcore/.8.3.0"
-        - "load CMake/3.14.0"
+        - "load CMake"
         - "load Intel/2019.5.281-GCC-8.3.0"
         - "load IntelMPI/2019.6.154"
-        - "load imkl/2019.3.199"
-        - "load netCDF/4.6.3"
-        - "load netCDF-Fortran/4.4.5"
-        - "load parallel-netcdf/1.11.0"
-        - "load HDF5/1.10.5"
-        # PG: For PISM
-        - "load PETSc/3.11.1"
-        - "load NCO"
-        - "load FFTW/3.3.8"
+        - "load Python/3.6.8"
 
 export_vars:
         - "FC=mpiifort"
+        - "F77=mpiifort"
+        - "MPIFC=mpiifort"
         - "FCFLAGS=-free"
         - "CC=mpiicc"
         - "CXX=mpiicpc"
-        - "NETCDF_DIR=$EBROOTNETCDF"
-        - "NETCDFF_DIR=$EBROOTNETCDFMINFORTRAN"
-        - "PNETCDF_DIR=$EBROOTPARALLELMINNETCDF"
-        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFF_DIR/include/"
-        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDF_DIR/include/"
-        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFCXX_DIR/include/"
-        # PG: For PISM:
-        - "NETCDF_ROOT=$NETCDF_DIR"
 
+        - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+
+choose_useCompiler:
+        # FOCI and FOCIOIFS use their own compiled libraries (netcdf, hdf5, ...) to avoid the massive 
+        # dependencies build into the modules on JUWELS
+        # source: https://git.geomar.de/HPC/libraries/-/blob/master/DOC/compile_libraries_juwels.sh
+        bareIntel19mpi:
+                add_module_actions:
+                        - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
+                add_export_vars:
+                        - "IO_LIB_ROOT=/p/project/cesmtst/esmtst22/gitlab/HPC_libraries/intel2019.3.199_impi2019.6.154_20191213"
+                        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+
+                        - "SZIPROOT=$IO_LIB_ROOT"
+                        - "HDF5ROOT=$IO_LIB_ROOT"
+                        - "HDF5_ROOT=$HDF5ROOT"
+                        - "NETCDFROOT=$IO_LIB_ROOT"
+                        - "NETCDFFROOT=$IO_LIB_ROOT"
+
+                        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+                        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+                        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
 further_reading:
         - batch_system/slurm.yaml

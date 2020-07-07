@@ -48,14 +48,14 @@ Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mist
 Uninstall ESM-tools
 -------------------
 
-To uninstall and remove your current installation of ESM-tools, you need to remove the installed python libs and deltete the esm_* executables. Following commands will do the trick (unix-based system)::
+To uninstall your current installation of ESM-tools, you need to remove the installed Python packages and delete the ``esm_*`` executables. The following commands will do the trick if you installed with the ``install.sh`` script or installed using ``pip`` with ``user`` mode ::
 
 $ rm ~/.local/bin/esm*
 $ rm ~/.local/lib/python3.6/site-packages/esm*
 
-You may also use ``pip`` to uninstall any of the packages::
+Note that you may have a different Python version, so the second command might need to be adapted. You may also use ``pip`` to uninstall any of the packages::
 
-$ pip uninstall esm-tools
+$ pip uninstall [--user] esm-tools
 
-Note that the ``--user`` flag may be required when using ``pip``.
+The ``--user`` flag may be required when using ``pip``.
 

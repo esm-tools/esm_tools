@@ -52,5 +52,10 @@ To uninstall and remove your current installation of ESM-tools, you need to remo
 
 $ rm ~/.local/bin/esm*
 $ rm ~/.local/lib/python3.6/site-packages/esm*
-$ rm ~/.local/lib/python3.6/site-packages/easy-*
+
+You may also use ``pip`` to uninstall any of the packages::
+
+$ pip uninstall esm-tools
+
+Note that the ``--user`` flag may be required when using ``pip``.
 

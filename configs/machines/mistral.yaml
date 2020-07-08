@@ -154,7 +154,6 @@ export_vars:
         - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
         - 'WLFLAG="-Wl"'
         - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
-        - 'OASIS3MCTROOT=${model_dir}'
 
         - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
         - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'

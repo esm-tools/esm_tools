@@ -50,8 +50,26 @@ def _read_config_standard_install(config):
     if not config.endswith(".yaml"):
         config += ".yaml"
     configstr = pkg_resources.resource_string("esm_tools.configs", config)
+    # configstr = pkg_resources.resource_string("configs", config)
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
+
+def _read_namelist_standard_install(nml):
+    """
+    Reads a namelist file for the case that you have done a standard pip install.
+
+    Parameters
+    ----------
+    nml : str
+        The nml to read, e.g. "echam/6.3.04p2/PALEO/namelist.echam"
+
+    Returns
+    -------
+    str :
+        A string representation of the namelist file. This should later be
+        passed to the f90nml package.
+    """
+    return pkg_resources.resource_string("esm_tools.namelists", nml)
 
 
 def _read_config_editable_install(config):
@@ -66,10 +84,30 @@ def _read_config_editable_install(config):
     """
     if not config.endswith(".yaml"):
         config += ".yaml"
+    # Note the only difference here is apparently swapping out
+    # esm_tools.configs for just configs. Not sure how that works, but it seems
+    # to be fine...
     configstr = pkg_resources.resource_string("configs", config)
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
 
+
+def _read_namelist_editable_install(nml):
+    """
+    Reads a namelist file for the case that you have done an editable/develop install.
+
+    Parameters
+    ----------
+    nml : str
+        The nml to read, e.g. "echam/6.3.04p2/PALEO/namelist.echam"
+
+    Returns
+    -------
+    str :
+        A string representation of the namelist file. This should later be
+        passed to the f90nml package.
+    """
+    return pkg_resources.resource_string("namelists", nml)
 
 # PG: Blatant theft:
 # https://stackoverflow.com/questions/42582801/check-whether-a-python-package-has-been-installed-in-editable-egg-link-mode
@@ -111,3 +149,21 @@ def read_config_file(config):
     if EDITABLE_INSTALL:
         return _read_config_editable_install(config)
     return _read_config_standard_install(config)
+
+
+def read_namelist_file(nml):
+    """Reads a namelist file from a path, seperated by "/". Similar to ``read_config_file``
+
+    Parameters
+    ----------
+    nml : str
+        The namelist to load
+
+    Returns
+    -------
+    str :
+        A string of the namelist file
+    """
+    if EDITABLE_INSTALL:
+        return _read_namelist_editable_install(nml)
+    return _read_namelist_standard_install(nml)

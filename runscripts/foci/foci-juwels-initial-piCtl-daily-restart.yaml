@@ -12,22 +12,11 @@ general:
    nday: 1
    base_dir: /p/home/jusers/wahl1/juwels/esm/esm-experiments/
    #lresume: False
-   #not working
-   #mail_type: "FAIL"
-   #mail_user: "swahl@geomar.de"
-   partition: devel
-   #choose_general.jobtype:
-   #     compute:
-   #           partition: devel
+computer:
+   additional_flags: "--ntasks-per-node=48"
 
 foci:
    model_dir: /p/home/jusers/wahl1/juwels/esm/models/foci-default 
-
-# does not work
-#computer:
-#mail_type: "FAIL"
-#mail_user: "swahl@geomar.de"
-#partition: "devel"
 
 echam:
    resolution: "T63"

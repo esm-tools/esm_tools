@@ -23,3 +23,5 @@ choose_nemo.version:
 requires:
 - xios-2.0_r982
 - nemobasemodel-3.6foci
+clean_command: echo "Nothing to do" 
+comp_command: echo "Nothing to do in clean" 

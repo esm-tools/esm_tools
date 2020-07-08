@@ -60,6 +60,17 @@ choose_general.setup_name:
                     - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
                     - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
                     - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        foci:
+                add_module_actions:
+                        - "unload intel intelmpi"
+                        - "load intel/17.0.6 intelmpi/2017.3.196"
+                fc: mpiifort
+                f77: mpiifort
+                mpifc: mpiifort
+                cc: mpiicc
+                cxx: mpiicpc
+                add_export_vars:
+                        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
 
 useMPI: intelmpi
 module_actions:
@@ -183,17 +194,6 @@ choose_useMPI:
 
                 add_export_vars:
                         - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        intelmpi17:
-                add_module_actions:
-                        - "unload intel intelmpi"
-                        - "load intel/17.0.6 intelmpi/2017.3.196"
-                fc: mpiifort
-                f77: mpiifort
-                mpifc: mpiifort
-                cc: mpiicc
-                cxx: mpiicpc
-                add_export_vars:
-                        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
         openmpi:
                 add_module_actions:
                         - "load openmpi/2.0.2p2_hpcx-intel14"

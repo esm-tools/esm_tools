@@ -78,27 +78,25 @@ export_vars:
 
         # mostly OpenIFS stuff
         - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
-        - "ZLIBROOT=/usr"
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+        - "ZLIBROOT=$IO_LIB_ROOT"
+        - "GRIBAPIROOT=$IO_LIB_ROOT"
+        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+        #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        #- 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
         - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
         - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'

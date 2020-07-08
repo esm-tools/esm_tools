@@ -44,6 +44,8 @@ jobs:
 
         which esm_versions
 
+        esm_versions upgrade esm_environment=allow-source-workaround
+
         esm_versions check
 
         rm -rf /home/shkifmsw/actions-runner/work/${{ matrix.model }}/model_sources

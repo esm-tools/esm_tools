@@ -1,12 +1,12 @@
 general:
         setup_name: fesom-recom
-        compute_time: "00:35:00"
+        compute_time: "02:00:00"
         initial_date: "1958-01-01"
-        final_date: "1958-01-02"
+        final_date: "1958-02-28"
         base_dir: /work/ollie/mandresm/esm_yaml_test/
         nyear: 0
-        nmonth: 0
-        nday: 1
+        nmonth: 1
+        nday: 0
 
 fesom-recom:
         version: 1.4
@@ -20,7 +20,7 @@ fesom:
         lresume: 0
         restart_rate: 1
         restart_first: 1
-        restart_unit: "d"
+        restart_unit: "m"
         post_processing: 0
 
 recom:

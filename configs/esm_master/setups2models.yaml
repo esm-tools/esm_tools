@@ -285,7 +285,7 @@ components:
                         43r3:
                                 branch: "oifs-deck"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"
-                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg"
+                                comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
                         43r3-awi:
                                 branch: "master"
                                 git-repository: "https://gitlab.dkrz.de/ec-earth/oifs-43r3.git"

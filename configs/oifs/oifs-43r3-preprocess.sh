@@ -15,6 +15,9 @@ startdate=$5
 enddate=$6
 outdir=$7
 with_wam=$8
+perturb=$9
+nx=${10}
+ensemble_id=${11}
 
 style="jesus"
 
@@ -26,7 +29,7 @@ if [[ "x$machine" == "xmistral" ]] ; then
     
     module purge
     module load netcdf_c/4.3.2-gcc48
-    module load cdo/1.9.8-gcc64
+    module load cdo
 fi 
 
 echo " OpenIFS preprocessing "
@@ -56,6 +59,7 @@ echo " $files "
 
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
+newgginit=${new}
 if [ -f $old ]; then                                                                                                                                                 
     ${grib_set} -s dataDate=$ndate $old $new                                                                                                                          
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
@@ -72,6 +76,41 @@ if [ -f $old ]; then
 else
     echo " Could not find file " $old
     exit
+fi
+
+# Modify SKT (skin-temp) field to create ensemble members
+if [[ "x${perturb}" == "x1" ]] ; then
+    
+    echo "          Modifying OpenIFS inital field SKT to generate ensemble member No ${ensemble_id}" 
+    
+    rm -rf tmp.grb tmp2.grb
+    # Generate random numbers on a 1D array of same size as reduced grid
+    echo "cdo -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb"
+    cdo -O -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb
+    # Now take grid description from ICMGG 
+    echo "cdo -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb "
+    cdo -O -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb    
+    # Merge with ICMGG
+    echo "cdo merge ${outdir}/ICMGG${outexpid}INIT ${outdir}/random.grb ${outdir}/tmp.grb"
+    cdo -O merge ${outdir}/ICMGG${outexpid}INIT ${outdir}/random.grb ${outdir}/tmp.grb
+    # Add to SKT (var 235)
+    echo "cdo expr,'var235=var1+var235;' ${outdir}/tmp.grb ${outdir}/tmp2.grb "
+    cdo -O expr,'var235=var1+var235;' ${outdir}/tmp.grb ${outdir}/tmp2.grb
+    # Replace values
+    echo "cdo replace ${outdir}/ICMGG${outexpid}INIT ${outdir}/tmp2.grb ${outdir}/ICMGG${outexpid}INIT_new"
+    cdo -O replace ${outdir}/ICMGG${outexpid}INIT ${outdir}/tmp2.grb ${outdir}/ICMGG${outexpid}INIT_new
+    # Control: Save diffs
+    cdo -O sub ${outdir}/ICMGG${outexpid}INIT_new ${outdir}/ICMGG${outexpid}INIT ${outdir}/ICMGG${outexpid}INIT_sub
+    # Replace file
+    echo "mv ${outdir}/ICMGG${outexpid}INIT_new ${outdir}/ICMGG${outexpid}INIT"
+    mv ${outdir}/ICMGG${outexpid}INIT_new ${outdir}/ICMGG${outexpid}INIT
+    # Control: Make nc file    
+    cdo -O -f nc -t ecmwf -setgridtype,regular ${outdir}/ICMGG${outexpid}INIT_sub ${outdir}/ICMGG${outexpid}INIT_sub.nc 
+    # Clean up crew
+    rm -f ${outdir}/random_1d.grb ${outdir}/random.grb ${outdir}/tmp.grb ${outdir}/tmp2.grb ${outdir}/ICMGG${outexpid}INIT_sub 
+    echo "          Modification of OpenIFS initial files for ensemble complete"
+    
+    
 fi
 
 old=${indir}/ICMSH${inexpid}INIT

@@ -1,0 +1,6 @@
+components:
+- oifs-40r1
+- oasis3mct-4.0
+coupling_changes:
+- sed -i '/COUPLENEMOECE = /s/.FALSE./.TRUE./g' oifs-40r1/src/ifs/module/yommcc.F90
+- sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-40r1/src/ifs/module/yommcc.F90

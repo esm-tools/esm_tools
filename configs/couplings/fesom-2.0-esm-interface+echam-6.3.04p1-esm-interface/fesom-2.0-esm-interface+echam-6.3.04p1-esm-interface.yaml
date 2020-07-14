@@ -1,0 +1,8 @@
+components:
+- esm-interface-1.0
+- oasis3mct-2.8
+- fesom-2.0-esm-interface
+- echam-6.3.04p1-esm-interface
+coupling_changes:
+- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt

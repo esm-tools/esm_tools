@@ -9,8 +9,7 @@ namelist_dir: "${esm_namelist_dir}/fesom/"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: mesh_part/build/fesom.x.ini
-comp_command: cd fesom_mesh_partitioning; mkdir build -p; cd build; cmake ..; make -j `nproc
---all`
+comp_command: cd fesom_mesh_partitioning; mkdir build -p; cd build; cmake ..; make -j `nproc --all`
 clean_command: rm -rf bin/fesom.x.ini fesom_mesh_partitioning/build mesh_part/CMakeCache.txt
 
 

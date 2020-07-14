@@ -1,7 +1,0 @@
-components:
-- echam-6.3.02p4
-- mpiom-1.6.2p3-coupled
-- oasis3-mct-2.8
-coupling_changes:
-- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.02p4/CMakeLists.txt
-- sed -i '/(OASIS3MCTROOT)/s:include:oasis/build/lib/psmile:g' mpiom-1.6.2p3-coupled/configure

@@ -5,7 +5,6 @@ model: mpiom
 branch: 1.6.2p3
 version: "1.6.2p3"
 
-available_versions:
 choose_version:
           1.6.2p3:
             branch: 1.6.2p3

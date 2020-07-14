@@ -7,34 +7,38 @@ nemoconfig: "ORCA05_LIM2_KCM_AOW"
 include_models:
         - xios
 executable:     oceanx
-version:        3.6
+#version:        3.6
+version: GYRE_XIOS
 
-available_versions:
-- ORCA05_LIM2_KCM_AOW
-- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
-- ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
-- GYRE_XIOS
-choose_nemo.version:
-  GYRE_XIOS:
-    requires:
-    - xios-2.0_r982_ogcm
-    - nemobasemodel-3.6ogcm
-  ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
-    branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-  ORCA05_LIM2_KCM_AOW:
-    branch: master
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
-    branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+compile_infos:
+        available_versions:
+        - ORCA05_LIM2_KCM_AOW
+        - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+        - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+        - GYRE_XIOS
 
-    requires:
-- xios-2.0_r982
-- nemobasemodel-3.6foci
+        choose_version:
+          GYRE_XIOS:
+            requires:
+            - xios-2.0_r982_ogcm
+            - nemobasemodel-3.6ogcm
+          ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+            branch: esm-tools
+            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+          ORCA05_LIM2_KCM_AOW:
+            branch: master
+            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+          ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+            branch: esm-tools
+            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+            
+        requires:
+        - xios-2.0_r982
+        - nemobasemodel-3.6foci
+
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
         Institute: IPSL

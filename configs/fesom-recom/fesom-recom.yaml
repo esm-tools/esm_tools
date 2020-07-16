@@ -33,12 +33,6 @@ fesom:
         opbnd_dir: ""
         tide_forcing_dir: ""
 
-        choose_computer.name:           # This section below is just for testing
-                mistral:
-                        forcing_data_dir: "/work/ab0995/a270152/recom_data/forcing_clim61" # "${pool_dir}/forcing/"
-                ollie:
-                        forcing_data_dir: "/work/ollie/projects/MarESys/forcing_clim61/" # "${pool_dir}/forcing/"
-
         asforcing: CORE2
         asforcing_wind_rad_precip: JRA55
 
@@ -50,7 +44,7 @@ fesom:
                                 output_length_unit: "${output_unit}"
                                 output_length_unit_restart: "${output_unit}"
                         #mesh_def:
-                                #part_format=0  #this option is required because of two ways
+                                #part_format: 0  #this option is required because of two ways
                                                 #of storring mapping arrays are currently in use
                                                 #option with part_format=0 shall be used in future!
                 namelist.diag:

@@ -46,7 +46,7 @@ choose_scenario:
         historical:
                 constant_CO2: false
                 REcoM_PI: true
-                CO2_for_spinup: ""
+                CO2_for_spinup: "0"
                 firstyearoffesomcycle: "${f_year_fesom_cycle}"
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
                 numofCO2cycles: "${num_CO2_cycles}"

@@ -5,6 +5,9 @@ model: fesom
 branch: master
 version: "2.0"
 
+comp_command: ${defaults.comp_command}
+clean_command: ${defaults.clean_command}
+
 choose_version:
   '2.0':
     branch: 2.0.2

@@ -37,12 +37,14 @@ restart:
         frequency: 12
         unit: "months"
 
+resolution: R02B05
 
 choose_scenario:
-        NWP:
+        2.1.0:        
+                scenario: NWP
                 version: 2.1.0
                 resolution: R02B05
-
+                
                 pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
                 input_dir: "${pool_dir}/input"
                 grid_dir: "${input_dir}/grid"
@@ -51,24 +53,62 @@ choose_scenario:
                 initial_dir: "${input_dir}/initial"
                 mapping_dir: "${model_dir}/run"
 
-                filenames:
-                        "cldoptprops": "ECHAM6_CldOptProps.nc"
-                        "rrtmglw": "rrtmg_lw.nc"
-                        "extpar": "extpar_DOM01.nc"
-                        "grid": "icon${resolution}_DOM01.nc"
-                        "redradgrid": "icon${reduced_radiation_resolution}_DOM00.nc"
-                        "mapping": "map_file.ana"
-                        "dictionary": "dict.output.dwd"
-                        "initial": "eraint_init_0014_${resolution}_G_1991090100.nc"
+                #filenames:
+                initial_file: "eraint_init_0014_${resolution}_G_1991090100.nc"
+                cldoptprops_file: "ECHAM6_CldOptProps.nc"
+                rrtmglw_file: "rrtmg_lw.ncy.nc"
+                extpar_file: "extpar_DOM01.nc"
+                grid_file: "icon${resolution}_DOM01.nc"
+                redradgrid_file: "icon${reduced_radiation_resolution}_DOM00.nc"
+                mapping_file: "map_file.ana"
+                dictionary_file: "dict.output.dwd"
+                sst_td_file: "SST_cmip6_midmonth_${resolution}_<year>-<month>.nc"
+                ci_td_file: "CI_cmip6_midmonth_${resolution}_<year>-<month>.nc"
+
+                input_sources: 
+                        cldoptprops: ${model_dir}/data/${cldoptprops_file}
+                        rrtmglw: ${model_dir}/data/${rrtmglw_file}
+                        extpar: ${external_parameter_dir}/${extpar_file}
+                        grid: ${grid_dir}/${grid_file}
+                        redradgrid: ${grid_dir}/${redradgrid_file}
+                        mapping: ${model_dir}/run/${mapping_file}
+                        initial: ${initial_dir}/${inital_file}
+                        dictionary: "${model_dir}/run/${dictionary_file}"
+
+                forcing_sources: 
+                        sic: "${bound_dir}/CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+                        sst: "${bound_dir}/SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+
                 add_namelist_changes:
                         NAMELIST_NWP:
                                 initicon_nml:
-                                        ifs2icon_filename: "${filenames.initial}"
+                                        ifs2icon_filename: "${initial_file}"
                                 lnd_nml:
-                                        sst_td_filename: "${sst_td_filename}"
-                                        ci_td_filename: "${ci_td_filename}"
-
-        LES:
+                                        st_td_filename: "${sst_td_file}"
+                                        ci_td_filename: "${ci_td_file}"
+                                extpar_nml:
+                                        extpar_filename: "${extpar_file}"
+                                grid_nml:
+                                        dynamics_grid_filename: "${grid_file}"
+                                        radiation_grid_filename: "${redradgrid_file}"
+                                io_nml:
+                                        dt_checkpoint: "$dt_restart"
+                                output_nml:
+                                        ml_varlist: "${ml_varlist}"
+                                        pl_varlist: "${pl_varlist}"
+                                        output_start: "${dt_start}Z" 
+                                        output_end: "${dt_end}Z"
+                                nwp_phy_nml:
+                                        lrtm_filename: "${rrtmglw_file}"
+                                        cldopt_filename: "${cldoptprops_file}"
+                        icon_master.namelist:
+                                time_nml:
+                                        ini_datetime_string: "${dt_start}Z"
+                                        end_datetime_string: "${dt_end}Z"
+                                        dt_restart: "${dt_restart}"
+        
+        2.3.0-nwp5:
+                scenario: LES
                 version: 2.3.0-nwp5
                 resolution: R3B11
                 dt_restart: 21600
@@ -82,32 +122,67 @@ choose_scenario:
                 mapping_dir: "${bound_dir}/run"
                 lbc_dir: "${bound_dir}"
 
-                filenames:
-                        "cldoptprops": "ECHAM6_CldOptProps.nc"
-                        "rrtmglw": "rrtmg_lw.nc"
-                        "extpar": "extpar_${resolution}_CanadaI.nc"
-                        "grid": "icon${resolution}_CanadaI.nc"
-                        "redradgrid": "icon${resolution}_CanadaI_parent.nc"
-                        "mapping": "map_file.latbc"
-                        "initial": "init_DOM01_ML_20190504T000000Z.nc"
-                        "latbc_grid": "lateral_boundary.grid.nc"
-                        "latbc_forcing": "forcing_DOM01_ML_<y><m><d>T<h>0000Z_lbc.nc"
+                cldoptprops_file: "ECHAM6_CldOptProps.nc"
+                rrtmglw_file: "rrtmg_lw.nc"
+                extpar_file: "extpar_${resolution}_CanadaI.nc"
+                grid_file: "icon${resolution}_CanadaI.nc"
+                redradgrid_file: "icon${resolution}_CanadaI_parent.nc"
+                mapping_file: "map_file.latbc"
+                initial_file: "init_DOM01_ML_20190504T000000Z.nc"
+                latbc_grid_file: "lateral_boundary.grid.nc"
+                latbc_forcing_file: "forcing_DOM01_ML_<y><m><d>T<h>0000Z_lbc.nc"
+
+                input_sources:
+                        cldoptprops: ${model_dir}/data/${cldoptprops_file}
+                        rrtmglw: ${model_dir}/data/${rrtmglw_file}
+                        extpar: ${external_parameter_dir}/${extpar_file}
+                        grid: ${grid_dir}/${grid_file}
+                        redradgrid: ${grid_dir}/${redradgrid_file}
+                        mapping: ${model_dir}/run/${mapping_file}
+                        initial: ${initial_dir}/${inital_file}
+                        latbc_grid: ${latbc_grid_file}
+                        latbc_forcing: ${latbc_forcing_file}
+
+                forcing_sources:
+                        latbc_forcing: "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
+
                 remove_input_sources:
                         - dictionary
                 add_namelist_changes:
                         NAMELIST_NWP:
                                 initicon_nml:
-                                        dwdfg_filename: "${filenames.initial}"
+                                        dwdfg_filename: "${initial_file}"
                                 limarea_nml:
-                                        latbc_boundary_grid: "${filenames.latbc_grid}"
+                                        latbc_boundary_grid: "${latbc_grid_file}"
                                         latbc_path: "${latbc_dir}"
-                                        latbc_varnames_map_file: "${filenames.mapping}"
-                                        latbc_filename: "${filenames.forcing}"
+                                        latbc_varnames_map_file: "${mapping_file}"
+                                        latbc_filename: "${latbc_forcing_file}"
+                                extpar_nml:
+                                        extpar_filename: "${extpar_file}"
+                                grid_nml:
+                                        dynamics_grid_filename: "${grid_file}"
+                                        radiation_grid_filename: "${redradgrid_file}"
+                                io_nml:
+                                        dt_checkpoint: "$dt_restart"
+                                output_nml:
+                                        ml_varlist: "${ml_varlist}"
+                                        pl_varlist: "${pl_varlist}"
+                                        output_start: "${dt_start}Z"
+                                        output_end: "${dt_end}Z"
+                                nwp_phy_nml:
+                                        lrtm_filename: "${rrtmglw_file}"
+                                        cldopt_filename: "${cldoptprops_file}"
+                        icon_master.namelist:
+                                time_nml:
+                                        ini_datetime_string: "${dt_start}Z"
+                                        end_datetime_string: "${dt_end}Z"
+                                        dt_restart: "${dt_restart}"
+
 # default directories
 
-model_dir: "${esm_master_dir}/icon-${version}"
+#model_dir: "${esm_master_dir}/icon-${version}"
 bin_dir: "${model_dir}/build/x86_64-unknown-linux-gnu/bin"
-namelist_dir: "${esm_master_dir}/esm_runscripts/namelists/icon/${version}"
+namelist_dir: "${esm_namelist_dir}/icon/${version}"
 
 # choices
 
@@ -118,20 +193,18 @@ choose_resolution:
                 cells: unknown
                 nlat: unknown
                 nlon: unknown
-                choose_cores_per_node:
+                choose_computer.cores_per_node:
                         24:
                                 nproc: 288
                         36:
                                 nproc: 288
                 reduced_radiation_resolution: R02B04
         R3B11:
-                choose_cores_per_node:
+                choose_computer.cores_per_node:
                         24:
                                 nproc: 900
                         36:
                                 nproc: 900
-
-
 
 choose_version:
         2.1.0:
@@ -140,31 +213,6 @@ choose_version:
                 repo_tag: 2.3.0-nwp5
         2.4.0:
                 repo_tag: 2.4.0
-
-
-
-input_sources:
-        "cldoptprops": "${model_dir}/data/${filenames.cldoptprops}"
-        "rrtmglw": "${model_dir}/data/${filenames.rrtmglw}"
-        "extpar": "${external_parameter_dir}/${filenames.extpar}"
-        "grid": "${grid_dir}/${filenames.grid}"
-        "redradgrid": "${grid_dir}/${filenames.redradgrid}"
-        "mapping": "${model_dir}/run/${filenames.mapping}"
-        "dictionary": "${model_dir}/run/${filenames.dictionary}"
-        "initial": "${initial_dir}/${filenames.initial}"
-
-sst_td_filename: "SST_cmip6_midmonth_${resolution}_<year>-<month>.nc"
-ci_td_filename: "CI_cmip6_midmonth_${resolution}_<year>-<month>.nc"
-
-forcing_in_workdir:
-        sic: "CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-        sst: "SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-        "latbc_forcing": "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
-
-forcing_sources:
-        sic: "${bound_dir}/CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-        sst: "${bound_dir}/SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-        "latbc_forcing": "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
 
 bin_in_workdir:
         icon: icon
@@ -175,32 +223,4 @@ bin_sources:
 config_sources:
         master: "${namelist_dir}/icon_master.namelist"
         nwp: "${namelist_dir}/NAMELIST_NWP"
-
-config_in_work:
-        master: "icon_master.namelist"
-        nwp: "NAMELIST_NWP"
-
-
-namelist_changes:
-        NAMELIST_NWP:
-                extpar_nml:
-                        extpar_filename: "${filenames.extpar}"
-                grid_nml:
-                        dynamics_grid_filename: "${filenames.grid}"
-                        radiation_grid_filename: "${filenames.redradgrid}"
-                io_nml:
-                        dt_checkpoint: "$dt_restart"
-                output_nml:
-                        ml_varlist: "${ml_varlist}"
-                        pl_varlist: "${pl_varlist}"
-                        output_start: "${dt_start}Z"
-                        output_end: "${dt_end}Z"
-                nwp_phy_nml:
-                        lrtm_filename: "${filenames.rrtmglw}"
-                        cldopt_filename: "${filenames.cldoptprops}"
-        icon_master.namelist:
-                time_nml:
-                        ini_datetime_string: "${dt_start}Z"
-                        end_datetime_string: "${dt_end}Z"
-                        dt_restart: "${dt_restart}"
 

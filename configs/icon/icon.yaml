@@ -39,7 +39,7 @@ restart:
 
 resolution: R02B05
 
-choose_scenario:
+choose_vesion:
         2.1.0:        
                 scenario: NWP
                 version: 2.1.0

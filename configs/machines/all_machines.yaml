@@ -10,8 +10,8 @@ mistral:
         post_nodes: 'mistralpp*'
 
 juwels:
-        login_nodes: '^juwels[0-9][0-9]\.fz-juelich\.de$ '
-        compute_nodes: '^juwels[0-9][0-9]\.ib.juwels.fzj.de'
+        login_nodes: '^juwels[0-9][0-9]\.ib.juwels.fzj.de'
+        compute_nodes: '^jwc[0-9][0-9]*'
 
 blogin:
         login_nodes: 'blogin*'

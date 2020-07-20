@@ -82,17 +82,21 @@ module_actions:
         - "load cmake"
         - "load udunits"
         - "load gribapi/1.28.0"
-        - "unload intel.compiler"
-        - "unload intel.compiler intel.mpi && module load  intel.mpi"
+        - "unload intel.compiler intel.mpi && module load intel.mpi"
         - "unload netcdf"
         - "load centoslibs cdo nco netcdf/4.6.2_gnu"
         # NOTE(PG): Using this model breaks ECHAM6-Concurrent Rad compilation
         # - "load python3/3.7.7_intel2020"
-        - "load automake"
+        #- "load automake"
         - "list"
 
 export_vars:
-        - 'NETCDF_DIR="/global/AWIsoft/netcdf/4.6.2_gnu"'
+        - 'XML2ROOT=/usr'
+        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH:/home/ollie/jstreffi/fcm/bin/'
+        - 'ZLIBROOT=/usr'
+        - 'MPIFC=mpif90'
+        - 'MPICC=mpigcc'
+        #- 'NETCDF_DIR="/global/AWIsoft/netcdf/4.6.2_gnu"'
         - 'NETCDFFROOT=$NETCDF_DIR'
         - 'NETCDFROOT=$NETCDF_DIR'
         - 'NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include'
@@ -101,20 +105,14 @@ export_vars:
         - 'PERL5LIB=/usr/lib64/perl5'
         - 'LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
         - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'XML2ROOT=/usr'
-        - 'ZLIBROOT=/usr'
         - 'FC=mpif90'
         - 'F77=mpif77'
-        - 'MPIFC=mpif90'
-        - 'MPICC=mpigcc'
         - 'CC=mpigcc'
         - 'CXX=mpigxx'
-        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH:/home/ollie/jstreffi/fcm/bin/'
         # OpenIFS enviroment
         - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api/include'
         - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api/lib -lgrib_api_f90 -lgrib_api"'
         - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"' 
         - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
         - 'OIFS_FC=$FC'
@@ -132,15 +130,22 @@ choose_useMPI:
                 add_module_actions:
                         - "unload intel.mpi"
                         - "load intel.mpi"
-                fc: '"mpiifort -mkl"'
-                f77: '"mpiifort -mkl"'
-                mpifc: mpiifort
-                mpicc: mpiicc
-                cc: mpiicc
-                cxx: mpiicpc
+                fc: mpif90
+                f77: mpif90
+                mpifc: mpif90
+                mpifc: mpigcc
+                mpicc: mpigxx
+                cc: mpigcc
+                cxx: mpigxx
+                #fc: '"mpiifort -mkl"'
+                #f77: '"mpiifort -mkl"'
+                #mpifc: mpiifort
+                #mpicc: mpiicc
+                #cc: mpiicc
+                #cxx: mpiicpc
 
-                add_export_vars:
-                        - 'MPIROOT=${I_MPI_ROOT}/intel64'
+                #add_export_vars:
+                #        - 'MPIROOT=${I_MPI_ROOT}/intel64'
 
 further_reading:
         - batch_system/slurm.yaml

@@ -92,11 +92,12 @@ module_actions:
         - "list"
 
 export_vars:
-        - 'NETCDFFROOT=${NETCDF_DIR}'
-        - 'NETCDFROOT=${NETCDF_DIR}'
-        - 'NETCDF_Fortran_INCLUDE_DIRECTORIES=${NETCDFROOT}/include'
-        - 'NETCDF_CXX_INCLUDE_DIRECTORIES=${NETCDFROOT}/include'
-        - 'NETCDF_CXX_LIBRARIES=${NETCDFROOT}/lib'
+        - 'NETCDF_DIR="/global/AWIsoft/netcdf/4.6.2_gnu"'
+        - 'NETCDFFROOT=$NETCDF_DIR'
+        - 'NETCDFROOT=$NETCDF_DIR'
+        - 'NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include'
+        - 'NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include'
+        - 'NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib'
         - 'PERL5LIB=/usr/lib64/perl5'
         - 'LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
         - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
@@ -114,15 +115,15 @@ export_vars:
         - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api/lib -lgrib_api_f90 -lgrib_api"'
         - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api/bin"'
         - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'OIFS_NETCDF_LIB="-L${NETCDF_DIR}/lib -lnetcdf"' 
-        - 'OIFS_NETCDFF_LIB="-L${NETCDF_DIR}/lib -lnetcdff"'
-        - 'OIFS_FC=${FC}'
+        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"' 
+        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -convert big_endian"'
         - 'OIFS_FFIXED="-fixed"'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         # OIFS_MPI_LIB is not defined
-        - 'OIFS_LFLAGS=${OIFS_MPI_LIB}'
-        - 'OIFS_CC=${CC}'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 

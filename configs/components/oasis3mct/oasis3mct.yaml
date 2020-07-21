@@ -12,6 +12,8 @@ config_in_work:
 config_sources:
         cf: "${cf_name_dir}/cf_name_table.txt"
 
+version: '2.8'
+
 available_versions:
 - foci
 - fociagrif

@@ -1,7 +1,7 @@
 # BLOGIN YAML CONFIGURATION FILES
 
-name: blogin 
-account: shk00018 
+name: blogin
+account: None
 
 choose_general.use_hyperthreading:
         "0":
@@ -44,7 +44,7 @@ pool_dir:  "/pool/data/not/available/on/blogin"
 module_actions:
         - "purge"
         - "load slurm"
-        - "load  HLRNenv" 
+        - "load  HLRNenv"
         - "load sw.skl"
         - "load cmake"
         - "load intel/19.0.5"

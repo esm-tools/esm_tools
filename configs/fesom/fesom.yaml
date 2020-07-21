@@ -257,7 +257,13 @@ choose_computer.name:
                 add_compiletime_environment_changes:
                         add_module_actions:
                                 - "load gcc/4.8.2"
-
+        blogin:
+                add_compiletime_environment_changes:
+                        add_export_vars:
+                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                                - "takenfrom='fesom1'"
 
 runtime_environment_changes:
         add_export_vars:

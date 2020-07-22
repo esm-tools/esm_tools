@@ -4,9 +4,6 @@ model: echam
 repository: https://gitlab.dkrz.de/modular_esm/echam6
 type: atmosphere
 
-
-
-
 available_versions:
 - 6.3.04p1-esm-interface-yac
 - 6.3.05p2
@@ -14,6 +11,7 @@ available_versions:
 - 6.3.02p4
 - 6.3.04p1-esm-interface
 - 6.3.05p2-concurrent_radiation
+- 6.3.05p2-concurrent_radiation-paleodyn
 - 6.3.04p1-paleodyn
 - 6.3.04p1
 branch: ${echam.version}
@@ -35,6 +33,16 @@ choose_version:
   6.3.05p2:
     branch: esm-tools
     git-repository: https://gitlab.dkrz.de/foci/src/echam.git
+  6.3.05p2-concurrent_radiation-paleodyn:
+    git-repository: https://gitlab.awi.de/pgierz/echam6.git
+    branch: ice
+    clean_command: rm -rf src/echam/bin; make clean
+    comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin;
+      cp  bin/echam6 src/echam/bin/echam6
+    conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/;
+      ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
+      yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
+      INSTALL='/usr/bin/install -p'
   6.3.05p2-concurrent_radiation:
     branch: concurrent_radiation
     clean_command: rm -rf src/echam/bin; make clean
@@ -184,6 +192,24 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 
+        6.3.05p2-concurrent_radiation-paleodyn:
+                repo_tag: not_applicable
+                dataset: r0007
+                add_streams:
+                    - rad
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        npromar: "${npromar}"
+                                parctl:
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                        lrestart_from_old: "${lrestart_from_old}"
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007

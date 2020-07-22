@@ -87,3 +87,6 @@ namelist_changes:
                         output_length_unit: "${restart_unit}"
                         restart_length: "${restart_rate}"
                         restart_length_unit: "${restart_unit}"
+                machine:
+                        n_levels: 1
+                        n_part: 288

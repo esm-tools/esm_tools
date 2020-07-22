@@ -1,5 +1,5 @@
 #########################################################################################
-######################### AWIESM 2 YAML CONFIGURATION FILE ##############################
+######################### AWIESM 1 YAML CONFIGURATION FILE ##############################
 #########################################################################################
 
 general:
@@ -11,14 +11,17 @@ general:
                 - echam
                 - fesom
                 - oasis3mct
+                - pism
+                - scope
+                - debm
 
-        version: "2.1"
+        version: "2.2"
         available_versions:
-        - '2.1'
+            - '2.2'
         choose_version:
-          '2.1':
-            couplings:
-            - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
+            "2.2":
+                couplings:
+                    - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
@@ -87,13 +90,12 @@ jsbach:
 
 
 fesom:
-        version: "2.0"
         choose_general.version:
                 1.1:
                         version: "1.4"
                 CMIP6:
                         version: "1.4"
-                2.0:
+                2.1:
                         version: "2.0"
         choose_general.resolution:
                 T63_CORE2:

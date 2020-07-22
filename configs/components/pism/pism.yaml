@@ -57,18 +57,6 @@ comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -
   \ \\\n        -DPism_USE_PROJ4:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
   \ \\\n        ..; make -j4; make install;\n"
 
-# PG: BUG!! This doesn't work, but should:
-#choose_computer.name:
-#    ollie:
-#        computer.module_actions:
-#            - "load pism_externals"
-#        computer.export_vars:
-#            - "I_MPI_FABRICS=shm:tmi"
-#    "*":
-#        add_module_actions:
-#            - "None"
-#        add_export_vars:
-#            - "None"
 
 executable: pismr
 version: 1.1.4
@@ -105,3 +93,6 @@ bin_sources:
         "pism_bin": "${bin_dir}/pismr"
 bin_in_work:
         "pism_bin": "pismr"
+
+further_reading:
+    - pism/pism.compiletime_env_changes.yaml

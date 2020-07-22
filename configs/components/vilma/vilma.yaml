@@ -1,6 +1,9 @@
 model: vilma
 version: 1d
+internal_version: 'I189'
 
+logfile: 'vega.log'
+executable: 'vega_vip.x'
 
 available_versions:
 - 1d
@@ -8,3 +11,37 @@ clean_command: ${defaults.clean_command}
 comp_command: ${defaults.comp_command}
 git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
 install_bins: bin/vega_vip.x
+
+resolution: '512x1024'
+
+# jmin, mnax: spectral resolution spherical harmonics
+jmin: 0
+jmax: 340
+
+# time step (in ka) if 0 read from tint in s:
+time_step: 0.025
+output_interval: 0.1
+
+# polynomial representation of PREM
+l_prem: 1
+
+# modified 3d viscosity 
+#       0: no
+#       1: read
+#       2: adjust
+#       MUST BE 0 for 1d
+l_visc: 0
+
+# toroidal loading (don't change)
+l_toro: 0
+
+# load grid type: (3/2/1/0)
+l_grid: 2
+
+# if =1, will stop after reading of environment
+l_envi: 0
+
+# writing out is not each 1kyr, but epochs are defined in wepochs.inp
+l_wepo: 1
+
+

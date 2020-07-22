@@ -1,5 +1,10 @@
+model: vilma
+version: 1d
+
+
 available_versions:
 - 1d
 clean_command: ${defaults.clean_command}
 comp_command: ${defaults.comp_command}
-git-repository: gitlab.dkrz.de/modular_esm/vilma.git vilma_1d
+git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+install_bins: bin/vega_vip.x

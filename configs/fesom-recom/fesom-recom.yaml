@@ -160,4 +160,4 @@ recom:
         setup_dir: "${general.model_dir}"
 
         time_step: "${fesom.time_step}"
-        parent_date: "${fesom.parent_date}"
+        parent_date: "${fesom.prev_date}"   # Possible fix to all date problems: prev_date: "{fesom.prev_date}"

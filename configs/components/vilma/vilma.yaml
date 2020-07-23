@@ -5,6 +5,13 @@ internal_version: 'I189'
 logfile: 'vega.log'
 executable: 'vega_vip.x'
 
+pool_dir: /dev/null
+model_dir: /dev/null
+bin_dir: ${model_dir}/bin
+ini_input_dir: ${pool_dir}/ice5g
+ini_forcing_dir: ${pool_dir}/config
+ini_restart_dir: ${pool_dir}/ice5g
+
 available_versions:
 - 1d
 clean_command: ${defaults.clean_command}
@@ -14,6 +21,12 @@ install_bins: bin/vega_vip.x
 
 resolution: '512x1024'
 
+eislastfile: ice5g_total.nc
+eislastconf: loadh_ice5g_total.inp
+bedrockfile: ETOPO1_Bed_n256.nc
+
+# parameters:
+#
 # jmin, mnax: spectral resolution spherical harmonics
 jmin: 0
 jmax: 340
@@ -45,3 +58,124 @@ l_envi: 0
 l_wepo: 1
 
 
+
+# calendar stuff
+#
+fyear: $(( ${final_date}%syear / 1000 ))
+itimes: $(( (${final_date}%syear - ${initial_date}%syear) / ${time_step} )) 
+
+lastyear_p1: $(( ${last_date}%syear + 1 ))
+finalyear_p1: $(( ${final_date}%syear + 1 ))
+
+btime: $(( ${start_date}%syear / 1000 ))
+wbtime: $(( ${initial_date}%syear / 1000 + ${output_interval} ))
+
+etime: $(( ${lastyear_p1} / 1000 ))
+wetime: $(( ${finalyear_p1} / 1000 ))
+
+
+create_config:
+        vilma_wrapper.sh:
+                - "<--append-- #!/bin/ksh"
+                - "<--append-- ./${executable} << END"
+                - "<--append-- ${jmin} ${jmax}"
+                - "<--append-- 0.d0"
+                - "<--append-- ${l_prem}"
+                - "<--append-- ${l_visc}"
+                - "<--append-- ${l_toro}"
+                - "<--append-- ${l_rot}"
+                - "<--append-- ${l_grid}"
+                - "<--append-- ${l_envi}"
+                - "<--append-- ${itimes}"
+                - "<--append-- ${l_wepo}"
+                - "<--append-- restart/restart.log"
+        wepochs.inp:
+                # ???
+                # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
+                #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
+                # done
+
+        inp/tint.inp:
+                - "<--append-- 0 0"
+                - "<--append-- 42.0 -42.0 ${time_step}"
+
+        inp/load_hist.inp:
+                - "<--append-- inp/${eislastconf}"
+                - "<--append-- ${eislastfile}"
+                - "<--append-- ${bedrockfile} ${eislastfile}"
+
+
+execution_command: "vilma_wrapper.sh"
+
+
+
+# files
+
+restart_in_sources:
+        io.tmp: ${restart_dir}/io.tmp
+        restart.log: ${restart_dir}/restart.log
+        ctc_stress.nc: ${restart_dir}/ctc_stress.nc
+        disp.nc: ${restart_dir}/disp.nc
+        mos_acompl.nc: ${restart_dir}/mos_acompl.nc
+        mos_acomp.nc: ${restart_dir}/mos_acomp.nc
+        mos_amtrx.nc: ${restart_dir}/mos_amtrx.nc
+        mos_indx.nc: ${restart_dir}/mos_indx.nc
+        pefgh.nc: ${restart_dir}/pefgh.nc
+        pjj.nc: ${restart_dir}/pjj.nc
+        ve_struct.nc: ${restart_dir}/ve_struct.nc
+        vega_oce.dat: ${output_dir}/vega_oce.dat
+        vega_rpt.dat: ${output_dir}/vega_rpt.dat
+        vega_deg1.dat: ${output_dir}/vega_deg1.dat
+        vega1.nc: ${output_dir}/vega1.nc
+        dflag.nc: ${output_dir}/dflag.nc
+
+restart_in_targets:
+        io.tmp: io.tmp
+        restart.log: restart/restart.log
+        ctc_stress.nc: restart/ctc_stress.nc
+        disp.nc: restart/disp.nc
+        mos_acompl.nc: restart/mos_acompl.nc
+        mos_acomp.nc: restart/mos_acomp.nc
+        mos_amtrx.nc: restart/mos_amtrx.nc
+        mos_indx.nc: restart/mos_indx.nc
+        pefgh.nc: restart/pefgh.nc
+        pjj.nc: restart/pjj.nc
+        ve_struct.nc: restart/ve_struct.nc
+        vega_oce.dat: out/vega_oce.dat
+        vega_rpt.dat: out/vega_rpt.dat
+        vega_deg1.dat: out/vega_deg1.dat
+        vega1.nc: out/vega1.nc
+        dflag.nc: out/dflag.nc
+
+config_sources:
+        eislastconf: ${eislastconf}
+
+forcing_sources:
+        eislastfile: ${ini_input_dir}/${eislastfile}
+        bedrockfile: ${ini_input_dir}/${bedrockfile}
+        densi: ${ini_forcing_dir}/densi.inp
+        visko: ${ini_input_dir}/visko.inp
+
+forcing_targets:
+        densi: inp/densi.inp
+        visko: inp/visko.inp
+        
+bin_sources:
+        exec: ${bin_dir}/${executable}
+
+outdata_sources:
+        vegalis: vega.lis
+        radii: out/radii.dat
+        rsl: out/rsl.nc
+        dflag: out/dflag.nc
+        vega1: out/vega1.nc
+        vega_deg1: out/vega_deg1.dat
+        vega_oce: out/vega_out.dat
+        vega_rpt: out/vega_rpt.dat
+
+restart_out_sources:
+        restarts: restart/*.nc
+        io: io.tmp
+
+log_sources:
+        restart_log: restart.log

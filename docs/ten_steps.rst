@@ -37,7 +37,7 @@ Ten Steps to a Running Model
 8. Go back to the ``esm_tools`` folder, and pick a sample runscript from the ``runscripts`` subfolder. These examples are very short and can be easily adapted. Pick one that is for the model you want to run, and maybe already adapted to the HPC system you are working on. Make sure to adapt the paths to your personal settings, e.g. ``model_dir``, ``base_dir`` etc.::
 
     $ cd ../esm_tools/runscripts/fesom2
-    $ (your_favourite_editor) fesom-2.0-ollie-initial-monthly.yaml
+    $ (your_favourite_editor) fesom2-ollie-initial-monthly.yaml
 
    Notice that the examples exist with the endings ``.run`` and ``.yaml``. It doesn't matter what you pick. The files ending in ``.run`` are looking more like conventional shell scripts that you might be better used to, the ``.yaml``-files are written as yaml configuration files, which makes things much nicer and more elegant to write down. We strongly encourage you to give the ``yaml``-version a try.
 
@@ -55,6 +55,6 @@ Ten Steps to a Running Model
 
 10. Run the experiment::
 
-     $ esm_runscripts fesom-2.0-ollie-initial-monthly.yaml -e my_first_test
+     $ esm_runscripts fesom2-ollie-initial-monthly.yaml -e my_first_test
 
 That should really be it. Good luck!

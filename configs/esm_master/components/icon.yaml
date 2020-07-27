@@ -5,5 +5,5 @@ available_versions:
 branch: ${icon.version}
 clean_command: make distclean
 comp_command: make -j `nproc --all`
-conf_command: ./configure --with-fortran=gcc --with-openmp --with-grib_api
+conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git

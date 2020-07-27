@@ -15,8 +15,6 @@ general:
                 - recom
                 - fesom
 
-        yearly_outputs_start: 3000   # Year in which the yearly output starts to be saved
-
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -29,6 +27,8 @@ fesom:
         time_step: 900
         output_unit: "m"
         leapyear: false
+
+        yearly_outputs_start: 1     # Year in which the yearly output starts to be saved
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -131,7 +131,7 @@ fesom:
                                         -
                                                 vars: ${yearly_outputs}
                                                 unit: y
-                                                first: 1    # ${general.yearly_outputs_start}
+                                                first: ${yearly_outputs_start}
                                                 rate: 1
                                         -
                                                 vars: ${recom.monthly_outputs}
@@ -148,7 +148,7 @@ fesom:
                                         -
                                                 vars: ${recom.yearly_outputs}
                                                 unit: y
-                                                first: ${general.yearly_outputs_start}
+                                                first: ${recom.yearly_outputs_start}
                                                 rate: 1
 
 
@@ -159,5 +159,5 @@ recom:
         model_dir: "${general.model_dir}/recom/"
         setup_dir: "${general.model_dir}"
 
+        yearly_outputs_start: 1             # Year in which the yearly output starts to be saved
         time_step: "${fesom.time_step}"
-        parent_date: "${fesom.prev_date}"   # Possible fix to all date problems: prev_date: "{fesom.prev_date}"

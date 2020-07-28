@@ -1,0 +1,34 @@
+# Equivalent of /home/ollie/jhauck/esm-master/fesom-1.4-recom/fesom-1.4/bin_reccap_incrCO2_1850_1957
+
+general:
+        setup_name: fesom-recom
+        compute_time: "08:00:00"
+        initial_date: "1850-01-01"
+        final_date: "1957-12-31"
+        base_dir: /work/ollie/mandresm/esm_yaml_test/
+        nyear: 1
+
+fesom-recom:
+        version: 1.4
+        model_dir: /home/ollie/mandresm/model_codes/fesom-recom-1.4/
+
+fesom:
+        version: "1.4-recom-mocsy-slp"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/ogurses/meshes/core_new_432/"
+        res: CORE2
+        forcing_data_dir: /work/ollie/projects/MarESys/forcing_clim61/
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: "y"
+        post_processing: 0
+        nproc: 432
+
+recom:
+        data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
+        scenario: "historical"
+        f_year_fesom_cycle: "${general.initial_date!syear}"
+        l_year_fesom_cycle: "${general.final_date!syear}"
+        num_CO2_cycles: 1
+        current_CO2_cycle: 1

@@ -15,6 +15,7 @@ compile_infos:
         - 6.3.04p1-esm-interface
         - 6.3.05p2-concurrent_radiation
         - 6.3.04p1-paleodyn
+        - 6.3.04p1-recom-awicm
         - 6.3.04p1
         branch: ${echam.version}
         choose_version:
@@ -32,10 +33,13 @@ compile_infos:
             branch: paleodyn
             destination: echam-6.3.04p1
             git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
-          6.3.05p2:
-            branch: 6.3.05p2
-            destination: echam-6.3.05p2
+          6.3.04p1-recom-awicm:
+            branch: co2_coupling
+            destination: echam-6.3.04p1
             git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+          6.3.05p2:
+            branch: esm-tools
+            git-repository: https://gitlab.dkrz.de/foci/src/echam.git
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
             clean_command: rm -rf src/echam/bin; make clean

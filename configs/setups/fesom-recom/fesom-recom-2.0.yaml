@@ -5,51 +5,6 @@ model: fesom
 branch: master
 version: "2.0"
 
-comp_command: ${defaults.comp_command}
-clean_command: ${defaults.clean_command}
-
-choose_version:
-  '2.0':
-    branch: 2.0.2
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-esm-interface:
-    branch: fesom2_using_esm-interface
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
-    install_bins: bin/fesom.x
-  2.0-esm-interface-yac:
-    branch: using_esm_interfaces_yac
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
-    install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-paleodyn:
-    branch: paleodyn_frozen
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
-    # files will be cleared from the src folder. After Dima's update we will return
-    # fesom-2.0 master branch back and remove this part
-    git-repository:
-    - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-    - "github.com/FESOM/fesom2.git"
-    branch: "recom-update"
-    install_bins: "bin/fesom.x"
-
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
@@ -73,7 +28,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/"
+namelist_dir: "${esm_namelist_dir}/fesom2/"                        
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -95,7 +50,7 @@ choose_asforcing:
                 leapyear: false
         ECHAM5:
                 leapyear: true
-
+             
 
 
 choose_resolution:
@@ -127,12 +82,8 @@ restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
 
-outputs: [a_ice,alpha,atmice_x,atmice_y,atmoce_x,atmoce_y,beta,Bo,evap,fer_C,fer_K,fh,fw,hbl,iceoce_x,iceoce_y,m_ice,MLD1,MLD2,m_snow,prec,Redi_K,reso,ssh,sss,sst,tx_sur,ty_sur,uice,vice,vve]
 
-outdata_sources:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
-outdata_targets:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+
 
 log_files:
         clock: clock
@@ -167,7 +118,7 @@ namelist_changes:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout:
+                inout: 
                         restartflag: "${restart_flag}"
                         output_length: "${restart_rate}"
                         output_length_unit: "${restart_unit}"
@@ -198,16 +149,16 @@ choose_currentday:
                 startday: "$(( ${start_date!sdoy} - 1 ))"
 
 choose_lresume:
-        false:
+        false:                                
                 create_config:
                         fesom.clock:
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"  
                                 - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
-                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
-        true:
+        true:   
                 create_config:
-                        fesom.clock:
+                        fesom.clock: 
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
-                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"     
 
 bin_in_work:
         fesom: "${executable}"
@@ -303,5 +254,4 @@ grids:
                 nx: ${nx}
                 ny: 1
                 oasis_grid_type: "U"
-                number_of_overlapping_points: 0 # oasis P-value
 

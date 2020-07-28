@@ -1,0 +1,29 @@
+general:
+        setup_name: fesom-recom
+        compute_time: "02:00:00"
+        initial_date: "1958-01-01"
+        final_date: "1958-02-28"
+        base_dir: /work/ollie/mandresm/esm_yaml_test/
+        nyear: 0
+        nmonth: 1
+        nday: 0
+
+fesom-recom:
+        version: 1.4
+        model_dir: /home/ollie/mandresm/model_codes/fesom-recom-1.4/
+
+fesom:
+        version: "1.4-recom-mocsy-slp"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/ogurses/meshes/core_new_432/"
+        res: CORE2
+        forcing_data_dir: /work/ollie/projects/MarESys/forcing_clim61/
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: "m"
+        post_processing: 0
+
+recom:
+        data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
+        scenario: "preindustrial"

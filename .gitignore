@@ -110,3 +110,6 @@ ENV/
 
 # IDE settings
 .vscode/
+
+# ESM-Master local files
+configs/esm_software/esm_master/esm_master.pkl

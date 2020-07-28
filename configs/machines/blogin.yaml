@@ -50,7 +50,7 @@ module_actions:
         - "load intel/19.0.5"
         - "load impi/2019.5"
         # dirty workaround, removed after rewrite of esm_environment (Sebastian Wahl 2020-06-26)
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+        #- "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
 
 export_vars:
 

@@ -3,7 +3,7 @@
 
 model: recom
 branch: master
-version: 2.0
+version: '2.0'
 
 available_versions:
   - '2.0'

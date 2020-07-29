@@ -161,10 +161,10 @@ choose_version:
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
-                                        Ndepo: Ndepo_1850
-                                        a_nd_file: a_nd_file
-                                        lightning: lightning
-                                        popdens: popdens
+                                        #Ndepo: Ndepo_1850
+                                        #a_nd_file: a_nd_file
+                                        #lightning: lightning
+                                        #popdens: popdens
 
 
 

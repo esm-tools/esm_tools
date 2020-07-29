@@ -157,7 +157,7 @@ choose_version:
                                         LU_trans: LU_trans_none
                         PAMIP:
                                 add_input_files:
-                                        jsbach: jsbach_1976
+                                        jsbach: jsbach_2005
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none

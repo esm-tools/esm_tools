@@ -4,7 +4,7 @@ input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
         "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
         "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
-        #"jsbach_2005": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_2005${jsbachnc_file_ending}.nc"
+        "jsbach_2005": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_2005${jsbachnc_file_ending}.nc"
         #"jsbach_2005": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_2005_no-dynveg.nc"
 
         # FOCI specific input sources

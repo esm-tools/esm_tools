@@ -85,11 +85,15 @@ if [[ "x${perturb}" == "x1" ]] ; then
     
     rm -rf tmp.grb tmp2.grb
     # Generate random numbers on a 1D array of same size as reduced grid
-    echo "cdo -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb"
-    cdo -O -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb
+    #echo "cdo -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb"
+    #cdo -O -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.grb
+    echo "cdo -f nc -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.nc"
+    cdo -O -f nc -remapnn,r${nx}x1 -divc,10 -subc,0.5 -random,r${nx}x1,${ensemble_id} ${outdir}/random_1d.nc
     # Now take grid description from ICMGG 
-    echo "cdo -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb "
-    cdo -O -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb    
+    #echo "cdo -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb "
+    #cdo -O -setgrid,${newgginit} ${outdir}/random_1d.grb ${outdir}/random.grb    
+    echo "cdo -setgrid,${newgginit} ${outdir}/random_1d.nc ${outdir}/random.nc "
+    cdo -O -f grb -setgrid,${newgginit} ${outdir}/random_1d.nc ${outdir}/random.grb
     # Merge with ICMGG
     echo "cdo merge ${outdir}/ICMGG${outexpid}INIT ${outdir}/random.grb ${outdir}/tmp.grb"
     cdo -O merge ${outdir}/ICMGG${outexpid}INIT ${outdir}/random.grb ${outdir}/tmp.grb
@@ -107,7 +111,7 @@ if [[ "x${perturb}" == "x1" ]] ; then
     # Control: Make nc file    
     cdo -O -f nc -t ecmwf -setgridtype,regular ${outdir}/ICMGG${outexpid}INIT_sub ${outdir}/ICMGG${outexpid}INIT_sub.nc 
     # Clean up crew
-    rm -f ${outdir}/random_1d.grb ${outdir}/random.grb ${outdir}/tmp.grb ${outdir}/tmp2.grb ${outdir}/ICMGG${outexpid}INIT_sub 
+    #rm -f ${outdir}/random_1d.grb ${outdir}/random.grb ${outdir}/tmp.grb ${outdir}/tmp2.grb ${outdir}/ICMGG${outexpid}INIT_sub 
     echo "          Modification of OpenIFS initial files for ensemble complete"
     
     

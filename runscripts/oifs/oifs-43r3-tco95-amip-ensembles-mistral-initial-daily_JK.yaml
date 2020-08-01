@@ -2,12 +2,14 @@ general:
         setup_name: oifs
         compute_time: "03:00:00"
         account: "bb0519"
+        use_hyperthreading: 0
+        partition: "compute2"
         initial_date: "2008-01-01"
         final_date: "2008-12-31"
         model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
         base_dir: "/work/bb0519/b350090/oifs-43r3-experiments/"
-        nyear: 0
-        nmonth: 1
+        nyear: 1
+        nmonth: 0
         nday: 0
         restart_rate: 1
         restart_unit: "months"
@@ -32,4 +34,4 @@ oifs:
         nproca: 288
         nprocb: 1
         perturb: 1
-        ensemble_id: 5
+        ensemble_id: 7

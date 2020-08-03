@@ -63,11 +63,22 @@ choose_general.setup_name:
 
 useMPI: intelmpi
 module_actions:
-        - "unload netcdf_c"
-        - "unload intel intelmpi"
+# kh 10.07.20
+#        - "unload netcdf_c"
+#        - "unload intel intelmpi"
+#        - "load python/3.5.2"
+#        - "load cmake/3.13.3"
+#        - "load autoconf/2.69"
+
+        - "purge"
+        - "load gcc/4.8.2"
+        - "unload intel"
+        - "load intel"
+        - "load cdo nco"
+        - "unload netcdf"
+        - "load netcdf_c/4.3.2-gcc48"
         - "load python/3.5.2"
         - "load cmake/3.13.3"
-        - "load autoconf/2.69"
 
 export_vars:
 
@@ -76,6 +87,14 @@ export_vars:
         - "MPIFC=${mpifc}"
         - "CC=${cc}"
         - "CXX=${cxx}"
+
+# kh 10.07.20 $$$
+#        - "FC=mpiifort"
+#        - "F77=mpiifort"
+#        - "MPIFC=mpiifort"
+#        - "CC=mpiicc"
+#        - "CXX=mpiicpc"
+
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
@@ -86,14 +105,34 @@ export_vars:
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
         # undefined symbol: __intel_skx_avx512_memcpy
         # This combination was recommended by DKRZ support
-        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
-        - "HDF5_ROOT=$HDF5ROOT"
-        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/"
-        - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
+
+# kh 10.07.20
+#       - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
+#       - "HDF5_ROOT=$HDF5ROOT"
+
+# kh 10.07.20 used from previous version
+        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
+        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
+        - "ESM_HDF5_DIR=sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/"
+        # NOTE(PG): The version of HDF5ROOT **WITH** an underscore is used by PISM Cmake:
+        - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
+
+# kh 10.07.20
+#       - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+#       - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/"
+
+# kh 10.07.20 used from previous version
+        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
+        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+
+# kh 10.07.20 tweaked to previous version
+#       - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
+
         # avoid GLIBCXX_3.4.15 not found error
-        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
-        - 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
+# kh 10.07.20 tweaked to previous version
+#       - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
+
+        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
@@ -102,7 +141,7 @@ export_vars:
         - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
 
         # mostly OpenIFS stuff
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
@@ -114,7 +153,11 @@ export_vars:
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
         - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
+
+# kh 10.07.20
+#       - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
+        - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
+
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
@@ -141,32 +184,33 @@ export_vars:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
+# kh 10.07.20
         # MPI environent variables important at runtime
-        - 'I_MPI_FABRICS=shm:dapl'
-        - 'I_MPI_FALLBACK=disable'
-        - 'I_MPI_SLURM_EXT=1'
-        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
-        - 'I_MPI_DYNAMIC_CONNECTION=1'
+#        - 'I_MPI_FABRICS=shm:dapl'
+#        - 'I_MPI_FALLBACK=disable'
+#        - 'I_MPI_SLURM_EXT=1'
+#        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
+#        - 'I_MPI_DYNAMIC_CONNECTION=1'
 
         # MPIOM vars
-        - 'ARFLAGS=crv'
-        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
-        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
-        - 'WLFLAG="-Wl"'
-        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
-        - 'OASIS3MCTROOT=${model_dir}'
+#        - 'ARFLAGS=crv'
+#        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
+#        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+#        - 'WLFLAG="-Wl"'
+#        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
+#        - 'OASIS3MCTROOT=${model_dir}'
 
-        - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
-        - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
-        - 'DAPL_WR_MAX=500'
+#        - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
+#        - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
+#        - 'DAPL_WR_MAX=500'
 
-        - 'OMPI_MCA_pml=cm'
-        - 'OMPI_MCA_mtl=mxm'
-        - 'OMPI_MCA_coll=^ghc'
-        - 'OMPI_MCA_mtl_mxm_np=0'
+#        - 'OMPI_MCA_pml=cm'
+#        - 'OMPI_MCA_mtl=mxm'
+#        - 'OMPI_MCA_coll=^ghc'
+#        - 'OMPI_MCA_mtl_mxm_np=0'
 
-        - 'MXM_RDMA_PORTS=mlx5_0:1'
-        - 'MXM_LOG_LEVEL=FATAL'
+#        - 'MXM_RDMA_PORTS=mlx5_0:1'
+#        - 'MXM_LOG_LEVEL=FATAL'
 
 choose_useMPI:
         intelmpi:
@@ -174,6 +218,9 @@ choose_useMPI:
                         - "unload intel intelmpi"
                         - "load intel/18.0.4 intelmpi/2018.5.288"
                         - "load libtool/2.4.6"
+# kh 11.07.20        
+                        - "load autoconf/2.69"
+
                         - "load automake/1.14.1"
                 fc: mpiifort
                 f77: mpiifort
@@ -181,8 +228,24 @@ choose_useMPI:
                 cc: mpiicc
                 cxx: mpiicpc
 
-                add_export_vars:
-                        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+# kh 10.07.20
+#               add_export_vars:
+#                       - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+
+        intel18_bullxmpi:
+                add_module_actions:
+                        - "unload intel intelmpi"
+                        - "load intel/18.0.4"
+                        - "load libtool/2.4.6"
+                        - "load autoconf/2.69"
+                        - "load automake/1.14.1"
+                        - "load bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
+                fc: mpif90
+                f77: mpif90
+                mpifc: mpif90
+                cc: mpicc
+                cxx: mpicxx
+
         intelmpi17:
                 add_module_actions:
                         - "unload intel intelmpi"

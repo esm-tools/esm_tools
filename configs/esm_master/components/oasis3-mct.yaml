@@ -21,14 +21,19 @@ choose_version:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
 clean_command: ${defaults.clean_command}
-comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include;
-  [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/;
-  cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h
-  ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a
-  ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a
-  ../lib;
+# kh 08.07.20 as a workaround the seetings from a previoius version are used to succesfully build awicmcr-CMIP6 on Mistral (see below)
+# merge todo: bring customizations for the different models in mistral.yaml for all models and clusters under one roof
+# kh 08.07.20 bugfix: avoid error if ../include already exists
+#comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir -p ../include;
+#  [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/;
+#  cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h
+#  ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a
+#  ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a
+#  ../lib;
 
-  '
+# kh 10.07.20
+comp_command: 'mkdir -p build; cd build; cmake ..;   make -j `nproc --all`'
+
 destination: oasis
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 install_libs:

@@ -19,7 +19,7 @@ SCENARIO_awicmcr="PI-CTRL"
 
 RES_fesom=CORE2
 
-MODEL_DIR_awicm=${HOME}/esm-master/awicmcr-test/
+MODEL_DIR_awicmcr=${HOME}/esm-master/awicmcr-test/
 
 BASE_DIR=/work/ab0995/a270058/esm_yaml_test/
 

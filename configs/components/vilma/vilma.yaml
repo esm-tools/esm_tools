@@ -8,16 +8,29 @@ executable: 'vega_vip.x'
 pool_dir: /dev/null
 model_dir: /dev/null
 bin_dir: ${model_dir}/bin
+
 ini_input_dir: ${pool_dir}/ice5g
 ini_forcing_dir: ${pool_dir}/config
-ini_restart_dir: ${pool_dir}/ice5g
+ini_parent_dir: ${pool_dir}/ice5g
 
 available_versions:
 - 1d
-clean_command: ${defaults.clean_command}
-comp_command: ${defaults.comp_command}
-git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
-install_bins: bin/vega_vip.x
+- 3d
+
+choose_version:
+        1d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+        3d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+
 
 resolution: '512x1024'
 
@@ -34,6 +47,8 @@ jmax: 340
 # time step (in ka) if 0 read from tint in s:
 time_step: 0.025
 output_interval: 0.1
+
+l_rot: ???
 
 # polynomial representation of PREM
 l_prem: 1
@@ -58,21 +73,28 @@ l_envi: 0
 l_wepo: 1
 
 
-
 # calendar stuff
 #
-fyear: $(( ${final_date}%syear / 1000 ))
-itimes: $(( (${final_date}%syear - ${initial_date}%syear) / ${time_step} )) 
+#final_year: ${final_date!syear}
+#initial_year: ${initial_date!syear}
+#last_year: ${end_date!syear}
+#start_year: ${start_date!syear}
 
-lastyear_p1: $(( ${last_date}%syear + 1 ))
-finalyear_p1: $(( ${final_date}%syear + 1 ))
+fyear: $(( ${final_date!syear} / 1000. ))
 
-btime: $(( ${start_date}%syear / 1000 ))
-wbtime: $(( ${initial_date}%syear / 1000 + ${output_interval} ))
+dtimes: $(( ${final_date!syear} / 1000. - ${initial_date!syear} / 1000. ))
+itimes: $(( ${dtimes} / ${time_step} ))
 
-etime: $(( ${lastyear_p1} / 1000 ))
-wetime: $(( ${finalyear_p1} / 1000 ))
+lastyear_p1: $(( ${end_date!syear} + 1 ))
+finalyear_p1: $(( ${final_date!syear} + 1 ))
 
+btime: $(( ${start_date!syear} /  1000. ))
+wbtime: $(( ${initial_date!syear} / 1000. + ${output_interval} ))
+
+etime: $(( ${lastyear_p1} / 1000. ))
+wetime: $(( ${finalyear_p1} / 1000. ))
+
+OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
 
 create_config:
         vilma_wrapper.sh:
@@ -84,22 +106,23 @@ create_config:
                 - "<--append-- ${l_visc}"
                 - "<--append-- ${l_toro}"
                 - "<--append-- ${l_rot}"
-                - "<--append-- ${l_grid}"
+                - "<--append-- ${l_grid}" 
                 - "<--append-- ${l_envi}"
                 - "<--append-- ${itimes}"
                 - "<--append-- ${l_wepo}"
                 - "<--append-- restart/restart.log"
         wepochs.inp:
+                - "<--append-- [[OUTPUT_DATES-->od]]"
                 # ???
                 # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
                 #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
                 # done
 
-        inp/tint.inp:
+        tint.inp:
                 - "<--append-- 0 0"
                 - "<--append-- 42.0 -42.0 ${time_step}"
 
-        inp/load_hist.inp:
+        load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
                 - "<--append-- ${eislastfile}"
                 - "<--append-- ${bedrockfile} ${eislastfile}"
@@ -107,27 +130,26 @@ create_config:
 
 execution_command: "vilma_wrapper.sh"
 
+input_sources:
+        vega_oce.dat: ${ini_input_dir}/vega_oce.dat
+        vega_rpt.dat: ${ini_input_dir}/vega_rpt.dat
+        vega_deg1.dat: ${ini_input_dir}/vega_deg1.dat
+        vega1.nc: ${ini_input_dir}/vega1.nc
+        dflag.nc: ${ini_input_dir}/dflag.nc
 
-
-# files
 
 restart_in_sources:
-        io.tmp: ${restart_dir}/io.tmp
-        restart.log: ${restart_dir}/restart.log
-        ctc_stress.nc: ${restart_dir}/ctc_stress.nc
-        disp.nc: ${restart_dir}/disp.nc
-        mos_acompl.nc: ${restart_dir}/mos_acompl.nc
-        mos_acomp.nc: ${restart_dir}/mos_acomp.nc
-        mos_amtrx.nc: ${restart_dir}/mos_amtrx.nc
-        mos_indx.nc: ${restart_dir}/mos_indx.nc
-        pefgh.nc: ${restart_dir}/pefgh.nc
-        pjj.nc: ${restart_dir}/pjj.nc
-        ve_struct.nc: ${restart_dir}/ve_struct.nc
-        vega_oce.dat: ${output_dir}/vega_oce.dat
-        vega_rpt.dat: ${output_dir}/vega_rpt.dat
-        vega_deg1.dat: ${output_dir}/vega_deg1.dat
-        vega1.nc: ${output_dir}/vega1.nc
-        dflag.nc: ${output_dir}/dflag.nc
+        io.tmp: io.tmp
+        restart.log: restart.log
+        ctc_stress.nc: ctc_stress.nc
+        disp.nc: disp.nc
+        mos_acompl.nc: mos_acompl.nc
+        mos_acomp.nc: mos_acomp.nc
+        mos_amtrx.nc: mos_amtrx.nc
+        mos_indx.nc: mos_indx.nc
+        pefgh.nc: pefgh.nc
+        pjj.nc: pjj.nc
+        ve_struct.nc: ve_struct.nc
 
 restart_in_targets:
         io.tmp: io.tmp
@@ -179,3 +201,4 @@ restart_out_sources:
 
 log_sources:
         restart_log: restart.log
+

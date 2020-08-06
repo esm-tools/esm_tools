@@ -18,7 +18,7 @@ choose_version:
       --enable-HAMOCC
 
 clean_command: make clean
-comp_command: make
+comp_command: make -j `nproc --all`
 conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC
 git-repository: https://gitlab.dkrz.de/modular_esm/mpiom.git
 install_bins: bin/mpiom.x

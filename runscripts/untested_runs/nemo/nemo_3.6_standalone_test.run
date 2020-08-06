@@ -26,9 +26,9 @@ INITIAL_DATE_nemo_standalone=0001-01-01 # initial exp. date
 FINAL_DATE_nemo_standalone=0001-01-31   # final date of the experiment
 CURRENT_DATE_nemo_standalone=date_file  # final date of the experiment
 
-MODEL_DIR_nemo_standalone=${HOME}/esm-tools/esm-master/nemo-3.6-ogcm/
+MODEL_DIR=${HOME}/esm-tools/esm-master/nemo-3.6-ogcm/
 
-BIN_DIR_nemo_standalone=${MODEL_DIR_nemo_standalone}/bin/
+BIN_DIR_nemo_standalone=${MODEL_DIR}/bin/
 
 BASE_DIR=/work/bb0519/${USER}/esm-experiments/
 

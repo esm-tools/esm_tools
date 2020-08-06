@@ -47,19 +47,6 @@ pool_dir:  "/pool/data"
 #
 
 choose_general.setup_name:
-        mpiesm:
-                add_module_actions:
-                    - "unload gcc"
-                    - "load gcc/4.8.2"
-                    - "load cdo nco"
-                    - "unload netcdf"
-                    - "load netcdf_c/4.3.2-gcc48"
-                add_export_vars:
-                    - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
-                    - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
-                    - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
-                    - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                    - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
         foci:
                 add_module_actions:
                         - "unload intel intelmpi"
@@ -158,14 +145,6 @@ export_vars:
         - 'I_MPI_SLURM_EXT=1'
         - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
         - 'I_MPI_DYNAMIC_CONNECTION=1'
-
-        # MPIOM vars
-        - 'ARFLAGS=crv'
-        - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
-        - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
-        - 'WLFLAG="-Wl"'
-        - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
-        - 'OASIS3MCTROOT=${model_dir}'
 
         - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
         - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'

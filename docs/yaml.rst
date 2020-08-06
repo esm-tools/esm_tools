@@ -20,6 +20,11 @@ speeding up the configuration process, avoiding bugs and complex syntax.
 The same should apply to developers that would like to implement their models
 in `ESM-Tools`: the implementation consists on the configuration of a few `YAML` files.
 
+.. warning::
+   `Tabs` are not allowed as `yaml` indentation, and therefore, `ESM-Tools` will return an
+   error every time a `yaml` file with `tabs` is invoked (e.g. `runscripts` and `config`
+   files need to be `'tab-free'`).
+
 YAML-Specific Syntax
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -53,6 +58,8 @@ The main `YAML` **elements** relevant to `ESM-Tools` are:
               ice:     ice
 
 Some relevant **properties** of the ``YAML`` format are:
+
+  * Only **white spaces** can be used for indentation. **Tabs are not allowed**.
 
   * Indentation can be used to structure information in as many levels as required, i.e. a dictionary
     ``choose_resolution`` that contains a list of dictionaries (``T63``, ``T31`` and ``T127``)::

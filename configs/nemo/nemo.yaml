@@ -25,6 +25,9 @@ metadata:
 
 resolution:     ORCA05
 time_step:      1800
+jpni:           24
+jpnj:           20
+nproc:          480
 
 use_lim2:       true
 use_tracer:     true
@@ -89,9 +92,9 @@ namelist_changes:
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
-                        jpni: 0
-                        jpnj: 0
-                        jpnij: 0
+                        jpni: ${jpni}
+                        jpnj: ${jpnj}
+                        jpnij: ${nproc}
 
 choose_nemoconfig:
        "ORCA05_LIM2_KCM_AOW":
@@ -100,13 +103,15 @@ choose_nemoconfig:
                 use_lim2:       true
                 use_tracer:     true
                 correct_neg_tracer_conc: true
-
-                add_namelist_changes:
-                        namelist_cfg:
-                              nammpp:
-                                    jpni: 0
-                                    jpnj: 0
-                                    jpnij: 0
+                
+                # uncomment the following to set CPU layout defaults
+                # for this configuration
+                #add_namelist_changes:
+                #        namelist_cfg:
+                #              nammpp:
+                #                    jpni: 0
+                #                    jpnj: 0
+                #                    jpnij: 0
 
        "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
                 free_surface: nonlinear
@@ -115,12 +120,14 @@ choose_nemoconfig:
                 use_tracer:     true
                 correct_neg_tracer_conc: true
 
-                add_namelist_changes:
-                        namelist_cfg:
-                              nammpp:
-                                    jpni: 0
-                                    jpnj: 0
-                                    jpnij: 0
+                # uncomment the following to set CPU layout defaults
+                # for this configuration
+                #add_namelist_changes:
+                #        namelist_cfg:
+                #              nammpp:
+                #                    jpni: 0
+                #                    jpnj: 0
+                #                    jpnij: 0
 
 choose_free_surface:
         linear:

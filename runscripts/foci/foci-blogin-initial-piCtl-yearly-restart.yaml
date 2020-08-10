@@ -2,14 +2,14 @@
 general:
    setup_name: "foci"
    #resolution: "T63_ORCA05"
-   compute_time: "00:15:00"
+   compute_time: "01:45:00"
    account: "shkifmsw"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-20T00:00:00"         # Final date of the experiment
+   final_date: "1853-01-01T00:00:00"         # Final date of the experiment
    version: "default"
    postprocessing: 0
    scenario: "PI-CTRL"
-   nday: 5
+   nyear: 1 
    base_dir: /scratch/usr/shkifmsw/esm-experiments/ 
    #lresume: False
 
@@ -23,11 +23,13 @@ computer:
 
 echam:
    resolution: "T63"
-   restart_rate: 5
-   restart_unit: "days"
-   nproca: 4
+   restart_rate: 1
+   restart_unit: "years"
+   nproca: 24
    nprocb: 24
 
 nemo:
    resolution: "ORCA05"
-   nproc: 24
+   jpni: 24
+   jpnj: 20
+   nproc: 480

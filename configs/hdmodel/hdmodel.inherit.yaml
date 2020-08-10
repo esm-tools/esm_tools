@@ -2,4 +2,5 @@ lresume: ${echam.lresume}
 time_step: ${echam.time_step}
 #ini_parent_exp_id: ${echam.ini_parent_exp_id}
 parent_date: ${echam.parent_date}
+other_date: ${echam.other_date}
 parent_restart_dir: ${echam.parent_restart_dir}

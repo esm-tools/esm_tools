@@ -5,11 +5,11 @@ general:
    compute_time: "00:15:00"
    account: "shkifmsw"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-02T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
    version: "default"
    postprocessing: 0
    scenario: "PI-CTRL"
-   nday: 1
+   nday: 1 
    base_dir: /scratch/usr/shkifmsw/esm-experiments/ 
    #lresume: False
 

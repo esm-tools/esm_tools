@@ -37,11 +37,11 @@ choose_version:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
-comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir ../include;
-  [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h ../include/;
-  cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -s ../lib/psmile/include/oasis_os.h
-  ../include/; ln -s ../build/lib/psmile/libpsmile.a ../lib; ln -s ../build/lib/psmile/mct/libmct.a
-  ../lib; ln -s ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -s ../build/lib/psmile/scrip/libscrip.a
+comp_command: 'mkdir -p build; cd build; cmake ..; make -j `nproc --all`; mkdir -p ../include;
+  [ -f ../include/oasis_os.h ] || ln -sf ../lib/psmile/include/oasis_os.h ../include/;
+  cp ../build/lib/psmile/*mod ../include/; [ -f ../include/oasis_os.h ] || ln -sf ../lib/psmile/include/oasis_os.h
+  ../include/; ln -sf ../build/lib/psmile/libpsmile.a ../lib; ln -sf ../build/lib/psmile/mct/libmct.a
+  ../lib; ln -sf ../build/lib/psmile/mct/mpeu/libmpeu.a ../lib; ln -sf ../build/lib/psmile/scrip/libscrip.a
   ../lib;
 
   '

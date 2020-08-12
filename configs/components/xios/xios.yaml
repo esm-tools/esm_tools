@@ -24,7 +24,6 @@ branch: esm-tools
 choose_version:
   2.0_r982:
     archfile: ESMTOOLS_generic_oasis_intel
-    nothing: much
     use_oasis: --use_oasis oasis3_mct
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel

@@ -484,13 +484,11 @@ outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
 
+# seb-wahl: add wildcard to allow runs with monthly output files (the default for trigfiles entry in namelist.echam)
+# and e.g. yearly restart (the default in FOCI), outdata_in_work removed as it is not required (same as outdata_sources)
 outdata_sources:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
-
-outdata_in_work:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
 
 restart_in_files:

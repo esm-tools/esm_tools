@@ -48,6 +48,8 @@ pool_dir:  "/pool/data"
 
 useMPI: intelmpi
 module_actions:
+        - "unload gcc"
+        - "load gcc/4.8.2"
         - "unload netcdf_c"
         - "unload intel intelmpi"
         - "load python/3.5.2"
@@ -132,6 +134,7 @@ export_vars:
         - 'I_MPI_SLURM_EXT=1'
         - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
         - 'I_MPI_DYNAMIC_CONNECTION=1'
+
 
         - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
         - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'

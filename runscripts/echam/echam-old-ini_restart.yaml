@@ -1,0 +1,17 @@
+echam:
+        choose_general.run_number:
+                1:
+                        add_restart_in_sources:
+                                "[[echam.streams-->STREAM]]": restart_${echam.ini_parent_exp_id}_STREAM_${echam.ini_parent_date}.nc
+
+jsbach:
+        choose_general.run_number:
+                1:
+                        add_restart_in_sources:
+                                "[[jsbach.streams-->STREAM]]": ${echam.ini_restart_dir}/../jsbach/restart_${echam.ini_parent_exp_id}_STREAM_${echam.ini_parent_date}.nc
+
+hdmodel:
+        choose_general.run_number:
+                1:
+                        add_restart_in_sources:
+                                hdrestart: ${echam.ini_restart_dir}/../hdmodel/restart_${echam.ini_parent_exp_id}_hd_${echam.ini_parent_date}.nc

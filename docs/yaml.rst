@@ -91,26 +91,74 @@ ESM-Tools Extended YAML Syntax
    Work in progress. This chapter might be incomplete. Red statements might be imprecise or not true.
 
 `ESM-Tools` offers extended functionality of the `YAML` files through the
-`esm_parser`. The following :ref:`yaml:Extended Syntax` subsection lists the extended `ESM-Tools`
+`esm_parser`. The following subsections lists the extended `ESM-Tools`
 syntax for `YAML` files including calendar and math operations (see
 :ref:`yaml:Math and Calendar Operations`).
-The :ref:`yaml:YAML Elements` subsection lists the `YAML` elements needed for configuration files and
+The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
-Extended Syntax
-~~~~~~~~~~~~~~~
+Variable calls
+~~~~~~~~~~~~~~
 
-Variable calls and ESM-Tools variables
---------------------------------------
-
-Variables defined in a `YAML` file can be invoked later on the same file or in oder files
-(provided that the file defining the variable has been previously read :red:`(is that true?)`).
+Variables defined in a `YAML` file can be invoked on the same file or in oder files
+provided that the file where it is defined is read for the given operation.
 The syntax for calling an already defined variable is::
 
   "${name_of_the_variable}"
 
+Variables can be nested in sections. To define a variable using the value of another one that is
+nested on a section the following syntax is needed::
+
+  "${<section>.<variable>}"
+
+When using `esm_parser`, variables in components, setups, machine files, general information, etc.,
+are grouped under sections of respective names (i.e. ``general``, ``ollie``, ``fesom``, ``awicm``, ...).
+To access a variable from a different file than the one in which it is declared it is necessary to
+reference the file name or label as it follows::
+
+  "${<file_label>.<section>.<variable>}"
+
+**Example**
+
+Lets take as an example the variable ``ini_parent_exp_id`` inside the ``general`` section in the
+`FESOM-REcoM` runscript ``runscripts/fesom-recom/fesom-recom-ollie-restart-daily.yaml``::
+
+  general:
+          setup_name: fesom-recom
+          [ ... ]
+          ini_parent_exp_id: restart_test
+          [ ... ]
+
+To define inside the ``fesom`` section a variable ``ini_restart_dir`` that takes the value of
+``ini_parent_exp_id`` and adds to it the ``/fesom/`` subdirectory we would need to write::
+
+  general:
+          setup_name: fesom-recom
+          [ ... ]
+          ini_parent_exp_id: restart_test
+
+  fesom:
+          [ ... ]
+          ini_restart_dir: "${ini_parent_exp_id}/fesom/"
+          [ ... ]
+
+If we would like to invoke from the same runscript some of the variables defined in another file,
+for example the ``useMPI`` variable in ``configs/machines/ollie.yaml`` the we would need to use::
+
+  a_new_variable: "${ollie.useMPI}"
+
+Bare in mind that these examples will only work if both `FESOM` and `REcoM` are involved in the
+`ESM-Tool` task triggered and if the task is run in `Ollie` (i.e. it will work for
+``esm_runscripts fesom-recom-ollie-restart-daily.yaml -e <experiment_id> ...``).
+
+ESM-Tools variables
+~~~~~~~~~~~~~~~~~~~
+
 ESM-Tools provide a set of variables that can be called from `YAML` files without a previous
 declaration:
+
+.. warning::
+   The following list contains entries that don't belong here (i.e. ``model_dir``). Review and correct.
 
 .. csv-table::
    :header: Key, Description
@@ -130,23 +178,33 @@ declaration:
    esm_runscript_dir,   "Absolute path to the runscripts folder (``<PATH>/esm_tools/runscripts``)."
    model_dir,           Absolute path of the model directory (where it was installed by `esm_master`).
 
-Lists starting with choose\_
-----------------------------
+Switches (``choose\_``)
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Lists named as ``choose_<name_of_a_property>`` can be used to nest ``configurations`` under a
-``configuration_key`` that can be then invoked from the ``property`` itself::
+A `YAML` list named as ``choose_<variable>`` function as a `switch` that evaluates the given ``variable``.
+The nested element `keys` inside the ``choose_<variable>`` act as `cases` for the switch and the `values` of
+this elements are only defined outside of the ``choose_<variable>`` if they belong to the selected
+``case_key``::
 
-  property_1: configuration_key_2
+  variable_1: case_key_2
 
-  choose_property_1:
-                configuration_key_1:
-                                configuration_1: value
-                                configuration_2: value
-                                [ ... ]
-                configuration_key_2:
-                                configuration_1: value
-                                configuration_2: value
-                                [ ... ]
+  choose_variable_1:
+          case_key_1:
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+          case_key_2:
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+          "*":
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+
+The key ``"*"`` or ``*`` works as an `else`.
+
+**Example**
 
 An example that can better illustrate this general description is the `FESOM 2.0` resolution
 configuration in ``<PATH>/esm_tools/configs/fesom/fesom-2.0.yaml``::
@@ -161,12 +219,29 @@ configuration in ``<PATH>/esm_tools/configs/fesom/fesom-2.0.yaml``::
           GLOB:
                   nx: 830305
 
-Here we are selecting the ``CORE2`` as default configuration set for the ``resolution`` property,
+Here we are selecting the ``CORE2`` as default configuration set for the ``resolution`` variable,
 but we could choose the ``GLOB`` configuration in another `YAML` file (i.e. a runscript), to override
 this default choice.
 
+In the case in which ``resolution: CORE2``, then ``nx``, ``mesh_dir`` and ``nproc`` will take the values
+defined inside the ``choose_resolution`` for ``CORE2`` (``126858``, 
+``runscripts/fesom-recom/fesom-recom-ollie-restart-daily.yaml``, and ``288`` respectively), once
+resolved by the `esm_parser`, at the same **nesting level** of the ``choose_resolution``.
+
+.. Note::
+   ``choose_versions`` inside configuration files is treated in a special way by the `esm_master`. To
+   avoid conflicts in case an additional ``choose_versions`` is needed, include the compilation information
+   inside a ``compile_infos`` section (including the ``choose_versions`` switch containning compilation
+   information). Outside of this exception, it is possible to use as many ``choose_<variable>`` repetitions
+   as needed.
+
+Append to an existing list (``add_``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 Math and Calendar Operations
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following math and calendar operations are supported in `YAML` files:
 
@@ -225,10 +300,10 @@ The following math and calendar operations are supported in `YAML` files:
   ========= ======================================
 
 Globbing
---------
+~~~~~~~~
 
 List loops
-----------
+~~~~~~~~~~
 
 This functionality allows for basic looping through a `YAML list`. The syntax for this is::
 
@@ -270,7 +345,7 @@ for a January run, and ``a_ice.fesom.200102.01.nc``, ``alpha.fesom.200102.01.nc`
 ``atmice_x.fesom.200102.01.nc``, ..., for a February run.
 
 File Dictionaries
------------------
+~~~~~~~~~~~~~~~~~
 
 File dictionaries are a special type of `YAML` elements that are useful to handle input, output,
 forcing, logging, binary and restart files, and that are normally defined inside the
@@ -381,7 +456,7 @@ are common to all scenarios. The source files not included in ``forcing_files`` 
 used.
 
 YAML Elements
-~~~~~~~~~~~~~
+=============
 
 The `esm_parser` is used to read the multiple types of `YAML` files contained in `ESM-Tools`
 (i.e. model and coupling configuration files, machine configurations, runscripts, etc.). Each of
@@ -407,7 +482,7 @@ from different files.
    sections is just suggestion on how to organize ESM-Tools input.
 
 Configuration Files
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 The following keys should/can be provided inside configuration files for models and coupled setups
 (``<PATH>/esm_tools/configs/<model_or_setup>``):
@@ -438,7 +513,7 @@ The following keys should/can be provided inside configuration files for models 
    ":ref:`yaml:File dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files."
 
 Runscripts
-----------
+~~~~~~~~~~
 
 The following keys should be provided inside runscripts
 (``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):

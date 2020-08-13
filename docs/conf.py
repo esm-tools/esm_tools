@@ -29,20 +29,21 @@ import yaml
 config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
 configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
 components = {}
-for component in ["../configs/esm_master/components/"+c for c in os.listdir("../configs/esm_master/components")]:
+for component in ["../configs/components/"+c for c in os.listdir("../configs/components")]:
     d = yaml.load(component, Loader=yaml.FullLoader)
     comp_name = component.split("/")[-1].replace(".yaml", "")
     components[comp_name] = d
 configs = []
 for comp in components:
-    if os.path.exists("../configs/"+comp+"/"+comp+".yaml"):
+    if os.path.exists("../configs/components/"+comp+"/"+comp+".yaml"):
         configs.append(comp)
 with open("Supported_Models.rst", "w") as rst:
     rst.write("================\n")
     rst.write("Supported Models\n")
     rst.write("================\n")
+configs.sort()
 for config in configs:
-    with open(os.path.join("../configs/", config, config+".yaml")) as f:
+    with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
         metadata = d.get("metadata")
         with open("metadata/"+config+".csv", "w") as table:

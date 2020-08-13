@@ -122,9 +122,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear}.oce.nc
-        ice_restart: fesom.${parent_date!syear}.ice.nc
+        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
+        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
+        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -137,9 +137,9 @@ restart_out_in_work:
         ice_restart: fesom.${end_date!syear}.ice.nc
 
 restart_out_sources:
-        oce_diag: fesom.${end_date!syear}.oce.diag.nc
-        oce_restart: fesom.${end_date!syear}.oce.nc
-        ice_restart: fesom.${end_date!syear}.ice.nc
+        oce_diag: fesom.${end_date!syear!smonth!sday}.oce.diag.nc
+        oce_restart: fesom.${end_date!syear!smonth!sday}.oce.nc
+        ice_restart: fesom.${end_date!syear!smonth!sday}.ice.nc
 
 
 
@@ -215,6 +215,15 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+                choose_general.run_number:
+                        # MAM: If it is a restart triggered from a runscript
+                        # it is necessary to specify the year of the initial
+                        # date of the experiment that is to be continued
+                        1:
+                                add_namelist_changes:
+                                        namelist.config:
+                                                clockinit:
+                                                        yearnew: "${first_initial_year}"
 
 
 

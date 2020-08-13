@@ -7,6 +7,7 @@ general:
         final_date: "1957-12-31"
         base_dir: /work/ollie/mandresm/esm_yaml_test/
         nyear: 1
+        lresume: 0
 
 fesom-recom:
         version: 1.4
@@ -18,13 +19,15 @@ fesom:
         mesh_dir: "/work/ollie/ogurses/meshes/core_new_432/"
         res: CORE2
         forcing_data_dir: /work/ollie/projects/MarESys/forcing_clim61/
-        lresume: 0
+        lresume: "${general.lresume}"
         restart_rate: 1
         restart_first: 1
         restart_unit: "y"
         post_processing: 0
         nproc: 432
 
+
 recom:
         data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
+        lresume: "${general.lresume}"
         scenario: "preindustrial"

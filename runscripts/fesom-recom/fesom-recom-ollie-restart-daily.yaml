@@ -1,13 +1,16 @@
 general:
         setup_name: fesom-recom
         compute_time: "00:10:00"
-        initial_date: "1958-01-01"
-        final_date: "1958-01-03"
+        initial_date: "1958-01-02"
+        final_date: "1958-01-04"
         base_dir: /work/ollie/mandresm/esm_yaml_test/
         nyear: 0
         nmonth: 0
         nday: 1
-        lresume: 0
+        first_initial_year: 1958    # Year of the initial date of the restarted experiment
+        ini_parent_exp_id: restart_test
+        ini_restart_dir: /work/ollie/mandresm/esm_yaml_test/${ini_parent_exp_id}/restart/
+        lresume: 1
 
 fesom-recom:
         version: 1.4
@@ -28,6 +31,7 @@ fesom:
         daily_outputs: [evs,fsitherm,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uso,uto,v2o,volo,vso,vto,w2o,wfo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn,mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
         yearly_outputs: []
         monthly_outputs: []
+
 
 recom:
         data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/

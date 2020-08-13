@@ -34,7 +34,7 @@ fesom:
         setup_dir: "${general.model_dir}"
 
         time_step: 900
-        output_unit: "m"
+        output_unit: "${restart_unit}"
         leapyear: false
 
         yearly_outputs_start: 1     # Year in which the yearly output starts to be saved
@@ -51,7 +51,7 @@ fesom:
                         inout:
                                 levelwise_output: true
                                 output_length_unit: "${output_unit}"
-                                output_length_unit_restart: "${output_unit}"
+                                output_length_unit_restart: "${restart_unit}"
                         #mesh_def:
                                 #part_format: 0  #this option is required because of two ways
                                                 #of storring mapping arrays are currently in use
@@ -102,7 +102,7 @@ fesom:
                                 gamma_fct: 0.4
                         age_tracer:
                                 use_age_tracer: true
-                                age_tracer_start_year: "${general.initial_date!syear}"
+                                age_tracer_start_year: "${age_tracer_sy}"
                         tracer_cutoff:
                                 limit_salinity: false
                                 salinity_min: 5.0
@@ -161,6 +161,22 @@ fesom:
                                                 rate: 1
 
 
+        choose_lresume:
+                true:
+                        choose_general.run_number:
+                                1:      # Restart from runscript
+                                        age_tracer_sy: "${first_initial_year}"
+                                        first_initial_year: "${general.first_initial_year}"
+                                        ini_parent_exp_id: "${general.ini_parent_exp_id}"
+                                        ini_restart_dir: "${general.ini_restart_dir}/fesom/"
+                                        ini_parent_date: "${prev_date}"
+
+                                "*":
+                                        age_tracer_sy: "${general.initial_date!syear}"
+                false:
+                        age_tracer_sy: "${general.initial_date!syear}"
+
+
 #########################################################################################
 
 recom:
@@ -170,3 +186,12 @@ recom:
 
         yearly_outputs_start: 1             # Year in which the yearly output starts to be saved
         time_step: "${fesom.time_step}"
+
+
+        choose_lresume:
+                true:
+                        choose_general.run_number:
+                                1:      # Restart from runscript
+                                        ini_parent_exp_id: "${general.ini_parent_exp_id}"
+                                        ini_restart_dir: "${general.ini_restart_dir}/recom/"
+                                        ini_parent_date: "${prev_date}"

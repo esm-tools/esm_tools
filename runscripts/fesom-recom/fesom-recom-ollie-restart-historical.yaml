@@ -5,9 +5,10 @@ general:
         final_date: "2019-12-31"
         base_dir: /work/ollie/mandresm/esm_yaml_test/
         nyear: 1
-        cold_start_year: 1850      # Not sure if this is necessary
+        first_initial_year: 1850    # Year of the initial date of the restarted experiment
         ini_parent_exp_id: fesom-recom-1.4_spinup
         ini_restart_dir: /work/ollie/mandresm/esm_yaml_test/${ini_parent_exp_id}/restart/
+        lresume: 1
 
 fesom-recom:
         version: 1.4
@@ -19,30 +20,19 @@ fesom:
         mesh_dir: "/work/ollie/ogurses/meshes/core_new_432/"
         res: CORE2
         forcing_data_dir: /work/ollie/projects/MarESys/forcing_clim61/
+        lresume: "${general.lresume}"
         restart_rate: 1
         restart_first: 1
         restart_unit: "y"
         post_processing: 0
         nproc: 432
 
-        lresume: 1
-        ini_parent_exp_id: "${general.ini_parent_exp_id}"
-        ini_restart_dir: "${general.ini_restart_dir}/fesom/"
-        ini_parent_date: "${prev_date}"
-        namelist_changes:           # Not sure if this is necessary
-            namelist.oce:
-                age_tracer:
-                    age_tracer_start_year: "${cold_start_year}"
 
 recom:
         data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
+        lresume: "${general.lresume}"
         scenario: "historical"
-        f_year_fesom_cycle: "${general.initial_date!syear}"
+        f_year_fesom_cycle: "${general.initial_date!syear}"     # "${general.first_initial_year}"
         l_year_fesom_cycle: "${general.final_date!syear}"
         num_CO2_cycles: 1
         current_CO2_cycle: 1
-
-        lresume: 1
-        ini_parent_exp_id: "${general.ini_parent_exp_id}"
-        ini_restart_dir: "${general.ini_restart_dir}/recom/"
-        ini_parent_date: "${prev_date}"

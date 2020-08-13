@@ -56,11 +56,6 @@ general:
                                 #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                 # OpenMP
                                 #- 'OMP_NUM_THREADS=1'
-computer:
-       additional_flags: "--ntasks-per-core=1"
-       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
-       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
-       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -240,8 +235,6 @@ jsbach:
               - yasso
 
 nemo:
-        nproc: 360
-        #lresume: ${general.lresume}
         choose_general.version:
                 default:
                         version: "3.6foci"
@@ -250,8 +243,6 @@ nemo:
         setup_dir: ${general.model_dir}
 
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
-
-
 
 xios:
         nproc: ${computer.cores_per_node}

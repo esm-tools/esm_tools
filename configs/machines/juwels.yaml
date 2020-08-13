@@ -6,18 +6,24 @@ name: juwels
 account: esmtst
 jobtype: compute
 accounting: true
-
+use_hyperthreading: 0
 sh_interpreter: "/usr/bin/bash"
-launcher_flags: "-l "
-hyperthreading_flag: "--ntasks-per-core=1"
-# does not get used
-additional_flags: "--ntasks-per-node=48"
+
+#computer:
+#        launcher_flags: "-l "
+#        additional_flags: "--ntasks-per-node=48"
 
 pool_directories:
         pool: "/pool/data/not/available/on/blogin"
         focipool: "/p/project/cesmtst/esmtst22/foci_input2"
 
 pool_dir:  "/pool/data/not/available/on/blogin"
+
+choose_general.use_hyperthreading:
+        "0":
+                hyperthreading_flag: "--ntasks-per-core=1"
+        "*":
+                hyperthreading_flag: ""
 
 choose_jobtype:
         tidy_and_resubmit:

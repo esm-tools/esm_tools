@@ -11,15 +11,15 @@ general:
    scenario: "PI-CTRL"
    nday: 1
    base_dir: /work/bb0519/b350071/esm-tools-foci2-seb-wahl/foci-default/experiments
-   #lresume: False
+
+computer:
+   additional_flags: "--ntasks-per-core=1"
+   launcher: "srun" # default, but set it to make clear what the launcher flags are used for
+   launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+   useMPI: intelmpi17
 
 foci:
    model_dir: /work/bb0519/b350071/esm-tools-foci2-seb-wahl/foci-default/
-
-# does not work
-computer:
-   mail_type: "FAIL"
-   mail_user: "swahl@geomar.de"
 
 echam:
    resolution: "T63"

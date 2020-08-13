@@ -8,6 +8,6 @@ lresume: ${echam.lresume}
 time_step: ${echam.time_step}
 parent_date: ${echam.parent_date}
 prev_date: ${echam.prev_date}
-ini_restart_dir: ${echam.parent_restart_dir}/../jsbach/
-ini_parent_exp_id: ${echam.parent_expid}
+parent_restart_dir: ${echam.parent_restart_dir}
+#ini_parent_exp_id: ${echam.ini_parent_exp_id}
 #ini_parent_date: ${echam.ini_parent_date}

@@ -10,7 +10,8 @@ What Is YAML?
 =============
 
 `YAML` is a structured data format oriented to human-readability. Because of this property,
-it is the chosen format for configuration and runscript files in `ESM-Tools`. These
+it is the chosen format for configuration and runscript files in `ESM-Tools` and the
+recommended format for runscripts (though bash runscripts are still supported). These
 `YAML` files are read by the `esm_parser` and then converted into a Python dictionary.
 The functionality of the `YAML` files is further expanded through the `esm_parser` and
 other `ESM-Tools` packages (i.e. calendar math through the `esm_calendar`). The
@@ -91,13 +92,13 @@ ESM-Tools Extended YAML Syntax
    Work in progress. This chapter might be incomplete. Red statements might be imprecise or not true.
 
 `ESM-Tools` offers extended functionality of the `YAML` files through the
-`esm_parser`. The following subsections lists the extended `ESM-Tools`
+`esm_parser`. The following subsections list the extended `ESM-Tools`
 syntax for `YAML` files including calendar and math operations (see
 :ref:`yaml:Math and Calendar Operations`).
 The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
-Variable calls
+Variable Calls
 ~~~~~~~~~~~~~~
 
 Variables defined in a `YAML` file can be invoked on the same file or in oder files
@@ -127,23 +128,22 @@ Lets take as an example the variable ``ini_parent_exp_id`` inside the ``general`
           setup_name: fesom-recom
           [ ... ]
           ini_parent_exp_id: restart_test
+          ini_restart_dir: /work/ollie/mandresm/esm_yaml_test/${ini_parent_exp_id}/restart/
           [ ... ]
 
-To define inside the ``fesom`` section a variable ``ini_restart_dir`` that takes the value of
-``ini_parent_exp_id`` and adds to it the ``/fesom/`` subdirectory we would need to write::
+Here we use ``ini_parent_exp_id`` to define part of the restart path ``ini_restart_dir``. 
+``general.ini_restart_dir`` is going to be called from the `FESOM-REcoM` configuration file
+``configs/setups/fesom-recom/fesom-recom.yaml`` to define the restart directory for `FESOM`
+``fesom.ini_restart_dir``::
 
-  general:
-          setup_name: fesom-recom
-          [ ... ]
-          ini_parent_exp_id: restart_test
+  [ ... ]
+  ini_restart_dir: "${general.ini_restart_dir}/fesom/"
+  [ ... ]
 
-  fesom:
-          [ ... ]
-          ini_restart_dir: "${ini_parent_exp_id}/fesom/"
-          [ ... ]
+Note that this line adds the subfolder ``/fesom/`` to the subdirectory.
 
 If we would like to invoke from the same runscript some of the variables defined in another file,
-for example the ``useMPI`` variable in ``configs/machines/ollie.yaml`` the we would need to use::
+for example the ``useMPI`` variable in ``configs/machines/ollie.yaml``, then we would need to use::
 
   a_new_variable: "${ollie.useMPI}"
 
@@ -151,7 +151,7 @@ Bare in mind that these examples will only work if both `FESOM` and `REcoM` are 
 `ESM-Tool` task triggered and if the task is run in `Ollie` (i.e. it will work for
 ``esm_runscripts fesom-recom-ollie-restart-daily.yaml -e <experiment_id> ...``).
 
-ESM-Tools variables
+ESM-Tools Variables
 ~~~~~~~~~~~~~~~~~~~
 
 ESM-Tools provide a set of variables that can be called from `YAML` files without a previous
@@ -235,9 +235,104 @@ resolved by the `esm_parser`, at the same **nesting level** of the ``choose_reso
    information). Outside of this exception, it is possible to use as many ``choose_<variable>`` repetitions
    as needed.
 
-Append to an existing list (``add_``)
+Append to an Existing List (``add_``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Given an existing list ``list1``::
+
+  list1:
+      - element1
+      - element2
+
+it is possible to add members to this list by using the following syntax::
+
+  add_list1:
+      - element3
+      - element4
+
+so that the variable ``list1`` at the end of the parting will contain
+``[element1, element2, element3, element4]``. This is not only usefull when you need to build the list
+piecewise (i.e. and expansion of a list inside a ``choose_`` switch) but also as the
+:ref:`hierarchy:File Hierarchy` will cause repeated variables to be overwritten.
+
+**Properties**
+
+  * It is possible to have multiple ``add_`` for the same variable in the same or even in different
+    files. That means that all the elements contained in the multiple ``add_`` will be added to the
+    list after the parsing.
+
+**Exceptions**
+
+Exceptions to ``add_`` apply only to the environment and namelist ``_changes`` (see
+:ref:`yaml:Environment and Namelist Changes (``_changes``)`). For variables of the type ``_changes``,
+an ``add_`` is only needed if the same ``_changes`` block repeats inside the same file. Otherwise, the
+``_changes`` block does no overwrite the same ``_changes`` block in other files, but their elements
+are combined.
+
+**Example**
+
+In the configuration file for `ECHAM` (``configs/components/echam/echam.yaml``) the list
+``input_files`` is declared as::
+
+  [ ... ]
+
+  input_files:
+      "cldoptprops": "cldoptprops"
+      "janspec": "janspec"
+      "jansurf": "jansurf"
+      "rrtmglw": "rrtmglw"
+      "rrtmgsw": "rrtmgsw"
+      "tslclim": "tslclim"
+      "vgratclim": "vgratclim"
+      "vltclim": "vltclim"
+
+  [ ... ]
+
+However different `ECHAM` scenarios require additional input files, for example the ``HIST`` scenario
+needs a ``MAC-SP`` element to be added and we use the ``add_`` functionality to do that::
+
+  [ ... ]
+  choose_scenario:
+      [ ... ]
+      HIST:
+          forcing_files:
+              [ ... ]
+          add_input_files:
+              MAC-SP: MAC-SP
+      [ ... ]
+
+An example for the ``_changes`` **exception** can be also found in the same ``ECHAM`` configuration file.
+Namelist changes necessary for `ECHAM` are defined inside this file as::
+
+  [ ... ]
+
+  namelist_changes:
+      namelist.echam:
+          runctl:
+              out_expname: ${general.expid}
+              dt_start:
+                  - ${pseudo_start_date!year}
+                  - ${pseudo_start_date!month}
+                  [ ... ]
+
+This changes specified here will be combined with changes in other files (i.e. ``echam.namelist_changes``
+in the coupled setups `AWICM` or `AWIESM` configuration files), not overwritten. However, `ECHAM`'s
+version ``6.3.05p2-concurrent_radiation`` needs of further namelist changes written down in the same
+file inside a ``choose_`` block and for that we need to use the ``add_`` functionality::
+
+  [ ... ]
+
+  choose_version:
+      [ ... ]
+      6.3.05p2-concurrent_radiation:
+          [ ... ]
+          add_namelist_changes:
+              namelist.echam:
+                  runctl:
+                      npromar: "${npromar}"
+                  parctl:
+
+  [ ... ]
 
 
 Math and Calendar Operations
@@ -245,64 +340,71 @@ Math and Calendar Operations
 
 The following math and calendar operations are supported in `YAML` files:
 
-* **Arithmetic operations**: an element of a `YAML` file can be defined as the result
-  of the addition, subtraction, multiplication or division of variables with the format::
+Arithmetic Operations
+---------------------
+An element of a `YAML` file can be defined as the result
+of the addition, subtraction, multiplication or division of variables with the format::
 
-    key: "$(( ${variable_1} operator ${variable_2} operator ... ${variable_n} ))"
+  key: "$(( ${variable_1} operator ${variable_2} operator ... ${variable_n} ))"
 
-  The `esm_parser` supports calendar operations through `esm_calendar`. When performing calendar
-  operations, variables that are not given in date format need to be followed by their ``unit`` for
-  the resulting variable to be also in date format, i.e.::
+The `esm_parser` supports calendar operations through `esm_calendar`. When performing calendar
+operations, variables that are not given in date format need to be followed by their ``unit`` for
+the resulting variable to be also in date format, i.e.::
 
-    runtime: $(( ${end_date} - ${time_step}seconds ))
+  runtime: $(( ${end_date} - ${time_step}seconds ))
 
-  ``time_step`` is a variable that is not given in date format, therefore, it is necessary to use
-  ``seconds`` for ``runtime`` to be in date format. Another example is to subtract one day from
-  the variable ``end_date``::
+``time_step`` is a variable that is not given in date format, therefore, it is necessary to use
+``seconds`` for ``runtime`` to be in date format. Another example is to subtract one day from
+the variable ``end_date``::
 
-    $(( ${end_date} - 1days ))
+  $(( ${end_date} - 1days ))
 
-  The units available are:
+The units available are:
 
-  ===================== ==================
-  Units supported by arithmetic operations
-  ========================================
-  calendar units        | seconds
-                        | minutes
-                        | days
-                        | months
-                        | years
-  ===================== ==================
+===================== ==================
+Units supported by arithmetic operations
+========================================
+calendar units        | seconds
+                      | minutes
+                      | days
+                      | months
+                      | years
+===================== ==================
 
-* **Extraction of date components from a date**: it is possible to extract date components from a
-  `date variable`. The syntax for such an operation is::
+Extraction of Date Components from a Date
+-----------------------------------------
+It is possible to extract date components from a `date variable`. The syntax for such an operation
+is::
 
-     "${variable!date_component}"
+   "${variable!date_component}"
 
-  An example to extract the year from the ``initial_time`` variable::
+An example to extract the year from the ``initial_time`` variable::
 
-    yearnew: "${initial_date!syear}"
+  yearnew: "${initial_date!syear}"
 
-  If ``initial_date`` was 2001-01-01T00:00:00, then ``yearnew`` would be 2001.
+If ``initial_date`` was 2001-01-01T00:00:00, then ``yearnew`` would be 2001.
 
-  The date components available are:
+The date components available are:
 
-  ========= ======================================
-  Date components
-  ================================================
-  ssecond   Second from a given date.
-  sminute   Minute from a given date.
-  shour     Hour from a given date.
-  sday      Day from a given date.
-  smonth    Month from a given date.
-  syear     Year from a given date.
-  sdoy      Day of the year, counting from Jan. 1.
-  ========= ======================================
+========= ======================================
+Date components
+================================================
+ssecond   Second from a given date.
+sminute   Minute from a given date.
+shour     Hour from a given date.
+sday      Day from a given date.
+smonth    Month from a given date.
+syear     Year from a given date.
+sdoy      Day of the year, counting from Jan. 1.
+========= ======================================
 
 Globbing
 ~~~~~~~~
 
-List loops
+Environment and Namelist Changes (``_changes``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+List Loops
 ~~~~~~~~~~
 
 This functionality allows for basic looping through a `YAML list`. The syntax for this is::

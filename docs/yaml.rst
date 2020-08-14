@@ -264,7 +264,7 @@ piecewise (i.e. and expansion of a list inside a ``choose_`` switch) but also as
 **Exceptions**
 
 Exceptions to ``add_`` apply only to the environment and namelist ``_changes`` (see
-:ref:`yaml:Environment and Namelist Changes`). For variables of the type ``_changes``,
+:ref:`yaml:Environment and Namelist Changes (\``_changes\``)`). For variables of the type ``_changes``,
 an ``add_`` is only needed if the same ``_changes`` block repeats inside the same file. Otherwise, the
 ``_changes`` block does no overwrite the same ``_changes`` block in other files, but their elements
 are combined.

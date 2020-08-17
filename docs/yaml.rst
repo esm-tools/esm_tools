@@ -401,6 +401,32 @@ sdoy      Day of the year, counting from Jan. 1.
 Globbing
 ~~~~~~~~
 
+Globbing allows to use ``*`` as a wildcard in filenames for restart, input and output files.
+With this feature files can be copied from/to the work directory whose filenames are not
+completely known. The syntax needed is::
+
+  file_list: common_pathname*common_pathname
+
+**Example**
+
+The component `NEMO` produces one restart file per processor, and the part of the file name
+relative to the processor is not known. In order to handle copying of restart files under
+this circumstances, globbing is used in `NEMO`'s configuration file
+(``configs/components/nemo/nemo.yaml``)::
+
+  [ ... ]
+
+  restart_in_sources:
+      restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+  restart_out_sources:
+      restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+  [ ... ]
+
+This will include inside the ``restart_in_sources`` and ``restart_out_sources`` lists, all the files
+sharing the specified common name around the position of the ``*`` symbol, following the same rules
+used by the Unix shell.
+
 Environment and Namelist Changes (``_changes``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

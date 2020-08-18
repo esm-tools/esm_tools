@@ -7,6 +7,7 @@ available_versions:
 - "update"
 - "esm_tools"
 
+version: "esm_tools"
 choose_version:
     "1.0":
         branch: "1.0"

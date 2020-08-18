@@ -33,16 +33,26 @@ compile_infos:
       6.3.05p2:
         branch: esm-tools
         git-repository: https://gitlab.dkrz.de/foci/src/echam.git
-      6.3.05p2-concurrent_radiation-paleodyn:
+      6.3.05p2-concurrent_radiation-paleodyn-hammoz:
         git-repository: https://gitlab.awi.de/pgierz/echam6.git
-        branch: ice
+        branch: hammoz
         clean_command: rm -rf src/echam/bin; make clean
         comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin;
           cp  bin/echam6 src/echam/bin/echam6
         conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/;
           ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
-          yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
+          yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel FCFLAGS="-cpp -DHAMMOZ"
           INSTALL='/usr/bin/install -p'
+      6.3.05p2-concurrent_radiation-paleodyn:
+        git-repository: https://gitlab.awi.de/pgierz/echam6.git
+        branch: cmake_attempt
+        #clean_command: rm -rf src/echam/bin; make clean
+        #comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin;
+        #  cp  bin/echam6 src/echam/bin/echam6
+        #conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/;
+        #  ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
+        #  yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
+        #  INSTALL='/usr/bin/install -p'
       6.3.05p2-concurrent_radiation:
         branch: concurrent_radiation
         clean_command: rm -rf src/echam/bin; make clean
@@ -653,11 +663,11 @@ check_error:
                 message: "Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry."
                 file: "${general.work_dir}/atmout"
                 frequency: 90
-        "wind speed":
-                method: "kill"
-                message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
-                file: "${general.work_dir}/atmout"
-                frequency: 90
+        #"wind speed":
+                #method: "kill"
+                #message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
+                #file: "${general.work_dir}/atmout"
+                #frequency: 90
 
 
 

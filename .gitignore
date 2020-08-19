@@ -2,6 +2,9 @@
 comp*.sh
 dummy_script.sh
 
+# pkl files, deniz
+*.pkl
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

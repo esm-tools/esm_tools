@@ -404,7 +404,17 @@ streams:
           #prev_date: 18500101
 # BUG: PG Why do we need lists here?
 
-
+streamsnc:
+        - aclcim
+        - g3b1hi
+        - g3bday
+        - g3bid
+        - g3bim
+        - glday
+        - glim
+        - jsbid
+        - sp6h
+        - spim
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
@@ -427,14 +437,17 @@ ignore_in_work:
 outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
+        "[[streamsnc-->STREAM]]_nc": STREAM_nc
 
 outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+        "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
 
 outdata_in_work:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+        "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
 
 
 restart_in_files:

@@ -78,4 +78,4 @@ backup_file.close()
 mh_file.close()            
 
 if is_file_changed:
-    print('compiler blocks in the mh-file has been updated')
+    print(':: change_mh_file: compiler blocks in the mh-file have been updated')

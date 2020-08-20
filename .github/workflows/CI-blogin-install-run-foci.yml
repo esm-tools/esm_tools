@@ -1,0 +1,136 @@
+name: CI-blogin-install-run-foci 
+jobs:
+  install_models:
+    runs-on:
+    - blogin3 
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+        - foci-default 
+        #- focioifs-2.0
+    steps:
+    - uses: actions/checkout@v2
+    - name: Compile Model
+      run: |
+        module load git
+        [[ "$HOSTNAME" =~ blogin ]] && module load anaconda3/2019.10
+        if [[ "$HOSTNAME" =~ juwels ]] ; then 
+           module --force purge
+           module use /gpfs/software/juwels/otherstages
+           module load Stages/Devel-2019a
+           module load GCCcore/.8.3.0
+           module load Python/3.6.8
+        fi 
+        pwd
+        # setup virtual environment
+        rm -rf env_esm_tools
+        python -m venv env_esm_tools
+        source env_esm_tools/bin/activate
+        # backup esmtoolsrc and install
+        cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
+        pip install .
+        # temporary
+        for t in esm_environment esm_master esm_parser esm_runscripts ; do
+          esm_versions upgrade ${t}=refac_master_foci
+        done
+        esm_versions check
+        # compile
+        rm -rf ${GITHUB_WORKSPACE}/models/${{ matrix.model }}
+        mkdir -p ${GITHUB_WORKSPACE}/models
+        cd ${GITHUB_WORKSPACE}/models
+        esm_master install-${{ matrix.model }}
+        cp -v ~/.esmtoolsrc ~/.esmtoolsrc_ci # save for next job
+        cp -v ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
+        
+    #- if: ${{ always() }}
+    #  name: Cleanup venv
+    #  run: 'rm -rf env'
+        
+  run_models:        
+    runs-on:
+    - blogin3 
+    needs: install_models
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+        - foci-default 
+    steps:
+    - name: Run Test Simulation 
+      run: |
+        module load git
+        [[ "$HOSTNAME" =~ blogin ]] && module load anaconda3/2019.10
+        if [[ "$HOSTNAME" =~ juwels ]] ; then 
+           module --force purge
+           module use /gpfs/software/juwels/otherstages
+           module load Stages/Devel-2019a
+           module load GCCcore/.8.3.0
+           module load Python/3.6.8
+        fi 
+        # activate virtual environment with correct esmtoolsrc saved in previous step
+        source ${GITHUB_WORKSPACE}/env_esm_tools/bin/activate
+        cp -v ~/.esmtoolsrc_ci ~/.esmtoolsrc
+        # start the simulation
+        cd ${GITHUB_WORKSPACE}/runscripts/foci/
+        rm -rf ${GITHUB_WORKSPACE}/esm-experiments/test_ci
+        [[ "$HOSTNAME" =~ blogin ]] && esm_runscripts -e test_ci foci-blogin-ci-initial-piCtl-daily-restart.yaml
+        [[ "$HOSTNAME" =~ juwels ]] && esm_runscripts -e test_ci foci-juwels-ci-initial-piCtl-daily-restart.yaml
+        # monitor run
+        logfile="${GITHUB_WORKSPACE}/esm-experiments/test_ci/log/test_ci_foci.log"
+        seen_in_queue=false
+        while [ true ] ; do
+          [[ $(squeue -u $USER | grep test_ci | wc -l) -eq 1 ]] && seen_in_queue=true
+          if [[ -f ${logfile} ]] ; then
+            # check on log if the test job has been seen in the queue
+            if $seen_in_queue ; then
+              if [[ $(squeue -u $USER | grep test_ci | wc -l) -eq 0 ]] ; then
+                sleep 30s
+                cat ${logfile}
+                if grep -q "Experiment over" ${logfile} ; then
+                  echo "`date`: Experiment finished successfully"
+                  exit 0
+                else
+                  echo "`date`: Experiment failed"
+                  exit 1
+                fi
+              else
+                echo "`date`: Experiment queued/running"
+                squeue -u $USER | grep test_ci
+                sleep 10s
+              fi
+            else
+              echo "`date` Experiment started, but not yet queued"
+              tail -1 ${logfile}
+              sleep 10s
+            fi
+          else
+            echo "`date` Experiment not yet started"
+            sleep 10s
+          fi
+        done
+on:
+  pull_request:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    #paths:
+    #- configs/setups/foci.yaml
+    #- configs/components/xios.yaml
+    #- configs/components/echam.yaml
+    #- configs/components/nemo.yaml
+    #- configs/components/oasis3mct/oasis3mct.yaml
+    #- configs/couplings/nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci.yaml
+  push:
+    branches:
+    - release
+    - develop
+    - '*prep-release*'
+    #paths:
+    #- configs/setups/foci.yaml
+    #- configs/components/xios.yaml
+    #- configs/components/echam.yaml
+    #- configs/components/nemo.yaml
+    #- configs/components/oasis3mct/oasis3mct.yaml
+    #- configs/couplings/nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci.yaml

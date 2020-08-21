@@ -22,6 +22,9 @@ choose_version:
     - xios-2.0_r982_ogcm
     - nemobasemodel-3.6ogcm
   ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+    requires:
+    - xios-2.5_r1910
+    - nemobasemodel-3.6foci
     branch: esm-tools
     destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
@@ -30,6 +33,9 @@ choose_version:
     destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+    requires:
+    - xios-2.5_r1910
+    - nemobasemodel-3.6foci
     branch: esm-tools
     destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git

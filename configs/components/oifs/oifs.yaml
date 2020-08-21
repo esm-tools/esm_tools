@@ -64,6 +64,8 @@ metadata:
                 Please make sure you have a licence to use OIFS. In case you are
                 unsure, please contact redmine...
 compile_infos:
+        requires:
+        - oasis3mct-4.0
         available_versions:
         - 40r1
         - 43r3-awi
@@ -84,7 +86,7 @@ compile_infos:
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg
+              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
           43r3-awi:
             branch: master
@@ -94,8 +96,9 @@ compile_infos:
           43r3-foci:
             branch: oifs-foci
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg
+              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
         clean_command: rm -rf make/esm
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
@@ -737,12 +740,12 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 
 postprocess:
         postprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
 
 

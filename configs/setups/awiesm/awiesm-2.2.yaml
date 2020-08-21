@@ -21,7 +21,7 @@ general:
         choose_version:
             "2.2":
                 couplings:
-                    - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools
+                    - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2.1+scope-dev+debm-esm_tools
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false

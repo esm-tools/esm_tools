@@ -1,0 +1,5 @@
+components:
+  - recom-2.0-r
+  - fesom-2.0-r
+coupling_changes:
+   - sed -i '/RECOM_COUPLED/s/OFF/ON/g' fesom-2.0-r/CMakeLists.txt

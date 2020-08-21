@@ -9,9 +9,19 @@ available_versions:
 - 2.0-o
 - 2.0-esm-interface
 - '1.4'
+- '1.4-recom-mocsy-slp'
 - 2.0-esm-interface-yac
 - 2.0-paleodyn
+- 1.4-recom-awicm
 - '2.0'
+- '2.0-r' # OG: temporarily here
+choose_version:
+  '1.4-recom-awicm':
+    destination: fesom-1.4
+    branch: co2_coupling
+  '1.4-recom-mocsy-slp':
+    branch: fesom-recom-mocsy-slp
+    destination: fesom-1.4
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
@@ -72,6 +82,8 @@ choose_asforcing:
                 leapyear: false
         ECHAM5:
                 leapyear: true
+        JRA55:
+                leapyear: true
 
 executable: fesom
 choose_resolution:
@@ -110,9 +122,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear}.oce.nc
-        ice_restart: fesom.${parent_date!syear}.ice.nc
+        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
+        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
+        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -125,9 +137,9 @@ restart_out_in_work:
         ice_restart: fesom.${end_date!syear}.ice.nc
 
 restart_out_sources:
-        oce_diag: fesom.${end_date!syear}.oce.diag.nc
-        oce_restart: fesom.${end_date!syear}.oce.nc
-        ice_restart: fesom.${end_date!syear}.ice.nc
+        oce_diag: fesom.${end_date!syear!smonth!sday}.oce.diag.nc
+        oce_restart: fesom.${end_date!syear!smonth!sday}.oce.nc
+        ice_restart: fesom.${end_date!syear!smonth!sday}.ice.nc
 
 
 
@@ -203,6 +215,15 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+                choose_general.run_number:
+                        # MAM: If it is a restart triggered from a runscript
+                        # it is necessary to specify the year of the initial
+                        # date of the experiment that is to be continued
+                        1:
+                                add_namelist_changes:
+                                        namelist.config:
+                                                clockinit:
+                                                        yearnew: "${first_initial_year}"
 
 
 
@@ -231,7 +252,7 @@ monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siar
 
 daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
 
-12_second_outputs: [tso]
+12_step_outputs: [tso]
 
 ignore_files:
         gf: gf
@@ -260,12 +281,22 @@ outdata_sources:
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-
 compiletime_environment_changes:
         add_export_vars:
                 takenfrom:      fesom1
-
-
+choose_computer.name:
+        mistral:
+                add_compiletime_environment_changes:
+                        add_module_actions:
+                                - "unload gcc"
+                                - "load gcc/4.8.2"
+        blogin:
+                add_compiletime_environment_changes:
+                        add_export_vars:
+                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                                - "takenfrom='fesom1'"
 
 runtime_environment_changes:
         add_export_vars:
@@ -285,7 +316,7 @@ runtime_environment_changes:
                                         unit: d
                                         rate: 1
                                 -
-                                        vars: ${12_second_outputs}
+                                        vars: ${12_step_outputs}
                                         unit: s
                                         rate: 12
                                 -

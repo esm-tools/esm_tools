@@ -1,0 +1,142 @@
+# BLOGIN YAML CONFIGURATION FILES
+
+name: blogin
+account: None
+
+choose_general.use_hyperthreading:
+        "0":
+                hyperthreading_flag: "--ntasks-per-core=1"
+        "*":
+                hyperthreading_flag: ""
+
+accounting: true
+
+"batch_system": "slurm"
+
+jobtype: compute
+sh_interpreter: "/bin/bash"
+
+choose_jobtype:
+        tidy_and_resubmit:
+                partition: standard96
+        post:
+                partition: standard96
+        compute:
+                partition: standard96
+
+
+choose_partition:
+        standard96:
+                cores_per_node: 96
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+
+pool_directories:
+        pool: "/scratch/usr/hbkawi"
+        focipool: "/scratch/usr/shkifmsw/foci_input2"
+
+pool_dir:  "/scratch/usr/hbkawi"
+
+
+useMPI: intelmpi
+
+# standard environment setup
+#
+module_actions:
+        - "purge"
+        - "load slurm"
+        - "load HLRNenv"
+        - "load sw.skl"
+        - "load cmake"
+        - "load intel/19.0.5"
+        - "load cdo nco"
+        # dirty workaround, removed after rewrite of esm_environment (Sebastian Wahl 2020-06-26)
+        #- "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+
+export_vars:
+
+        - "FC=${fc}"
+        - "F77=${f77}"
+        - "MPIFC=${mpifc}"
+        - "MPICC=${mpicc}"
+        - "CC=${cc}"
+        - "CXX=${cxx}"
+        - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+        - "IO_LIB_ROOT=/home/shkifmms/HPC_libraries/TARGETS/HLRN4B/intel-19.0.5/impi-2019.5"
+        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+
+        - "SZIPROOT=$IO_LIB_ROOT"
+        - "HDF5ROOT=$IO_LIB_ROOT"
+        - "HDF5_ROOT=$HDF5ROOT"
+        - "NETCDFROOT=$IO_LIB_ROOT"
+        - "NETCDFFROOT=$IO_LIB_ROOT"
+        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+
+        - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+        - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+
+        # mostly OpenIFS stuff
+        - "LAPACK_LIB='-mkl=sequential'"
+        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+        - "ZLIBROOT=$IO_LIB_ROOT"
+        - "GRIBAPIROOT=$IO_LIB_ROOT"
+        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
+        #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        #- 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+choose_useMPI:
+        intelmpi:
+                add_module_actions:
+                        - "unload impi"
+                        - "load impi/2019.5"
+                fc: mpiifort
+                f77: mpiifort
+                mpifc: mpiifort
+                mpicc: mpiicc
+                cc: mpiicc
+                cxx: mpiicpc
+
+                add_export_vars:
+                        # Recommended by HLNR support when using an MPI binary and srun
+                        - "SLURM_CPU_BIND=none"
+
+                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
+
+further_reading:
+        - batch_system/slurm.yaml

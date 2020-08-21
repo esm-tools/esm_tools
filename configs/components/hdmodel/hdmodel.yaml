@@ -31,6 +31,7 @@ choose_lresume:
 #input_files :
 #        hdpara: hdpara
 #        rmp_hd: rmp_hd
+other_date: $(( ${next_date} - ${time_step}seconds ))
 
 input_in_work:
         #hdpara: "hdpara.nc"
@@ -47,14 +48,14 @@ restart_in_in_work:
         hdrestart: hdrestart.nc
 
 restart_in_sources:
-        hdrestart: "${parent_restart_dir}/hdrestart.nc"
+        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 
 restart_out_in_work:
         hdrestart: hdrestart.nc
 
 restart_out_sources:
-        hdrestart: "${parent_restart_dir}/hdrestart.nc"
+        hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist

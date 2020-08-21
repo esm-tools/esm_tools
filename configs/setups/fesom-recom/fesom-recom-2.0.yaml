@@ -1,0 +1,20 @@
+#########################################################################################
+######################### FESOM-RECOM-2.0 YAML CONFIGURATION FILE #######################
+#########################################################################################
+
+general:
+        model: fesom-recom-2.0
+
+        version: 2.0
+
+        coupled_setup: False
+        standalone: True
+
+        include_models:
+                - recom
+                - fesom
+
+        choose_version:
+          '2.0':
+            couplings:
+            - fesom-2.0+recom-2.0

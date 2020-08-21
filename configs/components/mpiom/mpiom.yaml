@@ -1,6 +1,40 @@
 # MPIOM YAML CONFIGURATION FILE
 #
 
+model: mpiom
+
+available_versions:
+- 1.6.2p3
+- 1.6.3
+- 1.6.3p2
+- 1.6.2p3-coupled
+- 1.6.3-coupled
+- 1.6.3p2-coupled
+choose_version:
+  1.6.2p3:
+    branch: 1.6.2p3
+  1.6.2p3-coupled:
+    branch: 1.6.2p3
+    conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
+      --enable-HAMOCC
+  1.6.3:
+    branch: 1.6.3
+  1.6.3-coupled:
+    branch: 1.6.3
+    conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
+      --enable-HAMOCC
+  1.6.3p2:
+    branch: 1.6.3p2
+  1.6.3p2-coupled:
+    branch: 1.6.3p2
+    conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
+      --enable-HAMOCC
+clean_command: make clean
+comp_command: make -j `nproc --all`
+conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC
+git-repository: https://gitlab.dkrz.de/modular_esm/mpiom.git
+install_bins: bin/mpiom.x
+
 metadata:
         Institute: MPI-Met
         Description:
@@ -9,8 +43,18 @@ metadata:
                 Boussinesq assumptions made.
         Authors: Till Maier-Reimer, Helmuth Haak, Johann Jungclaus
         Publications:
-                - Characteristics of the ocean simulations in the Max Planck Institute Ocean Model (MPIOM) the ocean component of the MPI‐Earth system model <https://doi.org/10.1002/jame.20023>
-                - The Max-Planck-Institute global ocean/sea ice model with orthogonal curvilinear coordinates <https://doi.org/10.1016/S1463-5003(02)00015-X>
+                - "Characteristics of the ocean simulations in the Max Planck Institute Ocean Model (MPIOM) the ocean component of the MPI-Earth system model <https://doi.org/10.1002/jame.20023>"
+                - "The Max-Planck-Institute global ocean/sea ice model with orthogonal curvilinear coordinates <https://doi.org/10.1016/S1463-5003(02)00015-X>"
         License:
                 Please make sure you have a licence to use MPIOM. In case you are unsure,
-                please contact redmine…
+                please contact redmine...
+
+executable: mpiom
+
+setup_dir: "${model_dir}"
+
+resolution: GR15
+
+further_reading:
+        - mpiom/mpiom.compiletime_env_changes.yaml
+

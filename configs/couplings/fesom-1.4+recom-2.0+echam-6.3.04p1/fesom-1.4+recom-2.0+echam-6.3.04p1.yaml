@@ -1,0 +1,12 @@
+components:
+  - echam-6.3.04p1-recom-awicm
+  - recom-2.0-recom-awicm
+  - fesom-1.4-recom-awicm
+  - oasis3mct-2.8
+coupling_changes:
+  - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+  - sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+  - sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+  - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+  - sed -i '/ECHAM6_COUPLED_RECOM/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+

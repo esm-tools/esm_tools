@@ -25,9 +25,9 @@ fesom_VERSION="2.0"
 EXE_fesom=fesom.x
 use_hyperthreading=0
 
-MODEL_DIR_fesom_standalone=${HOME}/esm-master/fesom-2.0/
+MODEL_DIR=${HOME}/esm-master/fesom-2.0/
 
-BIN_DIR_fesom=${MODEL_DIR_fesom_standalone}/bin/
+BIN_DIR_fesom=${MODEL_DIR}/bin/
 
 BASE_DIR=/mnt/lustre01/work/ba1035/a270092/runtime/FESOM2/
 

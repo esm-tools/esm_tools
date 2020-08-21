@@ -31,9 +31,9 @@ jobs:
         cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
         pip install .
         # temporary
-        for t in esm_environment esm_master esm_parser esm_runscripts ; do
-          esm_versions upgrade ${t}=refac_master_foci
-        done
+        #for t in esm_environment esm_master esm_parser esm_runscripts ; do
+        #  esm_versions upgrade ${t}=refac_master_foci
+        #done
         esm_versions check
         # compile
         rm -rf ${GITHUB_WORKSPACE}/models/${{ matrix.model }}

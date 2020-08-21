@@ -16,6 +16,7 @@ compile_infos:
         - 6.3.05p2-concurrent_radiation
         - 6.3.04p1-paleodyn
         - 6.3.04p1-recom-awicm
+        - 6.3.05p2-concurrent_radiation-paleodyn
         - 6.3.04p1
         branch: ${echam.version}
         choose_version:
@@ -42,14 +43,23 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/foci/src/echam.git
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; ./configure --with-fortran=intel --with-coupler=oasis3-mct INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel INSTALL='/usr/bin/install -p'
+            git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
+          6.3.05p2-concurrent_radiation-paleodyn:
+            branch: "cmake_attempt"
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
+          6.3.05p2-concurrent_radiation-paleodyn-hammoz:
+            branch: "hammoz"
             clean_command: rm -rf src/echam/bin; make clean
             comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin;
               cp  bin/echam6 src/echam/bin/echam6
             conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/;
               ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
               yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
-              INSTALL='/usr/bin/install -p'
-            git-repository: https://gitlab.dkrz.de/PalMod/echam6-PalMod.git
+              FCFLAGS="-cpp -DHAMMOZ" INSTALL='/usr/bin/install -p'
+            git-repository: https://gitlab.awi.de/pgierz/echam6.git
           6.3.05p2-foci:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
@@ -189,6 +199,24 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 
+        6.3.05p2-concurrent_radiation-paleodyn:
+                repo_tag: not_applicable
+                dataset: r0007
+                add_streams:
+                    - rad
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        npromar: "${npromar}"
+                                parctl:
+
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                        lrestart_from_old: "${lrestart_from_old}"
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007
@@ -632,11 +660,11 @@ check_error:
                 message: "Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry."
                 file: "${general.work_dir}/atmout"
                 frequency: 90
-        "wind speed":
-                method: "kill"
-                message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
-                file: "${general.work_dir}/atmout"
-                frequency: 90
+        #"wind speed":
+                #method: "kill"
+                #message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
+                #file: "${general.work_dir}/atmout"
+                #frequency: 90
 
 
 

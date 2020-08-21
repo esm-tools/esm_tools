@@ -12,6 +12,8 @@ general:
                 - echam
                 - fesom
                 - oasis3mct
+                - pism
+                - scope
 
         available_versions:
         - '1.1'

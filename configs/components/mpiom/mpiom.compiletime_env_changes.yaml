@@ -21,9 +21,9 @@ choose_computer.name:
                         add_export_vars:
                                 - 'CFLAGS="-O2 -DgFortran -std=gnu99"'
                                 - 'FCFLAGS="-O3 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
-                                #- 'HDF5_ROOT="/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"'
-                                #- 'NETCDFFROOT="/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"'
-                                #- 'NETCDFROOT="/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"'
+                                - 'HDF5_ROOT="/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"'
+                                - 'NETCDFFROOT="/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"'
+                                - 'NETCDFROOT="/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"'
                                 - 'ARFLAGS=crv'
                                 - 'WLFLAG="-Wl"'
                                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'

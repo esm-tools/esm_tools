@@ -58,20 +58,17 @@ hyper_flag: "" # No hyperthreading on ollie
 #- "I_MPI_FABRICS=shm:tmi"
 
 choose_general.setup_name:
-    #awiesm:
-    #            add_module_actions:
-    #                - "unload netcdf"
-    #                - "unload intel.compiler"
-    #                - "load pism_externals"
-    #            add_export_vars:
-    #                - "I_MPI_FABRICS=shm:tmi"
-        pism:
-                add_module_actions:
-                    - "unload netcdf"
-                    - "unload intel.compiler"
-                    - "load pism_externals"
+        mpiesm:
                 add_export_vars:
-                    - "I_MPI_FABRICS=shm:tmi"
+                   # MPIOM vars
+                   - 'ARFLAGS=crv'
+                   - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                   - 'OASIS3MCTROOT=${model_dir}'
+                   - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
+                   - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+                   - 'FFLAGS="$FCFLAGS"'
+                   - 'WLFLAG="-Wl"'
+                   - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
 
 
 useMPI: intelmpi

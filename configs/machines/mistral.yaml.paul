@@ -47,90 +47,105 @@ pool_dir:  "/pool/data"
 #
 
 useMPI: intelmpi
-
 module_actions:
-# kh 10.07.20
         - "purge"
-        - "load gcc/4.8.2"
-        - "unload intel"
-        - "load intel"
-        - "load cdo nco"
-        - "unload netcdf"
-        - "load netcdf_c/4.3.2-gcc48"
+        - "unload netcdf_c"
+        - "unload intel intelmpi"
         - "load python/3.5.2"
         - "load cmake/3.13.3"
+        - "load autoconf/2.69"
 
 export_vars:
-
+        #########################################################################
+        # Compiler Settings
+        #########################################################################
+        #
         - "FC=${fc}"
         - "F77=${f77}"
         - "MPIFC=${mpifc}"
         - "CC=${cc}"
         - "CXX=${cxx}"
+
+        #########################################################################
+        # MPI Settings
+        #########################################################################
+        #
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-        # Why are we not using MPI HDF5
+        #########################################################################
+        # HDF5 Defaults
+        #########################################################################
+        #
+        # Why are we not using MPI HDF5?
         #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         #- 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
-        # undefined symbol: __intel_skx_avx512_memcpy
-        # This combination was recommended by DKRZ support
-        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
+        #           undefined symbol: __intel_skx_avx512_memcpy
+        #           This combination was recommended by DKRZ support
+        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
         - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
-        - "ESM_HDF5_DIR=sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/"
-        # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake:
-        - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
-        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
-        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
+        # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
+        #           Moved to PISM yamls, but doesn't show up??
+        - "HDF5_ROOT=$HDF5ROOT"
+
+        #########################################################################
+        # NETCDF Defaults
+        #########################################################################
+        #
+        # NOTE(PG): Is it intentional to have different netcdf_fortran and
+        # netcdf_c versions?
+        - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/"
+        - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
-        - "PERL5LIB=/usr/lib64/perl5"
-        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
-        - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
-
-        # mostly OpenIFS stuff
+        # NOTE(PG): Where/who do these two come from?
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+
+        #########################################################################
+        # Linear Algebra (LAPACK)
+        #########################################################################
+        #
+        - "LAPACK_LIB='-mkl=sequential'"
+        - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+
+        #########################################################################
+        # General Software (Perl, usw.)
+        #########################################################################
+        #
+        - "PERL5LIB=/usr/lib64/perl5"
+        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "ZLIBROOT=/usr"
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+
+        #########################################################################
+        # Other stuff: Needs to be cleaned up!
+        #########################################################################
+        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # NOTE(PG): The block starting with:
+        # mostly OpenIFS stuff (Moved to components/oifs/oifs.compiletime_env_changes.yaml)
+        # containing many OIFS variables has been moved. Sebastian Wahl, please check!!
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-
-        - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
-
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
         - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=${cc}'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+        #########################################################################
+        # LD_LIBRARY_PATH
+        #
+        # Since the LD_LIBRARY_PATH modifies linking, this block probably needs
+        # to be at the end!!
+        #########################################################################
+        #
+        - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
+        # avoid GLIBCXX_3.4.15 not found error
+        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
+        - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
+
+
 
 # kh 10.07.20
         # MPI environent variables important at runtime
@@ -158,7 +173,6 @@ choose_useMPI:
                         - "unload intel intelmpi"
                         - "load intel/18.0.4 intelmpi/2018.5.288"
                         - "load libtool/2.4.6"
-                        - "load autoconf/2.69"
                         - "load automake/1.14.1"
                 fc: mpiifort
                 f77: mpiifort

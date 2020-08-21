@@ -90,7 +90,10 @@ def transform_strs(d, path=None):
         elif isinstance(d[k], str):
             item = d[k]
             d[k] =  literal(item) if "\n" in item or ";" in item else quoted(item)
+        elif isinstance(d[k], int):
+            continue
         else:
+            print(d[k], type(d[k]))
             raise Exception("Do not understand...")
     return d
 

@@ -33,6 +33,7 @@ on:
     - release
     - develop
     - '*prep-release*'
+    - feature/CI-test
     #paths:
     #- configs/setups/foci.yaml
     #- configs/components/xios.yaml

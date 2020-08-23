@@ -21,6 +21,11 @@ speeding up the configuration process, avoiding bugs and complex syntax.
 The same should apply to developers that would like to implement their models
 in `ESM-Tools`: the implementation consists on the configuration of a few `YAML` files.
 
+.. warning::
+   `Tabs` are not allowed as `yaml` indentation, and therefore, `ESM-Tools` will return an
+   error every time a `yaml` file with `tabs` is invoked (e.g. `runscripts` and `config`
+   files need to be `'tab-free'`).
+
 YAML-Specific Syntax
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -54,6 +59,8 @@ The main `YAML` **elements** relevant to `ESM-Tools` are:
               ice:     ice
 
 Some relevant **properties** of the ``YAML`` format are:
+
+  * Only **white spaces** can be used for indentation. **Tabs are not allowed**.
 
   * Indentation can be used to structure information in as many levels as required, i.e. a dictionary
     ``choose_resolution`` that contains a list of dictionaries (``T63``, ``T31`` and ``T127``)::
@@ -407,6 +414,8 @@ completely known. The syntax needed is::
 
   file_list: common_pathname*common_pathname
 
+Note that this also works together with the :ref:`yaml:List Loops`.
+
 **Example**
 
 The component `NEMO` produces one restart file per processor, and the part of the file name
@@ -476,14 +485,14 @@ File Dictionaries
 ~~~~~~~~~~~~~~~~~
 
 File dictionaries are a special type of `YAML` elements that are useful to handle input, output,
-forcing, logging, binary and restart files, and that are normally defined inside the
-`configuration files` of the model. File dictionary's `keys` are composed by a file dictionary
-``type`` followed by ``_`` and an ``option``, and the `elements` consist of a list of ``file_tags``
-as `keys` with their respective ``file_paths`` as `values`::
+forcing, logging, binary and restart files among others (see `File dictionary types` table),
+and that are normally defined inside the `configuration files` of models. File dictionary's `keys`
+are composed by a file dictionary ``type`` followed by ``_`` and an ``option``, and the `elements`
+consist of a list of ``file_tags`` as `keys` with their respective ``file_paths`` as `values`::
 
   type_option:
-        - file_tag1: file_path1
-        - file_tag2: file_path2
+        file_tag1: file_path1
+        file_tag2: file_path2
 
 The ``file_tags`` need to be consistent throughout the different ``options`` for files to be
 correctly handled by ESM-Tools. Exceptionally, ``sources`` files can be tagged differently but
@@ -496,14 +505,18 @@ options (see `File dictionary options` table below).
    :header: Key, Description
    :widths: 15, 85
 
+   analysis,            User's files for their own analysis tools (i.e. to be used in the pre-/postprocessing).
    bin,                 Binary files.
    config,              Configure sources.
-   ignore,              ":red:`Files to be ignored?`"
+   couple,              Coupling files.
+   ignore,              Files to be ignored in the copying process.
    forcing,             Forcing files. An example is described at the end of this section.
    log,                 Log files.
-   outdata,             "Output configuration files. A concised example is described in :ref:`yaml:List Loops`."
-   restart_in,          
-   restart_out,         
+   mon,                 Monitoring files.
+   outdata,             "Output configuration files. A concise example is described in :ref:`yaml:List Loops`."
+   restart_in,          "Restart files to be copied from the **experiment directory** into the **run directory** (see :ref:`esm_runscripts:Experiment Directory Structure`), during the beginning of the `computing phase` (e.g. to copy restart files from the previous step into the new run folder)."
+   restart_out,         "Restart files to be copied from the **run directory** into the **experiment directory** (see :ref:`esm_runscripts:Experiment Directory Structure`), during the `tidy and resubmit phase` (e.g. to copy the output restart files from a finished run into the **experiment directory** for later use the next run)."
+   viz,                 Files for the visualization tool.
 
 **File dictionary options**
 

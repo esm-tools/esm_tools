@@ -58,11 +58,11 @@ general:
                                         #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                         # OpenMP
                                         - 'OMP_NUM_THREADS=1' 
-computer:
-       additional_flags: "--ntasks-per-core=1"
-       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
-       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
-       useMPI: intelmpi17
+#computer:
+#       additional_flags: "--ntasks-per-core=1"
+#       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
+#       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+#       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

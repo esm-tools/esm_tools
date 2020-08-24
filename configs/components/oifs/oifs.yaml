@@ -750,5 +750,5 @@ postprocess:
                 type: shell
 
 
-further_reading:
-    - oifs/oifs.compiletime_env_changes.yaml
+#further_reading:
+#    - oifs/oifs.compiletime_env_changes.yaml

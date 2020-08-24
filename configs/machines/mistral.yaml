@@ -133,7 +133,8 @@ export_vars:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
         # Build OpenIFS with FFTW. Use Intel MKL interfaces
-        - 'OIFS_FFTW="enable"'
+        # WARNING: FFTW does not work yet. Wait for patch from ECMWF
+        # - 'OIFS_FFTW="enable"'
         - 'OIFS_FFTW_DIR="$FFTW_ROOT"'
         - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
         - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'

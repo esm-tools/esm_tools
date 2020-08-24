@@ -3,3 +3,7 @@ components:
 - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
 - oasis3mct-fociagrif
 - rnfmap-focioifs1
+coupling_changes:
+- sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3-foci/src/ifs/module/yommcc.F90
+- sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-43r3-foci/src/ifs/module/yommcc.F90
+- sed -i '/COUPLENEMOFOCI = /s/.FALSE./.TRUE./g' oifs-43r3-foci/src/ifs/module/yommcc.F90

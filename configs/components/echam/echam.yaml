@@ -108,7 +108,7 @@ lresume: false
 dataset: "r0007"
 
 ini_parent_date: 22941231
-ini_parent_expid: khw0030
+ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
 
 pseudo_start_date: ${start_date}

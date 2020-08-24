@@ -1,0 +1,34 @@
+
+general:
+   setup_name: "foci"
+   compute_time: "01:15:00"
+   account: "bb0519"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1853-01-01T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nyear: 1
+   base_dir: /pf/b/b350071/esm-tools-latest/esm-experiments 
+
+computer:
+   additional_flags: "--ntasks-per-core=1"
+   launcher: "srun" # default, but set it to make clear what the launcher flags are used for
+   launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+   useMPI: intelmpi17
+
+foci:
+   model_dir: /pf/b/b350071/esm-tools-latest/models/foci-default/
+
+echam:
+   resolution: "T63"
+   restart_rate: ${general.nyear}
+   restart_unit: "years"
+   nproca: 24
+   nprocb: 24
+
+nemo:
+   resolution: "ORCA05"
+   jpni: 24
+   jpnj: 20
+   # nproc: 480

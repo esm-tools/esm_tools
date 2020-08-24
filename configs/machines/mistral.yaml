@@ -106,6 +106,7 @@ export_vars:
 
         - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
 
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
@@ -131,6 +132,11 @@ export_vars:
         - 'OIFS_CC=${cc}'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        # Build OpenIFS with FFTW. Use Intel MKL interfaces
+        - 'OIFS_FFTW="enable"'
+        - 'OIFS_FFTW_DIR="$FFTW_ROOT"'
+        - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
+        - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
 
 # kh 10.07.20
         # MPI environent variables important at runtime

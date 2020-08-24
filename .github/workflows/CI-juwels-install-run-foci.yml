@@ -1,8 +1,8 @@
-name: CI-blogin-install-run-foci 
+name: CI-juwels-install-run-foci 
 jobs:
   install_models:
     runs-on:
-    - blogin3 
+    - juwels
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +49,7 @@ jobs:
         
   run_models:        
     runs-on:
-    - blogin3 
+    - juwels
     needs: install_models
     strategy:
       fail-fast: false

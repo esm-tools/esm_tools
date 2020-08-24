@@ -1,8 +1,9 @@
+
 available_versions:
 - 3.6.3.x
 - 3.6ogcm
 - 3.6foci
-choose_nemobasemodel.version:
+choose_version:
   3.6.3.x:
     archfile: ESMTOOLS_generic_intel
     branch: release-3.6.3.x
@@ -20,5 +21,4 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/c
   cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe
   ${nemo.version}/BLD/bin/oceanx
 destination: nemo-${version}
-git-repository: None
 install_bins: CONFIG/${nemo.version}/BLD/bin/oceanx

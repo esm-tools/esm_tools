@@ -1,3 +1,20 @@
+#
+# Runoff mapper YAML file
+#
+
+model: rnfmap
+executable: rnfma
+execution_command: rnfma
+version: focioifs1
+type: river
+
+description: |
+        River routing scheme taken from EC-Earth
+        Modified for use in FOCI
+
+##
+## Compile information 
+##
 available_versions:
 - ec-earth
 - focioifs
@@ -10,6 +27,77 @@ choose_version:
   focioifs1:
     branch: esm-tools-focioifs
 clean_command: rm -rf bin; cd src; make clean
-comp_command: rm -rf bin; mkdir bin; cd src; make
+comp_command: rm -rf bin; mkdir bin; cd src; make ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
-install_bins: bin/rnfmap.exe
+install_bins: bin/rnfma
+##
+## Directories
+##
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
+namelist_dir: ${general.esm_namelist_dir}/rnfmap/
+
+parent_expid: "test" 
+parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
+
+resolution: 512x256
+
+generate_namelist: 1
+
+restart: 1
+restart_rate: 1
+restart_unit: 'months'
+
+namelists:
+        - "namelist.runoffmapper"
+
+choose_resolution:
+        512x256:
+                nx: 512
+                ny: 256
+                time_step: ${oasis3mct.time_step}
+
+nproca: 1
+nprocb: 1
+                         
+runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+
+lresume: false
+
+bin_sources: 
+        bin: ${bin_dir}/${executable}
+
+config_sources:
+        namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
+
+runoff_fields_recv: [R_Runoff_atm] 
+runoff_fields_send: [R_Runoff_oce]
+
+coupling_fields:
+        "[[runoff_fields_recv-->FIELD]]":
+                grid: rnfa
+        "[[runoff_fields_send-->FIELD]]":
+                grid: opar
+
+namelist_changes:
+        namelist.runoffmapper:
+                NAMRNFMAP:
+                        RunLengthSec: ${runtime_seconds}
+                        TimeStepSec: ${time_step}
+
+grids:
+        rnfa:
+                name: rnfa
+                nx: 512
+                ny: 256
+                oasis_grid_type: "LR"
+        opar:
+                name: opar
+                nx: "${nemo._nx}"
+                ny: "${nemo._ny}"
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 2
+   
+
+

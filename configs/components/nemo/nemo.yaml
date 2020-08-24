@@ -10,34 +10,41 @@ executable:     oceanx
 #version:        3.6
 version: GYRE_XIOS
 
-compile_infos:
-        available_versions:
-        - ORCA05_LIM2_KCM_AOW
-        - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
-        - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
-        - GYRE_XIOS
+available_versions:
+- ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- GYRE_XIOS
 
-        choose_version:
-          GYRE_XIOS:
-            requires:
-            - xios-2.0_r982_ogcm
-            - nemobasemodel-3.6ogcm
-          ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
-            branch: esm-tools
-            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-          ORCA05_LIM2_KCM_AOW:
-            branch: master
-            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-          ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
-            branch: esm-tools
-            destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
-            git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-            
-        requires:
-        - xios-2.0_r982
-        - nemobasemodel-3.6foci
+choose_version:
+  GYRE_XIOS:
+    requires:
+    - xios-2.0_r982_ogcm
+    - nemobasemodel-3.6ogcm
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+    requires:
+    - xios-2.5_r1910
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW:
+    branch: master
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
+    requires:
+    - xios-2.5_r1910
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    
+clean_command: echo Cleaning is handled by nemobasemodel.yaml 
+comp_command: echo Compilation is handled by nemobasemodel.yaml 
+requires:
+- xios-2.0_r982
+- nemobasemodel-3.6foci
 
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
@@ -56,6 +63,9 @@ metadata:
 
 resolution:     ORCA05
 time_step:      1800
+jpni:           0 
+jpnj:           0
+nproc:          $(( ${jpni} * ${jpnj} )) 
 
 use_lim2:       true
 use_tracer:     true
@@ -110,7 +120,8 @@ namelist_changes:
                         nn_leapy: 1
                         nn_rstctl: 2
                         ln_rstart: 'false'
-                namtsd:
+                namtsd:                                                
+                        ln_tsd_tradmp: '.true.' 
                         ln_tsd_init: '.true.'
                 namdom:
                         nn_closea: 1
@@ -119,9 +130,9 @@ namelist_changes:
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
-                        jpni: 0
-                        jpnj: 0
-                        jpnij: 0
+                        jpni: ${jpni}
+                        jpnj: ${jpnj}
+                        jpnij: ${nproc}
 
 choose_nemoconfig:
        "ORCA05_LIM2_KCM_AOW":
@@ -130,13 +141,31 @@ choose_nemoconfig:
                 use_lim2:       true
                 use_tracer:     true
                 correct_neg_tracer_conc: true
+                
+                # uncomment the following to set CPU layout defaults
+                # for this configuration
+                #add_namelist_changes:
+                #        namelist_cfg:
+                #              nammpp:
+                #                    jpni: 0
+                #                    jpnj: 0
+                #                    jpnij: 0
 
-                namelist_changes:
-                        namelist_cfg:
-                              nammpp:
-                                    jpni: 0
-                                    jpnj: 0
-                                    jpnij: 0
+       "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
+                free_surface: nonlinear
+                hosing: false
+                use_lim2:       true
+                use_tracer:     true
+                correct_neg_tracer_conc: true
+
+                # uncomment the following to set CPU layout defaults
+                # for this configuration
+                #add_namelist_changes:
+                #        namelist_cfg:
+                #              nammpp:
+                #                    jpni: 0
+                #                    jpnj: 0
+                #                    jpnij: 0
 
 choose_free_surface:
         linear:
@@ -353,12 +382,15 @@ log_sources:
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
+opaf_fields: [O_Runoff]
 
 coupling_fields:
         "[[opat_fields-->FIELD]]":
                 grid: opat
         "[[opac_fields-->FIELD]]":
                 grid: opac
+        "[[opaf_fields-->FIELD]]":
+                grid: opaf
 
 grids:
         opat:
@@ -373,3 +405,10 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
                 number_of_overlapping_points: 2 # oasis P-value
+        opaf:
+                name: opaf
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 2 
+

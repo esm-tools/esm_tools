@@ -20,6 +20,7 @@
     rerun_filetype = 4
     delta_time = 450
     putdata = 1, 'days', 'last', 0
+    trigfiles = 1, 'months', 'first', 0
     nproma = 32
     lcouple = .false.
     getocean = 24, 'steps', 'exact', 0

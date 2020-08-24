@@ -52,8 +52,27 @@ module_actions:
         - "load cmake"
         - "load intel/19.0.5"
         - "load cdo nco"
-        # dirty workaround, removed after rewrite of esm_environment (Sebastian Wahl 2020-06-26)
-        #- "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+        # Move in the future to FOCI
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+        - "load eccodes/intel/2.15.1"
+
+choose_useMPI:
+        intelmpi:
+                add_module_actions:
+                        - "unload impi"
+                        - "load impi/2019.5"
+                fc: mpiifort
+                f77: mpiifort
+                mpifc: mpiifort
+                mpicc: mpiicc
+                cc: mpiicc
+                cxx: mpiicpc
+
+                add_export_vars:
+                        # Recommended by HLNR support when using an MPI binary and srun
+                        - "SLURM_CPU_BIND=none"
+
+                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
 
 export_vars:
 
@@ -66,7 +85,8 @@ export_vars:
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-        - "IO_LIB_ROOT=/home/shkifmms/HPC_libraries/TARGETS/HLRN4B/intel-19.0.5/impi-2019.5"
+        # Replace in the future when system provided modules and libraries are reliable
+        - "IO_LIB_ROOT=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811"
         - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
 
         - "SZIPROOT=$IO_LIB_ROOT"
@@ -89,7 +109,7 @@ export_vars:
         - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
         - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
         - "ZLIBROOT=$IO_LIB_ROOT"
-        - "GRIBAPIROOT=$IO_LIB_ROOT"
+        - "GRIBAPIROOT=$ECCODES_DIR" # ECCODES_DIR is set by eccodes module
         #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
         #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
@@ -97,9 +117,8 @@ export_vars:
         #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
         #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        #- 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -leccodes_f90 -leccodes"'
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
@@ -120,23 +139,6 @@ export_vars:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
-choose_useMPI:
-        intelmpi:
-                add_module_actions:
-                        - "unload impi"
-                        - "load impi/2019.5"
-                fc: mpiifort
-                f77: mpiifort
-                mpifc: mpiifort
-                mpicc: mpiicc
-                cc: mpiicc
-                cxx: mpiicpc
-
-                add_export_vars:
-                        # Recommended by HLNR support when using an MPI binary and srun
-                        - "SLURM_CPU_BIND=none"
-
-                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
 
 further_reading:
         - batch_system/slurm.yaml

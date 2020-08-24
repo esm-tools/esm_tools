@@ -1,11 +1,11 @@
 general:
         setup_name: oifs
-        compute_time: "00:15:00"
+        compute_time: "00:30:00"
         account: "bb0519"
-        initial_date: "2008-02-01"
-        final_date: "2008-02-04"
+        initial_date: "2008-01-01"
+        final_date: "2008-01-05"
         model_dir: "/pf/b/b350090/model_codes/oifs-43r3/"
-        base_dir: "/work/bb0519/b350090/esm-experiments/"
+        base_dir: "/work/bb0519/b350090/oifs-43r3-experiments/"
         nyear: 0
         nmonth: 0
         nday: 5
@@ -28,6 +28,7 @@ oifs:
         resolution: TCO199
         levels: L91
         lresume: 0
+        perturb: 1
         post_processing: 1
-        nproca: 576
+        nproca: 1152
         nprocb: 1

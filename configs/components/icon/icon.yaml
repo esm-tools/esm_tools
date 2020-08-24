@@ -214,8 +214,8 @@ choose_resolution:
                                 nproc: 288
                         36:
                                 nproc: 288
-                reduced_radiation_resolution: R02B04
-        R3B11:
+                reduced_radiation_resolution: r02b04
+        r3b11:
                 choose_computer.cores_per_node:
                         24:
                                 nproc: 900
@@ -238,5 +238,31 @@ bin_sources:
 
 config_sources:
         master: "${namelist_dir}/icon_master.namelist"
-        nwp: "${namelist_dir}/NAMELIST_NWP"
+        nwp: "${namelist_dir}/namelist_nwp"
 
+
+useMPI: 
+
+
+choose_computer.name:
+        ollie:
+                compiletime_environment_changes: 
+                        add_module_actions:
+                                - "load gnu.compiler/6.3.0"
+                                - "unload intel.compiler intel.mpi && module load intel.mpi"
+                                - "unload netcdf/4.6.2_intel"
+                                - "load netcdf/4.6.2_gnu"
+                                #- "unload automake"
+                        fc: mpif90
+                        f77: mpif90
+                        mpifc: mpif90
+                        #mpifc: mpigcc
+                        mpicc: mpigxx
+                        cc: mpigcc
+                        cxx: mpigxx
+
+
+                        # add_exports_vars:
+
+
+    

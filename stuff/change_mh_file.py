@@ -10,9 +10,12 @@ import pathlib
 # directory and file paths
 conf_dir = pathlib.Path.cwd() / 'config'
 mh_fname = conf_dir / "mh-linux"
-print(mh_fname)
-print(conf_dir)
-backup_fname = conf_dir / f"{mh_fname}.bak"
+backup_fname = conf_dir / "mh-linux.bak"
+
+# convert them to strings since versions prior to 3.6 os module does not like
+# pathlib objects
+mh_fname = str(mh_fname)
+backup_fname = str(backup_fname)
 
 # create a backup file if it does not exit. Copy the contents of the original
 # file to the backup file

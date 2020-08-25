@@ -24,26 +24,16 @@ core:
                         - "write_simple_runscript"
                         - "submit"
 
+# esm-plugins is in an early stage and has many limitations:
+# 1. plugins MUST be placed in ../../esm_software/esm_runscripts/esm_plugins.yaml
+#    and commented unless available
+# 2. esm_plugin_manager cannot resolve variables at the momenty
+# 3. git-url is only for documentation purposes, if location does not 
+#    exists, esm_runscripts stops with an (useful) error message
 plugins:
         preprocess:
-                location: "/pf/b/b350090/esm-py/plugins/preprocess"
+                #location: ${model_dir} 
+                location: "/home/shkifmsw/gitlab/preprocess" 
                 git-url: "https://github.com/esm-tools-plugins/preprocess.git"
                 preprocess:
                         - "preprocess"
-
-        postprocess:
-                location: "/pf/b/b350090/esm-py/plugins/postprocess"
-                git-url: "https://github.com/esm-tools-plugins/postprocess-sh.git"
-                postprocess:
-                        - "postprocess"
-
-
-
-# include plugins like this:
-#plugins:
-#        my_plugin:
-#                location: "/work/ollie/dbarbi/my_plugin"
-#                git-url: ""
-#                my_plugin:
-#                        - "write_something"
-

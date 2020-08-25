@@ -105,9 +105,131 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
 
-#
-#------------------------------------------
-#
+choose_computer.name:
+  blogin:
+    runtime_environment_changes:
+      add_module_actions:
+        - "load eccodes/intel/2.15.1"
+      add_export_vars:
+
+        # left from mistral, need to check with JK
+        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        - 'OIFS_FFIXED=""'
+
+    compiletime_environment_changes:
+      add_module_actions:
+        - "load eccodes/intel/2.15.1"
+      add_export_vars:
+
+        - "LAPACK_LIB='-mkl=sequential'"
+        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+
+        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
+
+        # ECCODES stuff
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
+
+        # OASIS
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+
+        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+  mistral:
+    runtime_environment_changes:
+      add_export_vars:
+        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
+        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
+        - 'OIFS_FFIXED=""'
+
+    compiletime_environment_changes:
+      add_export_vars:
+        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
+        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
+
+        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+
+        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # this doesn't work but should
+        # - 'OIFS_FC=${mpifc}'
+        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        # this doesn't work but should
+        # - 'OIFS_CC=${cc}'
+        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        # Build OpenIFS with FFTW. Use Intel MKL interfaces
+        # WARNING: FFTW does not work yet. Wait for patch from ECMWF
+        # - 'OIFS_FFTW="enable"'
+        - 'OIFS_FFTW_DIR="$FFTW_ROOT"'
+        - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
+        - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
+
 input_expid: ECE3
 resolution: TL159
 levels: L91
@@ -741,14 +863,31 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh mistral ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 
 postprocess:
         postprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh mistral ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
 
 
-#further_reading:
-#    - oifs/oifs.compiletime_env_changes.yaml
+# seb-wahl: This should work but does not due to bug in esm_plugins.yaml
+#plugins:
+#        preprocess:
+#                location: ${model_dir} 
+#                git-url: "https://github.com/esm-tools-plugins/preprocess.git"
+#                preprocess:
+#                        - "preprocess"
+
+# Not needed with XIOS now (almost :-) ) being part of OpenIFS
+# and it was never working anyhow...
+#        postprocess:
+#                location: "/pf/b/b350090/esm-py/plugins/postprocess"
+#                git-url: "https://github.com/esm-tools-plugins/postprocess-sh.git"
+#                postprocess:
+#                        - "postprocess"
+#
+#
+#------------------------------------------
+#

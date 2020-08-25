@@ -76,7 +76,7 @@ fi
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    ${grib_set} -s dataDate=$ndate $old $new
+    grib_set -s dataDate=$ndate $old $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old

@@ -117,7 +117,8 @@ export_vars:
         - "ZLIBROOT=/usr"
 
         #########################################################################
-        # Other stuff: Needs to be cleaned up!
+        # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
+        # it's used by other models it stays in mistral.yaml for now
         #########################################################################
         - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
@@ -131,7 +132,6 @@ export_vars:
         - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
         # avoid GLIBCXX_3.4.15 not found error
         - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
-        - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
 
 # kh 10.07.20
         # MPI environent variables important at runtime

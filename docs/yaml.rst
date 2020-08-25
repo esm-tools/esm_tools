@@ -10,7 +10,8 @@ What Is YAML?
 =============
 
 `YAML` is a structured data format oriented to human-readability. Because of this property,
-it is the chosen format for configuration and runscript files in `ESM-Tools`. These
+it is the chosen format for configuration and runscript files in `ESM-Tools` and the
+recommended format for runscripts (though bash runscripts are still supported). These
 `YAML` files are read by the `esm_parser` and then converted into a Python dictionary.
 The functionality of the `YAML` files is further expanded through the `esm_parser` and
 other `ESM-Tools` packages (i.e. calendar math through the `esm_calendar`). The
@@ -98,26 +99,73 @@ ESM-Tools Extended YAML Syntax
    Work in progress. This chapter might be incomplete. Red statements might be imprecise or not true.
 
 `ESM-Tools` offers extended functionality of the `YAML` files through the
-`esm_parser`. The following :ref:`yaml:Extended Syntax` subsection lists the extended `ESM-Tools`
+`esm_parser`. The following subsections list the extended `ESM-Tools`
 syntax for `YAML` files including calendar and math operations (see
 :ref:`yaml:Math and Calendar Operations`).
-The :ref:`yaml:YAML Elements` subsection lists the `YAML` elements needed for configuration files and
+The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
-Extended Syntax
-~~~~~~~~~~~~~~~
+Variable Calls
+~~~~~~~~~~~~~~
 
-Variable calls and ESM-Tools variables
---------------------------------------
-
-Variables defined in a `YAML` file can be invoked later on the same file or in oder files
-(provided that the file defining the variable has been previously read :red:`(is that true?)`).
+Variables defined in a `YAML` file can be invoked on the same file or in oder files
+provided that the file where it is defined is read for the given operation.
 The syntax for calling an already defined variable is::
 
   "${name_of_the_variable}"
 
+Variables can be nested in sections. To define a variable using the value of another one that is
+nested on a section the following syntax is needed::
+
+  "${<section>.<variable>}"
+
+When using `esm_parser`, variables in components, setups, machine files, general information, etc.,
+are grouped under sections of respective names (i.e. ``general``, ``ollie``, ``fesom``, ``awicm``, ...).
+To access a variable from a different file than the one in which it is declared it is necessary to
+reference the file name or label as it follows::
+
+  "${<file_label>.<section>.<variable>}"
+
+**Example**
+
+Lets take as an example the variable ``ini_parent_exp_id`` inside the ``general`` section in the
+`FESOM-REcoM` runscript ``runscripts/fesom-recom/fesom-recom-ollie-restart-daily.yaml``::
+
+  general:
+          setup_name: fesom-recom
+          [ ... ]
+          ini_parent_exp_id: restart_test
+          ini_restart_dir: /work/ollie/mandresm/esm_yaml_test/${ini_parent_exp_id}/restart/
+          [ ... ]
+
+Here we use ``ini_parent_exp_id`` to define part of the restart path ``ini_restart_dir``. 
+``general.ini_restart_dir`` is going to be called from the `FESOM-REcoM` configuration file
+``configs/setups/fesom-recom/fesom-recom.yaml`` to define the restart directory for `FESOM`
+``fesom.ini_restart_dir``::
+
+  [ ... ]
+  ini_restart_dir: "${general.ini_restart_dir}/fesom/"
+  [ ... ]
+
+Note that this line adds the subfolder ``/fesom/`` to the subdirectory.
+
+If we would like to invoke from the same runscript some of the variables defined in another file,
+for example the ``useMPI`` variable in ``configs/machines/ollie.yaml``, then we would need to use::
+
+  a_new_variable: "${ollie.useMPI}"
+
+Bare in mind that these examples will only work if both `FESOM` and `REcoM` are involved in the
+`ESM-Tool` task triggered and if the task is run in `Ollie` (i.e. it will work for
+``esm_runscripts fesom-recom-ollie-restart-daily.yaml -e <experiment_id> ...``).
+
+ESM-Tools Variables
+~~~~~~~~~~~~~~~~~~~
+
 ESM-Tools provide a set of variables that can be called from `YAML` files without a previous
 declaration:
+
+.. warning::
+   The following list contains entries that don't belong here (i.e. ``model_dir``). Review and correct.
 
 .. csv-table::
    :header: Key, Description
@@ -137,23 +185,33 @@ declaration:
    esm_runscript_dir,   "Absolute path to the runscripts folder (``<PATH>/esm_tools/runscripts``)."
    model_dir,           Absolute path of the model directory (where it was installed by `esm_master`).
 
-Lists starting with choose\_
-----------------------------
+Switches (``choose\_``)
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Lists named as ``choose_<name_of_a_property>`` can be used to nest ``configurations`` under a
-``configuration_key`` that can be then invoked from the ``property`` itself::
+A `YAML` list named as ``choose_<variable>`` function as a `switch` that evaluates the given ``variable``.
+The nested element `keys` inside the ``choose_<variable>`` act as `cases` for the switch and the `values` of
+this elements are only defined outside of the ``choose_<variable>`` if they belong to the selected
+``case_key``::
 
-  property_1: configuration_key_2
+  variable_1: case_key_2
 
-  choose_property_1:
-                configuration_key_1:
-                                configuration_1: value
-                                configuration_2: value
-                                [ ... ]
-                configuration_key_2:
-                                configuration_1: value
-                                configuration_2: value
-                                [ ... ]
+  choose_variable_1:
+          case_key_1:
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+          case_key_2:
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+          "*":
+                  configuration_1: value
+                  configuration_2: value
+                  [ ... ]
+
+The key ``"*"`` or ``*`` works as an `else`.
+
+**Example**
 
 An example that can better illustrate this general description is the `FESOM 2.0` resolution
 configuration in ``<PATH>/esm_tools/configs/fesom/fesom-2.0.yaml``::
@@ -168,74 +226,221 @@ configuration in ``<PATH>/esm_tools/configs/fesom/fesom-2.0.yaml``::
           GLOB:
                   nx: 830305
 
-Here we are selecting the ``CORE2`` as default configuration set for the ``resolution`` property,
+Here we are selecting the ``CORE2`` as default configuration set for the ``resolution`` variable,
 but we could choose the ``GLOB`` configuration in another `YAML` file (i.e. a runscript), to override
 this default choice.
 
+In the case in which ``resolution: CORE2``, then ``nx``, ``mesh_dir`` and ``nproc`` will take the values
+defined inside the ``choose_resolution`` for ``CORE2`` (``126858``, 
+``runscripts/fesom-recom/fesom-recom-ollie-restart-daily.yaml``, and ``288`` respectively), once
+resolved by the `esm_parser`, at the same **nesting level** of the ``choose_resolution``.
+
+.. Note::
+   ``choose_versions`` inside configuration files is treated in a special way by the `esm_master`. To
+   avoid conflicts in case an additional ``choose_versions`` is needed, include the compilation information
+   inside a ``compile_infos`` section (including the ``choose_versions`` switch containning compilation
+   information). Outside of this exception, it is possible to use as many ``choose_<variable>`` repetitions
+   as needed.
+
+Append to an Existing List (``add_``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given an existing list ``list1``::
+
+  list1:
+      - element1
+      - element2
+
+it is possible to add members to this list by using the following syntax::
+
+  add_list1:
+      - element3
+      - element4
+
+so that the variable ``list1`` at the end of the parting will contain
+``[element1, element2, element3, element4]``. This is not only usefull when you need to build the list
+piecewise (i.e. and expansion of a list inside a ``choose_`` switch) but also as the
+:ref:`hierarchy:File Hierarchy` will cause repeated variables to be overwritten.
+
+**Properties**
+
+  * It is possible to have multiple ``add_`` for the same variable in the same or even in different
+    files. That means that all the elements contained in the multiple ``add_`` will be added to the
+    list after the parsing.
+
+**Exceptions**
+
+Exceptions to ``add_`` apply only to the environment and namelist ``_changes`` (see
+:ref:`yaml:Environment and Namelist Changes (\`\`_changes\`\`)`). For variables of the type ``_changes``,
+an ``add_`` is only needed if the same ``_changes`` block repeats inside the same file. Otherwise, the
+``_changes`` block does no overwrite the same ``_changes`` block in other files, but their elements
+are combined.
+
+**Example**
+
+In the configuration file for `ECHAM` (``configs/components/echam/echam.yaml``) the list
+``input_files`` is declared as::
+
+  [ ... ]
+
+  input_files:
+      "cldoptprops": "cldoptprops"
+      "janspec": "janspec"
+      "jansurf": "jansurf"
+      "rrtmglw": "rrtmglw"
+      "rrtmgsw": "rrtmgsw"
+      "tslclim": "tslclim"
+      "vgratclim": "vgratclim"
+      "vltclim": "vltclim"
+
+  [ ... ]
+
+However different `ECHAM` scenarios require additional input files, for example the ``HIST`` scenario
+needs a ``MAC-SP`` element to be added and we use the ``add_`` functionality to do that::
+
+  [ ... ]
+  choose_scenario:
+      [ ... ]
+      HIST:
+          forcing_files:
+              [ ... ]
+          add_input_files:
+              MAC-SP: MAC-SP
+      [ ... ]
+
+An example for the ``_changes`` **exception** can be also found in the same ``ECHAM`` configuration file.
+Namelist changes necessary for `ECHAM` are defined inside this file as::
+
+  [ ... ]
+
+  namelist_changes:
+      namelist.echam:
+          runctl:
+              out_expname: ${general.expid}
+              dt_start:
+                  - ${pseudo_start_date!year}
+                  - ${pseudo_start_date!month}
+                  [ ... ]
+
+This changes specified here will be combined with changes in other files (i.e. ``echam.namelist_changes``
+in the coupled setups `AWICM` or `AWIESM` configuration files), not overwritten. However, `ECHAM`'s
+version ``6.3.05p2-concurrent_radiation`` needs of further namelist changes written down in the same
+file inside a ``choose_`` block and for that we need to use the ``add_`` functionality::
+
+  [ ... ]
+
+  choose_version:
+      [ ... ]
+      6.3.05p2-concurrent_radiation:
+          [ ... ]
+          add_namelist_changes:
+              namelist.echam:
+                  runctl:
+                      npromar: "${npromar}"
+                  parctl:
+
+  [ ... ]
+
+
 Math and Calendar Operations
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following math and calendar operations are supported in `YAML` files:
 
-* **Arithmetic operations**: an element of a `YAML` file can be defined as the result
-  of the addition, subtraction, multiplication or division of variables with the format::
+Arithmetic Operations
+---------------------
+An element of a `YAML` file can be defined as the result
+of the addition, subtraction, multiplication or division of variables with the format::
 
-    key: "$(( ${variable_1} operator ${variable_2} operator ... ${variable_n} ))"
+  key: "$(( ${variable_1} operator ${variable_2} operator ... ${variable_n} ))"
 
-  The `esm_parser` supports calendar operations through `esm_calendar`. When performing calendar
-  operations, variables that are not given in date format need to be followed by their ``unit`` for
-  the resulting variable to be also in date format, i.e.::
+The `esm_parser` supports calendar operations through `esm_calendar`. When performing calendar
+operations, variables that are not given in date format need to be followed by their ``unit`` for
+the resulting variable to be also in date format, i.e.::
 
-    runtime: $(( ${end_date} - ${time_step}seconds ))
+  runtime: $(( ${end_date} - ${time_step}seconds ))
 
-  ``time_step`` is a variable that is not given in date format, therefore, it is necessary to use
-  ``seconds`` for ``runtime`` to be in date format. Another example is to subtract one day from
-  the variable ``end_date``::
+``time_step`` is a variable that is not given in date format, therefore, it is necessary to use
+``seconds`` for ``runtime`` to be in date format. Another example is to subtract one day from
+the variable ``end_date``::
 
-    $(( ${end_date} - 1days ))
+  $(( ${end_date} - 1days ))
 
-  The units available are:
+The units available are:
 
-  ===================== ==================
-  Units supported by arithmetic operations
-  ========================================
-  calendar units        | seconds
-                        | minutes
-                        | days
-                        | months
-                        | years
-  ===================== ==================
+===================== ==================
+Units supported by arithmetic operations
+========================================
+calendar units        | seconds
+                      | minutes
+                      | days
+                      | months
+                      | years
+===================== ==================
 
-* **Extraction of date components from a date**: it is possible to extract date components from a
-  `date variable`. The syntax for such an operation is::
+Extraction of Date Components from a Date
+-----------------------------------------
+It is possible to extract date components from a `date variable`. The syntax for such an operation
+is::
 
-     "${variable!date_component}"
+   "${variable!date_component}"
 
-  An example to extract the year from the ``initial_time`` variable::
+An example to extract the year from the ``initial_time`` variable::
 
-    yearnew: "${initial_date!syear}"
+  yearnew: "${initial_date!syear}"
 
-  If ``initial_date`` was 2001-01-01T00:00:00, then ``yearnew`` would be 2001.
+If ``initial_date`` was 2001-01-01T00:00:00, then ``yearnew`` would be 2001.
 
-  The date components available are:
+The date components available are:
 
-  ========= ======================================
-  Date components
-  ================================================
-  ssecond   Second from a given date.
-  sminute   Minute from a given date.
-  shour     Hour from a given date.
-  sday      Day from a given date.
-  smonth    Month from a given date.
-  syear     Year from a given date.
-  sdoy      Day of the year, counting from Jan. 1.
-  ========= ======================================
+========= ======================================
+Date components
+================================================
+ssecond   Second from a given date.
+sminute   Minute from a given date.
+shour     Hour from a given date.
+sday      Day from a given date.
+smonth    Month from a given date.
+syear     Year from a given date.
+sdoy      Day of the year, counting from Jan. 1.
+========= ======================================
 
 Globbing
---------
+~~~~~~~~
 
-List loops
-----------
+Globbing allows to use ``*`` as a wildcard in filenames for restart, input and output files.
+With this feature files can be copied from/to the work directory whose filenames are not
+completely known. The syntax needed is::
+
+  file_list: common_pathname*common_pathname
+
+Note that this also works together with the :ref:`yaml:List Loops`.
+
+**Example**
+
+The component `NEMO` produces one restart file per processor, and the part of the file name
+relative to the processor is not known. In order to handle copying of restart files under
+this circumstances, globbing is used in `NEMO`'s configuration file
+(``configs/components/nemo/nemo.yaml``)::
+
+  [ ... ]
+
+  restart_in_sources:
+      restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+  restart_out_sources:
+      restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+  [ ... ]
+
+This will include inside the ``restart_in_sources`` and ``restart_out_sources`` lists, all the files
+sharing the specified common name around the position of the ``*`` symbol, following the same rules
+used by the Unix shell.
+
+Environment and Namelist Changes (``_changes``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+List Loops
+~~~~~~~~~~
 
 This functionality allows for basic looping through a `YAML list`. The syntax for this is::
 
@@ -277,17 +482,17 @@ for a January run, and ``a_ice.fesom.200102.01.nc``, ``alpha.fesom.200102.01.nc`
 ``atmice_x.fesom.200102.01.nc``, ..., for a February run.
 
 File Dictionaries
------------------
+~~~~~~~~~~~~~~~~~
 
 File dictionaries are a special type of `YAML` elements that are useful to handle input, output,
-forcing, logging, binary and restart files, and that are normally defined inside the
-`configuration files` of the model. File dictionary's `keys` are composed by a file dictionary
-``type`` followed by ``_`` and an ``option``, and the `elements` consist of a list of ``file_tags``
-as `keys` with their respective ``file_paths`` as `values`::
+forcing, logging, binary and restart files among others (see `File dictionary types` table),
+and that are normally defined inside the `configuration files` of models. File dictionary's `keys`
+are composed by a file dictionary ``type`` followed by ``_`` and an ``option``, and the `elements`
+consist of a list of ``file_tags`` as `keys` with their respective ``file_paths`` as `values`::
 
   type_option:
-        - file_tag1: file_path1
-        - file_tag2: file_path2
+        file_tag1: file_path1
+        file_tag2: file_path2
 
 The ``file_tags`` need to be consistent throughout the different ``options`` for files to be
 correctly handled by ESM-Tools. Exceptionally, ``sources`` files can be tagged differently but
@@ -300,14 +505,18 @@ options (see `File dictionary options` table below).
    :header: Key, Description
    :widths: 15, 85
 
+   analysis,            User's files for their own analysis tools (i.e. to be used in the pre-/postprocessing).
    bin,                 Binary files.
    config,              Configure sources.
-   ignore,              ":red:`Files to be ignored?`"
+   couple,              Coupling files.
+   ignore,              Files to be ignored in the copying process.
    forcing,             Forcing files. An example is described at the end of this section.
    log,                 Log files.
-   outdata,             "Output configuration files. A concised example is described in :ref:`yaml:List Loops`."
-   restart_in,          
-   restart_out,         
+   mon,                 Monitoring files.
+   outdata,             "Output configuration files. A concise example is described in :ref:`yaml:List Loops`."
+   restart_in,          "Restart files to be copied from the **experiment directory** into the **run directory** (see :ref:`esm_runscripts:Experiment Directory Structure`), during the beginning of the `computing phase` (e.g. to copy restart files from the previous step into the new run folder)."
+   restart_out,         "Restart files to be copied from the **run directory** into the **experiment directory** (see :ref:`esm_runscripts:Experiment Directory Structure`), during the `tidy and resubmit phase` (e.g. to copy the output restart files from a finished run into the **experiment directory** for later use the next run)."
+   viz,                 Files for the visualization tool.
 
 **File dictionary options**
 
@@ -388,7 +597,7 @@ are common to all scenarios. The source files not included in ``forcing_files`` 
 used.
 
 YAML Elements
-~~~~~~~~~~~~~
+=============
 
 The `esm_parser` is used to read the multiple types of `YAML` files contained in `ESM-Tools`
 (i.e. model and coupling configuration files, machine configurations, runscripts, etc.). Each of
@@ -414,7 +623,7 @@ from different files.
    sections is just suggestion on how to organize ESM-Tools input.
 
 Configuration Files
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 The following keys should/can be provided inside configuration files for models and coupled setups
 (``<PATH>/esm_tools/configs/<model_or_setup>``):
@@ -445,7 +654,7 @@ The following keys should/can be provided inside configuration files for models 
    ":ref:`yaml:File dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files."
 
 Runscripts
-----------
+~~~~~~~~~~
 
 The following keys should be provided inside runscripts
 (``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):

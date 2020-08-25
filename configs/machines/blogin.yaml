@@ -52,8 +52,6 @@ module_actions:
         - "load cmake"
         - "load intel/19.0.5"
         - "load cdo nco"
-        # Move in the future to FOCI
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
 
 choose_useMPI:
         intelmpi:
@@ -100,6 +98,7 @@ export_vars:
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
+        # seb-wahl: removed as NetCDF libraries are already in the LD_LIBRARY_PATH (see above)
         #- "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
         #- "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
 

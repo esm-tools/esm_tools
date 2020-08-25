@@ -33,7 +33,8 @@ available_versions:
 - 2.4.0
 branch: ${icon.version}
 clean_command: make distclean
-comp_command: make -j `nproc --all`
+#comp_command: make -j `nproc --all`
+comp_command: make 
 #conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 #conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 #conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
@@ -241,28 +242,32 @@ config_sources:
         nwp: "${namelist_dir}/namelist_nwp"
 
 
+# the following settings are specific to ICON and they will overwrite the 
+# settings in the machine files. (Deniz)
 useMPI: 
 
+#choose_computer.name:
+#ollie:
+compiletime_environment_changes: 
+        add_module_actions:
+                - "load gnu.compiler/6.3.0"
+                - "unload intel.compiler"
+                - "unload intel.mpi"
+                - "load intel.mpi"
+                - "unload netcdf/4.6.2_intel"
+                - "load centoslibs"
+                - "load cdo"
+                - "load nco"
+                - "load netcdf/4.6.2_gnu"
+                # - "load netcdf/4.6.2_gnu"
+                #- "unload automake"
 
-choose_computer.name:
-        ollie:
-                compiletime_environment_changes: 
-                        add_module_actions:
-                                - "load gnu.compiler/6.3.0"
-                                - "unload intel.compiler intel.mpi && module load intel.mpi"
-                                - "unload netcdf/4.6.2_intel"
-                                - "load netcdf/4.6.2_gnu"
-                                #- "unload automake"
-                        fc: mpif90
-                        f77: mpif90
-                        mpifc: mpif90
-                        #mpifc: mpigcc
-                        mpicc: mpigxx
-                        cc: mpigcc
-                        cxx: mpigxx
-
-
-                        # add_exports_vars:
-
-
-    
+        add_export_vars:
+                - 'FC=mpif90'
+                - 'F77=mpif90'
+                #- 'F77=mpif77'
+                - 'MPIFC=mpif90'
+                - 'MPICC=mpigxx'
+                #- 'MPICC=mpigcc'
+                - 'CC=mpigcc'
+                - 'CXX=mpigxx'

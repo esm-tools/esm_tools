@@ -65,6 +65,8 @@ metadata:
                 unsure, please contact redmine...
 
 compile_infos:
+        # this require currently causes esm_master install-... to not work properly
+        # workaround esm_master get-... ; esm_master comp-...
         requires:
         - oasis3mct-4.0
         available_versions:
@@ -115,8 +117,8 @@ choose_computer.name:
 
     runtime_environment_changes:
 
-      add_module_actions:
-        - "load eccodes/intel/2.15.1"
+      #add_module_actions:
+      #  - "load eccodes/intel/2.15.1"
 
       add_export_vars:
 
@@ -128,14 +130,15 @@ choose_computer.name:
         #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        # - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     compiletime_environment_changes:
 
-      add_module_actions:
-        - "load eccodes/intel/2.15.1"
+      #add_module_actions:
+      #  - "load eccodes/intel/2.15.1"
     
       add_export_vars:
 
@@ -153,7 +156,8 @@ choose_computer.name:
 
         # ECCODES stuff
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        - 'ECCODES_DIR="$IO_LIB_ROOT"'
         - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
         - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
@@ -185,6 +189,7 @@ choose_computer.name:
         - 'OIFS_CC=mpiicc'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
   mistral:
 
@@ -391,6 +396,9 @@ choose_computer.cores_per_node:
         48:
                 nproca: 96
                 nprocb: 1
+        96:
+                nproca: 96
+                nprocb: 1
 
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run
@@ -473,13 +481,6 @@ choose_levels:
                 levels_number: 91
         L137:
                 levels_number: 137
-
-#add_export_vars:
-#        DR_HOOK_IGNORE_SIGNALS: "-1"
-#        OIFS_EXPID: ${input_expid}
-#        FOCI_USE_CPLNG: "no"
-#        AWICM_USE_CPLNG: "no"
-#        ECE_USE_CPLNG: "no"
 
 bin_sources:
         bin: ${bin_dir}/${executable}
@@ -698,14 +699,6 @@ choose_version:
                                         CUSTOP: "t${oifs.next_step}" 
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
-
-                environment_changes:
-                        add_export_vars:
-                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-                                - 'OIFS_FFIXED=""'
-                                - 'OIFS_OASIS_BASE="${general.model_dir}"'
-                                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                                - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
 
                 add_outdata_files:
                         ICMUA: ICMUA

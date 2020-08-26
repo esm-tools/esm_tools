@@ -96,6 +96,7 @@ export_vars:
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+        # seems to be ECHAM specific, leave it here for now
         - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
         # seb-wahl: removed as NetCDF libraries are already in the LD_LIBRARY_PATH (see above)

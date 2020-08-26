@@ -33,12 +33,18 @@ available_versions:
 - 2.4.0
 branch: ${icon.version}
 clean_command: make distclean
-#comp_command: make -j `nproc --all`
-comp_command: make 
+comp_command: make -j `nproc --all`
+#comp_command: make 
 #conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 #conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 #conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+
+# Deniz: environment variables are added to the conc_command since after 
+# prep_release merge ICON did not compile as before. When these variables are 
+# set to empty, then ICON compiles otherwise ICONs configure script sets them to
+# intel mpi (since we are module load intel.mpi and somehow this does not 
+# compile. I guess this is because we are using GCC with Intel MPI.
+conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api MPIROOT='' MPI_INCLUDE='' MPI_LIB=''
 git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
 
 
@@ -244,30 +250,28 @@ config_sources:
 
 # the following settings are specific to ICON and they will overwrite the 
 # settings in the machine files. (Deniz)
+# Deniz: look at the conf_command. MPI env vars are deleted
 useMPI: 
 
 #choose_computer.name:
 #ollie:
 compiletime_environment_changes: 
         add_module_actions:
-                - "load gnu.compiler/6.3.0"
+                - "unload cmake" 
                 - "unload intel.compiler"
                 - "unload intel.mpi"
-                - "load intel.mpi"
-                - "unload netcdf/4.6.2_intel"
+                - "load gnu.compiler/6.3.0"
                 - "load centoslibs"
+                - "unload netcdf/4.6.2_intel"
+                - "load netcdf/4.6.2_gnu"
                 - "load cdo"
                 - "load nco"
-                - "load netcdf/4.6.2_gnu"
-                # - "load netcdf/4.6.2_gnu"
-                #- "unload automake"
+                - "load intel.mpi"
 
         add_export_vars:
                 - 'FC=mpif90'
                 - 'F77=mpif90'
-                #- 'F77=mpif77'
                 - 'MPIFC=mpif90'
                 - 'MPICC=mpigxx'
-                #- 'MPICC=mpigcc'
                 - 'CC=mpigcc'
                 - 'CXX=mpigxx'

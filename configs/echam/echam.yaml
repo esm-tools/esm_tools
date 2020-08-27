@@ -263,10 +263,10 @@ choose_scenario:
                         aerofarir: piaerofarir
                         aerofin: histaerofin
                         ozone: histozone
-                        greenhouse: histgreenh 
-                        volcanir: histvolcanir
-                        volcsw: histvolcsw
-                        swflux: histswflux
+                        #greenhouse: histgreenh 
+                        #volcanir: histvolcanir
+                        #volcsw: histvolcsw
+                        #swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP
                         

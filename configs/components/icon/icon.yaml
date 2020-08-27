@@ -275,3 +275,26 @@ choose_computer.name:
                                 - 'MPICC=mpigxx'
                                 - 'CC=mpigcc'
                                 - 'CXX=mpigxx'
+        mistral: 
+                compiletime_environment_changes:
+                        add_module_actions:
+                                - "unload cmake" 
+                                - "unload gcc/4.8.2"
+                                - "load gcc/6.4.0"
+                                - "unload openmpi-2.0.2p1_hpcx-gcc64"
+                                - "load intelmpi/2018.5.288"
+                                - "load anaconda3/bleeding_edge"
+                                - "load netcdf_c/4.3.2-gcc48"
+                                - "load cdo"
+                                - "load nco"
+
+                        add_export_vars:
+                                - 'FC=mpif90'
+                                - 'F77=mpif90'
+                                - 'MPIFC=mpif90'
+                                - 'MPICC=mpigxx'
+                                - 'CC=mpigcc'
+                                - 'CXX=mpigxx'
+
+
+

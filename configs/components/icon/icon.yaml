@@ -253,25 +253,25 @@ config_sources:
 # Deniz: look at the conf_command. MPI env vars are deleted
 useMPI: 
 
-#choose_computer.name:
-#ollie:
-compiletime_environment_changes: 
-        add_module_actions:
-                - "unload cmake" 
-                - "unload intel.compiler"
-                - "unload intel.mpi"
-                - "load gnu.compiler/6.3.0"
-                - "load centoslibs"
-                - "unload netcdf/4.6.2_intel"
-                - "load netcdf/4.6.2_gnu"
-                - "load cdo"
-                - "load nco"
-                - "load intel.mpi"
-
-        add_export_vars:
-                - 'FC=mpif90'
-                - 'F77=mpif90'
-                - 'MPIFC=mpif90'
-                - 'MPICC=mpigxx'
-                - 'CC=mpigcc'
-                - 'CXX=mpigxx'
+choose_computer.name:
+        ollie:
+                compiletime_environment_changes: 
+                        add_module_actions:
+                                - "unload cmake" 
+                                - "unload intel.compiler"
+                                - "unload intel.mpi"
+                                - "load gnu.compiler/6.3.0"
+                                - "load centoslibs"
+                                - "unload netcdf/4.6.2_intel"
+                                - "load netcdf/4.6.2_gnu"
+                                - "load cdo"
+                                - "load nco"
+                                - "load intel.mpi"
+                
+                        add_export_vars:
+                                - 'FC=mpif90'
+                                - 'F77=mpif90'
+                                - 'MPIFC=mpif90'
+                                - 'MPICC=mpigxx'
+                                - 'CC=mpigcc'
+                                - 'CXX=mpigxx'

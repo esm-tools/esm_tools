@@ -3,14 +3,14 @@ general:
         compute_time: "00:30:00"
         account: shkifmsw
         initial_date: "2008-01-01"
-        final_date: "2008-01-01"
+        final_date: "2008-01-03"
         model_dir: /home/shkifmsw/esm/models/oifs-43r3-foci/
         base_dir: /home/shkifmsw/esm/esm-experiments/
         nyear: 0
         nmonth: 0
         nday: 1
         restart_rate: 1
-        restart_unit: months
+        restart_unit: days 
 
 oifs:
         version: 43r3

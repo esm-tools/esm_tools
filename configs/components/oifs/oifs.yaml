@@ -98,6 +98,8 @@ compile_infos:
               -v -j8 -f oifs.cfg
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
           43r3-foci:
+            requires:
+            - oasis3mct-fociagrif
             branch: oifs-foci
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
@@ -886,6 +888,28 @@ postprocess:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
 
+compute_recipe:
+      - "_create_setup_folders"
+      - "_create_component_folders"
+      - "initialize_experiment_logfile"
+      - "_write_finalized_config"
+      - "copy_tools_to_thisrun"
+      - "_copy_preliminary_files_from_experiment_to_thisrun"
+      - "_show_simulation_info"
+      # call your plugin whereever it is needed
+      #- "write_something"
+      - "copy_files_to_thisrun"
+      - "preprocess"
+      - "modify_namelists"
+      - "modify_files"
+      - "create_new_files"
+      - "prepare_coupler_files"
+      - "add_batch_hostfile"
+      - "copy_files_to_work"
+      - "write_simple_runscript"
+      - "report_missing_files"
+      - "database_entry"
+      - "submit" 
 
 # seb-wahl: This should work but does not due to bug in esm_plugins.yaml
 #plugins:

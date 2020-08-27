@@ -22,6 +22,7 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- 2.5_r1910
 branch: esm-tools
 choose_version:
   2.0_r982:
@@ -36,7 +37,8 @@ choose_version:
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc
 comp_command: if [[ $HOSTNAME =~ juwels ]]; then module unload GCCcore; fi; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
-destination: xios-${version}
+#destination: xios-${version}
+destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
 install_bins: bin/xios.x
 use_oasis: ''

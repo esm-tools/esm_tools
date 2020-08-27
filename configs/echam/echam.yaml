@@ -262,7 +262,8 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: rcp85aerofin
-                        ozone: rcp85ozone
+                        #ozone: rcp85ozone
+                        ozone: histozone
                         greenhouse: rcp85greenh
                         volcanir: histvolcanir
                         volcsw: histvolcsw

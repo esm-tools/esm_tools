@@ -8,35 +8,40 @@
 ##
 
 machine=$1
-indir=$2
-inexpid=$3
-outexpid=$4
-startdate=$5
-enddate=$6
-outdir=$7
-with_wam=$8
-perturb=$9
-nx=${10}
-ensemble_id=${11}
+indir=$1
+inexpid=$2
+outexpid=$3
+startdate=$4
+enddate=$5
+outdir=$6
+with_wam=$7
+perturb=$8
+nx=${9}
+ensemble_id=${10}
 
 style="jesus"
 
-if [[ "x$machine" == "xmistral" ]] ; then
-    export GRIB_API_BIN_DIR=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin/
-    grib_copy=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin/grib_copy
-    grib_set=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin/grib_set
-    grib_ls=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin/grib_ls
-    
+if [[ "$(hostname)" =~ mlogin ]] ; then
+    export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
     module purge
     module load netcdf_c/4.3.2-gcc48
     module load cdo
+
+elif [[ "$(hostname)" =~ blogin ]] ; then
+	 module load eccodes
+	 module load cdo
+else
+   echo
+	echo $0 has not been adapted for $(hostname)
+	echo
+	exit 1
 fi 
 
 echo " OpenIFS preprocessing "
 echo " ===================== "
 echo " "
-echo " Machine: $machine "
-echo " grib_set: $grib_set "
+echo " Machine: $(hostname) "
+echo " grib_set: $(which grib_set) "
 echo " cdo -V: "
 cdo -V 
 echo " "
@@ -61,7 +66,7 @@ old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
 if [ -f $old ]; then                                                                                                                                                 
-    ${grib_set} -s dataDate=$ndate $old $new                                                                                                                          
+    grib_set -s dataDate=$ndate $old $new                                                                                                                          
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 
@@ -71,7 +76,7 @@ fi
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    ${grib_set} -s dataDate=$ndate $old $new
+    grib_set -s dataDate=$ndate $old $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -120,7 +125,7 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    ${grib_set} -s dataDate=$ndate $old $new
+    grib_set -s dataDate=$ndate $old $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -139,7 +144,7 @@ if [[ "x${with_wam}" == "x1" ]] ; then
    
         if [ -f $old ]; then
             ## use grib_set to make new files
-            ${grib_set} -s dataDate=$ndate $old $new 
+            grib_set -s dataDate=$ndate $old $new 
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

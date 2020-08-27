@@ -15,11 +15,14 @@ metadata:
         License:
                 Please make sure you have a licence to use XIOS. In case you are
                 unsure, please contact redmine...
-
+#
+# repository, compile and version information
+#
 archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- 2.5_r1910
 branch: esm-tools
 choose_version:
   2.0_r982:
@@ -34,11 +37,23 @@ choose_version:
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc
 comp_command: if [[ $HOSTNAME =~ juwels ]]; then module unload GCCcore; fi; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
-destination: xios-${version}
+#destination: xios-${version}
+destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
 install_bins: bin/xios.x
 use_oasis: ''
-
+#
+# Setup up compile and runtime environment i.e. what needs
+# to be changed w.r.t the default config/machines/<computer>.yaml
+choose_computer.name:
+  blogin:
+    runtime_environment_changes:
+      add_module_actions:
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+        
+# 
+# runtime setup
+#
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00

@@ -24,26 +24,9 @@ core:
                         - "write_simple_runscript"
                         - "submit"
 
-plugins:
-        preprocess:
-                location: "/pf/b/b350090/esm-py/plugins/preprocess"
-                git-url: "https://github.com/esm-tools-plugins/preprocess.git"
-                preprocess:
-                        - "preprocess"
-
-        postprocess:
-                location: "/pf/b/b350090/esm-py/plugins/postprocess"
-                git-url: "https://github.com/esm-tools-plugins/postprocess-sh.git"
-                postprocess:
-                        - "postprocess"
-
-
-
-# include plugins like this:
-#plugins:
-#        my_plugin:
-#                location: "/work/ollie/dbarbi/my_plugin"
-#                git-url: ""
-#                my_plugin:
-#                        - "write_something"
-
+# To add your custom plugin, see oifs.yaml, section compute_recipe, and compare to the list above.
+# the custom plugin 'preprocess' listed in the compute_recipe in oifs.yaml needs to be installed beforehand with
+# git clone https://github.com/esm-tools-plugins/preprocess
+# cd preprocess
+# if required activate python3 e.g. module load anaconda3/bleeding_edge on mistral
+# pip install --user 

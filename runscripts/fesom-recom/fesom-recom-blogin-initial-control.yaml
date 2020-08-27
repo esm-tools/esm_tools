@@ -1,13 +1,14 @@
 # Equivalent of /home/ollie/jhauck/esm-master/fesom-1.4-recom/fesom-1.4/bin_reccap_ctrl_1850_1957
 
 general:
-        account: hbkmandr
+        account: hbk00072
         setup_name: fesom-recom
         compute_time: "08:00:00"
         initial_date: "1850-01-01"
         final_date: "1957-12-31"
         base_dir: /scratch/usr/hbkmandr/esm_yaml_test/
         nyear: 1
+        lresume: 0
 
 fesom-recom:
         version: 1.4
@@ -19,7 +20,7 @@ fesom:
         mesh_dir: "/scratch/usr/hbkawi/recom/ogurses/meshes/core_new_432/"
         res: CORE2
         forcing_data_dir: /scratch/usr/hbkawi/projects/MarESys/forcing_clim61/
-        lresume: 0
+        lresume: "${general.lresume}"
         restart_rate: 1
         restart_first: 1
         restart_unit: "y"
@@ -28,4 +29,5 @@ fesom:
 
 recom:
         data_path: /scratch/usr/hbkawi/projects/MarESys/forcing/CORE2mesh/
+        lresume: "${general.lresume}"
         scenario: "preindustrial"

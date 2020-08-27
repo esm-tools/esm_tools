@@ -294,6 +294,7 @@ choose_computer.name:
                 add_compiletime_environment_changes:
                         add_export_vars:
                                 - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
                                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
                                 - "takenfrom='fesom1'"

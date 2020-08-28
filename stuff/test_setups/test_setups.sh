@@ -1,6 +1,12 @@
 #!/bin/bash
-# Test installation of ESM-Tools including a
-# two day run with restart
+#
+# Test installation of ESM-Tools including 
+#
+# - full setup of tools into a python venv
+# - compile all configuration(s) listed in $configurations
+# - run test simulation for all configuration(s) listed in $configurations
+#   if a yaml file 'test_${configuration}.yaml' is available in
+#   stuff/test_setups/ 
 #
 # Sebastian Wahl 08/2020
 #
@@ -14,6 +20,7 @@
 configurations="foci-default"
 
 # Which steps to test? Valid options are 'run' and 'compile'
+# put steps="compile run" to first compile and the run a test simulation
 steps="compile run"
 
 # work directory
@@ -27,7 +34,7 @@ components=(esm_runscripts esm_master esm_parser esm_environment)
 branch=(prep_release prep_release prep_release prep_release)
 
 # Which version of ESM-Tools shall be tested
-esm_tools_branch=prep_release
+esm_tools_branch='feature/add_test_script'
 #
 ###########################################################################
 #
@@ -161,7 +168,7 @@ for configuration in ${configurations} ; do
         echo "`date`: OK: esm_runscripts -e test_${configuration} test_${configuration}.yaml" | tee -a ${logdir}/test_${configuration}.log
       fi
     else
-      echo "`date`: ERROR: $(pwd)/test_${configuration}.yaml not available" | tee -a ${logdir}/test_${configuration}.log
+      echo "`date`: ERROR: $workdir/$configuration/esm_tools/stuff/test_setups/test_${configuration}.yaml not available" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
 

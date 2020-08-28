@@ -27,7 +27,9 @@ steps="compile run"
 workdir=$WORK/tmp
 
 # Account for model run
-account=shkifmsw
+# TODO: make this a command line argument as it is the only machine specific 
+# thing left in this script
+account=bb0519
 
 # test a specific version of a tool?
 components=(esm_runscripts esm_master esm_parser esm_environment)
@@ -40,10 +42,10 @@ esm_tools_branch='feature/add_test_script'
 #
 # allow command line override of configuration
 #
-if [[ $# -eq 1 ]] ; then
-  configurations=$1
+if [[ $# -ge 1 ]] ; then
+  configurations=$@
   echo
-  echo "`date`: Using configuration(s) $1 from command line input"
+  echo "`date`: Using configuration(s) $@ from command line input"
   echo
 fi
 
@@ -66,7 +68,8 @@ for configuration in ${configurations} ; do
     module load git
     module load anaconda3/2019.10
   elif [[ "$HOSTNAME" =~ mlogin ]] ; then
-    module load git
+    #module load git
+	 module unload netcdf_c/4.3.2-gcc48 
     module load anaconda3/bleeding_edge
   elif [[ "$HOSTNAME" =~ juwels ]] ; then
     module --force purge
@@ -79,7 +82,10 @@ for configuration in ${configurations} ; do
     echo "`date`: ERROR: $0 not yet ported to $HOSTNAME" | tee -a ${logdir}/test_${configuration}.log
     exit 1
   fi
+
+  mkdir -p $workdir
   cd $workdir || exit 1
+  
   #
   # setup of esm tools and compilation
   #
@@ -93,6 +99,7 @@ for configuration in ${configurations} ; do
     python -m venv env_esm_tools_$configuration
     source env_esm_tools_$configuration/bin/activate
     # numpy is required by esm_tools and must be available inside the venv
+	 #pip install --upgrade pip
     pip install numpy
     echo "`date`: OK: Python virtual env setup" | tee -a ${logdir}/test_${configuration}.log
 
@@ -100,8 +107,15 @@ for configuration in ${configurations} ; do
     cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
     git clone -b ${esm_tools_branch} https://github.com/esm-tools/esm_tools.git
     cd esm_tools
-    pip install .
-    echo "`date`: OK: pip install ." | tee -a ${logdir}/test_${configuration}.log
+	 # TODO: on blogin an "pip install ." works on mistral it gives an error even though we are inside a venv
+    # pip install -e . as a workaround works.
+    pip install -e .
+    if [[ $? -gt 0 ]] ; then
+      echo "`date`: ERROR: pip install . failed" | tee -a ${logdir}/test_${configuration}.log
+      exit 1
+	 else 	
+      echo "`date`: OK: pip install ." | tee -a ${logdir}/test_${configuration}.log
+    fi
 
     if ! [[ ${#components[@]} -eq ${#branch[@]} ]] ; then
       echo "`date`: ERROR: components and branch must have the same length" | tee -a ${logdir}/test_${configuration}.log

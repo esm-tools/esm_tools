@@ -1,0 +1,27 @@
+
+general:
+   setup_name: "foci"
+   compute_time: "00:15:00"
+   account: set_by_test_foci-default.sh 
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nday: 1 
+   base_dir: /will/be/set/by/test_foci-default.sh 
+
+foci:
+   model_dir: /will/be/set/by/test_foci-default.sh 
+
+echam:
+   resolution: "T63"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproca: 4
+   nprocb: 24
+   
+nemo:
+   resolution: "ORCA05"
+   nproc: 24
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs

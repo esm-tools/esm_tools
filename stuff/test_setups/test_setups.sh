@@ -192,7 +192,7 @@ for configuration in ${configurations} ; do
             # might not be necessary but doesn't hurt :-)
             sleep 30s
             echo "`date`: Content of ${logfile}:" | tee -a ${logdir}/test_${configuration}.log
-            cat ${logfile}
+            cat ${logfile} | tee -a ${logdir}/test_${configuration}.log
             # exp has finished sucessfully
             if grep -q "Experiment over" ${logfile} ; then
               cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc

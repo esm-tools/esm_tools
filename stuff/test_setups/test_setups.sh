@@ -33,10 +33,13 @@ account=bb0519
 
 # test a specific version of a tool?
 components=(esm_runscripts esm_master esm_parser esm_environment)
-branch=(prep_release prep_release prep_release prep_release)
+branch=(prep_release_bufixes_foci prep_release prep_release prep_release)
 
 # Which version of ESM-Tools shall be tested
-esm_tools_branch='feature/add_test_script'
+esm_tools_branch='prep_release_bugfixes_focioifs'
+
+# Which plugins shall be installed during testing
+plugins="preprocess"
 #
 ###########################################################################
 #
@@ -133,6 +136,22 @@ for configuration in ${configurations} ; do
     done
     esm_versions check | tee -a ${logdir}/test_${configuration}.log
 
+    # install plugins
+    mkdir -p $workdir/$configuration/plugins
+    for plugin in $plugins ; do
+      # TODO: this does not work (at least not in a venv on mistral)
+      # pip install git+https://github.com/esm-tools-plugins/${plugin}.git
+      cd $workdir/$configuration/plugins/
+      git clone https://github.com/esm-tools-plugins/${plugin}.git
+      cd $plugin 
+      pip install -e .
+      if [[ $? -gt 0 ]] ; then
+        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+        echo "`date`: ERROR: pip install git+https://github.com/esm-tools-plugins/${plugin}.git failed" | tee -a ${logdir}/test_${configuration}.log
+        exit 1
+      fi
+    done
+
     # compile
     mkdir -p $workdir/$configuration/models
     rm -rf $workdir/$configuration/models/${configuration}
@@ -181,6 +200,7 @@ for configuration in ${configurations} ; do
       sed -i "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}.yaml
       sed -i "s#   account:.*#   account: ${account}#" test_${configuration}.yaml
       esm_runscripts -e test_${configuration} test_${configuration}.yaml
+      # TODO: esm_runscripts sometimes returns 0 despite an error 
       if [[ $? -gt 0 ]] ; then
         cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: esm_runscripts -e test_${configuration} test_${configuration}.yaml failed" | tee -a ${logdir}/test_${configuration}.log

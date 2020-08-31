@@ -224,9 +224,6 @@ config_files:
         oce:     oce
         diag:    diag
         io:      io
-        subglobtest: subglobtest
-        #subfoldertest: subfoldertest
-        #morestuff: morestuff
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -235,9 +232,6 @@ config_sources:
         oce:     "${namelist_dir}/namelist.oce"
         io:      "${namelist_dir}/namelist.io"
         diag:    "${namelist_dir}/namelist.diag"
-        subglobtest: "/home/ollie/dbarbi/esm-tools/functions/echam/*.yaml"
-        #subfoldertest: "/home/ollie/dbarbi/esm-tools/install.sh"
-        #morestuff: "/home/ollie/dbarbi/esm-tools/functions/echam/*.yaml"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -255,8 +249,6 @@ config_in_work:
         oce:     "namelist.oce"
         io:      "namelist.io"
         diag:    "namelist.diag"
-        subglobtest: "blabla/*"
-        #subfoldertest: "blabla/install.sh"
 
 coupling_fields:
         sst_feom:

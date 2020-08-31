@@ -85,7 +85,6 @@ metadata:
         License:
                 Please make sure you have a license to use ECHAM. In case you are
                 unsure, please contact redmine...
-bla: 999
 
 standalone_model: True
 

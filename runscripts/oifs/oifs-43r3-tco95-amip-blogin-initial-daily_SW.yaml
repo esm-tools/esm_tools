@@ -32,26 +32,3 @@ oifs:
         nproca: 288
         nprocb: 1
         perturb: 0 
-
-# esm-plugins is in an early stage and has many limitations:
-# 1. plugins MUST be placed in ../../esm_software/esm_runscripts/esm_plugins.yaml
-#    and commented unless available
-# 2. esm_plugin_manager cannot resolve variables at the momenty
-# 3. git-url is only for documentation purposes, if location does not 
-#    exists, esm_runscripts stops with an (useful) error message
-#plugins:
-#        preprocess:
-#                #location: ${model_dir} 
-#                location: /home/shkifmsw/esm/esm-tools-plugins/preprocess 
-#                git-url: https://github.com/esm-tools-plugins/preprocess.git
-#                preprocess:
-#                        - preprocess
-
-# include plugins like this:
-#plugins:
-#        my_plugin:
-#                location: "/work/ollie/dbarbi/my_plugin"
-#                git-url: ""
-#                my_plugin:
-#                        - "write_something"
-

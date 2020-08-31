@@ -2,6 +2,30 @@
 ######################### FOCI2 YAML CONFIGURATION FILE  ###############################
 #########################################################################################
 general:
+
+        compute_recipe:
+              - "_create_setup_folders"
+              - "_create_component_folders"
+              - "initialize_experiment_logfile"
+              - "_write_finalized_config"
+              - "copy_tools_to_thisrun"
+              - "_copy_preliminary_files_from_experiment_to_thisrun"
+              - "_show_simulation_info"
+              # call your plugin whereever it is needed
+              #- "write_something"
+              - "copy_files_to_thisrun"
+              - "preprocess"
+              - "modify_namelists"
+              - "modify_files"
+              - "create_new_files"
+              - "prepare_coupler_files"
+              - "add_batch_hostfile"
+              - "copy_files_to_work"
+              - "write_simple_runscript"
+              - "report_missing_files"
+              - "database_entry"
+              - "submit" 
+
         model: focioifs
         pool_dir: "${computer.pool_directories.focipool}"
         model_dir: ${esm_master_dir}/focioifs-${version}
@@ -34,9 +58,9 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
-        environment_changes:
-                choose_computer.name:
-                        mistral:
+        choose_computer.name:
+                mistral:
+                        runtime_environment_changes:
                                 add_export_vars:
                                         # (additional) settings used in FOCI up to v1.21
                                         - 'ECHAM6_THREADS=1'
@@ -58,6 +82,16 @@ general:
                                         #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                         # OpenMP
                                         - 'OMP_NUM_THREADS=1' 
+
+preprocess:
+        preprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+                type: shell
+
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
 #computer:
 #       additional_flags: "--ntasks-per-core=1"
 #       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
@@ -98,10 +132,9 @@ oifs:
                                 # TODO: Add variable for AGRIF coupling
                                 FOCI_CPL_NEMO_LIM: ".true." 
                 
-        environment_changes:
+        runtime_environment_changes:
                 add_export_vars:
                         # Turn on FOCI coupling        
-                        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                         - 'FOCI_USE_CPLNG="active"'
                         - 'AWICM_USE_CPLNG="no"'
                         - 'ECE_USE_CPLNG="no"'
@@ -204,14 +237,14 @@ oasis3mct:
         coupling_target_fields:
                 # Coupling ocean fields to atm
                 sstocean:
-                        - 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
-                        #- 'AIceFrac <--o2agauswgt-- OIceFrac'
-                        #- 'A_SSTSST <--o2agauswgt-- O_SSTSST'
-                        #- 'A_TepIce <--o2agauswgt-- O_TepIce'
-                        #- 'A_IceTck <--o2agauswgt-- O_IceTck'
-                        #- 'A_SnwTck <--o2agauswgt-- O_SnwTck'
-                        #- 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
-                        #- 'A_OCury1 <--o2agauswgt-- O_OCury1'
+                        #- 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
+                        - 'AIceFrac <--o2agauswgt-- OIceFrac'
+                        - 'A_SSTSST <--o2agauswgt-- O_SSTSST'
+                        - 'A_TepIce <--o2agauswgt-- O_TepIce'
+                        - 'A_IceTck <--o2agauswgt-- O_IceTck'
+                        - 'A_SnwTck <--o2agauswgt-- O_SnwTck'
+                        - 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
+                        - 'A_OCury1 <--o2agauswgt-- O_OCury1'
 
                 # Couple HTESSEL runoff to river routing
                 rnfatm:
@@ -223,27 +256,27 @@ oasis3mct:
 
                 # Couple atm fluxes to ocean (non-conserving)
                 flxatmos:
-                        - 'O_QsrIce:O_QnsIce:OTotSnow:OIceEvap:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:ATotSnow:AIceEvap:A_dQnsdT'
-                        #- 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
-                        #- 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
-                        #- 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
-                        #- 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
-                        #- 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
+                        #- 'O_QsrIce:O_QnsIce:OTotSnow:OIceEvap:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:ATotSnow:AIceEvap:A_dQnsdT'
+                        - 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
+                        - 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
+                        - 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
+                        - 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
+                        - 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
                 
                 # Coupled atm stress to ocean (non-conserving)
                 atmtau:         
-                        - 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
-                        #- 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
-                        #- 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
-                        #- 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
-                        #- 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
+                        #- 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                        - 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
+                        - 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
+                        - 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
+                        - 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
                 
                 # Couple atm fluxes to ocean (conserving)
                 atmflx: 
-                        - 'O_QsrMix:O_QnsMix:OTotRain <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain'
-                        #- 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
-                        #- 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
-                        #- 'OTotRain <--a2ogauswgtcn-- ATotRain'
+                        #- 'O_QsrMix:O_QnsMix:OTotRain <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain'
+                        - 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
+                        - 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
+                        - 'OTotRain <--a2ogauswgtcn-- ATotRain'
 
         coupling_directions:
                 # OIFS dry points to runoff mapper
@@ -615,4 +648,3 @@ choose_cores_per_node:
                                 rnfmap:
                                         nproca: 1
                                         nprocb: 1
-

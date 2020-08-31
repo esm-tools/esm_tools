@@ -21,14 +21,14 @@ ensemble_id=${10}
 
 style="jesus"
 
-if [[ "$(hostname)" =~ mlogin ]] ; then
+if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
     module purge
     module load netcdf_c/4.3.2-gcc48
     module load cdo
 
-elif [[ "$(hostname)" =~ blogin ]] ; then
-	 module load eccodes
+elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
+    module load eccodes
 	 module load cdo
 else
    echo

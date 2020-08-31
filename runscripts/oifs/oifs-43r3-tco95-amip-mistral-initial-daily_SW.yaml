@@ -3,7 +3,7 @@ general:
         compute_time: "00:30:00"
         account: "bb0519"
         initial_date: "2008-01-01"
-        final_date: "2008-01-01"
+        final_date: "2008-01-03"
         model_dir: "/pf/b/b350071/esm-tools-latest/models/oifs-43r3-foci/"
         base_dir: "/pf/b/b350071/esm-tools-latest/esm-experiments/"
         nyear: 0

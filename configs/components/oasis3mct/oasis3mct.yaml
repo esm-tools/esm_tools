@@ -37,7 +37,7 @@ choose_version:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
-comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1'
+comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 
 destination: oasis
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git

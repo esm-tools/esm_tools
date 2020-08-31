@@ -105,7 +105,7 @@ postprocess:
 oifs:
         version: "43r3"
 
-        pool_dir: "${computer.pool_directories.focipool}/OPENIFS43R3_${oifs.resolution}"
+        pool_dir: ${computer.pool_directories.focipool}
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"

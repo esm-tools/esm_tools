@@ -33,7 +33,7 @@ account=bb0519
 
 # test a specific version of a tool?
 components=(esm_runscripts esm_master esm_parser esm_environment)
-branch=(prep_release_bufixes_foci prep_release prep_release prep_release)
+branch=(prep_release_bufixes_foci prep_release_bugfixes_focioifs prep_release prep_release)
 
 # Which version of ESM-Tools shall be tested
 esm_tools_branch='prep_release_bugfixes_focioifs'

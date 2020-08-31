@@ -104,11 +104,9 @@ grids:
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
 #
-choose_computer.name:
-
-  blogin:
-
-    compiletime_environment_changes:
+compiletime_environment_changes:
+  choose_computer.name:
+    blogin:
 
       add_export_vars:
 
@@ -137,9 +135,9 @@ choose_computer.name:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
-  mistral:
+    mistral:
 
-    compiletime_environment_changes:
+      add_export_vars:
 
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'

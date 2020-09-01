@@ -33,10 +33,10 @@ account=bb0519
 
 # test a specific version of a tool?
 components=(esm_runscripts esm_master esm_parser esm_environment)
-branch=(prep_release_bufixes_foci prep_release_bugfixes_focioifs prep_release prep_release)
+branch=(prep_release prep_release prep_release prep_release)
 
 # Which version of ESM-Tools shall be tested
-esm_tools_branch='prep_release_bugfixes_focioifs'
+esm_tools_branch='prep_release'
 
 # Which plugins shall be installed during testing
 plugins="preprocess"
@@ -239,7 +239,7 @@ for configuration in ${configurations} ; do
             if grep -q "Experiment over" ${logfile} ; then
               cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: SUCCESS: Experiment finished successfully" | tee -a ${logdir}/test_${configuration}.log
-              exit 0
+              break 
             else
               cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: ERROR: Experiment failed" | tee -a ${logdir}/test_${configuration}.log
@@ -260,9 +260,9 @@ for configuration in ${configurations} ; do
         sleep 5s
       fi
     done # while [ true ] ; do
-  fi
 
-  echo "`date`: ERROR: Test experiment for $configuration failed with unknown error $?" | tee -a ${logdir}/test_${configuration}.log
-  exit 1
+    #echo "`date`: ERROR: Test experiment for $configuration failed with unknown error $?" | tee -a ${logdir}/test_${configuration}.log
+    #exit 1
+  fi
 
 done # loop over configurations

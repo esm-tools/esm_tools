@@ -6,12 +6,12 @@ general:
    account: "bb0519"
    partition: "compute2"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
    version: "default"
    postprocessing: 1
-   nyear: 1
+   nyear: 0
    nmonth: 0
-   nday: 0
+   nday: 1
    base_dir: /pf/b/b350071/esm-tools-latest/esm-experiments/
 
 focioifs:
@@ -40,12 +40,16 @@ oifs:
    nproca: 287
    nprocb: 1  
    use_ocean_currents: 1
-   
+
+oasis3mct:
+   norestart: T
+   use_lucia: True
+      
 nemo:
    resolution: "ORCA05"
-   nproca: 24
-   nprocb: 18
-
+   jpni: 24
+   jpnj: 18
+   nproc: 432
 rnfmap:
    nproca: 1
    nprocb: 1

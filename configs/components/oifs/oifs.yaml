@@ -7,6 +7,8 @@ executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
+with_xios: False
+xml_dir: ''
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -26,8 +28,10 @@ model_dir: ${general.model_dir}
 setup_dir: ${model_dir}
 bin_dir: ${setup_dir}/bin
 #bin_dir: ${model_dir}/bin
-pool_dir: "${computer.pool_directories.pool}"
-input_dir: ${computer.pool_dir}
+# seb-wahl: make focipool default until all OIFS data is available
+# in the "general" pool directory
+pool_dir: "${computer.pool_directories.focipool}"
+input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
@@ -76,6 +80,7 @@ compile_infos:
         - 40r1-foci
         - 43r3-foci
         - 40r1-agcm
+        - 43r3-ecmwf
         choose_version:
           40r1:
             branch: foci_conserv
@@ -105,6 +110,13 @@ compile_infos:
               -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
+          43r3-ecmwf:
+            branch: master
+            git-repository: https://git.geomar.de/joakim-kjellsson/openifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            requires:
+            - oasis3mct-4.0
+            - xios-2.5_r1910_oifs   
         clean_command: rm -rf make/esm
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
@@ -113,48 +125,41 @@ compile_infos:
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
 #
-choose_computer.name:
-
-  blogin:
-
-    runtime_environment_changes:
-
+runtime_environment_changes:
+  choose_computer.name:
+    blogin:
       #add_module_actions:
       #  - "load eccodes/intel/2.15.1"
-
       add_export_vars:
-
-        # left from mistral, need to check with JK
-        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
-        # - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-    compiletime_environment_changes:
+    mistral:    
+      add_export_vars:
+        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
+        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
+        # ENV vars used in OIFS's source code during runtime
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
 
+
+compiletime_environment_changes:
+  choose_computer.name:
+    blogin:
       #add_module_actions:
       #  - "load eccodes/intel/2.15.1"
-    
       add_export_vars:
 
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
         - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
         - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-
-        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        #- "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
 
         # ECCODES stuff
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
@@ -193,24 +198,7 @@ choose_computer.name:
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-  mistral:
-
-    runtime_environment_changes:
-
-      add_export_vars:
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-        # ENV vars used in OIFS's source code during runtime
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-
-    compiletime_environment_changes:
-
+    mistral:
       add_export_vars:
         - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
@@ -546,10 +534,14 @@ choose_general.run_number:
 
 
 restart_in_sources:
-        srf: ${restart_folder}/srf${start_ndays_string}0000.*
-        rcf: ${restart_folder}/rcf
-        BLS: "${run_number_minus1_string}/BLS${start_filebase_wam}.*"
-        LAW: "${run_number_minus1_string}/LAW${start_filebase_wam}.*"
+        srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
+        rcf: ${run_number_minus1_string}/rcf
+        BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
+        LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
+        #srf: ${restart_folder}/srf${start_ndays_string}0000.*
+        #rcf: ${restart_folder}/rcf
+        #BLS: ${restart_folder}/BLS${start_filebase_wam}.*
+        #LAW: ${restart_folder}/LAW${start_filebase_wam}.*
 
 #restart_out_files:
 #        srf: srf
@@ -587,6 +579,17 @@ outdata_sources:
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
+
+## Using XIOS?
+choose_with_xios:
+        1:
+                include_models:
+                        - xios
+
+                add_input_files:
+                        ifs_xml: ifs_xml
+                        iodef_xml: iodef_xml
+                        context_xml: context_xml
 
 
 ##
@@ -766,6 +769,9 @@ input_sources:
         ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
         ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
         ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
+        ifs_xml: ${xml_dir}/ifs_xml/*
+        iodef_xml: ${xml_dir}/iodef.xml
+        context_xml: ${xml_dir}/context_ifs.xml
         wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
         wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
         wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
@@ -805,6 +811,9 @@ input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
         ICMGG_INIUA: ICMGG${oifs.input_expid}INIUA
         ICMSH_INIT: ICMSH${oifs.input_expid}INIT
+        ifs_xml: ifs_xml/*
+        iodef_xml: iodef.xml
+        context_xml: context_ifs.xml
         rtables: rtables/*
         vtables: vtables/*
         ifsdata: ifsdata/*
@@ -832,8 +841,7 @@ forcing_in_work:
 # L grid is wet points including lakes
 # R grid is dry points 
 foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain] 
-foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, 
-                A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
+foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
 foci_fields_r: [A_Runoff]
 
 coupling_fields:
@@ -887,7 +895,6 @@ postprocess:
         postprocess_shell:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
-
 compute_recipe:
       - "_create_setup_folders"
       - "_create_component_folders"
@@ -911,22 +918,3 @@ compute_recipe:
       - "database_entry"
       - "submit" 
 
-# seb-wahl: This should work but does not due to bug in esm_plugins.yaml
-#plugins:
-#        preprocess:
-#                location: ${model_dir} 
-#                git-url: "https://github.com/esm-tools-plugins/preprocess.git"
-#                preprocess:
-#                        - "preprocess"
-
-# Not needed with XIOS now (almost :-) ) being part of OpenIFS
-# and it was never working anyhow...
-#        postprocess:
-#                location: "/pf/b/b350090/esm-py/plugins/postprocess"
-#                git-url: "https://github.com/esm-tools-plugins/postprocess-sh.git"
-#                postprocess:
-#                        - "postprocess"
-#
-#
-#------------------------------------------
-#

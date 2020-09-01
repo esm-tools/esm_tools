@@ -1,0 +1,34 @@
+general:
+   setup_name: oifs
+   compute_time: "00:30:00"
+   account: "bb0519"
+   initial_date: "2008-01-01"
+   final_date: "2008-01-03"
+   model_dir: "/pf/b/b350071/esm-tools-latest/models/oifs-43r3-foci/"
+   base_dir: "/pf/b/b350071/esm-tools-latest/esm-experiments/"
+   nyear: 0
+   nmonth: 0
+   nday: 1
+   restart_rate: 1
+   restart_unit: days 
+
+oifs:
+   version: 43r3
+   #pool_dir: "/work/bb0519/b350090/foci_input_for_dirk/"
+   input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
+   rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
+   vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
+   clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
+   ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
+   cmip5_data_dir: ${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/
+   icmcl_dir: ${pool_dir}/OPENIFS43R3-TCO95/2008010100/
+   icmcl_file: ICMCLhagwINIT
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   lresume: 0
+   post_processing: 1
+   nproca: 288
+   nprocb: 1
+   perturb: 0 

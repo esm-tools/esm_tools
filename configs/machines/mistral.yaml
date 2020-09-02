@@ -70,6 +70,7 @@ module_actions:
         - "load python/3.5.2"
         - "load cmake/3.13.3"
         - "load autoconf/2.69"
+        - "load cdo nco"
 
 export_vars:
 

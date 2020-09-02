@@ -7,7 +7,6 @@
 ## DIR is the location of the original data. 
 ##
 
-machine=$1
 indir=$1
 inexpid=$2
 outexpid=$3
@@ -28,8 +27,10 @@ if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     module load cdo
 
 elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
-    module load eccodes
-	 module load cdo
+    #module load eccodes # eccodes only available on blogin :-(
+	 #module load cdo
+	 module load intel/19.0.5 impi/2019.5
+	 export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
 else
    echo
 	echo $0 has not been adapted for $(hostname)

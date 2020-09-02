@@ -17,3 +17,8 @@ blogin:
         login_nodes: 'blogin*'
         compute_nodes: '^b[A-Za-z0-9]+\.usr\.hlrn\.de$'
         post_nodes: 'blogin*'
+
+glogin:
+        login_nodes: 'glogin*'
+        compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
+        post_nodes: 'glogin*'

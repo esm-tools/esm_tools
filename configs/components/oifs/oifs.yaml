@@ -134,6 +134,14 @@ runtime_environment_changes:
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+    glogin:
+      #add_module_actions:
+      #  - "load eccodes/intel/2.15.1"
+      add_export_vars:
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
 
     mistral:    
       add_export_vars:
@@ -152,6 +160,53 @@ runtime_environment_changes:
 compiletime_environment_changes:
   choose_computer.name:
     blogin:
+      #add_module_actions:
+      #  - "load eccodes/intel/2.15.1"
+      add_export_vars:
+
+        - "LAPACK_LIB='-mkl=sequential'"
+        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+
+        # ECCODES stuff
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        - 'ECCODES_DIR="$IO_LIB_ROOT"'
+        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
+
+        # OASIS
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+
+        # NetCDF
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+
+        # compiler and compile flags
+        # this doesn't work but should
+        # - 'OIFS_FC=${mpifc}'
+        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        # this doesn't work but should
+        # - 'OIFS_CC=${cc}'
+        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
+    glogin:
       #add_module_actions:
       #  - "load eccodes/intel/2.15.1"
       add_export_vars:

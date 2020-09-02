@@ -69,7 +69,7 @@ for configuration in ${configurations} ; do
     module load anaconda3/2019.10
   elif [[ "$HOSTNAME" =~ glogin ]] ; then
     module load git
-    module load anaconda3/2019.10
+    module load anaconda3
   elif [[ "$HOSTNAME" =~ mlogin ]] ; then
     #module load git
     module unload netcdf_c/4.3.2-gcc48 

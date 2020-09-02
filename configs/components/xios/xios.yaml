@@ -50,9 +50,12 @@ use_oasis: ''
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
-choose_computer.name:
-  blogin:
-    runtime_environment_changes:
+runtime_environment_changes:
+  choose_computer.name:
+    blogin:
+      add_module_actions:
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+    glogin:
       add_module_actions:
         - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
         

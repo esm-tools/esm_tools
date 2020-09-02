@@ -80,7 +80,7 @@ compile_infos:
         - 40r1-foci
         - 43r3-foci
         - 40r1-agcm
-        - 43r3-ecmwf
+        - 43r3-v1
         choose_version:
           40r1:
             branch: foci_conserv
@@ -110,10 +110,11 @@ compile_infos:
               -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
-          43r3-ecmwf:
-            branch: master
-            git-repository: https://git.geomar.de/joakim-kjellsson/openifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+          43r3-v1:
+            branch: vendor/v1-from-ECMWF
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=disable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910_oifs   
@@ -641,7 +642,7 @@ choose_with_xios:
                 add_input_files:
                         ifs_xml: ifs_xml
                         iodef_xml: iodef_xml
-                        context_xml: context_xml
+                        context_xml: context_xml               
 
 
 ##

@@ -20,7 +20,7 @@ executable: NONE
 
 choose_lresume:
         False:
-                input_files:
+                add_input_files:
                         hdstart: hdstart
         True:
                 restart_in_files:
@@ -28,15 +28,16 @@ choose_lresume:
 
                         #ini_restart_dir: "${pool_dir}/MPIESM/restart/dev/${parent_exp_id}/restart/jsbach"
 
-#input_files :
-#        hdpara: hdpara
-#        rmp_hd: rmp_hd
+input_files :
+        hdpara: hdpara
+        rmp_hd: rmp_hd
+
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
 input_in_work:
-        #hdpara: "hdpara.nc"
+        hdpara: "hdpara.nc"
         rmp_hd: "rmp_hd.nc"
-        #hdstart: "hdstart.nc"
+        hdstart: "hdstart.nc"
 
 input_sources:
         hdpara: "${input_dir}/hdpara.nc"

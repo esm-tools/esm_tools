@@ -1,0 +1,46 @@
+general:
+    setup_name: "awiesm"
+    compute_time: "02:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2001-12-31"
+    # FIXME: Ensure that the base_dir points to where your experiment should be
+    # stored. A specific directory for the expirment ID will be created for
+    # you:
+    base_dir: "/work/ab0246/a270077/esm_benchmarks/release_4p2/"
+    nmonth: 0
+    nyear: 1
+    # FIXME: This needs to be set to a valid computing account you have access to:
+    account: "ab0246"
+
+echam:
+    restart_unit: "months"
+
+awiesm:
+    version: "2.1"
+    postprocessing: true
+    scenario: "PALEO"
+    # FIXME: Ensure that this points to where your model code is stored
+    # NOTE: In a future version, model code will become part of the experiment
+    # tree and will be compiled for you...
+    model_dir: "/work/ab0246/a270077/model_codes/release_4p2/awiesm-2.2/"
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/pool/data/AWICM/FESOM2"
+    # NOTE: This will be incorporated into the pool at a later stage
+    mesh_dir: "/work/ba1066/a270061/mesh_CORE2_finaltopo_mean/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: 0
+    namelist_changes:
+        namelist.config:
+            paths:
+                # NOTE: This will be incorporated into the pool at a later stage
+                ClimateDataPath: "/work/ba0989/a270077/AWIESM_2_1_LR_concurrent_rad/nonstandard_input_files/fesom/hydrography/"
+
+jsbach:
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+        jsbach_1850: "/work/ba1066/a270061/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"

@@ -570,10 +570,15 @@ log_in_work:
 ## srf files are for OpenIFS
 ## BLS, LAW files are for ECWAM
 ##
+#choose_general.run_number:
+#        1:
+#                restart_folder: "${parent_restart_dir}"
+#        "*":
+#                restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
 
-#restart_in_files:
-#        srf: srf
-#        rcf: rcf
+restart_in_files:
+        srf: srf
+        rcf: rcf
 
 #restart_in_in_work:
 #        srf: "srf${start_ndays_string}0000.*"
@@ -581,22 +586,11 @@ log_in_work:
 #        BLS: "BLS${start_filebase_wam}.*"
 #        LAW: "LAW${start_filebase_wam}.*"
 
-choose_general.run_number:
-        1:
-                restart_folder: "${parent_restart_dir}"
-        "*":
-                restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
-
-
 restart_in_sources:
         srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
         rcf: ${run_number_minus1_string}/rcf
         BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
         LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
-        #srf: ${restart_folder}/srf${start_ndays_string}0000.*
-        #rcf: ${restart_folder}/rcf
-        #BLS: ${restart_folder}/BLS${start_filebase_wam}.*
-        #LAW: ${restart_folder}/LAW${start_filebase_wam}.*
 
 #restart_out_files:
 #        srf: srf
@@ -613,7 +607,6 @@ restart_out_targets:
         LAW: ${run_number_string}/*
         srf: ${run_number_string}/*
         rcf: ${run_number_string}/rcf
-
 
 ##
 ## output
@@ -746,7 +739,7 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${timestep_per_run} #${oifs.next_step}                                    
+                                        NFRRES: ${oifs.timestep_per_run} #${oifs.next_step}                                    
                                         NRESTS(1): -1
                                         NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 

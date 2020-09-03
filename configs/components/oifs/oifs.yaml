@@ -125,23 +125,37 @@ compile_infos:
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
 #
+#
+# Setup up compile and runtime environment i.e. what needs
+# to be changed w.r.t the default config/machines/<computer>.yaml
 runtime_environment_changes:
   choose_computer.name:
     blogin:
-      #add_module_actions:
-      #  - "load eccodes/intel/2.15.1"
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+      add_module_actions:
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
     glogin:
-      #add_module_actions:
-      #  - "load eccodes/intel/2.15.1"
+      add_module_actions:
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+        
+runtime_environment_changes:
+  choose_computer.name:
+
+    blogin:
+      add_module_actions:
+        # release_mt makes oifs lightning fast and avoids the really slow timesteps that occur randomly
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
+    glogin:
+      add_module_actions:
+        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+      add_export_vars:
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     mistral:    
       add_export_vars:
@@ -160,10 +174,7 @@ runtime_environment_changes:
 compiletime_environment_changes:
   choose_computer.name:
     blogin:
-      #add_module_actions:
-      #  - "load eccodes/intel/2.15.1"
       add_export_vars:
-
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
         - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
@@ -207,8 +218,6 @@ compiletime_environment_changes:
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
-      #add_module_actions:
-      #  - "load eccodes/intel/2.15.1"
       add_export_vars:
 
         - "LAPACK_LIB='-mkl=sequential'"
@@ -565,26 +574,18 @@ log_in_work:
         NODE: NODE.001_01
         ifsstat: ifs.stat
 
-##
-## restart files
-## srf files are for OpenIFS
-## BLS, LAW files are for ECWAM
-##
-#choose_general.run_number:
-#        1:
-#                restart_folder: "${parent_restart_dir}"
-#        "*":
-#                restart_folder: "${parent_restart_dir}/${run_number_minus1_string}"
-
+# 
+# Restart file - input
+# 
 restart_in_files:
         srf: srf
         rcf: rcf
 
-#restart_in_in_work:
-#        srf: "srf${start_ndays_string}0000.*"
-#        rcf: "rcf"
-#        BLS: "BLS${start_filebase_wam}.*"
-#        LAW: "LAW${start_filebase_wam}.*"
+restart_in_targets:
+        srf: ""
+        rcf: "rcf"
+        BLS: ""
+        LAW: ""
 
 restart_in_sources:
         srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
@@ -592,15 +593,18 @@ restart_in_sources:
         BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
         LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
 
-#restart_out_files:
-#        srf: srf
-#        rcf: rcf
+# 
+# Restart file - input
+# 
+restart_out_files:
+        srf: srf
+        rcf: rcf
 
-restart_out_in_work:
-        srf: "srf${end_ndays_string}0000.*"
-        rcf: "rcf"
-        BLS: "LAW${end_filebase_wam}.*"
-        LAW: "LAW${end_filebase_wam}.*"
+restart_out_sources:
+        srf: srf${end_ndays_string}0000.*
+        rcf: rcf
+        BLS: BLS${end_filebase_wam}.*
+        LAW: LAW${end_filebase_wam}.*
 
 restart_out_targets:
         BLS: ${run_number_string}/*

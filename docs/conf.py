@@ -179,6 +179,8 @@ shutil.rmtree("tmp_clone")
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', "sphinx.ext.napoleon",
     'sphinx.ext.autosectionlabel']
 
+napoleon_custom_sections = ["User Information", "Programmer Information"]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -52,12 +52,6 @@ hyper_flag: "" # No hyperthreading on ollie
 #
 
 
-#Hey Paul,
-#please put that into pism.yaml:
-#- "load pism_externals"
-#- "I_MPI_FABRICS=shm:tmi"
-
-
 
 useMPI: intelmpi
 
@@ -71,10 +65,9 @@ module_actions:
         - "unload netcdf"
         - "load hdf5"
         - "load centoslibs cdo nco netcdf/4.6.2_intel"
-        # NOTE(PG): Using this model breaks ECHAM6-Concurrent Rad compilation
-        # - "load python3/3.7.7_intel2020"
         - "load automake"
-        - load python3/3.6.5_intel2019
+        - "load python3/3.7.7_intel2020u2"
+        # - "load python3/3.6.5_intel2019"
         - "list"
 
 export_vars:

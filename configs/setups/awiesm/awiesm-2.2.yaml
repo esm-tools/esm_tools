@@ -59,6 +59,11 @@ echam:
                 T63_CORE2:
                         nproca: 24
                         nprocb: 18
+                        nprocar: 24
+                        nprocbr: 18
+                        npromar: 8
+                        lrad_async: true
+                        lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
                         nprocb: 18

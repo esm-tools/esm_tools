@@ -10,6 +10,9 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
+include_models:
+        - xios
+
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
         Carver et al., in prep.
@@ -113,7 +116,7 @@ compile_infos:
           43r3-v1:
             branch: vendor/v1-from-ECMWF
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=disable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
@@ -636,13 +639,12 @@ outdata_sources:
 ## Using XIOS?
 choose_with_xios:
         1:
-                include_models:
+                add_include_models:
                         - xios
-
-                add_input_files:
-                        ifs_xml: ifs_xml
-                        iodef_xml: iodef_xml
-                        context_xml: context_xml               
+                add_namelist_changes: 
+                        fort.4:
+                                NAMCT0:
+                                        LXIOS: ".true."
 
 
 ##
@@ -822,9 +824,6 @@ input_sources:
         ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
         ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
         ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
-        ifs_xml: ${xml_dir}/ifs_xml/*
-        iodef_xml: ${xml_dir}/iodef.xml
-        context_xml: ${xml_dir}/context_ifs.xml
         wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
         wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
         wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1

@@ -116,7 +116,7 @@ compile_infos:
           43r3-v1:
             branch: vendor/v1-from-ECMWF
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=disable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
@@ -683,11 +683,10 @@ choose_with_xios:
         1:
                 add_include_models:
                         - xios
-
-                add_input_files:
-                        ifs_xml: ifs_xml
-                        iodef_xml: iodef_xml
-                        context_xml: context_xml               
+                add_namelist_changes: 
+                        fort.4:
+                                NAMCT0:
+                                        LXIOS: ".true."
 
 
 ##

@@ -107,6 +107,10 @@ ESM_TOOLS_PROJECT_ADDRESS = "https://github.com/esm-tools/"
 
 mods_to_skip = []
 
+if os.path.isfile(".api_branches.yml"):
+    with open(".api_branches.yml") as branch_yaml:
+        branches = yaml.load(branch_yaml)
+
 with open("API.rst", "w") as rst:
  rst.write("============================\n")
  rst.write("ESM Tools Code Documentation\n")
@@ -116,9 +120,13 @@ with open("API.rst", "w") as rst:
  rst.write("   api/*")
 
  for esm_mod in sorted(esm_tools_modules):
+     branch = branches.get(esm_mod, "")
+     if branch:
+         branch = "-b "+branch
      # Clone:
      subprocess.call(
          "git clone "
+         + branch
          + ESM_TOOLS_PROJECT_ADDRESS
          + esm_mod
          + " tmp_clone/"

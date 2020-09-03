@@ -405,6 +405,47 @@ syear     Year from a given date.
 sdoy      Day of the year, counting from Jan. 1.
 ========= ======================================
 
+Changing Namelists
+------------------
+
+It is also possible to specify namelist changes to a particular section:
+
+
+.. code-block:: yaml
+
+    echam:
+            namelist_changes:
+                    namelist.echam:
+                            runctl:
+                                    l_orbvsop87: false
+                            radctl:
+                                    co2vmr: 217e-6
+                                    ch4vmr: 540e-9
+                                    n2ovmr: 245e-9
+                                    cecc: 0.017
+                                    cobld: 23.8
+                                    clonp: -0.008
+                                    yr_perp: "remove_from_namelist"
+
+In the example above, the `namelist.echam` file is changed in two specific chapters, first the section ``runctrl`` parameter ``l_orbsvop87`` is set to ``.false.``, and appropriate gas values and orbital values are set in ``radctl``. Note that the special entry ``"remove_from_namelist`` is used to delete entries. This would translate the following fortran namelist (trucated)
+
+.. code-block:: fortran
+
+        &runctl
+            l_orbvsop87 = .false.
+        /
+        
+        &radctl
+            co2vmr = 0.000217
+            ch4vmr = 5.4e-07
+            n2ovmr = 2.45e-07
+            cecc = 0.017
+            cobld = 23.8
+            clonp = -0.008
+        /
+
+
+
 Globbing
 ~~~~~~~~
 

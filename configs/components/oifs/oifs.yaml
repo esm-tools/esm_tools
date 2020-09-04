@@ -581,20 +581,20 @@ restart_in_files:
         srf: srf
         rcf: rcf
 
-restart_in_targets:
-        srf: ""
-        rcf: "rcf"
+restart_in_in_work:
+        rcf: rcf
+        srf: "" 
         BLS: ""
         LAW: ""
 
 restart_in_sources:
-        srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
-        rcf: ${run_number_minus1_string}/rcf
-        BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
-        LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
+        srf: srf${start_ndays_string}0000.*
+        rcf: rcf${start_ndays_string}
+        BLS: BLS${start_filebase_wam}.*
+        LAW: LAW${start_filebase_wam}.*
 
 # 
-# Restart file - input
+# Restart file - output
 # 
 restart_out_files:
         srf: srf
@@ -607,10 +607,10 @@ restart_out_sources:
         LAW: LAW${end_filebase_wam}.*
 
 restart_out_targets:
-        BLS: ${run_number_string}/*
-        LAW: ${run_number_string}/*
-        srf: ${run_number_string}/*
-        rcf: ${run_number_string}/rcf
+        rcf: rcf${end_ndays_string}
+        BLS: "" 
+        LAW: ""
+        srf: ""
 
 ##
 ## output

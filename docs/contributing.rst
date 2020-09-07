@@ -65,7 +65,7 @@ Contribution to esm_tools Package
 1. Fork the `esm_tools` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone https://github.com/your_github_username_here/esm_tools.git
+    $ git clone https://github.com/esm-tools/esm_tools.git
 
    (or whatever subproject you want to contribute to).
 
@@ -97,7 +97,7 @@ Contribution to Other Packages
 1. Follow steps 1-4 in :ref:`contributing:Contribution to esm_tools Package`
    for the desired package, cloning your fork locally with::
 
-   $ git clone https://github.com/your_github_username_here/<PACKAGE>.git
+   $ git clone https://github.com/esm-tools/<PACKAGE>.git
 
 2. Proceed to do a development install of the package in the package's folder::
 

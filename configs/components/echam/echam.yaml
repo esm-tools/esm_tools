@@ -490,6 +490,18 @@ streams:
         - glim
         - spim
 
+streamsnc:
+        - aclcim
+        - g3b1hi
+        - g3bday
+        - g3bid
+        - g3bim
+        - glday
+        - glim
+        - jsbid
+        - sp6h
+        - spim
+
           #prev_date: 18500101
 # BUG: PG Why do we need lists here?
 
@@ -516,13 +528,14 @@ ignore_in_work:
 outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
+        "[[streamsnc-->STREAM]]_nc": STREAM_nc
 
 # seb-wahl: add wildcard to allow runs with monthly output files (the default for trigfiles entry in namelist.echam)
 # and e.g. yearly restart (the default in FOCI), outdata_in_work removed as it is not required (same as outdata_sources)
 outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
-
+        "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM

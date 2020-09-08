@@ -411,6 +411,13 @@ choose_resolution:
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
+        TCO319:
+                nx: 421120
+                ny: 1
+                time_step: 1200
+                oasis_grid_name: 320
+                res_number: 319
+                res_number_tl: "319_4"
         TCO399:
                 nx: 654400
                 ny: 1
@@ -968,5 +975,5 @@ compute_recipe:
       - "write_simple_runscript"
       - "report_missing_files"
       - "database_entry"
-      - "submit" 
+      - "submit"
 

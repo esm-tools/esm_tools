@@ -1,96 +1,167 @@
 #########################################################################################
-######################### AWICM 1 YAML CONFIGURATION FILE ###############################
+######################### AWICM3 YAML CONFIGURATION FILE  ###############################
 #########################################################################################
-
 general:
-        model: awicm2
-        #model_dir: ${esm_master_dir}/awicm-${version}
 
+        compute_recipe:
+              - "_create_setup_folders"
+              - "_create_component_folders"
+              - "initialize_experiment_logfile"
+              - "_write_finalized_config"
+              - "copy_tools_to_thisrun"
+              - "_copy_preliminary_files_from_experiment_to_thisrun"
+              - "_show_simulation_info"
+              # call your plugin whereever it is needed
+              #- "write_something"
+              - "copy_files_to_thisrun"
+              - "preprocess"
+              - "modify_namelists"
+              - "modify_files"
+              - "create_new_files"
+              - "prepare_coupler_files"
+              - "add_batch_hostfile"
+              - "copy_files_to_work"
+              - "write_simple_runscript"
+              - "report_missing_files"
+              - "database_entry"
+              - "submit" 
+
+        model: awicm3
+        pool_dir: "${computer.pool_directories.awicm3pool}"
+        model_dir: ${esm_master_dir}/awicm3-${version}
+
+        lresume: False 
         coupled_setup: True
 
         include_models:
-                - echam
-                - fesom2
+                - oifs
+                - fesom
+                - xios
                 - oasis3mct
+                - rnfmap
 
-        version: "2.0"
-        scenario: "PI-CTRL"
-        resolution: ${echam.resolution}_${fesom2.resolution}
-        postprocessing: false
-        post_time: "00:05:00"
-        choose_general.resolution:
-                T63_CORE2:
-                        compute_time: "02:00:00"
         available_versions:
-        - '3.0'
-        - '3.1'
+        - '1.0'
         choose_version:
-          '3.0':
-            couplings:
-            - fesom-2.0+oifs-40r1
-          '3.1':
+          '1.0':
             couplings:
             - fesom-2.0+oifs-43r3-awi
 
+        version: "1.0"
+        scenario: "PI-CTRL"
+        resolution: ${oifs.resolution}_${fesom.resolution}
+        postprocessing: false
+        post_time: "00:05:00"
+        compute_time: "01:30:00"
+
+        choose_computer.name:
+                mistral:
+                        runtime_environment_changes:
+                                add_export_vars:
+                                        # (additional) settings used in FOCI up to v1.21
+                                        #- 'I_MPI_DYNAMIC_CONNECTION=1'
+                                        #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
+                                        # Intel MPI
+                                        #- 'DAPL_UCM_REP_TIME=8000'
+                                        #- 'DAPL_UCM_RTU_TIME=8000'
+                                        #- 'DAPL_UCM_CQ_SIZE=2000'
+                                        #- 'DAPL_UCM_QP_SIZE=2000'
+                                        #- 'DAPL_UCM_DREQ_RETRY=4'
+                                        #- 'DAPL_UCM_WAIT_TIME=10000'
+                                        # 1 was used in mkexp, but kills the model with esm-tools
+                                        #- 'I_MPI_HARD_FINALIZE=1'
+                                        # Intel OpenMP
+                                        #- 'KMP_STACKSIZE=64m'
+                                        #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
+                                        # OpenMP
+                                        - 'OMP_NUM_THREADS=1' 
+
+preprocess:
+        preprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+                type: shell
+
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
+#computer:
+#       additional_flags: "--ntasks-per-core=1"
+#       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
+#       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+#       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
-echam:
-        restart_firstlast: "first"
-        namelist_changes:
-                namelist.echam:
-                        runctl:
-                                lcouple: .true.
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
+oifs:
+        version: "43r3"
+
+        pool_dir: ${computer.pool_directories.focipool}
+        model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
-        ocean_resolution: "${fesom2.resolution}"
-        remove_forcing_files:
-                - sst
-                - sic
-        version: "6.3.04p1"
+        restart_firstlast: "last"
+        ocean_resolution: "${fesom.resolution}"
+
+        # nprocb must be 1
+        # nproca must be not a prime number for OpenIFS parallelisation to work
+        # (This is just one of the many mysteries of the IFS...)
+        #
+        # We want to use 1 CPU for runoff mapper
+        # 287 fulfills this requirement and 288 divides well with 36 and 48
+        # (287 = 41 * 7)
+        # so that the configuration fills up the compute nodes
+        # 575 would also be ok (575 = 23 * 25)
+        nproca: 287
+        nprocb: 1
+        
+        # By default we turn off ECWAM wave model
+        wam: False
+        
+        # namelist_changes:
+                # fort.4:
+                        # NAMFOCICFG:
+                                # Turn on coupling
+                                # TODO: Add variable for AGRIF coupling
+ 
+                
+        runtime_environment_changes:
+                add_export_vars:
+                        # Turn on FOCI coupling        
+                        - 'FESOM_USE_CPLNG="active"'
+        		- 'ECE_CPL_NEMO_LIM="false"'
+        		- 'ECE_CPL_FESOM_FESIM="true"'
+        		- 'ECE_AWI_CPL_FESOM="true"'
+        
+        choose_resolution:
+                TCO95:
+                     nproca: 287
+                TCO159:
+                     nproca: 575
+                TCO199:
+                     nproca: 575
+                TCO319:
+                     nproca: 862  
+                TCO399:
+                     nproca: 862                       
 
         choose_general.resolution:
-                T63_CORE2:
-                        nproca: 24
-                        nprocb: 18
+                T159_CORE2:
+                        nproca: 279
+                        nprocb: 1
 
-
-#########################################################################################
-
-
-jsbach:
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
-        namelist_changes:
-                namelist.jsbach:
-                        hydrology_ctl:
-                                gethd: "remove_from_namelist"
-                                puthd: "remove_from_namelist"
-        version: "3.20"
-
-        choose_computer.name:
-                ollie:
-                        dynveg_file_ending: ""
-                        no_dynveg_file_ending: ""
-
-
-#########################################################################################
-
-
-fesom2:
-        choose_general.version:
-                2.0:
-                        version: "2.0"
+fesom:
+        version: "2.0"
         choose_general.resolution:
-                T63_CORE2:
-                        nproc: 288
+                TCO159_CORE2:
+                        nproca: 288
+                        nprocb: 1
 
         opbnd_dir: ""
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom2.version}
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
         leapyear: True
@@ -100,97 +171,454 @@ fesom2:
                         boundary:
                                 restore_s_surf: 0.0
 
-        #  asforcing: ECHAM5
+        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
 
 
+xios:
+        model_dir: ${general.model_dir}/xios-${fesom.version}
+        setup_dir: ${general.model_dir}
+        
+        nproca: ${computer.cores_per_node}
+        nprocb: 1
+        
 
-
-
+rnfmap: 
+        model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
+        setup_dir: ${general.model_dir}
+        nproca: 1
+        nprocb: 1 
+        time_step: ${oasis3mct.coupling_time_step}       
 
 #########################################################################################
 
-oasis3mct:
+# Settings for OASIS
+oasis3mct:       
         model_dir: ${general.model_dir}/oasis
-
+        pool_dir: ${computer.pool_directories.focipool}/OASIS3_OPENIFS43R3-${oifs.resolution}_${fesom.resolution}/
+        mct_version: 4.0
+        norestart: "F"
+        use_lucia: True
+        
         process_ordering:
-                - fesom2
-                - echam
+                - fesom
+                - oifs
+                - rnfmap
+                - xios
+        
+        # lresume needs to be true to allow usage of flxatmos and sstocean
+        # "restart" files in initial coupling time step
+        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        lresume: true
+        ini_parent_date: "19500101" # not used, but needs to be present 
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present 
+        ini_restart_dir: "${pool_dir}"
 
-        a2o_lag: "${echam.time_step}"
-        o2a_lag: "${fesom2.time_step}"
-        a2o_seq: 2
+        output_exchanged_vars: false
 
-        coupling_time_step: 3600
+        a2o_lag: "${oifs.time_step}"
+        a2r_lag: "${oifs.time_step}"
+        o2a_lag: "${fesom.time_step}"
+        a2o_seq: 3
+        a2o_seq: 1
+        o2a_seq: 1
+
+        coupling_time_step: 10800
         coupling_target_fields:
-                o2a_flux:
-                        - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
-                        - 'snt_atmo <--distwgt-- snt_feom'
+                # Coupling ocean fields to atm
+                sstocean:
+                        #- 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
+                        - 'AIceFrac <--o2agauswgt-- OIceFrac'
+                        - 'A_SSTSST <--o2agauswgt-- O_SSTSST'
+                        - 'A_TepIce <--o2agauswgt-- O_TepIce'
+                        - 'A_IceTck <--o2agauswgt-- O_IceTck'
+                        - 'A_SnwTck <--o2agauswgt-- O_SnwTck'
+                        - 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
+                        - 'A_OCury1 <--o2agauswgt-- O_OCury1'
 
-                a2o_flux:
-                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'
-                        - 'prec_oce <--distwgt-- prec_atm'
-                        - 'snow_oce <--distwgt-- snow_atm'
-                        - 'evap_oce <--distwgt-- evap_atm'
-                        - 'subl_oce <--distwgt-- subl_atm'
-                        - 'heat_oce <--distwgt-- heat_atm'
-                        - 'heat_ico <--distwgt-- heat_ica'
-                        - 'heat_swo <--distwgt-- heat_swa'
-                        - 'hydr_oce <--distwgt-- hydr_atm'
+                # Couple HTESSEL runoff to river routing
+                rnfatm:
+                        - 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
 
+                # Coupled river routing to ocean runoff mask
+                rnrunoff:
+                        - 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
+
+                # Couple atm fluxes to ocean (non-conserving)
+                flxatmos:
+                        #- 'O_QsrIce:O_QnsIce:OTotSnow:OIceEvap:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:ATotSnow:AIceEvap:A_dQnsdT'
+                        - 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
+                        - 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
+                        - 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
+                        - 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
+                        - 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
+                
+                # Coupled atm stress to ocean (non-conserving)
+                atmtau:         
+                        #- 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                        - 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
+                        - 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
+                        - 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
+                        - 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
+                
+                # Couple atm fluxes to ocean (conserving)
+                atmflx: 
+                        #- 'O_QsrMix:O_QnsMix:OTotRain <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain'
+                        - 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
+                        - 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
+                        - 'OTotRain <--a2ogauswgtcn-- ATotRain'
 
         coupling_directions:
-                'feom->atmo':
+                # OIFS dry points to runoff mapper
+                'atmr->rnfa':
+                        lag: ${a2r_lag}
+                        seq: 3                
+                # Runoff mapper to runoff points in fesom
+                'opar->opaf':
+                        lag: 0
+                        seq: 3
+                # fesom to OIFS wet points including lakes 
+                'opat->atml':
                         lag: ${o2a_lag}
-                        seq: 2
-                'atmo->feom':
+                        seq: 3
+                # OIFS wet points including lakes to fesom including cyclic points
+                'atml->opat':
                         lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+                        seq: 3
+                # OIFS wet points excluding lakes to fesom excluding cyclic points
+                'atma->opac':
+                        lag: ${a2o_lag}
+                        seq: 3
+                # OIFS wet points including lakes to fesom excluding cyclic points
+                'atml->opac':
+                        lag: ${a2o_lag}
+                        seq: 3
+     
 
         coupling_methods:
-                distwgt:
-                        time_transformation: instant
+                # fesom to OpenIFS (Lgrid)
+                # GAUSWGT remapping. No conservation post processing
+                o2agauswgt:
+                        time_transformation: average
                         remapping:
-                                distwgt:
+                                - gauswgt:
                                         search_bin: latitude
-                                        nb_of_search_bins: 15
-                                        nb_of_neighbours: 6
-                bicubic:
-                        time_transformation: instant
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: dst
+                
+                # OpenIFS (HTESSEL, Rgrid) to runoff mapper
+                # GAUSWGT remapping. GLBPOS conservation.                         
+                a2rgauswgt:
+                        time_transformation: average
                         remapping:
-                                bicubic:
+                                - gauswgt:
                                         search_bin: latitude
-                                        nb_of_search_bins: 15
-
-
-
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                
+                # Runoff mapper to fesom
+                # GAUSWGT remapping. GLBPOS conservation
+                # (The grids match exactly, so this is kind of meaningless...)
+                r2ogauswgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: dst
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                
+                # OpenIFS (Lgrid) to fesom
+                # GAUSWGT remapping. No conservation post processing. 
+                a2ogauswgtnc:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: src
+                        
+                # OpenIFS (Agrid) to fesom
+                # GAUSWGT remapping. GLBPOS conservation. 
+                a2ogauswgtcn:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9                                        
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                
+                # OpenIFS (Lgrid) to AGRIF
+                # GAUSWGT remapping. No conservation post processing. 
+                a2agrgauswgtnc:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt: 
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: src
+                
+                # OpenIFS (Agrid) to AGRIF
+                # GAUSWGT remapping. No conservation post processing. 
+                a2agrgauswgtcn:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt: 
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: src
+                
+                # AGRIF to OpenIFS (Lgrid)
+                # GAUSWGT remapping. No conservation post processing
+                agr2agauswgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt: 
+                                        search_bin: latitude
+                                        nb_of_neighbours: 25
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: dst
+                
+                # AGRIF mask to OpenIFS (Lgrid)
+                # GAUSWGT remapping. No conservation post processing
+                agr22agauswgt:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt: 
+                                        search_bin: latitude
+                                        nb_of_neighbours: 25
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                                        map_regrid_on: dst                        
+        
+        add_input_files:
+                areas: areas
+                masks: masks
+                grids: grids
+        
+        add_input_in_work:
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
+        
+        add_input_sources: 
+                areas: ${pool_dir}/grids_areas_masks.nc
+                masks: ${pool_dir}/grids_areas_masks.nc
+                grids: ${pool_dir}/grids_areas_masks.nc
+                
         add_restart_out_files:
-                rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
-
+                rmp_o2a_TL: rmp_o2a_TL
+                rmp_a2r_RR: rmp_a2r_RR
+                rmp_r2f_RF: rmp_r2f_RF
+                rmp_a2o_LT: rmp_a2o_LT
+                rmp_a2o_AC: rmp_a2o_AC               
+                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
+                
         add_restart_out_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
+                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
+
+                                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
+                
 
         add_restart_out_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
+                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc                                
+                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
 
         add_restart_in_files:
-                rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
+                rmp_o2a_TL: rmp_o2a_TL
+                rmp_a2r_RR: rmp_a2r_RR
+                rmp_r2f_RF: rmp_r2f_RF
+                rmp_a2o_LT: rmp_a2o_LT
+                rmp_a2o_AC: rmp_a2o_AC
+                                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
 
         add_restart_in_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
+                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc                                
+                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
 
         add_restart_in_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
+                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc                
+                
+                sstocean: sstocean
+                flxatmos: flxatmos
+                rnfatm: rnfatm
+                rnrunoff: rnrunoff
+                atmtau: atmtau
+                atmflx: atmflx
 
 
+# Set up CPU layout
+choose_cores_per_node:
+        24:
+                choose_resolution:
+                        T159_CORE2:
+                                oifs:
+                                        nproca: 287
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 288
+                                        nprocb: 1
+                                xios:
+                                        nproca: 24
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_CORE2:
+                                oifs:
+                                        nproca: 1536
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 24
+                                        nprocb: 1
+                                xios:
+                                        nproca: 24
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+        36:
+                choose_resolution:
+                        T159_CORE2:
+                                oifs:
+                                        nproca: 395
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 72
+                                        nprocb: 1
+                                xios:
+                                        nproca: 36
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_CORE2:
+                                oifs:
+                                        nproca: 1512
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 36
+                                        nprocb: 1
+                                xios:
+                                        nproca: 36
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+        40:
+                choose_resolution:
+                        T159_CORE2:
+                                oifs:
+                                        nproca: 400
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 400
+                                        nprocb: 1
+                                xios:
+                                        nproca: 40
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1
+                        T511_CORE2:
+                                oifs:
+                                        nproca: 2000
+                                        nprocb: 1
+                                fesom:
+                                        nproca: 400
+                                        nprocb: 1
+                                xios:
+                                        nproca: 40
+                                        nprocb: 1
+                                rnfmap:
+                                        nproca: 1
+                                        nprocb: 1

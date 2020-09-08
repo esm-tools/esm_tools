@@ -15,17 +15,11 @@ choose_version:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     - github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-esm-interface:
-    branch: fesom2_using_esm-interface
+  2.0-esm_interface:
+    branch: using_esm-interface_yac
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
-    install_bins: bin/fesom.x
-  2.0-esm-interface-yac:
-    branch: using_esm_interfaces_yac
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-o:
     branch: oifs-deck

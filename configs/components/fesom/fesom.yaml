@@ -7,10 +7,9 @@ version: "1.4"
 
 available_versions:
 - 2.0-o
-- 2.0-esm-interface
+- 2.0-esm_interface
 - '1.4'
 - '1.4-recom-mocsy-slp'
-- 2.0-esm-interface-yac
 - 2.0-paleodyn
 - 1.4-recom-awicm
 - '2.0'

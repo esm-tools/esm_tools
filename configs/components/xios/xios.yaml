@@ -37,7 +37,7 @@ choose_version:
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
   2.5_r1910_oifs:
-    archfile: ESMTOOLS_generic_oasis_intel
+    archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc

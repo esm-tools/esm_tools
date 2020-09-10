@@ -116,6 +116,8 @@ compile_infos:
           43r3-v1:
             branch: vendor/v1-from-ECMWF
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            #branch: master 
+            #git-repository: https://git.geomar.de/joakim-kjellsson/openifs-43r3.git 
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
@@ -231,7 +233,7 @@ compiletime_environment_changes:
 
         # ECCODES stuff
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        #- "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
+        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
         - 'ECCODES_DIR="$IO_LIB_ROOT"'
         - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
@@ -246,24 +248,27 @@ compiletime_environment_changes:
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
 
         # NetCDF
+        - 'OIFS_NETCDF_DIR="$IO_LIB_ROOT"'
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'        
 
         # compiler and compile flags
         # this doesn't work but should
         # - 'OIFS_FC=${mpifc}'
         - 'OIFS_FC=mpiifort'
+        # setting to same as intel_mkl_impi-opt in 43r3
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        
         # this doesn't work but should
         # - 'OIFS_CC=${cc}'
         - 'OIFS_CC=mpiicc'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'        
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     mistral:

@@ -1,14 +1,14 @@
 general:
         setup_name: oifs
-        compute_time: "00:30:00"
+        compute_time: "02:00:00"
         account: shkjocke
-        initial_date: "2008-01-01T00:00:00"
-        final_date: "2008-01-16T00:00:00"
+        initial_date: "1979-01-01T00:00:00"
+        final_date: "2018-01-01T00:00:00"
         model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
         base_dir: /scratch/usr/shkjocke/esm-slask/
-        nyear: 0
+        nyear: 1
         nmonth: 0
-        nday: 5
+        nday: 0
         restart_rate: 1
         restart_unit: days 
 
@@ -23,8 +23,6 @@ oifs:
         clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
         ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
         cmip5_data_dir: ${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/
-        #icmcl_dir: ${pool_dir}/OPENIFS43R3-TCO95/2008010100/
-        #icmcl_file: ICMCLhagwINIT
         icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95-AMIP/
         icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231
         prepifs_expid: hagw
@@ -35,10 +33,11 @@ oifs:
         post_processing: 1
         nproca: 288
         nprocb: 1
-        perturb: 0 
+        perturb: 1
+        ensemble_id: 1
 
 xios:
-        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl 
         with_model: oifs
         nproca: 96
         nprocb: 1

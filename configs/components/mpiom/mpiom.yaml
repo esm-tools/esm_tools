@@ -16,25 +16,25 @@ choose_version:
   1.6.2p3-coupled:
     branch: 1.6.2p3
     conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
-      --enable-HAMOCC
+      --enable-HAMOCC --with-mpi=intelmpi
     install_bins: bin/mpiom.x
   1.6.3:
     branch: 1.6.3
   1.6.3-coupled:
     branch: 1.6.3
     conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
-      --enable-HAMOCC
+      --enable-HAMOCC --with-mpi=intelmpi
     install_bins: bin/mpiom.x
   1.6.3p2:
     branch: 1.6.3p2
   1.6.3p2-coupled:
     branch: 1.6.3p2
     conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
-      --enable-HAMOCC
+      --enable-HAMOCC --with-mpi=intelmpi
     install_bins: bin/mpiom.x
 clean_command: make clean
 comp_command: make -j `nproc --all`
-conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC
+conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC --with-mpi=intelmpi
 git-repository: https://gitlab.dkrz.de/modular_esm/mpiom.git
 
 metadata:

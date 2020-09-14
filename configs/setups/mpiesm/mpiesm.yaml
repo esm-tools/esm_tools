@@ -52,7 +52,7 @@ general:
 #########################################################################################
 
 echam:
-
+        timestep: 400
         choose_computer.cores_per_node:
                 24:
                         choose_general.resolution:
@@ -78,9 +78,9 @@ echam:
 #########################################################################################
 
 mpiom:
-
+        timestep: 2700
         choose_computer.cores_per_node:
-                24:
+                24`:
                         choose_general.resolution:
                                 T31_GR30:
                                         nnodes: 9
@@ -111,36 +111,36 @@ oasis3mct:
                 - mpiom
                 - echam
 
-        o2a_lag: 2700 #V2?
-        a2o_lag: 400 #V4?
-        o2a_seq: 1 #V3?
+        a2o_lag: "${echam.time_step}" #V4?
+        o2a_lag: "${mpiom.time_step}" #V2?
         a2o_seq: 1 #V3?
+        o2a_seq: 1 #V3?
 
         coupling_time_step: 86400 #V17
-        #coupling_target_fields:
-        #        o2a_flux: #V5
-        #                - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
-        #                - 'SITATMOS <--conserv-- SITOCEAN'
-        #                - 'SICATMOS <--conserv-- SICOCEAN'
-        #                - 'SNTATMOS <--conserv-- SNTOCEAN'
-        #                - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector?
-        #                - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
-        #                - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
-        #                - 'CO2ATMOS <--conserv-- CO2OCEAN'
-        #        a2o_flux: #V10
-        #                - 'FRIOCEAN <--conserv-- FRIATMOS' #V11? conserv scalar?
-        #                - 'FRWOCEAN <--conserv-- FRWATMOS'
-        #                - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
-        #                - 'TYWOCEAS <--bicubic-- TYWATMOU'
-        #                - 'TXIOCEAS <--bicubic-- TXIATMOU'
-        #                - 'TYIOCEAS <--bicubic-- TYIATMOU'
-        #                - 'RHIOCEAN <--conserv-- RHIATMOS' #V14? V15? conserv scalar?
-        #                - 'CHIOCEAN <--conserv-- CHIATMOS'
-        #                - 'NHWOCEAN <--conserv-- NHWATMOS'
-        #                - 'SHWOCEAN <--conserv-- SHWATMOS'
-        #                - 'WSVOCEAN <--conserv-- WSVATMOS'
-        #                - 'CO2CONOC <--conserv-- CO2CONAT'
-        #                - 'CO2FLXOC <--conserv-- CO2FLXAT' #V16? V15?
+        coupling_target_fields:
+                o2a_flux: #V5
+                        - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
+                        - 'SITATMOS <--conserv-- SITOCEAN'
+                        - 'SICATMOS <--conserv-- SICOCEAN'
+                        - 'SNTATMOS <--conserv-- SNTOCEAN'
+                        - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector?
+                        - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
+                        - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
+                        - 'CO2ATMOS <--conserv-- CO2OCEAN'
+                a2o_flux: #V10
+                        - 'FRIOCEAN <--conserv-- FRIATMOS' #V11? conserv scalar?
+                        - 'FRWOCEAN <--conserv-- FRWATMOS'
+                        - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
+                        - 'TYWOCEAS <--bicubic-- TYWATMOU'
+                        - 'TXIOCEAS <--bicubic-- TXIATMOU'
+                        - 'TYIOCEAS <--bicubic-- TYIATMOU'
+                        - 'RHIOCEAN <--conserv-- RHIATMOS' #V14? V15? conserv scalar?
+                        - 'CHIOCEAN <--conserv-- CHIATMOS'
+                        - 'NHWOCEAN <--conserv-- NHWATMOS'
+                        - 'SHWOCEAN <--conserv-- SHWATMOS'
+                        - 'WSVOCEAN <--conserv-- WSVATMOS'
+                        - 'CO2CONOC <--conserv-- CO2CONAT'
+                        - 'CO2FLXOC <--conserv-- CO2FLXAT' #V16? V15?
 
         coupling_directions:
                 'mpiom->atmo':

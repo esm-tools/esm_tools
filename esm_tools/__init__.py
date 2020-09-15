@@ -22,7 +22,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "4.2.2"
+__version__ = "4.2.3"
 
 import os
 import sys

@@ -1,0 +1,11 @@
+general:
+        setup_name: sample
+        compute_time: "00:01:00"
+        initial_date: "2000-01-01"
+        final_date: "2000-01-31"
+        base_dir: /work/ollie/mandresm/esm_yaml_test/
+        nmonth: 1
+
+sample:
+        version: 1.0
+        model_dir: /home/ollie/mandresm/model_codes/sample-1.0/

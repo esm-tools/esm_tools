@@ -638,47 +638,24 @@ restart_out_targets:
 ## output
 ##
 
-choose_with_xios:
-        1:
-                outdata_files:
-                        AMIP_1h_sfc: AMIP_1h_sfc
-                        AMIP_3h_sfc: AMIP_3h_sfc
-                        AMIP_6h_pl: AMIP_6h_pl
-                        AMIP_6h_ml: AMIP_6h_ml
-                        AMIP_1d_sfc: AMIP_1d_sfc
-                        AMIP_1m_sfc: AMIP_1m_sfc
-                        AMIP_1m_pl: AMIP_1m_pl
-        0:
-                outdata_files:
-                        ICMGG: ICMGG
-                        ICMSH: ICMSH
-        
-
 outdata_in_work:
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
-        AMIP_1h_sfc: AMIP_1h_regular_sfc.nc
-        AMIP_3h_sfc: AMIP_3h_regular_sfc.nc
-        AMIP_6h_pl: AMIP_6h_regular_pl.nc 
-        AMIP_6h_ml: AMIP_6h_regular_ml.nc 
-        AMIP_1d_sfc: AMIP_1d_regular_sfc.nc 
-        AMIP_1m_sfc: AMIP_1m_regular_sfc.nc 
-        AMIP_1m_pl: AMIP_1m_regular_pl.nc 
+#        # XIOS output
+        1m: "*_1m_*.nc"
+        3h: "*_3h_*.nc"
 
 outdata_sources:
+        # old grib based output
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
-        AMIP_1h_sfc: ${expid}_1h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
-        AMIP_3h_sfc: ${expid}_3h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
-        AMIP_6h_pl: ${expid}_6h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_pl.nc
-        AMIP_6h_ml: ${expid}_6h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_ml.nc
-        AMIP_1d_sfc: ${expid}_1d_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
-        AMIP_1m_sfc: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
-        AMIP_1m_pl: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_pl.nc
+        # XIOS output
+        1m: "*_1m_*.nc"
+        3h: "*_3h_*.nc"
 
 ## Using XIOS?
 choose_with_xios:
@@ -689,6 +666,14 @@ choose_with_xios:
                         fort.4:
                                 NAMCT0:
                                         LXIOS: ".true."
+                outdata_files:
+                        1m: 1m 
+                        3h: 3h 
+        0:               
+                outdata_files:
+                        ICMGG: ICMGG
+                        ICMSH: ICMSH
+
 
 
 ##

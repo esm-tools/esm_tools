@@ -116,9 +116,8 @@ compile_infos:
           43r3-v1:
             branch: vendor/v1-from-ECMWF
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            #branch: master 
-            #git-repository: https://git.geomar.de/joakim-kjellsson/openifs-43r3.git 
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            # Disable FFTW for now
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_FFTW=disable ; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
@@ -228,6 +227,11 @@ compiletime_environment_changes:
 
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        # FFTW is included in MKL so we link to that
+        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
+        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
+        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        
         - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
         - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
 
@@ -465,8 +469,12 @@ choose_computer.cores_per_node:
 
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run
-runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+#runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+# For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
+runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
+ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
+ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
@@ -479,9 +487,10 @@ start_seconds: "$((${start_date} - ${initial_date}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
 start_ndays_string: "<--format(%08d)-- ${start_ndays}"
-end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
-end_ndays: "$(( ${end_seconds} / 86400 ))"
-end_ndays_string: "<--format(%08d)-- ${end_ndays}"
+#end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
+next_seconds: "$((${next_date} - ${initial_date}))"
+next_ndays: "$(( ${next_seconds} / 86400 ))"
+next_ndays_string: "<--format(%08d)-- ${next_ndays}"
 
 # WAMstartdate
 wam_start_date: "${initial_date!syear!smonth!sday}000000"
@@ -597,23 +606,26 @@ restart_in_in_work:
         LAW: ""
 
 restart_in_sources:
-        srf: srf${start_ndays_string}0000.*
-        rcf: rcf${start_ndays_string}
-        BLS: BLS${start_filebase_wam}.*
-        LAW: LAW${start_filebase_wam}.*
+        #srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
+        srf: ${run_number_minus1_string}/srf* 
+        rcf: ${run_number_minus1_string}/rcf
+        BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
+        LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
+        #srf: ${restart_folder}/srf${start_ndays_string}0000.*
+        #rcf: s${restart_folder}/rcf
+        #BLS: ${restart_folder}/BLS${start_filebase_wam}.*
+        #LAW: ${restart_folder}/LAW${start_filebase_wam}.*
 
-# 
-# Restart file - output
-# 
-restart_out_files:
-        srf: srf
-        rcf: rcf
+#restart_out_files:
+#        srf: srf
+#        rcf: rcf
 
-restart_out_sources:
-        srf: srf${end_ndays_string}0000.*
-        rcf: rcf
-        BLS: BLS${end_filebase_wam}.*
-        LAW: LAW${end_filebase_wam}.*
+restart_out_in_work:
+        srf: "srf${next_ndays_string}0000.*"
+        #srf: "srf${ndays_per_run_string}0000.*"
+        rcf: "rcf"
+        BLS: "LAW${end_filebase_wam}.*"
+        LAW: "LAW${end_filebase_wam}.*"
 
 restart_out_targets:
         rcf: rcf${end_ndays_string}
@@ -625,21 +637,47 @@ restart_out_targets:
 ## output
 ##
 
-outdata_files:
-        ICMGG: ICMGG
-        ICMSH: ICMSH
+choose_with_xios:
+        1:
+                outdata_files:
+                        AMIP_1h_sfc: AMIP_1h_sfc
+                        AMIP_3h_sfc: AMIP_3h_sfc
+                        AMIP_6h_pl: AMIP_6h_pl
+                        AMIP_6h_ml: AMIP_6h_ml
+                        AMIP_1d_sfc: AMIP_1d_sfc
+                        AMIP_1m_sfc: AMIP_1m_sfc
+                        AMIP_1m_pl: AMIP_1m_pl
+        0:
+                outdata_files:
+                        ICMGG: ICMGG
+                        ICMSH: ICMSH
+        
 
 outdata_in_work:
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
+        AMIP_1h_sfc: AMIP_1h_regular_sfc.nc
+        AMIP_3h_sfc: AMIP_3h_regular_sfc.nc
+        AMIP_6h_pl: AMIP_6h_regular_pl.nc 
+        AMIP_6h_ml: AMIP_6h_regular_ml.nc 
+        AMIP_1d_sfc: AMIP_1d_regular_sfc.nc 
+        AMIP_1m_sfc: AMIP_1m_regular_sfc.nc 
+        AMIP_1m_pl: AMIP_1m_regular_pl.nc 
 
 outdata_sources:
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
+        AMIP_1h_sfc: ${expid}_1h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
+        AMIP_3h_sfc: ${expid}_3h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
+        AMIP_6h_pl: ${expid}_6h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_pl.nc
+        AMIP_6h_ml: ${expid}_6h_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_ml.nc
+        AMIP_1d_sfc: ${expid}_1d_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
+        AMIP_1m_sfc: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_sfc.nc
+        AMIP_1m_pl: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date!syear!smonth!sday}_pl.nc
 
 ## Using XIOS?
 choose_with_xios:
@@ -751,9 +789,10 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${oifs.timestep_per_run} #${oifs.next_step}                                    
-                                        NRESTS(1): -1
-                                        NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
+                                        #NFRRES: ${timestep_per_run} #${oifs.next_step}
+                                        NFRRES: ${oifs.next_step} 
+                                        #NRESTS(1): -1
+                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 
                                 NAMPAR0:
                                         NPROC: ${oifs.nproca}
@@ -945,7 +984,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 
 postprocess:

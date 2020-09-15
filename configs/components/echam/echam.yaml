@@ -356,7 +356,7 @@ choose_lresume:
                                   # - ndate "<--set_dim--" ${steps_in_year_before}
         True:
                 # pseudo_start_date: $(( ${start_date} - ${time_step} ))
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 runctl:
                                         dt_start: "remove_from_namelist"
@@ -365,49 +365,49 @@ choose_lresume:
 
 choose_CO2:
         '*':
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         co2vmr: ${CO2}
 
 choose_CH4:
         '*':
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         ch4vmr: ${CH4}
 choose_N2O:
         '*':
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
-                                        c2ovmr: ${N2O}
+                                        n2ovmr: ${N2O}
 
 choose_CECC:
         '*':
                 yr_perp_off: true
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         cecc: ${CECC}
 choose_COBLD:
         '*':
                 yr_perp_off: true
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         cobld: ${COBLD}
 choose_CLONP:
         '*':
                 yr_perp_off: true
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         clonp: ${CLONP}
 
 choose_yr_perp_off:
         true:
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 radctl:
                                         yr_perp: "remove_from_namelist"

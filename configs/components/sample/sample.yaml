@@ -18,6 +18,8 @@ comp_command: mkdir -p _build; gcc -Wall src/sample.c -o _build/sample
 
 executable: sample
 
+time_step: 1800
+
 nproc: 1
 
 setup_dir: "${model_dir}"
@@ -32,7 +34,15 @@ restart_out_files:
 restart_out_in_work:
     rfile: restart_work
 restart_out_sources:
-    rfile: restart_work
+    rfile: restart_work${end_date!syear!smonth!sday}
+
+# Moves the restart files from <expid>/restart/<component>/ to <expid>/run.../work/
+restart_in_files:
+    rfile: rfile
+restart_in_in_work:
+    rfile: restart_work${parent_date!syear!smonth}
+restart_in_sources:
+    rfile: restart_work${parent_date!syear!smonth!sday}
 
 # Moves the outdata files from <expid>/run.../work/ to <expid>/outdata/<component>/
 outdata_files:
@@ -40,7 +50,7 @@ outdata_files:
 outdata_in_work:
     ofile: outdata_work
 outdata_sources:
-    ofile: outdata_work
+    ofile: outdata_work${start_date!syear!smonth!sday}
 
 # Copies the sample_forcing file at the beginning of the run
 forcing_files:
@@ -48,4 +58,4 @@ forcing_files:
 forcing_in_work:
     ffile: sample_forcing
 forcing_sources:
-    ffile: /home/ollie/mandresm/my_scripts/sample_forcing
+    ffile: sample_forcing

@@ -47,7 +47,7 @@ As an example; let's say you only want to run the ``tidy`` phase of a
 particular job; which will move things from the particular run folder to the
 overall experiment tree. In this example; the experiment will be called ``test001``::
 
-        $ esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy_and_resubmit
+        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy_and_resubmit
 
 Experiment Directory Structure
 ------------------------------
@@ -67,8 +67,8 @@ runscript (see :ref:`yaml:Runscripts` syntax) followed by the given ``experiment
     <general.base_dir>/<experiment_ID>
 
 The main experiment folder contains the subfolders indicated in the table below. Each of these
-subfolders contains a folder for each component in the experiment (i.e. for an AWI-CM experiment the
-``outdata`` folder will contain the subfolders ``echam``, ``fesom``, ``hdmodel``, ``jsbach``,
+subfolders contains another folder for each component in the experiment (i.e. for an AWI-CM experiment
+the ``outdata`` folder will contain the subfolders ``echam``, ``fesom``, ``hdmodel``, ``jsbach``,
 ``oasis3mct``).
 
 ======================= ======================= ========================================================
@@ -127,8 +127,7 @@ run_YYYYMMDD-YYYYMMDD   run files               Run folder containing all the fi
                                                 Folders contained here have the same names as the ones
                                                 contained in the general experiment folder (``analysis``,
                                                 ``bin``, ``config``, etc). Once the run is finished
-                                                files the run files are copied to the general
-                                                experiment folder.
+                                                the run files are copied to the general experiment folder.
 
 scripts                 * ``esm_tools`` folder  Contains all the scripts needed for the experiment. A
                           containing:           subfolder ``esm_tools`` includes all the config files
@@ -146,7 +145,8 @@ scripts                 * ``esm_tools`` folder  Contains all the scripts needed 
                         * file.log
                         * hostfile_srun
 
-unknown                                         Folder where all the unknown files should be copied.
+unknown                                         Folder where all the unknown files from
+                                                ``run_YYYYMMDD_YYYYMMDD/work`` are copied.
 
 viz                     user's files            Aimed for user's visualization scripts.
 
@@ -172,11 +172,14 @@ useful to debug and restart experiments that have crashed.
    models consist of several runs, the `general` directory can end up looking very untidy.
    `Run` folders were created with the idea that they will be deleted once all files
    have been transferred to their respective folders in the `general` experiment directory.
-   Currently, that is not the case due to potential issues when there is a need for
-   restarting a crashed simulation: a faulty tidy-up (i.e. due to a run crash, some run
-   files are updated but others not) will lead to a faulty restart. In the the near
-   future the user will have control on whether keeping the `run` folders or deleting them,
-   through a variable in the runscript.
+   The default is not to delete this folders as they can be useful for debugging or
+   restarting a crashed simulation, but the user can choose to delete them
+   (see :ref:`esm_runscripts:Cleanup of \`\`run_\`\` directories`).
+
+Cleanup of ``run_`` directories
+-------------------------------
+
+.. automethod:: esm_runscripts.SimulationSetup.clean_run_dir
 
 Debugging an Experiment
 -----------------------

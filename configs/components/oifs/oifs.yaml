@@ -497,7 +497,7 @@ next_ndays_string: "<--format(%08d)-- ${next_ndays}"
 wam_start_date: "${initial_date!syear!smonth!sday}000000"
 
 # ICMCL start and end
-icmcl_end_date: $(( ${end_date} + 2days ))
+icmcl_end_date: $(( ${next_date} + 1days ))
 icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 
 # WAM restart files are named with the number of
@@ -602,38 +602,34 @@ restart_in_files:
 
 restart_in_in_work:
         rcf: rcf
-        srf: "" 
+        srf: ""
         BLS: ""
         LAW: ""
 
 restart_in_sources:
-        #srf: ${run_number_minus1_string}/srf${start_ndays_string}0000.*
-        srf: ${run_number_minus1_string}/srf* 
-        rcf: ${run_number_minus1_string}/rcf
-        BLS: ${run_number_minus1_string}/BLS${start_filebase_wam}.*
-        LAW: ${run_number_minus1_string}/LAW${start_filebase_wam}.*
-        #srf: ${restart_folder}/srf${start_ndays_string}0000.*
-        #rcf: s${restart_folder}/rcf
-        #BLS: ${restart_folder}/BLS${start_filebase_wam}.*
-        #LAW: ${restart_folder}/LAW${start_filebase_wam}.*
+        srf: srf${start_ndays_string}0000.*
+        rcf: rcf${start_ndays_string}
+        BLS: BLS${start_filebase_wam}.*
+        LAW: LAW${start_filebase_wam}.*
 
-#restart_out_files:
-#        srf: srf
-#        rcf: rcf
+# 
+# Restart file - output
+# 
+restart_out_files:
+        srf: srf
+        rcf: rcf
 
-restart_out_in_work:
-        srf: "srf${next_ndays_string}0000.*"
-        #srf: "srf${ndays_per_run_string}0000.*"
-        rcf: "rcf"
-        BLS: "LAW${end_filebase_wam}.*"
-        LAW: "LAW${end_filebase_wam}.*"
+restart_out_sources:
+        srf: srf${next_ndays_string}0000.*
+        rcf: rcf
+        BLS: BLS${end_filebase_wam}.*
+        LAW: LAW${end_filebase_wam}.*
 
 restart_out_targets:
-        rcf: rcf${end_ndays_string}
-        BLS: "" 
+        rcf: rcf${next_ndays_string}
+        BLS: ""
         LAW: ""
         srf: ""
-
 ##
 ## output
 ##

@@ -22,7 +22,9 @@ oifs:
         vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
         clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
         ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
-        cmip5_data_dir: ${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/
+        cmip6_data_dir: ${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/
+        mip: cmip6
+        scenario: historical 
         icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95-AMIP/
         icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231
         prepifs_expid: hagw
@@ -37,7 +39,10 @@ oifs:
         ensemble_id: 1
 
 xios:
-        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl 
+        # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_3h+6hrLev
+        # 1m surface + pressure levels
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
         with_model: oifs
         nproca: 96
         nprocb: 1

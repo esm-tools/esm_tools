@@ -640,8 +640,7 @@ outdata_in_work:
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
 #        # XIOS output
-        1m: "*_1m_*.nc"
-        3h: "*_3h_*.nc"
+        oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
 
 outdata_sources:
         # old grib based output
@@ -650,8 +649,7 @@ outdata_sources:
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
         # XIOS output
-        1m: "*_1m_*.nc"
-        3h: "*_3h_*.nc"
+        oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
 
 ## Using XIOS?
 choose_with_xios:
@@ -663,8 +661,7 @@ choose_with_xios:
                                 NAMCT0:
                                         LXIOS: ".true."
                 outdata_files:
-                        1m: 1m 
-                        3h: 3h 
+                        oifsnc: oifsnc
         0:               
                 outdata_files:
                         ICMGG: ICMGG

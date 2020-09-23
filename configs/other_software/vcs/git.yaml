@@ -1,8 +1,9 @@
-get_command: "git clone ${define_branch} ${define_tag} ${repository}"
+# kh 07.09.20 support options (e.g. --recursive)
+get_command: "git clone ${define_options} ${define_branch} ${define_tag} ${repository}"
 update_command: "git pull"
 status_command: "git status"
 log_command: "git log --oneline"
 
-
+define_options: "${repo_options}"
 define_branch: "-b ${branch}"
 define_tag: "-b ${branch}"

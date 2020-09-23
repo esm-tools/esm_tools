@@ -26,27 +26,36 @@ metadata:
                 unsure, please contact redmine...
 
 
+compile_infos:
+        available_versions:
+        - 2.1.0
+        - 2.3.0-nwp5
+        - 2.4.0
+        - 2.6.2-rc
+        branch: ${icon.version}
+        clean_command: make distclean
+        comp_command: make -j `nproc --all`
+        #comp_command: make 
+        #conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+        #conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+        #conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 
-available_versions:
-- 2.1.0
-- 2.3.0-nwp5
-- 2.4.0
-branch: ${icon.version}
-clean_command: make distclean
-comp_command: make -j `nproc --all`
-#comp_command: make 
-#conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-#conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-#conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+        choose_version:
+                2.6.2-rc:
+                        git-repository: "git@gitlab.dkrz.de:icon/icon.git"
+                        branch: "icon-2.6.2-rc"
+                        repo_options: "--recursive"
+                        conf_command: "./config/esm_tools/generic.intel-18.0.5"
+#                       clean_command: "make distclean"
+#                       comp_command: "make -j `nproc --all`"
 
 # Deniz: environment variables are added to the conc_command since after 
 # prep_release merge ICON did not compile as before. When these variables are 
 # set to empty, then ICON compiles otherwise ICONs configure script sets them to
 # intel mpi (since we are module load intel.mpi and somehow this does not 
 # compile. I guess this is because we are using GCC with Intel MPI.
-conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api MPIROOT='' MPI_INCLUDE='' MPI_LIB=''
-git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
-
+        conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api MPIROOT='' MPI_INCLUDE='' MPI_LIB=''
+        git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
 
 executable: icon
 scenario: NWP
@@ -275,6 +284,42 @@ choose_computer.name:
                                 - 'MPICC=mpigxx'
                                 - 'CC=mpigcc'
                                 - 'CXX=mpigxx'
+
+# kh 16.09.20
+                        choose_version:
+                                2.6.2-rc:
+                                        add_module_actions:
+                                                - "purge"
+                                                - "load gnu.compiler/6.5.0"
+                                                - "load automake/1.16.2"
+                                                - "load intel.mpi"
+                                                - "load intel.compiler/18.0.5"
+                                                - "load hdf5"
+                                                - "load netcdf/4.6.2_intel"                                                
+
+                                        add_export_vars:
+                                                - "HDF5_ROOT_ICON=/global/AWIsoft/hdf5/hdf5-1.10.2_gnu"
+                                                - "HDF5_LIBS_ICON='-lhdf5'"
+                                                - "NETCDF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                                                - "NETCDF_LIBS_ICON='-lnetcdf'"
+                                                - "NETCDFF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                                                - "NETCDFF_LIBS_ICON='-lnetcdff'"
+                                                - "GRIBAPI_ROOT_ICON=/global/AWIsoft/grib_api/1.12.3_gnu"
+                                                - "GRIBAPI_LIBS_ICON='-lgrib_api'"
+                                                - "XML2_ROOT='/usr'"
+
+#                                               - "LD_LIBRARY_PATH=$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
+
+# kh 16.09.20 disable parallel netcdf
+                                                - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --disable-parallel-netcdf'"
+
+# kh 17.09.20 intel mpi
+                                                - "FC=mpiifort"
+                                                - "F77=mpiifort"
+                                                - "MPIFC=mpiifort"
+                                                - "CC=mpiicc"
+                                                - "CXX=mpiicpc"
+
         mistral: 
                 compiletime_environment_changes:
                         add_module_actions:
@@ -295,6 +340,47 @@ choose_computer.name:
                                 - 'MPICC=mpigxx'
                                 - 'CC=mpigcc'
                                 - 'CXX=mpigxx'
+
+# kh 16.09.20
+                        choose_version:
+                                2.6.2-rc:
+                                        add_module_actions:
+                                                - "purge"
+                                                - "unload intel intelmpi"
+                                                - "unload gcc"
+                                                - "load gcc/6.4.0"
+                                                - "load intel/18.0.4"
+                                                - "load libtool/2.4.6"
+                                                - "load autoconf/2.69"
+                                                - "load automake/1.14.1"
+                                                - "load openmpi/2.0.2p1_hpcx-intel14"
+
+                                        add_export_vars:
+                                                - "HDF5_ROOT_ICON=/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-openmpi2-intel14"
+                                                - "HDF5_LIBS_ICON='-lhdf5'"
+
+                                                - "NETCDF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-parallel-openmpi2-intel14"
+                                                - "NETCDF_LIBS_ICON='-lnetcdf'"
+
+                                                - "NETCDFF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-openmpi2-intel14"
+                                                - "NETCDFF_LIBS_ICON='-lnetcdff'"
+
+                                                - "GRIBAPI_ROOT_ICON=/sw/rhel6-x64/grib_api/grib_api-1.15.0-gcc48"
+                                                - "GRIBAPI_LIBS_ICON='-lgrib_api'"
+
+                                                - "XML2_ROOT='/usr'"
+
+                                                - "LD_LIBRARY_PATH=$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
+
+# kh 16.09.20 enable parallel netcdf
+                                                - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --enable-parallel-netcdf'"
+
+# kh 17.09.20 openmpi
+                                                - "FC=mpif90"
+                                                - "F77=mpif90"
+                                                - "MPIFC=mpif90"
+                                                - "CC=mpicc"
+                                                - "CXX=mpicxx"
 
 
 

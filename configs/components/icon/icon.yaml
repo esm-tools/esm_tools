@@ -66,6 +66,7 @@ choose_version:
         2.1.0:        
                 scenario: NWP
                 version: 2.1.0
+                repo_tag: 2.1.0
                 resolution: R02B05
                 
                 pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
@@ -133,6 +134,7 @@ choose_version:
         2.3.0-nwp5:
                 scenario: LES
                 version: 2.3.0-nwp5
+                repo_tag: 2.3.0-nwp5
                 resolution: R3B11
                 dt_restart: 21600
 
@@ -201,6 +203,12 @@ choose_version:
                                         end_datetime_string: "${dt_end}Z"
                                         dt_restart: "${dt_restart}"
 
+        2.4.0:
+                version: 2.3.0-nwp5
+                repo_tag: 2.4.0
+
+
+
 # default directories
 
 #model_dir: "${esm_master_dir}/icon-${version}"
@@ -228,14 +236,6 @@ choose_resolution:
                                 nproc: 900
                         36:
                                 nproc: 900
-
-choose_version:
-        2.1.0:
-                repo_tag: 2.1.0
-        2.3.0-nwp5:
-                repo_tag: 2.3.0-nwp5
-        2.4.0:
-                repo_tag: 2.4.0
 
 bin_in_workdir:
         icon: icon

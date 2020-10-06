@@ -94,7 +94,7 @@ export_vars:
         - "NETCDFROOT=$IO_LIB_ROOT"
         - "NETCDFFROOT=$IO_LIB_ROOT"
         - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+        - 'NETCDF_Fortran_INCLUDE_DIRECTORIES="$NETCDFFROOT/include"'
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         # seems to be ECHAM specific, leave it here for now

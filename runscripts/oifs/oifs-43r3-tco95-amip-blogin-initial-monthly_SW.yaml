@@ -3,14 +3,14 @@ general:
         compute_time: "00:30:00"
         account: shkifmsw
         initial_date: "2008-01-01"
-        final_date: "2008-01-05"
+        final_date: "2008-03-01"
         model_dir: /home/shkifmsw/esm/models/oifs-43r3-v1/
         base_dir: /home/shkifmsw/esm/esm-experiments/
         nyear: 0
-        nmonth: 0
-        nday: 1 
+        nmonth: 1
+        nday: 0 
         restart_rate: 1
-        restart_unit: days 
+        restart_unit: months
         # cleanup of rundir
         clean_runs: 2 
 

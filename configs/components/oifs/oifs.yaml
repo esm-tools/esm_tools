@@ -128,14 +128,16 @@ compile_infos:
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
-runtime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-    glogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+# ___DUPLICATED___
+# | runtime_environment_changes:
+# |   choose_computer.name:
+# |     blogin:
+# |       add_module_actions:
+# |         - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+# |     glogin:
+# |       add_module_actions:
+# |         - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
+# |______________
         
 runtime_environment_changes:
   choose_computer.name:
@@ -327,7 +329,9 @@ wam_step: 1
 read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
-ensemble_id: 1
+# ___DUPLICATED___
+# | ensemble_id: 1
+# |_______________
 post_processing: 0
 use_ocean_currents: 0
 
@@ -354,8 +358,10 @@ orb_mode: "variable_year"
 orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
 
 restart: 1
-restart_rate: 1
-restart_unit: 'months'
+# ___DUPLICATED___
+# | restart_rate: 1
+# | restart_unit: 'months'
+# |_______________
 
 threads: 1
 ny: 1

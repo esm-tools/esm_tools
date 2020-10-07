@@ -7,7 +7,7 @@ version: "1.4"
 
 available_versions:
 - 2.0-o
-- 2.0-esm_interface
+- 1.4-esm_interface
 - '1.4'
 - '1.4-recom-mocsy-slp'
 - 2.0-paleodyn
@@ -21,6 +21,9 @@ choose_version:
   '1.4-recom-mocsy-slp':
     branch: fesom-recom-mocsy-slp
     destination: fesom-1.4
+  '1.4-esm_interface':
+    destination: fesom-1.4
+    branch: using_esm-interface
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom

@@ -1,0 +1,66 @@
+
+general:
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+   compute_time: "02:00:00"
+   account: shkjocke 
+   #partition: standard96
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   version: "default"
+   postprocessing: 1
+   nyear: 0
+   nmonth: 0
+   nday: 1
+   restart_rate: 1
+   restart_unit: days 
+   base_dir: /scratch/usr/shkjocke/esm-slask/
+   hours: 0
+
+focioifs:
+   model_dir: /home/shkjocke/model_codes/focioifs-2.0/
+   
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   pool_dir: "/scratch/usr/shkifmsw/foci_input2/"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS43R3_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS43R3_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   lresume: 0
+   post_processing: 1
+   nproca: 287
+   nprocb: 1  
+   use_ocean_currents: 1
+
+oasis3mct:
+   norestart: F
+   use_lucia: True
+      
+nemo:
+   resolution: "ORCA05"
+   jpni: 24
+   jpnj: 18
+   nproc: 432
+   
+rnfmap:
+   nproca: 1
+   nprocb: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: /scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS/
+   nproca: 48
+   nprocb: 1

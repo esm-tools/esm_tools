@@ -81,6 +81,13 @@ choose_with_model:
                 add_config_files:
                         context_ifs: context_ifs
                         ifs_xml: ifs_xml
+        focioifs: 
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml

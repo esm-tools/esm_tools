@@ -126,11 +126,7 @@ echam:
                                 #       - ${pseudo_start_date!day}
                                 #       - ${pseudo_start_date!hour}
                                 #       - ${pseudo_start_date!minute}
-                                #       - ${pseudo_start_date!second}
-
-        # directories
-        model_dir: ${general.model_dir}/echam-${echam.version}
-        setup_dir: ${general.model_dir}
+                                #       - ${pseudo_start_date!second}        
 
 
         remove_forcing_files:
@@ -306,25 +302,25 @@ oasis3mct:
                         seq: ${a2o_seq}
 
 
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+        #coupling_methods:
+        #        conserv:
+        #                time_transformation: average
+        #                remapping:
+        #        'atmo->opac':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
 
 
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opat':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+        #coupling_methods:
+        #        conserv:
+        #                time_transformation: average
+        #                remapping:
+        #        'atmo->opat':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
+        #        'atmo->opac':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
 
 
         coupling_methods:

@@ -62,15 +62,28 @@ module_actions:
 
 export_vars:
 
+        #########################################################################
+        # Compiler Settings
+        #########################################################################
+        #
         - "FC=${fc}"
         - "F77=${f77}"
         - "MPIFC=${mpifc}"
         - "CC=${cc}"
         - "CXX=${cxx}"
+
+        #########################################################################
+        # MPI Settings
+        #########################################################################
+        #
         - "MPIROOT=\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         - "MPI_LIB=\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-        # Why are we not using MPI HDF5
+        #########################################################################
+        # HDF5 Defaults
+        #########################################################################
+        #
+        # Why are we not using MPI HDF5?
         #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         #- 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
@@ -93,6 +106,10 @@ export_vars:
         - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
         - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
 
+        #########################################################################
+        # General Software (Perl, usw.)
+        #########################################################################
+        #
         # mostly OpenIFS stuff
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"

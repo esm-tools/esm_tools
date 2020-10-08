@@ -49,19 +49,16 @@ pool_dir:  "/pool/data"
 useMPI: intelmpi
 module_actions:
         - "purge"
-        - "unload netcdf_c"
-        - "unload intel intelmpi"
+        - "load gcc/4.8.2"
+        - "unload intel"
+        - "load intel"
+        - "load cdo nco"
+        - "unload netcdf"
+        - "load netcdf_c/4.3.2-gcc48"
         - "load python/3.5.2"
         - "load cmake/3.13.3"
-        - "load autoconf/2.69"
-        - "load nco"
 
 export_vars:
-        #########################################################################
-        # Locale Settings
-        #########################################################################
-        #
-        - "LC_ALL=en_US.utf-8"
 
         #########################################################################
         # Compiler Settings
@@ -107,27 +104,23 @@ export_vars:
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
-
-        #########################################################################
-        # Linear Algebra (LAPACK)
-        #########################################################################
-        #
+        - "PERL5LIB=/usr/lib64/perl5"
+        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
 
         #########################################################################
         # General Software (Perl, usw.)
         #########################################################################
         #
-        - "PERL5LIB=/usr/lib64/perl5"
-        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         - "ZLIBROOT=/usr"
+        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
 
         #########################################################################
         # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
         # it's used by other models it stays in mistral.yaml for now
         #########################################################################
-        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
         #########################################################################
         # LD_LIBRARY_PATH
@@ -142,6 +135,32 @@ export_vars:
 
         ################################################
         # This needs to be moved into OIFS
+
+        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        - 'OIFS_FC=${mpifc}'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=${cc}'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
         # MPI environent variables important at runtime
         - 'I_MPI_FABRICS=shm:dapl'
         - 'I_MPI_FALLBACK=disable'

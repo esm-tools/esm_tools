@@ -5,6 +5,7 @@
 header_start: "#SBATCH"
 submit: sbatch
 launcher: srun
+debugger: None
 mail_type: NONE
 account: None
 
@@ -46,6 +47,12 @@ choose_launcher:
         mpirun:
                 launcher_flags: "-l"
 
+choose_debugger:
+        None:
+            debugger_flags_prelauncher: ""
+        ddt:
+            debugger_flags_prelauncher: "ddt --connect"
+
 submitted: false
 script_name: "<--methods.scriptname--"
 actual_script_dir: "<--methods.script_dir--"
@@ -73,7 +80,7 @@ config_files:
         #hostfile:
         #        - "[[setup.orderedexecs-->MODEL]]<--startproc-- - MODEL<--endproc-- ./MODEL<--exe-- <--append--"
 
-execution_command: "${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 check_error:
         "srun: error:" :

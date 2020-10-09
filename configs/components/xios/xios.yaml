@@ -22,6 +22,7 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- "2.5"
 - 2.5_r1910
 - 2.5_r1910_oifs
 branch: esm-tools
@@ -32,13 +33,18 @@ choose_version:
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
+  "2.5":
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: master
   2.5_r1910:
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
   2.5_r1910_oifs:
     archfile: ESMTOOLS_generic_intel
-    use_oasis: '' 
+    use_oasis: ''
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc
 comp_command: if [[ $HOSTNAME =~ juwels ]]; then module unload GCCcore; fi; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x

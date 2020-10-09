@@ -79,6 +79,7 @@ compile_infos:
         available_versions:
         - 40r1
         - 43r3-awi
+        - 43r3-awi-e1
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -103,7 +104,17 @@ compile_infos:
           43r3-awi:
             requires:
             - oasis3mct-4.0-oifsdeck
-            branch: master
+            branch: master # or oifs-deck???
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+          43r3-awi-e1:
+            requires:
+            - oasis3mct-4.0-oifsdeck
+            - xios-2.5
+            branch: vendor/v1-from-ECMWF
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git

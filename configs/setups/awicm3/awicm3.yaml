@@ -36,16 +36,21 @@ general:
         include_models:
                 - oifs
                 - fesom
-                - xios
                 - oasis3mct
                 - rnfmap
 
         available_versions:
+        - '1.0-deck'
         - '1.0'
         choose_version:
+          1.0-deck:
+            couplings:
+            - fesom-2.0+oifs-43r3
           '1.0':
             couplings:
-            - fesom-2.0+oifs-43r3-awi
+            - fesom-2.0+oifs-43r3+xios-2.5
+            add_include_models:
+            - xios
 
         version: "1.0"
         scenario: "PI-CTRL"

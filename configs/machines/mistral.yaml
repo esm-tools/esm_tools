@@ -150,25 +150,25 @@ export_vars:
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
-# kh 10.07.20
         # MPI environent variables important at runtime
-#        - 'I_MPI_FABRICS=shm:dapl'
-#        - 'I_MPI_FALLBACK=disable'
-#        - 'I_MPI_SLURM_EXT=1'
-#        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
-#        - 'I_MPI_DYNAMIC_CONNECTION=1'
+        - 'I_MPI_FABRICS=shm:dapl'
+        - 'I_MPI_FALLBACK=disable'
+        - 'I_MPI_SLURM_EXT=1'
+        - 'I_MPI_LARGE_SCALE_THRESHOLD=8192'
+        - 'I_MPI_DYNAMIC_CONNECTION=1'
 
-#        - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
-#        - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
-#        - 'DAPL_WR_MAX=500'
+        - 'DAPL_NETWORK_NODES=$SLURM_NNODES'
+        - 'DAPL_NETWORK_PPN=$SLURM_NTASKS_PER_NODE'
+        - 'DAPL_WR_MAX=500'
 
-#        - 'OMPI_MCA_pml=cm'
-#        - 'OMPI_MCA_mtl=mxm'
-#        - 'OMPI_MCA_coll=^ghc'
-#        - 'OMPI_MCA_mtl_mxm_np=0'
+        - 'OMPI_MCA_pml=cm'
+        - 'OMPI_MCA_mtl=mxm'
+        - 'OMPI_MCA_coll=^ghc'
+        - 'OMPI_MCA_mtl_mxm_np=0'
 
-#        - 'MXM_RDMA_PORTS=mlx5_0:1'
-#        - 'MXM_LOG_LEVEL=FATAL'
+        - 'MXM_RDMA_PORTS=mlx5_0:1'
+        - 'MXM_LOG_LEVEL=FATAL'
+        ################################################
 
 choose_useMPI:
         intelmpi:

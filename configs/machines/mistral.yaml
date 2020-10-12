@@ -47,9 +47,7 @@ pool_dir:  "/pool/data"
 #
 
 useMPI: intelmpi
-
 module_actions:
-# kh 10.07.20
         - "purge"
         - "unload netcdf_c"
         - "unload intel intelmpi"
@@ -59,6 +57,11 @@ module_actions:
         - "load nco"
 
 export_vars:
+        #########################################################################
+        # Locale Settings
+        #########################################################################
+        #
+        - "LC_ALL=en_US.utf-8"
 
         #########################################################################
         # Compiler Settings

@@ -90,11 +90,11 @@ export_vars:
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
         #           undefined symbol: __intel_skx_avx512_memcpy
         #           This combination was recommended by DKRZ support
-        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
+        - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
         - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
         # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
         #           Moved to PISM yamls, but doesn't show up??
-        - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
+        - "HDF5_ROOT=$HDF5ROOT"
 
         #########################################################################
         # NETCDF Defaults

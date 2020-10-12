@@ -91,7 +91,6 @@ export_vars:
         #           undefined symbol: __intel_skx_avx512_memcpy
         #           This combination was recommended by DKRZ support
         - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
-        - "ESM_HDF5_DIR=sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/"
         - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
         # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
         #           Moved to PISM yamls, but doesn't show up??
@@ -128,7 +127,7 @@ export_vars:
         # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
         # it's used by other models it stays in mistral.yaml for now
         #########################################################################
-        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
+        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
         #########################################################################
         # LD_LIBRARY_PATH
@@ -137,14 +136,18 @@ export_vars:
         # to be at the end!!
         #########################################################################
         #
+        - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
+        # avoid GLIBCXX_3.4.15 not found error
+        - "LD_LIBRARY_PATH=$SZIPROOT/lib:$PROJ4_ROOT/lib:/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$LD_LIBRARY_PATH"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-
-        - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+        
+        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
 
+        ################################################
+        # This needs to be moved into OIFS
         # MPI environent variables important at runtime
         - 'I_MPI_FABRICS=shm:dapl'
         - 'I_MPI_FALLBACK=disable'

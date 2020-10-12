@@ -141,10 +141,6 @@ export_vars:
         - "LD_LIBRARY_PATH=$SZIPROOT/lib:$PROJ4_ROOT/lib:/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$LD_LIBRARY_PATH"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
-        
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
 
         ################################################
         # This needs to be moved into OIFS

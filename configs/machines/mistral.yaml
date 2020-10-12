@@ -51,14 +51,12 @@ useMPI: intelmpi
 module_actions:
 # kh 10.07.20
         - "purge"
-        - "load gcc/4.8.2"
-        - "unload intel"
-        - "load intel"
-        - "load cdo nco"
-        - "unload netcdf"
-        - "load netcdf_c/4.3.2-gcc48"
+        - "unload netcdf_c"
+        - "unload intel intelmpi"
         - "load python/3.5.2"
         - "load cmake/3.13.3"
+        - "load autoconf/2.69"
+        - "load nco"
 
 export_vars:
 
@@ -175,7 +173,6 @@ choose_useMPI:
                         - "unload intel intelmpi"
                         - "load intel/18.0.4 intelmpi/2018.5.288"
                         - "load libtool/2.4.6"
-                        - "load autoconf/2.69"
                         - "load automake/1.14.1"
                 fc: mpiifort
                 f77: mpiifort

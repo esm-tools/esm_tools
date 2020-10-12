@@ -88,29 +88,40 @@ export_vars:
         #- 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/'
         #- 'HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include'
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
-        # undefined symbol: __intel_skx_avx512_memcpy
-        # This combination was recommended by DKRZ support
+        #           undefined symbol: __intel_skx_avx512_memcpy
+        #           This combination was recommended by DKRZ support
         - "HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
-        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
         - "ESM_HDF5_DIR=sw/rhel6-x64/hdf5/hdf5-1.8.16-parallel-impi-intel14/"
-        # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake:
+        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
+        # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
+        #           Moved to PISM yamls, but doesn't show up??
         - "HDF5_ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/"
+
+        #########################################################################
+        # NETCDF Defaults
+        #########################################################################
+        #
+        # NOTE(PG): Is it intentional to have different netcdf_fortran and
+        # netcdf_c versions?
         - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
         - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5ROOT/include"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
-        - "PERL5LIB=/usr/lib64/perl5"
-        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
+
+        #########################################################################
+        # Linear Algebra (LAPACK)
+        #########################################################################
+        #
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
 
         #########################################################################
         # General Software (Perl, usw.)
         #########################################################################
         #
+        - "PERL5LIB=/usr/lib64/perl5"
+        - "SZIPROOT=/sw/rhel6-x64/sys/libaec-0.3.2-gcc48"
         # mostly OpenIFS stuff
         - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
@@ -123,7 +134,19 @@ export_vars:
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
 
         - "LD_LIBRARY_PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"
+        #########################################################################
+        # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
+        # it's used by other models it stays in mistral.yaml for now
+        #########################################################################
+        - "OASIS3MCT_FC_LIB='-L$NETCDFFROOT/lib -lnetcdff'"
 
+        #########################################################################
+        # LD_LIBRARY_PATH
+        #
+        # Since the LD_LIBRARY_PATH modifies linking, this block probably needs
+        # to be at the end!!
+        #########################################################################
+        #
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
         - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
         - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'

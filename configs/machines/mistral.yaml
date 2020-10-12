@@ -138,9 +138,7 @@ export_vars:
         #
         - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
         # avoid GLIBCXX_3.4.15 not found error
-        - "LD_LIBRARY_PATH=$SZIPROOT/lib:$PROJ4_ROOT/lib:/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$LD_LIBRARY_PATH"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
+        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
 
         ################################################
         # This needs to be moved into OIFS

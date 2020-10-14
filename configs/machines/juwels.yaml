@@ -49,6 +49,8 @@ module_actions:
         - "load Python/3.6.8"
 
 export_vars:
+        - "LC_ALL=en_US.utf-8"
+
         - "FC=mpiifort"
         - "F77=mpiifort"
         - "MPIFC=mpiifort"

@@ -152,6 +152,10 @@ yac:
                 - fesom
                 - echam
 
+        component_names:
+                - fesom
+                - echam6
+
         grids:
                 'feom':
                         alias_name: feom
@@ -164,7 +168,12 @@ yac:
         o2a_lag: "${fesom.time_step}"
         a2o_seq: 2
 
+        redirect_of_root: "false"
+        redirect_stdout: "false"
         coupling_time_step: 3600
+        coupling_time_step_unit: "second"
+        calendar : "proleptic-gregorian"
+
         coupling_target_fields:
                 'feom->atmo':
                         - 'sst_feom <--n-nearest_neighbor-- sst_feom'
@@ -202,12 +211,13 @@ yac:
                             timelag: 0
                             use_mask: "false"
                             debug: "false"
-                        write_restart: "false"
+                        write_restart: "true"
                         write_weight: "false"
                         operation: "none"
                 'atmo->feom':
                         source:
                             component_id: 2
+                            component_name: "echam6"
                             timestep: "${echam.time_step}"
                             transient_grid_ref: 2
                             timelag: 0

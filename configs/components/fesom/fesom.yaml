@@ -4,6 +4,7 @@
 model: fesom
 branch: master
 version: "1.4"
+type: ocean
 
 available_versions:
 - 2.0-o

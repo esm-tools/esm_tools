@@ -131,6 +131,18 @@ oifs:
                                 # TODO: Add variable for AGRIF coupling
 
 
+        choose_general.version:
+                '1.0':
+                        compiletime_environment_changes:
+                                add_export_vars:
+                                        #- 'XIOS_TOPLEVEL=${general.model_dir}/xios'
+                                        #- 'OIFS_TOPLEVEL_DIR=${model_dir}'
+                                        #- 'OIFS_XIOS=enable'
+                                        #- 'OIFS_XIOS_DIR=${general.model_dir}/xios'
+                                        #- 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
+                                        #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+
+
         runtime_environment_changes:
                 add_export_vars:
                         # Turn on FOCI coupling
@@ -180,7 +192,7 @@ fesom:
 
 
 xios:
-        model_dir: ${general.model_dir}/xios-${fesom.version}
+        model_dir: ${general.model_dir}/xios-${xios.version}
         setup_dir: ${general.model_dir}
 
         nproca: ${computer.cores_per_node}

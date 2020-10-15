@@ -65,6 +65,12 @@ runtime_environment_changes:
       add_module_actions:
         - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
         
+compiletime_environment_changes:
+  choose_computer.name:
+    ollie:
+      add_module_actions:
+        - "load ncl"
+
 # 
 # runtime setup
 #

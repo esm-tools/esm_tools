@@ -65,8 +65,8 @@ echam:
         version: "6.3.05p2-foci"
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
-        setup_dir: ${general.model_dir}
+        #model_dir: ${general.model_dir}/echam-${echam.version}
+        #setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         nproca: 24
         nprocb: 24
@@ -306,25 +306,25 @@ oasis3mct:
                         seq: ${a2o_seq}
 
 
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+        #coupling_methods:
+        #        conserv:
+        #                time_transformation: average
+        #                remapping:
+        #        'atmo->opac':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
 
 
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opat':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
+        #coupling_methods:
+        #        conserv:
+        #                time_transformation: average
+        #                remapping:
+        #        'atmo->opat':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
+        #        'atmo->opac':
+        #                lag: ${a2o_lag}
+        #                seq: ${a2o_seq}
 
 
         coupling_methods:

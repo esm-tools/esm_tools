@@ -51,7 +51,7 @@ Ten Steps to a Running Model
       * namelists that will be used during the run
       * the miniature ``.sad`` script that is submitted the compute nodes, which also shows the environment that will be used
 
-   You can also check directly if the job folder looks like expected. You can find it at ``$BASE_DIR/$EXP_ID`/run_xxxxxxxxxxx``, where ``BASE_DIR`` was set in your runscript, ``EXP_ID``   (probably) on the command line, and ``run_xxxxxxxxxxxxx`` stands for the first chunk of your chain job. You can check the work folder, which is located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/work``, as well as the complete configuration used to generate the simulation, located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/log``.
+   You can also check directly if the job folder looks like expected. You can find it at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxx``, where ``BASE_DIR`` was set in your runscript, ``EXP_ID``   (probably) on the command line, and ``run_xxxxxxxxxxxxx`` stands for the first chunk of your chain job. You can check the work folder, which is located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/work``, as well as the complete configuration used to generate the simulation, located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/log``.
 
 10. Run the experiment::
 

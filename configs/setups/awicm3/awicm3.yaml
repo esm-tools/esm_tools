@@ -57,7 +57,7 @@ general:
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
-        compute_time: "01:30:00"
+        compute_time: "00:30:00"
 
         choose_computer.name:
                 mistral:
@@ -103,11 +103,23 @@ postprocess:
 oifs:
         version: "43r3"
 
-        pool_dir: ${computer.pool_directories.focipool}
+        pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         ocean_resolution: "${fesom.resolution}"
+
+        input_dir: ${pool_dir}/oifs-${version}
+        rtables_dir: ${input_dir}/rtables/
+        ##vtables_dir: ${input_dir}/../vtables/
+        ##clim_dir: ${input_dir}/../
+        ##icmcl_dir: ${input_dir}
+        ##icmcl_file: ICMCLgu5aINIT
+        forcing_dir: ${input_dir}/${version}/ifsdata/
+        ifsdata_dir: ${input_dir}/${version}/ifsdata/
+        cmip6_data_dir: ${input_dir}/cmip6-data
+        cmip5_data_dir: ${input_dir}/cmip5-data
+
 
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
@@ -130,6 +142,8 @@ oifs:
                                 # Turn on coupling
                                 # TODO: Add variable for AGRIF coupling
 
+        resolution: TL159
+        levels: L60
 
         choose_general.version:
                 '1.0':
@@ -141,7 +155,6 @@ oifs:
                                         #- 'OIFS_XIOS_DIR=${general.model_dir}/xios'
                                         #- 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
                                         #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
-
 
         runtime_environment_changes:
                 add_export_vars:
@@ -163,13 +176,26 @@ oifs:
                 TCO399:
                      nproca: 862
 
+        res_number_tl: ${resolution}${levels} # @JOAKIM: what is this variable for? @JAN: Is the directory correct?
+
         choose_general.resolution:
-                T159_CORE2:
+                TL159_CORE2:
                         nproca: 279
                         nprocb: 1
 
+        #@JAN/JOAKIM: is ok to ignore this files?
+        remove_input_sources:
+                - vtables
+        remove_forcing_sources:
+                - RCP3PD_MIDYR_CONC
+                - RCP45_MIDYR_CONC
+                - RCP6_MIDYR_CONC
+                - RCP85_MIDYR_CONC
+
+
 fesom:
         version: "2.0"
+        resolution: CORE2
         choose_general.resolution:
                 TCO159_CORE2:
                         nproca: 288
@@ -190,6 +216,9 @@ fesom:
 
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
 
+        remove_config_sources:
+                - diag
+
 
 xios:
         model_dir: ${general.model_dir}/xios-${xios.version}
@@ -197,6 +226,10 @@ xios:
 
         nproca: ${computer.cores_per_node}
         nprocb: 1
+
+        #@JAN/JOAKIM: is ok to ignore this files?
+        remove_config_sources:
+                - ifs_xml
 
 
 rnfmap:
@@ -211,7 +244,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${computer.pool_directories.focipool}/OASIS3_OPENIFS43R3-${oifs.resolution}_${fesom.resolution}/
+        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
         use_lucia: True
@@ -240,7 +273,7 @@ oasis3mct:
         #a2o_seq: 1
         o2a_seq: 1
 
-        coupling_time_step: 10800
+        coupling_time_step: 3600
 #        coupling_target_fields:
 #                # Coupling ocean fields to atm
 #                sstocean:
@@ -450,10 +483,11 @@ oasis3mct:
                 masks: masks.nc
                 grids: grids.nc
 
-        add_input_sources:
-                areas: ${pool_dir}/grids_areas_masks.nc
-                masks: ${pool_dir}/grids_areas_masks.nc
-                grids: ${pool_dir}/grids_areas_masks.nc
+        # @JOAKIM: ok to remove?
+        #add_input_sources:
+        #        areas: ${pool_dir}/grids_areas_masks.nc
+        #        masks: ${pool_dir}/grids_areas_masks.nc
+        #        grids: ${pool_dir}/grids_areas_masks.nc
 
         add_restart_out_files:
                 rmp_o2a_TL: rmp_o2a_TL

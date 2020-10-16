@@ -2,6 +2,9 @@
 #OIFS standalone (=AMIP?) YAML FILE
 #
 
+# TODO:
+# 1 use with_xios to include or not xios (it is not working now probably due to a bug in esm_tools - esm_tools resolving include models before resolving the chooses)
+
 model: oifs
 executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}

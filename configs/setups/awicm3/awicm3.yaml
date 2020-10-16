@@ -147,14 +147,13 @@ oifs:
 
         choose_general.version:
                 '1.0':
-                        compiletime_environment_changes:
-                                add_export_vars:
-                                        #- 'XIOS_TOPLEVEL=${general.model_dir}/xios'
-                                        #- 'OIFS_TOPLEVEL_DIR=${model_dir}'
-                                        #- 'OIFS_XIOS=enable'
-                                        #- 'OIFS_XIOS_DIR=${general.model_dir}/xios'
-                                        #- 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
-                                        #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+                        with_xios: True
+                        #compiletime_environment_changes:
+                        #        add_export_vars:
+                        #                - 'OIFS_XIOS=enable'
+                        #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
+                        #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
+                        #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
 
         runtime_environment_changes:
                 add_export_vars:

@@ -214,7 +214,7 @@ oasis3mct:
         a2o_lag: "${oifs.time_step}"
         a2r_lag: "${oifs.time_step}"
         o2a_lag: "${nemo.time_step}"
-        a2o_seq: 3
+        a2o_seq: 1
         o2a_seq: 1
 
         coupling_time_step: 10800

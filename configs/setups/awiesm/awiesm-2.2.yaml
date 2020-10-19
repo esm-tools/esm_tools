@@ -71,6 +71,14 @@ echam:
                         nproca: 24
                         nprocb: 18
 
+        compiletime_environment_changes:
+            add_export_vars:
+                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                - "OASIS3MCT_FC_LIB=$(pwd)/lib/"
+                - "OASIS3MCTROOT=$(pwd)/oasis/"
+                - 'configure_opts=--with-coupler=oasis3-mct'
 
 #########################################################################################
 

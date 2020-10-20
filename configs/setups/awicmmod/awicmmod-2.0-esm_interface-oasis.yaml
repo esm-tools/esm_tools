@@ -103,6 +103,7 @@ esm_interface:
                     esmloglevel: 2
                     debug_fields_send: false
                     debug_fields_recv: false
+                    debug_fields_period: "${oasis3mct.coupling_time_step}"
                 esmsetupnb:
                     nbmodels: 2
                     nbroutes: 2

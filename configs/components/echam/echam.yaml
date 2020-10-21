@@ -44,7 +44,7 @@ compile_infos:
           6.3.05p2-concurrent_radiation-paleodyn:
             branch: "ice"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
-            comp_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
           6.3.05p2-concurrent_radiation-paleodyn-hammoz:
             branch: "hammoz"
@@ -89,6 +89,18 @@ include_models:
         - hdmodel
 
 
+choose_computer.name:
+        mistral:
+            choose_version:
+                6.3.05p2-concurrent_radiation-paleodyn:
+                    add_add_compiletime_environment_changes:
+                        add_add_export_vars:
+                            - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                            - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                    add_add_runtime_environment_changes:
+                        add_add_export_vars:
+                            - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                            - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 
 executable: echam6
 version: 6.3.04p1

@@ -55,6 +55,7 @@ module_actions:
         - "load cmake/3.13.3"
         - "load autoconf/2.69"
         - "load nco"
+        - "load cdo"
 
 export_vars:
         #########################################################################

@@ -1,8 +1,8 @@
 ---
 name: Document request/contribution
-about: Suggest a missing entry for the documentation or provide your own example to be included in the documentation.
+about: Suggest a missing or incorrect entry for the documentation or provide your own example to be included in the documentation.
 title: ''
-labels: ''
+labels: 'documentation'
 assignees: ''
 
 ---

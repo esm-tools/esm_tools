@@ -63,7 +63,7 @@ comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -
 
 
 executable: pismr
-version: 1.1.4
+version: github1.2.1
 domain: "greenland"
 resolution: 20km
 lresume: false
@@ -74,22 +74,18 @@ setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 pool_dir: "${computer.pool_directories.pool}/pool_pism"
 
+cold_start_file: "${pool_dir}/input/${domain}/pismr_${domain}_${resolution}.nc"
+spinup_file: "/no/default/was/set"
 
-choose_domain:
-        "greenland":
-                choose_resolution:
-                        20km:
-                                nx: 50
-                                ny: 30
-                                nz: 100
+choose_computer.cores_per_node:
+    36:
+        nnodes: 2
+        nproca: 72
+        nprocb: 1
 
 
-        "nhem":
-                choose_resolution:
-                        20km:
-                                nx: 50
-                                ny: 30
-                                nz: 100
+time_step: 100
+job_type: "compute"
 
 bin_files:
         "pism_bin": "pism_bin"
@@ -99,4 +95,9 @@ bin_in_work:
         "pism_bin": "pismr"
 
 further_reading:
+    - pism/pism.domains.yaml
     - pism/pism.compiletime_env_changes.yaml
+    - pism/pism.input_and_restart_files.yaml
+    - pism/pism.outputs.yaml
+    - pism/pism.calendar.yaml
+    - pism/pism.recipes.yaml

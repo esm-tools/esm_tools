@@ -76,6 +76,7 @@ docs/_build/
 docs/api/
 docs/API.rst
 docs/Supported_Models.rst
+docs/.docstrings
 
 # PyBuilder
 target/

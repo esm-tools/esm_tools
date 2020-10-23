@@ -90,7 +90,10 @@ esm_tools_modules = [
  "esm_version_checker",
 ]
 esm_tools_modules.remove("esm_tools")
-# Uncomment the following if you don't want to compile the docstrings
+# Creating a docs/.docstrings.yml file allows you to control the compilation of
+# the docstrings. Fill this file with ``docstrings: 0`` if you want to avoid
+# docstring's compilation, or ``docstrings: 1`` if you want to compile the
+# docstrings. If the file does not exists it always compiles the docstrings.
 if os.path.isfile(".docstrings.yml"):
     with open(".docstrings.yml") as docstrings_yaml:
          docstrings_dict = yaml.load(docstrings_yaml, Loader=yaml.FullLoader)

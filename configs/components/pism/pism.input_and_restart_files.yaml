@@ -13,7 +13,7 @@ input_files:
 input_sources:
     input: ${cli_input_file_pism}
 input_in_work:
-    input: ${general.expid}_pismr_input_${initial_date}.nc
+    input: ${general.expid}_pismr_input_${run_datestamp}.nc
 
 restart_in_files:
     restart: restart

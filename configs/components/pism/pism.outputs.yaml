@@ -1,10 +1,13 @@
-ex_interval: 10
-ts_interval: 1
 output_size: "small"
 
 output_files:
     ts_file: "${expid}_pismr_ts_${run_datestamp}.nc"
     ex_file: "${expid}_pismr_extra_${run_datestamp}.nc"
+
+ts_times: "${current_date!syear}:${ts_interval}:${end_date!syear}"
+ts_interval: 1
+ex_times: "${current_date!syear}:${ex_interval}:${end_date!syear}"
+ex_interval: 10
 
 choose_version:
     # FIXME(PG): Ask CR what version 0.0 is...?

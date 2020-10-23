@@ -2,6 +2,37 @@
 ESM Runscripts
 ==============
 
+Usage
+-----
+
+::
+
+    esm_runscripts [-h] [-d] [-v] [-e EXPID] [-c] [-P] [-j LAST_JOBTYPE]
+                      [-t TASK] [-p PID] [-x EXCLUDE] [-o ONLY]
+                      [-r RESUME_FROM] [-U]
+                      runscript
+
+Arguments
+---------
+
+====================================================== ==========================================================
+Optional arguments                                     Description
+====================================================== ==========================================================
+  -h, --help                                           Show this help message and exit.
+  -d, --debug                                          Print lots of debugging statements.
+  -v, --verbose                                        Be verbose.
+  -e ``EXPID``, --expid ``EXPID``                      The experiment ID to use. Default ``test``.
+  -c, --check                                          Run in check mode (don't submit job to supercomputer).
+  -P, --profile                                        Write profiling information (esm-tools).
+  -j ``LAST_JOBTYPE``, --last_jobtype ``LAST_JOBTYPE`` Write the jobtype this run was called from (esm-tools internal).
+  -t ``TASK``, --task ``TASK``                         The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
+  -p ``PID``, --pid ``PID``                            The PID of the task to observe.
+  -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
+  -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
+  -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from this step.
+  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files.
+====================================================== ==========================================================
+
 
 Running a Model/Setup
 ---------------------
@@ -18,7 +49,7 @@ The ``runscript.yaml/.run`` should contain all the information regarding the exp
 paths, and particular configurations of the experiment (see the :ref:`yaml:Runscripts` section
 for more information about the syntax of `yaml` runscripts). The ``experiment_ID`` is used
 to identify the experiment in the scheduler and to name the experiment's directory (see
-:ref:`esm_runscripts:Experiment Directory Structure`).
+:ref:`esm_runscripts:Experiment Directory Structure`). Omitting the argument ``-e <experiment_ID>`` will create an experiment with the default experimant ID ``test``.
 
 `ESM-Runscript` allows to run an experiment check by adding the ``-c`` flag to the previous
 command. This check performs all the system operations related to the experiment that would

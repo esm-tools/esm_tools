@@ -30,7 +30,7 @@ Optional arguments                                     Description
   -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
   -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
   -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from this step.
-  -U, --update                                         [U]date the tools from the current version.
+  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files.
 ====================================================== ==========================================================
 
 

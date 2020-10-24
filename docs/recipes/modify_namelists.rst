@@ -26,7 +26,7 @@ In dot notation, this will look like:
 Example
 ~~~~~~~
 
-In this example, we modify the ``co2vmr`` of the ``radctl`` section of ``namelist.echam``.
+Here are examples for just the relevant YAML change, and for a full runscript using this feature.
 
 .. yaml blocks can be written in yaml format by including them in a code block:
 .. tabs::

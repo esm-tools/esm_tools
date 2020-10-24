@@ -20,7 +20,7 @@ You can modify namelists directly from your user yaml runscript configuration.
    finally the desired value.
 
 In dot notation, this will look like:
-``<model_name>.namelist_changes.<namelist_name>.<chapter_name><key_name> = <value>``
+``<model_name>.namelist_changes.<namelist_name>.<chapter_name>.<key_name> = <value>``
 
 
 Example

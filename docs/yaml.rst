@@ -406,7 +406,7 @@ sdoy      Day of the year, counting from Jan. 1.
 ========= ======================================
 
 Changing Namelists
-------------------
+~~~~~~~~~~~~~~~~~~
 
 It is also possible to specify namelist changes to a particular section:
 

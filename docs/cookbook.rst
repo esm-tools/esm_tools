@@ -15,3 +15,4 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. Include your recipes here.
 
 .. include:: recipes/template.rst
+.. include:: recipes/use_own_namelist.rst

@@ -78,9 +78,13 @@ echam:
 #########################################################################################
 
 mpiom:
+        conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
+          --enable-HAMOCC --with-mpi=intelmpi
+        install_bins: bin/mpiom.x
+
         timestep: 2700
         choose_computer.cores_per_node:
-                24`:
+                24:
                         choose_general.resolution:
                                 T31_GR30:
                                         nnodes: 9

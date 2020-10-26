@@ -1,6 +1,6 @@
 components:
 - echam-6.3.04p1
-- mpiom-1.6.3-coupled
+- mpiom-1.6.3
 - oasis3mct-2.8
 coupling_changes:
 - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt

@@ -55,8 +55,15 @@ module_actions:
         - "load cmake/3.13.3"
         - "load autoconf/2.69"
         - "load nco"
+        - "load cdo"
 
 export_vars:
+        #########################################################################
+        # Locale Settings
+        #########################################################################
+        #
+        - "LC_ALL=en_US.utf-8"
+
         #########################################################################
         # Compiler Settings
         #########################################################################
@@ -98,6 +105,14 @@ export_vars:
         # netcdf_c versions?
         - "NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/"
         - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+        # NOTE(PG): The next lines are moved to echam.yaml, and only active for:
+        # A) mistral
+        # and
+        # B) echam-6.3.05p2-concurrent-radiation-paleodyn
+        # the next line is the critical one, this works:
+        # - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+        # this doesn't - mismatch with cxx_include_directories???:
+        # - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
         - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
         - "NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include"
@@ -133,6 +148,8 @@ export_vars:
         - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
         # avoid GLIBCXX_3.4.15 not found error
         - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
+        # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
+        # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 
         ################################################
         # This needs to be moved into OIFS

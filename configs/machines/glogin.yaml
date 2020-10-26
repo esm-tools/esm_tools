@@ -72,6 +72,7 @@ choose_useMPI:
                 launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
 
 export_vars:
+        - "LC_ALL=en_US.utf-8"
 
         - "FC=${fc}"
         - "F77=${f77}"

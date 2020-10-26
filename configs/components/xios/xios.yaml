@@ -37,7 +37,7 @@ choose_version:
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
   2.5_r1910_oifs:
-    archfile: ESMTOOLS_generic_oasis_intel
+    archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc
@@ -62,21 +62,41 @@ runtime_environment_changes:
 # 
 # runtime setup
 #
+pool_dir: "${computer.pool_directories.focipool}"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00
+xml_dir: ${pool_dir}
+with_model: nemo
 
 config_files:
-        domain_def: domain_def
-        field_def: field_def
-        file_def: file_def
         io_def: io_def
+
+choose_with_model:
+        nemo:
+                add_config_files:
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+        oifs: 
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml
         field_def: ${xml_dir}/field_def.xml
         file_def: ${xml_dir}/file_def.xml
         io_def: ${xml_dir}/iodef.xml
+        ifs_xml: ${xml_dir}/ifs_xml/*
+        context_ifs: ${xml_dir}/context_ifs.xml
+
+config_in_work:
+        domain_def: domain_def.xml
+        field_def: field_def.xml
+        file_def: file_def.xml
+        io_def: iodef.xml
+        ifs_xml: ifs_xml/*
+        context_ifs: context_ifs.xml
 
 bin_sources:
         server: ${bin_dir}/xios.x

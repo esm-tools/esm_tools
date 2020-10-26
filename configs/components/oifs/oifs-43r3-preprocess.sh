@@ -8,15 +8,16 @@
 ##
 
 indir=$1
-inexpid=$2
-outexpid=$3
-startdate=$4
-enddate=$5
-outdir=$6
-with_wam=$7
-perturb=$8
-nx=${9}
-ensemble_id=${10}
+icmcl_file=$2
+inexpid=$3
+outexpid=$4
+startdate=$5
+enddate=$6
+outdir=$7
+with_wam=$8
+perturb=$9
+nx=${10}
+ensemble_id=${11}
 
 style="jesus"
 
@@ -157,7 +158,7 @@ fi
 if [[ "x$style" == "xjesus" ]] ; then
     
     echo " * Cut ICMCL file "
-    cdo -select,startdate=${starttime},enddate=${endtime} ${indir}/ICMCL${inexpid}INIT ${outdir}/ICMCL${outexpid}INIT
+    cdo -select,startdate=${starttime},enddate=${endtime} ${icmcl_file} ${outdir}/ICMCL${outexpid}INIT
 
 fi
 

@@ -11,11 +11,11 @@ Using your own namelist
    <https://github.com/esm-tools/esm_tools/tree/release/namelists>`_.
 
 
-In your runscript, you can instruct `ESM-Tools` to substitute a given default namelist by `ESM-Tools` by a
+In your runscript, you can instruct `ESM-Tools` to substitute a given default namelist by a
 namelist of your choice.
 
 1. Search for the ``config_sources`` variable inside the configuration file of the model you are trying to run,
-   and then, identify the "key" containing the path to the namelist to modify.
+   and then, identify the "key" containing the path to the default namelist.
 
 2. In your runscript, indented in the corresponding model section, add an ``add_config_sources`` section,
    containing a variable whose "key" is the one of step 1, and the value is the path of the new namelist.
@@ -29,9 +29,9 @@ In dot notation both steps will look like:
 ``<model_name>.<remove_namelis_changes>: [<name_of_your_namelist>]``
 
 .. warning:: Use step 3 at your own risk! Many of the model specific information and functionality is
-   transferred to the model through ``namelist_changes``, and therefore, we discourage you from using this
-   unless you have a very deep understanding of the configuration file and the model. Following
-   :ref:`cookbook:Changing Namelist Entries from the Runscript` would be a safest solution.
+   transferred to the model through ``namelist_changes``, and therefore, we discourage you from using
+   ``remove_namelist_changes`` unless you have a very deep understanding of the configuration file and the model.
+   Following :ref:`cookbook:Changing Namelist Entries from the Runscript` would be a safest solution.
 
 
 Example
@@ -47,6 +47,7 @@ files.
       Following step 1, search for the ``config_sources`` dictionary inside the ``echam.yaml``:
 
       .. code-block:: yaml
+
          # Configuration Files:
          config_sources:
                  "namelist.echam": "${namelist_dir}/namelist.echam"
@@ -56,15 +57,17 @@ files.
       you will need to include the following in your runscript:
 
       .. code-block:: yaml
+
          echam:
                  add_config_sources:
                          "namelist.echam": /home/ollie/<usr>/my_namelists/namelist.echam
 
       If you want to omit the ``namelist_changes`` in ``echam.yaml`` or any other configuration file
       that your model/couple setup is using, you'll need to add to your runscript
-      ``remove_namelist_changes: [namelist.echam]`` (step 3)::
+      ``remove_namelist_changes: [namelist.echam]`` (step 3):
 
       .. code-block:: yaml
+
          echam:
                  add_config_sources:
                          "namelist.echam": /home/ollie/<usr>/my_namelists/namelist.echam
@@ -77,7 +80,8 @@ files.
          using ``remove_namelist_changes: [namelist.echam]`` will destroy the following lines in the
          ``echam.yaml``:
 
-         .. code_block:: yaml
+         .. code-block:: yaml
+
             choose_lresume:
                     False:
                             restart_in_modifications:
@@ -102,6 +106,7 @@ files.
       Following step 1, search for the ``config_sources`` dictionary inside the ``fesom.yaml``:
 
       .. code-block:: yaml
+
          config_sources:
                  config:  "${namelist_dir}/namelist.config"
                  forcing: "${namelist_dir}/namelist.forcing"
@@ -114,15 +119,17 @@ files.
       you will need to include the following in your runscript:
 
       .. code-block:: yaml
+
          fesom:
                  add_config_sources:
                          ice: "/home/ollie/<usr>/my_namelists/namelist.ice"
 
       If you want to omit the ``namelist_changes`` in ``fesom.yaml`` or any other configuration file
       that your model/couple setup is using, you'll need to add to your runscript
-      ``remove_namelist_changes: [namelist.ice]`` (step 3)::
+      ``remove_namelist_changes: [namelist.ice]`` (step 3):
 
       .. code-block:: yaml
+
          fesom:
                  add_config_sources:
                          ice: "/home/ollie/<usr>/my_namelists/namelist.ice"
@@ -139,4 +146,7 @@ See also
 
 .. links to relevant parts of the documentation
 
-:ref:`yaml:What Is YAML?`
+- `Default namelists on GitHub <https://github.com/esm-tools/esm_tools/tree/release/namelists>`_
+- :ref:`yaml:Append to an Existing List (\`\`add_\`\`)`
+- :ref:`yaml:Changing Namelists`
+- :ref:`yaml:What Is YAML?`

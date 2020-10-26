@@ -11,6 +11,7 @@ choose_job_type:
                         - "initialize_experiment_logfile"
                         - "_write_finalized_config"
                         - "copy_tools_to_thisrun"
+                        - "compile_model"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
                         - "copy_files_to_thisrun"

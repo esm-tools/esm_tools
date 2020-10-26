@@ -14,6 +14,7 @@ choose_version:
     branch: 1.6.3
   1.6.3p2:
     branch: 1.6.3p2
+install_bins: bin/mpiom.x
 clean_command: make clean
 comp_command: make -j `nproc --all`
 conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC --with-mpi=intelmpi
@@ -37,6 +38,7 @@ executable: mpiom
 
 setup_dir: "${model_dir}"
 
+time_step: 2700
 resolution: GR15
 
 further_reading:

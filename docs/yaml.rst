@@ -185,8 +185,8 @@ declaration:
    esm_runscript_dir,   "Absolute path to the runscripts folder (``<PATH>/esm_tools/runscripts``)."
    model_dir,           Absolute path of the model directory (where it was installed by `esm_master`).
 
-Switches (``choose\_``)
-~~~~~~~~~~~~~~~~~~~~~~~
+Switches (``choose_``)
+~~~~~~~~~~~~~~~~~~~~~~
 
 A `YAML` list named as ``choose_<variable>`` function as a `switch` that evaluates the given ``variable``.
 The nested element `keys` inside the ``choose_<variable>`` act as `cases` for the switch and the `values` of

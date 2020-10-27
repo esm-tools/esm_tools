@@ -110,18 +110,18 @@ before actually submitting and examining the resulting namelists::
 
 
 The namelists are printed in their final form as part of the log during the job
-submission and can be seen on disk in the ``work`` forlder of your first
+submission and can be seen on disk in the ``work`` folder of your first
 ``run_XZY`` folder.
 
 Note that you can have several chapters for one namelist or several namelists
 included in one ``namelist_changes`` block, but you can only have one
-``namelist_changes`` block per model or component.
+``namelist_changes`` block per model or component (see
+:ref:`yaml:Changing Namelists`).
 
 See also
 ~~~~~~~~
 
-.. todo Maybe we want to include a link here to the default namelists?
-
 .. links to relevant parts of the documentation
-
-:ref:`yaml:What Is YAML?`
+- `Default namelists on GitHub <https://github.com/esm-tools/esm_tools/tree/release/namelists>`_
+- :ref:`yaml:Changing Namelists`
+- :ref:`yaml:What Is YAML?`

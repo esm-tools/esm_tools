@@ -35,6 +35,5 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. } (Move to the end of the paragraph)
 .. : sort (sort the lines you have selected alphabetically)
 
-.. include:: recipes/template.rst
-
 .. include:: recipes/modify_namelists.rst
+.. include:: recipes/use_own_namelist.rst

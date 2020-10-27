@@ -61,6 +61,40 @@ information to understand whether the experiment will work correctly or not (we 
 encourage users to pay particular attention to the `Namelists` and the `Missing files` sections
 of the check's output).
 
+Filetypes and file hierachy during model/setup run
+--------------------------------------------------
+
+.. graphviz::
+    :name: sphinx.ext.graphviz
+    :caption: ESM-Tools filetype hierachy
+    :alt: ESM-Tools filetype hierachy
+    :align: center
+
+     digraph "file_hierachy" {
+         size="6,4";
+         graph [fontname="Verdana", fontsize="12"];
+         node [fontname="Verdana", fontsize="12"];
+         edge [fontname="Sans", fontsize="12"];
+         rankdir="TB";
+
+         runscript [label="runscript.yaml", shape="note", fillcolor="gray", style=filled];
+         model_file [label="model.yaml", shape="note", fontcolor=black, fillcolor="gray", style=filled];
+         setup_file [label="setup.yaml", shape="note", fillcolor=gray, style=filled];
+         maschine_file [label="maschine.yaml", shape="note", fillcolor=gray, style=filled];
+         user [label="User"];
+
+         setup_file -> maschine_file [label=" overwrites "];
+         model_file -> setup_file [label=" overwrites "];
+         runscript -> model_file [label=" overwrites "];
+
+         user -> runscript [label=" edits "];
+         developer [label="Developer"];
+         developer -> maschine_file [label=" edits "]; 
+         developer -> setup_file [label=" edits "];
+         developer -> model_file [label=" edits "];
+
+     }
+
 Job Phases
 ----------
 

@@ -1,0 +1,227 @@
+Implement a New Model
+=====================
+
+**Feature available since version:** 4.2
+
+
+1. Upload your model into a repository such us `gitlab.awi.de`, `gitlab.dkrz.de` or `github`.
+   Make sure to set up the right access permissions, so that you comply with the licensing of
+   the software you are uploading.
+
+2. If you are interested in implementing more than one version of the model, we recommend you
+   to commit them to the master branch in the order they were developed, and that you create
+   a tag per version. For example:
+
+   a. Clone the empty master branch you just created and add your model files to it::
+
+      $ git clone https://<your_repository>
+      $ cp -rf <your_model_files_for_given_version> <your_repository_folder>
+      $ git add .
+
+   b. Commit, tag the version and push the changes to your repository::
+
+      $ git commit -m "your comment here"
+      $ git tag -a <version_id> -m "your comment about the version"
+      $ git push -u origin <your_master_branch>
+      $ git push origin <version_id>
+
+   c. Repeat steps `a` and `b` for all the versions that you would like to be present in
+      ESM-Tools.
+
+3. Now that you have your model in a repository you are ready to implement it into `esm_tools`.
+   First, you will need to create your own branch of `esm_tools`, following the steps 1-4 in
+   :ref:`contributing:Contribution to esm_tools Package`.
+
+4. Then you will need to create a folder for your model inside the ``configs`` folder in your
+   `esm_tools` branch, and create a `yaml` file per version of your model::
+
+    $ mkdir <PATH>/esm_tools/configs/<model>
+    $ touch <PATH>/esm_tools/configs/<model>/<model-version>.yaml
+
+   These `yaml` files need to exist for `esm_master` to download and compile your model, but they can
+   be empty. However, you can choose to fill them with a basic configuration::
+
+    # YOUR_MODEL YAML CONFIGURATION FILE
+    #
+
+    model: your_model
+    branch: your_model_branch_in_your_repo
+    version: "the_version_of_your_model"
+
+    comp_executable: your_model_bin
+    executable: your_model_command
+
+    setup_dir: "${model_dir}"
+    bin_dir: "${setup_dir}/the_location_of_your_model_bin"
+
+5. Use your favourite text editor to open and edit ``setups2models.yaml`` in the ``configs/esm_master/``
+   folder::
+
+   $ <your_text_editor> <PATH>/esm_tools/configs/esm_master/setups2models.yaml
+
+6. The information of your model should be placed inside the ``components`` chapter of the file and
+   be correctly aligned with the other components. You can use the following example as a template::
+
+    components:
+            [...]
+            "your_model":
+                    install_bins: "path_to_the_binaries"
+                    git-repository: "https://your_repository.git"
+                    choose_version:
+                           "1.0.0":
+                                   branch: "1.0.0"
+                           "1.0.1":
+                                   branch: "1.0.1"
+                           "1.0.2":
+                                   branch: "develop"
+                    available_versions:
+                           - "1.0.0"
+                           - "1.0.1"
+                           - "1.0.2"
+                    comp_command: "your_commands_for_compiling"
+                    clean_command: "${defaults.clean_command}"
+
+            [...]
+
+   In the ``install_bins`` key you need to indicate the path inside your model folder where the
+   binaries are compiled to, so that `esm_master` can find them once compiled. The ``choose_version``
+   key relates version labels with their particular configurations, in this case only the ``branch``
+   (or tag) where they are located in your repository. The ``available_versions`` key is needed for
+   `esm_master` to list the versions of your model when called without input (``$ esm_master``).
+   The ``comp_command`` key indicates the command needed to compile your model, and can be set as
+   ``${defaults.comp_command}`` for a default command
+   (``mkdir -p build; cd build; cmake ..;   make install -j `nproc --all```), or you can define your
+   own list of compiling commands separated with ``;`` (``"command1; command2"``). Note that this is
+   just an example of a model configuration, but the parser used by `esm_tools` to read `yaml` files
+   (`esm_parser`) allows for a lot of flexibility in their configuration; i.e., imagine that the
+   different versions of your model are in different repositories, instead of in different branches,
+   and their path to the binaries are also different. Then you can remove the ``git-repository`` and
+   ``install_bins`` subsections from the general model section (``"your_model"``), and place their
+   particular configuration in their corresponding version inside the ``choose_version`` subsection.
+
+7. You can now check if `esm_master` can list and install your model correctly::
+
+    $ esm_master
+
+   This command should return, without errors, a list of available models and versions including yours.
+   Then you can actually try installing your model in the desire folder::
+
+    $ mkdir ~/model_codes
+    $ cd ~/model_codes
+    $ esm_master install-your_model-version
+
+8. If everything works correctly you can check that your changes pass `flake8`, commit your changes, push
+   them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
+   :ref:`contributing:Contribution to esm_tools Package`).
+
+
+See also
+~~~~~~~~
+
+.. links to relevant parts of the documentation
+
+- :ref:`yaml:What Is YAML?`
+
+
+Implement a New Coupled Setup
+=============================
+
+**Feature available since version:** 4.2
+
+
+1. Make sure the models, couplers and versions you want to use, are already available for `esm_master`
+   to install them (``$ esm_master`` and check the list). If something is missing you will need to
+   add it following the instructions in :ref:`contributing:Implementing a New Model`.
+
+2. Once everything you need is available to `esm_master`, you will need to create your own branch of
+   `esm_tools`, following the steps 1-4 in :ref:`contributing:Contribution to esm_tools Package`.
+
+3. Then you will need to create a folder for your coupled setup inside the ``configs`` folder, and
+   create a `yaml` file per version of your setup::
+
+    $ mkdir <PATH>/esm_tools/configs/<setup>
+    $ touch <PATH>/esm_tools/configs/<setup>/<setup-version>.yaml
+
+   These `yaml` files need to exist for `esm_master` to download and compile your coupled setup, but
+   they can be empty. However, you can choose to fill them with a basic configuration::
+
+    # YOUR_SETUP YAML CONFIGURATION FILE
+    #
+
+    model: your_setup
+    version: "your_setup_version"
+
+4. Use your favourite text editor to open and edit ``setups2models.yaml`` in the ``configs/esm_master/``
+   folder::
+
+   $ <your_text_editor> <PATH>/esm_tools/configs/esm_master/setups2models.yaml
+
+5. The information of your coupled setup should be placed inside the ``setups`` chapter of the file and
+   be correctly aligned with the other setups. You can use the following example as a template::
+
+    setups:
+            [...]
+            your_setup:
+                         available_versions:
+                                 - "1.0.0"
+                                 - "1.0.1"
+
+                         choose_version:
+                                 "1.0.0":
+                                         couplings:
+                                                 - "model1-1.0+model2-1.0"
+                                 "1.0.1":
+                                         couplings:
+                                                 - "model1-1.1+model2-1.1"
+
+            [...]
+
+   The ``available_versions`` key is needed for `esm_master` to label and list the versions of your setup
+   when called without input (``$ esm_master``). The ``choose_version`` key relates version labels with
+   their particular configurations. In this example, each version contains only the parameter
+   ``couplings`` that consist of a label that points to a coupling configuration, contained in another
+   chapter of ``setups2models.yaml``.
+
+6. Now you need to include the different coupling configurations into the ``couplings`` chapter of the
+   ``setups2models.yaml``. You can use the following example as a template::
+
+    couplings:
+            "model1-1.0+model2-1.0":
+                    components:
+                            - "model1-1.0"
+                            - "model2-1.0"
+                            - "coupler-version"
+                    coupling_changes:
+                            - "sed -i '/MODEL1_PARAMETER/s/OFF/ON/g' model1-1.0/file_to_change"
+                            - "sed -i '/MODEL2_PARAMETER/s/OFF/ON/g' model2-1.0/file_to_change"
+
+            [...]
+
+   Remember to do this with all the couplings required from your setup versions in the ``setups``
+   chapter. The ``components`` subsection should list the models and couplers used for the given coupling,
+   including their required version, in the same way they are labelled in the ``components`` chapter of
+   ``setups2models.yaml``. The ``coupling_changes`` subsection should include a list of commands to make
+   the necessary changes in the component's make files, for a correct compilation of the coupled setup.
+
+7. You can now check if `esm_master` can list and install your coupled setup correctly::
+
+    $ esm_master
+
+   This command should return, without errors, a list of available setups and versions including yours.
+   Then you can actually try installing your setup in the desire folder::
+
+    $ mkdir ~/model_codes
+    $ cd ~/model_codes
+    $ esm_master install-your_setup-version
+
+8. If everything works correctly you can check that your changes pass `flake8`, commit your changes, push
+   them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
+   :ref:`contributing:Contribution to esm_tools Package`).
+
+
+See also
+~~~~~~~~
+
+.. links to relevant parts of the documentation
+
+- :ref:`yaml:What Is YAML?`

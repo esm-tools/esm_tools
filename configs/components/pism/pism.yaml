@@ -30,6 +30,8 @@ available_versions:
 - github1.2
 - github1.2.1
 - index1.1
+required_plugins:
+    - "git+https://github.com/esm-tools-plugins/esm_pism"
 choose_version:
   github1.1.4:
     branch: v1.1.4

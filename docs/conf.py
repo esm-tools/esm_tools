@@ -196,6 +196,10 @@ else:
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
 
+# Strip the input promps for code cells when copying
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

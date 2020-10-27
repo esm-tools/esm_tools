@@ -222,84 +222,122 @@ Implement a New Coupled Setup
 
 **Feature available since version:** 4.2
 
+An example of the different files needed for `AWICM` setup is included at the end of this section
+(see :ref:`recipes/add_model_setup:Example`).
 
 1. Make sure the models, couplers and versions you want to use, are already available for `esm_master`
    to install them (``$ esm_master`` and check the list). If something is missing you will need to
-   add it following the instructions in :ref:`cookbook:Implementing a New Model`.
+   add it following the instructions in :ref:`cookbook:Implement a New Model`.
 
 2. Once everything you need is available to `esm_master`, you will need to create your own branch of
    `esm_tools`, following the steps 1-4 in :ref:`contributing:Contribution to esm_tools Package`.
 
-3. Then you will need to create a folder for your coupled setup inside ``esm_tools/configs/setups``
-   folder, and create a `yaml` file per version of your setup::
+3. Setups need two types of files: 1) **coupling files** containing information about model versions and
+   coupling changes, and 2) **setup files** containing the general information about the setup and the
+   model changes. In this step we focus on the creation of the **coupling files**.
+
+   a. Create a folder for your setup's couplings in ``esm_tools/configs/couplings``, and inside this
+      folder add a folder per coupling::
+
+       $ mkdir esm_tools/configs/couplings/<your_setup>
+       $ cd esm_tools/configs/couplings/<your_setup>
+       $ mkdir <coupling_name1>
+       $ mkdir <coupling_name2>
+       ...
+
+      The naming convention we follow for the coupling files is
+      ``component1-version+component2-version+...``.
+
+   b. Create a `yaml` file inside the coupling folder with the same name::
+
+       $ touch <coupling_name1>/<coupling_name1>.yaml
+
+   c. Include the following information in each coupling file:
+
+      .. code-block:: yaml
+
+         components:
+         - "model1-version"
+         - "model2-version"
+         - [ ... ]
+         - "coupler-version"
+         coupling_changes:
+         - sed -i '/MODEL1_PARAMETER/s/OFF/ON/g' model1-1.0/file_to_change
+         - sed -i '/MODEL2_PARAMETER/s/OFF/ON/g' model2-1.0/file_to_change
+         - [ ... ]
+
+      The ``components`` section should list the models and couplers used for the given coupling
+      including their required version. The ``coupling_changes`` subsection should include a list of
+      commands to make the necessary changes in the component's make files, for a correct compilation
+      of the coupled setup.
+
+4. Now, it is the turn for the creation of the **setup file**. Create a folder for your coupled setup
+   inside ``esm_tools/configs/setups`` folder, and create a `yaml` file for your setup::
 
     $ mkdir <PATH>/esm_tools/configs/setups/<your_setup>
-    $ touch <PATH>/esm_tools/configs/setups/<your_setup>/<setup>.yamli
+    $ touch <PATH>/esm_tools/configs/setups/<your_setup>/<setup>.yaml
 
-4. CONTINUE
+5. Use your favourite text editor to open and edit your ``<setup>.yaml`` in the
+   ``esm_tools/configs/setups/<your_setup>`` folder::
 
-   These `yaml` files need to exist for `esm_master` to download and compile your coupled setup, but
-   they can be empty. However, you can choose to fill them with a basic configuration::
+    $ <your_text_editor> <PATH>/esm_tools/configs/setups/<your_setup>/<setup>.yaml
 
-    # YOUR_SETUP YAML CONFIGURATION FILE
-    #
+6. Complete the following information about your setup:
 
-    model: your_setup
-    version: "your_setup_version"
+   .. code-block:: yaml
 
-4. Use your favourite text editor to open and edit ``setups2models.yaml`` in the ``configs/esm_master/``
-   folder::
+      #########################################################################################
+      ######################### NAME_VERSION YAML CONFIGURATION FILE ##########################
+      #########################################################################################
 
-   $ <your_text_editor> <PATH>/esm_tools/configs/esm_master/setups2models.yaml
+      general:
+              model: your_setup
+              version: "your_setup_version"
 
-5. The information of your coupled setup should be placed inside the ``setups`` chapter of the file and
-   be correctly aligned with the other setups. You can use the following example as a template::
+              coupled_setup: True
 
-    setups:
-            [...]
-            your_setup:
-                         available_versions:
-                                 - "1.0.0"
-                                 - "1.0.1"
+              include_models:           # List of models, couplers and componentes of the setup.
+                      - component_1     # Do not include the version number
+                      - component_2
+                      - [ ... ]
 
-                         choose_version:
-                                 "1.0.0":
-                                         couplings:
-                                                 - "model1-1.0+model2-1.0"
-                                 "1.0.1":
-                                         couplings:
-                                                 - "model1-1.1+model2-1.1"
+   .. note:: `Models` do not have a ``general`` section but in the `setups` the ``general``
+      section is mandatory.
 
-            [...]
+7. Include the names of the different versions in the ``available_versions`` section:
 
-   The ``available_versions`` key is needed for `esm_master` to label and list the versions of your setup
-   when called without input (``$ esm_master``). The ``choose_version`` key relates version labels with
-   their particular configurations. In this example, each version contains only the parameter
-   ``couplings`` that consist of a label that points to a coupling configuration, contained in another
-   chapter of ``setups2models.yaml``.
+   .. code-block:: yaml
 
-6. Now you need to include the different coupling configurations into the ``couplings`` chapter of the
-   ``setups2models.yaml``. You can use the following example as a template::
+      general:
 
-    couplings:
-            "model1-1.0+model2-1.0":
-                    components:
-                            - "model1-1.0"
-                            - "model2-1.0"
-                            - "coupler-version"
-                    coupling_changes:
-                            - "sed -i '/MODEL1_PARAMETER/s/OFF/ON/g' model1-1.0/file_to_change"
-                            - "sed -i '/MODEL2_PARAMETER/s/OFF/ON/g' model2-1.0/file_to_change"
+              [ ... ]
 
-            [...]
+              available_versions:
+                      - "1.0.0"
+                      - "1.0.1"
 
-   Remember to do this with all the couplings required from your setup versions in the ``setups``
-   chapter. The ``components`` subsection should list the models and couplers used for the given coupling,
-   including their required version, in the same way they are labelled in the ``components`` chapter of
-   ``setups2models.yaml``. The ``coupling_changes`` subsection should include a list of commands to make
-   the necessary changes in the component's make files, for a correct compilation of the coupled setup.
+   The ``available_versions`` key is needed for `esm_master` to list the versions of your setup.
 
-7. You can now check if `esm_master` can list and install your coupled setup correctly::
+8. In the ``<setup>.yaml``, use a ``choose_`` switch (see :ref:`yaml:Switches (\`\`choose_\`\`)`)
+   to assign the coupling files (created in step 3) to their correspondent setup versions:
+
+   .. code-block:: yaml
+
+      general:
+
+          [ ... ]
+
+          choose_version:
+                  "1.0.0":
+                          couplings:
+                                   - "model1-1.0+model2-1.0"
+                  "1.0.1":
+                          couplings:
+                                   - "model1-1.1+model2-1.1"
+
+          [ ... ]
+
+9. You can now check if `esm_master` can list and install your coupled setup correctly::
 
     $ esm_master
 
@@ -310,9 +348,83 @@ Implement a New Coupled Setup
     $ cd ~/model_codes
     $ esm_master install-your_setup-version
 
-8. If everything works correctly you can check that your changes pass `flake8`, commit your changes, push
-   them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
-   :ref:`contributing:Contribution to esm_tools Package`).
+10. If everything works correctly you can check that your changes pass ``flake8``, commit your changes, push
+    them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
+    :ref:`contributing:Contribution to esm_tools Package`).
+
+
+Example
+~~~~~~~
+
+
+Here you can have a look at relevant snippets of some of the `AWICM-1.0` files.
+
+.. tabs::
+
+   .. tab:: fesom-1.4+echam-6.3.04p1.yaml
+
+      One of the coupling files for `AWICM-1.0` (
+      ``esm_tools/configs/couplings/fesom-1.4+echam-6.3.04p1/fesom-1.4+echam-6.3.04p1.yaml``):
+
+      .. code-block:: yaml
+
+         components:
+         - echam-6.3.04p1
+         - fesom-1.4
+         - oasis3mct-2.8
+         coupling_changes:
+         - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+         - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+
+   .. tab:: awicm.yaml
+
+      Setup file for `AWICM` (``esm_tools/configs/setups/awicm/awicm.yaml``):
+
+      .. code-block:: yaml
+
+         #########################################################################################
+         ######################### AWICM 1 YAML CONFIGURATION FILE ###############################
+         #########################################################################################
+
+
+
+         general:
+                 model: awicm
+                 #model_dir: ${esm_master_dir}/awicm-${version}
+
+                 coupled_setup: True
+
+                 include_models:
+                         - echam
+                         - fesom
+                         - oasis3mct
+
+                 version: "1.1"
+                 scenario: "PI-CTRL"
+                 resolution: ${echam.resolution}_${fesom.resolution}
+                 postprocessing: false
+                 post_time: "00:05:00"
+                 choose_general.resolution:
+                         T63_CORE2:
+                                 compute_time: "02:00:00"
+                         T63_REF87K:
+                                 compute_time: "02:00:00"
+                         T63_REF:
+                                 compute_time: "02:00:00"
+                 available_versions:
+                 - '1.0'
+                 - '1.0-recom'
+                 - CMIP6
+                 choose_version:
+                   '1.0':
+                     couplings:
+                     - fesom-1.4+echam-6.3.04p1
+                   '1.0-recom':
+                     couplings:
+                     - fesom-1.4+recom-2.0+echam-6.3.04p1
+                   CMIP6:
+                     couplings:
+                     - fesom-1.4+echam-6.3.04p1
 
 
 See also

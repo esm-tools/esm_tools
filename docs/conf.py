@@ -76,21 +76,29 @@ import subprocess
 import shutil
 import sphinx.ext.apidoc
 
-#esm_tools_modules = [
-# "esm_archiving",
-# "esm_calendar",
-# "esm_database",
-# "esm_environment",
-# "esm_master",
-# "esm_parser",
-# "esm_profile",
-# "esm_rcfile",
-# "esm_runscripts",
-# "esm_tools",
-# "esm_version_checker",
-#]
-esm_tools_modules = []
-#esm_tools_modules.remove("esm_tools")
+esm_tools_modules = [
+ "esm_archiving",
+ "esm_calendar",
+ "esm_database",
+ "esm_environment",
+ "esm_master",
+ "esm_parser",
+ "esm_profile",
+ "esm_rcfile",
+ "esm_runscripts",
+ "esm_tools",
+ "esm_version_checker",
+]
+esm_tools_modules.remove("esm_tools")
+# Creating a docs/.docstrings.yml file allows you to control the compilation of
+# the docstrings. Fill this file with ``docstrings: 0`` if you want to avoid
+# docstring's compilation, or ``docstrings: 1`` if you want to compile the
+# docstrings. If the file does not exists it always compiles the docstrings.
+if os.path.isfile(".docstrings.yml"):
+    with open(".docstrings.yml") as docstrings_yaml:
+         docstrings_dict = yaml.load(docstrings_yaml, Loader=yaml.FullLoader)
+    if docstrings_dict.get('docstrings')==0:
+        esm_tools_modules = []
 
 # Ensure the API folder exists:
 try:
@@ -177,8 +185,14 @@ shutil.rmtree("tmp_clone")
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon', 'sphinx.ext.graphviz']
+# MA: for some reason sphinxcontrib.napoleon does not work on ollie so
+# the working module sphinx.ext.napoleon is used when compiled from ollie.
+if os.getcwd().split('/')[2]=="ollie":
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+        'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs' 'sphinx.ext.graphviz']
+else:
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+        'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs', 'sphinx.ext.graphviz']
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
 

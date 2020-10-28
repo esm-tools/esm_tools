@@ -40,9 +40,9 @@ Implement a New Model
     $ touch <PATH>/esm_tools/configs/<model>/<model>.yaml
 
 5. Use your favourite text editor to open and edit your ``<model>.yaml`` in the
-   ``esm_tools/configs/components/model`` folder::
+   ``esm_tools/configs/components/<model>`` folder::
 
-    $ <your_text_editor> <PATH>/esm_tools/configs/components/<model>.yaml
+    $ <your_text_editor> <PATH>/esm_tools/configs/components/<model>/<model>.yaml
 
 6. Complete the following information about your model:
 
@@ -198,9 +198,15 @@ Implement a New Model
     $ cd ~/model_codes
     $ esm_master install-your_model-version
 
-10. If everything works correctly you can check that your changes pass ``flake8``, commit your changes, push
-    them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
-    :ref:`contributing:Contribution to esm_tools Package`).
+10. If everything works correctly you can check that your changes pass ``flake8``::
+
+     $ flake8 <PATH>/esm_tools/configs/components/<model>/<model>.yaml
+
+    Use this `link <https://flake8.pycqa.org/en/latest/index.html>`_ to learn more about ``flake8``
+    and how to install it.
+
+11. Commit your changes, push them to the ``origin`` remote repository and submit a pull request
+    through GitHub (see steps 5-7 in :ref:`contributing:Contribution to esm_tools Package`).
 
 
 .. note:: You can include all the compiling information inside a ``compile_infos`` section to avoid
@@ -236,11 +242,9 @@ An example of the different files needed for `AWICM` setup is included at the en
    coupling changes, and 2) **setup files** containing the general information about the setup and the
    model changes. In this step we focus on the creation of the **coupling files**.
 
-   a. Create a folder for your setup's couplings in ``esm_tools/configs/couplings``, and inside this
-      folder add a folder per coupling::
+   a. Create a folder for your couplings in ``esm_tools/configs/couplings``::
 
-       $ mkdir esm_tools/configs/couplings/<your_setup>
-       $ cd esm_tools/configs/couplings/<your_setup>
+       $ cd esm_tools/configs/couplings/
        $ mkdir <coupling_name1>
        $ mkdir <coupling_name2>
        ...
@@ -268,8 +272,8 @@ An example of the different files needed for `AWICM` setup is included at the en
 
       The ``components`` section should list the models and couplers used for the given coupling
       including their required version. The ``coupling_changes`` subsection should include a list of
-      commands to make the necessary changes in the component's make files, for a correct compilation
-      of the coupled setup.
+      commands to make the necessary changes in the component's compilation configuration files
+      (``CMakeLists.txt``, ``configure``, etc.), for a correct compilation of the coupled setup.
 
 4. Now, it is the turn for the creation of the **setup file**. Create a folder for your coupled setup
    inside ``esm_tools/configs/setups`` folder, and create a `yaml` file for your setup::
@@ -348,9 +352,16 @@ An example of the different files needed for `AWICM` setup is included at the en
     $ cd ~/model_codes
     $ esm_master install-your_setup-version
 
-10. If everything works correctly you can check that your changes pass ``flake8``, commit your changes, push
-    them to the ``origin`` and submit a pull request through GitHub (see steps 5-7 in
-    :ref:`contributing:Contribution to esm_tools Package`).
+10. If everything works correctly you can check that your changes pass ``flake8``::
+
+     $ flake8 <PATH>/esm_tools/configs/setups/<your_setup>/<setup>.yaml
+     $ flake8 <PATH>/esm_tools/configs/couplings/<coupling_name>/<coupling_name>.yaml
+
+    Use this `link <https://flake8.pycqa.org/en/latest/index.html>`_ to learn more about ``flake8``
+    and how to install it.
+
+11. Commit your changes, push them to the ``origin`` remote repository and submit a pull request
+    through GitHub (see steps 5-7 in :ref:`contributing:Contribution to esm_tools Package`).
 
 
 Example

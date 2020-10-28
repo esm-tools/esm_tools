@@ -4,7 +4,7 @@ Implement a New Model
 **Feature available since version:** 4.2
 
 
-1. Upload your model into a repository such us `gitlab.awi.de`, `gitlab.dkrz.de` or `github`.
+1. Upload your model into a repository such us `gitlab.awi.de`, `gitlab.dkrz.de` or `GitHub`.
    Make sure to set up the right access permissions, so that you comply with the licensing of
    the software you are uploading.
 
@@ -31,13 +31,13 @@ Implement a New Model
 3. Now that you have your model in a repository you are ready to implement it into `esm_tools`.
    First, you will need to create your own branch of `esm_tools`, following the steps 1-4 in
    :ref:`contributing:Contribution to esm_tools Package`. The recommended name for the branch
-   would be `feature/<name_of_your_model>`.
+   would be ``feature/<name_of_your_model>``.
 
 4. Then you will need to create a folder for your model inside ``esm_tools/configs/components``
    and create the model's `yaml` file::
 
-    $ mkdir <PATH>/esm_tools/configs/<model>
-    $ touch <PATH>/esm_tools/configs/<model>/<model>.yaml
+    $ mkdir <PATH>/esm_tools/configs/components/<model>
+    $ touch <PATH>/esm_tools/configs/components/<model>/<model>.yaml
 
 5. Use your favourite text editor to open and edit your ``<model>.yaml`` in the
    ``esm_tools/configs/components/<model>`` folder::
@@ -210,7 +210,7 @@ Implement a New Model
 
 
 .. note:: You can include all the compiling information inside a ``compile_infos`` section to avoid
-   conflicts with other ``choose_version`` switches present in our configuration file.
+   conflicts with other ``choose_version`` switches present in your configuration file.
 
 
 See also
@@ -271,7 +271,7 @@ An example of the different files needed for `AWICM` setup is included at the en
          - [ ... ]
 
       The ``components`` section should list the models and couplers used for the given coupling
-      including their required version. The ``coupling_changes`` subsection should include a list of
+      including, their required version. The ``coupling_changes`` subsection should include a list of
       commands to make the necessary changes in the component's compilation configuration files
       (``CMakeLists.txt``, ``configure``, etc.), for a correct compilation of the coupled setup.
 
@@ -323,7 +323,7 @@ An example of the different files needed for `AWICM` setup is included at the en
    The ``available_versions`` key is needed for `esm_master` to list the versions of your setup.
 
 8. In the ``<setup>.yaml``, use a ``choose_`` switch (see :ref:`yaml:Switches (\`\`choose_\`\`)`)
-   to assign the coupling files (created in step 3) to their correspondent setup versions:
+   to assign the coupling files (created in step 3) to their corresponding setup versions:
 
    .. code-block:: yaml
 

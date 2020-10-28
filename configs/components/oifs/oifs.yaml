@@ -756,7 +756,7 @@ choose_version:
                                 - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                                 - 'OIFS_EXPID="${input_expid}"'
                                 - 'FOCI_USE_CPLNG="no"'
-                                - 'AWICM_USE_CPLNG="no"'
+                                - 'FESOM_USE_CPLNG="no"'
                                 - 'ECE_USE_CPLNG="no"'
 
         43r3:

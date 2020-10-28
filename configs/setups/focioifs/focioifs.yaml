@@ -39,7 +39,9 @@ general:
                 - xios
                 - oasis3mct
                 - rnfmap
-
+        requires:
+        - nemobasemodel-3.6foci
+        
         available_versions:
         - agrif
         - '2.0'
@@ -121,7 +123,7 @@ oifs:
                 add_export_vars:
                         # Turn on FOCI coupling        
                         - 'FOCI_USE_CPLNG="active"'
-                        - 'AWICM_USE_CPLNG="no"'
+                        - 'FESOM_USE_CPLNG="no"'
                         - 'ECE_USE_CPLNG="no"'
         
         choose_resolution:

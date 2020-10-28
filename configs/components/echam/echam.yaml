@@ -148,6 +148,8 @@ choose_switch:
 nprocar: 0
 nprocbr: 0
 npromar: 0
+nproca: 24
+nprocb: 24
 lrad_async: false
 lrestart_from_old: false
 

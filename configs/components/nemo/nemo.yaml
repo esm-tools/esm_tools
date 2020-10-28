@@ -23,7 +23,9 @@ choose_version:
     - nemobasemodel-3.6ogcm
   ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
     requires:
-    - xios-2.5_r1910
+    # workaround if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
     destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
@@ -34,7 +36,9 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
-    - xios-2.5_r1910
+    # workaround if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
     destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}

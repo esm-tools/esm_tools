@@ -13,6 +13,10 @@ choose_computer.name:
         mistral:
                 compiletime_environment_changes:
                         add_module_actions:
+                                - "unload intel"
+                                - "load intel/17.0.2"
+                                - "unload intelmpi"
+                                - "load intelmpi/2017.2.174"
                                 - "unload gcc"
                                 - "load gcc/4.8.2"
                                 - "load cdo nco"

@@ -9,6 +9,7 @@ core:
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
+                        - "assemble_filelists"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"

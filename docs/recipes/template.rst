@@ -19,18 +19,40 @@ General description here.
         variable1: 1
         variable2: false
 
-Model/setup specific instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example
+~~~~~~~
 
-.. subsection including particular things in the recipe for specific models and coupled setups
+.. subsection including examples with particular things in the recipe for specific models
+   and coupled setups.
+   Recommendation: use ``tabs`` for including examples for different models
    Note: numbering of the general recipe steps can be handy to reference the steps to modify
- 
-Component 1
------------
+
+.. tabs::
+   .. tab:: MODEL 1
+
+      Your text here
+
+      .. code-block:: yaml
+
+         Your yaml code here
+
+   .. tab:: MODEL 2
+
+      Your text here
+
+      .. code-block:: yaml
+
+         Your yaml code here
+
+.. Note: make sure to leave vertical spaces below the lines starting with ``.. tab::``
+   and ``.. code-block::``. If you don't, sphinx will complain about excess of inputs for
+   these functions.
+
 
 See also
 ~~~~~~~~
 
 .. links to relevant parts of the documentation
 
-:ref:`yaml:What Is YAML?`
+- `Text of your link <actual url for the link>`_
+- :ref:`yaml:What Is YAML?`

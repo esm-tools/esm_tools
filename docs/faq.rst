@@ -32,25 +32,27 @@ ESM Runscripts
    **A**: You can safely forget about ``FUNCTION_PATH``, which was only needed in the shell script version until revision 3. Either ignore it, or better remove it from the runscript.
 
 
-ESM Master 
+ESM Master
 ----------
 
 1. **Q**: How can I define different environments for different models / different versions of the same model?
-   
-   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.::
-  
-        choose_version:
-                40r1:
-                        environment_changes:
-                                add_export_vars:        
-                                        - 'MY_VAR="something"' 
-                                add_module_actions:
-                                        - load my_own_module          
 
-                43r3:
-                        environment_changes:
-                                add_export_vars:        
-                                        - 'MY_VAR="something_else"'
+   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.:
+
+   .. code-block:: yaml
+
+      choose_version:
+              40r1:
+                      environment_changes:
+                              add_export_vars:
+                                      - 'MY_VAR="something"'
+                              add_module_actions:
+                                      - load my_own_module
+
+              43r3:
+                      environment_changes:
+                              add_export_vars:
+                                      - 'MY_VAR="something_else"'
 2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
 
    **A**: Add your configuration in the file configs/esm_master/setups2models.yaml

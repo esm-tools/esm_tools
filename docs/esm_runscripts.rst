@@ -43,7 +43,7 @@ required changes to the namelists and configuration files, submits the runs of t
 experiment to the compute nodes, and handles and organizes restart, output and log files.
 The command to run a runscript is::
 
-    esm_runscripts <runscript.yaml/.run> -e <experiment_ID>
+ $ esm_runscripts <runscript.yaml/.run> -e <experiment_ID>
 
 The ``runscript.yaml/.run`` should contain all the information regarding the experiment
 paths, and particular configurations of the experiment (see the :ref:`yaml:Runscripts` section

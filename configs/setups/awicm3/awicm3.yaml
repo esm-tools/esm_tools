@@ -238,7 +238,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version_dir}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
         use_lucia: True
@@ -484,11 +484,10 @@ oasis3mct:
         #        grids: ${pool_dir}/grids_areas_masks.nc
 
         add_restart_out_files:
-                rmp_o2a_TL: rmp_o2a_TL
-                rmp_a2r_RR: rmp_a2r_RR
-                rmp_r2f_RF: rmp_r2f_RF
-                rmp_a2o_LT: rmp_a2o_LT
-                rmp_a2o_AC: rmp_a2o_AC
+                rmp_a2f_B: rmp_a2f_B
+                rmp_f2a_G: rmp_f2a_G
+                rmp_a2r_B: rmp_a2r_B
+                rmp_r2f_G: rmp_r2f_G
 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -498,12 +497,10 @@ oasis3mct:
                 atmflx: atmflx
 
         add_restart_out_in_work:
-                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
-
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -512,17 +509,11 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
 
-
         add_restart_out_sources:
-                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -532,11 +523,10 @@ oasis3mct:
                 atmflx: atmflx
 
         add_restart_in_files:
-                rmp_o2a_TL: rmp_o2a_TL
-                rmp_a2r_RR: rmp_a2r_RR
-                rmp_r2f_RF: rmp_r2f_RF
-                rmp_a2o_LT: rmp_a2o_LT
-                rmp_a2o_AC: rmp_a2o_AC
+                rmp_a2f_B: rmp_a2f_B
+                rmp_f2a_G: rmp_f2a_G
+                rmp_a2r_B: rmp_a2r_B
+                rmp_r2f_G: rmp_r2f_G
 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -546,15 +536,10 @@ oasis3mct:
                 atmflx: atmflx
 
         add_restart_in_in_work:
-                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -564,15 +549,10 @@ oasis3mct:
                 atmflx: atmflx
 
         add_restart_in_sources:
-                rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${fesom.resolution}.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
                 sstocean: sstocean
                 flxatmos: flxatmos

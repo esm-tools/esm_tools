@@ -1,0 +1,13 @@
+components:
+- oasis3mct-2.8
+- yac-1.5.4
+- esm_interface-generic
+- echam-6.3.04p1-esm_interface
+- fesom-2.0-esm_interface
+coupling_changes:
+- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/COUPLED_WITH_YAC/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+- sed -i '/COUPLED_WITH_YAC/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+- sed -i '/YAC/s/OFF/ON/g' esm-interface/CMakeLists.txt
+- sed -i '/OASIS/s/ON/OFF/g' esm-interface/CMakeLists.txt

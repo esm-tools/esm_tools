@@ -49,7 +49,8 @@ The ``runscript.yaml/.run`` should contain all the information regarding the exp
 paths, and particular configurations of the experiment (see the :ref:`yaml:Runscripts` section
 for more information about the syntax of `yaml` runscripts). The ``experiment_ID`` is used
 to identify the experiment in the scheduler and to name the experiment's directory (see
-:ref:`esm_runscripts:Experiment Directory Structure`). Omitting the argument ``-e <experiment_ID>`` will create an experiment with the default experimant ID ``test``.
+:ref:`esm_runscripts:Experiment Directory Structure`). Omitting the argument
+``-e <experiment_ID>`` will create an experiment with the default experimant ID ``test``.
 
 `ESM-Runscript` allows to run an experiment check by adding the ``-c`` flag to the previous
 command. This check performs all the system operations related to the experiment that would
@@ -97,10 +98,125 @@ runscript (see :ref:`yaml:Runscripts` syntax) followed by the given ``experiment
 
     <general.base_dir>/<experiment_ID>
 
-The main experiment folder contains the subfolders indicated in the table below. Each of these
+The main experiment folder contains the subfolders indicated in the graph and table below. Each of these
 subfolders contains a folder for each component in the experiment (i.e. for an AWI-CM experiment the
 ``outdata`` folder will contain the subfolders ``echam``, ``fesom``, ``hdmodel``, ``jsbach``,
 ``oasis3mct``).
+
+.. graphviz::
+    :name: exp_dir_structure
+    :caption: Experiment directory structure
+    :alt: Experiment directory structure
+    :align: center
+
+     digraph "file_hierachy" {
+         size="10.0";
+         graph [fontname="Verdana", fontsize="12"];
+         node [fontname="Verdana", fontsize="12"];
+         edge [fontname="Sans", fontsize="12"];
+         #newrank=true;
+         rankdir="TB";
+         compound=true;
+         #splines=ortho;
+
+         #rank = same; ane; anr;
+         #rank = same; bie; bir;
+
+         subgraph cluster0
+         {
+             label="General exp dir";
+             node [style=filled];
+             fontname="bold";
+             color=black;
+
+             ane [label="analisys", shape="folder", fillcolor="gray", style=filled];
+             bie [label="bin", shape="folder", fillcolor="gray", style=filled];
+             cfe [label="config", shape="folder", fillcolor="gray", style=filled];
+             cpe [label="couple", shape="folder", fillcolor="gray", style=filled];
+             foe [label="forcing", shape="folder", fillcolor="gray", style=filled];
+             ine [label="input", shape="folder", fillcolor="gray", style=filled];
+             loe [label="log", shape="folder", fillcolor="gray", style=filled];
+             moe [label="mon", shape="folder", fillcolor="gray", style=filled];
+             oue [label="outdata", shape="folder", fillcolor="gray", style=filled];
+             ree [label="restart", shape="folder", fillcolor="gray", style=filled];
+             rue [label="run_<DATE>", shape="folder", fillcolor="gray", style=filled];
+             sce [label="scripts", shape="folder", fillcolor="gray", style=filled];
+             une [label="unknown", shape="folder", fillcolor="gray", style=filled];
+             vie [label="viz", shape="folder", fillcolor="gray", style=filled];
+             woe [label="work", shape="folder", fillcolor="gray", style=filled];
+
+             ane -> bie -> cfe -> cpe -> foe -> ine -> loe -> moe -> oue -> ree -> rue -> sce -> une -> vie -> woe[style=invis];
+         }
+
+         subgraph cluster1
+         {
+             label="Run dir";
+             node [style=filled];
+             fontname="bold";
+             style=filled;
+             color=black;
+             fillcolor=gray;
+
+             anr [label="analisys", shape="folder", fillcolor="white", style=filled];
+             bir [label="bin", shape="folder", fillcolor="white", style=filled];
+             cfr [label="config", shape="folder", fillcolor="white", style=filled];
+             cpr [label="couple", shape="folder", fillcolor="white", style=filled];
+             for [label="forcing", shape="folder", fillcolor="white", style=filled];
+             inr [label="input", shape="folder", fillcolor="white", style=filled];
+             lor [label="log", shape="folder", fillcolor="white", style=filled];
+             mor [label="mon", shape="folder", fillcolor="white", style=filled];
+             our [label="outdata", shape="folder", fillcolor="white", style=filled];
+             rer [label="restart", shape="folder", fillcolor="white", style=filled];
+             scr [label="scripts", shape="folder", fillcolor="white", style=filled];
+             unr [label="unknown", shape="folder", fillcolor="white", style=filled];
+             vir [label="viz", shape="folder", fillcolor="white", style=filled];
+             wor [label="work", shape="folder", fillcolor="white", style=filled];
+
+             anr -> bir -> cfr -> cpr -> for -> inr -> lor -> mor -> our -> rer -> scr -> unr -> vir -> wor [style=invis];
+         }
+         rue -> unr [lhead=cluster1, dir=none, style=dashed];
+         #loe -> lor[style=invis];
+         #moe -> mor[style=invis];
+         #woe -> wor[style=invis];
+         #ane -> anr[style=invis];
+         #une -> unr[style=invis];
+         #vie -> vir[style=invis];
+
+         "namelists" [shape="note"]
+         "binaries" [shape="note"]
+
+         subgraph cluster2
+         {
+              color=white;
+
+              "restart files" [shape="note"]
+              "output files" [shape="note"]
+
+              "output files" -> "restart files" [style=invis]
+         }
+
+         subgraph cluster3
+         {
+             color=white
+
+             "ESM-Tools" [shape="folder"]
+             "Model installation folder" [shape="folder"]
+         }
+         "ESM-Tools" -> namelists [dir=none]
+         namelists -> wor
+         "Model installation folder" -> binaries [dir=none]
+         binaries -> wor
+
+         #ree -> "restart files" -> wor [style=invis]
+         #ree -> "output files" -> wor [style=invis]
+
+         #loe -> "output files" -> our [style=invis]
+
+         "restart files" -> wor
+         "restart files" -> ree
+         "output files" -> wor [dir=none]
+         "output files" -> oue
+     }
 
 ======================= ======================= ========================================================
 Subfolder               Files                   Description
@@ -208,6 +324,9 @@ useful to debug and restart experiments that have crashed.
    files are updated but others not) will lead to a faulty restart. In the the near
    future the user will have control on whether keeping the `run` folders or deleting them,
    through a variable in the runscript.
+
+.. check that the above is changed by the merge of develop in release 5.0, so that it includes
+   the delete file functionality. 
 
 Debugging an Experiment
 -----------------------

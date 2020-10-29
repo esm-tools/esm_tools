@@ -188,10 +188,10 @@ shutil.rmtree("tmp_clone")
 # MA: for some reason sphinxcontrib.napoleon does not work on ollie so
 # the working module sphinx.ext.napoleon is used when compiled from ollie.
 if os.getcwd().split('/')[2]=="ollie":
-    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
         'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
 else:
-    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
         'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]

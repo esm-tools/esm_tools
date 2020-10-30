@@ -9,6 +9,7 @@ Development Lead
 * Paul Gierz <paul.gierz@awi.de>
 * Nadine Wieters <nadine.wieters@awi.de>
 * Miguel Andrés-Martínez <miguel.andres-martinez@awi.de>
+* Deniz Ural <deniz.ural@awi.de>
 
 Project Management
 ------------------
@@ -21,6 +22,7 @@ Contributors
 * Sara Khosravi <sara.khosravi@awi.de>
 * Fatemeh Chegini <fatemeh.chegini@mpimet.mpg.de>
 * Joakim Kjellsson <jkjellsson@geomar.de>
+* Sebastian Wahl <swahl@geomar.de>
 * ...
 
 Beta Testers

@@ -10,6 +10,7 @@ Welcome to ESM Tools's documentation!
    installation
    transitioning
    yaml
+   yaml_hierarchy
    Supported_Models
    esm_master
    esm_versions

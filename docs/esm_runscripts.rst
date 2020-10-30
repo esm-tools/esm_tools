@@ -61,42 +61,45 @@ information to understand whether the experiment will work correctly or not (we 
 encourage users to pay particular attention to the `Namelists` and the `Missing files` sections
 of the check's output).
 
-Filetypes and file hierachy during model/setup run
---------------------------------------------------
-
-.. graphviz::
-    :name: sphinx.ext.graphviz
-    :caption: ESM-Tools filetype hierachy
-    :alt: ESM-Tools filetype hierachy
-    :align: center
-
-     digraph "file_hierachy" {
-         size="6,4";
-         graph [fontname="Verdana", fontsize="12"];
-         node [fontname="Verdana", fontsize="12"];
-         edge [fontname="Sans", fontsize="12"];
-         rankdir="TB";
-
-         runscript [label="runscript.yaml", shape="note", fillcolor="gray", style=filled];
-         model_file [label="model.yaml", shape="note", fontcolor=black, fillcolor="gray", style=filled];
-         setup_file [label="setup.yaml", shape="note", fillcolor=gray, style=filled];
-         maschine_file [label="maschine.yaml", shape="note", fillcolor=gray, style=filled];
-         user [label="User"];
-
-         setup_file -> maschine_file [label=" overwrites "];
-         model_file -> setup_file [label=" overwrites "];
-         runscript -> model_file [label=" overwrites "];
-
-         user -> runscript [label=" edits "];
-         developer [label="Developer"];
-         developer -> maschine_file [label=" edits "]; 
-         developer -> setup_file [label=" edits "];
-         developer -> model_file [label=" edits "];
-
-     }
-
 Job Phases
 ----------
+
+.. graphviz::
+    :name: job_phayses
+    :caption: ESM-Tools job phases
+    :alt: ESM-Tools job phases
+    :align: center
+
+     digraph "job_phases" {
+         size="18,8";
+         layout=neato 
+         epsilon=.0000001;
+         graph [fontname="Verdana bold", fontsize="10"];
+         node [fontname="Arial bold", fontsize="12", shape="box", fontcolor="white"];
+         edge [fontname="Sans", fontsize="12"];
+         splines="curved"
+         rankdir="BT";
+         overlap=scale;
+
+         gather [label="Gather\n information", shape="circle", fillcolor="gold", fontcolor="black", style=filled, width=1.3];
+         prepare1 [label="Prepare\n data\n folders", shape="circle", fillcolor="darkorange", style=filled, width=1.3];
+         modify [label="Modify\n data\n folders", shape="circle", fillcolor="firebrick", style=filled, width=1.3];
+         prepare2 [label="Prepare\n work\n folder", shape="circle", fillcolor="mediumvioletred", style=filled, width=1.3];
+         run [label="Run\n simulation", shape="circle", fillcolor="mediumslateblue", style=filled, width=1.3];
+         tidy [label="Move\n output\n to data\n folders", shape="circle", fillcolor="royalblue", style=filled, width=1.3];
+         post [label="Post-\nprocessing", shape="circle", fillcolor="teal", style=filled, width=1.3];
+         resubmit [label="Resubmit\n simulation", shape="circle", fillcolor="yellow3", fontcolor="black", style=filled, width=1.3];
+
+         gather -> prepare1 [label="", len=1., headport=c];
+         prepare1 -> modify [label="", len=1., headport=c];
+         modify -> prepare2 [label="", len=1.];
+         prepare2 -> run [label="", len=1.];
+         run -> tidy [label="", len=1.];
+         tidy -> post [label="", len=1.];
+         post -> resubmit [label="", len=1.];
+         resubmit -> gather [label="", len=1.];
+     }
+
 
 The following table summarizes the job phases of `ESM-Runscripts` and gives a brief description.
 ...

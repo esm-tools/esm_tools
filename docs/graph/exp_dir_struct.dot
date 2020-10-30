@@ -16,7 +16,7 @@ digraph "dir_struct" {
         color=black;
 
         # SUBFOLDERS
-        ane [label="analisys", shape="folder", fillcolor="gray", style=filled];
+        ane [label="analysis", shape="folder", fillcolor="gray", style=filled];
         bie [label="bin", shape="folder", fillcolor="gray", style=filled];
         cfe [label="config", shape="folder", fillcolor="gray", style=filled];
         cpe [label="couple", shape="folder", fillcolor="gray", style=filled];
@@ -47,7 +47,7 @@ digraph "dir_struct" {
         fillcolor=gray;
 
         # SUBFOLDERS
-        anr [label="analisys", shape="folder", fillcolor="white", style=filled];
+        anr [label="analysis", shape="folder", fillcolor="white", style=filled];
         bir [label="bin", shape="folder", fillcolor="white", style=filled];
         cfr [label="config", shape="folder", fillcolor="white", style=filled];
         cpr [label="couple", shape="folder", fillcolor="white", style=filled];

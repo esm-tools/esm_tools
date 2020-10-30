@@ -1,0 +1,140 @@
+# WHAT A NIGHTMARE OF GRAPH!
+digraph "dir_struct" {
+    size="10.0";
+    graph [fontname="Verdana", fontsize="12"];
+    node [fontname="Verdana", fontsize="12"];
+    edge [fontname="Sans", fontsize="12"];
+    rankdir="TB";
+    compound=true;
+
+    # GENERAL FOLDER SUBGROUP
+    subgraph cluster0
+    {
+        label="General exp dir";
+        node [style=filled];
+        fontname="bold";
+        color=black;
+
+        # SUBFOLDERS
+        ane [label="analisys", shape="folder", fillcolor="gray", style=filled];
+        bie [label="bin", shape="folder", fillcolor="gray", style=filled];
+        cfe [label="config", shape="folder", fillcolor="gray", style=filled];
+        cpe [label="couple", shape="folder", fillcolor="gray", style=filled];
+        foe [label="forcing", shape="folder", fillcolor="gray", style=filled];
+        ine [label="input", shape="folder", fillcolor="gray", style=filled];
+        loe [label="log", shape="folder", fillcolor="gray", style=filled];
+        moe [label="mon", shape="folder", fillcolor="gray", style=filled];
+        oue [label="outdata", shape="folder", fillcolor="gray", style=filled];
+        ree [label="restart", shape="folder", fillcolor="gray", style=filled];
+        rue [label="run_<DATE>", shape="folder", fillcolor="gray", style=filled];
+        sce [label="scripts", shape="folder", fillcolor="gray", style=filled];
+        une [label="unknown", shape="folder", fillcolor="gray", style=filled];
+        vie [label="viz", shape="folder", fillcolor="gray", style=filled];
+        woe [label="work", shape="folder", fillcolor="gray", style=filled];
+
+        # VERTICAL ALIGNMENT OF SUBFOLDERS
+        ane -> bie -> cfe -> cpe -> foe -> ine -> loe -> moe -> oue -> ree -> rue -> sce -> une -> vie -> woe[style=invis];
+    }
+
+    # RUN FOLDER SUBGROUP
+    subgraph cluster1
+    {
+        label="Run dir";
+        node [style=filled];
+        fontname="bold";
+        style=filled;
+        color=black;
+        fillcolor=gray;
+
+        # SUBFOLDERS
+        anr [label="analisys", shape="folder", fillcolor="white", style=filled];
+        bir [label="bin", shape="folder", fillcolor="white", style=filled];
+        cfr [label="config", shape="folder", fillcolor="white", style=filled];
+        cpr [label="couple", shape="folder", fillcolor="white", style=filled];
+        for [label="forcing", shape="folder", fillcolor="white", style=filled];
+        inr [label="input", shape="folder", fillcolor="white", style=filled];
+        lor [label="log", shape="folder", fillcolor="white", style=filled];
+        mor [label="mon", shape="folder", fillcolor="white", style=filled];
+        our [label="outdata", shape="folder", fillcolor="white", style=filled];
+        rer [label="restart", shape="folder", fillcolor="white", style=filled];
+        scr [label="scripts", shape="folder", fillcolor="white", style=filled];
+        unr [label="unknown", shape="folder", fillcolor="white", style=filled];
+        vir [label="viz", shape="folder", fillcolor="white", style=filled];
+        wor [label="work", shape="folder", fillcolor="white", style=filled];
+
+        # VERTICAL ALIGNMENT OF SUBFOLDERS
+        anr -> bir -> cfr -> cpr -> for -> inr -> lor -> mor -> our -> rer -> scr -> unr -> vir -> wor [style=invis];
+    }
+
+    # LINK RUN FOLDER WITH THE RUN FOLDER GROUP (DASHED LINE). lhead_cluster MAKES THE LINE TO STOP AT THE RUN FODLER CLUSTER
+    rue -> unr [lhead=cluster1, dir=none, style=dashed, constrain=false];
+
+    # EXTERNAL FILES
+    "namelists" [shape="note"]
+    "binaries" [shape="note"]
+
+    # RUN FILES SUBGROUP
+    subgraph cluster2
+    {
+         color=white;
+
+         "restart files" [shape="note"]
+         "output files" [shape="note"]
+
+         # VERTICAL ALIGNMENT OF FILES
+         "output files" -> "restart files" [style=invis]
+    }
+
+    # EXTERNAL SUBGROUP
+    subgraph cluster3
+    {
+        color=white
+
+        "ESM-Tools" [shape="folder"]
+        "Model installation folder" [shape="folder"]
+    }
+
+    # EXTERNAL ARROWS
+    "ESM-Tools" -> namelists [dir=none]
+    namelists -> wor
+    "Model installation folder" -> binaries [dir=none]
+    binaries -> wor
+
+    # RUN FILE ARROWS
+    "restart files" -> wor
+    "restart files" -> ree
+    "output files" -> wor [dir=none]
+    "output files" -> oue
+
+    # MODEL SUBFOLDER SUBGROUP
+    subgraph cluster4
+    {
+        label="AWICM example:"
+        color=black
+
+        "echam" [shape="folder"];
+        "fesom" [shape="folder"];
+        "hdmodel" [shape="folder"];
+        "jsbach" [shape="folder"];
+        "oasis3mct" [shape="folder"];
+
+        # VERTICAL ALIGNMENT OF SUBFOLDERS
+        echam -> fesom -> hdmodel -> jsbach -> oasis3mct -> "output files" [style=invis]
+    }
+
+    # DASHED LINES TO SUBFOLDERS
+    ane -> hdmodel [lhead=cluster4, dir=none, style=dashed];
+    anr -> hdmodel [lhead=cluster4, dir=none, style=dashed];
+    bie -> hdmodel [lhead=cluster4, dir=none, style=dashed];
+    bir -> hdmodel [lhead=cluster4, dir=none, style=dashed];
+    cfe -> hdmodel [lhead=cluster4, dir=none, style=dashed, constraint=false];
+    cfr -> hdmodel [lhead=cluster4, dir=none, style=dashed, constraint=false];
+
+    # 3 DOTS TO ILLUSTRATE CONTINUATION OF DASHED LINES TO SUBFOLDERS
+    dts1 [label="...", shape="none", fontname="bold", size=15];
+    dts2 [label="...", shape="none", fontname="bold", size=15]
+
+    # LINK 3 DOTS TO THE FOLDERS AND SUBFODERS SO THAT THEY ARE PLACED IN THE CORRECT POSITION OF THE GRAPH (BELLOW THE LAST DASHED LINES)
+    cfe -> dts1 -> oasis3mct  [style=invis, constrain=false]
+    cfr -> dts2 -> oasis3mct [style=invis, constrain=false]
+}

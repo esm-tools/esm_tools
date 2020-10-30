@@ -65,7 +65,7 @@ Job Phases
 ----------
 
 .. graphviz::
-    :name: job_phayses
+    :name: job_phases
     :caption: ESM-Tools job phases
     :alt: ESM-Tools job phases
     :align: center
@@ -73,7 +73,6 @@ Job Phases
      digraph "job_phases" {
          size="18,8";
          layout=neato 
-         epsilon=.0000001;
          graph [fontname="Verdana bold", fontsize="10"];
          node [fontname="Arial bold", fontsize="12", shape="box", fontcolor="white"];
          edge [fontname="Sans", fontsize="12"];

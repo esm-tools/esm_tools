@@ -65,40 +65,11 @@ of the check's output).
 Job Phases
 ----------
 
-.. graphviz::
+.. graphviz:: graph/job_phases.dot
     :name: job_phases
     :caption: ESM-Tools job phases
     :alt: ESM-Tools job phases
     :align: center
-
-     digraph "job_phases" {
-         size="18,8";
-         layout=neato 
-         graph [fontname="Verdana bold", fontsize="10"];
-         node [fontname="Arial bold", fontsize="12", shape="box", fontcolor="white"];
-         edge [fontname="Sans", fontsize="12"];
-         splines="curved"
-         rankdir="BT";
-         overlap=scale;
-
-         gather [label="Gather\n information", shape="circle", fillcolor="gold", fontcolor="black", style=filled, width=1.3];
-         prepare1 [label="Prepare\n data\n folders", shape="circle", fillcolor="darkorange", style=filled, width=1.3];
-         modify [label="Modify\n data\n folders", shape="circle", fillcolor="firebrick", style=filled, width=1.3];
-         prepare2 [label="Prepare\n work\n folder", shape="circle", fillcolor="mediumvioletred", style=filled, width=1.3];
-         run [label="Run\n simulation", shape="circle", fillcolor="mediumslateblue", style=filled, width=1.3];
-         tidy [label="Move\n output\n to data\n folders", shape="circle", fillcolor="royalblue", style=filled, width=1.3];
-         post [label="Post-\nprocessing", shape="circle", fillcolor="teal", style=filled, width=1.3];
-         resubmit [label="Resubmit\n simulation", shape="circle", fillcolor="yellow3", fontcolor="black", style=filled, width=1.3];
-
-         gather -> prepare1 [label="", len=1., headport=c];
-         prepare1 -> modify [label="", len=1., headport=c];
-         modify -> prepare2 [label="", len=1.];
-         prepare2 -> run [label="", len=1.];
-         run -> tidy [label="", len=1.];
-         tidy -> post [label="", len=1.];
-         post -> resubmit [label="", len=1.];
-         resubmit -> gather [label="", len=1.];
-     }
 
 
 The following table summarizes the job phases of `ESM-Runscripts` and gives a brief description.

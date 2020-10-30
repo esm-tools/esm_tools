@@ -65,6 +65,13 @@ of the check's output).
 Job Phases
 ----------
 
+.. graphviz:: graph/job_phases.dot
+    :name: job_phases
+    :caption: ESM-Tools job phases
+    :alt: ESM-Tools job phases
+    :align: center
+
+
 The following table summarizes the job phases of `ESM-Runscripts` and gives a brief description.
 ...
 

@@ -78,7 +78,7 @@ coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
                 grid: rnfa
         "[[runoff_fields_send-->FIELD]]":
-                grid: opar
+                grid: opaf
 
 namelist_changes:
         namelist.runoffmapper:
@@ -92,8 +92,8 @@ grids:
                 nx: 512
                 ny: 256
                 oasis_grid_type: "LR"
-        opar:
-                name: opar
+        opaf:
+                name: opaf
                 nx: "${nemo._nx}"
                 ny: "${nemo._ny}"
                 oasis_grid_type: "LR"

@@ -350,7 +350,6 @@ cmip_fix_year: 0
 a4xco2: False
 onepctco2: False
 lhvolca: False
-o3_scheme: "Cariolle"
 
 supercooled_liquid_could_fix: 0
 
@@ -566,6 +565,7 @@ input_files:
         rtables: rtables
         vtables: vtables
         tl_data: tl_data
+        o3_data: o3_data
         # also missing: modify_init for ensemble stuff
 
 ##
@@ -823,26 +823,24 @@ choose_mip:
                                                         SSPNAME: "SSP5-8.5"
                                 
 
-choose_o3_scheme:
-        "prescribed":
-                choose_mip:
-                        "cmip6":
-                                choose_scenario:
-                                        "piControl":
-                                                add_forcing_files:
-                                                        # O3 concentrations for piControl
-                                                        O3PI: O3PI
-                                        "historical":
-                                                add_forcing_files:
-                                                        # Add historical O3
-                                                        O3HIST: O3HIST
-                                        "SSP5-8.5":
-                                                add_forcing_files:
-                                                        # Add O3 for all scenarios
-                                                        O3SCEN: O3SCEN
-        "Cariolle":
-                add_forcing_files: 
-                        o3_data: o3_data
+#choose_o3_scheme:
+#        "prescribed":
+#                choose_mip:
+#                        "cmip6":
+#                                choose_scenario:
+#                                        "piControl":
+#                                                add_forcing_files:
+#                                                        # O3 concentrations for piControl
+#                                                        O3PI: O3PI
+#                                        "historical":
+#                                                add_forcing_files:
+#                                                        # Add historical O3
+#                                                        O3HIST: O3HIST
+#                                        "SSP5-8.5":
+#                                                add_forcing_files:
+#                                                        # Add O3 for all scenarios
+#                                                        O3SCEN: O3SCEN
+
 
 ##
 ## sources
@@ -864,6 +862,7 @@ input_sources:
         vtables: ${vtables_dir}/*
         ifsdata: ${ifsdata_dir}/*
         tl_data: ${input_dir}/${res_number_tl}/*
+        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_sources:
         # GHG data
@@ -877,8 +876,6 @@ forcing_sources:
         O3PI: ${cmip6_data_dir}/o3_pi/*
         O3HIST: ${cmip6_data_dir}/o3_histo/*
         O3SCEN: ${cmip6_data_dir}/o3_scenarios/*
-        # O3 equilibrium from Cariolle
-        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
         # ICMCL
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
 
@@ -899,6 +896,7 @@ input_in_work:
         vtables: vtables/*
         ifsdata: ifsdata/*
         tl_data: ${res_number_tl}/*
+        o3_data: ${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_in_work:
         ICMCL_INIT: ICMCL${oifs.input_expid}INIT
@@ -911,7 +909,6 @@ forcing_in_work:
         O3PI: cmip6_data/o3_pi/* 
         O3HIST: cmip6_data/o3_histo/* 
         O3SCEN: cmip6_data/o3_scenarios/*
-        o3_data: ${res_number_tl}/o3chem_l${nlev}/*
         
 ##
 ## coupling

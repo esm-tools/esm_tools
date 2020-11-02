@@ -15,12 +15,15 @@ core:
                         - "prepare_coupler_files"
                         - "add_batch_hostfile"
                         - "copy_files_to_work"
+
+                filelists:
+                        - "assemble"
                         - "report_missing_files"
 
                 database_actions:
                         - "database_entry"
 
-                esm_batch_system:
+                batch_system:
                         - "write_simple_runscript"
                         - "submit"
 

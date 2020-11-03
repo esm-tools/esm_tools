@@ -186,3 +186,14 @@ in the `general` experiment directory or in the `run` subdirectory:
 
   * The `ESM-Tools` variable space file ``config/<experiment_ID>_finished_config.yaml``.
   * The run log file ``run_YYYYMMDD-YYYYMMDD/<experiment_ID>_compute_YYYYMMDD-YYYYMMDD_<JobID>.log```.
+  
+For interactive debugging, you may also add the following to the ``general`` section of your configuration file. 
+This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb.html#debugger-commands>`_, and allow you to step through the recipe.
+
+.. code-block:: yaml
+
+    general: 
+        debug_recipe: True
+        
+        
+        

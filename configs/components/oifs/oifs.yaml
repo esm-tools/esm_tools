@@ -13,8 +13,8 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
-include_models:
-        - xios
+#include_models:
+#        - xios
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -377,7 +377,7 @@ compiletime_environment_changes:
 input_expid: ECE3
 resolution: TL159
 levels: L91
-nlev: 91
+nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
@@ -707,7 +707,7 @@ outdata_sources:
 ## Using XIOS?
 choose_with_xios:
         1:
-                add_include_models:
+                include_models:
                         - xios
                 add_namelist_changes: 
                         fort.4:

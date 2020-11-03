@@ -154,7 +154,7 @@ oifs:
         levels: L60 # @JAN: taken from the runscript, default in oifs.functions is 91
 
         choose_general.version:
-                '1.0':
+                "1.0":
                         with_xios: True
                         #compiletime_environment_changes:
                         #        add_export_vars:
@@ -180,11 +180,7 @@ oifs:
         #@JAN/JOAKIM: is ok to ignore this files?
         remove_input_sources:
                 - vtables
-        #remove_forcing_sources: # Not necessary anymore as long as we use mip: "cmip6"
-        #        - RCP3PD_MIDYR_CONC
-        #        - RCP45_MIDYR_CONC
-        #        - RCP6_MIDYR_CONC
-        #        - RCP85_MIDYR_CONC
+
 
 
 fesom:
@@ -215,8 +211,8 @@ fesom:
 
 
 xios:
-        model_dir: ${general.model_dir}/xios-${xios.version}
-        setup_dir: ${general.model_dir}
+        #model_dir: ${general.model_dir}/xios-${xios.version}
+        #setup_dir: ${general.model_dir}
 
         nproca: ${computer.cores_per_node}
         nprocb: 1
@@ -227,8 +223,8 @@ xios:
 
 
 rnfmap:
-        model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
-        setup_dir: ${general.model_dir}
+        #model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
+        #setup_dir: ${general.model_dir}
         nproca: 1
         nprocb: 1
         time_step: ${oasis3mct.coupling_time_step}
@@ -247,7 +243,11 @@ oasis3mct:
                 - fesom
                 - oifs
                 - rnfmap
-                - xios
+
+        choose_general.version:
+                "1.0":
+                        add_process_ordering:
+                                - xios
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -489,25 +489,11 @@ oasis3mct:
                 rmp_a2r_B: rmp_a2r_B
                 rmp_r2f_G: rmp_r2f_G
 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
-
         add_restart_out_in_work:
                 rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
                 rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
                 rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
                 rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
-
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
 
         add_restart_out_sources:
                 rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
@@ -515,25 +501,11 @@ oasis3mct:
                 rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
                 rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
-
         add_restart_in_files:
                 rmp_a2f_B: rmp_a2f_B
                 rmp_f2a_G: rmp_f2a_G
                 rmp_a2r_B: rmp_a2r_B
                 rmp_r2f_G: rmp_r2f_G
-
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
 
         add_restart_in_in_work:
                 rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
@@ -541,25 +513,11 @@ oasis3mct:
                 rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
                 rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
-
         add_restart_in_sources:
                 rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
                 rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
                 rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
                 rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
-
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
 
 
 # Set up CPU layout

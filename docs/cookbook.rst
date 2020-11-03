@@ -37,4 +37,5 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 
 .. include:: recipes/modify_namelists.rst
 .. include:: recipes/add_model_setup.rst
+.. include:: recipes/add_forcing_input.rst
 .. include:: recipes/use_own_namelist.rst

@@ -4,12 +4,48 @@ choose_job_type:
                 recipe:
                         - "postprocess"
 
+        prepare:
+                recipe:
+                        - "_read_date_file"
+                        - "check_model_lresume"
+                        - "resolve_some_choose_blocks"
+                        - "_initialize_calendar"
+                        - "resolve_some_choose_blocks"
+                        - "_add_all_folders"
+                        - "set_prev_date"
+                        - "set_parent_info"
+                        - "finalize_config"
+                        - "add_submission_info"
+                        - "initialize_batch_system"
+                        - "initialize_coupler"
+                        - "set_logfile"
+
+
+        tidy:
+                recipe:
+                        - "init_monitor_file"
+                        - "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
+                        - "tidy_coupler"
+                        - "assemble"
+                        - "check_for_unknown_files"
+                        - "log_used_files"
+                        - "copy_stuff_back_from_work"
+                        - "copy_all_results_to_exp"
+                        - "start_post_job"
+                        - "_increment_date_and_run_number"
+                        - "write_date_file"
+                        - "maybe_resubmit"
+                        
+
         compute:
                 recipe:
                         - "_create_setup_folders"
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
                         - "assemble"
+                        - "log_used_files"
                         - "_write_finalized_config"
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"

@@ -15,7 +15,7 @@ additional_flags: "--ntasks-per-node=48"
 
 pool_directories:
         pool: "/pool/data/not/available/on/blogin"
-        focipool: "/p/project/cesmtst/esmtst22/foci_input2"
+        focipool: "/p/project/hirace/foci_input2"
 
 pool_dir:  "/pool/data/not/available/on/blogin"
 
@@ -71,6 +71,7 @@ choose_general.setup_name:
                         - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
                 add_export_vars:
                         - "IO_LIB_ROOT=/p/project/cesmtst/esmtst22/gitlab/HPC_libraries/intel2019.3.199_impi2019.6.154_20191213"
+                        - "PATH=$IO_LIB_ROOT/bin:$PATH"
                         - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
 
                         - "SZIPROOT=$IO_LIB_ROOT"

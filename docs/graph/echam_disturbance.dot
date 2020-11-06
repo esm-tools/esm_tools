@@ -1,0 +1,50 @@
+digraph "echam_disturbance" {
+    size="10.0";
+    graph [fontname="Verdana", fontsize="12"];
+    node [fontname="Verdana", fontsize="12"];
+    edge [fontname="Sans", fontsize="12"];
+    rankdir="TB";
+    compound=true;
+
+    # GENERAL FOLDER SUBGROUP
+    subgraph cluster0
+    {
+        label="General exp dir";
+        node [style=filled];
+        fontname="bold";
+        color=black;
+
+        # SUBFOLDERS
+        ane [label="analysis", shape="folder", fillcolor="gray", style=filled];
+        bie [label="bin", shape="folder", fillcolor="gray", style=filled];
+        dt1 [label="...", shape="none", size=15];
+        rue [label="run_<DATE>", shape="folder", fillcolor="gray", style=filled];
+        sce [label="scripts", shape="folder", fillcolor="gray", style=filled];
+        dt2 [label="...", shape="none", size=15];
+
+        # VERTICAL ALIGNMENT OF SUBFOLDERS
+        ane -> bie -> dt1 -> rue -> sce -> dt2[style=invis];
+    }
+
+    # SCRIPS FOLDER SUBGROUP
+    subgraph cluster1
+    {
+        label="scripts (<exp_dir>/scripts)";
+        node [style=filled];
+        fontname="bold";
+        style=filled;
+        color=black;
+        fillcolor=gray;
+
+        # SUBFOLDERS
+        run [label="<runscript>.yaml", shape="note", fillcolor="white", style=filled];
+        diy [label="disturb_years.dat", shape="note", fontname="bolde", fillcolor="white", style=filled];
+        pt3 [label="...", shape="none", size=15];
+
+        # VERTICAL ALIGNMENT OF SUBFOLDERS
+        run -> diy -> pt3[style=invis];
+    }
+
+    # LINK SCRIPTS FOLDER WITH THE SCRIPTS FOLDER GROUP (DASHED LINE). lhead_cluster MAKES THE LINE TO STOP AT THE SCRIPTS FODLER CLUSTER
+    sce -> diy[lhead=cluster1, dir=none, style=dashed, constrain=false];
+}

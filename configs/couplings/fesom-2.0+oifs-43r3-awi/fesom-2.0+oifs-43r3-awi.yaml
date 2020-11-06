@@ -4,5 +4,5 @@ components:
 - fesom-2.0-o
 - oasis3mct-3.0
 coupling_changes:
-- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
+- sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt
 - sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0-o/CMakeLists.txt

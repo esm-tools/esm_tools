@@ -35,7 +35,7 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. } (Move to the end of the paragraph)
 .. : sort (sort the lines you have selected alphabetically)
 
-.. include:: recipes/add_model_setup.rst
-.. include:: recipes/echam_disturbance.rst
-.. include:: recipes/modify_namelists.rst
+.. include:: recipes/echam_disturbance.rst       
+.. include:: recipes/modify_namelists.rst        
+.. include:: recipes/add_model_setup.rst         
 .. include:: recipes/use_own_namelist.rst

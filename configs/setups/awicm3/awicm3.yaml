@@ -123,7 +123,7 @@ oifs:
         ##icmcl_file: ICMCLgu5aINIT
         forcing_dir: ${input_dir}/${version_dir}/ifsdata/
         ifsdata_dir: ${input_dir}/${version_dir}/ifsdata/
-        namelist_dir: ${general.esm_namelist_dir}/oifs/${version_dir}/
+        namelist_dir: ${general.esm_namelist_dir}/oifs/${version_dir}/awicm3/202011
         cmip6_data_dir: ${input_dir}/cmip6-data
         cmip5_data_dir: ${input_dir}/cmip5-data
 
@@ -177,10 +177,25 @@ oifs:
                         nproca: 279 # @JAN, are these numbers correct for this resolution?
                         nprocb: 1
 
-        #@JAN/JOAKIM: is ok to ignore this files?
+        #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
         remove_input_sources:
                 - vtables
 
+        # All forcing files are removed: path specified in to the namelist
+        remove_forcing_files:
+                - PRE2005_MIDYR_CONC
+                - RCP3PD_MIDYR_CONC
+                - RCP45_MIDYR_CONC
+                - RCP6_MIDYR_CONC
+                - RCP85_MIDYR_CONC
+                - CMIP6DATA
+                - O3PI
+                - O3HIST
+                - O3SCEN
+                - ICMCL_INIT
+
+        add_config_sources:
+                "fort.4": "${namelist_dir}/fort.4"
 
 
 fesom:
@@ -204,110 +219,64 @@ fesom:
         restart_unit: "d"
         leapyear: True
 
+        # TODO: choose namelist subfolder using a tag functionality
+        model_tag: "awicm-3-deck"
+        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+
+        surf_relax_s: 0.0
+
+        add_namelists:
+                - namelist.cvmix
+
         namelist_changes:
                 namelist.config:
-                        paths:
-                                OpbndPath: "remove_from_namelist"
-                                ForcingDataPath: "remove_from_namelist"
-                                TideForcingPath: "remove_from_namelist"
-                        initialization:
-                                oceclimadataname: "remove_from_namelist"
-                                use_prepared_init_ice: "remove_from_namelist"
                         restart_log:
-                                logfile_outfreq: 960            # @JAN, do we need this?
+                                restart_length_unit: "${restart_unit}"
                                 restart_length: "${restart_rate}"
-                                run_length_unit: "${restart_unit}"
-                        inout:
-                                output_offset: "remove_from_namelist"
-                                restart_length: "remove_from_namelist"
-                                restart_length_unit: "remove_from_namelist"
-                                restart_offset: "remove_from_namelist"
-                                logfile_outfreq: "remove_from_namelist"
-                                use_means: "remove_from_namelist"
-                        ale_def:
-                                which_ALE: 'linfs'              # @JAN, do we need this?
-                                use_partial_cell: false         # @JAN, do we need this?
-                        mesh_def:
-                                grid_type: "remove_from_namelist"
-                                use_ale: "remove_from_namelist"
-                                which_ale: "remove_from_namelist"
-                                use_partial_cell: "remove_from_namelist"
-                                min_hnode: "remove_from_namelist"
-                                lzstar_lev: "remove_from_namelist"
-                        geometry:
-                                betaplane: "remove_from_namelist"
-                                f_fplane: "remove_from_namelist"
-                                beta_betaplane: "remove_from_namelist"
-                        machine:                                # @JAN, this two are different than the default. Do we know why?
-                                n_levels: 2
-                                n_part: [12, 36]
-                namelist.forcing:
-                        forcing_source:
-                                wind_data_source: "remove_from_namelist"
-                                rad_data_source: "remove_from_namelist"
-                                precip_data_source: "remove_from_namelist"
-                                runoff_data_source: "remove_from_namelist"
-                                sss_data_source: "remove_from_namelist"
-                                wind_ttp_ind: "remove_from_namelist"
-                                rad_ttp_ind: "remove_from_namelist"
-                                precip_ttp_ind: "remove_from_namelist"
-                                runoff_ttp_ind: "remove_from_namelist"
-                                sss_ttp_ind: "remove_from_namelist"
-                        namsbc:
-                                nm_xwind_file: "remove_from_namelist"
-                                nm_ywind_file: "remove_from_namelist"
-                                nm_humi_file: "remove_from_namelist"
-                                nm_qsr_file: "remove_from_namelist"
-                                nm_qlw_file: "remove_from_namelist"
-                                nm_tair_file: "remove_from_namelist"
-                                nm_prec_file: "remove_from_namelist"
-                                nm_snow_file: "remove_from_namelist"
-                                nm_mslp_file: "remove_from_namelist"
-                                nm_runoff_file: "remove_from_namelist"
-                                nm_sss_data_file: "remove_from_namelist"
-                        nam_sbc:    # @JAN, do we need this block as it is or could we simplify it?
-                                nm_xwind_file: '${nam_sbc_dir}/u_10.'
-                                nm_ywind_file: '${nam_sbc_dir}/v_10.'
-                                nm_humi_file: '${nam_sbc_dir}/q_10.'
-                                nm_qsr_file: '${nam_sbc_dir}/ncar_rad.'
-                                nm_qlw_file: '${nam_sbc_dir}/ncar_rad.'
-                                nm_tair_file: '${nam_sbc_dir}/t_10.'
-                                nm_prec_file: '${nam_sbc_dir}/ncar_precip.'
-                                nm_snow_file: '${nam_sbc_dir}/ncar_precip.'
-                                nm_mslp_file: '${nam_sbc_dir}/slp.'
-                                nm_xwind_var: 'U_10_MOD'
-                                nm_ywind_var: 'V_10_MOD'
-                                nm_humi_var: 'Q_10_MOD'
-                                nm_qsr_var: 'SWDN_MOD'
-                                nm_qlw_var: 'LWDN_MOD'
-                                nm_tair_var: 'T_10_MOD'
-                                nm_prec_var: 'RAIN'
-                                nm_snow_var: 'SNOW'
-                                nm_mslp_var: 'SLP'
-                                nm_nc_iyear: 1948
-                                nm_nc_imm: 1
-                                nm_nc_idd: 1
-                                nm_nc_freq: 1
-                                nm_nc_tmid: 1
-                                l_xwind: true
-                                l_ywind: true
-                                l_humi: true
-                                l_qsr: true
-                                l_qlw: true
-                                l_tair: true
-                                l_prec: true
-                                l_mslp: false
-                                l_cloud: false
-                                l_snow: true
-                                nm_runoff_file: '${nam_sbc_dir}/runoff.nc'
-                                runoff_data_source: 'CORE2'
-                                nm_sss_data_file: '${nam_sbc_dir}/PHC2_salx.nc'
-                                sss_data_source: 'CORE2'
+                        # TODO: A fix is needed for the things below to work
+                        #inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+                        #        restart_length: "remove_from_namelist"
+                        #        restart_length_unit: "remove_from_namelist"
                 namelist.oce:
-                        boundary:
-                                restore_s_surf: 0.0
+                        oce_tra:
+                                surf_relax_s: "${surf_relax_s}"
+
+        # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
+        # old experiments. 5e-3 is a better value so it is used for XIOS version
+        choose_general.version:
+                "1.0-deck":
+                        add_namelist_changes:
+                                namelist.cvmix:
+                                        param_kpp:
+                                                kpp_kv0: 5e-2
+                # Use better oce_tra parameters for the XIOS version that match the fesom-bounded namelist
+                "1.0":
+                        add_namelist_changes:
+                                namelist.oce:
+                                        oce_tra:
+                                                use_momix: true
+                                                momix_lat: -50.0
+                                                momix_kv: 0.01
+                                                use_instabmix: true
+                                                instabmix_kv: 0.1
+                                                use_windmix: false
+                                                windmix_kv: 1.e-3
+                                                windmix_nl: 2
+                                                diff_sh_limit: 5.0e-3
+
+        # TODO: The following command does not work. What it tries to do is to remove
+        # the namsbc section that does not exist in the fesom-bounded namelist
+        # but that is defined in fesom-bounded namelist as nam-sbc
+        remove_namelist_changes.namelist,forcing:
+                        - namsbc
 
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
+
+        add_config_files:
+                cvmix: cvmix
+
+        add_config_sources:
+                cvmix: "${namelist_dir}/namelist.cvmix"
 
         remove_config_sources:
                 - diag

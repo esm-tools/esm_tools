@@ -75,6 +75,6 @@ disturbance whenever a "disturb_year" is encountered.
 See also
 ~~~~~~~~
 
-- https://icdc.cen.uni-hamburg.de/fileadmin/user_upload/icdc_Dokumente/ECHAM/echam6_userguide.pdf, Table 2.4, dynctl
+- `ECHAM6 User Handbook <https://icdc.cen.uni-hamburg.de/fileadmin/user_upload/icdc_Dokumente/ECHAM/echam6_userguide.pdf>`_, Table 2.4, dynctl
 
 - `Relevant source code <https://github.com/esm-tools/esm_runscripts/blob/103d0f3d614688efb839aa9292d843da49bd3788/esm_runscripts/namelists.py#L182-L217>`_

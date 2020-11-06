@@ -28,9 +28,9 @@ below.
    would look like:
 
 .. graphviz:: graph/echam_disturbance.dot
-    :name: exp_dir_structure
-    :caption: Experiment directory structure
-    :alt: Experiment directory structure
+    :name: disturb_years.dat location
+    :caption: disturb_years.dat location
+    :alt: disturb_years.dat location
     :align: center
 
 2. Add years you want disturbed.

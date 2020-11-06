@@ -17,10 +17,10 @@ digraph "echam_disturbance" {
         # SUBFOLDERS
         ane [label="analysis", shape="folder", fillcolor="gray", style=filled];
         bie [label="bin", shape="folder", fillcolor="gray", style=filled];
-        dt1 [label="...", shape="none", size=15];
+        dt1 [label="...", shape="none", size=15, fillcolor="white"];
         rue [label="run_<DATE>", shape="folder", fillcolor="gray", style=filled];
         sce [label="scripts", shape="folder", fillcolor="gray", style=filled];
-        dt2 [label="...", shape="none", size=15];
+        dt2 [label="...", shape="none", size=15, fillcolor="white"];
 
         # VERTICAL ALIGNMENT OF SUBFOLDERS
         ane -> bie -> dt1 -> rue -> sce -> dt2[style=invis];
@@ -38,8 +38,8 @@ digraph "echam_disturbance" {
 
         # SUBFOLDERS
         run [label="<runscript>.yaml", shape="note", fillcolor="white", style=filled];
-        diy [label="disturb_years.dat", shape="note", fontname="bolde", fillcolor="white", style=filled];
-        pt3 [label="...", shape="none", size=15];
+        diy [label="disturb_years.dat", shape="note", fontname="bold", fillcolor="white", style=filled];
+        pt3 [label="...", shape="none", size=15, fillcolor="gray"];
 
         # VERTICAL ALIGNMENT OF SUBFOLDERS
         run -> diy -> pt3[style=invis];
@@ -47,4 +47,5 @@ digraph "echam_disturbance" {
 
     # LINK SCRIPTS FOLDER WITH THE SCRIPTS FOLDER GROUP (DASHED LINE). lhead_cluster MAKES THE LINE TO STOP AT THE SCRIPTS FODLER CLUSTER
     sce -> diy[lhead=cluster1, dir=none, style=dashed, constrain=false];
+    ane -> run[style=invis];
 }

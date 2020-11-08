@@ -25,18 +25,13 @@ below.
 
    In your experiment script folder (**not** the one specific for each run),
    you can create a file called ``disturb_years.dat``. An abbreviated file tree
-   would look like::
+   would look like:
 
-      * EXPID
-      |
-      | * scripts
-      | | - run_config.yaml (sometimes called "EXPID.yaml")
-      | | - disturb_years.dat
-      | |
-      | * outdata
-      | | - echam
-      | ... other files and folders ...
-
+.. graphviz:: graph/echam_disturbance.dot
+    :name: disturb_years.dat location
+    :caption: disturb_years.dat location
+    :alt: disturb_years.dat location
+    :align: center
 
 2. Add years you want disturbed.
 

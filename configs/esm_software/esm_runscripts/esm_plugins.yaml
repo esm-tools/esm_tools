@@ -1,5 +1,19 @@
 core:
         esm_runscripts:
+                prepare:
+                        - "_read_date_file"
+                        - "check_model_lresume"
+                        - "resolve_some_choose_blocks"
+                        - "_initialize_calendar"
+                        - "_add_all_folders"
+                        - "set_prev_date"
+                        - "set_parent_info"
+                        - "finalize_config"
+                        - "add_submission_info"
+                        - "initialize_batch_system"
+                        - "initialize_coupler"
+                        - "set_logfile"
+
                 compute:
                         - "_create_setup_folders"
                         - "_create_component_folders"
@@ -16,16 +30,36 @@ core:
                         - "add_batch_hostfile"
                         - "copy_files_to_work"
 
+                tidy:
+                        - "init_monitor_file"
+                        - "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
+                        - "copy_stuff_back_from_work"
+                        - "copy_all_results_to_exp"
+                        - "start_post_job"
+                        - "increment_date_and_run_number"
+                        - "write_date_file"
+                        - "maybe_resubmit"
+
+                postprocess:
+                        - "_assemble_postprocess_tasks"
+
                 filelists:
                         - "assemble"
+                        - "log_used_files"
                         - "report_missing_files"
-
+                          
                 database_actions:
                         - "database_entry"
 
                 batch_system:
                         - "write_simple_runscript"
                         - "submit"
+
+
+
+
 
 # To add your custom plugin, see oifs.yaml, section compute_recipe, and compare to the list above.
 # the custom plugin 'preprocess' listed in the compute_recipe in oifs.yaml needs to be installed beforehand with

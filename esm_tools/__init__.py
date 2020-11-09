@@ -31,6 +31,9 @@ import pkg_resources
 import yaml
 
 
+def get_config_as_str(config):
+    return pkg_resources.resource_string("esm_tools.configs", config)
+
 # For more information on how this works, see here:
 # https://stackoverflow.com/questions/62550952/including-package-data-python-from-top-level-when-package-is-in-subdirectory/62552188#62552188
 def _read_config_standard_install(config):

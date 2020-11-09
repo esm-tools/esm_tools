@@ -34,6 +34,12 @@ import yaml
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
 
+def _list_config_dir_standard_install(dir_path):
+    return pkg_resources.resource_listdir("esm_tools.configs", dir_path)
+
+def _list_config_dir_editable_install(dir_path):
+    return pkg_resources.resource_listdir("configs", dir_path)
+
 # For more information on how this works, see here:
 # https://stackoverflow.com/questions/62550952/including-package-data-python-from-top-level-when-package-is-in-subdirectory/62552188#62552188
 def _read_config_standard_install(config):
@@ -153,6 +159,11 @@ def read_config_file(config):
         return _read_config_editable_install(config)
     return _read_config_standard_install(config)
 
+
+def list_config_dir(dirpath):
+    if EDITABLE_INSTALL:
+        return _list_config_dir_editable_install(dirpath)
+    return _list_config_dir_standard_install(dirpath)
 
 def read_namelist_file(nml):
     """Reads a namelist file from a path, seperated by "/". Similar to ``read_config_file``

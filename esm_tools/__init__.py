@@ -25,6 +25,7 @@ __email__ = "dirk.barbi@awi.de"
 __version__ = "4.2.12"
 
 import os
+import shutil
 import sys
 
 import pkg_resources
@@ -101,6 +102,22 @@ def _read_config_editable_install(config):
     return configdict
 
 
+def _copy_config_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.configs", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_config_folder_editable_install(dest_path):
+    src_path = pkg_resources.resource_filename("configs", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_namelist_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.namelists", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_namelist_folder_editable_install(dest_path):
+    src_path = pkg_resources.resource_filename("namelists", ".")
+    return shutil.copytree(src_path, dest_path)
+
 def _read_namelist_editable_install(nml):
     """
     Reads a namelist file for the case that you have done an editable/develop install.
@@ -164,6 +181,18 @@ def list_config_dir(dirpath):
     if EDITABLE_INSTALL:
         return _list_config_dir_editable_install(dirpath)
     return _list_config_dir_standard_install(dirpath)
+
+def copy_config_folder(dest_path):
+    if EDITABLE_INSTALL:
+        return _copy_config_folder_editable_install(dest_path)
+    return _copy_config_folder_standard_install(dest_path)
+
+def copy_namelist_folder(dest_path):
+    if EDITABLE_INSTALL:
+        return _copy_namelist_folder_editable_install(dest_path)
+    return _copy_namelist_folder_standard_install(dest_path)
+
+
 
 def read_namelist_file(nml):
     """Reads a namelist file from a path, seperated by "/". Similar to ``read_config_file``

@@ -32,6 +32,13 @@ import pkg_resources
 import yaml
 
 
+def _get_namelist_filepath_standard_install(namelist):
+    return pkg_resources.resource_filename("esm_tools.namelists", namelist)
+
+def _get_namelist_filepath_editable_install(namelist):
+    return pkg_resources.resource_filename("namelists", namelist)
+
+
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
 
@@ -191,6 +198,11 @@ def copy_namelist_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_namelist_folder_editable_install(dest_path)
     return _copy_namelist_folder_standard_install(dest_path)
+
+def get_namelist_filepath(namelist):
+    if EDITABLE_INSTALL:
+        return _get_namelist_filepath_editable_install(namelist)
+    return _get_namelist_filepath_standard_install(namelist)
 
 
 

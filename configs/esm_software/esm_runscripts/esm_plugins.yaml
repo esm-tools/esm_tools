@@ -35,11 +35,12 @@ core:
                         - "get_last_jobid"
                         - "wait_and_observe"
                         - "wake_up_call"
+                        - "tidy_coupler"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
                         - "start_post_job"
-                        - "increment_date_and_run_number"
-                        - "write_date_file"
+                        - "_increment_date_and_run_number"
+                        - "_write_date_file"
                         - "maybe_resubmit"
 
                 postprocess:
@@ -49,6 +50,7 @@ core:
                         - "assemble"
                         - "log_used_files"
                         - "report_missing_files"
+                        - "check_for_unknown_files"
                           
                 database_actions:
                         - "database_entry"

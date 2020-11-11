@@ -35,7 +35,7 @@ choose_job_type:
                         - "copy_all_results_to_exp"
                         - "start_post_job"
                         - "_increment_date_and_run_number"
-                        - "write_date_file"
+                        - "_write_date_file"
                         - "maybe_resubmit"
                         
 

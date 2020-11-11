@@ -31,6 +31,14 @@ ESM Runscripts
 
    **A**: You can safely forget about ``FUNCTION_PATH``, which was only needed in the shell script version until revision 3. Either ignore it, or better remove it from the runscript.
 
+3. **Q**: When I try to branch-off from a spinup experiment using `FESOM`, I get the following runtime error::
+
+    read ocean restart file
+    Error:
+    NetCDF: Invalid dimension ID or name
+
+
+   **A**: See :ref:`How to branch-off FESOM from old spinup restart files <target to branchoff old restart>`.
 
 ESM Master
 ----------

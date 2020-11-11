@@ -39,3 +39,4 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. include:: recipes/modify_namelists.rst
 .. include:: recipes/add_model_setup.rst
 .. include:: recipes/use_own_namelist.rst
+.. include:: recipes/branchoff_from_old_spinups.rst

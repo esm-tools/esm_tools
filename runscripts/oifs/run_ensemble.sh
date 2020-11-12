@@ -28,7 +28,7 @@ do
     echo " Run name: ${expid}_${rip}"
     sed -i "s/ensemble_id:.*/ensemble_id: ${e}/" ${rs}
     
-    #esm_runscripts ${rs} -e oifs-tco95-g${ii}
+    esm_runscripts ${rs} -e ${expid}_${rip}
 
 done
 

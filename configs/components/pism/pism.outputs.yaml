@@ -1,8 +1,11 @@
-output_size: "small"
+outdata_size: "small"
 
-output_files:
+outdata_files:
     ts_file: "${expid}_pismr_ts_${run_datestamp}.nc"
     ex_file: "${expid}_pismr_extra_${run_datestamp}.nc"
+outdata_sources:
+    "${expid}_pismr_ts_${run_datestamp}.nc": "${expid}_pismr_ts_${run_datestamp}.nc"
+    "${expid}_pismr_extra_${run_datestamp}.nc": "${expid}_pismr_extra_${run_datestamp}.nc"
 
 ts_times: "${current_date!syear}:${ts_interval}:${end_date!syear}"
 ts_interval: 1

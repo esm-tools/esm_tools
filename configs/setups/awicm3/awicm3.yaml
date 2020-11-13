@@ -200,6 +200,8 @@ oifs:
                                 LCORBMD:  "${orb_switch}"
                                 ORBMODE: "${orb_mode}"
                                 ORBIY: "${orb_iyear}"
+        # Namelist changes for wam_namelist not included yet as the first test is for DRH6
+        # that has no wave model. TODO: implement in the near future
 
         runtime_environment_changes:
                 add_export_vars:

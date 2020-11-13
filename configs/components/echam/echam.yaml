@@ -8,11 +8,10 @@ type: atmosphere
 
 compile_infos:
         available_versions:
-        - 6.3.04p1-esm-interface-yac
         - 6.3.05p2
         - 6.3.05p2-foci
         - 6.3.02p4
-        - 6.3.04p1-esm-interface
+        - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
         - 6.3.04p1-paleodyn
         - 6.3.04p1-recom-awicm
@@ -22,11 +21,7 @@ compile_infos:
         choose_version:
           6.3.02p4:
             install_bins: src/bin/echam6
-          6.3.04p1-esm-interface:
-            branch: using_esm_interfaces
-            destination: echam-6.3.04p1
-            git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
-          6.3.04p1-esm-interface-yac:
+          6.3.04p1-esm_interface:
             branch: using_esm_interfaces_yac
             destination: echam-6.3.04p1
             git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
@@ -160,6 +155,8 @@ choose_switch:
 nprocar: 0
 nprocbr: 0
 npromar: 0
+nproca: 24
+nprocb: 24
 lrad_async: false
 lrestart_from_old: false
 
@@ -196,9 +193,9 @@ choose_version:
         6.3.04p1-paleodyn:
                 repo_tag: 6.3.04p1
                 dataset: r0007
-        6.3.04p1-esm-interface:
+        6.3.04p1-esm_interface:
                 dataset: r0007
-        6.3.04p1-esm-interface-yac:
+        6.3.04p1-esm_interface-yac:
                 dataset: r0007
         6.3.05p2:
                 repo_tag: 6.3.05p2

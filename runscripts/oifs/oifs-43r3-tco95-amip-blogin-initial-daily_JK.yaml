@@ -1,0 +1,45 @@
+general:
+        setup_name: oifs
+        compute_time: "00:30:00"
+        account: shkjocke
+        initial_date: "2008-01-01T00:00:00"
+        final_date: "2008-01-16T00:00:00"
+        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-slask/
+        nyear: 0
+        nmonth: 0
+        nday: 5
+        restart_rate: 1
+        restart_unit: days 
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        #time_step: 3600.0
+        #pool_dir: /scratch/usr/shkifmsw/foci_input2
+        input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
+        rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
+        vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
+        clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
+        ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
+        cmip5_data_dir: ${pool_dir}/OPENIFS40R1_GENERAL/cmip5_ghg/
+        #icmcl_dir: ${pool_dir}/OPENIFS43R3-TCO95/2008010100/
+        #icmcl_file: ICMCLhagwINIT
+        icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95-AMIP/
+        icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231
+        prepifs_expid: hagw
+        prepifs_startdate: 20080101
+        resolution: TCO95
+        levels: L91
+        lresume: 0
+        post_processing: 1
+        nproca: 288
+        nprocb: 1
+        perturb: 0 
+
+xios:
+        #xml_dir: /home/shkjocke/xmls_for_oifs/
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_3h+6hrLev/
+        with_model: oifs
+        nproca: 96
+        nprocb: 1

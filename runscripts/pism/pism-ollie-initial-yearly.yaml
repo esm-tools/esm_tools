@@ -1,0 +1,14 @@
+general:
+        setup_name: pism
+        compute_time: "00:01:00"
+        initial_date: "2000-01-01"
+        final_date: "2001-01-01"
+        base_dir: /work/ollie/pgierz/test_esmtools/experiments/
+        nmonth: 1
+        clean_old_rundirs_keep_every: 5
+        clean_old_rundirs_except: 2
+
+pism:
+        version: 1.0
+        model_dir: /work/ollie/pgierz/test_esmtools/model_codes/
+        lresume: 0

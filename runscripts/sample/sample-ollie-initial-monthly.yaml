@@ -1,0 +1,14 @@
+general:
+        setup_name: sample
+        compute_time: "00:01:00"
+        initial_date: "2000-01-01"
+        final_date: "2001-01-01"
+        base_dir: /work/ollie/mandresm/esm_yaml_test/
+        nmonth: 1
+        clean_old_rundirs_keep_every: 5
+        clean_old_rundirs_except: 2
+
+sample:
+        version: 1.0
+        model_dir: /home/ollie/mandresm/model_codes/sample-1.0/
+        lresume: 0

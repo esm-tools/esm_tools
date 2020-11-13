@@ -15,6 +15,7 @@ core:
                         - "set_logfile"
 
                 compute:
+                        - "compile_model"
                         - "_create_setup_folders"
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
@@ -22,6 +23,7 @@ core:
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
+                        - "assemble_filelists"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"
@@ -68,9 +70,9 @@ core:
 #
 # git clone https://github.com/esm-tools-plugins/preprocess
 # cd preprocess
-# if required activate python3 e.g. 
+# if required activate python3 e.g.
 # module load anaconda3/bleeding_edge on
-# pip install --user 
+# pip install --user
 #
 # now check if the plugin is available
 # esm_plugins should print

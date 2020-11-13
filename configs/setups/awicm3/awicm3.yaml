@@ -102,11 +102,10 @@ general:
 #########################################################################################
 
 oifs:
-        version: "43r3-awi"
-        version_dir: "43r3"     # Version for directories
+        version: "43r3"
 
         pool_dir: ${general.pool_dir}
-        model_dir: ${general.model_dir}/oifs-${version_dir}
+        model_dir: ${general.model_dir}/oifs-${version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
@@ -115,17 +114,18 @@ oifs:
         mip: "cmip6"
         scenario: "historical"
 
-        input_dir: ${pool_dir}/oifs-${version_dir}
-        rtables_dir: ${input_dir}/rtables/
+        input_expid: DRH6
+        input_dir: ${pool_dir}/oifs-${version}
+        rtables_dir: /work/ollie/jstreffi/runtime/awicm-3.1/DRH6/work/rtables/
         ##vtables_dir: ${input_dir}/../vtables/
         ##clim_dir: ${input_dir}/../
         ##icmcl_dir: ${input_dir}
         ##icmcl_file: ICMCLgu5aINIT
-        forcing_dir: ${input_dir}/${version_dir}/ifsdata/
-        ifsdata_dir: ${input_dir}/${version_dir}/ifsdata/
-        namelist_dir: ${general.esm_namelist_dir}/oifs/${version_dir}/awicm3/202011
-        cmip6_data_dir: ${input_dir}/cmip6-data
-        cmip5_data_dir: ${input_dir}/cmip5-data
+        forcing_dir: ${input_dir}/${version}/ifsdata/
+        ifsdata_dir: ${input_dir}/${version}/ifsdata/
+        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/202011
+        cmip6_data_dir_nml: ${input_dir}/cmip6-data
+        cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
 
         # nprocb must be 1
@@ -140,28 +140,66 @@ oifs:
         nproca: 287
         nprocb: 1
 
-        # By default we turn off ECWAM wave model
-        wam: False
-        # @JAN: in oifs.functions wam: TRUE and wam_2w: TRUE by default
+        # By default we turn on ECWAM wave model (simulation FR10) but it should be
+        # false for DRH6
+        wam: true
 
-        # namelist_changes:
-                # fort.4:
-                        # NAMFOCICFG:
-                                # Turn on coupling
-                                # TODO: Add variable for AGRIF coupling
+        # Microphysics switch: 0 for off, 1 for light version and 2 for full
+        sclct_switch: 2
+
+        custop: "h48"
 
         resolution: TL159 # @JAN: taken from the runscript, default in oifs.functions is T255
         levels: L60 # @JAN: taken from the runscript, default in oifs.functions is 91
 
         choose_general.version:
                 "1.0":
-                        with_xios: True
+                        with_xios: true
+
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
                         #compiletime_environment_changes:
                         #        add_export_vars:
                         #                - 'OIFS_XIOS=enable'
                         #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
                         #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+
+        namelist_changes:
+                fort.4:
+                        NAERAD:
+                                CMIP5DATADIR: "${cmip5_data_dir_nml}"
+                                CRTABLEDIR: "${rtables_dir}"
+                                LECOMPGRID: "${lecompgrid}"
+                        NAMCLDP:
+                                SCLCT_SWITCH: "${sclct_switch}"
+                        NAMFPG:
+                                NFPMAX: "${res_number}"
+                        NAMFPD:
+                                NLAT: "${nlat}"
+                                NLON: "${nlon}"
+                        NAMPAR0:
+                                NSPECRESMIN: "${nspecresmin}"
+                        NAMDYNA:
+                                LGRADSP: "${lgradsp}"
+                        NAMNMI:
+                                LASSI: "${lassi}"
+                        NAMCT0:
+                                LFDBOP: "${lfdbop}"
+                                LSMSSIG: "${lsmssig}"
+                        NAMGRIB:
+                                NJTKDATE: "${start_date}"
+                                NJTKOFFSETSTEP: "${steps_since_initial}"
+                        NAMORB:
+                                LCORBMD:  "${orb_switch}"
+                                ORBMODE: "${orb_mode}"
+                                ORBIY: "${orb_iyear}"
 
         runtime_environment_changes:
                 add_export_vars:
@@ -176,6 +214,25 @@ oifs:
                 TL159_CORE2:
                         nproca: 279 # @JAN, are these numbers correct for this resolution?
                         nprocb: 1
+
+        # Namelist modifications for truncation types
+        nlon: "$(( ${nlat}*2 ))"
+        nspecresmin: "$(( ${res_number}+1 ))"
+        choose_truncation:
+                TCO:
+                        nlat: "$(( (${res_number}+1)*2 ))"
+                        lecompgrid: true
+                        lgradsp: false
+                        lassi: false
+                        lfdbop: false
+                        lsmssig: false
+                TL:
+                        nlat: "$(( ${res_number}+1 ))"
+                        lecompgrid: false
+                        lgradsp: true
+                        lassi: true
+                        lfdbop: true
+                        lsmssig: true
 
         #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
         remove_input_sources:
@@ -233,10 +290,6 @@ fesom:
                         restart_log:
                                 restart_length_unit: "${restart_unit}"
                                 restart_length: "${restart_rate}"
-                        # TODO: A fix is needed for the things below to work
-                        #inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
-                        #        restart_length: "remove_from_namelist"
-                        #        restart_length_unit: "remove_from_namelist"
                 namelist.oce:
                         oce_tra:
                                 surf_relax_s: "${surf_relax_s}"
@@ -264,11 +317,13 @@ fesom:
                                                 windmix_nl: 2
                                                 diff_sh_limit: 5.0e-3
 
-        # TODO: The following command does not work. What it tries to do is to remove
-        # the namsbc section that does not exist in the fesom-bounded namelist
-        # but that is defined in fesom-bounded namelist as nam-sbc
-        remove_namelist_changes.namelist,forcing:
-                        - namsbc
+        remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+                - restart_length
+                - restart_length_unit
+        # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
+        remove_namelist_changes:
+                - namelist.forcing
+
 
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
 
@@ -306,7 +361,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version_dir}/${oifs.resolution}-${fesom.resolution}/
+        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
         use_lucia: True

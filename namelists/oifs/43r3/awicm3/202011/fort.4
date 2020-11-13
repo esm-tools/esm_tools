@@ -58,6 +58,7 @@
   LHVOLCA        = FALSE,
   CRTABLEDIR     ='/work/ollie/jstreffi/runtime/awicm-3.1/DRH6/work//rtables/',
   LECOMPGRID     = FALSE,
+/
 &NAMARG
   LSLAG 		   = TRUE,
   NCONF            = 1,
@@ -207,8 +208,8 @@
   LRSACC           = TRUE,             ! reset accumulated fields to zero at model output frequency
 /
 &NAMFPD
-  NLAT             = 160,
-  NLON             = 320,
+  NLAT             = 400,
+  NLON             = 800,
 /
 &NAMDIM
     NPROMA = -16 ! for a vector computer this number needs to be larger
@@ -268,27 +269,17 @@
 /
 &NAMCVA
 /
-&NAMDDH
-/
 &NAMDFHD
 /
 &NAMDFI
 /
 &NAMDIF
 /
-&NAMDIM
-/
 &NAMDIMO
 /
 &NAMDMSP
 /
 &NAMDPHY
-/
-&NAMDYN
-/
-&NAMDYNA
-/
-&NAMDYNCORE
 /
 &NAMEMIS_CONF
 /
@@ -297,10 +288,6 @@
 &NAMFA
 /
 &NAMFFT
-/
-&NAMFPC
-/
-&NAMFPD
 /
 &NAMFPDY2
 /
@@ -318,8 +305,6 @@
 /
 &NAMFPF
 /
-&NAMFPG
-/
 &NAMFPIOS
 /
 &NAMFPPHY
@@ -331,8 +316,6 @@
 &NAMFY2
 /
 &NAMGEM
-/
-&NAMGFL
 /
 &NAMGMS
 /
@@ -352,8 +335,6 @@
 /
 &NAMIOMI
 /
-&NAMIOS
-/
 &NAMJBCODES
 /
 &NAMJFH
@@ -369,8 +350,6 @@
 &NAMLEG
 /
 &NAMLFI
-/
-&NAMMCC
 /
 &NAMMCUF
 /
@@ -400,11 +379,7 @@
 /
 &NAMOPTCMEM
 /
-&NAMPAR0
-/
 &NAMPARAR
-/
-&NAMPAR1
 /
 &NAMPHY
 /
@@ -418,8 +393,6 @@
 /
 &NAMPHYDS
 /
-&NAMPPC
-/
 &NAMPONG
 /
 &NAMRAD15
@@ -427,8 +400,6 @@
 &NAMRADCMEM
 /
 &NAMRCOEF
-/
-&NAMRES
 /
 &NAMRINC
 /
@@ -468,11 +439,7 @@
 /
 &NAMTRAJP
 /
-&NAMTRANS
-/
 &NAMTRM
-/
-&NAMVAR
 /
 &NAMVARBC
 /
@@ -498,8 +465,6 @@
 /
 &NAMVRTL
 /
-&NAMVV0
-/
 &NAMVV1
 /
 &NAMVV2
@@ -518,13 +483,9 @@
 /
 &NAEPHLI
 /
-&NAMCVER
-/
 &NAMPPVI
 /
 &NAMSPNG
-/
-&NAMRLX
 /
 &NAMTHLIM
 /

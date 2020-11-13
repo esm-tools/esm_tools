@@ -48,6 +48,8 @@ ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
+cmip6_data_dir_nml: ./cmip6_data/
+cmip5_data_dir_nml: ./cmip5_data/
 restart_dir: ""
 
 parent_expid: "test"
@@ -436,6 +438,7 @@ choose_resolution:
                 oasis_grid_name: "048"
                 res_number: 95
                 res_number_tl: "95_3"
+                truncation: "TQ"
         TCO95: 
                 nx: 40320 
                 ny: 1
@@ -443,6 +446,7 @@ choose_resolution:
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
+                truncation: "TCO"
         TL159:
                 nx: 35718
                 ny: 1
@@ -450,6 +454,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159l_2"
+                truncation: "TL"
         TCO159:
                 nx: 35718
                 ny: 1
@@ -457,6 +462,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159_4"
+                truncation: "TCO"
         TCO199:
                 nx: 167200
                 ny: 1
@@ -464,6 +470,7 @@ choose_resolution:
                 oasis_grid_name: "200"
                 res_number: 199
                 res_number_tl: "199_4"
+                truncation: "TCO"
         TL255:
                 nx: 88838
                 ny: 1
@@ -471,6 +478,7 @@ choose_resolution:
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
+                truncation: "TL"
         TCO319:
                 nx: 421120
                 ny: 1
@@ -478,6 +486,7 @@ choose_resolution:
                 oasis_grid_name: 320
                 res_number: 319
                 res_number_tl: "319_4"
+                truncation: "TCO"
         TCO399:
                 nx: 654400
                 ny: 1
@@ -485,6 +494,7 @@ choose_resolution:
                 oasis_grid_name: 400
                 res_number: 399
                 res_number_tl: "399_4"
+                truncation: "TCO"
         TL511:
                 nx: 348528
                 ny: 1
@@ -492,6 +502,7 @@ choose_resolution:
                 oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: "511l_2"
+                truncation: "TL"
         TL799:
                 nx: 843490
                 ny: 1
@@ -499,6 +510,7 @@ choose_resolution:
                 oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: "799l_2"
+                truncation: "TL"
         TL1279:
                 nx: 2140702
                 ny: 1
@@ -506,6 +518,7 @@ choose_resolution:
                 oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: "1279l_2"
+                truncation: "TL"
 
 choose_computer.cores_per_node:
         24:
@@ -535,6 +548,7 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
+custop: "t${oifs.next_step}"
 lresume: false
 
 start_seconds: "$((${start_date} - ${initial_date}))"
@@ -759,6 +773,9 @@ choose_wam:
                 add_outdata_files:
                         MPP: MPP
 
+                add_config_sources:
+                        "wam_namelist": "${namelist_dir}/wam_namelist"
+
         0:
                 wam_number: "0"
 
@@ -832,7 +849,7 @@ choose_version:
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "t${oifs.next_step}" 
+                                        CUSTOP: "${custop}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
@@ -858,7 +875,7 @@ choose_mip:
                         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
                         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
                         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-        "cmip6": 
+        "cmip6":
                 add_forcing_files:
                         # Add CO2 etc for all scenarios and years
                         CMIP6DATA: CMIP6DATA
@@ -867,7 +884,7 @@ choose_mip:
                         fort.4:
                                 NAERAD:
                                         LCMIP6: ".true."
-                                        CMIP6DATADIR: "./cmip6_data/"        
+                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
                         "piControl":
                                 add_forcing_files:
@@ -878,7 +895,7 @@ choose_mip:
                                                 NAERAD:
                                                         NCMIPFIXYR: 1850
                         "historical":
-                                add_forcing_files: 
+                                add_forcing_files:
                                         # Add historical O3
                                         O3HIST: O3HIST
                         "SSP5-8.5":
@@ -933,7 +950,6 @@ forcing_sources:
 
 config_sources:
         "fort.4": "${namelist_dir}/pictl/fort.4"
-        "wam_namelist": "${namelist_dir}/wam_namelist"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT

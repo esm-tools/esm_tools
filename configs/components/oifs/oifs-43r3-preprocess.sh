@@ -43,7 +43,7 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     module load IntelMPI/2019.6.154
     module load Python/3.6.8
     module load imkl/2019.3.199
-    export IO_LIB_ROOT=/p/project/cesmtst/esmtst22/gitlab/HPC_libraries/intel2019.3.199_impi2019.6.154_20191213
+    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 else

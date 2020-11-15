@@ -161,6 +161,11 @@ runtime_environment_changes:
         - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
+    juwels:
+      add_export_vars:
+        - 'OIFS_FFIXED=""'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
     mistral:    
       add_export_vars:
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"

@@ -51,6 +51,8 @@ core:
                         - "inspect_namelists"
                         - "inspect_folder"
                         - "inspect_file"
+                        - "inspect_size"
+                        - "inspect_config"
 
                 filelists:
                         - "assemble"

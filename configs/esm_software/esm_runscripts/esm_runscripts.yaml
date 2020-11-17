@@ -66,5 +66,7 @@ choose_job_type:
                 recipe:
                         - "inspect_overview"
                         - "inspect_namelists"
+                        - "inspect_size"
+                        - "inspect_config"
                         - "inspect_folder"
                         - "inspect_file"

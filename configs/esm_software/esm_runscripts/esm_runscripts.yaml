@@ -67,3 +67,4 @@ choose_job_type:
                         - "inspect_overview"
                         - "inspect_namelists"
                         - "inspect_folder"
+                        - "inspect_file"

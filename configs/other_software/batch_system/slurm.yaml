@@ -34,7 +34,8 @@ tasks_flag: "--ntasks=@tasks@"
 partition_flag: "--partition=${partition}"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
-output_flags: "--output=${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log --error=${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+thisrun_logfile: "${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
 choose_launcher:

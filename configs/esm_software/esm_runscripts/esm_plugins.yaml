@@ -50,6 +50,7 @@ core:
                         - "inspect_overview"
                         - "inspect_namelists"
                         - "inspect_folder"
+                        - "inspect_file"
 
                 filelists:
                         - "assemble"

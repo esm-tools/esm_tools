@@ -38,6 +38,12 @@ def _get_namelist_filepath_standard_install(namelist):
 def _get_namelist_filepath_editable_install(namelist):
     return pkg_resources.resource_filename("namelists", namelist)
 
+def _get_config_filepath_standard_install(config):
+    return pkg_resources.resource_filename("esm_tools.configs", config)
+
+def _get_config_filepath_editable_install(config):
+    return pkg_resources.resource_filename("configs", config)
+
 
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
@@ -204,6 +210,10 @@ def get_namelist_filepath(namelist):
         return _get_namelist_filepath_editable_install(namelist)
     return _get_namelist_filepath_standard_install(namelist)
 
+def get_config_filepath(config):
+    if EDITABLE_INSTALL:
+        return _get_config_filepath_editable_install(config)
+    return _get_config_filepath_standard_install(config)
 
 
 def read_namelist_file(nml):

@@ -46,6 +46,11 @@ core:
                 postprocess:
                         - "_assemble_postprocess_tasks"
 
+                inspect:
+                        - "inspect_overview"
+                        - "inspect_namelists"
+                        - "inspect_folder"
+
                 filelists:
                         - "assemble"
                         - "log_used_files"

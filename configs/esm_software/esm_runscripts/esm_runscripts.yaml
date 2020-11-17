@@ -61,3 +61,9 @@ choose_job_type:
                         - "report_missing_files"
                         - "database_entry"
                         - "submit"
+
+        inspect:
+                recipe:
+                        - "inspect_overview"
+                        - "inspect_namelists"
+                        - "inspect_folder"

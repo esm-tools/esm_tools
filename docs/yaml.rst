@@ -271,7 +271,7 @@ resolved by the `esm_parser`, at the same **nesting level** of the ``choose_reso
 Append to an Existing List (``add_``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Given an existing list ``list1``:
+Given an existing list ``list1`` or dictionary:
 
 .. code-block:: yaml
 
@@ -279,7 +279,7 @@ Given an existing list ``list1``:
        - element1
        - element2
 
-it is possible to add members to this list by using the following syntax:
+it is possible to add members to this list/dictionary by using the following syntax:
 
 .. code-block:: yaml
 
@@ -287,10 +287,14 @@ it is possible to add members to this list by using the following syntax:
        - element3
        - element4
 
-so that the variable ``list1`` at the end of the parting will contain
-``[element1, element2, element3, element4]``. This is not only usefull when you need to build the list
-piecewise (i.e. and expansion of a list inside a ``choose_`` switch) but also as the
-:ref:`hierarchy:File Hierarchy` will cause repeated variables to be overwritten.
+so that the variable ``list1`` at the end of the parsing will contain
+``[element1, element2, element3, element4]``. This is not only useful when you need to
+build the list piecewise (i.e. and expansion of a list inside a ``choose_`` switch) but
+also as the :ref:`yaml_hierarchy:YAML File Hierarchy` will cause repeated variables to
+be overwritten. Adding a nested dictionary in this way merges the ``add_<dictionary>``
+content into the ``<dictionary>`` with priority to ``add_<dictionary>`` elements inside
+the same file, and following the :ref:`yaml_hierarchy:YAML File Hierarchy` for
+different files.
 
 **Properties**
 
@@ -378,6 +382,33 @@ file inside a ``choose_`` block and for that we need to use the ``add_`` functio
                    parctl:
 
    [ ... ]
+
+
+Remove Elements from a List/Dictionary (``remove_``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to remove elements inside list or dictionaries by using the
+``remove_`` functionality which syntax is:
+
+.. code-block:: yaml
+
+   remove_<dictionary>: [<element_to_remove1>, <element_to_remove2>, ... ]
+
+or:
+
+.. code-block:: yaml
+
+   remove_<dictionary>:
+           - <element_to_remove1>
+           - <element_to_remove2>
+           -  ...
+
+You can also remove specific nested elements of a dictionary separating the `keys` for
+the path by ``.``:
+
+.. code-block:: yaml
+
+   remove_<model>.<dictionary>.<subkey1>.<subkey2>: [<element_to_remove1>, <element_to_remove2>, ... ]
 
 
 Math and Calendar Operations

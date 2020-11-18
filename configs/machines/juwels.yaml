@@ -45,21 +45,29 @@ module_actions:
         - "load GCCcore/.8.3.0"
         - "load CMake"
         - "load Intel/2019.5.281-GCC-8.3.0"
-        - "load IntelMPI/2019.6.154"
+        #- "load IntelMPI/2019.6.154"
+        - "load ParaStationMPI/5.4.4-1-mt"
         - "load Python/3.6.8"
 
 export_vars:
         - "LC_ALL=en_US.utf-8"
 
-        - "FC=mpiifort"
-        - "F77=mpiifort"
-        - "MPIFC=mpiifort"
+        #- "FC=mpiifort"
+        #- "F77=mpiifort"
+        #- "MPIFC=mpiifort"
+        #- "FCFLAGS=-free"
+        #- "CC=mpiicc"
+        #- "CXX=mpiicpc"
+        #- "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        #- "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""	
+        - "FC=mpifort"
+        - "F77=mpifort"
+        - "MPIFC=mpifort"
         - "FCFLAGS=-free"
-        - "CC=mpiicc"
-        - "CXX=mpiicpc"
-
-        - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        - "CC=mpicc"
+        - "CXX=mpic++"
+        - "MPIROOT=\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        - "MPI_LIB=\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
 choose_general.setup_name:
         # FOCI and FOCIOIFS use their own compiled libraries (netcdf, hdf5, ...) to avoid the massive 
@@ -89,9 +97,11 @@ choose_general.setup_name:
                 add_module_actions:
                         - "load imkl/2019.3.199"
                         - "load Perl/5.28.1"
-                        - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
+                        #- "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt"
+                        #- "source /gpfs/software/juwels/stages/Devel-2019a/software/psmpi/5.4.4-1-iccifort-2019.5.281-GCC-8.3.0-mt/bin/mpivars release_mt" 
                 add_export_vars:
-                        - "IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703"
+                        #- "IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703"
+                        - "IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/"
                         - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
 
                         - "SZIPROOT=$IO_LIB_ROOT"
@@ -133,12 +143,12 @@ choose_general.setup_name:
                         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
                         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
                         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                        - 'OIFS_FC=mpiifort'
+                        - 'OIFS_FC=mpifort'
                         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
                         - 'OIFS_FFIXED=""'
                         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
                         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-                        - 'OIFS_CC=mpiicc'
+                        - 'OIFS_CC=mpicc'
                         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
                         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 

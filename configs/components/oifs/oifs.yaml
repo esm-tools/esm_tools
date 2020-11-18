@@ -150,7 +150,7 @@ runtime_environment_changes:
         - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
@@ -164,6 +164,7 @@ runtime_environment_changes:
     juwels:
       add_export_vars:
         - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     mistral:    

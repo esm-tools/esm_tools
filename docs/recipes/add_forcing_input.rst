@@ -11,9 +11,9 @@ that ``<forcing/input>_sources`` file dictionary specifies the **sources** (path
 the files in the pools or personal folders, that need to be copied or linked into the
 experiment folder). On the other hand ``<forcing/input>_files`` specifies which of these
 sources are to be **included in the experiment**. This allows us to have many sources
-available already for the user and then the user can simply select which of them wants
-to use from ``<forcing/input>_files``. ``<forcing/input>_in_work`` is used to copy the
-files into de the work folder (``<base_dir>/<exp_id>/run_<DATE>/work``) if necessary
+already available to the user, and then the user can simply choose which of them to use
+by chosing from ``<forcing/input>_files``. ``<forcing/input>_in_work`` is used to copy
+the files into the work folder (``<base_dir>/<exp_id>/run_<DATE>/work``) if necessary
 and change their name. For more technical details see :ref:`yaml:File Dictionaries`.
 
 The next sections illustrate some of the many options to handle forcing and input
@@ -99,18 +99,18 @@ To change the path of the source for a given forcing or input file from your run
    .. code-block:: yaml
 
       <forcing/input>_files:
-      y        <key_for_your_file>: <key_for_your_source>
+              <key_for_your_file>: <key_for_your_source>
 
 Copy the file in the work folder and/or rename it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To copy the files from the forcing/input folders into de the work folder
+To copy the files from the forcing/input folders into the work folder
 (``<base_dir>/<exp_id>/run_<DATE>/work``) or rename them:
 
 1. Make sure your file and its source is defined somewhere (either in the config files
    or in your runscript) in ``<forcing/input>_sources`` and ``<forcing/input>_files``
-   (see subsections :ref:`add_forcing_input:Source Path Already Defined in a Config File`
-   and :ref:`add_forcing_input:Modify the Source of a File`).
+   (see subsections :ref:`cookbook:Source Path Already Defined in a Config File`
+   and :ref:`cookbook:Modify the Source of a File`).
 
 2. In your runscript, add the `key` to the file you want to **copy** with `value` the
    same as the `key`, inside <forcing/input>_in_work:

@@ -140,35 +140,24 @@ compile_infos:
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
-        
 runtime_environment_changes:
   choose_computer.name:
     blogin:
-      # TODO: this needs to go to blogin.yaml
-      add_module_actions:
-        # release_mt makes oifs lightning fast and avoids the really slow timesteps that occur randomly
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
-      # TODO: this needs to go to glogin.yaml
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     juwels:
-      # seb-wahl: this does do anything but it should change the compile environment
-      #compiler_mpi: intel2019_parastation
-      #iolibraries: geomar_libs 
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     mistral:    
@@ -195,14 +184,14 @@ compiletime_environment_changes:
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
 
         # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
         # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
@@ -234,14 +223,14 @@ compiletime_environment_changes:
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
 
         # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
         # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
@@ -263,19 +252,16 @@ compiletime_environment_changes:
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
     juwels:
-      # seb-wahl: this does do anything but it should change the compile environment
-      #compiler_mpi: intel2019_parastation
-      #iolibraries: geomar_libs 
       add_export_vars:
         # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
         # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
         - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'

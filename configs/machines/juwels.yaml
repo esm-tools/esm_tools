@@ -23,25 +23,34 @@ sh_interpreter: "/usr/bin/bash"
 
 # pool directories
 # TODO: cleanup the pool / focipool logic
-pool_dir:  "/pool/data/not/available/on/blogin"
+pool_dir:  "/pool/data/not/available/on/juwels"
 pool_directories:
-        pool: "/pool/data/not/available/on/blogin"
+        pool: "/pool/data/not/available/on/juwels"
         focipool: "/p/project/hirace/foci_input2"
 
 # choose block
 choose_jobtype:
         tidy_and_resubmit:
-                partition: batch 
+                partition: devel 
         post:
-                partition: batch
+                partition: devel
         compute:
-                partition: batch
+                partition: devel
 
 choose_partition:
         batch:
                 cores_per_node: 24
         devel:
                 cores_per_node: 24
+
+# basic modules and export vars needed
+# for all compiler and I/O settings
+module_actions:
+        - "--force purge"
+        - "use /gpfs/software/juwels/otherstages"
+
+export_vars:
+        - "LC_ALL=en_US.utf-8"
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
@@ -92,7 +101,8 @@ choose_compiler_mpi:
          - "MPI_LIB=\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
 choose_iolibraries:
-    system_libraries:
+
+    system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
          - "load netCDF"
@@ -109,6 +119,7 @@ choose_iolibraries:
                 - "HDF5_ROOT=$HDF5ROOT"
                 - "NETCDFROOT=$IO_LIB_ROOT"
                 - "NETCDFFROOT=$IO_LIB_ROOT"
+                - "ECCODESROOT=$IO_LIB_ROOT"
 
                 - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
                 - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
@@ -126,6 +137,7 @@ choose_iolibraries:
                 - "HDF5_ROOT=$HDF5ROOT"
                 - "NETCDFROOT=$IO_LIB_ROOT"
                 - "NETCDFFROOT=$IO_LIB_ROOT"
+                - "ECCODESROOT=$IO_LIB_ROOT"
 
                 - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
                 - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
@@ -133,13 +145,6 @@ choose_iolibraries:
                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
        #add_export_vars: 
-
-module_actions:
-        - "--force purge"
-        - "use /gpfs/software/juwels/otherstages"
-
-export_vars:
-        - "LC_ALL=en_US.utf-8"
 
 further_reading:
         - batch_system/slurm.yaml

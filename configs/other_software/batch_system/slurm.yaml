@@ -23,10 +23,10 @@ choose_accounting:
 
 choose_mail_type:
         "*":
-                mail1:  "--mail_type=${mail_type}"
+                mail1:  "--mail-type=${mail_type}"
 choose_mail_user:
         "*":
-                mail2:  "--mail_user=${mail_user}"
+                mail2:  "--mail-user=${mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
@@ -34,8 +34,7 @@ tasks_flag: "--ntasks=@tasks@"
 partition_flag: "--partition=${partition}"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
-output_path: "${experiment_dir}/scripts/"
-output_flags: "--output=${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log --error=${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+output_flags: "--output=${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log --error=${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
 name_flag: "--job-name=${expid}"
 
 choose_launcher:

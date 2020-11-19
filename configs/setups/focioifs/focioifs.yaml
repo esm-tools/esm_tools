@@ -79,11 +79,6 @@ postprocess:
         postprocess_shell:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
-#computer:
-#       additional_flags: "--ntasks-per-core=1"
-#       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
-#       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
-#       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -141,7 +136,7 @@ oifs:
 
 nemo:
         
-        nemoconfig: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
         
         choose_general.resolution:
                 TCO95_ORCA05:

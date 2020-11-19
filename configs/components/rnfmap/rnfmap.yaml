@@ -98,21 +98,10 @@ grids:
                 ny: "${nemo._ny}"
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 2
-   
-
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
 #
-# TODO: seb-wahl: this does not work but I think it should
-#environment_changes:
-#   choose_computer.name:
-#      #blogin:
-#      #glogin:
-#      juwels:
-#         compiler_mpi: intel2019_parastation
-#         iolibraries: geomar_libs 
-#      #mistral:  
 compiletime_environment_changes:
    add_export_vars:
       # OASIS

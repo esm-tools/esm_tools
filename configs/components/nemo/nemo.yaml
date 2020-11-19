@@ -3,23 +3,22 @@
 
 # DEFAULT VALUES
 model: nemo
-nemoconfig: "ORCA05_LIM2_KCM_AOW"
-include_models:
-        - xios
 executable:     oceanx
-#version:        3.6
 version: GYRE_XIOS
+include_models:
+- xios
 
 available_versions:
 - ORCA05_LIM2_KCM_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 
 choose_version:
   GYRE_XIOS:
     requires:
-    - xios-2.0_r982_ogcm
+    - xios-2.5_r1910_ogcm
     - nemobasemodel-3.6ogcm
   ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
     requires:
@@ -28,12 +27,25 @@ choose_version:
     #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
   ORCA05_LIM2_KCM_AOW:
+    requires:
+    - xios-2.0_r982
+    - nemobasemodel-3.6foci
     branch: master
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    # uncomment the following to set CPU layout defaults
+    # for this configuration
+    #add_namelist_changes:
+    #        namelist_cfg:
+    #              nammpp:
+    #                    jpni: 0
+    #                    jpnj: 0
+    #                    jpnij: 0
+
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
     # workaround if used with OIFS which also uses XIOS which causes XIOS
@@ -41,14 +53,22 @@ choose_version:
     #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-    
+
+    free_surface: nonlinear
+
+    # uncomment the following to set CPU layout defaults
+    # for this configuration
+    #add_namelist_changes:
+    #        namelist_cfg:
+    #              nammpp:
+    #                    jpni: 0
+    #                    jpnj: 0
+    #                    jpnij: 0
+
 clean_command: echo Cleaning is handled by nemobasemodel.yaml 
 comp_command: echo Compilation is handled by nemobasemodel.yaml 
-requires:
-- xios-2.0_r982
-- nemobasemodel-3.6foci
 
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
@@ -86,9 +106,10 @@ pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
 # TODO
 ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
-namelist_dir:   ${model_dir}/CONFIG/${nemoconfig}/EXP00
-setup_dir: "${model_dir}"
-bin_dir: "${setup_dir}/bin"
+namelist_dir:   ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+model_dir: ${general.model_dir}/nemo-${nemo.version}
+setup_dir: ${general.model_dir}
+bin_dir: ${setup_dir}/bin
 
 start_date_m1: $((${start_date} - ${time_step}seconds))
 end_date_m1: $((${next_date} - ${time_step}seconds))
@@ -137,39 +158,6 @@ namelist_changes:
                         jpni: ${jpni}
                         jpnj: ${jpnj}
                         jpnij: ${nproc}
-
-choose_nemoconfig:
-       "ORCA05_LIM2_KCM_AOW":
-                free_surface: linear
-                hosing: false
-                use_lim2:       true
-                use_tracer:     true
-                correct_neg_tracer_conc: true
-                
-                # uncomment the following to set CPU layout defaults
-                # for this configuration
-                #add_namelist_changes:
-                #        namelist_cfg:
-                #              nammpp:
-                #                    jpni: 0
-                #                    jpnj: 0
-                #                    jpnij: 0
-
-       "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
-                free_surface: nonlinear
-                hosing: false
-                use_lim2:       true
-                use_tracer:     true
-                correct_neg_tracer_conc: true
-
-                # uncomment the following to set CPU layout defaults
-                # for this configuration
-                #add_namelist_changes:
-                #        namelist_cfg:
-                #              nammpp:
-                #                    jpni: 0
-                #                    jpnj: 0
-                #                    jpnij: 0
 
 choose_free_surface:
         linear:
@@ -261,10 +249,29 @@ choose_resolution:
                         coef-G70: orca05_bfr_coef-G70.nc
                         Ice_init: Ice_initialization.nc
 
-        GYRE_XIOS:
+        GYRE:
+                free_surface: no_option 
+                use_lim2: false 
+                use_tracer: false
+                coupling_freq_in_steps: 1
                 _nx: 32
                 _ny: 22
                 time_step: 7200
+                add_namelist_changes:
+                   namelist_cfg:
+                      namtsd:                                                
+                        ln_tsd_tradmp: '.false.' 
+                        ln_tsd_init: '.false.'
+                      nameos:
+                        ln_useCT: '.false.'
+                input_files:
+                        namelist_ref: namelist_ref
+                config_files:        
+                        namelist_cfg: namelist_cfg
+                input_in_work:
+                        namelist_ref: namelist_ref
+                config_in_work:        
+                        namelist_cfg: namelist_cfg
 
 
 choose_use_lim2:

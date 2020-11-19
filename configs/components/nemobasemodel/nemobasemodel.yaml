@@ -20,5 +20,5 @@ clean_command: cd CONFIG; ./makenemo -n ${nemo.version} clean
 comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc
   cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe
   ${nemo.version}/BLD/bin/oceanx
-destination: nemo-${version}
+destination: nemo-${nemo.version}
 install_bins: CONFIG/${nemo.version}/BLD/bin/oceanx

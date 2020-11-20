@@ -32,10 +32,10 @@ general:
         coupled_setup: True
 
         include_models:
-                - oifs
                 - fesom
-                - oasis3mct
                 - rnfmap
+                - oifs
+                - oasis3mct
 
         available_versions:
         - '1.0-deck'
@@ -91,11 +91,6 @@ general:
 #                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
 #                type: shell
 
-#computer:
-#       additional_flags: "--ntasks-per-core=1"
-#       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
-#       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
-#       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -103,6 +98,8 @@ general:
 
 oifs:
         version: "43r3"
+
+        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
@@ -114,7 +111,8 @@ oifs:
         mip: "cmip6"
         scenario: "historical"
 
-        input_expid: DRH6
+        prepifs_expid: h6mv
+        input_expid: awi3   # This cannot be longer than 4 characters
         input_dir: ${pool_dir}/oifs-${version}
         rtables_dir: /work/ollie/jstreffi/runtime/awicm-3.1/DRH6/work/rtables/
         ##vtables_dir: ${input_dir}/../vtables/
@@ -241,6 +239,21 @@ oifs:
                 - rtables
                 - vtables
 
+        add_input_files:
+                ICMGG_INIT: ICMGG_INIT
+                ICMGG_INIUA: ICMGG_INIUA
+                ICMSH_INIT: ICMSH_INIT
+
+        add_input_sources:
+                ICMGG_INIT: ${input_dir}/${res_number_tl}/ICMGG${prepifs_expid}INIT_${fesom.resolution}
+                ICMGG_INIUA: ${input_dir}/${res_number_tl}/ICMGG${prepifs_expid}INIUA
+                ICMSH_INIT: ${input_dir}/${res_number_tl}/ICMSH${prepifs_expid}INIT
+
+        add_input_in_work:
+                ICMGG_INIT: ICMGG${input_expid}INIT
+                ICMGG_INIUA: ICMGG${input_expid}INIUA
+                ICMSH_INIT: ICMSH${input_expid}INIT
+
         # All forcing files are removed: path specified in to the namelist
         remove_forcing_files:
                 - PRE2005_MIDYR_CONC
@@ -268,8 +281,9 @@ oifs:
 
 fesom:
         version: "2.0"
-        time_step: 3600
+        time_step: 1800
         resolution: CORE2
+        lresume: false
         choose_general.resolution:
                 TCO159_CORE2:
                         nproca: 288
@@ -332,6 +346,10 @@ fesom:
         remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
                 - restart_length
                 - restart_length_unit
+        remove_namelist_changes.namelist.config.paths:
+                - ForcingDataPath
+                - OpbndPath
+                - TideForcingPath
         # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
         remove_namelist_changes:
                 - namelist.forcing
@@ -395,7 +413,6 @@ oasis3mct:
         pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
-        use_lucia: False
 
         process_ordering:
                 - fesom
@@ -410,7 +427,7 @@ oasis3mct:
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
-        lresume: true
+        lresume: True
         ini_parent_date: "19500101" # not used, but needs to be present
         ini_parent_exp_id: "khw0030" # not used, but needs to be present
         ini_restart_dir: "${pool_dir}"
@@ -419,7 +436,7 @@ oasis3mct:
 
         a2o_lag: "${oifs.time_step}"
         a2r_lag: "${oifs.time_step}"
-        o2a_lag: "${fesom.time_step}"
+        o2a_lag: "${oifs.time_step}"
         o2r_lag: 0
         r2a_lag: "${oifs.time_step}"
         a2o_seq: 2

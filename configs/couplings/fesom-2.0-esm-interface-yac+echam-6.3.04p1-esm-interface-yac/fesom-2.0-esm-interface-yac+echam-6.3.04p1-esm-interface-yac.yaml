@@ -5,5 +5,5 @@ components:
 - echam-6.3.04p1-esm-interface-yac
 - fesom-2.0-esm-interface-yac
 coupling_changes:
-- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
 - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt

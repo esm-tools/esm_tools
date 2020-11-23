@@ -64,6 +64,7 @@ choose_job_type:
 
         inspect:
                 recipe:
+                        - "assemble"
                         - "inspect_overview"
                         - "inspect_namelists"
                         - "inspect_size"

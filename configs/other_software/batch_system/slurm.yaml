@@ -5,6 +5,7 @@
 header_start: "#SBATCH"
 submit: sbatch
 launcher: srun
+debugger: None
 mail_type: NONE
 account: None
 
@@ -23,10 +24,10 @@ choose_accounting:
 
 choose_mail_type:
         "*":
-                mail1:  "--mail_type=${mail_type}"
+                mail1:  "--mail-type=${mail_type}"
 choose_mail_user:
         "*":
-                mail2:  "--mail_user=${mail_user}"
+                mail2:  "--mail-user=${mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
@@ -46,6 +47,15 @@ choose_launcher:
                 launcher_flags: "-bootstrap slurm"
         mpirun:
                 launcher_flags: "-l"
+
+choose_debugger:
+        None:
+            debugger_flags_prelauncher: ""
+        ddt:
+            debugger_flags_prelauncher: "ddt --connect"
+            runtime_environment_changes:
+                add_module_actions:
+                  - "load arm-forge"
 
 submitted: false
 script_name: "<--methods.scriptname--"
@@ -74,7 +84,7 @@ config_files:
         #hostfile:
         #        - "[[setup.orderedexecs-->MODEL]]<--startproc-- - MODEL<--endproc-- ./MODEL<--exe-- <--append--"
 
-execution_command: "${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 check_error:
         "srun: error:" :

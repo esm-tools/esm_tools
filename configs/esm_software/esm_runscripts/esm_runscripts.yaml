@@ -63,3 +63,13 @@ choose_job_type:
                         - "report_missing_files"
                         - "database_entry"
                         - "submit"
+
+        inspect:
+                recipe:
+                        - "assemble"
+                        - "inspect_overview"
+                        - "inspect_namelists"
+                        - "inspect_size"
+                        - "inspect_config"
+                        - "inspect_folder"
+                        - "inspect_file"

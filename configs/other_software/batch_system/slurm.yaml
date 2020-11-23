@@ -24,10 +24,10 @@ choose_accounting:
 
 choose_mail_type:
         "*":
-                mail1:  "--mail_type=${mail_type}"
+                mail1:  "--mail-type=${mail_type}"
 choose_mail_user:
         "*":
-                mail2:  "--mail_user=${mail_user}"
+                mail2:  "--mail-user=${mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
@@ -52,6 +52,9 @@ choose_debugger:
             debugger_flags_prelauncher: ""
         ddt:
             debugger_flags_prelauncher: "ddt --connect"
+            runtime_environment_changes:
+                add_module_actions:
+                  - "load arm-forge"
 
 submitted: false
 script_name: "<--methods.scriptname--"

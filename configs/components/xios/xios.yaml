@@ -40,7 +40,7 @@ choose_version:
     branch: 2.5_r1910
   # XIOS with oasis dependencies 
   2.5_r1910_oifs:
-    archfile: ESMTOOLS_generic_oasis_intel
+    archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
   # XIOS without any oasis dependencies 

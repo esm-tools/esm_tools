@@ -182,7 +182,6 @@ compiletime_environment_changes:
         - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
         - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-
         # TODO: figure out whether those two are still needed
         - "ESM_NETCDF_C_DIR=$NETCDFROOT"
         - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
@@ -221,7 +220,6 @@ compiletime_environment_changes:
         - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
         - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-
         # TODO: figure out whether those two are still needed
         - "ESM_NETCDF_C_DIR=$NETCDFROOT"
         - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
@@ -238,7 +236,7 @@ compiletime_environment_changes:
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
         # netcdf
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
         # compilers and compile switches

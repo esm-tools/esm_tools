@@ -52,7 +52,7 @@ general:
 #########################################################################################
 
 echam:
-
+        timestep: 400
         choose_computer.cores_per_node:
                 24:
                         choose_general.resolution:
@@ -78,7 +78,10 @@ echam:
 #########################################################################################
 
 mpiom:
+        conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
+          --enable-HAMOCC --with-mpi=intelmpi
 
+        timestep: 2700
         choose_computer.cores_per_node:
                 24:
                         choose_general.resolution:
@@ -111,10 +114,10 @@ oasis3mct:
                 - mpiom
                 - echam
 
-        o2a_lag: 2700 #V2?
-        a2o_lag: 400 #V4?
-        o2a_seq: 1 #V3?
+        a2o_lag: "${echam.time_step}" #V4?
+        o2a_lag: "${mpiom.time_step}" #V2?
         a2o_seq: 1 #V3?
+        o2a_seq: 1 #V3?
 
         coupling_time_step: 86400 #V17
         #coupling_target_fields:

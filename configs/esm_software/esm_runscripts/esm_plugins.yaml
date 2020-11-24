@@ -1,6 +1,21 @@
 core:
         esm_runscripts:
+                prepare:
+                        - "_read_date_file"
+                        - "check_model_lresume"
+                        - "resolve_some_choose_blocks"
+                        - "_initialize_calendar"
+                        - "_add_all_folders"
+                        - "set_prev_date"
+                        - "set_parent_info"
+                        - "finalize_config"
+                        - "add_submission_info"
+                        - "initialize_batch_system"
+                        - "initialize_coupler"
+                        - "set_logfile"
+
                 compute:
+                        - "compile_model"
                         - "_create_setup_folders"
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
@@ -8,6 +23,7 @@ core:
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
+                        - "assemble_filelists"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"
@@ -15,23 +31,57 @@ core:
                         - "prepare_coupler_files"
                         - "add_batch_hostfile"
                         - "copy_files_to_work"
+
+                tidy:
+                        - "init_monitor_file"
+                        - "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
+                        - "tidy_coupler"
+                        - "copy_stuff_back_from_work"
+                        - "copy_all_results_to_exp"
+                        - "start_post_job"
+                        - "_increment_date_and_run_number"
+                        - "_write_date_file"
+                        - "maybe_resubmit"
+
+                postprocess:
+                        - "_assemble_postprocess_tasks"
+
+                inspect:
+                        - "inspect_overview"
+                        - "inspect_namelists"
+                        - "inspect_folder"
+                        - "inspect_file"
+                        - "inspect_size"
+                        - "inspect_config"
+
+                filelists:
+                        - "assemble"
+                        - "log_used_files"
                         - "report_missing_files"
+                        - "check_for_unknown_files"
 
                 database_actions:
                         - "database_entry"
 
-                esm_batch_system:
+                batch_system:
                         - "write_simple_runscript"
                         - "submit"
+
+                virtual_env_builder:
+                        - "venv_bootstrap"
+
+
 
 # To add your custom plugin, see oifs.yaml, section compute_recipe, and compare to the list above.
 # the custom plugin 'preprocess' listed in the compute_recipe in oifs.yaml needs to be installed beforehand with
 #
 # git clone https://github.com/esm-tools-plugins/preprocess
 # cd preprocess
-# if required activate python3 e.g. 
+# if required activate python3 e.g.
 # module load anaconda3/bleeding_edge on
-# pip install --user 
+# pip install --user
 #
 # now check if the plugin is available
 # esm_plugins should print

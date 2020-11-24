@@ -1,13 +1,13 @@
 general:
         setup_name: oifs
-        compute_time: "04:00:00"
+        compute_time: "02:00:00"
         account: shk00018
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1979-02-01T00:00:00"
+        final_date: "2018-01-01T00:00:00"
         model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
         base_dir: /scratch/usr/shkjocke/esm-slask/
-        nyear: 0
-        nmonth: 1
+        nyear: 1
+        nmonth: 0
         nday: 0
         restart_rate: 1
         restart_unit: days 

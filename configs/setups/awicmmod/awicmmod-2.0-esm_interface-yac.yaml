@@ -1,0 +1,253 @@
+#########################################################################################
+######################### AWICM-MOD 2 YAML CONFIGURATION FILE ###############################
+#########################################################################################
+
+general:
+        model: awicmmod2
+        #model_dir: ${esm_master_dir}/awicm-${version}
+
+        coupled_setup: True
+
+        include_models:
+                - echam
+                - fesom
+                - yac
+                - esm_interface
+
+        version: "2.0-yac"
+        scenario: "PI-CTRL"
+        resolution: ${echam.resolution}_${fesom.resolution}
+        postprocessing: false
+        post_time: "00:05:00"
+        choose_general.resolution:
+                T63_CORE2:
+                        compute_time: "02:00:00"
+
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+echam:
+        restart_firstlast: "first"
+        namelist_changes:
+                namelist.echam:
+                        runctl:
+                                lcouple: .true.
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
+        model_dir: ${general.model_dir}/echam-${echam.version}
+        setup_dir: ${general.model_dir}
+        ocean_resolution: "${fesom.resolution}"
+        remove_forcing_files:
+                - sst
+                - sic
+        version: "6.3.04p1"
+
+        choose_general.resolution:
+                T63_CORE2:
+                        nproca: 24
+                        nprocb: 18
+
+
+#########################################################################################
+
+
+jsbach:
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        namelist_changes:
+                namelist.jsbach:
+                        hydrology_ctl:
+                                gethd: "remove_from_namelist"
+                                puthd: "remove_from_namelist"
+        version: "3.20"
+
+        choose_computer.name:
+                ollie:
+                        dynveg_file_ending: ""
+                        no_dynveg_file_ending: ""
+
+
+#########################################################################################
+
+
+fesom:
+        version: "2.0"
+        choose_general.resolution:
+                T63_CORE2:
+                        nproc: 288
+
+        opbnd_dir: ""
+        tide_forcing_dir: ""
+        forcing_data_dir: ""
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        setup_dir: ${general.model_dir}
+
+        leapyear: True
+
+        add_namelist_changes:
+                namelist.oce:
+                        boundary:
+                                restore_s_surf: 0.0
+
+        #  asforcing: ECHAM5
+
+########################################################################################
+
+esm_interface:
+        model: esm_interface
+
+        namelist_changes:
+            namelist.esmcouple:
+                esmdebugging:
+                    esm_debug_mode: false
+                    esmloglevel: 2
+                    debug_fields_send: false
+                    debug_fields_recv: false
+                esmsetupnb:
+                    nbmodels: 2
+                    nbroutes: 2
+                    nba2ostreams: 12
+                    nbo2astreams: 4
+
+                esmsetupinfo:
+                    models: ['echam6', 'fesom']
+                    esm_coupler: "yac"
+
+                exchange:
+                    routes: ['a2o', 'o2a']
+                    a2o_send_streams: ['taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm', 'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica', 'heat_swa', 'hydr_atm']
+                    a2o_send_ports: ['taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm', 'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica', 'heat_swa', 'hydr_atm']
+                    a2o_recv_streams: ['sst_feom', 'sit_feom', 'sie_feom', 'snt_feom']
+                    a2o_recv_ports: ['sst_atm', 'sit_atm', 'sie_atm', 'snt_atm']
+                    o2a_recv_streams: ['taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm', 'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica', 'heat_swa', 'hydr_atm']
+                    o2a_recv_ports: ['taux_oce', 'tauy_oce', 'taux_ico', 'tauy_ico', 'prec_oce', 'snow_oce', 'evap_oce', 'subl_oce', 'heat_oce', 'heat_ico', 'heat_swo', 'hydr_oce']
+                    o2a_send_streams: ['sst_feom', 'sit_feom', 'sie_feom', 'snt_feom']
+                    o2a_send_ports: ['sst_feom', 'sit_feom', 'sie_feom', 'snt_feom']
+
+
+        log_files:
+            esmlogecham: esmlogecham
+            esmlogfesom: esmlogfesom
+        log_in_work:
+            esmlogecham: esm_echam6.log
+            esmlogfesom: esm_fesom.log
+        log_sources:
+            esmlogecham: esm_echam6.log
+            esmlogfesom: esm_fesom.log
+        log_targets:
+            esmlogecham: esm_echam6.${start_date!syear!smonth}.${start_date!sday}.log
+            esmlogfesom: esm_fesom.${start_date!syear!smonth}.${start_date!sday}.log
+
+        outputs: [evap_atm_send_echam6, evap_atm_recv_fesom, heat_atm_send_echam6, heat_atm_recv_fesom, heat_ica_send_echam6, heat_ica_recv_fesom, heat_swa_send_echam6, heat_swa_recv_fesom, hydr_atm_send_echam6, hydr_atm_recv_fesom, prec_atm_send_echam6, prec_atm_recv_fesom, sie_feom_send_fesom, sie_feom_recv_echam6, sit_feom_send_fesom, sit_feom_recv_echam6, snow_atm_send_echam6, snow_atm_recv_fesom, snt_feom_send_fesom, snt_feom_recv_echam6, sst_feom_send_fesom, sst_feom_recv_echam6, subl_atm_send_echam6, subl_atm_recv_fesom, taux_atm_send_echam6, taux_ica_send_echam6, taux_atm_recv_fesom, taux_ica_recv_fesom, tauy_atm_send_echam6, tauy_ica_send_echam6, tauy_ica_recv_fesom, tauy_atm_recv_fesom]
+
+        outdata_sources:
+            "[[outputs-->OUTPUT]]": debug_file_OUTPUT.nc
+        outdata_targets:
+            "[[outputs-->OUTPUT]]": debug_file_OUTPUT.${start_date!syear!smonth}.${start_date!sday}.nc
+
+#########################################################################################
+
+yac:
+        process_ordering:
+                - fesom
+                - echam
+
+        component_names:
+                - fesom
+                - echam6
+
+        grids:
+                'feom':
+                        alias_name: feom
+                        id: 1
+                'atmo':
+                        alias_name: atmo
+                        id: 2
+
+        a2o_lag: "${echam.time_step}"
+        o2a_lag: "${fesom.time_step}"
+        a2o_seq: 2
+
+        redirect_of_root: "false"
+        redirect_stdout: "false"
+        coupling_time_step: 3600
+        coupling_time_step_unit: "second"
+        calendar : "proleptic-gregorian"
+
+        coupling_target_fields:
+                'feom->atmo':
+                        - 'sst_feom <--n-nearest_neighbor-- sst_feom'
+                        - 'sit_feom <--n-nearest_neighbor-- sit_feom'
+                        - 'sie_feom <--n-nearest_neighbor-- sie_feom'
+                        - 'snt_feom <--n-nearest_neighbor-- snt_feom'
+
+                'atmo->feom':
+                        - 'taux_atm <--n-nearest_neighbor-- taux_atm'
+                        - 'tauy_atm <--n-nearest_neighbor-- tauy_atm'
+                        - 'taux_ica <--n-nearest_neighbor-- taux_ica'
+                        - 'tauy_ica <--n-nearest_neighbor-- tauy_ica'
+                        - 'prec_atm <--n-nearest_neighbor-- prec_atm'
+                        - 'snow_atm <--n-nearest_neighbor-- snow_atm'
+                        - 'evap_atm <--n-nearest_neighbor-- evap_atm'
+                        - 'subl_atm <--n-nearest_neighbor-- subl_atm'
+                        - 'heat_atm <--n-nearest_neighbor-- heat_atm'
+                        - 'heat_ica <--n-nearest_neighbor-- heat_ica'
+                        - 'heat_swa <--n-nearest_neighbor-- heat_swa'
+                        - 'hydr_atm <--n-nearest_neighbor-- hydr_atm'
+        coupling_directions:
+                'feom->atmo':
+                        source:
+                            component_id: 1
+                            timestep: "${fesom.time_step}"
+                            transient_grid_ref: 1
+                            timelag: 0
+                            use_mask: "false"
+                            debug_before_interpolation: "false"
+                            debug_after_interpolation: "false"
+                        target:
+                            component_id: 2
+                            timestep: "${echam.time_step}"
+                            transient_grid_ref: 2
+                            timelag: 0
+                            use_mask: "false"
+                            debug: "false"
+                        write_restart: "true"
+                        write_weight: "false"
+                        operation: "none"
+                'atmo->feom':
+                        source:
+                            component_id: 2
+                            component_name: "echam6"
+                            timestep: "${echam.time_step}"
+                            transient_grid_ref: 2
+                            timelag: 0
+                            use_mask: "false"
+                            debug_before_interpolation: "false"
+                            debug_after_interpolation: "false"
+                        target:
+                            component_id: 1
+                            timestep: "${fesom.time_step}"
+                            transient_grid_ref: 1
+                            timelag: 0
+                            use_mask: "false"
+                            debug: "false"
+                        write_restart: "false"
+                        write_weight: "false"
+                        operation: "none"
+
+        interpolation_methods:
+                fixed_value:
+                        options: 
+                            'user_value': 2.0
+
+                n-nearest_neighbor:
+                        options: 
+                            'n': 1
+                            'weighted': "DISTANCE_WEIGHTED"
+
+                patch_recovery:
+                        options:
+                            'polynomial_order': 3
+                            'gauss_order': 7
+                            'extend_source_patch': 1
+                            'allow_extrapolation': 0 

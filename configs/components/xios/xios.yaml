@@ -24,6 +24,7 @@ available_versions:
 - 2.0_r982
 - 2.5_r1910
 - 2.5_r1910_oifs
+- 2.5_r1910_ogcm
 branch: esm-tools
 choose_version:
   2.0_r982:

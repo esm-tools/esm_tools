@@ -114,7 +114,7 @@ oifs:
         prepifs_expid: h6mv
         input_expid: awi3   # This cannot be longer than 4 characters
         input_dir: ${pool_dir}/oifs-${version}
-        rtables_dir: /work/ollie/jstreffi/runtime/awicm-3.1/DRH6/work/rtables/
+        rtables_dir: /work/ollie/jstreffi/input/oifs-43r3/rtables/
         ##vtables_dir: ${input_dir}/../vtables/
         ##clim_dir: ${input_dir}/../
         ##icmcl_dir: ${input_dir}
@@ -191,9 +191,10 @@ oifs:
                         NAMCT0:
                                 LFDBOP: "${lfdbop}"
                                 LSMSSIG: "${lsmssig}"
-                        NAMGRIB:
-                                NJTKDATE: "${start_date}"
-                                NJTKOFFSETSTEP: "${steps_since_initial}"
+                        # Where the hell do these namelist changes come from? I don't even remember writting them down... and they are not part of the original fort.4???
+                        #NAMGRIB:
+                        #        NJTKDATE: "${start_date}"
+                        #        NJTKOFFSETSTEP: "${steps_since_initial}"
                         NAMORB:
                                 LCORBMD:  "${orb_switch}"
                                 ORBMODE: "${orb_mode}"

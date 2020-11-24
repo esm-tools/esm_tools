@@ -189,11 +189,49 @@ runtime_environment_changes:
       add_module_actions:
         - "unload gribapi"
       add_export_vars:
-        - 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+        # MKLROOT MISTRAL
+        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
+        - 'PATH=$PATH:/home/ollie/jstreffi/fcm/bin/'
+        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        ##########- 'MPIROOT=$I_MPI_ROOT/intel64' BASH
+        # ESM_NETCDF_C_DIR MISTRAL
+        # ESM_NETCDF_F_DIR MISTRAL
+        # GRIBAPIROOT MISTRAL
+        # UDUNITS2_ROOT MISTRAL
+        # FFTW_ROOT MISTRAL
+        # PROJ4_ROOT MISTRAL
+        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel/"
+        - 'HDF5ROOT=$HDF5_ROOT'
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"' # MISTRAL
 
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
+        # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"' # Not in MISTRAL
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+        - 'OIFS_FC=${computer.fc}'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS='
+        - 'OIFS_CC=${computer.cc}'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        # OIFS_FFTW_DIR MISTRAL
+        # OIFS_FFTW_INCLUDE MISTRAL
+        # OIFS_FFTW_LIB MISTRAL
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
 compiletime_environment_changes:
   choose_computer.name:
@@ -356,7 +394,7 @@ compiletime_environment_changes:
         # UDUNITS2_ROOT MISTRAL
         # FFTW_ROOT MISTRAL
         # PROJ4_ROOT MISTRAL
-        - 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"' # MISTRAL
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"' # MISTRAL
 
         - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
         # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL

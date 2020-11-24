@@ -1,0 +1,18 @@
+general:
+   setup_name: nemo
+   compute_time: "00:15:00"
+   account: "shkifmsw"
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1902-01-01T00:00:00"         # Final date of the experiment
+   nyear: 1 
+   base_dir: /scratch/usr/shkifmsw/esm-experiments/ 
+   model_dir: /home/shkifmsw/esm/models/nemo-GYRE_XIOS
+
+nemo:
+   resolution: "GYRE" 
+   nproc: 24
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+
+xios:
+   model_dir: /home/shkifmsw/esm/models/nemo-GYRE_XIOS/xios
+   nproc: 1

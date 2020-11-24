@@ -3,48 +3,210 @@
 
 # DEFAULT VALUES
 model: nemo
-nemoconfig: "ORCA05_LIM2_KCM_AOW"
-include_models:
-        - xios
 executable:     oceanx
-#version:        3.6
 version: GYRE_XIOS
+include_models:
+- xios
 
 available_versions:
 - ORCA05_LIM2_KCM_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+- ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 
 choose_version:
   GYRE_XIOS:
     requires:
-    - xios-2.0_r982_ogcm
+    - xios-2.5_r1910_ogcm
     - nemobasemodel-3.6ogcm
   ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
     requires:
-    - xios-2.5_r1910
+    # seb-wahl: workaround if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
   ORCA05_LIM2_KCM_AOW:
+    requires:
+    - xios-2.0_r982
+    - nemobasemodel-3.6foci
     branch: master
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
-    - xios-2.5_r1910
+    # seb-wahl: workaround if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
-    destination: nemo-${nemobasemodel.version}/CONFIG/${nemo.version}
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-    
+
+    free_surface: nonlinear
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
+  # NEMO standalone setup
+  ORCA05_LIM2_NEMO_JRA55_test:
+    requires:
+    - xios-2.5_r1910_ogcm
+    - nemobasemodel-3.6ogcm_test
+    branch: master 
+    destination: nemo-${nemo.version}
+    # clone destination is a workaround implemented into esm_master for the fact that 
+    # "destination" is used as both the target directory for a "git clone ... destination"
+    # and the top level direcotory.
+    clone_destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    #
+    #original repository is the one below. seb-wahl made a copy in 02/2020
+    #since not all FOCI testes have access the original repository
+    #git-repository: https://git.geomar.de/cmip6-omip/GEOMAR05.CORE-cycle6.git
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    # override hardcoded path to runoff forcing
+    add_namelist_changes:
+       namelist_cfg:
+          namsbc_rnf:
+             cn_dir: "./"
+
+    add_input_files:
+       # reference namelists
+       #namelist_ref: namelist_ref
+       #namelist_ice_ref: namelist_ice_ref
+       # TODO: do we need top namelist
+       #namelist_top_ref: namelist_top_ref
+
+       # grids and coefficients 
+       #bathy_meter: bathy_meter 
+       #coordinates: coordinates
+       #subbasins: subbasins
+       #coef-G70: coef-G70
+       reshape_jra_orca05_bicub: reshape_jra_orca05_bicub 
+       reshape_jra_orca05_bilin: reshape_jra_orca05_bilin
+
+       # init data
+       sn_tem: sn_tem_woa13_omip
+       sn_sal: sn_sal_woa13_omip
+       #ice_init: ice_init_orca05
+       ice_init: ice_init_kkg36f13h
+
+       # restoring data / mask
+       sn_sss: sn_sss_phc21_woa98
+       cn_resto: cn_resto_medsea
+       
+    input_in_work:
+      # TODO: Jan Klaus Rieck used subbasins__3.6.0_ORCA05_Kv1.0.0.nc
+      # subbasins: orca05_subbasins_3.6.nc
+      # TODO: Jan Klaus Rieck used bfr_coef__3.6.0_ORCA05_Kv1.0.0.nc 
+      coef-G70: bfr_coef.nc
+      reshape_jra_orca05_bicub: reshape_jra_orca05_bicub.nc 
+      reshape_jra_orca05_bilin: reshape_jra_orca05_bilin.nc
+
+      sn_tem: data_tem.nc
+      sn_sal: data_sal.nc
+      sn_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB_time.nc 
+      ice_init: Ice_initialization.nc
+      namelist_ice_ref: namelist_ice_ref
+      
+    forcing_files:
+      # forcing data
+      sn_wndi: sn_wndi
+      sn_wndj: sn_wndj
+      sn_qsr: sn_qsr
+      sn_qlw: sn_qlw
+      sn_tair: sn_tair
+      sn_humi: sn_humi
+      sn_prec: sn_prec
+      sn_snow: sn_snow
+      sn_rnf: sn_rnf
+
+    forcing_in_work:
+        sn_wndi: "uas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_wndj: "vas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_qsr: "rsds-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_qlw: "rlds-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_tair: "tas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_humi: "huss-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_prec: "prra_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_snow: "prsn_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
+        sn_rnf: "sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc"
+
+    forcing_sources:
+        # JRA55-do drowned forcing
+        sn_wndi:
+          "${jra55_forcing_dir}/uas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_wndj:
+          "${jra55_forcing_dir}/vas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_qsr:
+          "${jra55_forcing_dir}/rsds-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_qlw:
+          "${jra55_forcing_dir}/rlds-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_tair:
+          "${jra55_forcing_dir}/tas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_humi:
+          "${jra55_forcing_dir}/huss-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_prec:
+          "${jra55_forcing_dir}/prra_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_snow:
+          "${jra55_forcing_dir}/prsn_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+        sn_rnf:
+          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc":
+             from: 1958
+             to: 1960
+
+
 clean_command: echo Cleaning is handled by nemobasemodel.yaml 
 comp_command: echo Compilation is handled by nemobasemodel.yaml 
-requires:
-- xios-2.0_r982
-- nemobasemodel-3.6foci
 
 metadata:
         Organization: Nucleus for European Modelling of the Ocean
@@ -80,11 +242,14 @@ restart_unit:   months
 # default directories
 pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
+jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
+jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
 # TODO
 ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
-namelist_dir:   ${model_dir}/CONFIG/${nemoconfig}/EXP00
-setup_dir: "${model_dir}"
-bin_dir: "${setup_dir}/bin"
+namelist_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+model_dir: ${general.model_dir}/nemo-${nemo.version}
+setup_dir: ${general.model_dir}
+bin_dir: ${setup_dir}/bin
 
 start_date_m1: $((${start_date} - ${time_step}seconds))
 end_date_m1: $((${next_date} - ${time_step}seconds))
@@ -103,8 +268,13 @@ thisstep_formatted: "<--format(%08d)-- ${thisstep}"
 newstep_formatted: "<--format(%08d)-- ${newstep}"
 
 coupling_freq_in_steps: 6
+# TODO: link with model start and end
+#jrastart: 1958
+#jraend: 1960
 
 # calendar:
+leapyear: True
+
 namelist_changes:
         namelist_cfg:
                 namrun:
@@ -117,7 +287,7 @@ namelist_changes:
                         cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
                         nn_stock: ${newstep}
-                        nn_leapy: 1
+                        #nn_leapy: 1
                         nn_rstctl: 2
                         ln_rstart: 'false'
                 namtsd:                                                
@@ -133,39 +303,17 @@ namelist_changes:
                         jpni: ${jpni}
                         jpnj: ${jpnj}
                         jpnij: ${nproc}
-
-choose_nemoconfig:
-       "ORCA05_LIM2_KCM_AOW":
-                free_surface: linear
-                hosing: false
-                use_lim2:       true
-                use_tracer:     true
-                correct_neg_tracer_conc: true
-                
-                # uncomment the following to set CPU layout defaults
-                # for this configuration
-                #add_namelist_changes:
-                #        namelist_cfg:
-                #              nammpp:
-                #                    jpni: 0
-                #                    jpnj: 0
-                #                    jpnij: 0
-
-       "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4":
-                free_surface: nonlinear
-                hosing: false
-                use_lim2:       true
-                use_tracer:     true
-                correct_neg_tracer_conc: true
-
-                # uncomment the following to set CPU layout defaults
-                # for this configuration
-                #add_namelist_changes:
-                #        namelist_cfg:
-                #              nammpp:
-                #                    jpni: 0
-                #                    jpnj: 0
-                #                    jpnij: 0
+choose_leapyear:
+        True:
+                add_namelist_changes:
+                        namelist_cfg:
+                                namrun:
+                                       nn_leapy: 1 
+        False:
+                add_namelist_changes:
+                        namelist_cfg:
+                                namrun:
+                                       nn_leapy: 0 
 
 choose_free_surface:
         linear:
@@ -236,31 +384,44 @@ choose_resolution:
                 _nx: 722
                 _ny: 511
                 time_step: 1800
+                
+                # default input files currently used in all COUPLED setups
+                # developed in FB1-ME
+                # standalone setups use slightly different files
                 input_files:
+                        # reference namelists
                         namelist_ref: namelist_ref
                         namelist_ice_ref: namelist_ice_ref
                         namelist_top_ref: namelist_top_ref
+                        # grids and coefficients 
                         bathy_meter: bathy_meter
                         coordinates: coordinates
                         subbasins: subbasins
-                        tpot: tpot
-                        s_correc: s_correc
-                        s_correc_sss: s_correc_sss
-                        Ice_init: Ice_init
                         coef-G70: coef-G70
-                input_in_work:
-                        namelist_ice_ref: namelist_ice_ref
-                        subbasins: orca05_subbasins_3.6.nc
-                        tpot: Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
-                        s_correc: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
-                        s_correc_sss: Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
-                        coef-G70: orca05_bfr_coef-G70.nc
-                        Ice_init: Ice_initialization.nc
 
-        GYRE_XIOS:
+        GYRE:
+                free_surface: no_option 
+                use_lim2: false 
+                use_tracer: false
+                coupling_freq_in_steps: 1
                 _nx: 32
                 _ny: 22
                 time_step: 7200
+                add_namelist_changes:
+                   namelist_cfg:
+                      namtsd:                                                
+                        ln_tsd_tradmp: '.false.' 
+                        ln_tsd_init: '.false.'
+                      nameos:
+                        ln_useCT: '.false.'
+                input_files:
+                        namelist_ref: namelist_ref
+                config_files:        
+                        namelist_cfg: namelist_cfg
+                input_in_work:
+                        namelist_ref: namelist_ref
+                config_in_work:        
+                        namelist_cfg: namelist_cfg
 
 
 choose_use_lim2:
@@ -319,24 +480,36 @@ bin_sources:
 
 ############## input files:
 
-input_files:
+#input_files:
 
-input_in_work:
+#input_in_work:
 
 input_sources:
+        # grids and coefficients
         bathy_meter: ${input_dir}/bathy_meter.nc
         coordinates: ${input_dir}/coordinates.nc
         subbasins: ${input_dir}/orca05_subbasins_3.6.nc
-        tpot: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
-        s_correc: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
-        s_correc_sss: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
-        Ice_init: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
+        reshape_jra_orca05_bicub: ${input_dir}/reshape_jra_bicub__3.6.0_ORCA05_Kv1.0.0.nc 
+        reshape_jra_orca05_bilin: ${input_dir}/reshape_jra_bilin__3.6.0_ORCA05_Kv1.0.0.nc
+        # input data
+        sn_tem_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        sn_tem_woa13_omip: ${input_dir}/woa13_decav_ptemp_OMIPinit__3.6.0_ORCA05.L46_Kv1.0.0.nc
+        sn_sal_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        sn_sal_woa13_omip: ${input_dir}/woa13_decav_salt_OMIPinit__3.6.0_ORCA05.L46_Kv1.0.0.nc
+        ice_init_kkg36f13h: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
+        ice_init_orca05: ${input_dir}/Ice_initialization__3.6.0_ORCA05_Kv1.0.0.nc
+
+        # restoring data / mask
+        sn_sss_phc21_woa98: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
+        cn_resto_medsea: ${input_dir}/dmpmsk_MedSea_orca05.l46_RA-II.nc 
         # add namelist_ref as input source to avoid removal of comments which
         # makes namelist unreadable
         namelist_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ref
         namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
         namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
+
+#forcing_files:
 
 ############## config files / namelist files:
 
@@ -382,15 +555,15 @@ log_sources:
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
-opaf_fields: [O_Runoff]
+opar_fields: [O_Runoff]
 
 coupling_fields:
         "[[opat_fields-->FIELD]]":
                 grid: opat
         "[[opac_fields-->FIELD]]":
                 grid: opac
-        "[[opaf_fields-->FIELD]]":
-                grid: opaf
+        "[[opar_fields-->FIELD]]":
+                grid: opar
 
 grids:
         opat:
@@ -405,8 +578,8 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
                 number_of_overlapping_points: 2 # oasis P-value
-        opaf:
-                name: opaf
+        opar:
+                name: opar
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"

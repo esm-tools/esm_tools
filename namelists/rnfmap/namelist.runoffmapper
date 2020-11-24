@@ -1,4 +1,4 @@
 &NAMRNFMAP
-    RunLengthSec = 86400 
-    TimeStepSec  = 10800 
+    RunLengthSec = 86400
+    TimeStepSec  = 10800
 /

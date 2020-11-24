@@ -2,6 +2,9 @@
 #OIFS standalone (=AMIP?) YAML FILE
 #
 
+# TODO:
+# 1 use with_xios to include or not xios (it is not working now probably due to a bug in esm_tools - esm_tools resolving include models before resolving the chooses)
+
 model: oifs
 executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
@@ -45,6 +48,8 @@ ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
+cmip6_data_dir_nml: ./cmip6_data/
+cmip5_data_dir_nml: ./cmip5_data/
 restart_dir: ""
 
 parent_expid: "test"
@@ -79,6 +84,7 @@ compile_infos:
         available_versions:
         - 40r1
         - 43r3-awi
+        - 43r3-awi-e1
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -101,10 +107,23 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
           43r3-awi:
-            branch: master
+            requires:
+            - oasis3mct-4.0-oifsdeck
+            branch: master # or oifs-deck???
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg
+              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+          43r3-awi-e1:
+            requires:
+            - oasis3mct-4.0-oifsdeck
+            - xios-2.5
+            branch: fix-mkl
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
           #43r3-foci:
           #  requires:
           #  - oasis3mct-fociagrif
@@ -160,7 +179,7 @@ runtime_environment_changes:
         - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-    mistral:    
+    mistral:
       add_export_vars:
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
         - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
@@ -171,6 +190,54 @@ runtime_environment_changes:
         # ENV vars used in OIFS's source code during runtime
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+
+    ollie:
+      add_module_actions:
+        - "unload gribapi"
+      add_export_vars:
+        # MKLROOT MISTRAL
+        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
+        - 'PATH=$PATH:/home/ollie/jstreffi/fcm/bin/'
+        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        ##########- 'MPIROOT=$I_MPI_ROOT/intel64' BASH
+        # ESM_NETCDF_C_DIR MISTRAL
+        # ESM_NETCDF_F_DIR MISTRAL
+        # GRIBAPIROOT MISTRAL
+        # UDUNITS2_ROOT MISTRAL
+        # FFTW_ROOT MISTRAL
+        # PROJ4_ROOT MISTRAL
+        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/"
+        - 'HDF5ROOT=$HDF5_ROOT'
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
+
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
+        # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+        - 'OIFS_FC=${computer.fc}'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS='
+        - 'OIFS_CC=${computer.cc}'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        # OIFS_FFTW_DIR MISTRAL
+        # OIFS_FFTW_INCLUDE MISTRAL
+        # OIFS_FFTW_LIB MISTRAL
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
 compiletime_environment_changes:
   choose_computer.name:
@@ -325,10 +392,54 @@ compiletime_environment_changes:
         - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
         - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
 
+    ollie:
+      add_module_actions:
+        - "unload gribapi"
+      add_export_vars:
+        # MKLROOT MISTRAL
+        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        ##########- 'MPIROOT=$I_MPI_ROOT/intel64' BASH
+        # ESM_NETCDF_C_DIR MISTRAL
+        # ESM_NETCDF_F_DIR MISTRAL
+        # GRIBAPIROOT MISTRAL
+        # UDUNITS2_ROOT MISTRAL
+        # FFTW_ROOT MISTRAL
+        # PROJ4_ROOT MISTRAL
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
+
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
+        # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
+
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+        - 'OIFS_FC=${computer.fc}'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS='
+        - 'OIFS_CC=${computer.cc}'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        # OIFS_FFTW_DIR MISTRAL
+        # OIFS_FFTW_INCLUDE MISTRAL
+        # OIFS_FFTW_LIB MISTRAL
+
 input_expid: ECE3
 resolution: TL159
 levels: L91
-nlev: 91
+nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
@@ -387,6 +498,7 @@ choose_resolution:
                 oasis_grid_name: "048"
                 res_number: 95
                 res_number_tl: "95_3"
+                truncation: "TQ"
         TCO95: 
                 nx: 40320 
                 ny: 1
@@ -394,6 +506,7 @@ choose_resolution:
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
+                truncation: "TCO"
         TL159:
                 nx: 35718
                 ny: 1
@@ -401,6 +514,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159l_2"
+                truncation: "TL"
         TCO159:
                 nx: 35718
                 ny: 1
@@ -408,6 +522,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159_4"
+                truncation: "TCO"
         TCO199:
                 nx: 167200
                 ny: 1
@@ -415,6 +530,7 @@ choose_resolution:
                 oasis_grid_name: "200"
                 res_number: 199
                 res_number_tl: "199_4"
+                truncation: "TCO"
         TL255:
                 nx: 88838
                 ny: 1
@@ -422,6 +538,15 @@ choose_resolution:
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
+                truncation: "TL"
+        TCO319:
+                nx: 421120
+                ny: 1
+                time_step: 1200
+                oasis_grid_name: 320
+                res_number: 319
+                res_number_tl: "319_4"
+                truncation: "TCO"
         TCO399:
                 nx: 654400
                 ny: 1
@@ -429,6 +554,7 @@ choose_resolution:
                 oasis_grid_name: 400
                 res_number: 399
                 res_number_tl: "399_4"
+                truncation: "TCO"
         TL511:
                 nx: 348528
                 ny: 1
@@ -436,6 +562,7 @@ choose_resolution:
                 oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: "511l_2"
+                truncation: "TL"
         TL799:
                 nx: 843490
                 ny: 1
@@ -443,6 +570,7 @@ choose_resolution:
                 oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: "799l_2"
+                truncation: "TL"
         TL1279:
                 nx: 2140702
                 ny: 1
@@ -450,6 +578,7 @@ choose_resolution:
                 oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: "1279l_2"
+                truncation: "TL"
 
 choose_computer.cores_per_node:
         24:
@@ -479,6 +608,7 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
+custop: "t${oifs.next_step}"
 lresume: false
 
 start_seconds: "$((${start_date} - ${initial_date}))"
@@ -651,7 +781,7 @@ outdata_sources:
 ## Using XIOS?
 choose_with_xios:
         1:
-                add_include_models:
+                include_models:
                         - xios
                 add_namelist_changes: 
                         fort.4:
@@ -702,6 +832,9 @@ choose_wam:
 
                 add_outdata_files:
                         MPP: MPP
+
+                add_config_sources:
+                        "wam_namelist": "${namelist_dir}/wam_namelist"
 
         0:
                 wam_number: "0"
@@ -776,7 +909,7 @@ choose_version:
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "t${oifs.next_step}" 
+                                        CUSTOP: "${custop}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
@@ -802,7 +935,7 @@ choose_mip:
                         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
                         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
                         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-        "cmip6": 
+        "cmip6":
                 add_forcing_files:
                         # Add CO2 etc for all scenarios and years
                         CMIP6DATA: CMIP6DATA
@@ -811,7 +944,7 @@ choose_mip:
                         fort.4:
                                 NAERAD:
                                         LCMIP6: ".true."
-                                        CMIP6DATADIR: "./cmip6_data/"        
+                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
                         "piControl":                                
                                 add_namelist_changes:
@@ -885,7 +1018,6 @@ forcing_sources:
 
 config_sources:
         "fort.4": "${namelist_dir}/pictl/fort.4"
-        "wam_namelist": "${namelist_dir}/wam_namelist"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
@@ -996,5 +1128,5 @@ compute_recipe:
       - "write_simple_runscript"
       - "report_missing_files"
       - "database_entry"
-      - "submit" 
+      - "submit"
 

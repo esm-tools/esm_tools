@@ -22,6 +22,7 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- "2.5"
 - 2.5_r1910
 - 2.5_r1910_oifs
 - 2.5_r1910_ogcm
@@ -33,6 +34,11 @@ choose_version:
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
+  "2.5":
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: master
   # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
     archfile: ESMTOOLS_generic_oasis_intel
@@ -41,7 +47,7 @@ choose_version:
   # XIOS with oasis dependencies 
   2.5_r1910_oifs:
     archfile: ESMTOOLS_generic_intel
-    use_oasis: '' 
+    use_oasis: ''
     branch: 2.5_r1910
   # XIOS without any oasis dependencies 
   2.5_r1910_ogcm:
@@ -55,10 +61,16 @@ destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
 install_bins: bin/xios.x
 use_oasis: ''
-# 
+
+compiletime_environment_changes:
+  choose_computer.name:
+    ollie:
+      add_module_actions:
+        - "load ncl"
+
+#
 # runtime setup
 #
-xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 
@@ -67,6 +79,7 @@ config_files:
 
 choose_general.setup_name:
         nemo:
+                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
                 add_config_files:
                         domain_def: domain_def
                         field_def: field_def
@@ -84,6 +97,8 @@ choose_general.setup_name:
                         domain_def: domain_def
                         field_def: field_def
                         file_def: file_def
+        awicm3:
+                xml_dir: "${pool_dir}"
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml

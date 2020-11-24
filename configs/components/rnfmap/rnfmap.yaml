@@ -92,12 +92,16 @@ grids:
                 nx: 512
                 ny: 256
                 oasis_grid_type: "LR"
-        opaf:
-                name: opaf
-                nx: "${nemo._nx}"
-                ny: "${nemo._ny}"
-                oasis_grid_type: "LR"
-                number_of_overlapping_points: 2
+
+choose_general.setup_name:
+        focioifs:
+                add_grids:
+                        opaf:
+                                name: opaf
+                                nx: "${nemo._nx}"
+                                ny: "${nemo._ny}"
+                                oasis_grid_type: "LR"
+                                number_of_overlapping_points: 2
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
@@ -113,7 +117,7 @@ compiletime_environment_changes:
       - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
       - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
       - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-      # compiler and compiler flags 
+      # compiler and compiler flags
       - 'OIFS_FC=$FC'
       - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
       - 'OIFS_FFIXED=""'
@@ -122,4 +126,3 @@ compiletime_environment_changes:
       - 'OIFS_CC=$CC'
       - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
       - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-

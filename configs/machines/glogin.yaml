@@ -43,11 +43,11 @@ pool_dir:  "/scratch/usr/hbkawi"
 
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
-#compiler_mpi: intel2019_impi2019
+compiler_mpi: intel2019_impi2019
 #iolibraries: system_libs
 #
 # for FOCIOIFS use
-compiler_mpi: intel2019_ompi
+# compiler_mpi: intel2019_ompi
 # for FOCI use
 # compiler_mpi: intel2019_impi2019
 # for both FOCI and FOCIOIFS use 

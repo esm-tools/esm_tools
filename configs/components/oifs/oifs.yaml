@@ -13,8 +13,8 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
-#include_models:
-#        - xios
+include_models:
+        - xios
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -124,14 +124,22 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
+          #43r3-foci:
+          #  requires:
+          #  - oasis3mct-fociagrif
+          #  branch: oifs-foci
+          #  comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+          #    -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+          #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+          #  install_bins: make/esm/oifs/bin/oifs
           43r3-foci:
-            requires:
-            - oasis3mct-fociagrif
-            branch: oifs-foci
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            branch: oifs-geomar
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
+            requires:
+            - oasis3mct-4.0
+            - xios-2.5_r1910
           43r3-v1:
             branch: oifs-geomar 
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -151,25 +159,24 @@ compile_infos:
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
-        
 runtime_environment_changes:
   choose_computer.name:
-
     blogin:
-      add_module_actions:
-        # release_mt makes oifs lightning fast and avoids the really slow timesteps that occur randomly
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
+    juwels:
+      add_export_vars:
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     mistral:
@@ -178,7 +185,6 @@ runtime_environment_changes:
         - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
         - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
         # ENV vars used in OIFS's source code during runtime
@@ -200,19 +206,19 @@ runtime_environment_changes:
         # UDUNITS2_ROOT MISTRAL
         # FFTW_ROOT MISTRAL
         # PROJ4_ROOT MISTRAL
-        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel/"
+        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/"
         - 'HDF5ROOT=$HDF5_ROOT'
-        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"' # MISTRAL
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
 
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
         # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"' # Not in MISTRAL
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
@@ -239,45 +245,38 @@ compiletime_environment_changes:
       add_export_vars:
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-
-        # ECCODES stuff
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
-        - 'ECCODES_DIR="$IO_LIB_ROOT"'
-        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        # FFTW is included in MKL so we link to that
+        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
+        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
+        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
-
-        # OASIS
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-
-        # NetCDF
+        # netcdf
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-
-        # compiler and compile flags
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
       add_export_vars:
@@ -288,49 +287,65 @@ compiletime_environment_changes:
         - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
         - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-
-        # ECCODES stuff
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
-        - 'ECCODES_DIR="$IO_LIB_ROOT"'
-        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
-
-        # OASIS
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-
-        # NetCDF
-        - 'OIFS_NETCDF_DIR="$IO_LIB_ROOT"'
+        # netcdf
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'        
-
-        # compiler and compile flags
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
-        # setting to same as intel_mkl_impi-opt in 43r3
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'        
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+    juwels:
+      add_export_vars:
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        # netcdf
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=$CC'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
     mistral:
       add_export_vars:
@@ -362,16 +377,12 @@ compiletime_environment_changes:
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
         # Build OpenIFS with FFTW. Use Intel MKL interfaces
@@ -394,18 +405,18 @@ compiletime_environment_changes:
         # UDUNITS2_ROOT MISTRAL
         # FFTW_ROOT MISTRAL
         # PROJ4_ROOT MISTRAL
-        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"' # MISTRAL
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
 
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
         # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
 
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
         # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"' # Not in MISTRAL
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
@@ -880,7 +891,7 @@ choose_version:
                                 - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                                 - 'OIFS_EXPID="${input_expid}"'
                                 - 'FOCI_USE_CPLNG="no"'
-                                - 'AWICM_USE_CPLNG="no"'
+                                - 'FESOM_USE_CPLNG="no"'
                                 - 'ECE_USE_CPLNG="no"'
 
         43r3:
@@ -935,27 +946,35 @@ choose_mip:
                                         LCMIP6: ".true."
                                         CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
-                        "piControl":
-                                add_forcing_files:
-                                        # O3 concentrations for piControl
-                                        O3PI: O3PI
+                        "piControl":                                
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
                                                         NCMIPFIXYR: 1850
-                        "historical":
-                                add_forcing_files:
-                                        # Add historical O3
-                                        O3HIST: O3HIST
                         "SSP5-8.5":
-                                add_forcing_files:
-                                        # Add O3 for all scenarios
-                                        O3SCEN: O3SCEN
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
                                 
+
+#choose_o3_scheme:
+#        "prescribed":
+#                choose_mip:
+#                        "cmip6":
+#                                choose_scenario:
+#                                        "piControl":
+#                                                add_forcing_files:
+#                                                        # O3 concentrations for piControl
+#                                                        O3PI: O3PI
+#                                        "historical":
+#                                                add_forcing_files:
+#                                                        # Add historical O3
+#                                                        O3HIST: O3HIST
+#                                        "SSP5-8.5":
+#                                                add_forcing_files:
+#                                                        # Add O3 for all scenarios
+#                                                        O3SCEN: O3SCEN
 
 
 ##
@@ -1024,7 +1043,7 @@ forcing_in_work:
         O3PI: cmip6_data/o3_pi/* 
         O3HIST: cmip6_data/o3_histo/* 
         O3SCEN: cmip6_data/o3_scenarios/*
-
+        
 ##
 ## coupling
 ##

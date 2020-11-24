@@ -22,14 +22,37 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "4.2.7"
+__version__ = "4.2.12"
 
 import os
+import shutil
 import sys
 
 import pkg_resources
 import yaml
 
+
+def _get_namelist_filepath_standard_install(namelist):
+    return pkg_resources.resource_filename("esm_tools.namelists", namelist)
+
+def _get_namelist_filepath_editable_install(namelist):
+    return pkg_resources.resource_filename("namelists", namelist)
+
+def _get_config_filepath_standard_install(config):
+    return pkg_resources.resource_filename("esm_tools.configs", config)
+
+def _get_config_filepath_editable_install(config):
+    return pkg_resources.resource_filename("configs", config)
+
+
+def get_config_as_str(config):
+    return pkg_resources.resource_string("esm_tools.configs", config)
+
+def _list_config_dir_standard_install(dir_path):
+    return pkg_resources.resource_listdir("esm_tools.configs", dir_path)
+
+def _list_config_dir_editable_install(dir_path):
+    return pkg_resources.resource_listdir("configs", dir_path)
 
 # For more information on how this works, see here:
 # https://stackoverflow.com/questions/62550952/including-package-data-python-from-top-level-when-package-is-in-subdirectory/62552188#62552188
@@ -92,6 +115,22 @@ def _read_config_editable_install(config):
     return configdict
 
 
+def _copy_config_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.configs", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_config_folder_editable_install(dest_path):
+    src_path = pkg_resources.resource_filename("configs", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_namelist_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.namelists", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_namelist_folder_editable_install(dest_path):
+    src_path = pkg_resources.resource_filename("namelists", ".")
+    return shutil.copytree(src_path, dest_path)
+
 def _read_namelist_editable_install(nml):
     """
     Reads a namelist file for the case that you have done an editable/develop install.
@@ -149,6 +188,32 @@ def read_config_file(config):
     if EDITABLE_INSTALL:
         return _read_config_editable_install(config)
     return _read_config_standard_install(config)
+
+
+def list_config_dir(dirpath):
+    if EDITABLE_INSTALL:
+        return _list_config_dir_editable_install(dirpath)
+    return _list_config_dir_standard_install(dirpath)
+
+def copy_config_folder(dest_path):
+    if EDITABLE_INSTALL:
+        return _copy_config_folder_editable_install(dest_path)
+    return _copy_config_folder_standard_install(dest_path)
+
+def copy_namelist_folder(dest_path):
+    if EDITABLE_INSTALL:
+        return _copy_namelist_folder_editable_install(dest_path)
+    return _copy_namelist_folder_standard_install(dest_path)
+
+def get_namelist_filepath(namelist):
+    if EDITABLE_INSTALL:
+        return _get_namelist_filepath_editable_install(namelist)
+    return _get_namelist_filepath_standard_install(namelist)
+
+def get_config_filepath(config):
+    if EDITABLE_INSTALL:
+        return _get_config_filepath_editable_install(config)
+    return _get_config_filepath_standard_install(config)
 
 
 def read_namelist_file(nml):

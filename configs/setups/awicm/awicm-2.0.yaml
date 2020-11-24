@@ -23,18 +23,10 @@ general:
                         compute_time: "02:00:00"
         available_versions:
         - '2.0'
-        - 2.0-esm-interface
-        - 2.0-esm-interface-yac
         choose_version:
           '2.0':
             couplings:
             - fesom-2.0+echam-6.3.04p1
-          2.0-esm-interface:
-            couplings:
-            - fesom-2.0-esm-interface+echam-6.3.04p1-esm-interface
-          2.0-esm-interface-yac:
-            couplings:
-            - fesom-2.0-esm-interface-yac+echam-6.3.04p1-esm-interface-yac
 
 
 #########################################################################################
@@ -67,6 +59,11 @@ echam:
 
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        choose_jsbach.dataset:
+                "r0009":
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+                "r0008":        
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:

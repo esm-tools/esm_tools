@@ -39,7 +39,9 @@ general:
                 - xios
                 - oasis3mct
                 - rnfmap
-
+        requires:
+        - nemobasemodel-3.6foci
+        
         available_versions:
         - agrif
         - '2.0'
@@ -63,23 +65,8 @@ general:
                         runtime_environment_changes:
                                 add_export_vars:
                                         # (additional) settings used in FOCI up to v1.21
-                                        - 'ECHAM6_THREADS=1'
                                         - 'NEMO_THREADS=1'
                                         - 'I_MPI_SLURM_EXT=0'
-                                        #- 'I_MPI_DYNAMIC_CONNECTION=1'
-                                        #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
-                                        # Intel MPI
-                                        #- 'DAPL_UCM_REP_TIME=8000'
-                                        #- 'DAPL_UCM_RTU_TIME=8000'
-                                        #- 'DAPL_UCM_CQ_SIZE=2000'
-                                        #- 'DAPL_UCM_QP_SIZE=2000'
-                                        #- 'DAPL_UCM_DREQ_RETRY=4'
-                                        #- 'DAPL_UCM_WAIT_TIME=10000'
-                                        # 1 was used in mkexp, but kills the model with esm-tools
-                                        #- 'I_MPI_HARD_FINALIZE=1'
-                                        # Intel OpenMP
-                                        #- 'KMP_STACKSIZE=64m'
-                                        #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
                                         # OpenMP
                                         - 'OMP_NUM_THREADS=1' 
 
@@ -92,11 +79,6 @@ postprocess:
         postprocess_shell:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
-#computer:
-#       additional_flags: "--ntasks-per-core=1"
-#       launcher: "srun" # default, but set it to make clear what the launcher flags are used for
-#       launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
-#       useMPI: intelmpi17
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -104,7 +86,7 @@ postprocess:
 
 oifs:
         version: "43r3"
-
+        
         pool_dir: ${computer.pool_directories.focipool}
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
@@ -136,7 +118,7 @@ oifs:
                 add_export_vars:
                         # Turn on FOCI coupling        
                         - 'FOCI_USE_CPLNG="active"'
-                        - 'AWICM_USE_CPLNG="no"'
+                        - 'FESOM_USE_CPLNG="no"'
                         - 'ECE_USE_CPLNG="no"'
         
         choose_resolution:
@@ -148,13 +130,13 @@ oifs:
                      nproca: 862                       
 
         choose_general.resolution:
-                T159_ORCA05:
+                TCO95_ORCA05:
                         nproca: 279
                         nprocb: 1
 
 nemo:
         
-        nemoconfig: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
         
         choose_general.resolution:
                 TCO95_ORCA05:
@@ -233,6 +215,8 @@ oasis3mct:
         o2a_seq: 1
 
         coupling_time_step: 10800
+        export_mode: EXPOUT 
+        
         coupling_target_fields:
                 # Coupling ocean fields to atm
                 sstocean:
@@ -283,8 +267,8 @@ oasis3mct:
                         lag: ${a2r_lag}
                         seq: 3                
                 # Runoff mapper to runoff points in NEMO
-                'opar->opaf':
-                        lag: 0
+                'opaf->opar':
+                        lag: 0 #${o2a_lag}
                         seq: 3
                 # NEMO to OIFS wet points including lakes 
                 'opat->atml':
@@ -356,7 +340,7 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_opar_to_opaf_GAUSWGT_${nemo.resolution}.nc
+                                        mapname: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: dst
                         postprocessing:
                                 conserv:
@@ -475,7 +459,7 @@ oasis3mct:
         add_restart_out_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 # These four are for AGRIF-OpenIFS remapping
@@ -495,7 +479,7 @@ oasis3mct:
         add_restart_out_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -527,7 +511,7 @@ oasis3mct:
         add_restart_in_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -545,7 +529,7 @@ oasis3mct:
         add_restart_in_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opar_to_opaf_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc

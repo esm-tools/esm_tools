@@ -68,14 +68,14 @@ echam:
                         nproca: 24
                         nprocb: 18
 
-        choose_computer.name:
-            ollie:
-                compiletime_environment_changes:
-                    add_export_vars:
-                        # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
-                        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-                        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                        - 'configure_opts=--with-coupler=oasis3-mct'
+        add_compiletime_environment_changes:
+            add_export_vars:
+                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                - "OASIS3MCT_FC_LIB=$(pwd)/lib/"
+                - "OASIS3MCTROOT=$(pwd)/oasis/"
+                - 'configure_opts=--with-coupler=oasis3-mct'
 
 
 #########################################################################################
@@ -83,6 +83,11 @@ echam:
 
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        choose_jsbach.dataset:
+                "r0009":
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+                "r0008":        
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:
@@ -150,6 +155,11 @@ oasis3mct:
         a2o_seq: 2
 
         coupling_time_step: 3600
+        # Example for input fields:
+        #coupling_input_fields:
+        #    gfw_atmo:
+        #        freq: 86400
+        #        field_filepath: "foo/bar.nc"
         coupling_target_fields:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'

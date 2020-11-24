@@ -6,6 +6,6 @@ components:
 - scope-dev
 - debm-esm_tools
 coupling_changes:
-- sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
 - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation-paleodyn/config/mh-linux
   #- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation-paleodyn/configure.ac

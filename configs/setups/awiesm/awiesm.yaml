@@ -21,10 +21,10 @@ general:
         choose_version:
           '1.1':
             couplings:
-            - fesom-1.4+echam-6.3.04p1-paleodyn
+            - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn
           '1.2':
             couplings:
-            - fesom-1.4+echam-6.3.04p1-paleodyn+pism-github1.2+scope-dev
+            - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools
                   #version: "1.1"
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -56,7 +56,7 @@ echam:
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.04p1"
+        version: "6.3.05p2-concurrent_radiation-paleodyn"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -70,12 +70,31 @@ echam:
                         nproca: 24
                         nprocb: 18
 
+        compiletime_environment_changes:
+            add_export_vars:
+                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                - 'configure_opts=--with-coupler=oasis3-mct'
+                - "paul=was_here"
+
+        choose_computer.name:
+            ollie:
+                add_compiletime_environment_changes:
+                    add_export_vars:
+                        - 'configure_opts=--with-coupler=oasis3-mct'
+
 
 #########################################################################################
 
 
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        choose_jsbach.dataset:
+                "r0009":
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+                "r0008":        
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:

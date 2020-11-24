@@ -1,0 +1,38 @@
+&esmdebugging
+    esm_debug_mode = .false.
+    esmloglevel = 2
+    debug_fields_send = .false.
+    debug_fields_recv = .false.
+/
+
+&esmsetupnb
+    nbmodels = 2
+    nbroutes = 2
+    nba2ostreams = 12
+    nbo2astreams = 4
+/
+
+&esmsetupinfo
+    models = 'echam6', 'fesom'
+    esm_coupler = 'oasis3mct'
+/
+
+&exchange
+    routes = 'a2o', 'o2a'
+    a2o_send_streams = 'taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm',
+                       'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica',
+                       'heat_swa', 'hydr_atm'
+    a2o_send_ports = 'taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm',
+                     'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica',
+                     'heat_swa', 'hydr_atm'
+    a2o_recv_streams = 'sst_atmo', 'sit_atmo', 'sie_atmo', 'snt_atmo'
+    a2o_recv_ports = 'sst_atm', 'sit_atm', 'sie_atm', 'snt_atm'
+    o2a_recv_streams = 'taux_oce', 'tauy_oce', 'taux_ico', 'tauy_ico', 'prec_oce',
+                       'snow_oce', 'evap_oce', 'subl_oce', 'heat_oce', 'heat_ico',
+                       'heat_swo', 'hydr_oce'
+    o2a_recv_ports = 'taux_oce', 'tauy_oce', 'taux_ico', 'tauy_ico', 'prec_oce',
+                     'snow_oce', 'evap_oce', 'subl_oce', 'heat_oce', 'heat_ico',
+                     'heat_swo', 'hydr_oce'
+    o2a_send_streams = 'sst_feom', 'sit_feom', 'sie_feom', 'snt_feom'
+    o2a_send_ports = 'sst_feom', 'sit_feom', 'sie_feom', 'snt_feom'
+/

@@ -55,8 +55,8 @@ compile_infos:
     
     choose_version:
         2.6.2-rc:
-            # git-repository: "git@gitlab.dkrz.de:icon/icon.git"
-            git-repository: "https://gitlab.dkrz.de:icon/icon.git"
+            git-repository: "git@gitlab.dkrz.de:icon/icon.git"
+            # git-repository: "https://gitlab.dkrz.de:icon/icon.git"
             branch: "icon-2.6.2-rc"
             repo_options: "--recursive"
             conf_command: "./config/esm_tools/generic.intel-18.0.5"

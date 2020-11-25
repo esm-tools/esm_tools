@@ -153,6 +153,13 @@ choose_iolibraries:
                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "$FC"
+cc: "$CC"
+mpifc: "$MPIFC" 
+mpicc: "$MPICC"
+cxx: "$CXX" 
+
 launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
 
 further_reading:

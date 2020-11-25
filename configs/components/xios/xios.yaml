@@ -61,13 +61,6 @@ destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
 install_bins: bin/xios.x
 use_oasis: ''
-
-compiletime_environment_changes:
-  choose_computer.name:
-    ollie:
-      add_module_actions:
-        - "load ncl"
-
 #
 # runtime setup
 #
@@ -94,6 +87,12 @@ choose_general.setup_name:
                 add_config_files:
                         context_ifs: context_ifs
                         ifs_xml: ifs_xml
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+        foci:
+                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                add_config_files:
                         domain_def: domain_def
                         field_def: field_def
                         file_def: file_def

@@ -214,9 +214,9 @@ jsbach:
               - yasso
 
 nemo:
-        choose_general.version:
-                default:
-                        version: "3.6foci"
+        #choose_general.version:
+        #        default:
+        #                version: "3.6foci"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -230,7 +230,7 @@ xios:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}
+        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
                 - nemo
                 - echam

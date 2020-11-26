@@ -1,0 +1,38 @@
+general:
+    setup_name: "awicm"
+    version: "2.0"
+    compute_time: "00:15:00"
+    initial_date: "1850-01-01"
+    final_date: "2015-12-31"
+    base_dir: "/work/ollie/lackerma/awicm_pism_tests"
+    nmonth: 0
+    nyear: 1
+awicm:
+    postprocessing: false
+    model_dir: "/home/ollie/lackerma/awicm-2.0"
+    scenario: "HIST"
+echam:
+    version: "6.3.04p1"
+    res: T63
+    ini_restart_dir: "/work/ollie/radesuya/awicm_checks/stage1/restart/echam"
+    ini_parent_exp_id: "stage1"
+    ini_parent_date: 23591231
+    lresume: 1
+fesom:
+    namelist_changes:
+        namelist.config:
+            icebergs:
+                use_icebergs: false
+                use_icesheet_coupling: false
+                ib_num: 1
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/work/ollie/pool/FESOM/"
+    mesh_dir: "/work/ollie/sxu/AWICM-2.0/meshes/core2_dkrz/"
+    restart_rate: 12
+    restart_unit: "m"
+    restart_first: 1
+    ini_restart_dir: "/work/ollie/radesuya/awicm_checks/stage1/restart/echam"
+    ini_parent_exp_id: "stage1"
+    ini_parent_date: 23591231
+    lresume: 1

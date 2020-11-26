@@ -480,23 +480,27 @@ streams:
         - echam
         - accw
         - co2
-        - g3bm
-        - glm
-        - jsbachm
-        - landm
-        - spm
-        - surfm
-        - vegm
-        - yassom
+        - g3bid
+        - g3bim
+        - g3bday
+        - g3b1hi
+        - glday
+        - aclcim
+        - sp6h
+        - glim
+        - spim
+
 streamsnc:
-        - g3bm
-        - glm
-        - jsbachm
-        - landm
-        - spm
-        - surfm
-        - vegm
-        - yassom
+        - aclcim
+        - g3b1hi
+        - g3bday
+        - g3bid
+        - g3bim
+        - glday
+        - glim
+        - jsbid
+        - sp6h
+        - spim
 
           #prev_date: 18500101
 # BUG: PG Why do we need lists here?

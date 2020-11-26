@@ -13,8 +13,8 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
-include_models:
-        - xios
+#include_models:
+#        - xios
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -109,7 +109,7 @@ compile_infos:
           43r3-awi:
             requires:
             - oasis3mct-4.0-oifsdeck
-            branch: master # or oifs-deck???
+            branch: awicm-3-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -194,50 +194,13 @@ runtime_environment_changes:
     ollie:
       add_module_actions:
         - "unload gribapi"
+        - "unload hdf5"
       add_export_vars:
-        # MKLROOT MISTRAL
-        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
-        - 'PATH=$PATH:/home/ollie/jstreffi/fcm/bin/'
-        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        ##########- 'MPIROOT=$I_MPI_ROOT/intel64' BASH
-        # ESM_NETCDF_C_DIR MISTRAL
-        # ESM_NETCDF_F_DIR MISTRAL
-        # GRIBAPIROOT MISTRAL
-        # UDUNITS2_ROOT MISTRAL
-        # FFTW_ROOT MISTRAL
-        # PROJ4_ROOT MISTRAL
-        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/"
-        - 'HDF5ROOT=$HDF5_ROOT'
-        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
-
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
-        # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
-        - 'OIFS_FC=${computer.fc}'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
         - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS='
-        - 'OIFS_CC=${computer.cc}'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        # OIFS_FFTW_DIR MISTRAL
-        # OIFS_FFTW_INCLUDE MISTRAL
-        # OIFS_FFTW_LIB MISTRAL
+        - 'GRIB_SAMPLES_PATH="/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
 
 compiletime_environment_changes:
   choose_computer.name:
@@ -395,28 +358,19 @@ compiletime_environment_changes:
     ollie:
       add_module_actions:
         - "unload gribapi"
+        - "unload hdf5"
       add_export_vars:
-        # MKLROOT MISTRAL
         - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        ##########- 'MPIROOT=$I_MPI_ROOT/intel64' BASH
-        # ESM_NETCDF_C_DIR MISTRAL
-        # ESM_NETCDF_F_DIR MISTRAL
-        # GRIBAPIROOT MISTRAL
-        # UDUNITS2_ROOT MISTRAL
-        # FFTW_ROOT MISTRAL
-        # PROJ4_ROOT MISTRAL
-        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib"' # MISTRAL
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
 
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/share/grib_api/ifs_samples/grib1_mlgrib2'
-        # 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/' MISTRAL
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
 
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel_defaulthdf5/bin"' # Not in MISTRAL
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
@@ -432,9 +386,6 @@ compiletime_environment_changes:
         - 'OIFS_CC=${computer.cc}'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        # OIFS_FFTW_DIR MISTRAL
-        # OIFS_FFTW_INCLUDE MISTRAL
-        # OIFS_FFTW_LIB MISTRAL
 
 input_expid: ECE3
 resolution: TL159
@@ -491,14 +442,6 @@ namelists:
 choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.
-        TQ95:
-                nx: 13280
-                ny: 1
-                time_step: 3600
-                oasis_grid_name: "048"
-                res_number: 95
-                res_number_tl: "95_3"
-                truncation: "TQ"
         TCO95: 
                 nx: 40320 
                 ny: 1

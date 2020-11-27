@@ -16,9 +16,9 @@ general:
         clean_runs: 2 
 
         # machine specific setup 
-        account: shk00018
-        model_dir: /home/shkifmsw/esm/models/oifs-43r3-v1/
-        base_dir: /home/shkifmsw/esm/esm-experiments/
+        account: hirace
+        model_dir: /p/project/hirace/wahl1/esm/models/oifs-43r3-v1/
+        base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
         # seb-wahl: this does not work and causes really strange
         # behaviour upon restart!
         #choose_computer.name:

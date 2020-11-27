@@ -4,7 +4,7 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "02:00:00"
+   compute_time: "00:10:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-04T00:00:00"         # Final date of the experiment
 
@@ -58,7 +58,6 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   post_processing: 1
    nproca: 287
    nprocb: 1  
    use_ocean_currents: 0

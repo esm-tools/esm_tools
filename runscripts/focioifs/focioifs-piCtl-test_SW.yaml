@@ -15,25 +15,29 @@ general:
    restart_unit: days 
    hours: 0
   
-   # directory setup
-   choose_computer.name:
-      blogin:
-         account: shk00018
-         my_work_env: /home/shkifmsw/esm/
-      glogin:
-         account: shk00018
-         my_work_env: /home/shkifmsw/esm/
-      juwels:
-         account: hirace 
-         my_work_env: /p/project/hirace/wahl1/esm/ 
-      mistral:
-         account: bb0519 
-         my_work_env: /pf/b/b350071/esm 
-
-   base_dir: ${my_work_env}/esm-experiments/
+   # machine specific setup 
+   account: hirace 
+   base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
+   # seb-wahl: this does not work and causes really strange
+   # behaviour upon restart!
+   #choose_computer.name:
+   #   blogin:
+   #      account: shk00018
+   #      my_work_env: /home/shkifmsw/esm/
+   #   glogin:
+   #      account: shk00018
+   #      my_work_env: /home/shkifmsw/esm/
+   #   juwels:
+   #      account: hirace 
+   #      my_work_env: /p/project/hirace/wahl1/esm/ 
+   #   mistral:
+   #      account: bb0519 
+   #      my_work_env: /pf/b/b350071/esm 
+   #model_dir: ${my_work_env}/models/focioifs-2.0/
+   #base_dir: ${my_work_env}/esm-experiments/
 
 focioifs:
-   model_dir: ${my_work_env}/models/focioifs-2.0/
+   model_dir: /p/project/hirace/wahl1/esm/models/focioifs-2.0
    
 oifs:
    version: "43r3"

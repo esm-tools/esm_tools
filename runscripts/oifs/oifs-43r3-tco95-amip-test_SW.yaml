@@ -15,23 +15,27 @@ general:
         # cleanup of rundir
         clean_runs: 2 
 
-        # directory setup
-        choose_computer.name:
-           blogin:
-              account: shk00018
-              my_work_env: /home/shkifmsw/esm/
-           glogin:
-              account: shk00018
-              my_work_env: /home/shkifmsw/esm/
-           juwels:
-              account: hirace 
-              my_work_env: /p/project/hirace/wahl1/esm/ 
-           mistral:
-              account: bb0519 
-              my_work_env: /pf/b/b350071/esm 
-
-        model_dir: ${my_work_env}/models/oifs-43r3-v1/
-        base_dir: ${my_work_env}/esm-experiments/
+        # machine specific setup 
+        account: shk00018
+        model_dir: /home/shkifmsw/esm/models/oifs-43r3-v1/
+        base_dir: /home/shkifmsw/esm/esm-experiments/
+        # seb-wahl: this does not work and causes really strange
+        # behaviour upon restart!
+        #choose_computer.name:
+        #   blogin:
+        #      account: shk00018
+        #      my_work_env: /home/shkifmsw/esm/
+        #   glogin:
+        #      account: shk00018
+        #      my_work_env: /home/shkifmsw/esm/
+        #   juwels:
+        #      account: hirace 
+        #      my_work_env: /p/project/hirace/wahl1/esm/ 
+        #   mistral:
+        #      account: bb0519 
+        #      my_work_env: /pf/b/b350071/esm 
+        #model_dir: ${my_work_env}/models/oifs-43r3-v1/
+        #base_dir: ${my_work_env}/esm-experiments/
 
 oifs:
         version: 43r3
@@ -57,11 +61,10 @@ oifs:
 
 xios:
         # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
-        xml_dir: ${oifs.pool_dir}/OPENIFS43R3-TCO95/output_3h+6hrLev
+        xml_dir: ${oifs.pool_dir}/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
         # 6hrPlev + 1day PV lev + 1day sfc + monthly means 
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
         # 1m surface + pressure levels
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
-        with_model: oifs
         nproca: 96
         nprocb: 1

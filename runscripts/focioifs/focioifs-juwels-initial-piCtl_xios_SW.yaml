@@ -1,5 +1,6 @@
 
 general:
+   use_venv: False
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
    compute_time: "02:00:00"
@@ -7,8 +8,8 @@ general:
    #partition: standard96
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-04T00:00:00"         # Final date of the experiment
-   version: "default"
-   postprocessing: 1
+   version: "2.0"
+   #postprocessing: 0
    nyear: 0
    nmonth: 0
    nday: 1

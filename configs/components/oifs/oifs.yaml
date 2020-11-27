@@ -672,9 +672,6 @@ restart_in_files:
 
 restart_in_in_work:
         rcf: rcf
-        srf: ""
-        BLS: ""
-        LAW: ""
 
 restart_in_sources:
         srf: srf${start_ndays_string}0000.*
@@ -697,9 +694,6 @@ restart_out_sources:
 
 restart_out_targets:
         rcf: rcf${next_ndays_string}
-        BLS: ""
-        LAW: ""
-        srf: ""
 ##
 ## output
 ##

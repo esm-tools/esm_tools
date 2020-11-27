@@ -180,33 +180,6 @@ Bare in mind that these examples will only work if both `FESOM` and `REcoM` are 
 `ESM-Tool` task triggered and if the task is run in `Ollie` (i.e. it will work for
 ``esm_runscripts fesom-recom-ollie-restart-daily.yaml -e <experiment_id> ...``).
 
-ESM-Tools Variables
-~~~~~~~~~~~~~~~~~~~
-
-ESM-Tools provide a set of variables that can be called from `YAML` files without a previous
-declaration:
-
-.. warning::
-   The following list contains entries that don't belong here (i.e. ``model_dir``). Review and correct.
-
-.. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
-
-   start_date,          Model's start date.
-   end_date,            Model's end date.
-   initial_date,        :red:`I don't understand the diference between the start_date and initial_date and so on`
-   final_date,          
-   parent_date,         
-   current_date,        Current date.
-   next_date,           :red:`Following time step's date?`
-   time_step,           Time step of the model.
-   expid,               ID of the experiment.
-   parent_expid,        Parent ID.
-   esm_namelist_dir,    "Absolute path to the namelists folder (``<PATH>/esm_tools/namelists``)."
-   esm_runscript_dir,   "Absolute path to the runscripts folder (``<PATH>/esm_tools/runscripts``)."
-   model_dir,           Absolute path of the model directory (where it was installed by `esm_master`).
-
 Switches (``choose_``)
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -733,71 +706,3 @@ This means that for a scenario ``PI-CTRL`` the files that are handled by ESM-Too
 and ``piozone``, and they are tagged with new general `keys` (``sst``, ``sic``, ...) that
 are common to all scenarios. The source files not included in ``forcing_files`` won't be
 used.
-
-YAML Elements
-=============
-
-The `esm_parser` is used to read the multiple types of `YAML` files contained in `ESM-Tools`
-(i.e. model and coupling configuration files, machine configurations, runscripts, etc.). Each of
-these `YAML` files can contain two type of `YAML` elements:
-
-  * **Tool-specific elements**: `YAML-scalars`, `lists` or `dictionaries` that include instructions and
-    information used by `ESM-Tools`. These elements are predefined inside the `esm_parser` or other
-    packages inside `ESM-Tools` and are used to control the `ESM-Tools` functionality.
-
-  * **User-defined elements**: `YAML-scalars`, `lists` of `dictionaries` that contain information
-    defined by the user for later use as variables in the same `YAML` file or other `YAML` files.
-
-The following subsections list and describe the **Tool-specific elements** used to operate `ESM-Tools`
-from different files.
-
-.. Note::
-   Most of the **Tool-specific elements** can be defined in any file (i.e. `configuration file`,
-   `runscript`, ...) and, if present in two files used by ESM-Tools at a time, the value is chosen
-   depending on the ESM-Tools file priority/read order (:red:`reference here to that section`).
-   Ideally, you would like to declare as many elements as possible inside the `configuration files`,
-   to be used by default, and change them in the `runscripts` when necessary. However, it is ultimately
-   up to the user where to setup the Tool-specific elements; the element classification in the following
-   sections is just suggestion on how to organize ESM-Tools input.
-
-Configuration Files
-~~~~~~~~~~~~~~~~~~~
-
-The following keys should/can be provided inside configuration files for models and coupled setups
-(``<PATH>/esm_tools/configs/<model_or_setup>``):
-
-.. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
-
-   model,               Name of the model.
-   version,             Version of the model.
-   repository,          Address of the model's repository.
-                                destination: "fesom-1.4"
-   metadata,            "List to incude descriptive information about the model (i.e. ``Authors``, ``Institute``, ``Publications``, etc.) used to produce the content of :ref:`Supported_Models:Supported Models`. This information should be organized in nested `keys` followed by the corresponding description. Nested `keys` do not receive a special treatment meaning that you can include here any kind of information about the model. Only the `Publications` `key` is treated in a particular way: it can consist of a single element or a `list`, in which each element contains a link to the publication inside ``<>`` (i.e. ``- Title, Authors, Journal, Year. <https://doi.org/...>``)."
-   restart_rate,        
-   restart_unit,        
-   resolution,          "Name for the desired resolution configuration defined inside the ``choose_resolution`` list."
-   pool_dir,            Absolute path of the pool directory.
-   setup_dir,           Absolute path of the setup directory.
-   bin_dir,             Absolute path of the binary folder containing the model binaries.
-   namelist_dir,        Absolute path of the namelists directory for the model.
-   namelists,           "List of namelist files required for the model, and contained in ``namelist_dir`` folder."
-   executable,          Name of the model executable file.
-   choose_resolution,   List of dictionaries containing different resolution configurations.
-   namelist_changes,    
-   choose_lresume,      
-   coupling_fields,     List of coupling field dictionaries containing coupling field variables.
-   grids,               List of grid dictionaries containing grid parameters.
-   ":ref:`yaml:File dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files."
-
-Runscripts
-~~~~~~~~~~
-
-The following keys should be provided inside runscripts
-(``<PATH>/esm_tools/runscripts/<model>/<runscript.yaml>``):
-
-.. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
-

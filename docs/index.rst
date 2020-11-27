@@ -11,6 +11,7 @@ Welcome to ESM Tools's documentation!
    transitioning
    yaml
    yaml_hierarchy
+   esm_variables
    Supported_Models
    esm_master
    esm_versions

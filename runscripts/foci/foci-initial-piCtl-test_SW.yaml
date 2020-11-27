@@ -2,18 +2,35 @@ general:
    use_venv: False
    verbose: False
    setup_name: "foci"
+   version: "default"
+
    compute_time: "00:15:00"
    account: "hirace"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-04T00:00:00"         # Final date of the experiment
-   version: "default"
    postprocessing: 0
    scenario: "PI-CTRL"
    nday: 1 
-   base_dir: /p/project/hirace/wahl1/esm/esm-experiments/ 
+   
+   # directory setup
+   choose_computer.name:
+      blogin:
+         account: shk00018
+         my_work_env: /home/shkifmsw/esm/
+      glogin:
+         account: shk00018
+         my_work_env: /home/shkifmsw/esm/
+      juwels:
+         account: hirace
+         my_work_env: /p/project/hirace/wahl1/esm/
+      mistral:
+         account: bb0519
+         my_work_env: /pf/b/b350071/esm
+
+   base_dir: ${my_work_env}/esm-experiments/
 
 foci:
-   model_dir: /p/project/hirace/wahl1/esm/models/foci-default/
+   model_dir: ${my_work_env}/models/foci-default/
 
 echam:
    resolution: "T63"

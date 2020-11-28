@@ -218,7 +218,7 @@ See also
 
 .. links to relevant parts of the documentation
 
-- :ref:`yaml:ESM-Tools Variables`
+- :ref:`esm_variables:ESM-Tools Variables`
 - :ref:`yaml:Switches (\`\`choose_\`\`)`
 - :ref:`yaml:What Is YAML?`
 
@@ -443,6 +443,6 @@ See also
 
 .. links to relevant parts of the documentation
 
-- :ref:`yaml:ESM-Tools Variables`
+- :ref:`esm_variables:ESM-Tools Variables`
 - :ref:`yaml:Switches (\`\`choose_\`\`)`
 - :ref:`yaml:What Is YAML?`

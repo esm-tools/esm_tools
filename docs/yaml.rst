@@ -608,7 +608,7 @@ It is also possible to specify namelist changes to a particular section of a nam
                                     clonp: -0.008
                                     yr_perp: "remove_from_namelist"
 
-In the example above, the `namelist.echam` file is changed in two specific chapters, first the section ``runctrl`` parameter ``l_orbsvop87`` is set to ``.false.``, and appropriate gas values and orbital values are set in ``radctl``. Note that the special entry ``"remove_from_namelist`` is used to delete entries. This would translate the following fortran namelist (trucated)
+In the example above, the `namelist.echam` file is changed in two specific chapters, first the section ``runctrl`` parameter ``l_orbsvop87`` is set to ``false``, and appropriate gas values and orbital values are set in ``radctl``. Note that the special entry ``"remove_from_namelist`` is used to delete entries. This would translate the following fortran namelist (trucated):
 
 .. code-block:: fortran
 
@@ -624,6 +624,11 @@ In the example above, the `namelist.echam` file is changed in two specific chapt
             cobld = 23.8
             clonp = -0.008
         /
+
+Note that, although we set ``l_orbsvop87`` to be ``false``, it is translated to the
+namelist as a frotran boolean (``.false.``). This occurs because `ESM-Tools`
+"understands" that it is writing a fortan namelist and transforms the `yaml` booleans
+into fortran.
 
 For more examples, check the recipe in the cookbook
 (:ref:`cookbook:Changing Namelist Entries from the Runscript`).

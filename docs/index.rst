@@ -10,10 +10,14 @@ Welcome to ESM Tools's documentation!
    installation
    transitioning
    yaml
+   yaml_hierarchy
+   esm_variables
    Supported_Models
    esm_master
    esm_versions
    esm_runscripts
+   motd
+   cookbook
    faq
    packages
    API

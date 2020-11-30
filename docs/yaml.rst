@@ -626,7 +626,7 @@ In the example above, the `namelist.echam` file is changed in two specific chapt
         /
 
 Note that, although we set ``l_orbsvop87`` to be ``false``, it is translated to the
-namelist as a frotran boolean (``.false.``). This occurs because `ESM-Tools`
+namelist as a fortran boolean (``.false.``). This occurs because `ESM-Tools`
 "understands" that it is writing a fortan namelist and transforms the `yaml` booleans
 into fortran.
 

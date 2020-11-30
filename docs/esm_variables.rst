@@ -68,7 +68,7 @@ Runtime variables
    compute_time,        "Estimated computing time for a run, used for submitting a job with the job scheduler."
    time_step,           Time step of the component in seconds.
    lresume,             Boolean to indicate whether the run is an initial run or a restart.
-   pool_dir,            Path to the pool directory to read in mesh data, forcing files, inputs, etc.
+   pool_dir,            "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
    namelists,           "List of namelist files required for the model."
    namelist_changes,    "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
    nproc,               Number of processors to use for the model.

@@ -280,7 +280,7 @@ different files.
 Exceptions to ``add_`` apply only to the environment and namelist ``_changes`` (see
 :ref:`yaml:Environment and Namelist Changes (\`\`_changes\`\`)`). For variables of the type ``_changes``,
 an ``add_`` is only needed if the same ``_changes`` block repeats inside the same file. Otherwise, the
-``_changes`` block does no overwrite the same ``_changes`` block in other files, but their elements
+``_changes`` block does not overwrite the same ``_changes`` block in other files, but their elements
 are combined.
 
 **Example**
@@ -457,46 +457,6 @@ syear     Year from a given date.
 sdoy      Day of the year, counting from Jan. 1.
 ========= ======================================
 
-Changing Namelists
-~~~~~~~~~~~~~~~~~~
-
-It is also possible to specify namelist changes to a particular section:
-
-
-.. code-block:: yaml
-
-    echam:
-            namelist_changes:
-                    namelist.echam:
-                            runctl:
-                                    l_orbvsop87: false
-                            radctl:
-                                    co2vmr: 217e-6
-                                    ch4vmr: 540e-9
-                                    n2ovmr: 245e-9
-                                    cecc: 0.017
-                                    cobld: 23.8
-                                    clonp: -0.008
-                                    yr_perp: "remove_from_namelist"
-
-In the example above, the `namelist.echam` file is changed in two specific chapters, first the section ``runctrl`` parameter ``l_orbsvop87`` is set to ``.false.``, and appropriate gas values and orbital values are set in ``radctl``. Note that the special entry ``"remove_from_namelist`` is used to delete entries. This would translate the following fortran namelist (trucated)
-
-.. code-block:: fortran
-
-        &runctl
-            l_orbvsop87 = .false.
-        /
-
-        &radctl
-            co2vmr = 0.000217
-            ch4vmr = 5.4e-07
-            n2ovmr = 2.45e-07
-            cecc = 0.017
-            cobld = 23.8
-            clonp = -0.008
-        /
-
-
 
 Globbing
 ~~~~~~~~
@@ -533,8 +493,163 @@ This will include inside the ``restart_in_sources`` and ``restart_out_sources`` 
 sharing the specified common name around the position of the ``*`` symbol, following the same rules
 used by the Unix shell.
 
+
 Environment and Namelist Changes (``_changes``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The functionality ``_changes`` is used to control environment, namelist and coupling
+changes. This functionality can be used from config files, but also runscripts. If
+the same type of ``_changes`` is used both in config files and a runscript for a
+simulation, the dictionaries are merged following the hierarchy specified in the
+:ref:`yaml_hierarchy:YAML File Hierarchy` chapter.
+
+Environment Changes
+-------------------
+
+Environment changes are used to make changes to the default environment defined in the
+machine files (``esm_tools/configs/machines/<name_of_the_machine>.yaml``). There are
+three types of environment changes:
+
+.. csv-table::
+   :header: Key, Description
+   :widths: 15, 85
+
+   ``environment_changes``,             Changes for both the compilation and the runtime environments.
+   ``compiletime_environment_changes``, Changes to the environment applied only during compilation.
+   ``runtime_environment_changes``,     Changes to the environment applied only during runtime.
+
+Two types of `yaml` elements can be nested inside an environment changes:
+``add_module_actions`` and ``add_export_vars``.
+
+* Use ``add_module_actions`` to include one `module` command or a list of them. The
+  shell command ``module`` is already invoked by `ESM-Tools`, therefore you only need to
+  list the options (i.e. ``load/unload <module_name>``).
+
+* Use ``add_export_vars`` to export one or a list of environment variables. Shell
+  command ``export`` is not needed here, just define the variable as
+  ``VAR_NAME=VAR_VALUE`` or as a nested dictionary.
+
+**Example**
+
+.. tabs::
+   .. tab:: fesom.yaml
+
+      The model `FESOM` needs some environment changes for compiling in `Mistral` and
+      `Blogin` HPCs, which are included in `FESOM`'s configuration file
+      (``esm_tools/configs/components/fesom/fesom.yaml``):
+
+      .. code-block:: yaml
+
+         [ ... ]
+
+         compiletime_environment_changes:
+                 add_export_vars:
+                         takenfrom:      fesom1
+         choose_computer.name:
+                 mistral:
+                         add_compiletime_environment_changes:
+                                 add_module_actions:
+                                         - "unload gcc"
+                                         - "load gcc/4.8.2"
+                 blogin:
+                         add_compiletime_environment_changes:
+                                 add_export_vars:
+                                         - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                         - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                                         - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                                         - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                                         - "takenfrom='fesom1'"
+
+         runtime_environment_changes:
+                 add_export_vars:
+                         AWI_FESOM_YAML:
+                                 output_schedules:
+                                         -
+                                                 vars: [restart]
+                                                 unit: ${restart_unit}
+                                                 first: ${restart_first}
+                                                 rate: ${restart_rate}
+                                         -
+                                                 [ ... ]
+
+      Independently of the computer, ``fesom.yaml`` exports always the ``takenfrom``
+      variable for compiling. Because ``compiletime_environment_changes`` is already
+      defined for that purpose, any ``compiletime_environment_changes`` in a
+      ``choose_`` block needs to have an ``add_`` at the beginning. Here we see that a
+      ``choose_`` block is used to select which changes to apply compile environment
+      (``add_compiletime_environment_changes``) depending on the HPC system we are in
+      (`Mistral` or `Blogin`). For more details on how to use the ``choose_`` and
+      ``add_`` functionalities see :ref:`yaml:Switches (\`\`choose_\`\`)` and
+      :ref:`yaml:Append to an Existing List (\`\`add_\`\`)`.
+
+      We also see here how ``runtime_environment_changes`` is used to add nested
+      information about the output schedules for `FESOM` into an
+      ``AWI_FESOM_YAML`` variable that will be exported to the runtime environment.
+
+Changing Namelists
+------------------
+
+It is also possible to specify namelist changes to a particular section of a namelist:
+
+
+.. code-block:: yaml
+
+    echam:
+            namelist_changes:
+                    namelist.echam:
+                            runctl:
+                                    l_orbvsop87: false
+                            radctl:
+                                    co2vmr: 217e-6
+                                    ch4vmr: 540e-9
+                                    n2ovmr: 245e-9
+                                    cecc: 0.017
+                                    cobld: 23.8
+                                    clonp: -0.008
+                                    yr_perp: "remove_from_namelist"
+
+In the example above, the `namelist.echam` file is changed in two specific chapters, first the section ``runctrl`` parameter ``l_orbsvop87`` is set to ``.false.``, and appropriate gas values and orbital values are set in ``radctl``. Note that the special entry ``"remove_from_namelist`` is used to delete entries. This would translate the following fortran namelist (trucated)
+
+.. code-block:: fortran
+
+        &runctl
+            l_orbvsop87 = .false.
+        /
+
+        &radctl
+            co2vmr = 0.000217
+            ch4vmr = 5.4e-07
+            n2ovmr = 2.45e-07
+            cecc = 0.017
+            cobld = 23.8
+            clonp = -0.008
+        /
+
+For more examples, check the recipe in the cookbook
+(:ref:`cookbook:Changing Namelist Entries from the Runscript`).
+
+Coupling changes
+----------------
+
+Coupling changes (``coupling_changes``) are typically invoked in the coupling files
+(``esm_tools/configs/couplings/``), executed before compilation of coupled setups,
+and consist of a list of shell commands to modify the configuration and make files of
+the components for their correct compilation for coupling.
+
+For example, in the ``fesom-1.4+echam-6.3.04p1.yaml`` used in `AWICM-1.0`,
+``coupling_changes`` lists two ``sed`` commands to apply the necessary changes to the
+``CMakeLists.txt`` files for both `FESOM` and `ECHAM`:
+
+.. code-block:: yaml
+
+   components:
+   - echam-6.3.04p1
+   - fesom-1.4
+   - oasis3mct-2.8
+   coupling_changes:
+   - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
+   - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
+
 
 List Loops
 ~~~~~~~~~~

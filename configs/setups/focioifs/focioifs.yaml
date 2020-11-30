@@ -77,10 +77,12 @@ preprocess:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
                 type: shell
 
-postprocess:
-        postprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-                type: shell
+# postprocessing is not supported, and causes a crash in release 5 if not commented
+# seb-wahl 2020-11-27
+#postprocess:
+#        postprocess_shell:
+#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+#                type: shell
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

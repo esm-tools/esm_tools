@@ -4,20 +4,23 @@
 general:
 
         compute_recipe:
+              - "venv_bootstrap"
               - "_create_setup_folders"
               - "_create_component_folders"
               - "initialize_experiment_logfile"
-              - "_write_finalized_config"
               - "copy_tools_to_thisrun"
+              - "compile_model"
               - "_copy_preliminary_files_from_experiment_to_thisrun"
               - "_show_simulation_info"
-              - "copy_files_to_thisrun"
-              # @JAN: can you provide this sript? - "preprocess"
-              - "modify_namelists"
-              - "modify_files"
               - "create_new_files"
               - "prepare_coupler_files"
               - "add_batch_hostfile"
+              - "assemble"
+              - "log_used_files"
+              - "_write_finalized_config"
+              - "copy_files_to_thisrun"
+              - "modify_namelists"
+              - "modify_files"
               - "copy_files_to_work"
               - "write_simple_runscript"
               - "report_missing_files"
@@ -125,7 +128,6 @@ oifs:
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
-
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -135,12 +137,17 @@ oifs:
         # (287 = 41 * 7)
         # so that the configuration fills up the compute nodes
         # 575 would also be ok (575 = 23 * 25)
+        # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
         nproca: 287
         nprocb: 1
+        choose_general.resolution:
+                TL159_CORE2:
+                        nproca: 287
+                        nprocb: 1
 
         # By default we turn on ECWAM wave model (simulation FR10) but it should be
         # false for DRH6
-        wam: true
+        wam: false
 
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
@@ -210,11 +217,7 @@ oifs:
                         - 'ECE_CPL_FESOM_FESIM="true"'
                         - 'ECE_AWI_CPL_FESOM="true"'
 
-        res_number_tl: ${resolution}${levels} # @JOAKIM: what is this variable for? @JAN: Is the directory correct?
-        choose_general.resolution:
-                TL159_CORE2:
-                        nproca: 279 # @JAN, are these numbers correct for this resolution?
-                        nprocb: 1
+        res_number_tl: ${resolution}${levels}
 
         # Namelist modifications for truncation types
         nlon: "$(( ${nlat}*2 ))"
@@ -236,7 +239,7 @@ oifs:
                         lsmssig: true
 
         #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
-        remove_input_sources:
+        remove_input_files:
                 - rtables
                 - vtables
 
@@ -364,7 +367,7 @@ fesom:
         add_config_sources:
                 cvmix: "${namelist_dir}/namelist.cvmix"
 
-        remove_config_sources:
+        remove_config_files:
                 - diag
 
         awicm3_fields: [ist_feom, sia_feom]
@@ -532,6 +535,11 @@ oasis3mct:
                 masks: masks.nc
                 grids: grids.nc
 
+        add_input_sources:
+                areas: ${pool_dir}/areas.nc
+                masks: ${pool_dir}/masks.nc
+                grids: ${pool_dir}/grids.nc
+
         add_restart_out_files:
                 rmp_a2f_B: rmp_a2f_B
                 rmp_f2a_G: rmp_f2a_G
@@ -569,89 +577,91 @@ oasis3mct:
                 rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
 
-# Set up CPU layout
-choose_cores_per_node:
-        24:
-                choose_resolution:
-                        T159_CORE2:
-                                oifs:
-                                        nproca: 287
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 288
-                                        nprocb: 1
-                                xios:
-                                        nproca: 24
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
-                        T511_CORE2:
-                                oifs:
-                                        nproca: 1536
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 24
-                                        nprocb: 1
-                                xios:
-                                        nproca: 24
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
-        36:
-                choose_resolution:
-                        T159_CORE2:
-                                oifs:
-                                        nproca: 395
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 72
-                                        nprocb: 1
-                                xios:
-                                        nproca: 36
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
-                        T511_CORE2:
-                                oifs:
-                                        nproca: 1512
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 36
-                                        nprocb: 1
-                                xios:
-                                        nproca: 36
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
-        40:
-                choose_resolution:
-                        T159_CORE2:
-                                oifs:
-                                        nproca: 400
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 400
-                                        nprocb: 1
-                                xios:
-                                        nproca: 40
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
-                        T511_CORE2:
-                                oifs:
-                                        nproca: 2000
-                                        nprocb: 1
-                                fesom:
-                                        nproca: 400
-                                        nprocb: 1
-                                xios:
-                                        nproca: 40
-                                        nprocb: 1
-                                rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+## Set up CPU layout
+# Set correct trunctation cases and remove nproca and nprocb from the sections
+# above
+#choose_cores_per_node:
+#        24:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 287
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 288
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 1536
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#        36:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 395
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 72
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 1512
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#        40:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 40
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 2000
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 40
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1

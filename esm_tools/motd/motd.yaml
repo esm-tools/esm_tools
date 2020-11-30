@@ -5,9 +5,3 @@ release5_esm_tools:
                 Your version of ESM-Tools is very old. Please consider updating to release 5 . 
         action: DELAY(1)
 
-test_report:
-        package: "esm_tools"
-        versions: "<6.0.0"
-        message: |
-                Everything Ok, I just want to try out motd...
-        action: DELAY(3)

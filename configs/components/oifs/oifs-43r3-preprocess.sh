@@ -8,15 +8,16 @@
 ##
 
 indir=$1
-inexpid=$2
-outexpid=$3
-startdate=$4
-enddate=$5
-outdir=$6
-with_wam=$7
-perturb=$8
-nx=${9}
-ensemble_id=${10}
+icmcl_file=$2
+inexpid=$3
+outexpid=$4
+startdate=$5
+enddate=$6
+outdir=$7
+with_wam=$8
+perturb=$9
+nx=${10}
+ensemble_id=${11}
 
 style="jesus"
 
@@ -31,6 +32,23 @@ elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
 	 #module load cdo
 	 module load intel/19.0.5 impi/2019.5
 	 export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
+elif [[ "$(hostname -f)" =~ juwels ]] ; then
+	 
+    # new Intel 2019 settings 
+    # self compiled netcdf etc from Sebastian Wahl
+    module --force purge
+    module use $OTHERSTAGES
+    module load Stages/Devel-2019a
+    #module load Intel/2019.3.199-GCC-8.3.0
+    #module load IntelMPI/2019.6.154
+    module load Intel/2019.5.281-GCC-8.3.0
+    module load ParaStationMPI/5.4.4-1-mt    
+    module load Python/3.6.8
+    module load imkl/2019.3.199
+    #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
+    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
+    export PATH=$IO_LIB_ROOT/bin:$PATH
+    export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 else
    echo
 	echo $0 has not been adapted for $(hostname)
@@ -157,7 +175,7 @@ fi
 if [[ "x$style" == "xjesus" ]] ; then
     
     echo " * Cut ICMCL file "
-    cdo -select,startdate=${starttime},enddate=${endtime} ${indir}/ICMCL${inexpid}INIT ${outdir}/ICMCL${outexpid}INIT
+    cdo -select,startdate=${starttime},enddate=${endtime} ${icmcl_file} ${outdir}/ICMCL${outexpid}INIT
 
 fi
 

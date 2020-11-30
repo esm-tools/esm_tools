@@ -4,6 +4,7 @@
 model: fesom
 branch: master
 version: "2.0"
+type: ocean
 
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
@@ -15,40 +16,34 @@ choose_version:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     - github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-esm-interface:
-    branch: fesom2_using_esm-interface
+  2.0-esm_interface:
+    branch: using_esm-interface_yac
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
-    install_bins: bin/fesom.x
-  2.0-esm-interface-yac:
-    branch: using_esm_interfaces_yac
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/a270089/fesom-2.0_yac.git
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-o:
     branch: oifs-deck
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-paleodyn:
-    branch: paleodyn_frozen
+  2.0-jio:
+    branch: juwels_chunk_io
     destination: fesom-2.0
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
+    #- https://github.com/FESOM/fesom2.git # Change later to this repository
+  2.0-paleodyn:
+    branch: paleodyn_frozen
+    destination: fesom-2.0
   2.0-r:
     # OG: This will be the master branch for fesom-recom-2.0. All the recom related
     # files will be cleared from the src folder. After Dima's update we will return
     # fesom-2.0 master branch back and remove this part
-    git-repository:
-    - "https://gitlab.dkrz.de/FESOM/fesom2.git"
-    - "github.com/FESOM/fesom2.git"
-    branch: "recom-update"
-    install_bins: "bin/fesom.x"
+    branch: recom-update
+
+install_bins: bin/fesom.x
+git-repository:
+- https://gitlab.dkrz.de/FESOM/fesom2.git
+- github.com/FESOM/fesom2.git
+
 
 restart_rate: "12"
 restart_unit: "m"

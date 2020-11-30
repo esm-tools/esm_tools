@@ -1,0 +1,61 @@
+# SAMPLE CONFIGURATION FILE
+# An example configuration file for testing of ESM-Tools
+# without the use of models
+
+model: sample
+version: '1.0'
+
+available_versions:
+- '1.0'
+choose_version:
+  '1.0':
+    branch: master
+
+git-repository: "https://github.com/mandresm/esm_sample.git"
+install_bins: _build/sample
+clean_command: ${defaults.clean_command}
+comp_command: mkdir -p _build; gcc -Wall src/sample.c -o _build/sample
+
+executable: sample
+
+time_step: 1800
+
+nproc: 1
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+
+bin_sources:
+    sample: "${bin_dir}/${executable}"
+
+# Moves the restart files from <expid>/run.../work/ to <expid>/restart/<component>/
+restart_out_files:
+    rfile: rfile
+restart_out_in_work:
+    rfile: restart_work
+restart_out_sources:
+    rfile: restart_work${end_date!syear!smonth!sday}
+
+# Moves the restart files from <expid>/restart/<component>/ to <expid>/run.../work/
+restart_in_files:
+    rfile: rfile
+restart_in_in_work:
+    rfile: restart_work${parent_date!syear!smonth}
+restart_in_sources:
+    rfile: restart_work${parent_date!syear!smonth!sday}
+
+# Moves the outdata files from <expid>/run.../work/ to <expid>/outdata/<component>/
+outdata_files:
+    ofile: ofile
+outdata_in_work:
+    ofile: outdata_work
+outdata_sources:
+    ofile: outdata_work${start_date!syear!smonth!sday}
+
+# Copies the sample_forcing file at the beginning of the run
+forcing_files:
+    ffile: ffile
+forcing_in_work:
+    ffile: sample_forcing
+forcing_sources:
+    ffile: sample_forcing

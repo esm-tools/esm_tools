@@ -2,6 +2,6 @@ components:
   - recom-2.0
   - fesom-1.4-recom-mocsy-slp
 coupling_changes:
-  - sed -i '/FESOM_COUPLED/s/ON/OFF/g' fesom-1.4/CMakeLists.txt
+  - sed -i '/set(FESOM_COUPLED/s/ON/OFF/g' fesom-1.4/CMakeLists.txt
   - sed -i '/FESOM_RECOM/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
   - sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt

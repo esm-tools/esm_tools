@@ -1,0 +1,232 @@
+#########################################################################################
+######################### AWICM-MOD 1 YAML CONFIGURATION FILE ###############################
+#########################################################################################
+
+general:
+        #model_dir: ${esm_master_dir}/awicm-${version}
+
+        coupled_setup: True
+
+        include_models:
+                - echam
+                - fesom
+                - oasis3mct
+                - esm_interface
+
+        version: "1.4-oasis"
+        scenario: "PI-CTRL"
+        resolution: ${echam.resolution}_${fesom.resolution}
+        postprocessing: false
+        post_time: "00:05:00"
+        choose_general.resolution:
+                T63_CORE2:
+                        compute_time: "02:00:00"
+
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+echam:
+        restart_firstlast: "first"
+        namelist_changes:
+                namelist.echam:
+                        runctl:
+                                lcouple: .true.
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
+        model_dir: ${general.model_dir}/echam-${echam.version}
+        setup_dir: ${general.model_dir}
+        ocean_resolution: "${fesom.resolution}"
+        remove_forcing_files:
+                - sst
+                - sic
+        version: "6.3.04p1"
+
+        choose_general.resolution:
+                T63_CORE2:
+                        nproca: 24
+                        nprocb: 18
+
+
+#########################################################################################
+
+
+jsbach:
+        adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        namelist_changes:
+                namelist.jsbach:
+                        hydrology_ctl:
+                                gethd: "remove_from_namelist"
+                                puthd: "remove_from_namelist"
+        version: "3.20"
+
+        choose_computer.name:
+                ollie:
+                        dynveg_file_ending: ""
+                        no_dynveg_file_ending: ""
+
+
+#########################################################################################
+
+
+fesom:
+        version: "1.4"
+        choose_general.resolution:
+                T63_CORE2:
+                        nproc: 288
+
+        opbnd_dir: ""
+        tide_forcing_dir: ""
+        forcing_data_dir: ""
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        setup_dir: ${general.model_dir}
+
+        add_namelist_changes:
+                namelist.oce:
+                        boundary:
+                                restore_s_surf: 0.0
+
+        leapyear: True
+        asforcing: ECHAM5
+
+#########################################################################################
+
+esm_interface:
+        model: esm_interface
+
+        namelist_changes:
+            namelist.esmcouple:
+                esmdebugging:
+                    esm_debug_mode: false
+                    esmloglevel: 2
+                    debug_fields_send: false
+                    debug_fields_recv: false
+                esmsetupnb:
+                    nbmodels: 2
+                    nbroutes: 2
+                    nba2ostreams: 12
+                    nbo2astreams: 4
+
+                esmsetupinfo:
+                    models: ['echam6', 'fesom']
+                    esm_coupler: "oasis3mct"
+
+                exchange:
+                    routes: ['a2o', 'o2a']
+                    a2o_send_streams: ['taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm', 'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica', 'heat_swa', 'hydr_atm']
+                    a2o_send_ports: ['taux_atm', 'tauy_atm', 'taux_ica', 'tauy_ica', 'prec_atm', 'snow_atm', 'evap_atm', 'subl_atm', 'heat_atm', 'heat_ica', 'heat_swa', 'hydr_atm']
+                    a2o_recv_streams: ['sst_atmo', 'sit_atmo', 'sie_atmo', 'snt_atmo']
+                    a2o_recv_ports: ['sst_atm', 'sit_atm', 'sie_atm', 'snt_atm']
+                    o2a_recv_streams: ['taux_oce', 'tauy_oce', 'taux_ico', 'tauy_ico', 'prec_oce', 'snow_oce', 'evap_oce', 'subl_oce', 'heat_oce', 'heat_ico', 'heat_swo', 'hydr_oce']
+                    o2a_recv_ports: ['taux_oce', 'tauy_oce', 'taux_ico', 'tauy_ico', 'prec_oce', 'snow_oce', 'evap_oce', 'subl_oce', 'heat_oce', 'heat_ico', 'heat_swo', 'hydr_oce']
+                    o2a_send_streams: ['sst_feom', 'sit_feom', 'sie_feom', 'snt_feom']
+                    o2a_send_ports: ['sst_feom', 'sit_feom', 'sie_feom', 'snt_feom']
+
+
+        log_files:
+            esmlogecham: esmlogecham
+            esmlogfesom: esmlogfesom
+        log_in_work:
+            esmlogecham: esm_echam6.log
+            esmlogfesom: esm_fesom.log
+        log_sources:
+            esmlogecham: esm_echam6.log
+            esmlogfesom: esm_fesom.log
+        log_targets:
+            esmlogecham: esm_echam6.${start_date!syear!smonth}.${start_date!sday}.log
+            esmlogfesom: esm_fesom.${start_date!syear!smonth}.${start_date!sday}.log
+
+        outputs: [evap_atm_send_echam6, evap_oce_recv_fesom, heat_atm_send_echam6, heat_oce_recv_fesom, heat_ica_send_echam6, heat_ico_recv_fesom, heat_swa_send_echam6, heat_swo_recv_fesom, hydr_atm_send_echam6, hydr_oce_recv_fesom, prec_atm_send_echam6, prec_oce_recv_fesom, sie_feom_send_fesom, sie_atmo_recv_echam6, sit_feom_send_fesom, sit_atmo_recv_echam6, snow_atm_send_echam6, snow_oce_recv_fesom, snt_feom_send_fesom, snt_atmo_recv_echam6, sst_feom_send_fesom, sst_atmo_recv_echam6, subl_atm_send_echam6, subl_oce_recv_fesom, taux_atm_send_echam6, taux_ica_send_echam6, taux_oce_recv_fesom, taux_ico_recv_fesom, tauy_atm_send_echam6, tauy_ica_send_echam6, tauy_ico_recv_fesom, tauy_oce_recv_fesom]
+
+        outdata_sources:
+            "[[outputs-->OUTPUT]]": debug_file_OUTPUT.nc
+        outdata_targets:
+            "[[outputs-->OUTPUT]]": debug_file_OUTPUT.${start_date!syear!smonth}.${start_date!sday}.nc
+
+#########################################################################################
+
+oasis3mct:
+        model_dir: ${general.model_dir}/oasis
+
+        process_ordering:
+                - fesom
+                - echam
+
+        a2o_lag: "${echam.time_step}"
+        o2a_lag: "${fesom.time_step}"
+        a2o_seq: 2
+
+        coupling_time_step: 3600
+        coupling_target_fields:
+                o2a_flux:
+                        - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
+                        - 'snt_atmo <--distwgt-- snt_feom'
+
+                a2o_flux:
+                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'
+                        - 'prec_oce <--distwgt-- prec_atm'
+                        - 'snow_oce <--distwgt-- snow_atm'
+                        - 'evap_oce <--distwgt-- evap_atm'
+                        - 'subl_oce <--distwgt-- subl_atm'
+                        - 'heat_oce <--distwgt-- heat_atm'
+                        - 'heat_ico <--distwgt-- heat_ica'
+                        - 'heat_swo <--distwgt-- heat_swa'
+                        - 'hydr_oce <--distwgt-- hydr_atm'
+
+
+        coupling_directions:
+                'feom->atmo':
+                        lag: ${o2a_lag}
+                        seq: 2
+                'atmo->feom':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+
+        coupling_methods:
+                distwgt:
+                        time_transformation: instant
+                        remapping:
+                                distwgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+                                        nb_of_neighbours: 6
+                bicubic:
+                        time_transformation: instant
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+
+
+
+        add_restart_out_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_out_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_out_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_files:
+                rmp_a2f_B: rmp_a2f_B
+                rmp_a2f_D: rmp_a2f_D
+                rmp_f2a_D: rmp_f2a_D
+
+        add_restart_in_in_work:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+        add_restart_in_sources:
+                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+
+

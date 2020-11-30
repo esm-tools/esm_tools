@@ -22,8 +22,10 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- "2.5"
 - 2.5_r1910
 - 2.5_r1910_oifs
+- 2.5_r1910_ogcm
 branch: esm-tools
 choose_version:
   2.0_r982:
@@ -32,51 +34,86 @@ choose_version:
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
+  "2.5":
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: master
+  # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
+  # XIOS with oasis dependencies 
   2.5_r1910_oifs:
-    archfile: ESMTOOLS_generic_oasis_intel
+    archfile: ESMTOOLS_generic_intel
+    use_oasis: ''
+    branch: 2.5_r1910
+  # XIOS without any oasis dependencies 
+  2.5_r1910_ogcm:
+    archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc
-comp_command: if [[ $HOSTNAME =~ juwels ]]; then module unload GCCcore; fi; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
 install_bins: bin/xios.x
 use_oasis: ''
 #
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-runtime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-    glogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-        
-# 
 # runtime setup
 #
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-xml_dir: ${nemo.model_dir}/CONFIG/${nemo.nemoconfig}/EXP00
 
 config_files:
-        domain_def: domain_def
-        field_def: field_def
-        file_def: file_def
         io_def: io_def
+
+choose_general.setup_name:
+        nemo:
+                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                add_config_files:
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+        oifs: 
+                xml_dir: "${computer.pool_directories.focipool}"
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+        focioifs: 
+                xml_dir: "${computer.pool_directories.focipool}"
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+        foci:
+                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                add_config_files:
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+        awicm3:
+                xml_dir: "${pool_dir}"
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml
         field_def: ${xml_dir}/field_def.xml
         file_def: ${xml_dir}/file_def.xml
         io_def: ${xml_dir}/iodef.xml
+        ifs_xml: ${xml_dir}/ifs_xml/*
+        context_ifs: ${xml_dir}/context_ifs.xml
+
+config_in_work:
+        domain_def: domain_def.xml
+        field_def: field_def.xml
+        file_def: file_def.xml
+        io_def: iodef.xml
+        ifs_xml: ifs_xml/*
+        context_ifs: context_ifs.xml
 
 bin_sources:
         server: ${bin_dir}/xios.x

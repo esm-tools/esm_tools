@@ -1,0 +1,55 @@
+general:
+        setup_name: oifs
+        compute_time: "02:00:00"
+        account: shk00018
+        initial_date: "1979-01-01T00:00:00"
+        final_date: "2018-01-01T00:00:00"
+        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-slask/
+        nyear: 1
+        nmonth: 0
+        nday: 0
+        restart_rate: 1
+        restart_unit: days 
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        #time_step: 3600.0
+        #pool_dir: /scratch/usr/shkifmsw/foci_input2
+        input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
+        rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
+        vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
+        clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
+        ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
+        cmip6_data_dir: ${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/
+        mip: cmip6
+        scenario: historical 
+        icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95-AMIP/
+        icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231        
+        prepifs_expid: hagw
+        prepifs_startdate: 20080101
+        resolution: TCO95
+        levels: L91
+        lresume: 0
+        post_processing: 1
+        nproca: 288
+        nprocb: 1
+        perturb: 1
+        ensemble_id: 1
+        
+        add_namelist_changes:
+                fort.4: 
+                        NAMCLDP:
+                                SCLCT_SWITCH: 1 
+
+xios:
+        # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_3h+6hrLev
+        # 6hrPlev + 1day PV lev + 1day sfc + monthly means 
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
+        # 1m surface + pressure levels
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
+        with_model: oifs
+        nproca: 96
+        nprocb: 1

@@ -1,196 +1,667 @@
 #########################################################################################
-######################### AWICM 1 YAML CONFIGURATION FILE ###############################
+######################### AWICM3 YAML CONFIGURATION FILE  ###############################
 #########################################################################################
-
 general:
-        model: awicm2
-        #model_dir: ${esm_master_dir}/awicm-${version}
 
+        compute_recipe:
+              - "venv_bootstrap"
+              - "_create_setup_folders"
+              - "_create_component_folders"
+              - "initialize_experiment_logfile"
+              - "copy_tools_to_thisrun"
+              - "compile_model"
+              - "_copy_preliminary_files_from_experiment_to_thisrun"
+              - "_show_simulation_info"
+              - "create_new_files"
+              - "prepare_coupler_files"
+              - "add_batch_hostfile"
+              - "assemble"
+              - "log_used_files"
+              - "_write_finalized_config"
+              - "copy_files_to_thisrun"
+              - "modify_namelists"
+              - "modify_files"
+              - "copy_files_to_work"
+              - "write_simple_runscript"
+              - "report_missing_files"
+              - "database_entry"
+              - "submit"
+
+        model: awicm3
+        pool_dir: "/work/ollie/jstreffi/input"
+        model_dir: ${esm_master_dir}/awicm3-${version}
+
+        lresume: False
         coupled_setup: True
 
         include_models:
-                - echam
-                - fesom2
+                - fesom
+                - rnfmap
+                - oifs
                 - oasis3mct
 
-        version: "2.0"
+        available_versions:
+        - '1.0-deck'
+        - '1.0'
+        choose_version:
+          1.0-deck:
+            couplings:
+            - fesom-2.0+oifs-43r3
+          '1.0':
+            couplings:
+            - fesom-2.0+oifs-43r3+xios-2.5
+            add_include_models:
+            - xios
+
+        version: "1.0-deck"
         scenario: "PI-CTRL"
-        resolution: ${echam.resolution}_${fesom2.resolution}
+        resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
-        choose_general.resolution:
-                T63_CORE2:
-                        compute_time: "02:00:00"
-        available_versions:
-        - '3.0'
-        - '3.1'
-        choose_version:
-          '3.0':
-            couplings:
-            - fesom-2.0+oifs-40r1
-          '3.1':
-            couplings:
-            - fesom-2.0+oifs-43r3-awi
+        compute_time: "00:30:00"
+
+        choose_computer.name:
+                mistral:
+                        runtime_environment_changes:
+                                add_export_vars:
+                                        # (additional) settings used in FOCI up to v1.21
+                                        #- 'I_MPI_DYNAMIC_CONNECTION=1'
+                                        #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
+                                        # Intel MPI
+                                        #- 'DAPL_UCM_REP_TIME=8000'
+                                        #- 'DAPL_UCM_RTU_TIME=8000'
+                                        #- 'DAPL_UCM_CQ_SIZE=2000'
+                                        #- 'DAPL_UCM_QP_SIZE=2000'
+                                        #- 'DAPL_UCM_DREQ_RETRY=4'
+                                        #- 'DAPL_UCM_WAIT_TIME=10000'
+                                        # 1 was used in mkexp, but kills the model with esm-tools
+                                        #- 'I_MPI_HARD_FINALIZE=1'
+                                        # Intel OpenMP
+                                        #- 'KMP_STACKSIZE=64m'
+                                        #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
+                                        # OpenMP
+                                        - 'OMP_NUM_THREADS=1'
+
+# @JAN: preprocessing and postprocessing scripts needed here
+############################################################
+#preprocess:
+#        preprocess_shell:
+#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+#                type: shell
+#
+#postprocess:
+#        postprocess_shell:
+#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+#                type: shell
 
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
-echam:
-        restart_firstlast: "first"
-        namelist_changes:
-                namelist.echam:
-                        runctl:
-                                lcouple: .true.
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
+oifs:
+        version: "43r3"
+
+        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
+
+        pool_dir: ${general.pool_dir}
+        model_dir: ${general.model_dir}/oifs-${version}
         setup_dir: ${general.model_dir}
-        ocean_resolution: "${fesom2.resolution}"
-        remove_forcing_files:
-                - sst
-                - sic
-        version: "6.3.04p1"
+        restart_firstlast: "last"
+        restart_rate: 12
+        ocean_resolution: "${fesom.resolution}"
 
+        mip: "cmip6"
+        scenario: "historical"
+
+        prepifs_expid: h6mv
+        input_expid: awi3   # This cannot be longer than 4 characters
+        input_dir: ${pool_dir}/oifs-${version}
+        rtables_dir: /work/ollie/jstreffi/input/oifs-43r3/rtables/
+        ##vtables_dir: ${input_dir}/../vtables/
+        ##clim_dir: ${input_dir}/../
+        ##icmcl_dir: ${input_dir}
+        ##icmcl_file: ICMCLgu5aINIT
+        forcing_dir: ${input_dir}/${version}/ifsdata/
+        ifsdata_dir: ${input_dir}/${version}/ifsdata/
+        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/202011
+        cmip6_data_dir_nml: ${input_dir}/cmip6-data
+        cmip5_data_dir_nml: ${input_dir}/cmip5-data
+
+        # nprocb must be 1
+        # nproca must be not a prime number for OpenIFS parallelisation to work
+        # (This is just one of the many mysteries of the IFS...)
+        #
+        # We want to use 1 CPU for runoff mapper
+        # 287 fulfills this requirement and 288 divides well with 36 and 48
+        # (287 = 41 * 7)
+        # so that the configuration fills up the compute nodes
+        # 575 would also be ok (575 = 23 * 25)
+        # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
+        nproca: 287
+        nprocb: 1
         choose_general.resolution:
-                T63_CORE2:
-                        nproca: 24
-                        nprocb: 18
+                TL159_CORE2:
+                        nproca: 287
+                        nprocb: 1
 
+        # By default we turn on ECWAM wave model (simulation FR10) but it should be
+        # false for DRH6
+        wam: false
 
-#########################################################################################
+        # Microphysics switch: 0 for off, 1 for light version and 2 for full
+        sclct_switch: 2
 
+        custop: "h48"
 
-jsbach:
-        adj_input_dir: "${fesom2.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
-        namelist_changes:
-                namelist.jsbach:
-                        hydrology_ctl:
-                                gethd: "remove_from_namelist"
-                                puthd: "remove_from_namelist"
-        version: "3.20"
+        resolution: TL159 # @JAN: taken from the runscript, default in oifs.functions is T255
+        levels: L60 # @JAN: taken from the runscript, default in oifs.functions is 91
 
-        choose_computer.name:
-                ollie:
-                        dynveg_file_ending: ""
-                        no_dynveg_file_ending: ""
-
-
-#########################################################################################
-
-
-fesom2:
         choose_general.version:
-                2.0:
-                        version: "2.0"
+                "1.0":
+                        with_xios: true
+
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                        #compiletime_environment_changes:
+                        #        add_export_vars:
+                        #                - 'OIFS_XIOS=enable'
+                        #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
+                        #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
+                        #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+
+        namelist_changes:
+                fort.4:
+                        NAERAD:
+                                CMIP5DATADIR: "${cmip5_data_dir_nml}"
+                                CRTABLEDIR: "${rtables_dir}"
+                                LECOMPGRID: "${lecompgrid}"
+                        NAMCLDP:
+                                SCLCT_SWITCH: "${sclct_switch}"
+                        NAMFPG:
+                                NFPMAX: "${res_number}"
+                        NAMFPD:
+                                NLAT: "${nlat}"
+                                NLON: "${nlon}"
+                        NAMPAR0:
+                                NSPECRESMIN: "${nspecresmin}"
+                        NAMDYNA:
+                                LGRADSP: "${lgradsp}"
+                        NAMNMI:
+                                LASSI: "${lassi}"
+                        NAMCT0:
+                                LFDBOP: "${lfdbop}"
+                                LSMSSIG: "${lsmssig}"
+                        # Where the hell do these namelist changes come from? I don't even remember writting them down... and they are not part of the original fort.4???
+                        #NAMGRIB:
+                        #        NJTKDATE: "${start_date}"
+                        #        NJTKOFFSETSTEP: "${steps_since_initial}"
+                        NAMORB:
+                                LCORBMD:  "${orb_switch}"
+                                ORBMODE: "${orb_mode}"
+                                ORBIY: "${orb_iyear}"
+        # Namelist changes for wam_namelist not included yet as the first test is for DRH6
+        # that has no wave model. TODO: implement in the near future
+
+        runtime_environment_changes:
+                add_export_vars:
+                        # Turn on FESOM coupling
+                        - 'FESOM_USE_CPLNG="active"'
+                        - 'ECE_CPL_NEMO_LIM="false"'
+                        - 'ECE_CPL_FESOM_FESIM="true"'
+                        - 'ECE_AWI_CPL_FESOM="true"'
+
+        res_number_tl: ${resolution}${levels}
+
+        # Namelist modifications for truncation types
+        nlon: "$(( ${nlat}*2 ))"
+        nspecresmin: "$(( ${res_number}+1 ))"
+        choose_truncation:
+                TCO:
+                        nlat: "$(( (${res_number}+1)*2 ))"
+                        lecompgrid: true
+                        lgradsp: false
+                        lassi: false
+                        lfdbop: false
+                        lsmssig: false
+                TL:
+                        nlat: "$(( ${res_number}+1 ))"
+                        lecompgrid: false
+                        lgradsp: true
+                        lassi: true
+                        lfdbop: true
+                        lsmssig: true
+
+        #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
+        remove_input_files:
+                - rtables
+                - vtables
+
+        add_input_files:
+                ICMGG_INIT: ICMGG_INIT
+                ICMGG_INIUA: ICMGG_INIUA
+                ICMSH_INIT: ICMSH_INIT
+
+        add_input_sources:
+                ICMGG_INIT: ${input_dir}/${res_number_tl}/ICMGG${prepifs_expid}INIT_${fesom.resolution}
+                ICMGG_INIUA: ${input_dir}/${res_number_tl}/ICMGG${prepifs_expid}INIUA
+                ICMSH_INIT: ${input_dir}/${res_number_tl}/ICMSH${prepifs_expid}INIT
+
+        add_input_in_work:
+                ICMGG_INIT: ICMGG${input_expid}INIT
+                ICMGG_INIUA: ICMGG${input_expid}INIUA
+                ICMSH_INIT: ICMSH${input_expid}INIT
+
+        # All forcing files are removed: path specified in to the namelist
+        remove_forcing_files:
+                - PRE2005_MIDYR_CONC
+                - RCP3PD_MIDYR_CONC
+                - RCP45_MIDYR_CONC
+                - RCP6_MIDYR_CONC
+                - RCP85_MIDYR_CONC
+                - CMIP6DATA
+                - O3PI
+                - O3HIST
+                - O3SCEN
+                - ICMCL_INIT
+
+        add_config_sources:
+                "fort.4": "${namelist_dir}/fort.4"
+
+        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
+
+        coupling_fields:
+                "[[awicm3_fields-->FIELD]]":
+                    grid: atma
+                A_Runoff:
+                    grid: atmr
+
+
+fesom:
+        version: "2.0"
+        time_step: 1800
+        resolution: CORE2
+        lresume: false
         choose_general.resolution:
-                T63_CORE2:
-                        nproc: 288
+                TCO159_CORE2:
+                        nproca: 288
+                        nprocb: 1
 
         opbnd_dir: ""
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom2.version}
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
+        pool_dir: "${general.pool_dir}/fesom2/"
+        mesh_dir: "${pool_dir}/core2_meanz/"
+        nam_sbc_dir: /work/ollie/dsein/input/forcing/CORE2
+
+        restart_unit: "d"
         leapyear: True
 
-        add_namelist_changes:
+        # TODO: choose namelist subfolder using a tag functionality
+        model_tag: "awicm-3-deck"
+        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+
+        surf_relax_s: 0.0
+
+        add_namelists:
+                - namelist.cvmix
+
+        namelist_changes:
+                namelist.config:
+                        restart_log:
+                                restart_length_unit: "${restart_unit}"
+                                restart_length: "${restart_rate}"
                 namelist.oce:
-                        boundary:
-                                restore_s_surf: 0.0
+                        oce_tra:
+                                surf_relax_s: "${surf_relax_s}"
 
-        #  asforcing: ECHAM5
+        # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
+        # old experiments. 5e-3 is a better value so it is used for XIOS version
+        choose_general.version:
+                "1.0-deck":
+                        add_namelist_changes:
+                                namelist.cvmix:
+                                        param_kpp:
+                                                kpp_kv0: 5e-2
+                # Use better oce_tra parameters for the XIOS version that match the fesom-bounded namelist
+                "1.0":
+                        add_namelist_changes:
+                                namelist.oce:
+                                        oce_tra:
+                                                use_momix: true
+                                                momix_lat: -50.0
+                                                momix_kv: 0.01
+                                                use_instabmix: true
+                                                instabmix_kv: 0.1
+                                                use_windmix: false
+                                                windmix_kv: 1.e-3
+                                                windmix_nl: 2
+                                                diff_sh_limit: 5.0e-3
+
+        remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+                - restart_length
+                - restart_length_unit
+        remove_namelist_changes.namelist.config.paths:
+                - ForcingDataPath
+                - OpbndPath
+                - TideForcingPath
+        # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
+        remove_namelist_changes:
+                - namelist.forcing
 
 
+        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
+
+        add_config_files:
+                cvmix: cvmix
+
+        add_config_sources:
+                cvmix: "${namelist_dir}/namelist.cvmix"
+
+        remove_config_files:
+                - diag
+
+        awicm3_fields: [ist_feom, sia_feom]
+
+        coupling_fields:
+                "[[awicm3_fields-->FIELD]]":
+                        grid: feom
 
 
+xios:
+        #model_dir: ${general.model_dir}/xios-${xios.version}
+        #setup_dir: ${general.model_dir}
 
+        nproca: ${computer.cores_per_node}
+        nprocb: 1
+
+        #@JAN/JOAKIM: is ok to ignore this files?
+        remove_config_sources:
+                - ifs_xml
+
+
+rnfmap:
+        #model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
+        #setup_dir: ${general.model_dir}
+        nproca: 1
+        nprocb: 1
+        time_step: ${oasis3mct.coupling_time_step}
+
+        coupling_fields:
+                "[[runoff_fields_send-->FIELD]]":
+                        grid: rnfo
+
+        grids:
+                rnfa:
+                        name: RnfA
+                rnfo:
+                        name: RnfO
+                        nx: 512
+                        ny: 256
+                        oasis_grid_type: "LR"
 
 #########################################################################################
 
+# Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
+        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        mct_version: 4.0
+        norestart: "F"
 
         process_ordering:
-                - fesom2
-                - echam
+                - fesom
+                - oifs
+                - rnfmap
 
-        a2o_lag: "${echam.time_step}"
-        o2a_lag: "${fesom2.time_step}"
+        choose_general.version:
+                "1.0":
+                        add_process_ordering:
+                                - xios
+
+        # lresume needs to be true to allow usage of flxatmos and sstocean
+        # "restart" files in initial coupling time step
+        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        lresume: True
+        ini_parent_date: "19500101" # not used, but needs to be present
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present
+        ini_restart_dir: "${pool_dir}"
+
+        output_exchanged_vars: false
+
+        a2o_lag: "${oifs.time_step}"
+        a2r_lag: "${oifs.time_step}"
+        o2a_lag: "${oifs.time_step}"
+        o2r_lag: 0
+        r2a_lag: "${oifs.time_step}"
         a2o_seq: 2
+        o2a_seq: 2
+        o2r_seq: 1
+        r2a_seq: 2
 
         coupling_time_step: 3600
         coupling_target_fields:
-                o2a_flux:
-                        - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
-                        - 'snt_atmo <--distwgt-- snt_feom'
-
-                a2o_flux:
-                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'
-                        - 'prec_oce <--distwgt-- prec_atm'
-                        - 'snow_oce <--distwgt-- snow_atm'
-                        - 'evap_oce <--distwgt-- evap_atm'
-                        - 'subl_oce <--distwgt-- subl_atm'
-                        - 'heat_oce <--distwgt-- heat_atm'
-                        - 'heat_ico <--distwgt-- heat_ica'
-                        - 'heat_swo <--distwgt-- heat_swa'
-                        - 'hydr_oce <--distwgt-- hydr_atm'
-
+                rstas.nc:
+                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
+                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
+                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                        - 'R_Runoff_atm <--bicubic-- A_Runoff'
+                        - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
+                rstos.nc:
+                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
         coupling_directions:
-                'feom->atmo':
-                        lag: ${o2a_lag}
-                        seq: 2
-                'atmo->feom':
+                'atma->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
+                'atmr->rnfa':
+                        lag: ${r2a_lag}
+                        seq: ${r2a_seq}
+                'rnfo->feom':
+                        lag: ${o2r_lag}
+                        seq: ${o2r_seq}
+                'feom->atma':
+                        lag: ${o2a_lag}
+                        seq: ${o2a_seq}
+
 
         coupling_methods:
-                distwgt:
-                        time_transformation: instant
-                        remapping:
-                                distwgt:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 15
-                                        nb_of_neighbours: 6
                 bicubic:
-                        time_transformation: instant
+                        time_transformation: average
                         remapping:
                                 bicubic:
                                         search_bin: latitude
                                         nb_of_search_bins: 15
 
+                bicubic_glb:
+                        time_transformation: average
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                                        algorithm: opt
+                bicubic_gss:
+                        time_transformation: average
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+                        postprocessing:
+                                conserv:
+                                        method: gsspos
+                                        algorithm: opt
+                gauswgt_c:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 9
+                                        weight: "2.0"
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                                        algorithm: opt
+                gauswgt_i:
+                        time_transformation: instant
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 9
+                                        weight: "2.0"
 
+
+        add_input_files:
+                areas: areas
+                masks: masks
+                grids: grids
+
+        add_input_in_work:
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
+
+        add_input_sources:
+                areas: ${pool_dir}/areas.nc
+                masks: ${pool_dir}/masks.nc
+                grids: ${pool_dir}/grids.nc
 
         add_restart_out_files:
                 rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
+                rmp_f2a_G: rmp_f2a_G
+                rmp_a2r_B: rmp_a2r_B
+                rmp_r2f_G: rmp_r2f_G
 
         add_restart_out_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
         add_restart_out_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
         add_restart_in_files:
                 rmp_a2f_B: rmp_a2f_B
-                rmp_a2f_D: rmp_a2f_D
-                rmp_f2a_D: rmp_f2a_D
+                rmp_f2a_G: rmp_f2a_G
+                rmp_a2r_B: rmp_a2r_B
+                rmp_r2f_G: rmp_r2f_G
 
         add_restart_in_in_work:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
         add_restart_in_sources:
-                rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
-                rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
-                rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+                rmp_a2f_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_a}_to_feom_BICUBIC.nc
+                rmp_f2a_G: ${fesom.nproc}/rmp_feom_to_${oifs.oasis_grid_name_a}_GAUSWGT.nc
+                rmp_a2r_B: ${fesom.nproc}/rmp_${oifs.oasis_grid_name_r}_to_RnfA_BICUBIC.nc
+                rmp_r2f_G: ${fesom.nproc}/rmp_RnfO_to_feom_GAUSWGT.nc
 
 
+## Set up CPU layout
+# Set correct trunctation cases and remove nproca and nprocb from the sections
+# above
+#choose_cores_per_node:
+#        24:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 287
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 288
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 1536
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 24
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#        36:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 395
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 72
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 1512
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 36
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#        40:
+#                choose_resolution:
+#                        T159_CORE2:
+#                                oifs:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 40
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1
+#                        T511_CORE2:
+#                                oifs:
+#                                        nproca: 2000
+#                                        nprocb: 1
+#                                fesom:
+#                                        nproca: 400
+#                                        nprocb: 1
+#                                xios:
+#                                        nproca: 40
+#                                        nprocb: 1
+#                                rnfmap:
+#                                        nproca: 1
+#                                        nprocb: 1

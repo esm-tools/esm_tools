@@ -54,15 +54,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm_tools/esm_tools",
-    version="4.2.11",
+    version="4.2.12",
     zip_safe=False,
 )
 
-try:
-    from esm_rcfile import set_rc_entry
-
-    set_rc_entry("FUNCTION_PATH", thisfolder + "/configs")
-    set_rc_entry("NAMELIST_PATH", thisfolder + "/namelists")
-    set_rc_entry("RUNSCRIPT_PATH", thisfolder + "/runscripts")
-except:
-    print("RCFile could not be written!")

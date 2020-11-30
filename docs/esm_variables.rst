@@ -12,7 +12,7 @@ these `YAML` files can contain two type of `YAML` elements/variables:
   * **Setup/model elements**: `YAML-scalars`, `lists` of `dictionaries` that contain
     information defined in the model/setup config files (i.e. ``awicm.yaml``, ``fesom.yaml``, etc.).
     This information is model/setup-specific and causes no effect unless it is combined with the
-    **tools-specific elements**. For example, in ``fesom.yaml`` for `FESOM-1.0` the variable
+    **tool-specific elements**. For example, in ``fesom.yaml`` for `FESOM-1.0` the variable
     ``asforcing`` exists, however this means nothing to `ESM-Tools` by its own. In this case, this
     variable is used in ``namelist_changes`` (a tool-specific element) to state the type of forcing
     to be used and this is what actually makes a difference to the simulation. The advantage of
@@ -51,9 +51,9 @@ Installation variables
    available_versions,  List of supported versions of the component or coupled setup.
    git-repository,      Address of the model's git repository.
    branch,              Branch from where to clone.
-   destination,         "Name of the folder where the model is download and compiled, in a coupled setup."
+   destination,         "Name of the folder where the model is downloaded and compiled, in a coupled setup."
    comp_command,        Command used to compile the component.
-   executable,          Name of the component executable file.
+   install_bins,        "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
 
 Runtime variables
 -----------------
@@ -61,13 +61,14 @@ Runtime variables
    :header: Key, Description
    :widths: 15, 85
 
-   account,             User account to be used to run the experiment.
+   account,             User account of the HPC system to be used to run the experiment.
    model_dir,           "Absolute path of the model directory (where it was installed by `esm_master`)."
    setup_dir,           "Absolute path of the setup directory (where it was installed by `esm_master`)."
-   compute_time,        "Estimated computing time for a run, used for submitting a job with `slurm`."
+   executable,          "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
+   compute_time,        "Estimated computing time for a run, used for submitting a job with the job scheduler."
    time_step,           Time step of the component in seconds.
    lresume,             Boolean to indicate whether the run is an initial run or a restart.
-   pool_dir,            Path to the pool directory.
+   pool_dir,            Path to the pool directory to read in mesh data, forcing files, inputs, etc.
    namelists,           "List of namelist files required for the model."
    namelist_changes,    "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
    nproc,               Number of processors to use for the model.
@@ -75,9 +76,9 @@ Runtime variables
    base_dir,            Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
    post_processing,     Boolean to indicate whether to run postprocessing or not.
    ":ref:`yaml:File Dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
-   expid,               "ID of the experiment, also defined when calling ``esm_runscripts`` with the ``-e`` flag."
-   ini_restart_exp_id,  "ID of the restarted experiment in case the current experiment has a different ``expid``."
-   ini_restart_dir,     "Path of the restarted experiment in case the current experiment runs in a different directory."
+   expid,               "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
+   ini_restart_exp_id,  "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
+   ini_restart_dir,     "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
    execution_command,   "Command for executing the component, including ``${executable}`` and the necessary flags."
 
 Calendar variables

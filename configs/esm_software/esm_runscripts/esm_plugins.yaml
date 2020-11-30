@@ -43,6 +43,7 @@ core:
                         - "start_post_job"
                         - "_increment_date_and_run_number"
                         - "_write_date_file"
+                        - "signal_tidy_completion"
                         - "maybe_resubmit"
 
                 postprocess:

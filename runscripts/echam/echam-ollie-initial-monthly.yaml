@@ -1,0 +1,22 @@
+general:
+        setup_name: echam
+        compute_time: "00:15:00"
+        initial_date: "2000-01-01"
+        final_date: "2000-01-31"
+        model_dir: "/work/ollie/dbarbi/modelcodes/echam-6.3.04p1/"
+        base_dir: "/work/ollie/dbarbi/esm_yaml_test/"
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+echam:
+        version: "6.3.04p1"
+        scenario: "PI-CTRL"
+        res: T63
+        post_processing: False
+        lresume: False
+
+        file_movements:
+                forcing:
+                        all_directions: "link"
+

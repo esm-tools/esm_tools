@@ -30,7 +30,17 @@ Optional arguments                                     Description
   -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
   -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
   -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from this step.
-  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files.
+  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files
+  -i, --inspect                                        This option can be used to [i]nspect the results of a previous
+                                                       run, for example one prepared with ``-c``. This argument needs an
+                                                       additional keyword. Choose among: ``overview`` (gives you the
+                                                       same litte message you see at the beginning of each run, ``lastlog``
+                                                       (displays the last log file), ``explog`` (the overall experiment
+                                                       logfile), ``datefile`` (the overall experiment logfile), ``config`` 
+                                                       (the Python dict that contains all information), ``size`` (the size
+                                                       of the experiment folder), a filename or a directory name output 
+                                                       the content of the file /directory if found in the last 
+                                                       ``run_`` folder.)
 ====================================================== ==========================================================
 
 
@@ -248,5 +258,28 @@ This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb
     general: 
         debug_recipe: True
         
+Setting the file movement method for filetypes in the runscript
+---------------------------------------------------------------
+
+By default, esm_runscripts copies all files initially into the first `run_`-folder, from there to `work`. After the run, outputs, logs, restarts etc. are copied
+from `work` to `run_`, and then moved from there to the overall experiment folder. We chose that as the default setting as it is the safest option, leaving the user
+with everything belonging to the experiment in one folder. It is also the most disk space consuming, and it makes sense to link some files into the experiment rather
+than copy them.
+
+As an example, to configure esm_runscripts for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
+
+.. code-block:: yaml
+        echam:
+                file_movements:
+                        forcing:
+                                all_directions: "link"
+                        input:
+                                init_to_exp: "link"
+                                exp_to_run: "link"
+                                run_to_work: "link"
+                                work_to_run: "link"
+
+Both ways to set the entries are doing the same thing. It is possible, as in the `input` case, to set the file movement method independantly for each of the
+directions; the setting `all_directions` is just a shortcut if the method is identical for all of them.
         
         

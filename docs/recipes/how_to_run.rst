@@ -5,7 +5,7 @@ How to setup runscripts for different kind of experiments
 
 .. **Feature available since version:** <version_num>
 
-This recipe describes how to setup a runscript for the following different kinds of experiments. Besides the variables described in :ref:esm_variables, add the following variables to your runscript, as described below.
+This recipe describes how to setup a runscript for the following different kinds of experiments. Besides the variables described in :ref:`esm_variables:ESM-Tools Variables`, add the following variables to your runscript, as described below.
 
 * **Initial run**: An experiment from initial model conditions.
 
@@ -36,7 +36,8 @@ This recipe describes how to setup a runscript for the following different kinds
 
 .. code-block:: yaml
 
-    lresume: 1
+    general:
+        lresume: 1
         ini_parent_exp_id: <old-experiment-id>
         ini_restart_dir: <path-to-restart-dir-of-old-experiment>/restart/
         first_initial_year: <year>
@@ -52,5 +53,5 @@ See also
 
 .. links to relevant parts of the documentation
 
-- :ref:'esm_variables'
+- :ref:`esm_variables:ESM-Tools Variables`
 - :ref:`yaml:What Is YAML?`

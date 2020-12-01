@@ -40,6 +40,7 @@ core:
                         - "tidy_coupler"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
+                        - "clean_run_dir"
                         - "start_post_job"
                         - "_increment_date_and_run_number"
                         - "_write_date_file"

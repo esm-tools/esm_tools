@@ -303,8 +303,8 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools r4 UserManual',
-     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez',
+     'ESM Tools r5 UserManual',
+     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez, \\\\Deniz Ural',
      'manual'),
 ]
 

@@ -1,6 +1,6 @@
 
 general:
-   use_venv: False
+   #use_venv: False
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 

@@ -2,7 +2,7 @@
 Ten Steps to a Running Model
 ============================
 
-1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later (see :ref:`installation:Before you continue`). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see :ref:`installation:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
      $ export PATH=$PATH:~/.local/bin
 

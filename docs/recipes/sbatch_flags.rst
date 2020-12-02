@@ -20,10 +20,11 @@ Example
 ~~~~~~~
 
 Assume you want to run a simulation using the Quality of Service flag (``--qos``) of
-`SLURM`. Then, you'll need to define the ``additional_flags`` inside the ``computer``
-section of your runscript. This can be done by adding the following to your runscript:
+`SLURM` with value ``24h``. Then, you'll need to define the ``additional_flags`` inside
+the ``computer`` section of your runscript. This can be done by adding the following to
+your runscript:
 
 .. code-block:: yaml
 
    computer:
-       additional_flags: "--qos=<your_preferred_value>"
+       additional_flags: "--qos=24h"

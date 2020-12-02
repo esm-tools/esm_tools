@@ -10,7 +10,7 @@ For our complete documentation, please check https://esm-tools.readthedocs.io/en
 Before you continue
 -------------------
 
-You will need python 3 (possibly version 3.5 or newer) and also a version of git that is not ancient (everything newer than 2.10 should be good) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
+You will need python 3 (possibly version 3.6 or newer), a version of git that is not ancient (everything newer than 2.10 should be good), and up-to-date pip (``pip install -U pip``) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
 
 ollie.awi.de::
 

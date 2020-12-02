@@ -19,6 +19,7 @@
 #
 import os
 import sys
+import esm_tools
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -215,8 +216,9 @@ master_doc = 'index'
 # General information about the project.
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
-author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez"
-version = "4.0"
+author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez, Deniz Ural"
+version = esm_tools.__version__.split(".")
+version = "{0}.{1}".format(version[0], version[1])
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -303,7 +305,7 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools r5 UserManual',
+     'ESM Tools r{0} UserManual'.format(version),
      'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez, \\\\Deniz Ural',
      'manual'),
 ]

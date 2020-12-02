@@ -12,7 +12,7 @@ from your runscript, inside the ``computer`` section:
    :header: Key, Description
    :widths: 15, 85
 
-   "mail_type, mail_user",      Define these two variables to get updates about your sjob through email.
+   "mail_type, mail_user",      Define these two variables to get updates about your slurm-job through email.
    single_proc_submit_flag,     "By default defined as ``--ntasks-per-node=1``"
    additional_flags,            "To add any additional flag that is not predefined in `ESM-Tools`"
 

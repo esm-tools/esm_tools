@@ -19,7 +19,6 @@
 #
 import os
 import sys
-import esm_tools
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -76,6 +75,7 @@ for config in configs:
 import subprocess
 import shutil
 import sphinx.ext.apidoc
+import esm_tools
 
 esm_tools_modules = [
  "esm_archiving",

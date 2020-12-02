@@ -26,4 +26,4 @@ section of your runscript. This can be done by adding the following to your runs
 .. code-block:: yaml
 
    computer:
-       additional_flags: "--qos=<its_value>"
+       additional_flags: "--qos=<your_preferred_value>"

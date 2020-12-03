@@ -31,6 +31,7 @@ choose_job_type:
                         - "assemble"
                         - "check_for_unknown_files"
                         - "log_used_files"
+                        - "throw_away_some_infiles"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
                         - "clean_run_dir"

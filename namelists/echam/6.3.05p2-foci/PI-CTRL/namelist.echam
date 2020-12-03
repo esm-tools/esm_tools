@@ -16,7 +16,7 @@
     putrerun = 12, 'months', 'last', 0
     lfractional_mask = .false.
     out_datapath = './'
-    out_expname = '${EXP_ID}'
+    out_expname = 'EXP_ID'
     rerun_filetype = 4
     delta_time = 450
     putdata = 1, 'days', 'last', 0

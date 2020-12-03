@@ -5,7 +5,7 @@
     lfractional_mask = .false.
     lresume = .true.
     out_datapath = './'
-    out_expname = '${EXP_ID}'
+    out_expname = 'EXP_ID'
     rerun_filetype = 4
     delta_time = 450
     putdata = 1, 'months', 'last', 0

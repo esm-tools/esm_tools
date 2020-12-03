@@ -341,6 +341,7 @@ generate_namelist: 1
 ensemble: 0
 post_processing: 0
 use_ocean_currents: 0
+pextra: 0
 
 #cmip6: True
 #cmip5: False
@@ -663,6 +664,17 @@ choose_with_xios:
                         ICMSH: ICMSH
 
 
+# PEXTRA output
+# (also needs change in xml files for XIOS)
+choose_pextra: 
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LBUD23: ".true."
+                                NAMDPHY:
+                                        NVEXTR: 24
+                                        NCEXTR: ${nlev}
 
 ##
 ## would that we with or without ECWAM, sir?

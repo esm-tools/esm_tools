@@ -77,7 +77,7 @@ metadata:
                 The ECHAM atmosphere model, major version 6
         Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
         Publications:
-                'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
+                'Atmospheric component of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
                 Please make sure you have a license to use ECHAM. In case you are
                 unsure, please contact redmine...
@@ -118,16 +118,30 @@ ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
 
-pseudo_start_date: ${start_date}
-pseudo_end_date: ${next_date}
-pseudo_resume_date: ${start_date}
+
+
+# TODO: document this crazy ECHAM6 restart math
+
+choose_restart_firstlast:
+        last:
+                pseudo_start_date: $((${start_date} - ${time_step}seconds))
+                pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
+                pseudo_final_date: $((${final_date} - ${time_step}seconds))
+                pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+        first:
+                pseudo_start_date: ${start_date} 
+                pseudo_start_date2: $((${start_date} - 1years))
+                pseudo_final_date: ${final_date}
+                pseudo_end_date: $((${next_date} - ${time_step}seconds))
+
+
 #year_before_date: $(( ${start_date} - "1 years" )) # irgendwie so
 #year_before_length: $((${start_date} - ${year_before_date} ))
 #steps_in_year_before: $(( ${year_before_length} / ${time_step} - 1 ))
 
 restart_rate: 1
 restart_unit: "months"
-restart_firstlast: "first"
+restart_firstlast: "last"
 
 
 # default directories
@@ -140,7 +154,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}/${restart_firstlast}"
 
 switch: 1
 value : "echam default"
@@ -356,19 +370,53 @@ choose_scenario:
                         MAC-SP: MAC-SP
 
 
+choose_general.run_number:
+        1:
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        dt_resume:
+                                                - ${pseudo_start_date!syear}
+                                                - ${pseudo_start_date!smonth}
+                                                - ${pseudo_start_date!sday}
+                                                - ${pseudo_start_date!hour}
+                                                - ${pseudo_start_date!minute}
+                                                - ${pseudo_start_date!second}
+        "*":      
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                        dt_resume: "remove_from_namelist"
+
+
 choose_lresume:
         False:
+                add_namelist_changes:
+                        namelist.echam:
+                                runctl:
+                                       dt_start:
+                                              - ${pseudo_start_date!year}
+                                              - ${pseudo_start_date!month}
+                                              - ${pseudo_start_date!day}
+                                              - ${pseudo_start_date!hour}
+                                              - ${pseudo_start_date!minute}
+                                              - ${pseudo_start_date!second}
                 restart_in_modifications:
                         "[[streams-->STREAM]]":
                                 - "vdate <--set_global_attr-- ${start_date!syear!smonth!sday}"
                                   # - fdate "<--set_dim--" ${year_before_date}
                                   # - ndate "<--set_dim--" ${steps_in_year_before}
         True:
-                # pseudo_start_date: $(( ${start_date} - ${time_step} ))
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
-                                        dt_start: "remove_from_namelist"
+                                        dt_start:
+                                              - ${pseudo_start_date2!year}
+                                              - ${pseudo_start_date2!month}
+                                              - ${pseudo_start_date2!day}
+                                              - ${pseudo_start_date2!hour}
+                                              - ${pseudo_start_date2!minute}
+                                              - ${pseudo_start_date2!second}
 
 
 
@@ -589,18 +637,13 @@ namelist_changes:
         namelist.echam:
                 runctl:
                         out_expname: ${general.expid}
-                        dt_start:
-                                - ${pseudo_start_date!year}
-                                - ${pseudo_start_date!month}
-                                - ${pseudo_start_date!day}
                         dt_stop:
-                                - ${pseudo_end_date!syear}
-                                - ${pseudo_end_date!smonth}
-                                - ${pseudo_start_date!sday}
-                        dt_resume:
-                                - ${pseudo_resume_date!syear}
-                                - ${pseudo_resume_date!smonth}
-                                - ${pseudo_resume_date!sday}
+                               - ${pseudo_final_date!year}
+                               - ${pseudo_final_date!month}
+                               - ${pseudo_final_date!day}
+                               - ${pseudo_final_date!hour}
+                               - ${pseudo_final_date!minute}
+                               - ${pseudo_final_date!second}
                         lresume: "${lresume}"
                         lcouple: ".false."
                         delta_time: ${time_step}

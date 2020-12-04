@@ -55,62 +55,10 @@ echam:
         nproca: 24
         nprocb: 24
 
-        # TODO: document this crazy ECHAM6 restart math
-        pseudo_start_date: $((${start_date} - ${time_step}seconds))
-        pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
-        pseudo_final_date: $((${final_date} - ${time_step}seconds))
-        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
-        choose_lresume:
-                True:
-                        add_namelist_changes:
-                                namelist.echam:
-                                        runctl:
-                                               dt_start:
-                                                      - ${pseudo_start_date2!year}
-                                                      - ${pseudo_start_date2!month}
-                                                      - ${pseudo_start_date2!day}
-                                                      - ${pseudo_start_date2!hour}
-                                                      - ${pseudo_start_date2!minute}
-                                                      - ${pseudo_start_date2!second}
-                False:
-                        add_namelist_changes:
-                                namelist.echam:
-                                        runctl:
-                                               dt_start:
-                                                      - ${pseudo_start_date!year}
-                                                      - ${pseudo_start_date!month}
-                                                      - ${pseudo_start_date!day}
-                                                      - ${pseudo_start_date!hour}
-                                                      - ${pseudo_start_date!minute}
-                                                      - ${pseudo_start_date!second}
         namelist_changes:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
-                                # if lresume = true, dt_start is removed from namelist
-                                # see echam.yaml because if dt_start = dt_resume a
-                                # initial run is forced (see mo_time_control.f90)
-                                #dt_start:
-                                #       - ${pseudo_start_date!year}
-                                #       - ${pseudo_start_date!month}
-                                #       - ${pseudo_start_date!day}
-                                #       - ${pseudo_start_date!hour}
-                                #       - ${pseudo_start_date!minute}
-                                #       - ${pseudo_start_date!second}
-                                dt_stop:
-                                       - ${pseudo_final_date!year}
-                                       - ${pseudo_final_date!month}
-                                       - ${pseudo_final_date!day}
-                                       - ${pseudo_final_date!hour}
-                                       - ${pseudo_final_date!minute}
-                                       - ${pseudo_final_date!second}
-                                dt_resume: "remove_from_namelist"
-                                #       - ${pseudo_start_date!year}
-                                #       - ${pseudo_start_date!month}
-                                #       - ${pseudo_start_date!day}
-                                #       - ${pseudo_start_date!hour}
-                                #       - ${pseudo_start_date!minute}
-                                #       - ${pseudo_start_date!second}        
 
         remove_forcing_files:
                 - sst

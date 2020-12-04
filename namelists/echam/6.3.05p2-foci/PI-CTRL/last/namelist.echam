@@ -36,36 +36,44 @@
 &mvstreamctl ! 'default spm glm g3bm'
     filetag = 'echam'
     source = 'sp', 'gl', 'g3b'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default co2m'
     filetag = 'co2'
     source = 'co2'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default tdiagm'
     filetag = 'tdiag'
     source = 'tdiag'
     meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp',
               'gboxarea'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default jsbachm'
     filetag = 'jsbach'
     source = 'jsbach'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default landm'
     filetag = 'land'
     source = 'land'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default vegm'
     filetag = 'veg'
     source = 'veg'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default surfm'
     filetag = 'surf'
     source = 'surf'
+    interval = 1, 'days', 'last', 0
 /
 &mvstreamctl ! 'default yassom'
     filetag = 'yasso'
     source = 'yasso'
+    interval = 1, 'days', 'last', 0
 /
 &set_stream ! 'default jsbach'
     stream = 'jsbach'

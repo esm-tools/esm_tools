@@ -20,9 +20,9 @@ forcing_sources:
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 1851
         "cover_fract_HIST":
-               "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_1850.nc":
+               "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850.nc":
                         to: 1850
-               "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_@YEAR@.nc":
+               "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_@YEAR@.nc":
                         from: 1851
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
 

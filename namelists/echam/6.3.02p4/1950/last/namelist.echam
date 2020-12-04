@@ -23,8 +23,8 @@
   NO_CYCLES      = 1
   PUTOCEAN       = 1,'days','last',0
   GETOCEAN       = 1,'days','last',0
-  PUTRERUN       = 12,'months','first',0
-! PUTDATA        = 1,'months','first',0
+  PUTRERUN       = 12,'months','last',0
+! PUTDATA        = 1,'months','last',0
   default_output = .true.
   PUTDATA        = 6,'hours','last',0
   TRIGFILES      = 12,'months','exact',0

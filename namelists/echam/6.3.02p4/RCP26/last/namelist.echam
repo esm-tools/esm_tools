@@ -5,7 +5,7 @@
     lfractional_mask = .false.
     lresume = .true.
     out_datapath = './'
-    out_expname = '${EXP_ID}'
+    out_expname = 'EXP_ID'
     rerun_filetype = 4
     delta_time = 450
     putdata = 1, 'months', 'last', 0
@@ -26,34 +26,42 @@
 &mvstreamctl
     filetag = 'echam'
     source = 'sp', 'gl', 'g3b'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'co2'
     source = 'co2'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'surf'
     source = 'surf'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'tracer'
     source = 'tracer'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'jsbach'
     source = 'jsbach'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'land'
     source = 'land'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'veg'
     source = 'veg'
+    interval = 1, 'months', 'last', 0
 /
 &mvstreamctl
     filetag = 'yasso'
     source = 'yasso'
+    interval = 1, 'months', 'last', 0
 /
 &set_stream
     stream = 'jsbach'

@@ -1,14 +1,14 @@
 &runctl
     dt_start = 2285, 12, 31, 23, 52, 30
     dt_stop = 6699, 12, 31, 23, 52, 30
-    putrerun = 12, 'months', 'last', 0
+    putrerun = 12, 'months', 'first', 0
     lfractional_mask = .false.
     lresume = .true.
     out_datapath = './'
     out_expname = 'E280'
     rerun_filetype = 4
     delta_time = 450
-    putdata = 1, 'months', 'last', 0
+    putdata = 1, 'months', 'first', 0
     nproma = 8
     lcouple = .true.
     getocean = 1, 'days', 'last', 0
@@ -27,19 +27,19 @@
     vphysc_lpost = .false.
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'spim'
     source = 'sp'
     variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'glim'
     source = 'gl'
     variables = 'xl:mean', 'xi:mean'
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'aclcim'
     source = 'g3b'
     variables = 'aclc:mean'
@@ -67,44 +67,44 @@
     lpost = 0
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'g3bim'
     source = 'g3b'
     variables = 't2min:min', 't2max:max', 'topmax:mean'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'glday'
     source = 'gl'
     variables = 'q:mean'
 /
 &mvstreamctl
     target = 'g3bday'
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     source = 'g3b'
     meannam = 'tslm1', 'tsi'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'g3bid'
     source = 'g3b'
     variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 'albedo:mean',
                 'dew2:mean', 'ws:mean', 'sn:mean', 'wimax:max', 't2min:min', 't2max:max'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'jsbid'
     source = 'jsbach'
     variables = 'layer_moisture:mean'
 /
 &mvstreamctl
-    interval = 6, 'hours', 'last', 0
+    interval = 6, 'hours', 'first', 0
     target = 'sp6h'
     source = 'sp'
     variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
 /
 &mvstreamctl
-    interval = 1, 'hours', 'last', 0
+    interval = 1, 'hours', 'first', 0
     target = 'g3b1hi'
     source = 'g3b'
     variables = 'u10:inst', 'v10:inst', 'wimax:max'

@@ -1,30 +1,39 @@
-&runctl
-    dt_start = 2285, 12, 31, 23, 52, 30
-    dt_stop = 6699, 12, 31, 23, 52, 30
-    putrerun = 12, 'months', 'last', 0
-    lfractional_mask = .false.
-    lresume = .true.
-    out_datapath = './'
-    out_expname = 'E280'
-    rerun_filetype = 4
-    delta_time = 450
-    putdata = 1, 'months', 'last', 0
-    nproma = 8
-    lcouple = .true.
-    getocean = 1, 'days', 'last', 0
-    putocean = 1, 'days', 'last', 0
-    lcouple_co2 = .true.
-    default_output = .false.
-/
 &parctl
-    nproca = 24
-    nprocb = 24
+  NPROCA       = <nproca>
+  NPROCB       = <nprocb>
+/
+&runctl
+  NPROMA         = 72
+  OUT_EXPNAME    = <cexper>
+  OUT_DATAPATH   = <rundir>
+  OUT_FILETYPE   = 2
+  OUT_ZTYPE      = 0
+  RERUN_FILETYPE = 4
+  LRESUME        = <lresume>
+  LTIMER         = .false.
+  LMIDATM        = .true.
+! LHD            = .true.
+  LCOUPLE        = .true.
+  LCOUPLE_CO2    = .true.
+! LIPCC          = .true.
+  LAMIP          = .false.
+  DT_START       = <yys>,<mms>,<dds>,0,0,0
+  DT_STOP        = <yye>,<mme>,<dde>,0,0,0
+  DELTA_TIME     = <atmstp>
+  NO_CYCLES      = 1
+  PUTOCEAN       = 1,'days','last',0
+  GETOCEAN       = 1,'days','last',0
+  PUTRERUN       = <restart>,<restart_unit>,'last',0
+  PUTDATA        = 3,'hours','last',0
+  default_output = .true.
+  TRIGFILES      = 12,'months','exact',0
+  LDEBUGEV       = .false.
 /
 &submodelctl
-    lmethox = .true.
+  lmethox = .true.
 /
-&submdiagctl
-    vphysc_lpost = .false.
+&simpleplumesctl
+    fix_yr = 1950
 /
 &mvstreamctl
     interval = 1, 'months', 'last', 0
@@ -88,7 +97,7 @@
     interval = 1, 'days', 'last', 0
     target = 'g3bid'
     source = 'g3b'
-    variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 'albedo:mean',
+    variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 
                 'dew2:mean', 'ws:mean', 'sn:mean', 'wimax:max', 't2min:min', 't2max:max'
 /
 &mvstreamctl
@@ -110,14 +119,21 @@
     variables = 'u10:inst', 'v10:inst', 'wimax:max'
 /
 &radctl
-    iaero = 3
-    io3 = 4
-    isolrad = 6
-    ich4 = 3
-    in2o = 3
-    co2vmr = 284.3169860840e-06
-    ch4vmr = 808.2490234375e-09
-    n2ovmr = 273.0210571289e-09
-    yr_perp = 1850
+  iaero   = 9
+  io3     = 4
+  isolrad = 7
+  ico2    = 2
+  ighg    = 0
+  icfc    = 2
+  ich4    = 3
+  in2o    = 3
+  CO2VMR  = 312.82e-6
+  CH4VMR  = 1.1638e-6
+  N2OVMR  = 0.290e-6
+  YR_PERP = 1950
+  cfcvmr(1) =  0.8939e-12
+  cfcvmr(2) =  6.3823e-12
 /
-
+&co2ctl
+ LCO2_SCENARIO = .false.
+/

@@ -17,14 +17,14 @@
   LCOUPLE        = .true.
   LCOUPLE_CO2    = .true.
 ! LIPCC          = .true.
-  LAMIP          = .false.
-  DT_START       = 1901,01,01,0,0,0
+  LAMIP          = .false.  
+  DT_START       = 1850,01,01,0,0,0
   DT_STOP        = 2402,1,1,0,0,0
   DELTA_TIME     = 200
   PUTOCEAN       = 1,'days','last',0
   GETOCEAN       = 1,'days','last',0
   PUTRERUN       = 1,'years','first',0
-  PUTDATA        = 3,'hours','last',0
+  PUTDATA        = 3,'hours','first',0
   default_output = .true.
   TRIGFILES      = 12,'months','exact',0
   LDEBUGEV       = .false.
@@ -34,19 +34,19 @@
     vphysc_lpost = .false.
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'spim'
     source = 'sp'
     variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'glim'
     source = 'gl'
     variables = 'xl:mean', 'xi:mean'
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'aclcim'
     source = 'g3b'
     variables = 'aclc:mean'
@@ -74,44 +74,44 @@
     lpost = 0
 /
 &mvstreamctl
-    interval = 1, 'months', 'last', 0
+    interval = 1, 'months', 'first', 0
     target = 'g3bim'
     source = 'g3b'
     variables = 't2min:min', 't2max:max', 'topmax:mean'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'glday'
     source = 'gl'
     variables = 'q:mean'
 /
 &mvstreamctl
     target = 'g3bday'
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     source = 'g3b'
     meannam = 'tslm1', 'tsi'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'g3bid'
     source = 'g3b'
     variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 
                 'dew2:mean', 'ws:mean', 'sn:mean', 'wimax:max', 't2min:min', 't2max:max'
 /
 &mvstreamctl
-    interval = 1, 'days', 'last', 0
+    interval = 1, 'days', 'first', 0
     target = 'jsbid'
     source = 'jsbach'
     variables = 'layer_moisture:mean'
 /
 &mvstreamctl
-    interval = 6, 'hours', 'last', 0
+    interval = 6, 'hours', 'first', 0
     target = 'sp6h'
     source = 'sp'
     variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
 /
 &mvstreamctl
-    interval = 1, 'hours', 'last', 0
+    interval = 1, 'hours', 'first', 0
     target = 'g3b1hi'
     source = 'g3b'
     variables = 'u10:inst', 'v10:inst', 'wimax:max'
@@ -124,16 +124,16 @@
   lco2     = .false.
 /
 &radctl
-  iaero   = 3
+  iaero   = 8
   io3     = 4
-  isolrad = 6
-  ich4    = 3
-  in2o    = 3
-  CO2VMR  = 1.1372679e-03
-  CH4VMR  = 808.2490234375e-09
-  N2OVMR  = 273.0210571289e-09
-  YR_PERP = 1850
+  isolrad = 1
+  ico2    = 4
+  ighg    = 1
+  icfc    = 4
+  ich4    = 4
+  in2o    = 4
 /
 &co2ctl
- LCO2_SCENARIO = .false.
+ LCO2_SCENARIO = .true.
 /
+

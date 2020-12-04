@@ -23,7 +23,7 @@
   DELTA_TIME     = 200
   PUTOCEAN       = 1,'days','last',0
   GETOCEAN       = 1,'days','last',0
-  PUTRERUN       = 1,'years','first',0
+  PUTRERUN       = 1,'years','last',0
   PUTDATA        = 3,'hours','last',0
   default_output = .true.
   TRIGFILES      = 12,'months','exact',0

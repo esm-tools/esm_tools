@@ -30,6 +30,8 @@ Ten Steps to a Running Model
 
   You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access (:ref:`Supported_Models:Supported Models`). Feel free to contact us if you don't know who the model developers are.
 
+.. note:: An error may occur in case you have performed a fresh install of` ESM-Tools` version 5 after having version 4 installed. In this known error, ``esm_master`` crashes with a ``FileNotFoundError`` with regard to ``esm_master.yaml``. Try to fix this by updating your ~/.esmtoolsrc, removing lines that define paths for runscripts, namelists, and functions. Then try again (``RUNSCRIPT_PATH``, ``NAMELIST_PATH`` and ``FUNCTION_PATH``).
+
 7. Check if the installation process worked; if so, you should find the model executable in the subfolder ``bin`` of the model folder. E.g.::
 
     $ ls fesom-2.0/bin

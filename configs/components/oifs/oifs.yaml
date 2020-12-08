@@ -673,8 +673,10 @@ choose_pextra:
                                 NAEPHY:
                                         LBUD23: ".true."
                                 NAMDPHY:
-                                        NVEXTR: 24
+                                        NVEXTR: 4
                                         NCEXTR: ${nlev}
+                                #NAMPHYDS:
+                                #        NVEXTRAGB(1:4): 91,92,93,94
 
 ##
 ## would that we with or without ECWAM, sir?

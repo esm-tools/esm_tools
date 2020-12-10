@@ -18,7 +18,17 @@ batch_system: slurm
 logical_cpus_per_core: 2
 threads_per_core: 1
 launcher_flags: "-l "
-hyperthreading_flag: "--ntasks-per-core=1"
+
+choose_general.use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        1:
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
+        "*":
+                hyperthreading_flag: "--ntasks-per-core=1"
+
 sh_interpreter: "/usr/bin/bash"
 
 # pool directories

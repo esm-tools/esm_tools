@@ -13,9 +13,6 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
-include_models:
-        - xios
-
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
         Carver et al., in prep.

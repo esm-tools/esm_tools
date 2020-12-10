@@ -37,9 +37,17 @@ metadata:
 executable: mpiom
 
 setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
 
 time_step: 2700
 resolution: GR15
+
+bin_files:
+        mpiom_bin: "mpiom_bin"
+bin_sources:
+        mpiom_bin: "${bin_dir}/mpiom.x"
+bin_in_work:
+        mpiom_bin: "mpiom.x"
 
 further_reading:
         - mpiom/mpiom.compiletime_env_changes.yaml

@@ -62,15 +62,6 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
-        choose_computer.name:
-                mistral:
-                        runtime_environment_changes:
-                                add_export_vars:
-                                        # (additional) settings used in FOCI up to v1.21
-                                        - 'NEMO_THREADS=1'
-                                        - 'I_MPI_SLURM_EXT=0'
-                                        # OpenMP
-                                        - 'OMP_NUM_THREADS=1' 
 
 preprocess:
         preprocess_shell:
@@ -89,6 +80,7 @@ preprocess:
 #########################################################################################
 
 oifs:
+
         version: "43r3"
         
         pool_dir: ${computer.pool_directories.focipool}

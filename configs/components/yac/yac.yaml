@@ -23,9 +23,4 @@ metadata:
 
 
 config_files:
-    coupling_xml:  coupling_xml
     coupling_xsd:  coupling_xsd
-
-config_sources:
-    coupling_xsd:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xsd"
-    coupling_xml:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xml"

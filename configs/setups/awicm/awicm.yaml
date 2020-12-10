@@ -43,12 +43,13 @@ general:
             - fesom-1.4+echam-6.3.04p1
 
 
+
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
 echam:
-        restart_firstlast: "first"
+        restart_firstlast: "last"
         namelist_changes:
                 namelist.echam:
                         runctl:
@@ -139,6 +140,8 @@ fesom:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
+
+        shift_maxtime: ${echam.time_step}
 
         process_ordering:
                 - fesom

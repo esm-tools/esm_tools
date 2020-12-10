@@ -6,6 +6,7 @@ general:
     base_dir: "/work/ollie/dbarbi/esm_yaml_tests/"
     nmonth: 1
     nyear: 0
+    use_venv: False
 
 awicm:
     version: "CMIP6"
@@ -21,4 +22,5 @@ fesom:
     restart_first: 1
     #further_reading:
     #    - "fesom_output_control.yaml"
-
+echam:
+    restart_firstlast: 'last'

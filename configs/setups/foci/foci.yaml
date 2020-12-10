@@ -88,15 +88,6 @@ echam:
                      - need_year_before
                      - need_year_after
 
-        restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
-
-        restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
-
-        restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-
         streams:
               - echam
               - accw
@@ -144,16 +135,14 @@ jsbach:
                              npools_foci: npools_foci
                              fpc_foci: fpc_foci
 
-        pseudo_start_date: $((${start_date} - ${time_step}seconds))
-        pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
-        restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+                             #restart_in_sources:
+                             #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
 
-        restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+                             # restart_out_sources:
+                             #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
 
-        restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                             #restart_out_in_work:
+                             #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
         streams:
               - jsbach

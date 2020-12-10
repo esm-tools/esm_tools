@@ -32,6 +32,39 @@ config_sources:
 no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "_dynveg"
 
+
+choose_echam.restart_firstlast:
+        'last':
+                pseudo_start_date: $((${start_date} - ${time_step}seconds))
+                pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+                add_namelist_changes:
+                        namelist.jsbach:
+                                hydrology_ctl:
+                                        gethd:
+                                                - 24
+                                                - 'steps'
+                                                - 'exact'
+                                                - 0
+                                        puthd:
+                                                - 24
+                                                - 'steps'
+                                                - 'exact'
+                                                - -${echam.time_step}
+        'first':
+                pseudo_start_date: $((${start_date}))
+                pseudo_end_date: $((${next_date} - ${time_step}seconds))
+                add_namelist_changes:
+                        namelist.jsbach:
+                                hydrology_ctl:
+                                        gethd: "remove_from_namelist"
+                                        puthd: "remove_from_namelist"
+
+choose_general.run_number:
+        1:
+                pseudo_parent_date: ${parent_date}
+        "*":    
+                pseudo_parent_date: ${pseudo_start_date}
+
 choose_version:
         "3.20p1":
                 dataset: r0010
@@ -336,7 +369,7 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -346,10 +379,10 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 restart_out_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 
 

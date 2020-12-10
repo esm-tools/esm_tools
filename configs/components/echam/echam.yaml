@@ -126,12 +126,12 @@ choose_restart_firstlast:
         last:
                 pseudo_start_date: $((${start_date} - ${time_step}seconds))
                 pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
-                pseudo_final_date: $((${final_date} - ${time_step}seconds))
+                pseudo_final_date: $((${final_date} + 1days - ${time_step}seconds))
                 pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
         first:
                 pseudo_start_date: ${start_date} 
                 pseudo_start_date2: $((${start_date} - 1years))
-                pseudo_final_date: ${final_date}
+                pseudo_final_date: $((${final_date} + 1days))
                 pseudo_end_date: $((${next_date} - ${time_step}seconds))
 
 
@@ -372,6 +372,7 @@ choose_scenario:
 
 choose_general.run_number:
         1:
+                pseudo_parent_date: ${parent_date}
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -382,7 +383,8 @@ choose_general.run_number:
                                                 - ${pseudo_start_date!hour}
                                                 - ${pseudo_start_date!minute}
                                                 - ${pseudo_start_date!second}
-        "*":      
+        "*":     # 
+                pseudo_parent_date: ${pseudo_start_date}
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -598,7 +600,7 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -608,10 +610,10 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 
 log_files:

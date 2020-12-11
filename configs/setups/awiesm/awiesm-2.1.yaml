@@ -3,6 +3,31 @@
 #########################################################################################
 
 general:
+        compute_recipe:
+            - "venv_bootstrap"
+            - "_create_setup_folders"
+            - "_create_component_folders"
+            - "initialize_experiment_logfile"
+            - "copy_tools_to_thisrun"
+            - "compile_model"
+            - "_copy_preliminary_files_from_experiment_to_thisrun"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "create_hosing_files"
+            - "prepare_coupler_files"
+            - "add_batch_hostfile"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "copy_files_to_thisrun"
+            - "modify_namelists"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "write_simple_runscript"
+            - "report_missing_files"
+            - "database_entry"
+            - "submit"
+
         model: awiesm
 
         coupled_setup: True
@@ -86,7 +111,7 @@ jsbach:
         choose_jsbach.dataset:
                 "r0009":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
-                "r0008":        
+                "r0008":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:

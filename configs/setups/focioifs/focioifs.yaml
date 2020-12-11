@@ -80,6 +80,30 @@ preprocess:
 #########################################################################################
 
 oifs:
+        # Ok here's something that's not intuitive and certainly needs improvement in the next version
+        # compiletime and runtime env changes have to be placed within one of the components (does not
+        # matter which one) and then they are valid for all components.
+        compiletime_environment_changes:
+          choose_computer.name:
+             blogin:
+                compiler_mpi: intel2019_ompi
+             glogin:
+                compiler_mpi: intel2019_ompi
+             juwels:
+                compiler_mpi: intel2019_parastation 
+        runtime_environment_changes:
+          add_export_vars:
+             # Turn on FOCI coupling        
+             - 'FOCI_USE_CPLNG="active"'
+             - 'FESOM_USE_CPLNG="no"'
+             - 'ECE_USE_CPLNG="no"'
+          choose_computer.name:
+             blogin:
+                compiler_mpi: intel2019_ompi
+             glogin:
+                compiler_mpi: intel2019_ompi
+             juwels:
+                compiler_mpi: intel2019_parastation 
 
         version: "43r3"
         
@@ -110,12 +134,6 @@ oifs:
                                 # TODO: Add variable for AGRIF coupling
                                 FOCI_CPL_NEMO_LIM: ".true." 
                 
-        runtime_environment_changes:
-                add_export_vars:
-                        # Turn on FOCI coupling        
-                        - 'FOCI_USE_CPLNG="active"'
-                        - 'FESOM_USE_CPLNG="no"'
-                        - 'ECE_USE_CPLNG="no"'
         
         choose_resolution:
                 TCO95:

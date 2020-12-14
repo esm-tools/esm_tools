@@ -16,8 +16,8 @@ xml_dir: ''
 include_models:
         - xios
 
-required_plugins:
-        - "git+https://github.com/esm-tools-plugins/preprocess"
+#required_plugins:
+#        - "git+https://github.com/esm-tools-plugins/preprocess"
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS

@@ -2,48 +2,57 @@ release5_esm_tools:
         package: "esm_tools"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_runscripts:
         package: "esm_runscripts"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_master:
         package: "esm_master"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_parser:
         package: "esm_parser"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_environment:
         package: "esm_environment"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_version_checker:
         package: "esm_version_checker"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
 release5_esm_plugin_manager:
         package: "esm_plugin_manager"
         versions: "<4.0.0"
         message: |
-                Your version of this package is very old. Please consider updating to release 5 . 
+                Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
+hosing_esm_tools:
+        package: "esm_tools"
+        versions: ">=5.0.5"
+        message: |
+                "ESM Tools version 5.0.5 allows for the generation of hosing files in AWI-ESM-2.1 and AWI-ESM-2.2
+                To use that, you still need to install a plugin. Please run:
+
+                $ pip install --user git+https://gitlab.awi.de/paleodyn/Projects/PalMod/gfw_creator.git"
+        action: DELAY(1)

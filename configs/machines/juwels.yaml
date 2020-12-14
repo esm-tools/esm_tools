@@ -18,8 +18,17 @@ batch_system: slurm
 logical_cpus_per_core: 2
 threads_per_core: 1
 launcher_flags: "-l "
+# set default for hyperthreading_flag
 hyperthreading_flag: "--ntasks-per-core=1"
 sh_interpreter: "/usr/bin/bash"
+
+use_hyperthreading: "0"
+choose_general.use_hyperthreading:
+        "0":
+                hyperthreading_flag: "--ntasks-per-core=1"
+        "*":
+                hyperthreading_flag: ""
+
 
 # pool directories
 # TODO: cleanup the pool / focipool logic

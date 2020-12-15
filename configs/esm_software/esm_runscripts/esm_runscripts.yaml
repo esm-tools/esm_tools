@@ -39,6 +39,7 @@ choose_job_type:
                         - "_increment_date_and_run_number"
                         - "_write_date_file"
                         - "maybe_resubmit"
+                        - "signal_tidy_completion"
 
 
         compute:

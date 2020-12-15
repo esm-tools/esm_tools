@@ -618,6 +618,9 @@ namelist_changes:
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
+mpiesm_fields: [SSTATMOS, SITATMOS, SICATMOS, SNTATMOS, OCUATMOS, OCVATMOS, CO2TRAAT, CO2ATMOS, TXWATMOU, TYWATMOU, TXIATMOU, TYIATMOU]
+mpiesm_fields_lr: [FRIATMOS, FRWATMOS, RHIATMOS, CHIATMOS, NHWATMOS, SHWATMOS, WSVATMOS, CO2CONAT]
+
 coupling_fields:
         sst_atmo:
                 grid: atmo
@@ -660,6 +663,15 @@ coupling_fields:
         "[[foci_fields-->FIELD]]":
                 grid: atmo
 
+        "[[mpiesm_fields-->FIELD]]":
+                grid: atmo
+
+        "[[mpiesm_fields_lr-->FIELD]]":
+                grid: atmo_lr
+
+        CO2FLXAT:
+                grid: atml
+
 grids:
         atmo:
                 name: atmo
@@ -667,7 +679,18 @@ grids:
                 ny: "${_ny}"
                 oasis_grid_type: "D"
                 number_of_overlapping_points: 0 # oasis P-value
-
+        atmo_lr:
+                name: atmo
+                nx: "${_nx}"
+                ny: "${_ny}"
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0 # oasis P-value
+        atml:
+                name: atml
+                nx: "${_nx}"
+                ny: "${_ny}"
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0 # oasis P-value
 
 
 # Configuration Files:

@@ -42,6 +42,67 @@ bin_dir: "${setup_dir}/bin"
 time_step: 2700
 resolution: GR15
 
+choose_resolution:
+        GR15:
+                nx: 120
+                ny: 101
+        GR30:
+                nx: 254 # 256 @CHRISTIAN: should it be 254 or 256? inconsistencies
+                            # between old runscripts MPIOM presets and OASIS namcouple
+                ny: 220
+
+coupling_fields:
+        SSTOCEAN:
+                grid: oces
+        SITOCEAN:
+                grid: oces
+        SICOCEAN:
+                grid: oces
+        SNTOCEAN:
+                grid: oces
+        OCUOCEAN:
+                grid: oces
+        OCVOCEAN:
+                grid: oces
+        CO2TRAOC:
+                grid: oces
+        CO2OCEAN:
+                grid: oces
+        FRIOCEAN:
+                grid: oces
+        FRWOCEAN:
+                grid: oces
+        TXWOCEAS:
+                grid: oces
+        TYWOCEAS:
+                grid: oces
+        TXIOCEAS:
+                grid: oces
+        TYIOCEAS:
+                grid: oces
+        RHIOCEAN:
+                grid: oces
+        CHIOCEAN:
+                grid: oces
+        NHWOCEAN:
+                grid: oces
+        SHWOCEAN:
+                grid: oces
+        WSVOCEAN:
+                grid: oces
+        CO2CONOC:
+                grid: oces
+        CO2FLXOC:
+                grid: oces
+
+grids:
+        oces:
+                name: oces
+                nx: "${nx}"
+                ny: "${ny}"
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0 # oasis P-value
+
 bin_files:
         mpiom_bin: "mpiom_bin"
 bin_sources:

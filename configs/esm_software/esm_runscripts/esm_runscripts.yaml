@@ -36,9 +36,9 @@ choose_job_type:
                         - "copy_all_results_to_exp"
                         - "clean_run_dir"
                         - "start_post_job"
+                        - "signal_tidy_completion"
                         - "_increment_date_and_run_number"
                         - "_write_date_file"
-                        - "signal_tidy_completion"
                         - "maybe_resubmit"
 
 

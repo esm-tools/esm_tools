@@ -5,15 +5,20 @@ name: mistral
 additional_flags: "--mem=0"
 account: None
 
-choose_general.use_hyperthreading:
+use_hyperthreading: False
+choose_use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        1:
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
         "0":
                 hyperthreading_flag: "--ntasks-per-core=1"
         0:
                 hyperthreading_flag: "--ntasks-per-core=1"
         False:
                 hyperthreading_flag: "--ntasks-per-core=1"
-        "*":
-                hyperthreading_flag: ""
 
 accounting: true
 

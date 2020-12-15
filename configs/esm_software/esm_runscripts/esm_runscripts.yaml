@@ -38,8 +38,8 @@ choose_job_type:
                         - "start_post_job"
                         - "_increment_date_and_run_number"
                         - "_write_date_file"
-                        - "maybe_resubmit"
                         - "signal_tidy_completion"
+                        - "maybe_resubmit"
 
 
         compute:

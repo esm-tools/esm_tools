@@ -5,8 +5,8 @@ name: mistral
 additional_flags: "--mem=0"
 account: None
 
-hyperthreading_flag: "--ntasks-per-core=1"
-choose_general.use_hyperthreading:
+use_hyperthreading: False
+choose_use_hyperthreading:
         "1":
                 hyperthreading_flag: ""
         1:

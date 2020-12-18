@@ -61,8 +61,8 @@ choose_resolution:
                 nx: 120
                 ny: 101
         GR30:
-                nx: 254 # 256 @CHRISTIAN: should it be 254 or 256? inconsistencies
-                            # between old runscripts MPIOM presets and OASIS namcouple
+                nx: 254 # @CHRISTIAN: should it be 254 or 256? inconsistencies
+                        # between old runscripts MPIOM presets and OASIS namcouple
                 ny: 220
 
 coupling_fields:
@@ -130,4 +130,5 @@ config_sources:
 
 further_reading:
         - mpiom/mpiom.compiletime_env_changes.yaml
+        - mpiom/mpiom.nml_mod.yaml
 

@@ -53,7 +53,18 @@ general:
 #########################################################################################
 
 echam:
+        # namelist.echam in the run folder is almost identical to those from MPI
+        # scripts. The differences are:
+        # - ``nprocar`` and ``nprocbr`` are defined in ESM-Tools version (taken
+        #   from the old ksh scripts)
+        # - default_output = .true. (.false. for MPI)
+
         namelist_dir: "${general.esm_namelist_dir}/echam/${version}-mpiesm"
+
+        namelist_changes:
+                namelist.echam:
+                        runctl:
+                                lcouple: .true.
 
         choose_computer.cores_per_node:
                 24:
@@ -148,11 +159,23 @@ mpiom:
 #########################################################################################
 
 oasis3mct:
+        # @Christian: namcouple copied from MPI namcouple. The only differences with it
+        # is that the ``SEQ = 1`` in each field is missing but Oasis manual states that
+        # "the SEQ namcouple setting is only diagnostic and it is not required".
+        # ``nb`` values in each field are also different but Oasis manual states that
+        # this parameter is "UNUSED but still required for parsing".
+        # OCVATMOS-OCVOCEAN and OCUATMOS-OCUOCEAN fields are labelled as vectors in the
+        # MPI version but oasis3mct does not support VECTORS anymore. The log from
+        # the MPI scripts you sent me shows that it is using oasis3mct, therefore, so
+        # oasis3mct might not care anymore about if that parameter is defined as
+        # VECTOR or SCALAR, it considers it always as a SCALAR (in fact, the oasis
+        # manual states that "the optionVECTOR, which in fact leads to a scalar
+        # treatment of the field (as in the previous versions), is still accepted").
 
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}
 
-        process_ordering: #V1?
+        process_ordering:
                 - mpiom
                 - echam
 
@@ -161,15 +184,15 @@ oasis3mct:
         ini_parent_exp_id: "an_exp_id" # not used, but needs to be present
         ini_restart_dir: "${pool_dir}"
 
-        a2o_lag: "${echam.time_step}" #V4?
-        o2a_lag: "${mpiom.time_step}" #V2?
-        a2o_seq: 3 #V3?
-        o2a_seq: 3 #V3?
+        a2o_lag: "${echam.time_step}"
+        o2a_lag: "${mpiom.time_step}"
+        a2o_seq: 3
+        o2a_seq: 3
 
-        coupling_time_step: 86400 #V17
-        coupling_target_fields: # @CHRISTIAN: I don't understand the nb values of the namcouple 1, 45, 31...
-                sstoce1: #V5
-                        - 'SSTATMOS <--conserv-- SSTOCEAN' #V7? conserv scalar?
+        coupling_time_step: 86400
+        coupling_target_fields:
+                sstoce1:
+                        - 'SSTATMOS <--conserv-- SSTOCEAN'
                 sstoce2:
                         - 'SITATMOS <--conserv-- SITOCEAN'
                 sstoce3:
@@ -177,19 +200,19 @@ oasis3mct:
                 sstoce4:
                         - 'SNTATMOS <--conserv-- SNTOCEAN'
                 sstoce5:
-                        - 'OCUATMOS <--conserv-- OCUOCEAN' #V6? V8? conserv vector? # @CHRISTIAN: it had a VECTOR on the previous version but oasis3mtc says there is not such a possibility anymore...
+                        - 'OCUATMOS <--conserv-- OCUOCEAN'
                 sstoce6:
-                        - 'OCVATMOS <--conserv-- OCVOCEAN' #V6?
+                        - 'OCVATMOS <--conserv-- OCVOCEAN'
                 sstoce7:
-                        - 'CO2TRAAT <--conserv-- CO2TRAOC' #V9? conserv scalar?
+                        - 'CO2TRAAT <--conserv-- CO2TRAOC'
                 sstoce8:
                         - 'CO2ATMOS <--conserv-- CO2OCEAN'
                 flxatm17:
-                        - 'FRIOCEAN <--conserv2-- FRIATMOS' #V11? conserv scalar?
+                        - 'FRIOCEAN <--conserv2-- FRIATMOS'
                 flxatm18:
                         - 'FRWOCEAN <--conserv2-- FRWATMOS'
                 flxatm9:
-                        - 'TXWOCEAS <--bicubic-- TXWATMOU' #V12? V13
+                        - 'TXWOCEAS <--bicubic-- TXWATMOU'
                 flxatm11:
                         - 'TYWOCEAS <--bicubic-- TYWATMOU'
                 flxatm13:
@@ -197,7 +220,7 @@ oasis3mct:
                 flxatm15:
                         - 'TYIOCEAS <--bicubic-- TYIATMOU'
                 flxatm19:
-                        - 'RHIOCEAN <--conserv3-- RHIATMOS' #V14? V15? conserv scalar?
+                        - 'RHIOCEAN <--conserv3-- RHIATMOS'
                 flxatm20:
                         - 'CHIOCEAN <--conserv3-- CHIATMOS'
                 flxatm21:
@@ -209,7 +232,7 @@ oasis3mct:
                 flxatm24:
                         - 'CO2CONOC <--conserv3-- CO2CONAT'
                 flxatm25:
-                        - 'CO2FLXOC <--conserv4-- CO2FLXAT' #V16? V15?
+                        - 'CO2FLXOC <--conserv4-- CO2FLXAT'
 
         coupling_directions:
                 'oces->atmo':
@@ -227,16 +250,16 @@ oasis3mct:
 
         coupling_methods:
                 conserv:
-                        time_transformation: instant #?
+                        time_transformation: instant
                         remapping:
                                 - conserv:
-                                        search_bin: latitude #V7
-                                        nb_of_search_bins: 40 #V7
-                                        normalization: fracarea #V7?
-                                        order: first #V7
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracarea
+                                        order: first
                                 - mapping:
-                                        mapname: rmp_oces_to_atmo_CONSERV_FRACAREA_${general.resolution}.nc #V19?
-                                        map_regrid_on: src #V19?
+                                        mapname: rmp_oces_to_atmo_CONSERV_FRACAREA_${general.resolution}.nc
+                                        map_regrid_on: dst
                 conserv2:
                         time_transformation: instant
                         remapping:
@@ -247,7 +270,7 @@ oasis3mct:
                                         order: first
                                 - mapping:
                                         mapname: rmp_atmo_to_oces_CONSERV_FRACAREA_${general.resolution}.nc
-                                        map_regrid_on: dst
+                                        map_regrid_on: src
                         postprocessing:
                                 conserv:
                                         method: global
@@ -261,7 +284,7 @@ oasis3mct:
                                         order: first
                                 - mapping:
                                         mapname: rmp_atmo_to_oces_CONSERV_FRACAREA_${general.resolution}.nc
-                                        map_regrid_on: dst
+                                        map_regrid_on: src
                 conserv4:
                         time_transformation: instant
                         remapping:
@@ -277,11 +300,11 @@ oasis3mct:
                                 conserv:
                                         method: global
                 bicubic:
-                        time_transformation: instant #?
+                        time_transformation: instant
                         remapping:
                                 - bicubic:
-                                        search_bin: latitude #V13
-                                        nb_of_search_bins: 40 #V13
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
                                 - mapping:
-                                        mapname: rmp_atmo_to_oces_BICUBIC_D_${general.resolution}.nc #V18?
-                                        map_regrid_on: dst #V18?
+                                        mapname: rmp_atmo_to_oces_BICUBIC_D_${general.resolution}.nc
+                                        map_regrid_on: src

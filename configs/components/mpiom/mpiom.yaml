@@ -2,6 +2,7 @@
 #
 
 model: mpiom
+type: ocean
 
 available_versions:
 - 1.6.2p3
@@ -35,9 +36,22 @@ metadata:
                 please contact redmine...
 
 executable: mpiom
+version: 1.6.3
+
+standalone_model: True
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
+namelist_dir: "${general.esm_namelist_dir}/mpiom/${version}"
+
+namelists:
+        - "OCECTL"
+        - "NAMELIST_BGC"
+
+namelist_changes:
+        OCECTL:
+                ocectl:
+                        dt: "${time_step}"
 
 time_step: 2700
 resolution: GR15
@@ -109,6 +123,10 @@ bin_sources:
         mpiom_bin: "${bin_dir}/mpiom.x"
 bin_in_work:
         mpiom_bin: "mpiom.x"
+
+config_sources:
+        OCECTL: "${namelist_dir}/OCECTL"
+        NAMELIST_BGC: "${namelist_dir}/NAMELIST_BGC"
 
 further_reading:
         - mpiom/mpiom.compiletime_env_changes.yaml

@@ -53,6 +53,8 @@ general:
 #########################################################################################
 
 echam:
+        namelist_dir: "${general.esm_namelist_dir}/echam/${version}-mpiesm"
+
         choose_computer.cores_per_node:
                 24:
                         choose_general.resolution:
@@ -78,6 +80,8 @@ echam:
         choose_general.version:
                 CMIP6:
                     version: "6.3.04p1"
+                "1.2.01p1":
+                    version: "6.3.05p2"
                 "1.2.01":
                     version: "6.3.04p1"
                 "1.2.00":
@@ -87,9 +91,13 @@ echam:
 #########################################################################################
 
 jsbach:
+        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}-mpiesm"
+
         choose_general.version:
                 CMIP6:
                     version: "3.20"
+                "1.2.01p1":
+                    version: "3.20p1"
                 "1.2.01":
                     version: "3.20"
                 "1.2.00":
@@ -129,6 +137,8 @@ mpiom:
         choose_general.version:
                 CMIP6:
                     version: "1.6.3"
+                "1.2.01p1":
+                    version: "1.6.3p2"
                 "1.2.01":
                     version: "1.6.3"
                 "1.2.00":

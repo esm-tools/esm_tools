@@ -1,0 +1,85 @@
+&runctl
+    dt_start = 1898, 12, 31, 23, 52, 30
+    dt_stop = 2349, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    lresume = .true.
+    out_datapath = './'
+    out_expname = 'mpiesm_PI_ctrl_ham'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'months', 'last', 0
+    nproma = 8
+    lcouple = .true.
+    getocean = 192, 'steps', 'exact', 0
+    putocean = 192, 'steps', 'exact', -450
+    lcouple_co2 = .true.
+    default_output = .false.
+    dt_resume = 1899, 12, 31, 23, 52, 30
+/
+&parctl
+    nproca = 24
+    nprocb = 24
+/
+&submodelctl
+    lmethox = .true.
+/
+&mvstreamctl ! 'default spm glm g3bm'
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+&mvstreamctl ! 'default co2m'
+    filetag = 'co2'
+    source = 'co2'
+/
+&mvstreamctl ! 'default surfm'
+    filetag = 'surf'
+    source = 'surf'
+/
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+/
+&mvstreamctl ! 'default jsbachm'
+    filetag = 'jsbach'
+    source = 'jsbach'
+/
+&mvstreamctl ! 'default landm'
+    filetag = 'land'
+    source = 'land'
+/
+&mvstreamctl ! 'default vegm'
+    filetag = 'veg'
+    source = 'veg'
+/
+&mvstreamctl ! 'default yassom'
+    filetag = 'yasso'
+    source = 'yasso'
+/
+&set_stream ! 'default jsbach'
+    stream = 'jsbach'
+    lpost = 0
+/
+&set_stream ! 'default land'
+    stream = 'land'
+    lpost = 0
+/
+&set_stream ! 'default veg'
+    stream = 'veg'
+    lpost = 0
+/
+&set_stream ! 'default yasso'
+    stream = 'yasso'
+    lpost = 0
+/
+&radctl
+    iaero = 3
+    io3 = 4
+    isolrad = 6
+    ich4 = 3
+    in2o = 3
+    co2vmr = 284.3169860840e-06
+    ch4vmr = 808.2490234375e-09
+    n2ovmr = 273.0210571289e-09
+    yr_perp = 1850
+/

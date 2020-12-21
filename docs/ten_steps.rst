@@ -2,9 +2,12 @@
 Ten Steps to a Running Model
 ============================
 
-1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see :ref:`installation:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see :ref:`installation:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-     $ export PATH=$PATH:~/.local/bin
+    $ export PATH=$PATH:~/.local/bin
+    $ export LC_ALL=en_US
+    $ export LANG=en_US.utf-8
+
 
 2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
 

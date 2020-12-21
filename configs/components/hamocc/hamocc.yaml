@@ -1,0 +1,50 @@
+# HAMOCC YAML CONFIGURATION FILE
+#
+
+model: hamocc
+type: biogeochemistry
+
+version: "${mpiom.version}"
+resolution: "${mpiom.resolution}"
+
+forcing_dir: "${mpiom.forcing_dir}"
+namelist_dir: "${general.esm_namelist_dir}/hamocc/${version}"
+
+ini_parent_date: 22941231
+ini_parent_exp_id: khw0030
+ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/hamocc"
+
+namelists:
+        - "NAMELIST_BGC"
+
+config_sources:
+        NAMELIST_BGC: "${namelist_dir}/NAMELIST_BGC"
+
+choose_version:
+        "1.6.2p3":
+                forcing_files:
+                        MAHOWALDDUST: MAHOWALDDUST_r2
+        "1.6.3":
+                forcing_files:
+                        MAHOWALDDUST: MAHOWALDDUST_2005
+                        ndepo: ndepo
+                add_forcing_in_work:
+                        ndepo: nitrogen_deposition.nc
+        "1.6.3p2":
+                forcing_files:
+                        MAHOWALDDUST: MAHOWALDDUST_2005
+                        ndepo: ndepo
+                add_forcing_in_work:
+                        ndepo: nitrogen_deposition.nc
+
+forcing_sources:
+        MAHOWALDDUST_r2: "${forcing_dir}/${resolution}_MAHOWALDDUST_r2.nc"
+        MAHOWALDDUST_2005: "${forcing_dir}/${resolution}_MAHOWALDDUST_2005.nc"
+        ndepo: "${forcing_dir}/${resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc"
+
+forcing_in_work:
+        MAHOWALDDUST: dust_deposition.nc
+
+
+further_reading:
+        - hamocc/hamocc.nml_mod.yaml

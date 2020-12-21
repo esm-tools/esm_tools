@@ -35,33 +35,65 @@ metadata:
                 Please make sure you have a licence to use MPIOM. In case you are unsure,
                 please contact redmine...
 
-executable: mpiom
+executable: mpiom.x
 version: 1.6.3
+resolution: GR30
+levels: 40
+dataset: "r0008"
+
+ini_parent_date: 22941231
+ini_parent_exp_id: khw0030
+ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/mpiom"
+
+pseudo_start_date: ${start_date}
+pseudo_end_date: ${next_date}
+pseudo_resume_date: ${start_date}
 
 standalone_model: True
 
+include_models:
+        - hamocc
+
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
+pool_dir: "${computer.pool_directories.pool}/MPIOM"
+input_dir: "${pool_dir}/input/${dataset}/${resolution}"
+forcing_dir: "${input_dir}"
 namelist_dir: "${general.esm_namelist_dir}/mpiom/${version}"
+
+# Options
+# @Christian: I don't know what is the desired default for this options
+salt_restoring: false
+iterative_coupling: false
+lflexible_hosing: false
 
 namelists:
         - "OCECTL"
-        - "NAMELIST_BGC"
 
 namelist_changes:
         OCECTL:
                 ocectl:
                         dt: "${time_step}"
+                        nmonts: "${nmonths}"
+                        ndays: "${ndays}"
+                ocedim:
+                        ie_g: "${nx}"
+                        je_g: "${ny}"
+                        ke: "${levels}"
+                nprocs:
+                        nprocx: "${nproca}"
+                        nprocy: "${nprocb}"
 
+ndays: 0
+nmonths: 12
 time_step: 2700
-resolution: GR15
 
 choose_resolution:
         GR15:
                 nx: 120
                 ny: 101
         GR30:
-                nx: 254 # @CHRISTIAN: should it be 254 or 256? inconsistencies
+                nx: 256 # @CHRISTIAN: should it be 254 or 256? inconsistencies
                         # between old runscripts MPIOM presets and OASIS namcouple
                 ny: 220
 
@@ -126,7 +158,64 @@ bin_in_work:
 
 config_sources:
         OCECTL: "${namelist_dir}/OCECTL"
-        NAMELIST_BGC: "${namelist_dir}/NAMELIST_BGC"
+
+input_files:
+        topo: topo
+        BEK: BEK
+        anta: anta
+        arcgri: arcgri
+
+input_sources:
+        topo: "${input_dir}/${resolution}_topo"
+        BEK: "${input_dir}/${resolution}_BEK"
+        anta: "${input_dir}/${resolution}_anta"
+        arcgri: "${input_dir}/${resolution}_arcgri.nc"
+
+input_in_work:
+        topo: topo
+        BEK: BEK
+        anta: anta
+        arcgri: arcgri.nc
+
+
+choose_lresume:
+        false:
+                add_namelist_changes:
+                        OCECTL:
+                                ocectl:
+                                        istart: 2
+                                        model_start_time:
+                                                - ${pseudo_start_date!year}
+                                                - ${pseudo_start_date!month}
+                                                - ${pseudo_start_date!day}
+
+choose_salt_restoring:
+        true:
+                add_forcing_files:
+                        INISAL_PHC: INISAL_PHC
+                add_forcing_sources:
+                        INISAL_PHC: "${forcing_dir}/${resolution}L${levels}_INISAL_PHC"
+                add_forcing_in_work:
+                        INISAL_PHC: INISAL_PHC
+                add_namelist_changes:
+                        OCECTL:
+                                ocectl:
+                                        set_nudge_sss: [".true.", 3.3e-7, 1, 1, 1, "${nx}", "${ny}", 1, 2]
+                                ioctl:
+                                        iolist(87): [890, 'RELSSS', 'nc4', 62]
+                # The following lines need to be translated into the new Pythonic logic
+                # when salt_restoring is true:
+                #cdo -sellevidx,1 -setcode,62 -selcode,5 ${INIT_DIR_mpiom}/RELSSS ${INIT_DIR_mpiom}/foo >> $dumpfile 2>&1
+                #mv ${INIT_DIR_mpiom}/foo ${INIT_DIR_mpiom}/RELSSS >> $dumpfile 2>&1
+
+choose_iterative_coupling:
+        true:   # I doubt that this option will work as there are many pieces I don't
+                # know how to implement from the old scripts
+                add_namelist_changes:
+                        OCECTL:
+                                ocectl:
+                                        lflexible_hosing: "${lflexible_hosing}"
+
 
 further_reading:
         - mpiom/mpiom.compiletime_env_changes.yaml

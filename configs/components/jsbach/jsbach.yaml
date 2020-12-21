@@ -30,7 +30,7 @@ config_sources:
 
 # normally, except awicm on ollie :-(((
 no_dynveg_file_ending: "_no-dynveg"
-dynveg_file_ending: "_dynveg"
+dynveg_file_ending: ""
 
 choose_version:
         "3.20p1":
@@ -336,7 +336,7 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -346,7 +346,7 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc

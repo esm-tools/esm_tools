@@ -301,7 +301,7 @@ choose_scenario:
                 add_input_files:
                         MAC-SP: MAC-SP
         HIST:
-                greenhouse_dir: "${forcing_dir}"
+                greenhouse_dir: "${input_dir}"
                 forcing_files:
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
@@ -467,7 +467,7 @@ forcing_in_work:
         aerofarir: "aero_farir_@YEAR@.nc"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
-        volcir: "strat_aerosol_ir_@YEAR@.nc"
+        volcanir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
 

@@ -54,5 +54,5 @@ hosing_esm_tools:
                 "ESM Tools version 5.0.5 allows for the generation of hosing files in AWI-ESM-2.1 and AWI-ESM-2.2
                 To use that, you still need to install a plugin. Please run:
 
-                $ pip install --user git+https://gitlab.awi.de/paleodyn/Projects/PalMod/gfw_creator.git"
+                $ pip install --user gfw_creator"
         action: DELAY(1)

@@ -3,6 +3,9 @@
 name: blogin
 account: None
 
+# set default for hyperthreading_flag
+hyperthreading_flag: "--ntasks-per-core=1"
+use_hyperthreading: "0"
 choose_general.use_hyperthreading:
         "0":
                 hyperthreading_flag: "--ntasks-per-core=1"
@@ -73,6 +76,13 @@ choose_compiler_mpi:
          - "load intel/19.0.5"
          - "load impi/2019.5"
       choose_general.setup_name:
+         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
+         focioifs:
+            add_module_actions:
+               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 
+         oifs:
+            add_module_actions:
+               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 
          foci:
             add_module_actions:
                - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 

@@ -48,7 +48,7 @@ icmcl_dir: ${input_dir}
 icmcl_file: ICMCLgu5aINIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
 ifsdata_dir: ${input_dir}/../${version}/ifsdata/
-namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
+namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/pictl/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 cmip6_data_dir_nml: ./cmip6_data/
@@ -408,6 +408,7 @@ generate_namelist: 1
 ensemble: 0
 post_processing: 0
 use_ocean_currents: 0
+pextra: 0
 
 #cmip6: True
 #cmip5: False
@@ -735,6 +736,20 @@ choose_with_xios:
                         ICMSH: ICMSH
 
 
+choose_pextra: 
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LBUD23: ".true."
+                                NAMDPHY:
+                                        NVEXTR: 25
+                                        NCEXTR: ${nlev}
+                                #NAMPHYDS:
+                                #        NVEXTRAGB(:): 91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115, 
+                                #NAMFPC:
+                                #        NFP3DFS: 25
+                                #        MFP3DFS: 91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115, 
 
 ##
 ## would that we with or without ECWAM, sir?
@@ -957,7 +972,7 @@ forcing_sources:
 
 
 config_sources:
-        "fort.4": "${namelist_dir}/pictl/fort.4"
+        "fort.4": "${namelist_dir}/fort.4"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT

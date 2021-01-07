@@ -5,7 +5,7 @@ general:
         setup_name: oifs
         compute_time: "00:30:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1979-01-04T00:00:00"
+        final_date: "1980-01-01T00:00:00"
         nyear: 0
         nmonth: 1
         nday: 0
@@ -39,7 +39,7 @@ general:
 
 oifs:
         version: 43r3
-        with_xios: True 
+        with_xios: True         
         input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
         rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
         vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
@@ -60,9 +60,12 @@ oifs:
         nprocb: 1
         perturb: 0
         ensemble_id: 1
+        pextra: 1 
+        namelist_dir: /home/shkjocke/esm_tools/namelists/oifs/43r3/pextra/
         
 xios:
-        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_PEXTRA_Aday+Amon
         # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
         #xml_dir: ${oifs.pool_dir}/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
         # 6hrPlev + 1day PV lev + 1day sfc + monthly means 

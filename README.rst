@@ -45,7 +45,7 @@ First, make sure you add the following lines to one of your login or profile fil
 
     $ export PATH=$PATH:~/.local/bin
     $ export LC_ALL=en_US
-    $ export LANG=en_US.utf-8
+    $ export LANG=en_US.UTF-8
 
 To use the new version of the esm-tools, now rewritten in Python, clone this repository::
 

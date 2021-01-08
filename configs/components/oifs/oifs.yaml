@@ -745,11 +745,11 @@ choose_pextra:
                                 NAMDPHY:
                                         NVEXTR: 25
                                         NCEXTR: ${nlev}
-                                #NAMPHYDS:
-                                #        NVEXTRAGB(:): 91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115, 
-                                #NAMFPC:
-                                #        NFP3DFS: 25
-                                #        MFP3DFS: 91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115, 
+                                NAMPHYDS:
+                                        NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
+                                NAMFPC:
+                                        NFP3DFS: 25
+                                        MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
 
 ##
 ## would that we with or without ECWAM, sir?
@@ -1059,10 +1059,11 @@ preprocess:
                 type: shell
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27
-#postprocess:
-#        postprocess_shell:
-#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-#                type: shell
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
+
 compute_recipe:
    - "venv_bootstrap"
    - "_create_setup_folders"

@@ -55,13 +55,12 @@ oifs:
         resolution: TCO95
         levels: L91
         lresume: 0
-        post_processing: 1
+        post_processing: 0
         nproca: 288
         nprocb: 1
         perturb: 0
         ensemble_id: 1
         pextra: 1 
-        namelist_dir: /home/shkjocke/esm_tools/namelists/oifs/43r3/pextra/
         
 xios:
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon

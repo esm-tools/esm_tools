@@ -5,7 +5,7 @@ shall_exit=false
 
 
 # prints the error message as the first argument and exits the program with non-zero status
-function quit_setup () {
+function quit_install () {
     echo ""
     echo "$(tput setaf 1)ERROR: ${1} $(tput sgr 0)"
     echo "please set the LANG and LC_ALL variables in your shell startup script (eg. .bashrc, .bash_profile) to the following values: "
@@ -38,7 +38,7 @@ fi
 
 # we have an error, terminate the script
 if [[ ${shall_exit} == true ]]; then
-    quit_setup "${err_msg}"
+    quit_install "${err_msg}"
 fi
 
 

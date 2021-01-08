@@ -6,7 +6,7 @@ Ten Steps to a Running Model
 
     $ export PATH=$PATH:~/.local/bin
     $ export LC_ALL=en_US
-    $ export LANG=en_US.utf-8
+    $ export LANG=en_US.UTF-8
 
 
 2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).

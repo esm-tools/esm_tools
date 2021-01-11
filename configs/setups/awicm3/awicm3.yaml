@@ -28,7 +28,7 @@ general:
               - "submit"
 
         model: awicm3
-        pool_dir: "/work/ollie/jstreffi/input"
+
         model_dir: ${esm_master_dir}/awicm3-${version}
 
         lresume: False
@@ -82,6 +82,12 @@ general:
                                         # OpenMP
                                         - 'OMP_NUM_THREADS=1'
 
+                        pool_dir: "/mnt/lustre01/work/ab0246/a270092/input"
+                ollie:
+                        pool_dir: "/work/ollie/jstreffi/input"
+                juwels:
+                        pool_dir: "/p/project/chhb19/jstreffi/input"
+
 # @JAN: preprocessing and postprocessing scripts needed here
 ############################################################
 #preprocess:
@@ -117,7 +123,7 @@ oifs:
         prepifs_expid: h6mv
         input_expid: awi3   # This cannot be longer than 4 characters
         input_dir: ${pool_dir}/oifs-${version}
-        rtables_dir: /work/ollie/jstreffi/input/oifs-43r3/rtables/
+        rtables_dir: ${input_dir}/rtables/
         ##vtables_dir: ${input_dir}/../vtables/
         ##clim_dir: ${input_dir}/../
         ##icmcl_dir: ${input_dir}

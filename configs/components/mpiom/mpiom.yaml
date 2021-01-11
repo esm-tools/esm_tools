@@ -219,5 +219,6 @@ choose_iterative_coupling:
 
 further_reading:
         - mpiom/mpiom.compiletime_env_changes.yaml
+        - mpiom/mpiom.runtime_env_changes.yaml
         - mpiom/mpiom.nml_mod.yaml
 

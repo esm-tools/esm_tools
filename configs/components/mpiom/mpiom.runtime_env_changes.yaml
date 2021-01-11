@@ -1,0 +1,12 @@
+choose_computer.name:
+        ollie:
+                runtime_environment_changes:
+                        add_export_vars:
+                                - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
+                                - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
+                                - 'FFLAGS="$FCFLAGS"'
+                                - 'ARFLAGS=crv'
+                                - 'WLFLAG="-Wl"'
+                                - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                                - 'OASIS3MCTROOT=${general.model_dir}'
+                                - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'

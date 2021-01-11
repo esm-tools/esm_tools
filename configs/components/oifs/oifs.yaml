@@ -17,6 +17,7 @@ include_models:
         - xios
 
 required_plugins:
+        - "git+https://github.com/esm-tools-plugins/postprocess"
         - "git+https://github.com/esm-tools-plugins/preprocess"
 
 description: |
@@ -48,7 +49,7 @@ icmcl_dir: ${input_dir}
 icmcl_file: ICMCLgu5aINIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
 ifsdata_dir: ${input_dir}/../${version}/ifsdata/
-namelist_dir: "$(esm_versions get esm_tools file_path)/namelists/oifs/${version}/pictl/"
+namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
 cmip6_data_dir_nml: ./cmip6_data/
@@ -1057,8 +1058,9 @@ preprocess:
         preprocess_shell:
                 method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
-# postprocessing is not supported, and causes a crash in release 5 if not commented
-# seb-wahl 2020-11-27
+# the postprocessing is at the moment essentially the same as the preprocessing plugin
+# it just executes a shell script
+# not working as expected as there is no "wait" after submit in the compute recipe below
 postprocess:
         postprocess_shell:
                 method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
@@ -1088,4 +1090,6 @@ compute_recipe:
    - "report_missing_files"
    - "database_entry"
    - "submit"
+# this does not work as expected, solution is work in progress
+#   - "postprocess"
 

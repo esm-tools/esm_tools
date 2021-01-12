@@ -246,25 +246,21 @@ oifs:
 
         #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
         remove_input_files:
-                - rtables
+                #- rtables
                 - vtables
 
         add_input_files:
                 ICMGG_INIT: ICMGG_INIT
                 ICMGG_INIUA: ICMGG_INIUA
                 ICMSH_INIT: ICMSH_INIT
-                o3_data: o3_data
 
-        add_input_sources: # @JAN/JOAKIM: finding inconsistencies among sources
+        input_sources: # @JAN/JOAKIM: finding inconsistencies among sources
                 ICMGG_INIT: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIT_${fesom.resolution}
                 ICMGG_INIUA: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIUA
                 ICMSH_INIT: ${input_dir}/${res_level}/ICMSH${prepifs_expid}INIT
+                tl_data: ${input_dir}/${version}/climate/${res_number_tl}/*
                 o3_data: ${input_dir}/${version}/climate/${res_number_tl}/o3chem_l${nlev}/*
 
-        #add_input_in_work:
-        #        ICMGG_INIT: ICMGG${input_expid}INIT
-        #        ICMGG_INIUA: ICMGG${input_expid}INIUA
-        #        ICMSH_INIT: ICMSH${input_expid}INIT
 
         # All forcing files are removed: path specified in to the namelist
         remove_forcing_files:

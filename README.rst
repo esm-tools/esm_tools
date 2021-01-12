@@ -4,12 +4,13 @@ ESM Tools
 
 .. image:: https://readthedocs.org/projects/esm-tools/badge/?version=latest
 
+For our complete documentation, please check https://esm-tools.readthedocs.io/en/latest/index.html.
 
 
 Before you continue
 -------------------
 
-You will need python 3 (possibly version 3.5 or newer) and also a version of git that is not ancient (everything newer than 2.10 should be good) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
+You will need python 3 (possibly version 3.6 or newer), a version of git that is not ancient (everything newer than 2.10 should be good), and up-to-date pip (``pip install -U pip``) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
 
 ollie.awi.de::
 
@@ -40,6 +41,12 @@ Note that some machines might raise an error ``conflict netcdf_c`` when loading 
 Installing
 ----------
 
+First, make sure you add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+
+    $ export PATH=$PATH:~/.local/bin
+    $ export LC_ALL=en_US
+    $ export LANG=en_US.utf-8
+
 To use the new version of the esm-tools, now rewritten in Python, clone this repository::
 
     $ git clone https://github.com/esm-tools/esm_tools.git
@@ -53,54 +60,3 @@ You should now have the command line tools ``esm_master`` and ``esm_runscripts``
 You may have to add the installation path to your ``PATH`` variable::
 
     $ export PATH=~/.local/bin:$PATH
-
-CI-Status
----------
-
-The following table shows automatic testing for compilation of various models
-on Ollie. Automatic testing of actual runs is still under constructions.
-Automatic testing for Mistral is not yet available.
-
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| Model Installation Ollie (Release Branch)                                                                          | Model Installation Ollie (Develop Branch)                                                                                         |
-+====================================================================================================================+===================================================================================================================================+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-1.0/badge.svg                   | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-1.0/badge.svg?branch=develop                   |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0-esm-interface-yac/badge.svg | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0-esm-interface-yac/badge.svg?branch=develop |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0-esm-interface/badge.svg     | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0-esm-interface/badge.svg?branch=develop     |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0/badge.svg                   | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-2.0/badge.svg?branch=develop                   |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-3.0/badge.svg                   | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-3.0/badge.svg?branch=develop                   |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-3.1/badge.svg                   | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-3.1/badge.svg?branch=develop                   |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-CMIP6/badge.svg                 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-CMIP6/badge.svg?branch=develop                 |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-recom-1.0/badge.svg             | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicm-recom-1.0/badge.svg?branch=develop             |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-1.0/badge.svg                 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-1.0/badge.svg?branch=develop                 |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-2.0/badge.svg                 | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-2.0/badge.svg?branch=develop                 |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-CMIP6/badge.svg               | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awicmcr-CMIP6/badge.svg?branch=develop               |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-1.1/badge.svg                  | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-1.1/badge.svg?branch=develop                  |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-1.2/badge.svg                  | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-1.2/badge.svg?branch=develop                  |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-2.1/badge.svg                  | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-2.1/badge.svg?branch=develop                  |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-2.2/badge.svg                  | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-awiesm-2.2/badge.svg?branch=develop                  |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-fesom-recom-1.4/badge.svg             | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-fesom-recom-1.4/badge.svg?branch=develop             |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-fesom-recom-2.0/badge.svg             | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-fesom-recom-2.0/badge.svg?branch=develop             |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.00p4/badge.svg             | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.00p4/badge.svg?branch=develop             |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01/badge.svg               | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01/badge.svg?branch=develop               |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01p1/badge.svg             | .. image:: https://github.com/esm-tools/esm_tools/workflows/CI-Ollie-install-mpiesm-1.2.01p1/badge.svg?branch=develop             |
-+--------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+

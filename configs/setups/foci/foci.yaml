@@ -40,22 +40,6 @@ general:
                                  - 'ECHAM6_THREADS=1'
                                  - 'NEMO_THREADS=1'
                                  - 'I_MPI_SLURM_EXT=0'
-                                #- 'I_MPI_DYNAMIC_CONNECTION=1'
-                                #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
-                                # Intel MPI
-                                #- 'DAPL_UCM_REP_TIME=8000'
-                                #- 'DAPL_UCM_RTU_TIME=8000'
-                                #- 'DAPL_UCM_CQ_SIZE=2000'
-                                #- 'DAPL_UCM_QP_SIZE=2000'
-                                #- 'DAPL_UCM_DREQ_RETRY=4'
-                                #- 'DAPL_UCM_WAIT_TIME=10000'
-                                # 1 was used in mkexp, but kills the model with esm-tools
-                                #- 'I_MPI_HARD_FINALIZE=1'
-                                # Intel OpenMP
-                                #- 'KMP_STACKSIZE=64m'
-                                #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
-                                # OpenMP
-                                #- 'OMP_NUM_THREADS=1'
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -126,12 +110,7 @@ echam:
                                 #       - ${pseudo_start_date!day}
                                 #       - ${pseudo_start_date!hour}
                                 #       - ${pseudo_start_date!minute}
-                                #       - ${pseudo_start_date!second}
-
-        # directories
-        model_dir: ${general.model_dir}/echam-${echam.version}
-        setup_dir: ${general.model_dir}
-
+                                #       - ${pseudo_start_date!second}        
 
         remove_forcing_files:
                 - sst
@@ -235,9 +214,9 @@ jsbach:
               - yasso
 
 nemo:
-        choose_general.version:
-                default:
-                        version: "3.6foci"
+        #choose_general.version:
+        #        default:
+        #                version: "3.6foci"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -251,7 +230,7 @@ xios:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}
+        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
                 - nemo
                 - echam
@@ -304,28 +283,6 @@ oasis3mct:
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
-
-
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-
-
-        coupling_methods:
-                conserv:
-                        time_transformation: average
-                        remapping:
-                'atmo->opat':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-                'atmo->opac':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-
 
         coupling_methods:
                 conserv:

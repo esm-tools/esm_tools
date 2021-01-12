@@ -2,6 +2,9 @@
 #OIFS standalone (=AMIP?) YAML FILE
 #
 
+# TODO:
+# 1 use with_xios to include or not xios (it is not working now probably due to a bug in esm_tools - esm_tools resolving include models before resolving the chooses)
+
 model: oifs
 executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
@@ -9,9 +12,6 @@ version: 43r3
 type: atmosphere
 with_xios: False
 xml_dir: ''
-
-include_models:
-        - xios
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -45,6 +45,8 @@ ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
+cmip6_data_dir_nml: ./cmip6_data/
+cmip5_data_dir_nml: ./cmip5_data/
 restart_dir: ""
 
 parent_expid: "test"
@@ -79,6 +81,7 @@ compile_infos:
         available_versions:
         - 40r1
         - 43r3-awi
+        - 43r3-awi-e1
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -101,18 +104,39 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
           43r3-awi:
-            branch: master
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-          43r3-foci:
             requires:
-            - oasis3mct-fociagrif
-            branch: oifs-foci
+            - oasis3mct-4.0-oifsdeck
+            branch: awicm-3-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+          43r3-awi-e1:
+            requires:
+            - oasis3mct-4.0-oifsdeck
+            - xios-2.5
+            branch: fix-mkl
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+          #43r3-foci:
+          #  requires:
+          #  - oasis3mct-fociagrif
+          #  branch: oifs-foci
+          #  comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+          #    -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+          #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+          #  install_bins: make/esm/oifs/bin/oifs
+          43r3-foci:
+            branch: oifs-geomar
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            install_bins: make/esm/oifs/bin/oifs
+            requires:
+            - oasis3mct-4.0
+            - xios-2.5_r1910
           43r3-v1:
             branch: oifs-geomar 
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -132,39 +156,47 @@ compile_infos:
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
-        
 runtime_environment_changes:
   choose_computer.name:
-
     blogin:
-      add_module_actions:
-        # release_mt makes oifs lightning fast and avoids the really slow timesteps that occur randomly
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
-      add_module_actions:
-        - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$IO_LIB_ROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-    mistral:    
+    juwels:
+      add_export_vars:
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+
+    mistral:
       add_export_vars:
         - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
         - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
         - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
         - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
         - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
         - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
         # ENV vars used in OIFS's source code during runtime
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+
+    ollie:
+      add_module_actions:
+        - "unload gribapi"
+        - "unload hdf5"
+      add_export_vars:
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
+        - 'OIFS_FFIXED=""'
+        - 'GRIB_SAMPLES_PATH="/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
 
 compiletime_environment_changes:
@@ -173,45 +205,38 @@ compiletime_environment_changes:
       add_export_vars:
         - "LAPACK_LIB='-mkl=sequential'"
         - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-
-        # ECCODES stuff
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
-        - 'ECCODES_DIR="$IO_LIB_ROOT"'
-        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        # FFTW is included in MKL so we link to that
+        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
+        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
+        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
-
-        # OASIS
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-
-        # NetCDF
+        # netcdf
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-
-        # compiler and compile flags
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     glogin:
       add_export_vars:
@@ -222,49 +247,65 @@ compiletime_environment_changes:
         - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
         - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
         - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        
-        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-
-        # ECCODES stuff
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODES_DIR/lib"
-        - 'ECCODES_DIR="$IO_LIB_ROOT"'
-        - 'GRIB_SAMPLES_PATH="$ECCODES_DIR/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODES_DIR/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODES_DIR/lib -leccodes_f90 -leccodes"'
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
         - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
         - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODES_DIR/bin"'
-
-        # OASIS
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-
-        # NetCDF
-        - 'OIFS_NETCDF_DIR="$IO_LIB_ROOT"'
+        # netcdf
         - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'        
-
-        # compiler and compile flags
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
-        # setting to same as intel_mkl_impi-opt in 43r3
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'        
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+    juwels:
+      add_export_vars:
+        # TODO: figure out whether those two are still needed
+        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
+        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
+        # grib api / eccodes
+        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
+        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
+        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
+        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        # oasis
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        # netcdf
+        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+        # compilers and compile switches
+        - 'OIFS_FC=$FC'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+        - 'OIFS_CC=$CC'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
 
     mistral:
       add_export_vars:
@@ -296,16 +337,12 @@ compiletime_environment_changes:
         - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
         - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
         - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # this doesn't work but should
-        # - 'OIFS_FC=${mpifc}'
-        - 'OIFS_FC=mpiifort'
+        - 'OIFS_FC=$FC'
         - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
         - 'OIFS_FFIXED=""'
         - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
         - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        # this doesn't work but should
-        # - 'OIFS_CC=${cc}'
-        - 'OIFS_CC=mpiicc'
+        - 'OIFS_CC=$CC'
         - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
         - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
         # Build OpenIFS with FFTW. Use Intel MKL interfaces
@@ -315,10 +352,42 @@ compiletime_environment_changes:
         - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
         - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
 
+    ollie:
+      add_module_actions:
+        - "unload gribapi"
+        - "unload hdf5"
+      add_export_vars:
+        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
+
+        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
+
+        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
+        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
+        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
+        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
+        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
+        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
+        - 'OIFS_FC=${computer.fc}'
+        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+        - 'OIFS_FFIXED=""'
+        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+        - 'OIFS_LFLAGS='
+        - 'OIFS_CC=${computer.cc}'
+        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
+        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
 input_expid: ECE3
 resolution: TL159
 levels: L91
-nlev: 91
+nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
@@ -370,13 +439,6 @@ namelists:
 choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.
-        TQ95:
-                nx: 13280
-                ny: 1
-                time_step: 3600
-                oasis_grid_name: "048"
-                res_number: 95
-                res_number_tl: "95_3"
         TCO95: 
                 nx: 40320 
                 ny: 1
@@ -384,6 +446,7 @@ choose_resolution:
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
+                truncation: "TCO"
         TL159:
                 nx: 35718
                 ny: 1
@@ -391,6 +454,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159l_2"
+                truncation: "TL"
         TCO159:
                 nx: 35718
                 ny: 1
@@ -398,6 +462,7 @@ choose_resolution:
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159_4"
+                truncation: "TCO"
         TCO199:
                 nx: 167200
                 ny: 1
@@ -405,6 +470,7 @@ choose_resolution:
                 oasis_grid_name: "200"
                 res_number: 199
                 res_number_tl: "199_4"
+                truncation: "TCO"
         TL255:
                 nx: 88838
                 ny: 1
@@ -412,6 +478,15 @@ choose_resolution:
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
+                truncation: "TL"
+        TCO319:
+                nx: 421120
+                ny: 1
+                time_step: 1200
+                oasis_grid_name: 320
+                res_number: 319
+                res_number_tl: "319_4"
+                truncation: "TCO"
         TCO399:
                 nx: 654400
                 ny: 1
@@ -419,6 +494,7 @@ choose_resolution:
                 oasis_grid_name: 400
                 res_number: 399
                 res_number_tl: "399_4"
+                truncation: "TCO"
         TL511:
                 nx: 348528
                 ny: 1
@@ -426,6 +502,7 @@ choose_resolution:
                 oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: "511l_2"
+                truncation: "TL"
         TL799:
                 nx: 843490
                 ny: 1
@@ -433,6 +510,7 @@ choose_resolution:
                 oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: "799l_2"
+                truncation: "TL"
         TL1279:
                 nx: 2140702
                 ny: 1
@@ -440,6 +518,7 @@ choose_resolution:
                 oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: "1279l_2"
+                truncation: "TL"
 
 choose_computer.cores_per_node:
         24:
@@ -469,6 +548,7 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
+custop: "t${oifs.next_step}"
 lresume: false
 
 start_seconds: "$((${start_date} - ${initial_date}))"
@@ -589,9 +669,6 @@ restart_in_files:
 
 restart_in_in_work:
         rcf: rcf
-        srf: ""
-        BLS: ""
-        LAW: ""
 
 restart_in_sources:
         srf: srf${start_ndays_string}0000.*
@@ -614,9 +691,6 @@ restart_out_sources:
 
 restart_out_targets:
         rcf: rcf${next_ndays_string}
-        BLS: ""
-        LAW: ""
-        srf: ""
 ##
 ## output
 ##
@@ -641,7 +715,7 @@ outdata_sources:
 ## Using XIOS?
 choose_with_xios:
         1:
-                add_include_models:
+                include_models:
                         - xios
                 add_namelist_changes: 
                         fort.4:
@@ -692,6 +766,9 @@ choose_wam:
 
                 add_outdata_files:
                         MPP: MPP
+
+                add_config_sources:
+                        "wam_namelist": "${namelist_dir}/wam_namelist"
 
         0:
                 wam_number: "0"
@@ -748,7 +825,7 @@ choose_version:
                                 - 'DR_HOOK_IGNORE_SIGNALS="-1"'
                                 - 'OIFS_EXPID="${input_expid}"'
                                 - 'FOCI_USE_CPLNG="no"'
-                                - 'AWICM_USE_CPLNG="no"'
+                                - 'FESOM_USE_CPLNG="no"'
                                 - 'ECE_USE_CPLNG="no"'
 
         43r3:
@@ -766,7 +843,7 @@ choose_version:
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "t${oifs.next_step}" 
+                                        CUSTOP: "${custop}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
@@ -792,7 +869,7 @@ choose_mip:
                         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
                         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
                         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-        "cmip6": 
+        "cmip6":
                 add_forcing_files:
                         # Add CO2 etc for all scenarios and years
                         CMIP6DATA: CMIP6DATA
@@ -801,29 +878,37 @@ choose_mip:
                         fort.4:
                                 NAERAD:
                                         LCMIP6: ".true."
-                                        CMIP6DATADIR: "./cmip6_data/"        
+                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
-                        "piControl":
-                                add_forcing_files:
-                                        # O3 concentrations for piControl
-                                        O3PI: O3PI
+                        "piControl":                                
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
                                                         NCMIPFIXYR: 1850
-                        "historical":
-                                add_forcing_files: 
-                                        # Add historical O3
-                                        O3HIST: O3HIST
                         "SSP5-8.5":
-                                add_forcing_files:
-                                        # Add O3 for all scenarios
-                                        O3SCEN: O3SCEN
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
                                 
+
+#choose_o3_scheme:
+#        "prescribed":
+#                choose_mip:
+#                        "cmip6":
+#                                choose_scenario:
+#                                        "piControl":
+#                                                add_forcing_files:
+#                                                        # O3 concentrations for piControl
+#                                                        O3PI: O3PI
+#                                        "historical":
+#                                                add_forcing_files:
+#                                                        # Add historical O3
+#                                                        O3HIST: O3HIST
+#                                        "SSP5-8.5":
+#                                                add_forcing_files:
+#                                                        # Add O3 for all scenarios
+#                                                        O3SCEN: O3SCEN
 
 
 ##
@@ -867,7 +952,6 @@ forcing_sources:
 
 config_sources:
         "fort.4": "${namelist_dir}/pictl/fort.4"
-        "wam_namelist": "${namelist_dir}/wam_namelist"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
@@ -893,7 +977,7 @@ forcing_in_work:
         O3PI: cmip6_data/o3_pi/* 
         O3HIST: cmip6_data/o3_histo/* 
         O3SCEN: cmip6_data/o3_scenarios/*
-
+        
 ##
 ## coupling
 ##
@@ -952,31 +1036,34 @@ preprocess:
         preprocess_shell:
                 method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
-
-postprocess:
-        postprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-                type: shell
+# postprocessing is not supported, and causes a crash in release 5 if not commented
+# seb-wahl 2020-11-27
+#postprocess:
+#        postprocess_shell:
+#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+#                type: shell
 compute_recipe:
-      - "_create_setup_folders"
-      - "_create_component_folders"
-      - "initialize_experiment_logfile"
-      - "_write_finalized_config"
-      - "copy_tools_to_thisrun"
-      - "_copy_preliminary_files_from_experiment_to_thisrun"
-      - "_show_simulation_info"
-      # call your plugin whereever it is needed
-      #- "write_something"
-      - "copy_files_to_thisrun"
-      - "preprocess"
-      - "modify_namelists"
-      - "modify_files"
-      - "create_new_files"
-      - "prepare_coupler_files"
-      - "add_batch_hostfile"
-      - "copy_files_to_work"
-      - "write_simple_runscript"
-      - "report_missing_files"
-      - "database_entry"
-      - "submit" 
+   - "venv_bootstrap"
+   - "_create_setup_folders"
+   - "_create_component_folders"
+   - "initialize_experiment_logfile"
+   - "copy_tools_to_thisrun"
+   - "compile_model"
+   - "_copy_preliminary_files_from_experiment_to_thisrun"
+   - "_show_simulation_info"
+   - "create_new_files"
+   - "prepare_coupler_files"
+   - "add_batch_hostfile"
+   - "assemble"
+   - "log_used_files"
+   - "_write_finalized_config"
+   - "copy_files_to_thisrun"
+   - "preprocess"
+   - "modify_namelists"
+   - "modify_files"
+   - "copy_files_to_work"
+   - "write_simple_runscript"
+   - "report_missing_files"
+   - "database_entry"
+   - "submit"
 

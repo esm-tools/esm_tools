@@ -1,0 +1,36 @@
+general:
+        setup_name: "echam"
+        account: shkifmsw
+        compute_time: "01:15:00"
+        initial_date: "1850-01-01"      # Initial exp. date
+        final_date: "1851-12-31"        # Final date of the experiment
+        base_dir: /scratch/usr/shkifmsw/esm-experiments 
+        nyear: 1                        # Number of years per run
+        #model_dir: /home/shkifmsw/esm/models
+        model_dir: /home/shkifmsw/esm/models/echam-${echam.version}
+
+echam:
+        #model_dir: ${general.model_dir}/echam-${echam.version}
+        setup_dir: ${general.model_dir}
+        pool_dir: ${computer.pool_directories.focipool}/ECHAM6
+        version: 6.3.05p2-foci
+        dataset: r0008
+        res: T63
+        scenario: "PI-CTRL"
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: "years"
+        post_processing: 0
+        nproca: 24
+        nprocb: 24
+
+jsbach:
+        pool_dir: ${computer.pool_directories.focipool}/JSBACH
+        version: "3.20p1" 
+        dynamic_vegetations: True
+        add_input_files:
+              lctlib: lctlib_foci
+
+hdmodel:
+        pool_dir: ${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD

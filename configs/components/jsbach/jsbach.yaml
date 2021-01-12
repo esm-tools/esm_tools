@@ -17,7 +17,7 @@ license_text: |
 pool_dir: "${computer.pool_directories.pool}/JSBACH"
 input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
-
+cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
 dynamic_vegetations: False
 

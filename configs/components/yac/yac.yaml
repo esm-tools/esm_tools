@@ -20,3 +20,12 @@ git-repository: https://gitlab.dkrz.de/dkrz-sw/yac.git
 
 metadata:
     Information: "For more information about YAC please go to the webpage: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html"
+
+
+config_files:
+    coupling_xml:  coupling_xml
+    coupling_xsd:  coupling_xsd
+
+config_sources:
+    coupling_xsd:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xsd"
+    coupling_xml:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xml"

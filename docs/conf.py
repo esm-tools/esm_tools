@@ -75,6 +75,7 @@ for config in configs:
 import subprocess
 import shutil
 import sphinx.ext.apidoc
+import esm_tools
 
 esm_tools_modules = [
  "esm_archiving",
@@ -90,6 +91,15 @@ esm_tools_modules = [
  "esm_version_checker",
 ]
 esm_tools_modules.remove("esm_tools")
+# Creating a docs/.docstrings.yml file allows you to control the compilation of
+# the docstrings. Fill this file with ``docstrings: 0`` if you want to avoid
+# docstring's compilation, or ``docstrings: 1`` if you want to compile the
+# docstrings. If the file does not exists it always compiles the docstrings.
+if os.path.isfile(".docstrings.yml"):
+    with open(".docstrings.yml") as docstrings_yaml:
+         docstrings_dict = yaml.load(docstrings_yaml, Loader=yaml.FullLoader)
+    if docstrings_dict.get('docstrings')==0:
+        esm_tools_modules = []
 
 # Ensure the API folder exists:
 try:
@@ -176,10 +186,20 @@ shutil.rmtree("tmp_clone")
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon']
+# MA: for some reason sphinxcontrib.napoleon does not work on ollie so
+# the working module sphinx.ext.napoleon is used when compiled from ollie.
+if os.getcwd().split('/')[2]=="ollie":
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
+        'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
+else:
+    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
+        'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
+
+# Strip the input promps for code cells when copying
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -196,8 +216,9 @@ master_doc = 'index'
 # General information about the project.
 project = 'ESM Tools'
 copyright = "2020, Dirk Barbi"
-author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez"
-version = "4.0"
+author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez, Deniz Ural"
+version = esm_tools.__version__.split(".")
+version = "{0}.{1}".format(version[0], version[1])
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
@@ -284,8 +305,8 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'esm_tools.tex',
-     'ESM Tools r4 UserManual',
-     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez',
+     'ESM Tools r{0} UserManual'.format(version),
+     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez, \\\\Deniz Ural',
      'manual'),
 ]
 

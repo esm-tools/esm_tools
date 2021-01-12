@@ -3,6 +3,31 @@
 #########################################################################################
 
 general:
+        compute_recipe:
+            - "venv_bootstrap"
+            - "_create_setup_folders"
+            - "_create_component_folders"
+            - "initialize_experiment_logfile"
+            - "copy_tools_to_thisrun"
+            - "compile_model"
+            - "_copy_preliminary_files_from_experiment_to_thisrun"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "create_hosing_files"
+            - "prepare_coupler_files"
+            - "add_batch_hostfile"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "copy_files_to_thisrun"
+            - "modify_namelists"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "write_simple_runscript"
+            - "report_missing_files"
+            - "database_entry"
+            - "submit"
+
         model: awiesm
 
         coupled_setup: True
@@ -33,6 +58,14 @@ general:
                         compute_time: "02:00:00"
                 T63_REF:
                         compute_time: "02:00:00"
+        multi_srun:
+            climate_srun:
+                - echam
+                - fesom
+            ice_srun:
+                - pism
+            couple_srun:
+                - scope
 
 
 #########################################################################################
@@ -71,12 +104,25 @@ echam:
                         nproca: 24
                         nprocb: 18
 
+        compiletime_environment_changes:
+            add_export_vars:
+                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                - "OASIS3MCT_FC_LIB=$(pwd)/lib/"
+                - "OASIS3MCTROOT=$(pwd)/oasis/"
+                - 'configure_opts=--with-coupler=oasis3-mct'
 
 #########################################################################################
 
 
 jsbach:
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+        choose_jsbach.dataset:
+                "r0009":
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
+                "r0008":
+                        cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:

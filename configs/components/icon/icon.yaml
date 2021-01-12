@@ -1,10 +1,11 @@
 # ICON YAML DEFAULT CONFIGURATION FILE
 
 model: icon
-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
 type: atmosphere
-
 standalone_model: True
+repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
+# git-repository: ${repository}
+git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
 
 #description: |
 #        The ICON atmosphere model, major version 2
@@ -16,37 +17,14 @@ standalone_model: True
 #        unsure, please contact redmine....
 
 metadata:
-        Institute: MPI-Met
-        Description: The ICON atmosphere model, major version 2
-        Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
-        Publications:
-                'ICON-A, the Atmosphere Component of the ICON Earth System Model: I. Model Description <https://doi.org/10.1029/2017MS001242>'
-        License:
-                Please make sure you have a license to use ICON. In case you are
-                unsure, please contact redmine...
-
-
-
-available_versions:
-- 2.1.0
-- 2.3.0-nwp5
-- 2.4.0
-branch: ${icon.version}
-clean_command: make distclean
-comp_command: make -j `nproc --all`
-#comp_command: make 
-#conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-#conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-#conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
-
-# Deniz: environment variables are added to the conc_command since after 
-# prep_release merge ICON did not compile as before. When these variables are 
-# set to empty, then ICON compiles otherwise ICONs configure script sets them to
-# intel mpi (since we are module load intel.mpi and somehow this does not 
-# compile. I guess this is because we are using GCC with Intel MPI.
-conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api MPIROOT='' MPI_INCLUDE='' MPI_LIB=''
-git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
-
+    Institute: MPI-Met
+    Description: The ICON atmosphere model, major version 2
+    Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
+    Publications:
+            'ICON-A, the Atmosphere Component of the ICON Earth System Model: I. Model Description <https://doi.org/10.1029/2017MS001242>'
+    License:
+            Please make sure you have a license to use ICON. In case you are
+            unsure, please contact redmine...
 
 executable: icon
 scenario: NWP
@@ -55,157 +33,198 @@ ml_varlist: "'pres','pres_sfc','pres_msl','o3','h_ice','fr_seaice','t_ice','w_so
 
 pl_varlist: "'u','v','w','temp','geopot','rh','qv'"
 
-
 restart:
-        frequency: 12
-        unit: "months"
+    frequency: 12
+    unit: "months"
 
 resolution: R02B05
 
+# define_options: "--recursive"    # deniz
+# define_options: "${repo_options}"    # deniz
+# repo_options: "        "    # deniz
+
+compile_infos:
+    available_versions:
+    - 2.1.0      
+    - 2.3.0-nwp5 
+    - 2.4.0
+    - 2.6.2-rc
+
+    branch: ${icon.version}
+    repo_options: " " #   "--placeholder_repo_option"    # deniz
+    
+    choose_version:
+        2.6.2-rc:
+            git-repository: "git@gitlab.dkrz.de:icon/icon.git"
+            # git-repository: "https://gitlab.dkrz.de:icon/icon.git"
+            branch: "icon-2.6.2-rc"
+            repo_options: "--recursive"
+            conf_command: "./config/esm_tools/generic.intel-18.0.5"
+            # for comp and clean, use the default ones given below
+
+    clean_command: make distclean
+    comp_command: make -j `nproc --all`
+
+    #comp_command: make 
+    #conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+    #conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+    #conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
+
+    # Deniz: environment variables are added to the conc_command since after 
+    # prep_release merge ICON did not compile as before. When these variables are 
+    # set to empty, then ICON compiles otherwise ICONs configure script sets them to
+    # intel mpi (since we are module load intel.mpi and somehow this does not 
+    # compile. I guess this is because we are using GCC with Intel MPI.
+    conf_command: export STUFF_DIR=`awk 'BEGIN {FS = "="} ; { if ($1 == "FUNCTION_PATH") print $2 }' ~/.esmtoolsrc`/../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api MPIROOT='' MPI_INCLUDE='' MPI_LIB=''
+
+
 choose_version:
-        2.1.0:        
-                scenario: NWP
-                version: 2.1.0
-                repo_tag: 2.1.0
-                resolution: R02B05
-                
-                pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
-                input_dir: "${pool_dir}/input"
-                grid_dir: "${input_dir}/grid"
-                bound_dir: "${input_dir}/bound"
-                external_parameter_dir: "${input_dir}/extpar"
-                initial_dir: "${input_dir}/initial"
-                mapping_dir: "${model_dir}/run"
-
-                #filenames:
-                initial_file: "eraint_init_0014_${resolution}_G_1991090100.nc"
-                cldoptprops_file: "ECHAM6_CldOptProps.nc"
-                rrtmglw_file: "rrtmg_lw.ncy.nc"
-                extpar_file: "extpar_DOM01.nc"
-                grid_file: "icon${resolution}_DOM01.nc"
-                redradgrid_file: "icon${reduced_radiation_resolution}_DOM00.nc"
-                mapping_file: "map_file.ana"
-                dictionary_file: "dict.output.dwd"
-                sst_td_file: "SST_cmip6_midmonth_${resolution}_<year>-<month>.nc"
-                ci_td_file: "CI_cmip6_midmonth_${resolution}_<year>-<month>.nc"
-
-                input_sources: 
-                        cldoptprops: ${model_dir}/data/${cldoptprops_file}
-                        rrtmglw: ${model_dir}/data/${rrtmglw_file}
-                        extpar: ${external_parameter_dir}/${extpar_file}
-                        grid: ${grid_dir}/${grid_file}
-                        redradgrid: ${grid_dir}/${redradgrid_file}
-                        mapping: ${model_dir}/run/${mapping_file}
-                        initial: ${initial_dir}/${inital_file}
-                        dictionary: "${model_dir}/run/${dictionary_file}"
-
-                forcing_sources: 
-                        sic: "${bound_dir}/CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-                        sst: "${bound_dir}/SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
-
-                add_namelist_changes:
-                        NAMELIST_NWP:
-                                initicon_nml:
-                                        ifs2icon_filename: "${initial_file}"
-                                lnd_nml:
-                                        st_td_filename: "${sst_td_file}"
-                                        ci_td_filename: "${ci_td_file}"
-                                extpar_nml:
-                                        extpar_filename: "${extpar_file}"
-                                grid_nml:
-                                        dynamics_grid_filename: "${grid_file}"
-                                        radiation_grid_filename: "${redradgrid_file}"
-                                io_nml:
-                                        dt_checkpoint: "$dt_restart"
-                                output_nml:
-                                        ml_varlist: "${ml_varlist}"
-                                        pl_varlist: "${pl_varlist}"
-                                        output_start: "${dt_start}Z" 
-                                        output_end: "${dt_end}Z"
-                                nwp_phy_nml:
-                                        lrtm_filename: "${rrtmglw_file}"
-                                        cldopt_filename: "${cldoptprops_file}"
-                        icon_master.namelist:
-                                time_nml:
-                                        ini_datetime_string: "${dt_start}Z"
-                                        end_datetime_string: "${dt_end}Z"
-                                        dt_restart: "${dt_restart}"
+    2.1.0:        
+        # repo_options: ""
+        scenario: NWP
+        repo_tag: 2.1.0
+        resolution: R02B05
+        dt_restart: 21600
         
-        2.3.0-nwp5:
-                scenario: LES
-                version: 2.3.0-nwp5
-                repo_tag: 2.3.0-nwp5
-                resolution: R3B11
-                dt_restart: 21600
+        pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
+        input_dir: "${pool_dir}/input"
+        grid_dir: "${input_dir}/grid"
+        bound_dir: "${input_dir}/bound"
+        external_parameter_dir: "${input_dir}/extpar"
+        initial_dir: "${input_dir}/initial"
+        mapping_dir: "${model_dir}/run"
 
-                pool_dir: "/work/ollie/dlittman/icon"
-                input_dir: "${pool_dir}/arctic/input"
-                grid_dir: "${input_dir}"
-                bound_dir: "${pool_dir}/test_cases/case_les/arctic/input/R3B11_CanadaI"
-                external_parameter_dir: "${input_dir}"
-                initial_dir: "${bound_dir}"
-                mapping_dir: "${bound_dir}/run"
-                lbc_dir: "${bound_dir}"
+        # filenames:
+        initial_file: "eraint_init_0014_${resolution}_G_1991090100.nc"
+        cldoptprops_file: "ECHAM6_CldOptProps.nc"
+        rrtmglw_file: "rrtmg_lw.ncy.nc"
+        extpar_file: "extpar_DOM01.nc"
+        grid_file: "icon${resolution}_DOM01.nc"
+        redradgrid_file: "icon${reduced_radiation_resolution}_DOM00.nc"
+        mapping_file: "map_file.ana"
+        dictionary_file: "dict.output.dwd"
+        sst_td_file: "SST_cmip6_midmonth_${resolution}_<year>-<month>.nc"
+        ci_td_file: "CI_cmip6_midmonth_${resolution}_<year>-<month>.nc"
 
-                cldoptprops_file: "ECHAM6_CldOptProps.nc"
-                rrtmglw_file: "rrtmg_lw.nc"
-                extpar_file: "extpar_${resolution}_CanadaI.nc"
-                grid_file: "icon${resolution}_CanadaI.nc"
-                redradgrid_file: "icon${resolution}_CanadaI_parent.nc"
-                mapping_file: "map_file.latbc"
-                initial_file: "init_DOM01_ML_20190504T000000Z.nc"
-                latbc_grid_file: "lateral_boundary.grid.nc"
-                latbc_forcing_file: "forcing_DOM01_ML_<y><m><d>T<h>0000Z_lbc.nc"
+        input_sources: 
+            cldoptprops: ${model_dir}/data/${cldoptprops_file}
+            rrtmglw: ${model_dir}/data/${rrtmglw_file}
+            extpar: ${external_parameter_dir}/${extpar_file}
+            grid: ${grid_dir}/${grid_file}
+            redradgrid: ${grid_dir}/${redradgrid_file}
+            mapping: ${model_dir}/run/${mapping_file}
+            initial: ${initial_dir}/${initial_file}
+            dictionary: "${model_dir}/run/${dictionary_file}"
 
-                input_sources:
-                        cldoptprops: ${model_dir}/data/${cldoptprops_file}
-                        rrtmglw: ${model_dir}/data/${rrtmglw_file}
-                        extpar: ${external_parameter_dir}/${extpar_file}
-                        grid: ${grid_dir}/${grid_file}
-                        redradgrid: ${grid_dir}/${redradgrid_file}
-                        mapping: ${model_dir}/run/${mapping_file}
-                        initial: ${initial_dir}/${inital_file}
-                        latbc_grid: ${latbc_grid_file}
-                        latbc_forcing: ${latbc_forcing_file}
+        forcing_sources: 
+            sic: "${bound_dir}/CI_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
+            sst: "${bound_dir}/SST_cmip6_midmonth_${resolution}_@YEAR@-@MONTH@.nc"
 
-                forcing_sources:
-                        latbc_forcing: "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
+        add_namelist_changes:
+            NAMELIST_NWP:
+                initicon_nml:
+                    ifs2icon_filename: "${initial_file}"
+                lnd_nml:
+                    st_td_filename: "${sst_td_file}"
+                    ci_td_filename: "${ci_td_file}"
+                extpar_nml:
+                    extpar_filename: "${extpar_file}"
+                grid_nml:
+                    dynamics_grid_filename: "${grid_file}"
+                    radiation_grid_filename: "${redradgrid_file}"
+                io_nml:
+                    dt_checkpoint: "${dt_restart}"
+                output_nml:
+                    ml_varlist: "${ml_varlist}"
+                    pl_varlist: "${pl_varlist}"
+                    # output_start: "${dt_start}Z" 
+                    # output_end: "${dt_end}Z"
+                nwp_phy_nml:
+                    lrtm_filename: "${rrtmglw_file}"
+                    cldopt_filename: "${cldoptprops_file}"
 
-                remove_input_sources:
-                        - dictionary
-                add_namelist_changes:
-                        NAMELIST_NWP:
-                                initicon_nml:
-                                        dwdfg_filename: "${initial_file}"
-                                limarea_nml:
-                                        latbc_boundary_grid: "${latbc_grid_file}"
-                                        latbc_path: "${latbc_dir}"
-                                        latbc_varnames_map_file: "${mapping_file}"
-                                        latbc_filename: "${latbc_forcing_file}"
-                                extpar_nml:
-                                        extpar_filename: "${extpar_file}"
-                                grid_nml:
-                                        dynamics_grid_filename: "${grid_file}"
-                                        radiation_grid_filename: "${redradgrid_file}"
-                                io_nml:
-                                        dt_checkpoint: "$dt_restart"
-                                output_nml:
-                                        ml_varlist: "${ml_varlist}"
-                                        pl_varlist: "${pl_varlist}"
-                                        output_start: "${dt_start}Z"
-                                        output_end: "${dt_end}Z"
-                                nwp_phy_nml:
-                                        lrtm_filename: "${rrtmglw_file}"
-                                        cldopt_filename: "${cldoptprops_file}"
-                        icon_master.namelist:
-                                time_nml:
-                                        ini_datetime_string: "${dt_start}Z"
-                                        end_datetime_string: "${dt_end}Z"
-                                        dt_restart: "${dt_restart}"
+            icon_master.namelist:
+                time_nml:
+                    # ini_datetime_string: "${dt_start}Z"
+                    # end_datetime_string: "${dt_end}Z"
+                    dt_restart: "${dt_restart}"
+        
+    2.3.0-nwp5:
+        scenario: LES
+        repo_tag: 2.3.0-nwp5
+        resolution: R3B11
+        dt_restart: 21600
 
-        2.4.0:
-                version: 2.3.0-nwp5
-                repo_tag: 2.4.0
+        pool_dir: "/work/ollie/dlittman/icon"
+        input_dir: "${pool_dir}/arctic/input"
+        grid_dir: "${input_dir}"
+        bound_dir: "${pool_dir}/test_cases/case_les/arctic/input/R3B11_CanadaI"
+        external_parameter_dir: "${input_dir}"
+        initial_dir: "${bound_dir}"
+        mapping_dir: "${bound_dir}/run"
+        lbc_dir: "${bound_dir}"
+        latbc_dir: "${bound_dir}"
+
+        cldoptprops_file: "ECHAM6_CldOptProps.nc"
+        rrtmglw_file: "rrtmg_lw.nc"
+        extpar_file: "extpar_${resolution}_CanadaI.nc"
+        grid_file: "icon${resolution}_CanadaI.nc"
+        redradgrid_file: "icon${resolution}_CanadaI_parent.nc"
+        mapping_file: "map_file.latbc"
+        initial_file: "init_DOM01_ML_20190504T000000Z.nc"
+        latbc_grid_file: "lateral_boundary.grid.nc"
+        latbc_forcing_file: "forcing_DOM01_ML_<y><m><d>T<h>0000Z_lbc.nc"
+
+        input_sources:
+            cldoptprops: ${model_dir}/data/${cldoptprops_file}
+            rrtmglw: ${model_dir}/data/${rrtmglw_file}
+            extpar: ${external_parameter_dir}/${extpar_file}
+            grid: ${grid_dir}/${grid_file}
+            redradgrid: ${grid_dir}/${redradgrid_file}
+            mapping: ${model_dir}/run/${mapping_file}
+            initial: ${initial_dir}/${initial_file}
+            latbc_grid: ${latbc_grid_file}
+            latbc_forcing: ${latbc_forcing_file}
+
+        forcing_sources:
+            latbc_forcing: "${latbc_dir}/forcing_DOM01_ML_@DATE@Z_lbc.nc"
+
+        remove_input_sources:
+            - dictionary
+
+        add_namelist_changes:
+            NAMELIST_NWP:
+                initicon_nml:
+                    dwdfg_filename: "${initial_file}"
+                limarea_nml:
+                    latbc_boundary_grid: "${latbc_grid_file}"
+                    latbc_path: "${latbc_dir}"
+                    latbc_varnames_map_file: "${mapping_file}"
+                    latbc_filename: "${latbc_forcing_file}"
+                extpar_nml:
+                    extpar_filename: "${extpar_file}"
+                grid_nml:
+                    dynamics_grid_filename: "${grid_file}"
+                    radiation_grid_filename: "${redradgrid_file}"
+                io_nml:
+                    dt_checkpoint: "$dt_restart"
+                output_nml:
+                    ml_varlist: "${ml_varlist}"
+                    pl_varlist: "${pl_varlist}"
+                    # output_start: "${dt_start}Z"
+                    # output_end: "${dt_end}Z"
+                nwp_phy_nml:
+                    lrtm_filename: "${rrtmglw_file}"
+                    cldopt_filename: "${cldoptprops_file}"
+
+            icon_master.namelist:
+                time_nml:
+                    # ini_datetime_string: "${dt_start}Z"
+                    # end_datetime_string: "${dt_end}Z"
+                    dt_restart: "${dt_restart}"
+
+    2.4.0:
+        repo_tag: 2.4.0
 
 
 
@@ -213,39 +232,41 @@ choose_version:
 
 #model_dir: "${esm_master_dir}/icon-${version}"
 bin_dir: "${model_dir}/build/x86_64-unknown-linux-gnu/bin"
-namelist_dir: "${esm_namelist_dir}/icon/${version}"
+namelist_dir: "${esm_namelist_dir}/icon/${version}"       # deniz: commented out this and added icon.version
+# namelist_dir: "${esm_namelist_dir}/icon/${icon.version}"   # deniz: commented out
 
 # choices
 
 choose_resolution:
-        R02B05:
-                levels: 90
-                Timestep: 360
-                cells: unknown
-                nlat: unknown
-                nlon: unknown
-                choose_computer.cores_per_node:
-                        24:
-                                nproc: 288
-                        36:
-                                nproc: 288
-                reduced_radiation_resolution: r02b04
-        r3b11:
-                choose_computer.cores_per_node:
-                        24:
-                                nproc: 900
-                        36:
-                                nproc: 900
+    R02B05:
+        levels: 90
+        Timestep: 360
+        cells: unknown
+        nlat: unknown
+        nlon: unknown
+        choose_computer.cores_per_node:
+            24:
+                nproc: 288
+            36:
+                nproc: 288
+        reduced_radiation_resolution: r02b04
+    
+    r3b11:
+        choose_computer.cores_per_node:
+            24:
+                nproc: 900
+            36:
+                nproc: 900
 
 bin_in_workdir:
-        icon: icon
+    icon: icon
 
 bin_sources:
-        icon: "${bin_dir}/${executable}"
+    icon: "${bin_dir}/${executable}"
 
 config_sources:
-        master: "${namelist_dir}/icon_master.namelist"
-        nwp: "${namelist_dir}/namelist_nwp"
+    master: "${namelist_dir}/icon_master.namelist"
+    nwp: "${namelist_dir}/namelist_nwp"
 
 
 # the following settings are specific to ICON and they will overwrite the 
@@ -254,47 +275,105 @@ config_sources:
 useMPI: 
 
 choose_computer.name:
-        ollie:
-                compiletime_environment_changes: 
-                        add_module_actions:
-                                - "unload cmake" 
-                                - "unload intel.compiler"
-                                - "unload intel.mpi"
-                                - "load gnu.compiler/6.3.0"
-                                - "load centoslibs"
-                                - "unload netcdf/4.6.2_intel"
-                                - "load netcdf/4.6.2_gnu"
-                                - "load cdo"
-                                - "load nco"
-                                - "load intel.mpi"
+    ollie:
+        add_compiletime_environment_changes: 
+            add_module_actions:
+                - "unload cmake" 
+                - "unload intel.compiler"
+                - "unload intel.mpi"
+                - "load gnu.compiler/6.3.0"
+                - "load centoslibs"
+                - "unload netcdf/4.6.2_intel"
+                - "load netcdf/4.6.2_gnu"
+                - "load cdo"
+                - "load nco"
+                - "load intel.mpi"
                 
-                        add_export_vars:
-                                - 'FC=mpif90'
-                                - 'F77=mpif90'
-                                - 'MPIFC=mpif90'
-                                - 'MPICC=mpigxx'
-                                - 'CC=mpigcc'
-                                - 'CXX=mpigxx'
-        mistral: 
-                compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload cmake" 
-                                - "unload gcc/4.8.2"
-                                - "load gcc/6.4.0"
-                                - "unload openmpi-2.0.2p1_hpcx-gcc64"
-                                - "load intelmpi/2018.5.288"
-                                - "load anaconda3/bleeding_edge"
-                                - "load netcdf_c/4.3.2-gcc48"
-                                - "load cdo"
-                                - "load nco"
+            add_export_vars:
+                - 'FC=mpif90'
+                - 'F77=mpif90'
+                - 'MPIFC=mpif90'
+                - 'MPICC=mpigxx'
+                - 'CC=mpigcc'
+                - 'CXX=mpigxx'
 
-                        add_export_vars:
-                                - 'FC=mpif90'
-                                - 'F77=mpif90'
-                                - 'MPIFC=mpif90'
-                                - 'MPICC=mpigxx'
-                                - 'CC=mpigcc'
-                                - 'CXX=mpigxx'
+            choose_version:
+                2.6.2-rc:
+                    add_module_actions:
+                        - "purge"
+                        - "load gnu.compiler/6.5.0"
+                        - "load automake/1.16.2"
+                        - "load intel.mpi"
+                        - "load intel.compiler/18.0.5"
+                        - "load hdf5"
+                        - "load netcdf/4.6.2_intel"
 
+                    add_export_vars:
+                        - "HDF5_ROOT_ICON=/global/AWIsoft/hdf5/hdf5-1.10.2_gnu"
+                        - "HDF5_LIBS_ICON='-lhdf5'"
+                        - "NETCDF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                        - "NETCDF_LIBS_ICON='-lnetcdf'"
+                        - "NETCDFF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                        - "NETCDFF_LIBS_ICON='-lnetcdff'"
+                        - "GRIBAPI_ROOT_ICON=/global/AWIsoft/grib_api/1.12.3_gnu"
+                        - "GRIBAPI_LIBS_ICON='-lgrib_api'"
+                        - "XML2_ROOT='/usr'"
+                        - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --disable-parallel-netcdf'"
+                        - "FC=mpiifort"
+                        - "F77=mpiifort"
+                        - "MPIFC=mpiifort"
+                        - "CC=mpiicc"
+                        - "CXX=mpiicpc"
+                            
+    mistral: 
+        add_compiletime_environment_changes:
+            add_module_actions:
+                - "unload cmake" 
+                - "unload gcc/4.8.2"
+                - "load gcc/6.4.0"
+                - "unload openmpi-2.0.2p1_hpcx-gcc64"
+                - "load intelmpi/2018.5.288"
+                - "load anaconda3/bleeding_edge"
+                - "load netcdf_c/4.3.2-gcc48"
+                - "load cdo"
+                - "load nco"
 
+            add_export_vars:
+                - 'FC=mpif90'
+                - 'F77=mpif90'
+                - 'MPIFC=mpif90'
+                - 'MPICC=mpigxx'
+                - 'CC=mpigcc'
+                - 'CXX=mpigxx'
+                        
+            choose_version:
+                2.6.2-rc:
+                    add_module_actions:
+                        - "purge"
+                        - "unload intel intelmpi"
+                        - "unload gcc"
+                        - "load gcc/6.4.0"
+                        - "load intel/18.0.4"
+                        - "load libtool/2.4.6"
+                        - "load autoconf/2.69"
+                        - "load automake/1.14.1"
+                        - "load openmpi/2.0.2p1_hpcx-intel14"
+
+                    add_export_vars:
+                        - "HDF5_ROOT_ICON=/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-openmpi2-intel14"
+                        - "HDF5_LIBS_ICON='-lhdf5'"
+                        - "NETCDF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-parallel-openmpi2-intel14"
+                        - "NETCDF_LIBS_ICON='-lnetcdf'"
+                        - "NETCDFF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-openmpi2-intel14"
+                        - "NETCDFF_LIBS_ICON='-lnetcdff'"
+                        - "GRIBAPI_ROOT_ICON=/sw/rhel6-x64/grib_api/grib_api-1.15.0-gcc48"
+                        - "GRIBAPI_LIBS_ICON='-lgrib_api'"
+                        - "XML2_ROOT='/usr'"
+                        - "LD_LIBRARY_PATH=$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
+                        - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --enable-parallel-netcdf'"
+                        - "FC=mpif90"
+                        - "F77=mpif90"
+                        - "MPIFC=mpif90"
+                        - "CC=mpicc"
+                        - "CXX=mpicxx"
 

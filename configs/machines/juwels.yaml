@@ -1,32 +1,51 @@
 # JUWELS YAML CONFIGURATION FILE
 
-batch_system: slurm
-
+# basic setup
 name: juwels 
 account: esmtst
 jobtype: compute
 accounting: true
 
-sh_interpreter: "/usr/bin/bash"
+# default settings for compiler, mpi and I/O libs
+#compiler_mpi: intel2019_impi2019
+#iolibraries: system_libs
+# for FOCI/FOCIOIFS use 
+compiler_mpi: intel2019_parastation
+iolibraries: geomar_libs
+
+# slurm setup
+batch_system: slurm
+logical_cpus_per_core: 2
+threads_per_core: 1
 launcher_flags: "-l "
-hyperthreading_flag: "--ntasks-per-core=1"
-# does not get used
-additional_flags: "--ntasks-per-node=48"
 
+choose_general.use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        1:
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
+        "*":
+                hyperthreading_flag: "--ntasks-per-core=1"
+
+sh_interpreter: "/usr/bin/bash"
+
+# pool directories
+# TODO: cleanup the pool / focipool logic
+pool_dir:  "/pool/data/not/available/on/juwels"
 pool_directories:
-        pool: "/pool/data/not/available/on/blogin"
-        focipool: "/p/project/cesmtst/esmtst22/foci_input2"
+        pool: "/pool/data/not/available/on/juwels"
+        focipool: "/p/project/hirace/foci_input2"
 
-pool_dir:  "/pool/data/not/available/on/blogin"
-
+# choose block
 choose_jobtype:
         tidy_and_resubmit:
-                partition: batch 
+                partition: devel 
         post:
-                partition: batch
+                partition: devel
         compute:
-                partition: batch
-
+                partition: devel
 
 choose_partition:
         batch:
@@ -34,112 +53,115 @@ choose_partition:
         devel:
                 cores_per_node: 24
 
-logical_cpus_per_core: 2
-
-threads_per_core: 1
-
+# basic modules and export vars needed
+# for all compiler and I/O settings
 module_actions:
         - "--force purge"
         - "use /gpfs/software/juwels/otherstages"
-        - "load Stages/Devel-2019a"
-        - "load GCCcore/.8.3.0"
-        - "load CMake"
-        - "load Intel/2019.5.281-GCC-8.3.0"
-        - "load IntelMPI/2019.6.154"
-        - "load Python/3.6.8"
 
 export_vars:
         - "LC_ALL=en_US.utf-8"
 
-        - "FC=mpiifort"
-        - "F77=mpiifort"
-        - "MPIFC=mpiifort"
-        - "FCFLAGS=-free"
-        - "CC=mpiicc"
-        - "CXX=mpiicpc"
+# choose compiler and MPI implementation
+choose_compiler_mpi:
 
-        - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+   intel2019_impi2019:
+      add_module_actions:
+         - "load Stages/Devel-2019a"
+         - "load Intel/2019.5.281-GCC-8.3.0"
+         - "load IntelMPI/2019.6.154"
+         - "load CMake"
+         - "load Python/3.6.8"
+         - "load imkl/2019.3.199"
+         #TODO check if we need perl
+         #- "load Perl/5.28.1"
+      # FOCI needs the release_mt version of intel mpi
+      choose_general.setup_name:
+         foci:
+            add_module_actions:
+               - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
+      add_export_vars:  
+         - "FC=mpiifort"
+         - "F77=mpiifort"
+         - "MPIFC=mpiifort"
+         - "FCFLAGS=-free"
+         - "CC=mpiicc"
+         - "CXX=mpiicpc"
+         - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-choose_general.setup_name:
-        # FOCI and FOCIOIFS use their own compiled libraries (netcdf, hdf5, ...) to avoid the massive 
-        # dependencies build into the modules on JUWELS
-        # Installation https://git.geomar.de/HPC/libraries/-/blob/master/DOC/compile_libraries_juwels.sh
-        #              https://git.geomar.de/HPC/libraries/-/blob/master/DOC/compile_libraries_juwels.sh
-        foci:
-                add_module_actions:
-                        - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
-                add_export_vars:
-                        - "IO_LIB_ROOT=/p/project/cesmtst/esmtst22/gitlab/HPC_libraries/intel2019.3.199_impi2019.6.154_20191213"
-                        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+   intel2019_parastation:
+      add_module_actions:
+         - "load Stages/Devel-2019a"
+         - "load Intel/2019.5.281-GCC-8.3.0"
+         - "load ParaStationMPI/5.4.4-1-mt"
+         - "load CMake"
+         - "load Python/3.6.8"
+         - "load imkl/2019.3.199"
+         #TODO check if we need perl
+         #- "load Perl/5.28.1"
+      add_export_vars:  
+         - "FC=mpifort"
+         - "F77=mpifort"
+         - "MPIFC=mpifort"
+         - "FCFLAGS=-free"
+         - "CC=mpicc"
+         - "CXX=mpic++"
+         - "MPIROOT=\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         - "MPI_LIB=\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-                        - "SZIPROOT=$IO_LIB_ROOT"
-                        - "HDF5ROOT=$IO_LIB_ROOT"
-                        - "HDF5_ROOT=$HDF5ROOT"
-                        - "NETCDFROOT=$IO_LIB_ROOT"
-                        - "NETCDFFROOT=$IO_LIB_ROOT"
+choose_iolibraries:
 
-                        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-                        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
-                        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        focioifs:
-                add_module_actions:
-                        - "load imkl/2019.3.199"
-                        - "load Perl/5.28.1"
-                        - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt" 
-                add_export_vars:
-                        - "IO_LIB_ROOT=/p/project/cesmtst/esmtst22/gitlab/HPC_libraries/intel2019.3.199_impi2019.6.154_20191213"
-                        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+    system_libs:
+       # TODO: find the correct libraries and dependencies
+       add_module_actions:
+         - "load netCDF"
+    geomar_libs:
+       choose_compiler_mpi:
+          intel2019_impi2019:
+             add_export_vars:
+                - "IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703"
+                - "PATH=$IO_LIB_ROOT/bin:$PATH"
+                - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
 
-                        - "SZIPROOT=$IO_LIB_ROOT"
-                        - "HDF5ROOT=$IO_LIB_ROOT"
-                        - "HDF5_ROOT=$HDF5ROOT"
-                        - "NETCDFROOT=$IO_LIB_ROOT"
-                        - "NETCDFFROOT=$IO_LIB_ROOT"
+                - "SZIPROOT=$IO_LIB_ROOT"
+                - "HDF5ROOT=$IO_LIB_ROOT"
+                - "HDF5_ROOT=$HDF5ROOT"
+                - "NETCDFROOT=$IO_LIB_ROOT"
+                - "NETCDFFROOT=$IO_LIB_ROOT"
+                - "ECCODESROOT=$IO_LIB_ROOT"
 
-                        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-                        - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
-                        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+                - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+                - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+          intel2019_parastation:
+             add_export_vars:
+                - "IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113"
+                - "PATH=$IO_LIB_ROOT/bin:$PATH"
+                - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
 
-                       # mostly OpenIFS stuff
-                        - "ESM_NETCDF_C_DIR=$IO_LIB_ROOT"
-                        - "ESM_NETCDF_F_DIR=$IO_LIB_ROOT"
-                        - "ZLIBROOT=$IO_LIB_ROOT"
-                        - "GRIBAPIROOT=$IO_LIB_ROOT"
-                        #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-                        #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-                        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-                        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-                        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-                        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib"
-                        #- 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-                        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
-                        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-                        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -leccodes_f90 -leccodes"'
-                        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-                        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-                        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-                        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-                        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-                        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-                        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-                        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-                        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-                        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-                        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                        - 'OIFS_FC=mpiifort'
-                        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-                        - 'OIFS_FFIXED=""'
-                        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-                        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-                        - 'OIFS_CC=mpiicc'
-                        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-                        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+                - "SZIPROOT=$IO_LIB_ROOT"
+                - "HDF5ROOT=$IO_LIB_ROOT"
+                - "HDF5_ROOT=$HDF5ROOT"
+                - "NETCDFROOT=$IO_LIB_ROOT"
+                - "NETCDFFROOT=$IO_LIB_ROOT"
+                - "ECCODESROOT=$IO_LIB_ROOT"
+
+                - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+                - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
+                - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+       #add_export_vars: 
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "$FC"
+cc: "$CC"
+mpifc: "$MPIFC" 
+mpicc: "$MPICC"
+cxx: "$CXX" 
 
 further_reading:
         - batch_system/slurm.yaml
+

@@ -31,26 +31,36 @@ ESM Runscripts
 
    **A**: You can safely forget about ``FUNCTION_PATH``, which was only needed in the shell script version until revision 3. Either ignore it, or better remove it from the runscript.
 
+3. **Q**: When I try to branch-off from a spinup experiment using `FESOM`, I get the following runtime error::
 
-ESM Master 
+    read ocean restart file
+    Error:
+    NetCDF: Invalid dimension ID or name
+
+
+   **A**: See :ref:`How to branch-off FESOM from old spinup restart files <target to branchoff old restart>`.
+
+ESM Master
 ----------
 
 1. **Q**: How can I define different environments for different models / different versions of the same model?
-   
-   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.::
-  
-        choose_version:
-                40r1:
-                        environment_changes:
-                                add_export_vars:        
-                                        - 'MY_VAR="something"' 
-                                add_module_actions:
-                                        - load my_own_module          
 
-                43r3:
-                        environment_changes:
-                                add_export_vars:        
-                                        - 'MY_VAR="something_else"'
+   **A**: You can add a choose-block in the models yaml-file (``esm_tools/configs/model_name.yaml``), e.g.:
+
+   .. code-block:: yaml
+
+      choose_version:
+              40r1:
+                      environment_changes:
+                              add_export_vars:
+                                      - 'MY_VAR="something"'
+                              add_module_actions:
+                                      - load my_own_module
+
+              43r3:
+                      environment_changes:
+                              add_export_vars:
+                                      - 'MY_VAR="something_else"'
 2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
 
    **A**: Add your configuration in the file configs/esm_master/setups2models.yaml
@@ -58,9 +68,25 @@ ESM Master
 Frequent Errors
 ---------------
 
-1. **Q**: When I use ``esm_versions`` I get the following error::
+1. **Q**: When I try to install `ESM-Tools` or use ``esm_versions`` I get the following error::
 
        RuntimeError: Click will abort further execution because Python 3 was configured to use ASCII as encoding for the environment. Consult https://click.palletsprojects.com/en/7.x/python3/ for mitigation steps.
+
+or something on the following lines::
+
+    ERROR: Command errored out with exit status 1:
+    command: /sw/rhel6-x64/conda/anaconda3-bleeding_edge/bin/python -c 'import sys, setuptools, tokenize; sys.argv[0] = '"'"'/tmp/pip-install-0y687gmq/esm-master/setup.py'"'"'; _file__='"'"'/tmp/pip-install-0y687gmq/esm-master/setup.py'"'"';f=getattr(tokenize, '"'"'open'"'"', open)(__file__);code=f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, _file__, '"'"'exec'"'"'))' egg_info --egg-base /tmp/pip-install-0y687gmq/esm-master/pip-egg-info
+    cwd: /tmp/pip-install-0y687gmq/esm-master/
+    Complete output (7 lines):
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/tmp/pip-install-0y687gmq/esm-master/setup.py", line 8, in <module>
+        readme = readme_file.read()
+      File "/sw/rhel6-x64/conda/anaconda3-bleeding_edge/lib/python3.6/encodings/ascii.py", line 26, in decode
+        return codecs.ascii_decode(input, self.errors)[0]
+    UnicodeDecodeError: 'ascii' codec can't decode byte 0xf0 in position 1468: ordinal not in range(128)
+        ----------------------------------------
+    ERROR: Command errored out with exit status 1: python setup.py egg_info Check the logs for full command output.
 
    **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales respectively to ``en_US`` and ``en_US.utf-8``, either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
 
@@ -69,4 +95,4 @@ Frequent Errors
 
 2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
 
-   **A**: Add your configuration in the file ``configs/esm_master/setups2models.yaml`` (see :ref:`contributing:Implementing a New Model` and :ref:`contributing:Implementing a New Coupled Setup`)
+   **A**: Add your configuration in the file ``configs/esm_master/setups2models.yaml`` (see :ref:`contributing:Implementing a New Model` and :ref:`cookbook:Implement a New Coupled Setup`)

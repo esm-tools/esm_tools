@@ -1,0 +1,19 @@
+general:
+    version: 2.0-esm_interface-oasis
+    model: awicmmod
+
+    available_versions:
+    - 2.0-esm_interface-oasis
+    - 2.0-esm_interface-yac
+    - 1.4-esm_interface-oasis
+
+    choose_version:
+      '2.0-esm_interface-oasis':
+        couplings:
+        - 'fesom-2.0-esm_interface-oasis+echam-6.3.04p1-esm_interface-oasis'
+      '2.0-esm_interface-yac':
+        couplings:
+        - 'fesom-2.0-esm_interface-yac+echam-6.3.04p1-esm_interface-yac'
+      '1.4-esm_interface-oasis':
+        couplings:
+        - 'fesom-1.4-esm_interface-oasis+echam-6.3.04p1-esm_interface-oasis'

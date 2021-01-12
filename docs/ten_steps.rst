@@ -2,9 +2,12 @@
 Ten Steps to a Running Model
 ============================
 
-1. Make sure you have git installed with version newer than 2.13, and python version 3.5 or later (see :ref:`installation:Before you continue`). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. You might want to add the following line to one of your login or profile files, e.g. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see :ref:`installation:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-     $ export PATH=$PATH:~/.local/bin
+    $ export PATH=$PATH:~/.local/bin
+    $ export LC_ALL=en_US
+    $ export LANG=en_US.utf-8
+
 
 2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
 
@@ -30,6 +33,8 @@ Ten Steps to a Running Model
 
   You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access (:ref:`Supported_Models:Supported Models`). Feel free to contact us if you don't know who the model developers are.
 
+.. note:: An error may occur in case you have performed a fresh install of` ESM-Tools` version 5 after having version 4 installed. In this known error, ``esm_master`` crashes with a ``FileNotFoundError`` with regard to ``esm_master.yaml``. Try to fix this by updating your ~/.esmtoolsrc, removing lines that define paths for runscripts, namelists, and functions. Then try again (``RUNSCRIPT_PATH``, ``NAMELIST_PATH`` and ``FUNCTION_PATH``).
+
 7. Check if the installation process worked; if so, you should find the model executable in the subfolder ``bin`` of the model folder. E.g.::
 
     $ ls fesom-2.0/bin
@@ -51,7 +56,7 @@ Ten Steps to a Running Model
       * namelists that will be used during the run
       * the miniature ``.sad`` script that is submitted the compute nodes, which also shows the environment that will be used
 
-   You can also check directly if the job folder looks like expected. You can find it at ``$BASE_DIR/$EXP_ID`/run_xxxxxxxxxxx``, where ``BASE_DIR`` was set in your runscript, ``EXP_ID``   (probably) on the command line, and ``run_xxxxxxxxxxxxx`` stands for the first chunk of your chain job. You can check the work folder, which is located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/work``, as well as the complete configuration used to generate the simulation, located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/log``.
+   You can also check directly if the job folder looks like expected. You can find it at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxx``, where ``BASE_DIR`` was set in your runscript, ``EXP_ID``   (probably) on the command line, and ``run_xxxxxxxxxxxxx`` stands for the first chunk of your chain job. You can check the work folder, which is located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/work``, as well as the complete configuration used to generate the simulation, located at ``$BASE_DIR/$EXP_ID/run_xxxxxxxxxxxx/log``.
 
 10. Run the experiment::
 

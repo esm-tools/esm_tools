@@ -2,6 +2,47 @@
 ESM Runscripts
 ==============
 
+Usage
+-----
+
+::
+
+    esm_runscripts [-h] [-d] [-v] [-e EXPID] [-c] [-P] [-j LAST_JOBTYPE]
+                      [-t TASK] [-p PID] [-x EXCLUDE] [-o ONLY]
+                      [-r RESUME_FROM] [-U]
+                      runscript
+
+Arguments
+---------
+
+====================================================== ==========================================================
+Optional arguments                                     Description
+====================================================== ==========================================================
+  -h, --help                                           Show this help message and exit.
+  -d, --debug                                          Print lots of debugging statements.
+  -v, --verbose                                        Be verbose.
+  -e ``EXPID``, --expid ``EXPID``                      The experiment ID to use. Default ``test``.
+  -c, --check                                          Run in check mode (don't submit job to supercomputer).
+  -P, --profile                                        Write profiling information (esm-tools).
+  -j ``LAST_JOBTYPE``, --last_jobtype ``LAST_JOBTYPE`` Write the jobtype this run was called from (esm-tools internal).
+  -t ``TASK``, --task ``TASK``                         The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
+  -p ``PID``, --pid ``PID``                            The PID of the task to observe.
+  -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
+  -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
+  -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from this step.
+  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files
+  -i, --inspect                                        This option can be used to [i]nspect the results of a previous
+                                                       run, for example one prepared with ``-c``. This argument needs an
+                                                       additional keyword. Choose among: ``overview`` (gives you the
+                                                       same litte message you see at the beginning of each run, ``lastlog``
+                                                       (displays the last log file), ``explog`` (the overall experiment
+                                                       logfile), ``datefile`` (the overall experiment logfile), ``config`` 
+                                                       (the Python dict that contains all information), ``size`` (the size
+                                                       of the experiment folder), a filename or a directory name output 
+                                                       the content of the file /directory if found in the last 
+                                                       ``run_`` folder.)
+====================================================== ==========================================================
+
 
 Running a Model/Setup
 ---------------------
@@ -12,13 +53,14 @@ required changes to the namelists and configuration files, submits the runs of t
 experiment to the compute nodes, and handles and organizes restart, output and log files.
 The command to run a runscript is::
 
-    esm_runscripts <runscript.yaml/.run> -e <experiment_ID>
+ $ esm_runscripts <runscript.yaml/.run> -e <experiment_ID>
 
 The ``runscript.yaml/.run`` should contain all the information regarding the experiment
 paths, and particular configurations of the experiment (see the :ref:`yaml:Runscripts` section
 for more information about the syntax of `yaml` runscripts). The ``experiment_ID`` is used
 to identify the experiment in the scheduler and to name the experiment's directory (see
-:ref:`esm_runscripts:Experiment Directory Structure`).
+:ref:`esm_runscripts:Experiment Directory Structure`). Omitting the argument
+``-e <experiment_ID>`` will create an experiment with the default experimant ID ``test``.
 
 `ESM-Runscript` allows to run an experiment check by adding the ``-c`` flag to the previous
 command. This check performs all the system operations related to the experiment that would
@@ -32,6 +74,13 @@ of the check's output).
 
 Job Phases
 ----------
+
+.. graphviz:: graph/job_phases.dot
+    :name: job_phases
+    :caption: ESM-Tools job phases
+    :alt: ESM-Tools job phases
+    :align: center
+
 
 The following table summarizes the job phases of `ESM-Runscripts` and gives a brief description.
 ...
@@ -66,10 +115,20 @@ runscript (see :ref:`yaml:Runscripts` syntax) followed by the given ``experiment
 
     <general.base_dir>/<experiment_ID>
 
-The main experiment folder contains the subfolders indicated in the table below. Each of these
-subfolders contains another folder for each component in the experiment (i.e. for an AWI-CM experiment
-the ``outdata`` folder will contain the subfolders ``echam``, ``fesom``, ``hdmodel``, ``jsbach``,
-``oasis3mct``).
+The **main experiment folder** (``General exp dir``) contains the subfolders indicated in the graph
+and table below. Each of these subfolders contains a folder for each component in the experiment
+(i.e. for an AWI-CM experiment the ``outdata`` folder will contain the subfolders ``echam``,
+``fesom``, ``hdmodel``, ``jsbach``, ``oasis3mct``).
+
+The structure of the **run folder** ``run_YYYYMMDD-YYYYMMDD`` (``Run dir`` in the graph) replicates
+that of the general experiment folder. `Run` directories are created before each new run and they are
+useful to debug and restart experiments that have crashed.
+
+.. graphviz:: graph/exp_dir_struct.dot
+    :name: exp_dir_structure
+    :caption: Experiment directory structure
+    :alt: Experiment directory structure
+    :align: center
 
 ======================= ======================= ========================================================
 Subfolder               Files                   Description
@@ -163,9 +222,7 @@ If one file was to be copied in a directory containing a file with the same name
 both files get renamed by the addition of their start date and end dates at the
 end of their names (i.e. ``fesom.clock_YYYYMMDD-YYYYMMDD``).
 
-The structure of the ``run_YYYYMMDD-YYYYMMDD`` directory replicates that of the general
-experiment folder. `Run` directories are created before each new run and they are
-useful to debug and restart experiments that have crashed.
+
 
 .. Note::
    Having a `general` and several `run` subfolders means that files are duplicated and, when
@@ -181,6 +238,9 @@ Cleanup of ``run_`` directories
 
 .. automethod:: esm_runscripts.SimulationSetup.clean_run_dir
 
+.. check that the above is changed by the merge of develop in release 5.0, so that it includes
+   the delete file functionality.
+
 Debugging an Experiment
 -----------------------
 
@@ -189,3 +249,36 @@ in the `general` experiment directory or in the `run` subdirectory:
 
   * The `ESM-Tools` variable space file ``config/<experiment_ID>_finished_config.yaml``.
   * The run log file ``run_YYYYMMDD-YYYYMMDD/<experiment_ID>_compute_YYYYMMDD-YYYYMMDD_<JobID>.log```.
+  
+For interactive debugging, you may also add the following to the ``general`` section of your configuration file. 
+This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb.html#debugger-commands>`_, and allow you to step through the recipe.
+
+.. code-block:: yaml
+
+    general: 
+        debug_recipe: True
+        
+Setting the file movement method for filetypes in the runscript
+---------------------------------------------------------------
+
+By default, `esm_runscripts` copies all files initially into the first ``run_``-folder, and from there to ``work``. After the run, outputs, logs, restarts etc. are copied
+from ``work`` to ``run_``, and then moved from there to the overall experiment folder. We chose that as the default setting as it is the safest option, leaving the user
+with everything belonging to the experiment in one folder. It is also the most disk space consuming, and it makes sense to link some files into the experiment rather
+than copy them.
+
+As an example, to configure `esm_runscripts` for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
+
+.. code-block:: yaml
+
+        echam:
+                file_movements:
+                        forcing:
+                                all_directions: "link"
+                        input:
+                                init_to_exp: "link"
+                                exp_to_run: "link"
+                                run_to_work: "link"
+                                work_to_run: "link"
+
+Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
+directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.

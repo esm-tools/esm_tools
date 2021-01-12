@@ -931,7 +931,7 @@ input_sources:
         vtables: ${vtables_dir}/*
         ifsdata: ${ifsdata_dir}/*
         tl_data: ${input_dir}/${res_number_tl}/*
-        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
+        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/* # @JOAKIM: maybe we want this to be in the forcing files?
 
 forcing_sources:
         # GHG data

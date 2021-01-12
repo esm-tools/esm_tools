@@ -36,6 +36,7 @@ install_bins: bin/rnfma
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
 pool_dir: "${computer.pool_directories.pool}"
+input_dir: "${pool_dir}/runoff-mapper"
 namelist_dir: ${general.esm_namelist_dir}/rnfmap/
 
 parent_expid: "test" 
@@ -70,6 +71,15 @@ bin_sources:
 
 config_sources:
         namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
+
+input_files:
+        runoff_maps: runoff_maps
+
+input_in_work:
+        runoff_maps: runoff_maps.nc
+
+input_sources:
+        runoff_maps: ${input_dir}/runoff_maps.nc
 
 runoff_fields_recv: [R_Runoff_atm] 
 runoff_fields_send: [R_Runoff_oce]

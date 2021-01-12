@@ -191,11 +191,11 @@ runtime_environment_changes:
     ollie:
       add_module_actions:
         - "unload gribapi"
-        - "unload hdf5"
       add_export_vars:
-        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
+        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu"
+        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"'
         - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2"'
+        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"'
         - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
 
@@ -355,19 +355,19 @@ compiletime_environment_changes:
     ollie:
       add_module_actions:
         - "unload gribapi"
-        - "unload hdf5"
       add_export_vars:
         - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
+        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu"
+        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"$GRIBAPIROOT/lib"'
 
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
+        - 'GRIB_SAMPLES_PATH=$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2'
 
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
+        - 'OIFS_GRIB_API_INCLUDE=-I$GRIBAPIROOT/include'
+        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_INCLUDE=-I$GRIBAPIROOT/include'
+        - 'OIFS_GRIB_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+        - 'OIFS_GRIB_BIN="$GRIBAPIROOT/bin"'
         - 'OIFS_OASIS_BASE=$(pwd)/oasis'
         - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
         - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'

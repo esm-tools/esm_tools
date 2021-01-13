@@ -88,10 +88,10 @@ or something on the following lines::
         ----------------------------------------
     ERROR: Command errored out with exit status 1: python setup.py egg_info Check the logs for full command output.
 
-   **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales respectively to ``en_US`` and ``en_US.utf-8``, either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
+   **A**: Some systems have ``C.UTF-8`` as locale default (i.e. ``$LC_ALL``, ``$LANG``). This issue is solved by setting up the locales respectively to ``en_US.UTF-8`` and ``en_US.UTF-8``, either manually or adding them to the local bash configuration file (i.e. ``~/.bash_profile``)::
 
-        $ export LC_ALL=en_US
-        $ export LANG=en_US.utf-8
+        $ export LC_ALL=en_US.UTF-8
+        $ export LANG=en_US.UTF-8
 
 2. **Q**: How can I add a new model, setup, and coupling strategy to the esm_master tool?
 

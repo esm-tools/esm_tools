@@ -68,7 +68,7 @@ module_actions:
    - "load cdo nco"
 
 export_vars:
-   - "LC_ALL=en_US.utf-8"
+   - "LC_ALL=en_US.UTF-8"
    # Recommended by HLNR support when using an MPI binary and srun
    - "SLURM_CPU_BIND=none"
 

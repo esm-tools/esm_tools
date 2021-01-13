@@ -72,7 +72,7 @@ module_actions:
         - "list"
 
 export_vars:
-        - "LC_ALL=en_US.utf-8"
+        - "LC_ALL=en_US.UTF-8"
 
         - 'FC=${fc}'
         - 'F77=${f77}'

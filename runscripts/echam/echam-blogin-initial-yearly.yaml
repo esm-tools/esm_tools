@@ -8,7 +8,7 @@ general:
         nyear: 1                        # Number of years per run
         #model_dir: /home/shkifmsw/esm/models
         model_dir: /home/shkifmsw/esm/models/echam-${echam.version}
-        use_venv: False
+        # use_venv: False
 
 echam:
         #model_dir: ${general.model_dir}/echam-${echam.version}

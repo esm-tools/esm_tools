@@ -40,7 +40,7 @@ restart_in_in_work:
         hdrestart: hdrestart.nc
 
 restart_in_sources:
-        hdrestart: restart_${parent_expid}_hd_${parent_date!syear!smonth!sday}.nc
+        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 restart_in_files:
         hdrestart: hdrestart
@@ -49,7 +49,7 @@ restart_out_in_work:
         hdrestart: hdrestart.nc
 
 restart_out_sources:
-        hdrestart: restart_${general.expid}_hd_${other_date!syear!smonth!sday}.nc
+        hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist

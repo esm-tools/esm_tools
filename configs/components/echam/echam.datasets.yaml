@@ -34,7 +34,7 @@ forcing_sources:
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
                         to: 1864
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                        from: 1866
+                        from: 1865
                         to: 2000
         "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
         # volcanic
@@ -43,17 +43,17 @@ forcing_sources:
                         to: 1850
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_@YEAR@.nc":
                         from: 1851
-                        to: 2013
+                        to: 2014
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2014.nc":
-                        from: 2014
+                        from: 2015
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_@YEAR@.nc":
                         from: 1851
-                        to: 2013
+                        to: 2014
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2014.nc":
-                        from: 2014
+                        from: 2015
         # greenhouse
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"

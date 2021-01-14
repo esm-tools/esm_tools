@@ -309,7 +309,9 @@ choose_scenario:
                         sic: amipsic
                         ozone: histozone
                         greenhouse: histgreenh
-                        volcanir: histvolcanir
+                        # volcanir: histvolcanir
+                        # volcsw: histvolcsw
+                        volcanir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
                 add_input_files:

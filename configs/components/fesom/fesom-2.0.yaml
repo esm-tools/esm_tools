@@ -84,7 +84,6 @@ namelists:
         - namelist.forcing
         - namelist.oce
         - namelist.ice
-        - namelist.diag
         - namelist.io
 
 choose_asforcing:

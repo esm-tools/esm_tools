@@ -19,6 +19,7 @@ general:
               - "log_used_files"
               - "_write_finalized_config"
               - "copy_files_to_thisrun"
+              #- "preprocess"
               - "modify_namelists"
               - "modify_files"
               - "copy_files_to_work"
@@ -90,11 +91,11 @@ general:
 
 # @JAN: preprocessing and postprocessing scripts needed here
 ############################################################
-#preprocess:
-#        preprocess_shell:
-#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
-#                type: shell
-#
+preprocess:
+        preprocess_shell:
+                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+                type: shell
+
 #postprocess:
 #        postprocess_shell:
 #                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
@@ -158,7 +159,10 @@ oifs:
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
 
-        custop: "h48"
+        nfrres: 1
+        custop: "h${oifs.next_step}" # @JAN/JOAKIM why is the first letter "h" for
+                                     # AWICM3 and "t" for oifs? Do we need here a
+                                     # logic to interprete the time stepping unit?
 
         resolution: TL159 # @JAN: taken from the runscript, default in oifs.functions is T255
         levels: L60 # @JAN: taken from the runscript, default in oifs.functions is 91
@@ -184,6 +188,10 @@ oifs:
 
         namelist_changes:
                 fort.4:
+                        NAMRES:
+                                NRESTS:
+                                        - -1
+                                        - -${timestep_per_run}
                         NAERAD:
                                 CMIP5DATADIR: "${cmip5_data_dir_nml}"
                                 CRTABLEDIR: "${rtables_dir}"
@@ -560,8 +568,8 @@ oasis3mct:
                 masks: ${pool_dir}/masks.nc
                 grids: ${pool_dir}/grids.nc
                 rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
-                rstas: ${pool_dir}/${fesom.nproc}/rst/rstas.nc
-                rstos: ${pool_dir}/${fesom.nproc}/rst/rstos.nc
+                rstas: ${pool_dir}/${fesom.nproc}/rstas.nc
+                rstos: ${pool_dir}/${fesom.nproc}/rstos.nc
 
 
 ## Set up CPU layout

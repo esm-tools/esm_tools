@@ -456,10 +456,10 @@ choose_resolution:
                 res_number_tl: "159l_2"
                 truncation: "TL"
         TCO159:
-                nx: 35718
+                nx: 108160
                 ny: 1
                 time_step: 3600
-                oasis_grid_name: "080"
+                oasis_grid_name: "160"
                 res_number: 159
                 res_number_tl: "159_4"
                 truncation: "TCO"

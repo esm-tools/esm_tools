@@ -84,6 +84,7 @@ namelists:
         - namelist.ice
         - namelist.diag
         - namelist.io
+        - namelist.cvmix
 
 choose_asforcing:
         CORE2:

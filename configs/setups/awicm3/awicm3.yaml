@@ -151,10 +151,12 @@ oifs:
                 TL159_CORE2:
                         nproca: 36
                         nprocb: 1
+                TCO159_CORE2:
+                        nproca: 36
+                        nprocb: 1
 
-        # By default we turn on ECWAM wave model (simulation FR10) but it should be
-        # false for DRH6
-        wam: false
+        # Wave model switch
+        wam: true
 
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
@@ -164,8 +166,8 @@ oifs:
                                      # AWICM3 and "t" for oifs? Do we need here a
                                      # logic to interprete the time stepping unit?
 
-        resolution: TL159 # @JAN: taken from the runscript, default in oifs.functions is T255
-        levels: L60 # @JAN: taken from the runscript, default in oifs.functions is 91
+        resolution: TCO159
+        levels: L91
 
         choose_general.version:
                 "1.0":
@@ -187,7 +189,7 @@ oifs:
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
 
         namelist_changes:
-                fort.4:
+                fort.4: # @JOAKIM: why not defined in OpenIFS
                         NAMRES:
                                 NRESTS:
                                         - -1
@@ -199,6 +201,7 @@ oifs:
                         NAMCLDP:
                                 SCLCT_SWITCH: "${sclct_switch}"
                         NAMFPG:
+                                NFPLEV: "${nlev}"
                                 NFPMAX: "${res_number}"
                         NAMFPD:
                                 NLAT: "${nlat}"
@@ -254,7 +257,6 @@ oifs:
 
         #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
         remove_input_files:
-                #- rtables
                 - vtables
 
         add_input_files:
@@ -266,6 +268,10 @@ oifs:
                 ICMGG_INIT: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIT_${fesom.resolution}
                 ICMGG_INIUA: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIUA
                 ICMSH_INIT: ${input_dir}/${res_level}/ICMSH${prepifs_expid}INIT
+                wam_grid_tables: ${input_dir}/${res_level}/wam_grid_tables
+                wam_subgrid_0: ${input_dir}/${res_level}/wam_subgrid_0
+                wam_subgrid_1: ${input_dir}/${res_level}/wam_subgrid_1
+                wam_subgrid_2: ${input_dir}/${res_level}/wam_subgrid_2
                 tl_data: ${input_dir}/${version}/climate/${res_number_tl}/*
                 o3_data: ${input_dir}/${version}/climate/${res_number_tl}/o3chem_l${nlev}/*
 
@@ -283,7 +289,7 @@ oifs:
                 - O3SCEN
                 - ICMCL_INIT
 
-        add_config_sources:
+        add_config_sources: # @JOAKIM
                 "fort.4": "${namelist_dir}/fort.4"
 
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
@@ -320,14 +326,10 @@ fesom:
         restart_unit: "d"
         leapyear: True
 
-        # TODO: choose namelist subfolder using a tag functionality
         model_tag: "awicm-3-deck"
         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
 
         surf_relax_s: 0.0
-
-        add_namelists:
-                - namelist.cvmix
 
         namelist_changes:
                 namelist.config:
@@ -338,6 +340,7 @@ fesom:
                         oce_tra:
                                 surf_relax_s: "${surf_relax_s}"
 
+        # TODO: make indepent namelists. With XIOS use the latest namelist from fesom-2
         # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
         # old experiments. 5e-3 is a better value so it is used for XIOS version
         choose_general.version:
@@ -458,7 +461,16 @@ oasis3mct:
 
         output_exchanged_vars: false
 
-        lag: "${oifs.time_step}"
+        time_step: 86400
+
+        choose_lresume:
+                false:
+                        remove_input_files:
+                                - rstos
+                                - rstas
+                        lag: 0
+                true:
+                        lag: "${time_step}"
 
         a2o_lag: "${lag}"
         a2r_lag: "${lag}"

@@ -1,6 +1,6 @@
-choose_computer.name:
-        ollie:
-                compiletime_environment_changes:
+compiletime_environment_changes:
+        choose_computer.name:
+                ollie:
                         add_export_vars:
                                 - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
                                 - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
@@ -10,8 +10,8 @@ choose_computer.name:
                                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
                                 - 'OASIS3MCTROOT=${general.model_dir}'
                                 - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
-        mistral:
-                compiletime_environment_changes:
+                                - 'configure_opts=--with-mpi=intelmpi'
+                mistral:
                         add_module_actions:
                                 - "unload intel"
                                 - "load intel/17.0.2"
@@ -34,3 +34,4 @@ choose_computer.name:
                                 - 'OASIS3MCTROOT=${general.model_dir}'
                                 - 'LIBS="-Wl,-rpath,$NETCDFFROOT/lib:$NETCDFROOT/lib:$HDF5ROOT/lib:$SZIPROOT/lib:$MPIROOT/lib"'
                                 - 'LD_LIBRARY_PATH="/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$SZIPROOT/lib:$PROJ4_ROOT/lib:$LD_LIBRARY_PATH"'
+                                - 'configure_opts=--with-mpi=intelmpi'

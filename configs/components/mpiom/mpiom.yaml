@@ -18,7 +18,7 @@ choose_version:
 install_bins: bin/mpiom.x
 clean_command: make clean
 comp_command: make -j `nproc --all`
-conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC --with-mpi=intelmpi
+conf_command: ./configure --prefix=${model_dir} --disable-mh-file --enable-HAMOCC $configure_opts
 git-repository: https://gitlab.dkrz.de/modular_esm/mpiom.git
 
 metadata:
@@ -66,6 +66,9 @@ namelist_dir: "${general.esm_namelist_dir}/mpiom/${version}"
 salt_restoring: false
 iterative_coupling: false
 lflexible_hosing: false
+
+nproca: 24
+nprocb: 18
 
 namelists:
         - "OCECTL"

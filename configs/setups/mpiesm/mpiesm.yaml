@@ -119,8 +119,6 @@ jsbach:
 
 mpiom:
         resolution: GR30
-        conf_command: ./configure --prefix=${model_dir} --disable-mh-file --with-coupler=oasis3-mct
-          --enable-HAMOCC --with-mpi=intelmpi
 
         time_step: 2700
         choose_computer.cores_per_node:
@@ -155,6 +153,9 @@ mpiom:
                 "1.2.00":
                     version: "1.6.2p3"
 
+        compiletime_environment_changes:
+                add_export_vars:
+                        - 'configure_opts="--with-coupler=oasis3-mct"'
 #        namelist_changes:
 #                OCECTL:
 #                        proctl:

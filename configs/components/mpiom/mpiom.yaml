@@ -35,7 +35,8 @@ metadata:
                 Please make sure you have a licence to use MPIOM. In case you are unsure,
                 please contact redmine...
 
-executable: mpiom.x
+comp_executable: mpiom.x
+executable: mpiom
 version: 1.6.3
 resolution: GR30
 levels: 40
@@ -79,6 +80,7 @@ namelist_changes:
                         dt: "${time_step}"
                         nmonts: "${nmonths}"
                         ndays: "${ndays}"
+                        nyears: "${nyears}"
                 ocedim:
                         ie_g: "${nx}"
                         je_g: "${ny}"
@@ -87,8 +89,12 @@ namelist_changes:
                         nprocx: "${nproca}"
                         nprocy: "${nprocb}"
 
-ndays: 0
-nmonths: 12
+#nday: "$(( ${next_date!sday} - ${start_date!sday} ))" #re.sub(r'\b0+(?!\b)', '', math)
+#nmon: "$(( ${next_date!smonth} - ${start_date!smonth} ))"
+#nyea: "$(( ${next_date!syear} - ${start_date!syear} ))"
+ndays: ${general.nday}
+nmonths: ${general.nmonth}
+nyears: ${general.nyear}
 time_step: 2700
 
 choose_resolution:
@@ -155,9 +161,9 @@ grids:
 bin_files:
         mpiom_bin: "mpiom_bin"
 bin_sources:
-        mpiom_bin: "${bin_dir}/mpiom.x"
+        mpiom_bin: "${bin_dir}/${comp_executable}"
 bin_in_work:
-        mpiom_bin: "mpiom.x"
+        mpiom_bin: "${executable}"
 
 config_sources:
         OCECTL: "${namelist_dir}/OCECTL"

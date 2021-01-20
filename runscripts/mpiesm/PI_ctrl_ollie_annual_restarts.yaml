@@ -1,0 +1,49 @@
+general:
+    setup_name: "mpiesm"
+    resolution: "T63_GR15"
+    coupled_setup: True
+    compute_time: "00:10:00"
+    version: "1.2.01p1"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-03"
+    base_dir: /work/ollie/mandresm/esm_yaml_test/
+    nmonth: 0
+    nyear: 0
+    nday: 1
+    a_random_var: 1
+
+
+echam:
+    restart_unit: "days"
+    nproca: 24
+    nprocb: 18 # this alone has no effect, nprocb still set to 24 in namelist.echam
+    nprocar: 0 #switch off concurrent radiation, delete this line or switch to 24 to use concurrent radiation
+    nprocbr: 0 #switch off concurrent radiation, delete this line or switch to 18 to use concurrent radiation
+    namelist_changes:
+        namelist.echam:
+            parctl:
+                #nproca: 24 #this does the trick
+                #nprocb: 18 #this does the trick, nprocb is 18 in namelist.echam
+                nprocar: 0 #switch off concurrent radiation, delete this line or switch to 24 to use concurrent radiation
+                nprocbr: 0 #switch off concurrent radiation, delete this line or switch to 18 to use concurrent radiation
+            runctl:
+                default_output: True 
+
+
+jsbach:
+        namelist_changes:
+                namelist.jsbach:
+                        jsbach_ctl:
+                                use_dynveg: True
+
+
+mpiesm:
+    model_dir: /home/ollie/mandresm/model_codes/mpiesm-1.2.01p1/
+
+mpiom:
+    res: "GR15"
+#    pool_dir: "/work/ollie/pool/MPIESM/"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    lresume: 0

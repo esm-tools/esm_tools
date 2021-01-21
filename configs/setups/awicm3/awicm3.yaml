@@ -196,7 +196,7 @@ oifs:
                         NAMRES:
                                 NRESTS:
                                         - -1
-                                        - -${timestep_per_run}
+                                        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works
                         NAERAD:
                                 CMIP5DATADIR: "${cmip5_data_dir_nml}"
                                 CRTABLEDIR: "${rtables_dir}"
@@ -323,9 +323,6 @@ oifs:
                 - O3HIST
                 - O3SCEN
                 - ICMCL_INIT
-
-        add_config_sources: # @JOAKIM
-                "fort.4": "${namelist_dir}/fort.4"
 
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
 

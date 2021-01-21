@@ -135,6 +135,9 @@ oifs:
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
+        start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
+        end_filebase_wam: "${initial_date!syear!smonth!sday}000000_" # @JOAKIM: check if still works, pull request esm_parser#20
+
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -255,6 +258,34 @@ oifs:
                         lfdbop: true
                         lsmssig: true
 
+        choose_wam:
+                1:
+                        add_input_files: # @JOAKIM: why did you commented this in oifs.yaml?
+                                uwavein: uwavein
+                                specwavein: specwavein
+                                sfcwindin: sfcwindin
+                                cdwavein: cdwavein
+
+                        add_restart_in_files: # @JOAKIM: why don't we have wavinfo in oifs.yaml?
+                                waminfo: waminfo
+                        add_restart_in_sources:
+                                waminfo: waminfo${start_ndays_string}
+                                BLS: BLS${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                                LAW: LAW${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+
+                        add_restart_in_in_work:
+                                waminfo: waminfo
+
+                        add_restart_out_files:
+                                waminfo: waminfo
+                        add_restart_out_sources:
+                                waminfo: waminfo
+                                BLS: BLS${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                                LAW: LAW${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                        add_restart_out_targets:
+                                waminfo: waminfo${next_ndays_string}
+
+
         #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
         remove_input_files:
                 - vtables
@@ -272,6 +303,10 @@ oifs:
                 wam_subgrid_0: ${input_dir}/${res_level}/wam_subgrid_0
                 wam_subgrid_1: ${input_dir}/${res_level}/wam_subgrid_1
                 wam_subgrid_2: ${input_dir}/${res_level}/wam_subgrid_2
+                uwavein: ${input_dir}/${res_level}/uwavein
+                specwavein: ${input_dir}/${res_level}/specwavein
+                sfcwindin: ${input_dir}/${res_level}/sfcwindin
+                cdwavein: ${input_dir}/${res_level}/cdwavein
                 tl_data: ${input_dir}/${version}/climate/${res_number_tl}/*
                 o3_data: ${input_dir}/${version}/climate/${res_number_tl}/o3chem_l${nlev}/*
 
@@ -299,6 +334,25 @@ oifs:
                     grid: atma
                 A_Runoff:
                     grid: atmr
+
+        ignore_files: # @JOAKIM, is it okay to add this ignore files to oifs.yaml?
+                debug.root: debug.root
+                debug.notroot: debug.notroot
+                drhook: drhook
+                lucia: lucia
+                nout: nout
+        ignore_in_work:
+                debug.root: debug.root*
+                debug.notroot: debug.notroot*
+                drhook: drhook*
+                lucia: lucia.*
+                nout: nout.000000
+        ignore_sources:
+                debug.root: debug.root*
+                debug.notroot: debug.notroot*
+                drhook: drhook*
+                lucia: lucia.*
+                nout: nout.000000
 
 
 fesom:

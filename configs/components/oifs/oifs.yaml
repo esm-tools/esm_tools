@@ -598,7 +598,7 @@ start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
 #end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
 #end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
 #end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000" # @JOAKIM: check if still works, pull request esm_parser#20
 
 run_number_minus1: "$(( ${run_number} - 1 ))"
 run_number_string: "<--format(%05d)-- ${run_number}"

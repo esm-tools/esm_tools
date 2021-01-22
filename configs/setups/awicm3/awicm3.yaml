@@ -290,7 +290,7 @@ oifs:
         remove_input_files:
                 - vtables
 
-        add_input_files:
+        input_files:
                 ICMGG_INIT: ICMGG_INIT
                 ICMGG_INIUA: ICMGG_INIUA
                 ICMSH_INIT: ICMSH_INIT

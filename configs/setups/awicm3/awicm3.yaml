@@ -116,6 +116,8 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
+        in_date_folder: "${parent_date!syear!smonth!sday}"
+        out_date_folder: "${end_date!syear!smonth!sday}"
         ocean_resolution: "${fesom.resolution}"
 
         mip: "cmip6"
@@ -268,27 +270,17 @@ oifs:
 
                         add_restart_in_files: # @JOAKIM: why don't we have wavinfo in oifs.yaml?
                                 waminfo: waminfo
-                        add_restart_in_sources:
-                                waminfo: waminfo${start_ndays_string}
-                                BLS: BLS${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
-                                LAW: LAW${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
-
-                        add_restart_in_in_work:
-                                waminfo: waminfo
 
                         add_restart_out_files:
                                 waminfo: waminfo
-                        add_restart_out_sources:
-                                waminfo: waminfo
-                                BLS: BLS${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
-                                LAW: LAW${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
-                        add_restart_out_targets:
-                                waminfo: waminfo${next_ndays_string}
 
+        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
 
-        #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
-        remove_input_files:
-                - vtables
+        coupling_fields:
+                "[[awicm3_fields-->FIELD]]":
+                    grid: atma
+                A_Runoff:
+                    grid: atmr
 
         input_files:
                 ICMGG_INIT: ICMGG_INIT
@@ -310,6 +302,50 @@ oifs:
                 tl_data: ${input_dir}/${version}/climate/${res_number_tl}/*
                 o3_data: ${input_dir}/${version}/climate/${res_number_tl}/o3chem_l${nlev}/*
 
+        # BEFORE RUN: copy from RESTART to WORK
+        # ----------
+        # RESTART (restart files from prev. leg in the general exp dir):
+        restart_in_sources:
+                srf: ${in_date_folder}/srf${start_ndays_string}0000.*
+                rcf: ${in_date_folder}/rcf
+                waminfo: ${in_date_folder}/waminfo${start_ndays_string}
+                BLS: ${in_date_folder}/BLS${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                LAW: ${in_date_folder}/LAW${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+        # WORK (current leg directory):
+        restart_in_in_work: # @JOAKIM: this can be added to oifs.yaml without causing issues
+                srf: srf${start_ndays_string}0000.*
+                rcf: rcf
+                waminfo: waminfo
+                BLS: BLS${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                LAW: LAW${start_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+
+        # AFTER RUN: copy WORK to RESTART
+        # ---------
+        # WORK (restart files generated during this leg, to be copied to the exp dir):
+        restart_out_sources:
+                waminfo: waminfo # @JOAKIM: this can be added to oifs.yaml without causing issues
+                BLS: BLS${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+                LAW: LAW${end_filebase_wam}* # @JOAKIM: this seems more general use of the wild card
+        # RESTART (restart files from this leg in the general exp dir, for the next leg restart)
+        restart_out_targets:
+                srf: ${out_date_folder}/srf${next_ndays_string}0000.*
+                rcf: ${out_date_folder}/rcf
+                waminfo: ${out_date_folder}/waminfo${next_ndays_string}
+                BLS: ${out_date_folder}/BLS${end_filebase_wam}*
+                LAW: ${out_date_folder}/LAW${end_filebase_wam}*
+
+        outdata_sources:
+                # old grib based output
+                ICMGG: ${out_date_folder}/ICMGG${oifs.input_expid}+*
+                ICMSH: ${out_date_folder}/ICMSH${oifs.input_expid}+*
+                ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
+                MPP: ${out_date_folder}/MPP*
+                # XIOS output
+                oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+
+        #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
+        remove_input_files:
+                - vtables
 
         # All forcing files are removed: path specified in to the namelist
         remove_forcing_files:
@@ -323,14 +359,6 @@ oifs:
                 - O3HIST
                 - O3SCEN
                 - ICMCL_INIT
-
-        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
-
-        coupling_fields:
-                "[[awicm3_fields-->FIELD]]":
-                    grid: atma
-                A_Runoff:
-                    grid: atmr
 
         ignore_files: # @JOAKIM, is it okay to add this ignore files to oifs.yaml?
                 debug.root: debug.root

@@ -11,7 +11,6 @@ general:
     use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 awicm3:
-    version: "1.0-deck"
     postprocessing: false
     model_dir: "/home/ollie/mandresm/model_codes/awicm3-1.0-deck/"
 

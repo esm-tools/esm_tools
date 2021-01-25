@@ -83,7 +83,7 @@ general:
                                         # OpenMP
                                         - 'OMP_NUM_THREADS=1'
 
-                        pool_dir: "/mnt/lustre01/work/ab0246/a270092/input"
+                        pool_dir: "/work/ab0246/a270092/input"
                 ollie:
                         pool_dir: "/work/ollie/jstreffi/input"
                 juwels:

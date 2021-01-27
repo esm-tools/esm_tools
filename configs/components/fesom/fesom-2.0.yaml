@@ -25,11 +25,10 @@ choose_version:
   2.0-o:
     branch: oifs-deck
   2.0-jio:
-    branch: juwels_chunk_io
+    branch: juwels_chunk_io # ${branch_deck}
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    #- https://github.com/FESOM/fesom2.git # Change later to this repository
+    - https://github.com/FESOM/fesom2.git
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
@@ -232,6 +231,13 @@ config_sources:
 compiletime_environment_changes:
         add_export_vars:
                 - taken2from:      fesom2_compile
+        choose_computer.name:
+                mistral:
+                        add_export_vars:
+                                - branch_deck: mistral_chunk_io
+                "*":
+                        add_export_vars:
+                                - branch_deck: juwels_chunk_io
 
 runtime_environment_changes:
         add_export_vars:

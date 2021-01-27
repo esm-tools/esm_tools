@@ -19,7 +19,7 @@ general:
               - "log_used_files"
               - "_write_finalized_config"
               - "copy_files_to_thisrun"
-              #- "preprocess"
+              - "preprocess"
               - "modify_namelists"
               - "modify_files"
               - "copy_files_to_work"

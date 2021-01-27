@@ -26,7 +26,8 @@ fesom:
     nproc: 72
 
 oifs:
-    resolution: "TL159L60"
+    resolution: "TL159"
+    levels: "L60"
     prepifs_expid: h6mv
     input_expid: awi3
     wam: false

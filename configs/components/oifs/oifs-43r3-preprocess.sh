@@ -19,7 +19,7 @@ perturb=$9
 nx=${10}
 ensemble_id=${11}
 
-style="jesus"
+style=${12:-"jesus"}
 
 if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
@@ -154,7 +154,7 @@ fi
 if [[ "x${with_wam}" == "x1" ]] ; then
     files="cdwavein sfcwindin specwavein uwavein"
     for file in $files ; do
-   
+
         ## old file
         old=${indir}/$file 
         
@@ -163,7 +163,7 @@ if [[ "x${with_wam}" == "x1" ]] ; then
    
         if [ -f $old ]; then
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new 
+            grib_set -s dataDate=$ndate $old $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

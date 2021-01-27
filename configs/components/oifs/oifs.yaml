@@ -13,6 +13,10 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
+required_plugins:
+        - "git+https://github.com/esm-tools-plugins/postprocess"
+        - "git+https://github.com/esm-tools-plugins/preprocess"
+
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
         Carver et al., in prep.
@@ -39,7 +43,7 @@ rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
 icmcl_dir: ${input_dir}
-icmcl_file: ICMCLgu5aINIT
+icmcl_file: ICMCL${prepifs_expid}INIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
 ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/

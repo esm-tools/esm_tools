@@ -65,7 +65,7 @@ general:
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
 
-        compute_recipe: #_with_preprocess:
+        compute_recipe_with_preprocess:
             - "venv_bootstrap"
             - "_create_setup_folders"
             - "_create_component_folders"
@@ -90,39 +90,39 @@ general:
             - "database_entry"
             - "submit"
 
-        #compute_recipe_no_preprocess:
-        #    - "venv_bootstrap"
-        #    - "_create_setup_folders"
-        #    - "_create_component_folders"
-        #    - "initialize_experiment_logfile"
-        #    - "copy_tools_to_thisrun"
-        #    - "compile_model"
-        #    - "_copy_preliminary_files_from_experiment_to_thisrun"
-        #    - "_show_simulation_info"
-        #    - "create_new_files"
-        #    - "prepare_coupler_files"
-        #    - "add_batch_hostfile"
-        #    - "assemble"
-        #    - "log_used_files"
-        #    - "_write_finalized_config"
-        #    - "copy_files_to_thisrun"
-        #    - "modify_namelists"
-        #    - "modify_files"
-        #    - "copy_files_to_work"
-        #    - "write_simple_runscript"
-        #    - "report_missing_files"
-        #    - "database_entry"
-        #    - "submit"
+        compute_recipe_no_preprocess:
+            - "venv_bootstrap"
+            - "_create_setup_folders"
+            - "_create_component_folders"
+            - "initialize_experiment_logfile"
+            - "copy_tools_to_thisrun"
+            - "compile_model"
+            - "_copy_preliminary_files_from_experiment_to_thisrun"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "prepare_coupler_files"
+            - "add_batch_hostfile"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "copy_files_to_thisrun"
+            - "modify_namelists"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "write_simple_runscript"
+            - "report_missing_files"
+            - "database_entry"
+            - "submit"
 
-        #choose_oifs.lresume:
-        #        false:
-        #                choose_run_number:
-        #                        1:      # If first leg, use preprocessing
-        #                                compute_recipe: ${compute_recipe_with_preprocess}
-        #                        "*":    # If not first leg, use no preprocessing
-        #                                compute_recipe: ${compute_recipe_no_preprocess}
-        #        true:   # If restart, use no preprocessing
-        #                compute_recipe: ${compute_recipe_no_preprocess}
+        choose_oifs.lresume:
+                false:
+                        choose_run_number:
+                                1:      # If first leg, use preprocessing
+                                        compute_recipe: ${compute_recipe_with_preprocess}
+                                "*":    # If not first leg, use no preprocessing
+                                        compute_recipe: ${compute_recipe_no_preprocess}
+                true:   # If restart, use no preprocessing
+                        compute_recipe: ${compute_recipe_no_preprocess}
 
 
 #########################################################################################

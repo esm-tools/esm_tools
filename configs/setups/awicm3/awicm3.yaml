@@ -3,30 +3,6 @@
 #########################################################################################
 general:
 
-        compute_recipe:
-              - "venv_bootstrap"
-              - "_create_setup_folders"
-              - "_create_component_folders"
-              - "initialize_experiment_logfile"
-              - "copy_tools_to_thisrun"
-              - "compile_model"
-              - "_copy_preliminary_files_from_experiment_to_thisrun"
-              - "_show_simulation_info"
-              - "create_new_files"
-              - "prepare_coupler_files"
-              - "add_batch_hostfile"
-              - "assemble"
-              - "log_used_files"
-              - "_write_finalized_config"
-              - "copy_files_to_thisrun"
-              - "preprocess"
-              - "modify_namelists"
-              - "modify_files"
-              - "copy_files_to_work"
-              - "write_simple_runscript"
-              - "report_missing_files"
-              - "database_entry"
-              - "submit"
 
         model: awicm3
 
@@ -89,6 +65,65 @@ general:
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
 
+        compute_recipe: #_with_preprocess:
+            - "venv_bootstrap"
+            - "_create_setup_folders"
+            - "_create_component_folders"
+            - "initialize_experiment_logfile"
+            - "copy_tools_to_thisrun"
+            - "compile_model"
+            - "_copy_preliminary_files_from_experiment_to_thisrun"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "prepare_coupler_files"
+            - "add_batch_hostfile"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "copy_files_to_thisrun"
+            - "preprocess"
+            - "modify_namelists"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "write_simple_runscript"
+            - "report_missing_files"
+            - "database_entry"
+            - "submit"
+
+        #compute_recipe_no_preprocess:
+        #    - "venv_bootstrap"
+        #    - "_create_setup_folders"
+        #    - "_create_component_folders"
+        #    - "initialize_experiment_logfile"
+        #    - "copy_tools_to_thisrun"
+        #    - "compile_model"
+        #    - "_copy_preliminary_files_from_experiment_to_thisrun"
+        #    - "_show_simulation_info"
+        #    - "create_new_files"
+        #    - "prepare_coupler_files"
+        #    - "add_batch_hostfile"
+        #    - "assemble"
+        #    - "log_used_files"
+        #    - "_write_finalized_config"
+        #    - "copy_files_to_thisrun"
+        #    - "modify_namelists"
+        #    - "modify_files"
+        #    - "copy_files_to_work"
+        #    - "write_simple_runscript"
+        #    - "report_missing_files"
+        #    - "database_entry"
+        #    - "submit"
+
+        #choose_oifs.lresume:
+        #        false:
+        #                choose_run_number:
+        #                        1:      # If first leg, use preprocessing
+        #                                compute_recipe: ${compute_recipe_with_preprocess}
+        #                        "*":    # If not first leg, use no preprocessing
+        #                                compute_recipe: ${compute_recipe_no_preprocess}
+        #        true:   # If restart, use no preprocessing
+        #                compute_recipe: ${compute_recipe_no_preprocess}
+
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -135,7 +170,6 @@ oifs:
         run_number_minus2_string: "<--format(%06d)-- ${run_number_minus2}"
         prev_wam: "${run_number_minus2_string}${parent_date!shour!sminute!ssecond}"
         this_wam: "${run_number_minus1_string}${parent_date!shour!sminute!ssecond}"
-        shit: BLS${end_filebase_wam}${this_wam}.
 
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
@@ -382,7 +416,7 @@ oifs:
         ############################################################
         preprocess:
                 preprocess_shell:
-                        method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.res_level}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir}/../input/oifs/ ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
+                        method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.res_level}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir}/../input/oifs/ ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
                         type: shell
 
         #postprocess:

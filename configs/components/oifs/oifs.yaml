@@ -760,8 +760,8 @@ choose_wam:
                                         LWCOU2W: ".true."
                         wam_namelist:
                                 NALINE: # @JOAKIM
-                                        CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
-                                        CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
+                                        #CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
+                                        #CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
                                         CDATEF: "${wam_start_date}" # I think this is for generating the output with the correct date stamp
 
                 add_restart_in_files:

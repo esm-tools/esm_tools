@@ -21,6 +21,11 @@ ensemble_id=${11}
 
 style=${12:-"jesus"}
 
+if [[ "$(hostname -f)" =~ awi.de ]] ; then
+    export PATH=/global/AWIsoft/grib_api/1.12.3_gnu/bin/bin:$PATH
+    module purge
+    module load netcdf cdo
+
 if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
     module purge

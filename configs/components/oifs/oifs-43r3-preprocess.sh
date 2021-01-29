@@ -21,10 +21,11 @@ ensemble_id=${11}
 
 style=${12:-"jesus"}
 
-if [[ "$(hostname -f)" =~ awi.de ]] ; then
-    export PATH=/global/AWIsoft/grib_api/1.12.3_gnu/bin/bin:$PATH
+if [[ "$(hostname -f)" =~ ollie ]] ; then
     module purge
-    module load netcdf cdo
+    module load intel.compiler
+    module load cdo netcdf/4.6.2_intel
+    export PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu/bin:$PATH
 
 elif [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH

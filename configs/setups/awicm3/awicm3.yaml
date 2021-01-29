@@ -675,14 +675,20 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: "2.0"
 
+        input_files:
+                rmp: rmp
+
+        input_in_work:
+                rmp: rmp_*.nc
+
+        input_sources:
+                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
 
         restart_in_files:
-                rmp: rmp
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_in_in_work:
-                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
@@ -690,7 +696,6 @@ oasis3mct:
                 false:
                         lag: 0
                         restart_in_sources:
-                                rmp: rmp_*.nc
                                 rstas.nc: rstas.nc
                                 rstos.nc: rstos.nc
                 true:
@@ -699,22 +704,18 @@ oasis3mct:
                                 areas: ${pool_dir}/areas.nc
                                 masks: ${pool_dir}/masks.nc
                                 grids: ${pool_dir}/grids.nc
-                                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                                 rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
                                 rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
 
         restart_out_files:
-                rmp: rmp
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_in_work:
-                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_sources:
-                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 

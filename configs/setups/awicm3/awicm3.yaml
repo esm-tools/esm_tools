@@ -166,12 +166,12 @@ oifs:
         #wam_end_date: "${end_date!syear!smonth!sday}000000"
         start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
         end_filebase_wam: "${initial_date!syear!smonth!sday}000000_" # @JOAKIM: check if still works, pull request esm_parser#20
-        days_since_initial_minus1: "$(( ${seconds_since_initial} / 86400 - 1 ))"
-        days_since_initial_minus2: "$(( ${seconds_since_initial} / 86400 - 2 ))"
+        days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
+        days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
+        days_string: "<--format(%06d)-- ${days_since_initial}"
         days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
-        days_minus2_string: "<--format(%06d)-- ${days_since_initial_minus2}"
-        prev_wam: "${days_minus2_string}${parent_date!shour!sminute!ssecond}"
-        this_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
+        prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
+        this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work

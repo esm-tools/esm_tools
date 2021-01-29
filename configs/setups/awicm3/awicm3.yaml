@@ -37,6 +37,8 @@ general:
         post_time: "00:05:00"
         compute_time: "00:30:00"
 
+        reusable_filetypes: [input, bin, src]
+
         choose_computer.name:
                 mistral:
                         runtime_environment_changes:
@@ -121,8 +123,8 @@ general:
                                         compute_recipe: ${compute_recipe_with_preprocess}
                                 "*":    # If not first leg, use no preprocessing
                                         compute_recipe: ${compute_recipe_no_preprocess}
-                true:   # If restart, use no preprocessing
-                        compute_recipe: ${compute_recipe_no_preprocess}
+                true:   # If restart, use no preprocessing:
+                                compute_recipe: ${compute_recipe_no_preprocess}
 
 
 #########################################################################################
@@ -416,7 +418,7 @@ oifs:
         ############################################################
         preprocess:
                 preprocess_shell:
-                        method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.res_level}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir}/../input/oifs/ ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
+                        method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.res_level}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
                         type: shell
 
         #postprocess:
@@ -587,15 +589,6 @@ oasis3mct:
 
         time_step: 86400
 
-        choose_lresume:
-                false:
-                        remove_input_files:
-                                - rstos
-                                - rstas
-                        lag: 0
-                true:
-                        lag: "${time_step}"
-
         a2o_lag: "${lag}"
         a2r_lag: "${lag}"
         o2a_lag: "${lag}"
@@ -683,29 +676,48 @@ oasis3mct:
                                         weight: "2.0"
 
 
-        add_input_files:
-                areas: areas
-                masks: masks
-                grids: grids
+        restart_in_files:
                 rmp: rmp
-                rstas: rstas
-                rstos: rstos
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
 
-        add_input_in_work:
-                areas: areas.nc
-                masks: masks.nc
-                grids: grids.nc
+        restart_in_in_work:
                 rmp: rmp_*.nc
-                rstas: rstas.nc
-                rstos: rstos.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
 
-        add_input_sources:
-                areas: ${pool_dir}/areas.nc
-                masks: ${pool_dir}/masks.nc
-                grids: ${pool_dir}/grids.nc
-                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
-                rstas: ${pool_dir}/${fesom.nproc}/rstas.nc
-                rstos: ${pool_dir}/${fesom.nproc}/rstos.nc
+        choose_lresume:
+                false:
+                        lag: 0
+                        restart_in_sources:
+                                rmp: rmp_*.nc
+                                rstas.nc: rstas.nc
+                                rstos.nc: rstos.nc
+                true:
+                        lag: "${time_step}"
+                        restart_in_sources:
+                                areas: ${pool_dir}/areas.nc
+                                masks: ${pool_dir}/masks.nc
+                                grids: ${pool_dir}/grids.nc
+                                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
+                                rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
+                                rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
+
+        restart_out_files:
+                rmp: rmp
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_out_in_work:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_out_sources:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
 
 
 ## Set up CPU layout

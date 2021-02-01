@@ -227,6 +227,34 @@ oifs:
                         #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
                         #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+        choose_computer.name:
+                mistral:
+                        add_compiletime_environment_changes:
+                                add_module_actions:
+                                        - "unload gribapi"
+                                        - "load netcdf_c"
+                                add_export_vars:
+                                        - 'NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14'
+                                        - 'NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48'
+                                        - 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48'
+                                        - 'GRIBROOT=/pf/a/a270092/ecmwf/grib_api_intel_modulegcc'
+                                        - "GRIBAPIROOT=/pf/a/a270092/ecmwf/grib_api_intel_modulegcc"
+
+                                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                                        - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
+                                        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
+                                        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
+                                        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+                                        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
+                                        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
+                                        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
+                                        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
+                                        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
+                                        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+                                        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+                                        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+                                        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                                        - 'I_MPI_DYNAMIC_CONNECTION=0'
 
         namelist_changes:
                 fort.4: # @JOAKIM: why not defined in OpenIFS
@@ -519,6 +547,14 @@ fesom:
                 "[[awicm3_fields-->FIELD]]":
                         grid: feom
 
+        compiletime_environment_changes:
+                choose_computer.name:
+                        mistral:
+                                add_export_vars:
+                                        - branch_deck: d4139d9
+                        "*":
+                                add_export_vars:
+                                        - branch_deck: mistral_chunk_io
 
 xios:
         #model_dir: ${general.model_dir}/xios-${xios.version}

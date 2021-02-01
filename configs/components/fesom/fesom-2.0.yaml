@@ -29,6 +29,7 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
+    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
@@ -231,13 +232,6 @@ config_sources:
 compiletime_environment_changes:
         add_export_vars:
                 - taken2from:      fesom2_compile
-        choose_computer.name:
-                mistral:
-                        add_export_vars:
-                                - branch_deck: mistral_chunk_io
-                "*":
-                        add_export_vars:
-                                - branch_deck: juwels_chunk_io
 
 runtime_environment_changes:
         add_export_vars:

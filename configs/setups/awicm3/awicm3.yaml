@@ -554,7 +554,7 @@ fesom:
                                         - branch_deck: d4139d9
                         "*":
                                 add_export_vars:
-                                        - branch_deck: mistral_chunk_io
+                                        - branch_deck: juwels_chunk_io
 
 xios:
         #model_dir: ${general.model_dir}/xios-${xios.version}

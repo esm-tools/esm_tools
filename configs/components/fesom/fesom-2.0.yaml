@@ -25,7 +25,7 @@ choose_version:
   2.0-o:
     branch: oifs-deck
   2.0-jio:
-    branch: juwels_chunk_io # ${branch_deck}
+    branch: juwels_chunk_io
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git

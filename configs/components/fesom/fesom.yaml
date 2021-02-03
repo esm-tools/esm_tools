@@ -288,11 +288,11 @@ compiletime_environment_changes:
         add_export_vars:
                 takenfrom:      fesom1
 choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
+        #mistral:
+        #        add_compiletime_environment_changes:
+        #                add_module_actions:
+        #                        - "unload gcc"
+        #                        - "load gcc/4.8.2"
         blogin:
                 add_compiletime_environment_changes:
                         add_export_vars:

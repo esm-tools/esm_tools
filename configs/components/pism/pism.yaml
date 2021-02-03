@@ -80,6 +80,10 @@ cold_start_file: "${pool_dir}/input/${domain}/pismr_${domain}_${resolution}.nc"
 spinup_file: "/no/default/was/set"
 
 choose_computer.cores_per_node:
+    24:
+        nnodes: 4
+        nproca: 96
+        nprocb: 1
     36:
         nnodes: 2
         nproca: 72

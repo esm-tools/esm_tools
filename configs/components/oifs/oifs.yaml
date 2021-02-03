@@ -13,9 +13,9 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
-required_plugins:
-        - "git+https://github.com/esm-tools-plugins/postprocess"
-        - "git+https://github.com/esm-tools-plugins/preprocess"
+#required_plugins:
+#        - "git+https://github.com/esm-tools-plugins/postprocess"
+#        - "git+https://github.com/esm-tools-plugins/preprocess"
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -191,6 +191,7 @@ runtime_environment_changes:
         # ENV vars used in OIFS's source code during runtime
         - 'OIFS_FFIXED=""'
         - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
     ollie:
       add_module_actions:

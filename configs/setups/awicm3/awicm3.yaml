@@ -41,6 +41,22 @@ general:
 
         choose_computer.name:
                 mistral:
+                        compiletime_environment_changes:
+                                add_export_vars:
+                                        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
+                                        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+                                        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
+                                        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
+                                        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
+                                        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+                                        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+                                        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+                                        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                                        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
+                                        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
+
+                                        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+                                        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
                         runtime_environment_changes:
                                 add_export_vars:
                                         # (additional) settings used in FOCI up to v1.21
@@ -227,34 +243,7 @@ oifs:
                         #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
                         #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
-        choose_computer.name:
-                mistral:
-                        add_compiletime_environment_changes:
-                                add_module_actions:
-                                        - "unload gribapi"
-                                        - "load netcdf_c"
-                                add_export_vars:
-                                        - 'NETCDFFROOT=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14'
-                                        - 'NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48'
-                                        - 'HDF5ROOT=/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48'
-                                        - 'GRIBROOT=/pf/a/a270092/ecmwf/grib_api_intel_modulegcc'
-                                        - "GRIBAPIROOT=/pf/a/a270092/ecmwf/grib_api_intel_modulegcc"
 
-                                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                                        - "LD_LIBRARY_PATH=$NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH"
-                                        - "LD_LIBRARY_PATH=/sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH"
-                                        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-                                        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-                                        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-                                        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-                                        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-                                        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-                                        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-                                        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-                                        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-                                        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-                                        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-                                        - 'I_MPI_DYNAMIC_CONNECTION=0'
 
         namelist_changes:
                 fort.4: # @JOAKIM: why not defined in OpenIFS

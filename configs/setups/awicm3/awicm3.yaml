@@ -705,9 +705,15 @@ oasis3mct:
 
         input_in_work:
                 rmp: rmp_*.nc
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
 
         input_sources:
                 rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
+                areas: ${pool_dir}/areas.nc
+                masks: ${pool_dir}/masks.nc
+                grids: ${pool_dir}/grids.nc
 
         restart_in_files:
                 rstas.nc: rstas.nc
@@ -717,20 +723,27 @@ oasis3mct:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
+        choose_general.run_number:
+                1:
+                        add_input_files:
+                                areas: areas
+                                masks: masks
+                                grids: grids
+
         choose_lresume:
                 false:
                         lag: 0
-                        restart_in_sources:
-                                rstas.nc: rstas.nc
-                                rstos.nc: rstos.nc
                 true:
                         lag: "${time_step}"
-                        restart_in_sources:
-                                areas: ${pool_dir}/areas.nc
-                                masks: ${pool_dir}/masks.nc
-                                grids: ${pool_dir}/grids.nc
-                                rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
-                                rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
+                        choose_general.run_number:
+                                1:
+                                        add_restart_in_sources:
+                                                rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
+                                                rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
+                                "*":
+                                        add_restart_in_sources:
+                                                rstas.nc: rstas.nc
+                                                rstos.nc: rstos.nc
 
         restart_out_files:
                 rstas.nc: rstas.nc

@@ -552,7 +552,8 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        #pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        pool_dir: /work/ollie/mandresm/pool/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
 
@@ -687,16 +688,15 @@ oasis3mct:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
-        choose_general.run_number:
-                1:
-                        add_input_files:
-                                areas: areas
-                                masks: masks
-                                grids: grids
-
         choose_lresume:
                 false:
                         lag: 0
+                        choose_general.run_number:
+                                1:
+                                        add_input_files:
+                                                areas: areas
+                                                masks: masks
+                                                grids: grids
                 true:
                         lag: "${time_step}"
                         choose_general.run_number:

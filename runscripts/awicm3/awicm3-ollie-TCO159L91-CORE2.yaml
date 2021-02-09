@@ -2,8 +2,8 @@ general:
     setup_name: "awicm3"
     version: "1.0-deck"
     compute_time: "00:15:00"
-    initial_date: "1990-01-01"
-    final_date: "1990-01-05"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-05"
     base_dir: "/work/ollie/mandresm/esm_yaml_test/"
     nday: 1
     nmonth: 0

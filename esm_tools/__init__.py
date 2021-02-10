@@ -44,11 +44,11 @@ def _get_config_filepath_standard_install(config):
 def _get_config_filepath_editable_install(config):
     return pkg_resources.resource_filename("configs", config)
 
-def _get_runscript_filepath_standard_install(config):
-    return pkg_resources.resource_filename("esm_tools.runscripts", config)
+def _get_runscript_filepath_standard_install(runscript):
+    return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
 
-def _get_runscript_filepath_editable_install(config):
-    return pkg_resources.resource_filename("runscripts", config)
+def _get_runscript_filepath_editable_install(runscript):
+    return pkg_resources.resource_filename("runscripts", runscript)
 
 
 def get_config_as_str(config):
@@ -235,7 +235,7 @@ def get_config_filepath(config):
         return _get_config_filepath_editable_install(config)
     return _get_config_filepath_standard_install(config)
 
-def get_runscript_filepath(config):
+def get_runscript_filepath(runscript):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)

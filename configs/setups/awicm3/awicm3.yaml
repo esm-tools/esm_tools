@@ -112,17 +112,6 @@ general:
 #########################################################################################
 
 oifs:
-        sometesting:
-                function: ${general.esm_function_dir}
-                namelist: ${general.esm_namelist_dir}
-                runscript: ${general.esm_runscript_dir}
-                functions: ${general.esm_function_dir}s
-                namelists: ${general.esm_namelist_dir}s
-                runscripts: ${general.esm_runscript_dir}s
-                sfunctions: s${general.esm_function_dir}s
-                snamelists: s${general.esm_namelist_dir}s
-                srunscripts: s${general.esm_runscript_dir}s
-
         version: "43r3"
 
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}

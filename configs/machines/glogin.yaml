@@ -3,6 +3,9 @@
 name: glogin
 account: None
 
+# set default for hyperthreading_flag
+hyperthreading_flag: "--ntasks-per-core=1"
+use_hyperthreading: "0"
 choose_general.use_hyperthreading:
         "0":
                 hyperthreading_flag: "--ntasks-per-core=1"

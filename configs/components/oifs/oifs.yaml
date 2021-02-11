@@ -13,6 +13,14 @@ type: atmosphere
 with_xios: False
 xml_dir: ''
 
+# MA: I think the following lines can be deleted but needs testing
+#include_models:
+#        - xios
+
+required_plugins:
+        - "git+https://github.com/esm-tools-plugins/postprocess"
+        - "git+https://github.com/esm-tools-plugins/preprocess"
+
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
         Carver et al., in prep.
@@ -402,6 +410,7 @@ generate_namelist: 1
 ensemble: 0
 post_processing: 0
 use_ocean_currents: 0
+pextra: 0
 
 #cmip6: True
 #cmip5: False
@@ -729,6 +738,20 @@ choose_with_xios:
                         ICMSH: ICMSH
 
 
+choose_pextra: 
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LBUD23: ".true."
+                                NAMDPHY:
+                                        NVEXTR: 25
+                                        NCEXTR: ${nlev}
+                                NAMPHYDS:
+                                        NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
+                                NAMFPC:
+                                        NFP3DFS: 25
+                                        MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
 
 ##
 ## would that we with or without ECWAM, sir?
@@ -951,7 +974,7 @@ forcing_sources:
 
 
 config_sources:
-        "fort.4": "${namelist_dir}/pictl/fort.4"
+        "fort.4": "${namelist_dir}/fort.4"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
@@ -1034,14 +1057,16 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
-# postprocessing is not supported, and causes a crash in release 5 if not commented
-# seb-wahl 2020-11-27
-#postprocess:
-#        postprocess_shell:
-#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-#                type: shell
+# the postprocessing is at the moment essentially the same as the preprocessing plugin
+# it just executes a shell script
+# not working as expected as there is no "wait" after submit in the compute recipe below
+postprocess:
+        postprocess_shell:
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
+
 compute_recipe:
    - "venv_bootstrap"
    - "_create_setup_folders"
@@ -1066,4 +1091,6 @@ compute_recipe:
    - "report_missing_files"
    - "database_entry"
    - "submit"
+# this does not work as expected, solution is work in progress
+#   - "postprocess"
 

@@ -509,6 +509,10 @@ fesom:
                                 add_export_vars:
                                         - branch_deck: juwels_chunk_io
 
+further_reading:
+        - fesom/fesom-2.0.io.yaml
+
+
 xios:
         #model_dir: ${general.model_dir}/xios-${xios.version}
         #setup_dir: ${general.model_dir}

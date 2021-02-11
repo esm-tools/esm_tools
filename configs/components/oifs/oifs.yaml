@@ -14,8 +14,8 @@ with_xios: False
 xml_dir: ''
 
 # MA: I think the following lines can be deleted but needs testing
-# #include_models:
-# #        - xios
+#include_models:
+#        - xios
 
 required_plugins:
         - "git+https://github.com/esm-tools-plugins/postprocess"

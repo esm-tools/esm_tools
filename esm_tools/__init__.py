@@ -44,6 +44,12 @@ def _get_config_filepath_standard_install(config):
 def _get_config_filepath_editable_install(config):
     return pkg_resources.resource_filename("configs", config)
 
+def _get_runscript_filepath_standard_install(runscript):
+    return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
+
+def _get_runscript_filepath_editable_install(runscript):
+    return pkg_resources.resource_filename("runscripts", runscript)
+
 
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
@@ -131,6 +137,15 @@ def _copy_namelist_folder_editable_install(dest_path):
     src_path = pkg_resources.resource_filename("namelists", ".")
     return shutil.copytree(src_path, dest_path)
 
+def _copy_runscript_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.runscripts", ".")
+    return shutil.copytree(src_path, dest_path)
+
+def _copy_runscript_folder_editable_install(dest_path):
+    src_path = pkg_resources.resource_filename("runscripts", ".")
+    return shutil.copytree(src_path, dest_path)
+
+
 def _read_namelist_editable_install(nml):
     """
     Reads a namelist file for the case that you have done an editable/develop install.
@@ -205,6 +220,11 @@ def copy_namelist_folder(dest_path):
         return _copy_namelist_folder_editable_install(dest_path)
     return _copy_namelist_folder_standard_install(dest_path)
 
+def copy_runscript_folder(dest_path):
+    if EDITABLE_INSTALL:
+        return _copy_runscript_folder_editable_install(dest_path)
+    return _copy_runscript_folder_standard_install(dest_path)
+
 def get_namelist_filepath(namelist):
     if EDITABLE_INSTALL:
         return _get_namelist_filepath_editable_install(namelist)
@@ -214,6 +234,11 @@ def get_config_filepath(config):
     if EDITABLE_INSTALL:
         return _get_config_filepath_editable_install(config)
     return _get_config_filepath_standard_install(config)
+
+def get_runscript_filepath(runscript):
+    if EDITABLE_INSTALL:
+        return _get_runscript_filepath_editable_install(runscript)
+    return _get_runscript_filepath_standard_install(runscript)
 
 
 def read_namelist_file(nml):

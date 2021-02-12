@@ -28,8 +28,8 @@ choose_version:
     branch: juwels_chunk_io
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    #- https://github.com/FESOM/fesom2.git # Change later to this repository
+    - https://github.com/FESOM/fesom2.git
+    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
@@ -83,6 +83,7 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+        - namelist.cvmix
 
 choose_asforcing:
         CORE2:

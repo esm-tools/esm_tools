@@ -23,3 +23,5 @@ choose_computer.name:
                 - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
                 - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
                 - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                - "GCC_NAME=/sw/rhel6-x64/gcc/gcc-6.4.0/bin/gcc"
+                - "GXX_NAME=/sw/rhel6-x64/gcc/gcc-6.4.0/bin/g++"

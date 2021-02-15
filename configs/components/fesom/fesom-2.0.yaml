@@ -14,7 +14,7 @@ choose_version:
     branch: 2.0.2
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
+    - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-esm_interface:
     branch: using_esm-interface_yac
@@ -42,7 +42,7 @@ choose_version:
 install_bins: bin/fesom.x
 git-repository:
 - https://gitlab.dkrz.de/FESOM/fesom2.git
-- github.com/FESOM/fesom2.git
+- https://github.com/FESOM/fesom2.git
 
 
 restart_rate: "12"

@@ -47,14 +47,14 @@ setup(
     include_package_data=True,
     keywords="esm_tools",
     name="esm_tools",
-    packages=["esm_tools", "esm_tools.configs", "esm_tools.namelists"],
-    package_dir={'esm_tools.configs': "configs", "esm_tools.namelists": "namelists"},
-    package_data={'esm_tools.configs': ['../configs/*'], "esm_tools.namelists": ["../namelists/*"]},
+    packages=["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    package_dir={'esm_tools.configs': "configs", "esm_tools.namelists": "namelists", "esm_tools.runscripts": "runscripts"},
+    package_data={'esm_tools.configs': ['../configs/*'], "esm_tools.namelists": ["../namelists/*"], "esm_tools.runscripts": ["../runscripts/*"]},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm_tools/esm_tools",
-    version="5.0.12",
+    version="5.0.13",
     zip_safe=False,
 )
 

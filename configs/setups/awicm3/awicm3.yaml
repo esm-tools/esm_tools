@@ -142,8 +142,6 @@ oifs:
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
-        #wam_start_date: "${start_date!syear!smonth!sday}000000"
-        #wam_end_date: "${end_date!syear!smonth!sday}000000"
         start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
         end_filebase_wam: "${initial_date!syear!smonth!sday}000000_" # @JOAKIM: check if still works, pull request esm_parser#20
         days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
@@ -207,10 +205,12 @@ oifs:
                         #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
                         #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
+                "1.0-deck":
+                        with_xios: false
 
 
         namelist_changes:
-                fort.4: # @JOAKIM: why not defined in OpenIFS
+                fort.4:
                         NAMRES:
                                 NRESTS:
                                         - -1
@@ -244,8 +244,6 @@ oifs:
                                 LCORBMD:  "${orb_switch}"
                                 ORBMODE: "${orb_mode}"
                                 ORBIY: "${orb_iyear}"
-        # Namelist changes for wam_namelist not included yet as the first test is for DRH6
-        # that has no wave model. TODO: implement in the near future
 
         runtime_environment_changes:
                 add_export_vars:

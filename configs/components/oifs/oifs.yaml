@@ -2,9 +2,6 @@
 #OIFS standalone (=AMIP?) YAML FILE
 #
 
-# TODO:
-# 1 use with_xios to include or not xios (it is not working now probably due to a bug in esm_tools - esm_tools resolving include models before resolving the chooses)
-
 model: oifs
 executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
@@ -12,10 +9,6 @@ version: 43r3
 type: atmosphere
 with_xios: False
 xml_dir: ''
-
-# MA: I think the following lines can be deleted but needs testing
-#include_models:
-#        - xios
 
 required_plugins:
         - "git+https://github.com/esm-tools-plugins/postprocess"
@@ -124,6 +117,7 @@ compile_infos:
             requires:
             - oasis3mct-4.0-oifsdeck
             - xios-2.5
+            with_xios: true
             branch: fix-mkl
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -145,14 +139,16 @@ compile_infos:
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910
+            with_xios: true
           43r3-v1:
-            branch: oifs-geomar 
+            branch: oifs-geomar
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
-            - xios-2.5_r1910_oifs   
+            - xios-2.5_r1910_oifs
+            with_xios: true
         clean_command: rm -rf make/esm
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
@@ -728,19 +724,19 @@ choose_with_xios:
         1:
                 include_models:
                         - xios
-                add_namelist_changes: 
+                add_namelist_changes:
                         fort.4:
                                 NAMCT0:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-        0:               
+        0:
                 outdata_files:
                         ICMGG: ICMGG
                         ICMSH: ICMSH
 
 
-choose_pextra: 
+choose_pextra:
         1:
                 add_namelist_changes:
                         fort.4:
@@ -750,10 +746,10 @@ choose_pextra:
                                         NVEXTR: 25
                                         NCEXTR: ${nlev}
                                 NAMPHYDS:
-                                        NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
+                                        NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
                                 NAMFPC:
                                         NFP3DFS: 25
-                                        MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115] 
+                                        MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
 
 ##
 ## would that we with or without ECWAM, sir?
@@ -806,12 +802,12 @@ choose_wam:
                                         LWCOU: ".false."
                                         LWCOU2W: ".false."
 
-# For coupled setups we can use ocean currents 
+# For coupled setups we can use ocean currents
 choose_use_ocean_currents:
-        1: 
+        1:
                 add_namelist_changes:
                         fort.4:
-                                NAEPHY: 
+                                NAEPHY:
                                         LECURR: ".true."
         0:
                 add_namelist_changes:
@@ -860,7 +856,7 @@ choose_version:
                         fort.4:
                                 NAMRES:
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
-                                        NFRRES: ${nfrres} 
+                                        NFRRES: ${nfrres}
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 
@@ -900,14 +896,14 @@ choose_mip:
                 add_forcing_files:
                         # Add CO2 etc for all scenarios and years
                         CMIP6DATA: CMIP6DATA
-                        
+
                 add_namelist_changes:
                         fort.4:
                                 NAERAD:
                                         LCMIP6: ".true."
                                         CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
-                        "piControl":                                
+                        "piControl":
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
@@ -917,7 +913,7 @@ choose_mip:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
-                                
+
 
 #choose_o3_scheme:
 #        "prescribed":
@@ -1000,11 +996,11 @@ forcing_in_work:
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-        CMIP6DATA: cmip6_data/* 
-        O3PI: cmip6_data/o3_pi/* 
-        O3HIST: cmip6_data/o3_histo/* 
+        CMIP6DATA: cmip6_data/*
+        O3PI: cmip6_data/o3_pi/*
+        O3HIST: cmip6_data/o3_histo/*
         O3SCEN: cmip6_data/o3_scenarios/*
-        
+
 ##
 ## coupling
 ##

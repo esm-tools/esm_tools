@@ -8,7 +8,6 @@ general:
     nday: 1
     nmonth: 0
     nyear: 0
-    use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 awicm3:
     postprocessing: false

@@ -558,6 +558,9 @@ custop: "t${oifs.next_step}"
 nfrres: "${next_step}"
 lresume: false
 
+massfixer: 1
+nfrmasscon: 12
+
 start_seconds: "$((${start_date} - ${initial_date}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
@@ -814,6 +817,26 @@ choose_use_ocean_currents:
                         fort.4:
                                 NAEPHY:
                                         LECURR: ".false."
+
+##
+## mass conservation / mass fixer
+## LMASCOR turns it on/off
+## NFRMASSCON is correction frequency in time steps 
+## (once per day might be ok)
+##
+choose_massfixer:
+        0:
+                add_namelist_changes: 
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".false."
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".true."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
 
 ##
 ## specifics for 40r1 and 43r3

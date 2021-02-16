@@ -835,6 +835,7 @@ choose_massfixer:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".true."
+                                        LMASDRY: ".true." 
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
 

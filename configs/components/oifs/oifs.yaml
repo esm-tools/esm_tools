@@ -820,6 +820,10 @@ choose_use_ocean_currents:
 
 ##
 ## mass conservation / mass fixer
+## 0 - no mass fixer
+## 1 - mass fixer for dry mass
+## 2 - mass fixer for dry mass and cloud variables
+##
 ## LMASCOR turns it on/off
 ## NFRMASSCON is correction frequency in time steps 
 ## (once per day might be ok)
@@ -838,6 +842,21 @@ choose_massfixer:
                                         LMASDRY: ".true." 
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
+        2:      add_namelist_changes: 
+                        fort.4: 
+                                NAMDYN: 
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".true."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+                                NAMGFL:
+                                        LTRCMFIX: ".true."
+                                        LTRCMFIX_PS: ".true."
+                                        YS_NL%LMASSFIX: ".true."
+                                        YR_NL%LMASSFIX: ".true."
+                                        YI_NL%LMASSFIX: ".true."
+                                        YL_NL%LMASSFIX: ".true."
+                                        YQ_NL%LMASSFIX: ".true."
 
 ##
 ## specifics for 40r1 and 43r3

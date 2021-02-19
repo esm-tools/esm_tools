@@ -7,7 +7,7 @@ executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
-with_xios: False
+with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
 xml_dir: ''
 
 required_plugins:
@@ -46,8 +46,8 @@ ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
-cmip6_data_dir_nml: ./cmip6_data/
-cmip5_data_dir_nml: ./cmip5_data/
+cmip6_data_dir_nml: ${cmip6_data_dir}
+cmip5_data_dir_nml: ${cmip5_data_dir}
 restart_dir: ""
 
 parent_expid: "test"
@@ -104,6 +104,7 @@ compile_infos:
               -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
+            with_xios: false # for now, later the default will be with_xios: true
           43r3-awi:
             requires:
             - oasis3mct-4.0-oifsdeck
@@ -117,7 +118,6 @@ compile_infos:
             requires:
             - oasis3mct-4.0-oifsdeck
             - xios-2.5
-            with_xios: true
             branch: fix-mkl
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -139,7 +139,6 @@ compile_infos:
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910
-            with_xios: true
           43r3-v1:
             branch: oifs-geomar
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -148,246 +147,13 @@ compile_infos:
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910_oifs
-            with_xios: true
         clean_command: rm -rf make/esm
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
-#
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-#
-#
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-runtime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-    glogin:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-    juwels:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-    mistral:
-      add_export_vars:
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-        # ENV vars used in OIFS's source code during runtime
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-    ollie:
-      add_module_actions:
-        - "unload gribapi"
-      add_export_vars:
-        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu"
-        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"'
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-
-compiletime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_export_vars:
-        - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # FFTW is included in MKL so we link to that
-        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
-        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
-        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    glogin:
-      add_export_vars:
-
-        - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # FFTW is included in MKL so we link to that
-        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
-        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
-        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    juwels:
-      add_export_vars:
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    mistral:
-      add_export_vars:
-        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
-
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        # Build OpenIFS with FFTW. Use Intel MKL interfaces
-        # WARNING: FFTW does not work yet. Wait for patch from ECMWF
-        # - 'OIFS_FFTW="enable"'
-        - 'OIFS_FFTW_DIR="$FFTW_ROOT"'
-        - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
-        - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
-
-    ollie:
-      add_module_actions:
-        - "unload gribapi"
-      add_export_vars:
-        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - "GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu"
-        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"$GRIBAPIROOT/lib"'
-
-        - 'GRIB_SAMPLES_PATH=$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2'
-
-        - 'OIFS_GRIB_API_INCLUDE=-I$GRIBAPIROOT/include'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_INCLUDE=-I$GRIBAPIROOT/include'
-        - 'OIFS_GRIB_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-        - 'OIFS_GRIB_BIN="$GRIBAPIROOT/bin"'
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
-        - 'OIFS_FC=${computer.fc}'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS='
-        - 'OIFS_CC=${computer.cc}'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+further_reading:
+        - oifs/oifs.env.yaml
 
 input_expid: ECE3
 resolution: TL159
@@ -408,6 +174,7 @@ ensemble: 0
 post_processing: 0
 use_ocean_currents: 0
 pextra: 0
+dr_hook_ignore_signals: -1
 
 #cmip6: True
 #cmip5: False
@@ -423,9 +190,9 @@ supercooled_liquid_could_fix: 0
 # If perturb = 1, then we perturb the initial SKT in ICMGGECE3INIT
 # with random numbers generated using CDO
 # We use ensemble_id as seed, so this number must be unique for each member
-# i.e. ensemble_id = N for r1iNp1 
-perturb: 1 
-ensemble_id: 1 
+# i.e. ensemble_id = N for r1iNp1
+perturb: 1
+ensemble_id: 1
 
 orb_switch: False
 orb_mode: "variable_year"
@@ -540,6 +307,61 @@ choose_computer.cores_per_node:
                 nproca: 96
                 nprocb: 1
 
+#======================================================================================
+# MAIN CHANGES TO fort.4 NAMELIST
+#======================================================================================
+
+# Microphysics switch: 0 for off, 1 for light version and 2 for full
+sclct_switch: 2 # @JOAKIM which one as default?
+
+# Namelist modifications for truncation types
+nlon: "$(( ${nlat}*2 ))"
+nspecresmin: "$(( ${res_number}+1 ))"
+choose_truncation:
+        TCO:
+                nlat: "$(( (${res_number}+1)*2 ))"
+                lecompgrid: true
+                lgradsp: false
+                lassi: false
+                lfdbop: false
+                lsmssig: false
+        TL:
+                nlat: "$(( ${res_number}+1 ))"
+                lecompgrid: false
+                lgradsp: true
+                lassi: true
+                lfdbop: true
+                lsmssig: true
+
+# Apply truncation and other general options to the namelist
+namelist_changes:
+        fort.4:
+                NAERAD:
+                        CRTABLEDIR: "${rtables_dir}"
+                        LECOMPGRID: "${lecompgrid}"
+                NAMCLDP:
+                        SCLCT_SWITCH: "${sclct_switch}"
+                NAMFPG:
+                        NFPLEV: "${nlev}"
+                        NFPMAX: "${res_number}"
+                NAMFPD:
+                        NLAT: "${nlat}"
+                        NLON: "${nlon}"
+                NAMPAR0:
+                        NSPECRESMIN: "${nspecresmin}"
+                NAMDYNA:
+                        LGRADSP: "${lgradsp}"
+                NAMNMI:
+                        LASSI: "${lassi}"
+                NAMCT0:
+                        LFDBOP: "${lfdbop}"
+                        LSMSSIG: "${lsmssig}"
+                NAMORB:
+                        LCORBMD:  "${orb_switch}"
+                        ORBMODE: "${orb_mode}"
+                        ORBIY: "${orb_iyear}"
+
+
 # Where does end_date and start_date come from
 # Why is it set to 364 days even when I ask for a 5-day run
 #runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
@@ -554,8 +376,10 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
-custop: "t${oifs.next_step}"
-nfrres: "${next_step}"
+custop: "h${oifs.next_step}"
+#custop: "t${oifs.next_step}" # TODO: delete this comment
+nfrres: 1
+#nfrres: "${next_step}" # TODO: delete this comment
 lresume: false
 
 massfixer: 1
@@ -595,7 +419,7 @@ icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 #start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
 #start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
 #start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
+start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
 
 #end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
 #end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
@@ -607,7 +431,7 @@ start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
 #end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
 #end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
 #end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000" # @JOAKIM: check if still works, pull request esm_parser#20
+end_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
 
 run_number_minus1: "$(( ${run_number} - 1 ))"
 run_number_string: "<--format(%05d)-- ${run_number}"
@@ -635,28 +459,57 @@ choose_levels:
 bin_sources:
         bin: ${bin_dir}/${executable}
 
-##
-## input files
-##
+#======================================================================================
+# INPUT FILES
+#======================================================================================
 
 input_files:
         #ICMGG_INIT: ICMGG_INIT
         #ICMGG_INIUA: ICMGG_INIUA
         #ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
-        rtables: rtables
+        #rtables: rtables
         #vtables: vtables
         tl_data: tl_data
         o3_data: o3_data
         # also missing: modify_init for ensemble stuff
 
-##
-## forcing files
-##
+#======================================================================================
+# FORCING FILES
+#======================================================================================
 
-##
-## log files
-##
+# Switch to copy the forcing files into the experiment input folder. If false, the
+# forcing files are accessed directly from the pool
+copy_forcing: false
+choose_copy_forcing:
+        true:
+                forcing_files:
+                        O3PI: O3PI
+                        O3HIST: O3HIST
+                        O3SCEN: O3SCEN
+                        ICMCL_INIT: ICMCL_INIT
+                choose_mip:
+                        "cmip5":
+                                cmip5_data_dir_nml: ./cmip5_data/
+                                add_forcing_files:
+                                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                        "cmip6":
+                                cmip6_data_dir_nml: ./cmip6_data/
+                                add_forcing_files:
+                                        # Add CO2 etc for all scenarios and years
+                                        CMIP6DATA: CMIP6DATA
+        false:
+                forcing_files:
+                        ICMCL_INIT: ICMCL_INIT
+
+
+#======================================================================================
+# LOG FILES
+#======================================================================================
 
 log_files:
         NODE: NODE
@@ -670,40 +523,67 @@ log_in_work:
         NODE: NODE.001_01
         ifsstat: ifs.stat
 
-# 
-# Restart file - input
-# 
+#======================================================================================
+# RESTART FILES
+#======================================================================================
+
+# Indexing logic for WAM restart files
+days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
+days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
+days_string: "<--format(%06d)-- ${days_since_initial}"
+days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
+prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
+this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
+
+# BEFORE RUN: copy from RESTART to WORK
+# ----------
 restart_in_files:
         srf: srf
         rcf: rcf
 
-restart_in_in_work:
-        rcf: rcf
-
+# RESTART (restart files from prev. leg in the general exp dir):
 restart_in_sources:
-        srf: srf${start_ndays_string}0000.*
-        rcf: rcf${start_ndays_string}
-        BLS: BLS${start_filebase_wam}.*
-        LAW: LAW${start_filebase_wam}.*
+        srf: ${in_date_folder}/srf${start_ndays_string}0000.*
+        rcf: ${in_date_folder}/rcf
+        waminfo: ${in_date_folder}/waminfo${start_ndays_string}
+        BLS: ${in_date_folder}/BLS${start_filebase_wam}${prev_wam}.*
+        LAW: ${in_date_folder}/LAW${start_filebase_wam}${prev_wam}.*
 
-# 
-# Restart file - output
-# 
+# WORK (current leg directory):
+restart_in_in_work:
+        srf: srf${start_ndays_string}0000.*
+        rcf: rcf
+        waminfo: waminfo
+        BLS: BLS${start_filebase_wam}${prev_wam}.*
+        LAW: LAW${start_filebase_wam}${prev_wam}.*
+
+
+# AFTER RUN: copy WORK to RESTART
+# ---------
 restart_out_files:
         srf: srf
         rcf: rcf
 
+# WORK (restart files generated during this leg, to be copied to the exp dir):
 restart_out_sources:
         srf: srf${next_ndays_string}0000.*
         rcf: rcf
-        BLS: BLS${end_filebase_wam}.*
-        LAW: LAW${end_filebase_wam}.*
+        waminfo: waminfo
+        BLS: BLS${end_filebase_wam}${this_wam}.*
+        LAW: LAW${end_filebase_wam}${this_wam}.*
 
+# RESTART (restart files from this leg in the general exp dir, for the next leg restart)
 restart_out_targets:
-        rcf: rcf${next_ndays_string}
-##
-## output
-##
+        srf: ${out_date_folder}/srf${next_ndays_string}0000.*
+        rcf: ${out_date_folder}/rcf
+        waminfo: ${out_date_folder}/waminfo${next_ndays_string}
+        BLS: ${out_date_folder}/BLS${end_filebase_wam}${this_wam}.*
+        LAW: ${out_date_folder}/LAW${end_filebase_wam}${this_wam}.*
+
+
+#======================================================================================
+# OUTPUT FILES
+#======================================================================================
 
 outdata_in_work:
         ICMGG: ICMGG${oifs.input_expid}+*
@@ -715,12 +595,25 @@ outdata_in_work:
 
 outdata_sources:
         # old grib based output
-        ICMGG: ICMGG${oifs.input_expid}+*
-        ICMSH: ICMSH${oifs.input_expid}+*
-        ICMUA: ICMUA${oifs.input_expid}+*
-        MPP: MPP*
+        ICMGG: ${out_date_folder}/ICMGG${oifs.input_expid}+*
+        ICMSH: ${out_date_folder}/ICMSH${oifs.input_expid}+*
+        ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
+        MPP: ${out_date_folder}/MPP*
         # XIOS output
-        oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+        oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+
+
+#======================================================================================
+# IGNORE FILES
+#======================================================================================
+
+ignore_files:
+        drhook: drhook
+ignore_in_work:
+        drhook: drhook*
+ignore_sources:
+        drhook: drhook*
+
 
 ## Using XIOS?
 choose_with_xios:
@@ -747,7 +640,6 @@ choose_pextra:
                                         LBUD23: ".true."
                                 NAMDPHY:
                                         NVEXTR: 25
-                                        NCEXTR: ${nlev}
                                 NAMPHYDS:
                                         NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
                                 NAMFPC:
@@ -767,10 +659,10 @@ choose_wam:
                         wam_subgrid_0: wam_subgrid_0
                         wam_subgrid_1: wam_subgrid_1
                         wam_subgrid_2: wam_subgrid_2
-                        #uwavein: uwavein
-                        #specwavein: specwavein
-                        #sfcwindin: sfcwindin
-                        #cdwavein: cdwavein
+                        uwavein: uwavein
+                        specwavein: specwavein
+                        sfcwindin: sfcwindin
+                        cdwavein: cdwavein
 
                 add_namelist_changes:
                         fort.4:
@@ -778,7 +670,7 @@ choose_wam:
                                         LWCOU: ".true."
                                         LWCOU2W: ".true."
                         wam_namelist:
-                                NALINE: # @JOAKIM
+                                NALINE:
                                         #CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
                                         #CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
                                         CDATEF: "${wam_start_date}" # I think this is for generating the output with the correct date stamp
@@ -786,9 +678,11 @@ choose_wam:
                 add_restart_in_files:
                         BLS: BLS
                         LAW: LAW
+                        waminfo: waminfo
                 add_restart_out_files:
                         BLS: BLS
                         LAW: LAW
+                        waminfo: waminfo
 
                 add_outdata_files:
                         MPP: MPP
@@ -901,6 +795,10 @@ choose_version:
                                 NAMRES:
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
+                                        NRESTS:
+                                                - -1
+                                                - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
+
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 
@@ -930,17 +828,11 @@ choose_version:
 
 choose_mip:
         "cmip5":
-                add_forcing_files:
-                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
-                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
-                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
-                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
         "cmip6":
-                add_forcing_files:
-                        # Add CO2 etc for all scenarios and years
-                        CMIP6DATA: CMIP6DATA
-
                 add_namelist_changes:
                         fort.4:
                                 NAERAD:
@@ -982,23 +874,28 @@ choose_mip:
 ## sources
 ##
 
+prepifs_dir: ${input_dir}/${prepifs_startdate}${hours}/
+tl_o3_data_dir: ${input_dir}
+ICMGG_INIT_name: ""
+ICMSH_INIT_name: ""
+
 input_sources:
-        ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
-        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
-        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
-        wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
-        wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
-        wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
-        wam_subgrid_2: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_2
-        uwavein: ${input_dir}/${prepifs_startdate}${hours}/uwavein
-        specwavein: ${input_dir}/${prepifs_startdate}${hours}/specwavein
-        sfcwindin: ${input_dir}/${prepifs_startdate}${hours}/sfcwindin
-        cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
+        ICMGG_INIT: ${prepifs_dir}/ICMGG${prepifs_expid}INIT${ICMGG_INIT_name}
+        ICMGG_INIUA: ${prepifs_dir}/ICMGG${prepifs_expid}INIUA
+        ICMSH_INIT: ${prepifs_dir}/ICMSH${prepifs_expid}INIT${ICMSH_INIT_name}
+        wam_grid_tables: ${prepifs_dir}/wam_grid_tables
+        wam_subgrid_0: ${prepifs_dir}/wam_subgrid_0
+        wam_subgrid_1: ${prepifs_dir}/wam_subgrid_1
+        wam_subgrid_2: ${prepifs_dir}/wam_subgrid_2
+        uwavein: ${prepifs_dir}/uwavein
+        specwavein: ${prepifs_dir}/specwavein
+        sfcwindin: ${prepifs_dir}/sfcwindin
+        cdwavein: ${prepifs_dir}/cdwavein
         rtables: ${rtables_dir}/*
         vtables: ${vtables_dir}/*
         ifsdata: ${ifsdata_dir}/*
-        tl_data: ${input_dir}/${res_number_tl}/*
-        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/* # @JOAKIM: maybe we want this to be in the forcing files?
+        tl_data: ${tl_o3_data_dir}/${res_number_tl}/*
+        o3_data: ${tl_o3_data_dir}/${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_sources:
         # GHG data
@@ -1014,7 +911,6 @@ forcing_sources:
         O3SCEN: ${cmip6_data_dir}/o3_scenarios/*
         # ICMCL
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
-
 
 
 config_sources:
@@ -1045,25 +941,6 @@ forcing_in_work:
         O3HIST: cmip6_data/o3_histo/*
         O3SCEN: cmip6_data/o3_scenarios/*
 
-##
-## coupling
-##
-
-# split fields to A, R and L grid
-# A grid is wet points except lakes
-# L grid is wet points including lakes
-# R grid is dry points 
-foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain] 
-foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
-foci_fields_r: [A_Runoff]
-
-coupling_fields:
-        "[[foci_fields_a-->FIELD]]":
-                grid: atma
-        "[[foci_fields_l-->FIELD]]":
-                grid: atml
-        "[[foci_fields_r-->FIELD]]":
-                grid: atmr
 
 # A grid at N80 resolution is A080 etc.
 grids:
@@ -1101,7 +978,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script

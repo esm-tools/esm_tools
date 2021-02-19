@@ -132,24 +132,11 @@ oifs:
         input_expid: awi3   # This cannot be longer than 4 characters
         input_dir: ${pool_dir}/oifs-${version}
         rtables_dir: ${input_dir}/rtables/
-        ##vtables_dir: ${input_dir}/../vtables/
-        ##clim_dir: ${input_dir}/../
-        ##icmcl_dir: ${input_dir}
-        ##icmcl_file: ICMCLgu5aINIT
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/202011
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
-
-        start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
-        end_filebase_wam: "${initial_date!syear!smonth!sday}000000_" # @JOAKIM: check if still works, pull request esm_parser#20
-        days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
-        days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
-        days_string: "<--format(%06d)-- ${days_since_initial}"
-        days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
-        prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-        this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 
         # nprocb must be 1
         # nproca must be not a prime number for OpenIFS parallelisation to work
@@ -208,6 +195,7 @@ oifs:
                 "1.0-deck":
                         with_xios: false
 
+        with_xios: false
 
         namelist_changes:
                 fort.4:
@@ -215,35 +203,6 @@ oifs:
                                 NRESTS:
                                         - -1
                                         - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works
-                        NAERAD:
-                                CMIP5DATADIR: "${cmip5_data_dir_nml}"
-                                CRTABLEDIR: "${rtables_dir}"
-                                LECOMPGRID: "${lecompgrid}"
-                        NAMCLDP:
-                                SCLCT_SWITCH: "${sclct_switch}"
-                        NAMFPG:
-                                NFPLEV: "${nlev}"
-                                NFPMAX: "${res_number}"
-                        NAMFPD:
-                                NLAT: "${nlat}"
-                                NLON: "${nlon}"
-                        NAMPAR0:
-                                NSPECRESMIN: "${nspecresmin}"
-                        NAMDYNA:
-                                LGRADSP: "${lgradsp}"
-                        NAMNMI:
-                                LASSI: "${lassi}"
-                        NAMCT0:
-                                LFDBOP: "${lfdbop}"
-                                LSMSSIG: "${lsmssig}"
-                        # Where the hell do these namelist changes come from? I don't even remember writting them down... and they are not part of the original fort.4???
-                        #NAMGRIB:
-                        #        NJTKDATE: "${start_date}"
-                        #        NJTKOFFSETSTEP: "${steps_since_initial}"
-                        NAMORB:
-                                LCORBMD:  "${orb_switch}"
-                                ORBMODE: "${orb_mode}"
-                                ORBIY: "${orb_iyear}"
 
         runtime_environment_changes:
                 add_export_vars:
@@ -254,39 +213,6 @@ oifs:
                         - 'ECE_AWI_CPL_FESOM="true"'
 
         res_level: ${resolution}${levels}
-
-        # Namelist modifications for truncation types
-        nlon: "$(( ${nlat}*2 ))"
-        nspecresmin: "$(( ${res_number}+1 ))"
-        choose_truncation:
-                TCO:
-                        nlat: "$(( (${res_number}+1)*2 ))"
-                        lecompgrid: true
-                        lgradsp: false
-                        lassi: false
-                        lfdbop: false
-                        lsmssig: false
-                TL:
-                        nlat: "$(( ${res_number}+1 ))"
-                        lecompgrid: false
-                        lgradsp: true
-                        lassi: true
-                        lfdbop: true
-                        lsmssig: true
-
-        choose_wam:
-                1:
-                        add_input_files: # @JOAKIM: why did you commented this in oifs.yaml?
-                                uwavein: uwavein
-                                specwavein: specwavein
-                                sfcwindin: sfcwindin
-                                cdwavein: cdwavein
-
-                        add_restart_in_files: # @JOAKIM: why don't we have wavinfo in oifs.yaml?
-                                waminfo: waminfo
-
-                        add_restart_out_files:
-                                waminfo: waminfo
 
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
 
@@ -301,103 +227,19 @@ oifs:
                 ICMGG_INIUA: ICMGG_INIUA
                 ICMSH_INIT: ICMSH_INIT
 
-        input_sources: # @JAN/JOAKIM: finding inconsistencies among sources
-                ICMGG_INIT: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIT_${fesom.resolution}
-                ICMGG_INIUA: ${input_dir}/${res_level}/ICMGG${prepifs_expid}INIUA
-                ICMSH_INIT: ${input_dir}/${res_level}/ICMSH${prepifs_expid}INIT
-                wam_grid_tables: ${input_dir}/${res_level}/wam_grid_tables
-                wam_subgrid_0: ${input_dir}/${res_level}/wam_subgrid_0
-                wam_subgrid_1: ${input_dir}/${res_level}/wam_subgrid_1
-                wam_subgrid_2: ${input_dir}/${res_level}/wam_subgrid_2
-                uwavein: ${input_dir}/${res_level}/uwavein
-                specwavein: ${input_dir}/${res_level}/specwavein
-                sfcwindin: ${input_dir}/${res_level}/sfcwindin
-                cdwavein: ${input_dir}/${res_level}/cdwavein
-                tl_data: ${input_dir}/${version}/climate/${res_number_tl}/*
-                o3_data: ${input_dir}/${version}/climate/${res_number_tl}/o3chem_l${nlev}/*
+        prepifs_dir: ${input_dir}/${res_level}/
+        tl_o3_data_dir: ${input_dir}/${version}/climate/
+        ICMGG_INIT_name: "_${fesom.resolution}"
 
-        # BEFORE RUN: copy from RESTART to WORK
-        # ----------
-        # RESTART (restart files from prev. leg in the general exp dir):
-        restart_in_sources:
-                srf: ${in_date_folder}/srf${start_ndays_string}0000.*
-                rcf: ${in_date_folder}/rcf
-                waminfo: ${in_date_folder}/waminfo${start_ndays_string}
-                BLS: ${in_date_folder}/BLS${start_filebase_wam}${prev_wam}.* # @JOAKIM: this seems more general use of the wild card
-                LAW: ${in_date_folder}/LAW${start_filebase_wam}${prev_wam}.* # @JOAKIM: this seems more general use of the wild card
-        # WORK (current leg directory):
-        restart_in_in_work: # @JOAKIM: this can be added to oifs.yaml without causing issues
-                srf: srf${start_ndays_string}0000.*
-                rcf: rcf
-                waminfo: waminfo
-                BLS: BLS${start_filebase_wam}${prev_wam}.* # @JOAKIM: this seems more general use of the wild card
-                LAW: LAW${start_filebase_wam}${prev_wam}.* # @JOAKIM: this seems more general use of the wild card
-
-        # AFTER RUN: copy WORK to RESTART
-        # ---------
-        # WORK (restart files generated during this leg, to be copied to the exp dir):
-        restart_out_sources:
-                waminfo: waminfo # @JOAKIM: this can be added to oifs.yaml without causing issues
-                BLS: BLS${end_filebase_wam}${this_wam}.* # @JOAKIM: this seems more general use of the wild card
-                LAW: LAW${end_filebase_wam}${this_wam}.* # @JOAKIM: this seems more general use of the wild card
-        # RESTART (restart files from this leg in the general exp dir, for the next leg restart)
-        restart_out_targets:
-                srf: ${out_date_folder}/srf${next_ndays_string}0000.*
-                rcf: ${out_date_folder}/rcf
-                waminfo: ${out_date_folder}/waminfo${next_ndays_string}
-                BLS: ${out_date_folder}/BLS${end_filebase_wam}${this_wam}.*
-                LAW: ${out_date_folder}/LAW${end_filebase_wam}${this_wam}.*
-
-        outdata_sources:
-                # old grib based output
-                ICMGG: ${out_date_folder}/ICMGG${oifs.input_expid}+*
-                ICMSH: ${out_date_folder}/ICMSH${oifs.input_expid}+*
-                ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
-                MPP: ${out_date_folder}/MPP*
-                # XIOS output
-                oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-
-        #@JAN/JOAKIM: is ok to ignore this files? anything else that needs to be removed?
-        remove_input_files:
-                - vtables
-
-        # All forcing files are removed: path specified in to the namelist
+        # Remove ICMCL_INIT forcing
         remove_forcing_files:
-                - PRE2005_MIDYR_CONC
-                - RCP3PD_MIDYR_CONC
-                - RCP45_MIDYR_CONC
-                - RCP6_MIDYR_CONC
-                - RCP85_MIDYR_CONC
-                - CMIP6DATA
-                - O3PI
-                - O3HIST
-                - O3SCEN
                 - ICMCL_INIT
 
-        ignore_files: # @JOAKIM, is it okay to add this ignore files to oifs.yaml?
-                debug.root: debug.root
-                debug.notroot: debug.notroot
-                drhook: drhook
-                lucia: lucia
-                nout: nout
-        ignore_in_work:
-                debug.root: debug.root*
-                debug.notroot: debug.notroot*
-                drhook: drhook*
-                lucia: lucia.*
-                nout: nout.000000
-        ignore_sources:
-                debug.root: debug.root*
-                debug.notroot: debug.notroot*
-                drhook: drhook*
-                lucia: lucia.*
-                nout: nout.000000
-
-        # @JAN: preprocessing and postprocessing scripts needed here
+        # preprocessing and postprocessing scripts needed here
         ############################################################
         preprocess:
                 preprocess_shell:
-                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.res_level}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
+                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
                         type: shell
 
         #postprocess:
@@ -527,6 +369,7 @@ rnfmap:
         #model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
         #setup_dir: ${general.model_dir}
         pool_dir: ${general.pool_dir}
+        runoff_maps_name: _${fesom.resolution}
 
         nproca: 1
         nprocb: 1
@@ -544,9 +387,8 @@ rnfmap:
                         nx: 512
                         ny: 256
                         oasis_grid_type: "LR"
-
-        input_sources:
-                runoff_maps: ${input_dir}/runoff_maps_${fesom.resolution}.nc
+        input_files:
+                runoff_maps: runoff_maps
 
 
 #########################################################################################

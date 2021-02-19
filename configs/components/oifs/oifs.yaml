@@ -307,6 +307,10 @@ choose_computer.cores_per_node:
                 nproca: 96
                 nprocb: 1
 
+#======================================================================================
+# MAIN CHANGES TO fort.4 NAMELIST
+#======================================================================================
+
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
 sclct_switch: 2 # @JOAKIM which one as default?
 
@@ -329,6 +333,7 @@ choose_truncation:
                 lfdbop: true
                 lsmssig: true
 
+# Apply truncation and other general options to the namelist
 namelist_changes:
         fort.4:
                 NAERAD:
@@ -371,8 +376,10 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
-custop: "t${oifs.next_step}"
-nfrres: "${next_step}"
+custop: "h${oifs.next_step}"
+#custop: "t${oifs.next_step}" # TODO: delete this comment
+nfrres: 1
+#nfrres: "${next_step}" # TODO: delete this comment
 lresume: false
 
 start_seconds: "$((${start_date} - ${initial_date}))"
@@ -744,6 +751,10 @@ choose_version:
                                 NAMRES:
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
+                                        NRESTS:
+                                                - -1
+                                                - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
+
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 

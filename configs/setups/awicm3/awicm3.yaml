@@ -166,11 +166,6 @@ oifs:
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
 
-        nfrres: 1
-        custop: "h${oifs.next_step}" # @JAN/JOAKIM why is the first letter "h" for
-                                     # AWICM3 and "t" for oifs? Do we need here a
-                                     # logic to interprete the time stepping unit?
-
         resolution: TCO159
         levels: L91
 
@@ -196,13 +191,6 @@ oifs:
                         with_xios: false
 
         with_xios: false
-
-        namelist_changes:
-                fort.4:
-                        NAMRES:
-                                NRESTS:
-                                        - -1
-                                        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works
 
         runtime_environment_changes:
                 add_export_vars:

@@ -382,6 +382,9 @@ nfrres: 1
 #nfrres: "${next_step}" # TODO: delete this comment
 lresume: false
 
+massfixer: 1
+nfrmasscon: 12
+
 start_seconds: "$((${start_date} - ${initial_date}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
@@ -466,7 +469,7 @@ input_files:
         #ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
         #rtables: rtables
-        vtables: vtables
+        #vtables: vtables
         tl_data: tl_data
         o3_data: o3_data
         # also missing: modify_init for ensemble stuff
@@ -710,6 +713,47 @@ choose_use_ocean_currents:
                                         LECURR: ".false."
 
 ##
+## mass conservation / mass fixer
+## 0 - no mass fixer
+## 1 - mass fixer for dry mass
+## 2 - mass fixer for dry mass and cloud variables
+##
+## LMASCOR turns it on/off
+## NFRMASSCON is correction frequency in time steps 
+## (once per day might be ok)
+##
+choose_massfixer:
+        0:
+                add_namelist_changes: 
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".false."
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".true." 
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+        2:      
+                add_namelist_changes: 
+                        fort.4: 
+                                NAMDYN: 
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".true."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+                                NAMGFL:
+                                        LTRCMFIX: ".true."
+                                        LTRCMFIX_PS: ".true."
+                                        YS_NL%LMASSFIX: ".true."
+                                        YR_NL%LMASSFIX: ".true."
+                                        YI_NL%LMASSFIX: ".true."
+                                        YL_NL%LMASSFIX: ".true."
+                                        YQ_NL%LMASSFIX: ".true."
+
+##
 ## specifics for 40r1 and 43r3
 ##
 
@@ -934,7 +978,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script

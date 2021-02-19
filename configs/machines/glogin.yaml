@@ -4,17 +4,16 @@ name: glogin
 account: None
 
 # set default for hyperthreading_flag
-hyperthreading_flag: "--ntasks-per-core=1"
-use_hyperthreading: "0"
-choose_general.use_hyperthreading:
+use_hyperthreading: False
+choose_use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
         "0":
-                hyperthreading_flag: "--ntasks-per-core=1"
-        0:
                 hyperthreading_flag: "--ntasks-per-core=1"
         False:
                 hyperthreading_flag: "--ntasks-per-core=1"
-        "*":
-                hyperthreading_flag: ""
 
 accounting: true
 

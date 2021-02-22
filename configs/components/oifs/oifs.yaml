@@ -49,6 +49,8 @@ cmip5_data_dir: ${input_dir}/../cmip5_data
 cmip6_data_dir_nml: ${cmip6_data_dir}
 cmip5_data_dir_nml: ${cmip5_data_dir}
 restart_dir: ""
+in_date_folder: "${parent_date!syear!smonth!sday}"
+out_date_folder: "${end_date!syear!smonth!sday}"
 
 parent_expid: "test"
 parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"

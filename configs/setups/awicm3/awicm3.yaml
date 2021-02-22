@@ -121,8 +121,6 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
-        in_date_folder: "${parent_date!syear!smonth!sday}"
-        out_date_folder: "${end_date!syear!smonth!sday}"
         ocean_resolution: "${fesom.resolution}"
 
         mip: "cmip6"

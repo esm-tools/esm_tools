@@ -11,15 +11,16 @@ indir=$1
 icmcl_file=$2
 inexpid=$3
 outexpid=$4
-startdate=$5
-enddate=$6
-outdir=$7
-with_wam=$8
-perturb=$9
-nx=${10}
-ensemble_id=${11}
+inidate=$5
+startdate=$6
+enddate=$7
+outdir=$8
+with_wam=$9
+perturb=$10
+nx=${11}
+ensemble_id=${12}
 
-style=${12:-"jesus"}
+style=${13:-"jesus"}
 
 if [[ "$(hostname -f)" =~ ollie ]] ; then
     module purge
@@ -76,10 +77,16 @@ echo " Exp ID: $expid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
 
-ndate=$(date -u -d "${startdate}" +%Y%m%d)
+if [[ "x${style}" == "xjesus" ]] ; then
+   ndate=$(date -u -d "${inidate}" +%Y%m%d)
+else
+   ndate=$(date -u -d "${startdate}" +%Y%m%d)
+fi
+initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
 endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
+echo " Initial time: $initime "
 echo " Start time: $starttime "
 echo " End time: $endtime "
 echo " "
@@ -91,7 +98,7 @@ old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
 if [ -f $old ]; then                                                                                                                                                 
-    grib_set -s dataDate=$ndate $old $new                                                                                                                          
+    grib_set -s dataDate=$ndate $old $new 
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 

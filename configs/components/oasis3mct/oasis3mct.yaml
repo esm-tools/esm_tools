@@ -105,6 +105,23 @@ restart_in_sources:
         masks: masks.nc
         grids: grids.nc
 
+ignore_files:
+        debug.root: debug.root
+        debug.notroot: debug.notroot
+        lucia: lucia
+        nout: nout
+
+ignore_in_work:
+        debug.root: debug.root*
+        debug.notroot: debug.notroot*
+        lucia: lucia.*
+        nout: nout.000000
+
+ignore_sources:
+        debug.root: debug.root*
+        debug.notroot: debug.notroot*
+        lucia: lucia.*
+        nout: nout.000000
 
 
 # transformations:

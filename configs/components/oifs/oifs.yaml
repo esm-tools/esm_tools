@@ -24,6 +24,8 @@ license_text: |
 # Force namelist fort.4 to be written in uppercase
 namelist_case: "uppercase"
 
+reusable_filetypes: [input, bin, src]
+
 ##
 ## Directories
 ##
@@ -466,9 +468,9 @@ bin_sources:
 #======================================================================================
 
 input_files:
-        #ICMGG_INIT: ICMGG_INIT
-        #ICMGG_INIUA: ICMGG_INIUA
-        #ICMSH_INIT: ICMSH_INIT
+        ICMGG_INIT: ICMGG_INIT
+        ICMGG_INIUA: ICMGG_INIUA
+        ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
         #rtables: rtables
         #vtables: vtables
@@ -489,7 +491,6 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-                        ICMCL_INIT: ICMCL_INIT
                 choose_mip:
                         "cmip5":
                                 cmip5_data_dir_nml: ./cmip5_data/
@@ -505,12 +506,7 @@ choose_copy_forcing:
                                         # Add CO2 etc for all scenarios and years
                                         CMIP6DATA: CMIP6DATA
         false:
-                forcing_files:
-                        ICMCL_INIT: ICMCL_INIT
-
-# This is needed to run OpenIFS AMIP for me
-remove_forcing_files:
-        - ICMCL_INIT
+                forcing_files: {}
 
 #======================================================================================
 # LOG FILES
@@ -618,10 +614,13 @@ outdata_sources:
 
 ignore_files:
         drhook: drhook
+        ICMCL: ICMCL
 ignore_in_work:
         drhook: drhook*
+        ICMCL: ICMCL*
 ignore_sources:
         drhook: drhook*
+        ICMCL: ICMCL*
 
 
 ## Using XIOS?

@@ -37,8 +37,6 @@ general:
         post_time: "00:05:00"
         compute_time: "00:30:00"
 
-        reusable_filetypes: [input, bin, src]
-
         choose_computer.name:
                 mistral:
                         pool_dir: "/work/ab0246/a270092/input"
@@ -208,18 +206,9 @@ oifs:
                 A_Runoff:
                     grid: atmr
 
-        input_files:
-                ICMGG_INIT: ICMGG_INIT
-                ICMGG_INIUA: ICMGG_INIUA
-                ICMSH_INIT: ICMSH_INIT
-
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
-
-        # Remove ICMCL_INIT forcing
-        remove_forcing_files:
-                - ICMCL_INIT
 
         # preprocessing and postprocessing scripts needed here
         ############################################################

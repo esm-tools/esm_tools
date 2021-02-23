@@ -535,10 +535,14 @@ log_in_work:
 # Indexing logic for WAM restart files
 days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
 days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
+next_ndays_minus1: "$(( ${next_ndays} - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
 days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
+next_ndays_minus1_string: "<--format(%06d)-- ${next_ndays_minus1}"
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
+this_wam: "${next_ndays_minus1_string}${parent_date!shour!sminute!ssecond}"
+this_bls: "BLS${end_filebase_wam}${this_wam}"
+this_law: "LAW${end_filebase_wam}${this_wam}"
 
 # BEFORE RUN: copy from RESTART to WORK
 # ----------

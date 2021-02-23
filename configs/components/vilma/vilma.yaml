@@ -37,6 +37,61 @@ resolution: '512x1024'
 eislastfile: ice5g_total.nc
 eislastconf: loadh_ice5g_total.inp
 bedrockfile: ETOPO1_Bed_n256.nc
+wepochsfile: automatic
+tinitfile: automatic
+
+
+
+choose_coupled_to_ice:
+        True:
+                compute_recipe:
+                        - "venv_bootstrap"
+                        - "_create_setup_folders"
+                        - "_create_component_folders"
+                        - "initialize_experiment_logfile"
+                        - "copy_tools_to_thisrun"
+                        - "compile_model"
+                        - "_copy_preliminary_files_from_experiment_to_thisrun"
+                        - "_show_simulation_info"
+                        - "create_new_files"
+                        - "prepare_coupler_files"
+                        - "add_batch_hostfile"
+                        - "assemble"
+                        - "log_used_files"
+                        - "_write_finalized_config"
+                        - "copy_files_to_thisrun"
+                        - "ice2vilma"
+                        - "modify_namelists"
+                        - "modify_files"
+                        - "copy_files_to_work"
+                        - "write_simple_runscript"
+                        - "report_missing_files"
+                        - "database_entry"
+                        - "submit"
+
+                tidy_recipe:
+                        - "init_monitor_file"
+                        - "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
+                        - "tidy_coupler"
+                        - "assemble"
+                        - "check_for_unknown_files"
+                        - "log_used_files"
+                        - "throw_away_some_infiles"
+                        - "copy_stuff_back_from_work"
+                        - "vilma2ice"
+                        - "copy_all_results_to_exp"
+                        - "clean_run_dir"
+                        - "start_post_job"
+                        - "signal_tidy_completion"
+                        - "_increment_date_and_run_number"
+                        - "_write_date_file"
+                        - "maybe_resubmit"
+
+
+
+
 
 # parameters:
 #
@@ -48,7 +103,7 @@ jmax: 340
 time_step: 0.025
 output_interval: 0.1
 
-l_rot: ???
+l_rot: 1
 
 # polynomial representation of PREM
 l_prem: 1
@@ -94,7 +149,6 @@ wbtime: $(( ${initial_date!syear} / 1000. + ${output_interval} ))
 etime: $(( ${lastyear_p1} / 1000. ))
 wetime: $(( ${finalyear_p1} / 1000. ))
 
-OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
 
 create_config:
         vilma_wrapper.sh:
@@ -111,21 +165,31 @@ create_config:
                 - "<--append-- ${itimes}"
                 - "<--append-- ${l_wepo}"
                 - "<--append-- restart/restart.log"
-        wepochs.inp:
-                - "<--append-- [[OUTPUT_DATES-->od]]"
-                # ???
-                # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
-                #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
-                # done
-
-        tint.inp:
-                - "<--append-- 0 0"
-                - "<--append-- 42.0 -42.0 ${time_step}"
 
         load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
                 - "<--append-- ${eislastfile}"
                 - "<--append-- ${bedrockfile} ${eislastfile}"
+
+choose_tintfile:
+        "automatic":
+                add_create_config:        
+                        tint.inp:
+                                - "<--append-- 0 0"
+                                - "<--append-- 42.0 -42.0 ${time_step}"
+                tintfile: ${base_dir}/${expid}/config/tint.inp
+
+choose_wepochsfile:
+        "automatic":
+                OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
+                add_create_config:        
+                        wepochs.inp:
+                                - "<--append-- [[OUTPUT_DATES-->od]]"
+                                # ???
+                                # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
+                                #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
+                                # done
+                tintfile: ${base_dir}/${expid}/config/wepochs.inp
 
 
 execution_command: "vilma_wrapper.sh"
@@ -171,6 +235,8 @@ restart_in_targets:
 
 config_sources:
         eislastconf: ${eislastconf}
+        wepochs: wepochsfile
+        tint: tintfile
 
 forcing_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}

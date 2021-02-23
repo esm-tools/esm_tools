@@ -10,9 +10,9 @@ type: atmosphere
 with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
 xml_dir: ''
 
-required_plugins:
-        - "git+https://github.com/esm-tools-plugins/postprocess"
-        - "git+https://github.com/esm-tools-plugins/preprocess"
+#required_plugins:
+#        - "git+https://github.com/esm-tools-plugins/postprocess"
+#        - "git+https://github.com/esm-tools-plugins/preprocess"
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -154,8 +154,8 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
 
-further_reading:
-        - oifs/oifs.env.yaml
+#further_reading:
+#        - oifs/oifs.env.yaml
 
 input_expid: ECE3
 resolution: TL159

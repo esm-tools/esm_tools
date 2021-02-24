@@ -39,6 +39,7 @@ output_path: "${experiment_dir}/scripts/"
 thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
+qos_flag: "--qos=@qos@"
 
 choose_launcher:
         srun:

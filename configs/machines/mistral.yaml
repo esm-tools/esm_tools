@@ -54,7 +54,7 @@ pool_dir:  "/pool/data"
 useMPI: intelmpi
 module_actions:
         - "purge"
-        - "source /pf/a/a270092/esm-master/esm-environment/mistral.dkrz.de"
+        - "source /pf/a/a270152/model_codes/mistral.dkrz.de"
 #        - "unload netcdf_c"
 #        - "unload intel intelmpi"
 #        - "load python/3.5.2"

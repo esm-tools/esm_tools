@@ -28,8 +28,8 @@ choose_general.use_hyperthreading:
                 hyperthreading_flag: ""
         1:
                 hyperthreading_flag: ""
-        True:
-                hyperthreading_flag: ""
+        #True:
+        #        hyperthreading_flag: ""
         "*":
                 hyperthreading_flag: "--ntasks-per-core=1"
 

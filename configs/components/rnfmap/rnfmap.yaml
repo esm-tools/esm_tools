@@ -73,7 +73,7 @@ bin_sources:
 config_sources:
         namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
 
-input_files: []
+input_files: {}
 
 input_in_work:
         runoff_maps: runoff_maps.nc

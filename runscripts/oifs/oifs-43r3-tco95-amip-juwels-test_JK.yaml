@@ -18,8 +18,8 @@ general:
         # machine specific setup 
         account: hirace
         base_dir: /p/scratch/hirace/kjellsson1/esm-experiments
-        pool_dir: /p/project/hirace/foci_input2/
-        model_dir: model_dir: /p/project/hirace/kjellsson1/models/oifs-43r3-v1/
+        #pool_dir: /p/project/hirace/foci_input2/
+        model_dir: /p/project/hirace/kjellsson1/models/oifs-43r3-v1/
 
 oifs:
         version: 43r3

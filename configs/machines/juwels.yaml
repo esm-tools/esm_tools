@@ -49,11 +49,11 @@ choose_jobtype:
         post:
                 partition: devel
         compute:
-                partition: devel
+                partition: batch
 
 choose_partition:
         batch:
-                cores_per_node: 24
+                cores_per_node: 48
         devel:
                 cores_per_node: 24
 

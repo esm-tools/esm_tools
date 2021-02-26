@@ -225,7 +225,7 @@ oifs:
         ############################################################
         preprocess:
                 preprocess_shell:
-                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
+                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${thisrun_input_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.input_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
                         type: shell
 
         #postprocess:
@@ -262,16 +262,16 @@ fesom:
         model_tag: "awicm-3-deck"
         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
 
-        surf_relax_s: 0.0
+        #surf_relax_s: "0.0"
 
         namelist_changes:
                 namelist.config:
                         restart_log:
                                 restart_length_unit: "${restart_unit}"
                                 restart_length: "${restart_rate}"
-                namelist.oce:
-                        oce_tra:
-                                surf_relax_s: "${surf_relax_s}"
+                #namelist.oce:
+                #        oce_tra:
+                #                surf_relax_s: "${surf_relax_s}"
 
         # TODO: make indepent namelists. With XIOS use the latest namelist from fesom-2
         # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
@@ -359,7 +359,7 @@ rnfmap:
 
         nproca: 1
         nprocb: 1
-        time_step: ${oasis3mct.coupling_time_step}
+        time_step: ${oifs.time_step} #${oasis3mct.coupling_time_step}
 
         coupling_fields:
                 "[[runoff_fields_send-->FIELD]]":
@@ -418,12 +418,12 @@ oasis3mct:
         o2r_seq: 1
         r2a_seq: 2
 
-        coupling_time_step: 3600
+        coupling_time_step: "${oasis3mct.time_step}"
         coupling_target_fields:
                 rstas.nc:
-                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
-                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
+                        - 'heat_oce:heat_swo <--bicubic-- A_Qns_oce:A_Qs_all'
+                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                        - 'heat_ico <--bicubic-- A_Q_ice'
                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                         - 'R_Runoff_atm <--bicubic-- A_Runoff'
                         - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'

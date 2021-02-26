@@ -358,10 +358,10 @@ namelist_changes:
                 NAMCT0:
                         LFDBOP: "${lfdbop}"
                         LSMSSIG: "${lsmssig}"
-                NAMORB:
-                        LCORBMD:  "${orb_switch}"
-                        ORBMODE: "${orb_mode}"
-                        ORBIY: "${orb_iyear}"
+                #NAMORB:
+                #        LCORBMD:  "${orb_switch}"
+                #        ORBMODE: "${orb_mode}"
+                #        ORBIY: "${orb_iyear}"
 
 
 # Where does end_date and start_date come from
@@ -372,6 +372,7 @@ runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
 ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
+simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
@@ -674,7 +675,7 @@ choose_wam:
                         wam_namelist:
                                 NALINE:
                                         #CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
-                                        #CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
+                                        CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
                                         CDATEF: "${wam_start_date}" # I think this is for generating the output with the correct date stamp
 
                 add_restart_in_files:
@@ -799,7 +800,7 @@ choose_version:
                                         NFRRES: ${nfrres}
                                         NRESTS:
                                                 - -1
-                                                - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
+                                                - $(( -${simulation_length_seconds} / ${time_step} ))
 
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}

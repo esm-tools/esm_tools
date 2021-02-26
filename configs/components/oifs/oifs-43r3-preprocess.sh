@@ -16,7 +16,7 @@ startdate=$6
 enddate=$7
 outdir=$8
 with_wam=$9
-perturb=$10
+perturb=${10}
 nx=${11}
 ensemble_id=${12}
 
@@ -73,9 +73,12 @@ cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "
-echo " Exp ID: $expid "
+echo " InExp ID: $inexpid "
+echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb: $perturb "
+echo " Style: $style"
 
 if [[ "x${style}" == "xjesus" ]] ; then
    ndate=$(date -u -d "${inidate}" +%Y%m%d)
@@ -97,8 +100,10 @@ echo " $files "
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
-if [ -f $old ]; then                                                                                                                                                 
-    grib_set -s dataDate=$ndate $old $new 
+if [ -f $old ]; then                                                                                                   
+    cp $old $old\_ori
+    rm $old                                              
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 
@@ -108,7 +113,9 @@ fi
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -157,7 +164,9 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -173,10 +182,12 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         
         ## new file
         new=${outdir}/$file
-   
+
         if [ -f $old ]; then
+            cp $old $old\_ori
+            rm $old 
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new
+            grib_set -s dataDate=$ndate $old\_ori $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

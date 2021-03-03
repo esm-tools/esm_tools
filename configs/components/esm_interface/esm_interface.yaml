@@ -7,7 +7,7 @@ available_versions:
 
 choose_version:
   generic:
-    branch: v1.1
+    branch: generic
     comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
 
 comp_command: ${defaults.comp_command}

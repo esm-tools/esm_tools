@@ -154,8 +154,8 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
 
-#further_reading:
-#        - oifs/oifs.env.yaml
+further_reading:
+        - oifs/oifs.env.yaml
 
 input_expid: ECE3
 resolution: TL159

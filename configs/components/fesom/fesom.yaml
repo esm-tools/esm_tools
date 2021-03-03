@@ -1,5 +1,8 @@
 # FESOM YAML CONFIGURATION FILE
 #
+# TODO: remove this when control from awicm3.yaml is made possible
+further_reading:
+        - oifs/oifs.env.yaml
 
 model: fesom
 branch: master

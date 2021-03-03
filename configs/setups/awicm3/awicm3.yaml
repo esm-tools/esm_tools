@@ -106,6 +106,9 @@ general:
                 true:   # If restart, use no preprocessing:
                                 compute_recipe: ${compute_recipe_no_preprocess}
 
+        # TODO: add here the further_reading of the oifs environment for compilation
+        # when that option works
+
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -329,7 +332,8 @@ fesom:
         compiletime_environment_changes:
                 choose_computer.name:
                         mistral:
-                                add_export_vars:
+                                # TODO: remove the double add_ when environment is fixed
+                                add_add_export_vars:
                                         - branch_deck: d4139d9
                         "*":
                                 add_export_vars:

@@ -533,9 +533,9 @@ log_in_work:
 
 # Indexing logic for WAM restart files
 days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
-days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
+days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
-days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
+days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
 this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 

@@ -2,7 +2,7 @@ general:
     setup_name: "awicm3"
     version: "1.0-deck"
     account: "ab0246"
-    compute_time: "00:30:00"
+    compute_time: "02:00:00"
     initial_date: "2000-01-01"
     final_date: "2002-01-01"
     base_dir: "/work/ab0246/a270152/esm_yaml_test/"

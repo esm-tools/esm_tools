@@ -375,6 +375,7 @@ ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
 simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
+seconds_since_initial_end: $((${end_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
@@ -531,7 +532,7 @@ log_in_work:
 #======================================================================================
 
 # Indexing logic for WAM restart files
-days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
+days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
 days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
 days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"

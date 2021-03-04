@@ -16,10 +16,10 @@ Sice=4.0
 h0=.5
 emiss_ice=0.97
 emiss_wat=0.97
-albsn=0.66
-albsnm=0.56
-albi=0.56
-albim=0.44
+albsn=0.73
+albsnm=0.65
+albi=0.62
+albim=0.55
 albw=0.1
 /
 

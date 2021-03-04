@@ -358,10 +358,12 @@ namelist_changes:
                 NAMCT0:
                         LFDBOP: "${lfdbop}"
                         LSMSSIG: "${lsmssig}"
-                #NAMORB:
-                #        LCORBMD:  "${orb_switch}"
-                #        ORBMODE: "${orb_mode}"
-                #        ORBIY: "${orb_iyear}"
+                # For this changes to have an effect use a version of OpenIFS that
+                # contains yomorb.F90
+                NAMORB:
+                        LCORBMD:  "${orb_switch}"
+                        ORBMODE: "${orb_mode}"
+                        ORBIY: "${orb_iyear}"
 
 
 # Where does end_date and start_date come from
@@ -675,7 +677,7 @@ choose_wam:
                                         LWCOU2W: ".true."
                         wam_namelist:
                                 NALINE:
-                                        #CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
+                                        CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
                                         CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
                                         CDATEF: "${wam_start_date}" # I think this is for generating the output with the correct date stamp
 

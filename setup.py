@@ -54,7 +54,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm_tools/esm_tools",
-    version="5.0.13",
+    version="5.0.14",
     zip_safe=False,
 )
 

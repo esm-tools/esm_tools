@@ -1,6 +1,6 @@
 components:
 - oasis3mct-2.8
-- yac-1.5.4
+- yac-1.5.5
 - esm_interface-generic
 - echam-6.3.04p1-esm_interface
 - fesom-2.0-esm_interface

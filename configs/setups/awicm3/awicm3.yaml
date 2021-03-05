@@ -163,7 +163,7 @@ oifs:
         wam: true
 
         perturb: 0
-        ensemble_id: 0
+        ensemble_id: 1
 
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2

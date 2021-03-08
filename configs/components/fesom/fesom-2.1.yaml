@@ -52,7 +52,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/"
+namelist_dir: "${esm_namelist_dir}/fesom2.1/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -67,6 +67,8 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+        - namelist.cvmix
+        - namelist.icepack
 
 choose_asforcing:
         CORE2:
@@ -200,8 +202,9 @@ config_files:
         forcing: forcing
         ice:     ice
         oce:     oce
-        diag:    diag
         io:      io
+        cvmix:   cvmix
+        icepack: icepack
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -209,7 +212,8 @@ config_sources:
         ice:     "${namelist_dir}/namelist.ice"
         oce:     "${namelist_dir}/namelist.oce"
         io:      "${namelist_dir}/namelist.io"
-        diag:    "${namelist_dir}/namelist.diag"
+        cvmix:   "${namelist_dir}/namelist.cvmix"
+        icepack: "${namelist_dir}/namelist.icepack"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -226,7 +230,8 @@ config_in_work:
         ice:     "namelist.ice"
         oce:     "namelist.oce"
         io:      "namelist.io"
-        diag:    "namelist.diag"
+        cvmix:   "namelist.cvmix"
+        icepack: "namelist.icepack"
 
 coupling_fields:
         sst_feom:

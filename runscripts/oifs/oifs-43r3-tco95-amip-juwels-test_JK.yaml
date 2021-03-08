@@ -16,26 +16,10 @@ general:
         clean_runs: 2 
 
         # machine specific setup 
-        account: shk00018
-        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
-        base_dir: /scratch/usr/shkjocke/esm-slask/
-        # seb-wahl: this does not work and causes really strange
-        # behaviour upon restart!
-        #choose_computer.name:
-        #   blogin:
-        #      account: shk00018
-        #      my_work_env: /home/shkifmsw/esm/
-        #   glogin:
-        #      account: shk00018
-        #      my_work_env: /home/shkifmsw/esm/
-        #   juwels:
-        #      account: hirace 
-        #      my_work_env: /p/project/hirace/wahl1/esm/ 
-        #   mistral:
-        #      account: bb0519 
-        #      my_work_env: /pf/b/b350071/esm 
-        #model_dir: ${my_work_env}/models/oifs-43r3-v1/
-        #base_dir: ${my_work_env}/esm-experiments/
+        account: hirace
+        base_dir: /p/scratch/hirace/kjellsson1/esm-experiments
+        #pool_dir: /p/project/hirace/foci_input2/
+        model_dir: /p/project/hirace/kjellsson1/models/oifs-43r3-v1/
 
 oifs:
         version: 43r3

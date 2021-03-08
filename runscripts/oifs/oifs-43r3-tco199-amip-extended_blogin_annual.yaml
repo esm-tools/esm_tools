@@ -47,8 +47,7 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 0
-        nproca: 960
-        nprocb: 1
+        nproc: 960
         perturb: 0
         ensemble_id: 1
         
@@ -56,5 +55,4 @@ xios:
         # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
         xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199/output_3hr+6hrPLev+1dayPV+Amon/
         with_model: oifs
-        nproca: 96
-        nprocb: 1
+        nproc: 96

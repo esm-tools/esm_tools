@@ -297,17 +297,13 @@ choose_resolution:
 
 choose_computer.cores_per_node:
         24:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
         36:
-                nproca: 108
-                nprocb: 1
+                nproc: 108
         48:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
         96:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
 
 #======================================================================================
 # MAIN CHANGES TO fort.4 NAMELIST
@@ -773,7 +769,7 @@ choose_version:
                                         NRESTS: "-1, -${oifs.next_step}"
 
                                 NAMPAR0:
-                                        NPROC: ${oifs.nproca}
+                                        NPROC: ${oifs.nproc}
 
                                 NAMDYN:
                                         TSTEP: ${oifs.time_step}
@@ -809,7 +805,7 @@ choose_version:
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
 
                                 NAMPAR0:
-                                        NPROC: ${oifs.nproca}
+                                        NPROC: ${oifs.nproc}
 
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}

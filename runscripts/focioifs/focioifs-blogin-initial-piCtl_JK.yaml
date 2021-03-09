@@ -41,8 +41,7 @@ oifs:
    levels: L91
    lresume: 0
    post_processing: 1
-   nproca: 287
-   nprocb: 1  
+   nproc: 287  
    use_ocean_currents: 1
 
 oasis3mct:
@@ -56,11 +55,9 @@ nemo:
    nproc: 432
    
 rnfmap:
-   nproca: 1
-   nprocb: 1
+   nproc: 1
 
 xios: 
    with_model: focioifs 
    xml_dir: /scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS/
-   nproca: 48
-   nprocb: 1
+   nproc: 48

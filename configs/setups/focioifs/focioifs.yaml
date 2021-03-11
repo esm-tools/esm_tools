@@ -254,7 +254,7 @@ oasis3mct:
         o2a_seq: 1
 
         coupling_time_step: 10800
-        export_mode: EXPOUT 
+        export_mode: EXPORTED
         
         coupling_target_fields:
                 # Coupling ocean fields to atm

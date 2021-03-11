@@ -17,11 +17,14 @@
 # Which configuration(s) shall be tested?
 # Can be overwritten by command line argument
 # Use space as separator for multiple configurations
-configurations="foci-default"
+#configurations="foci-default focioifs-2.0"
+configurations="oifs-43r3-v1 focioifs-2.0 foci-default"
+#configurations="foci-default"
 
 # Which steps to test? Valid options are 'run' and 'compile'
 # put steps="compile run" to first compile and the run a test simulation
 steps="compile run"
+#steps="run"
 
 # work directory
 workdir=$WORK/tmp
@@ -29,17 +32,18 @@ workdir=$WORK/tmp
 # Account for model run
 # TODO: make this a command line argument as it is the only machine specific 
 # thing left in this script
-account=bb0519
+account=shk00018
 
 # test a specific version of a tool?
-components=(esm_runscripts esm_master esm_parser esm_environment)
-branch=(prep_release prep_release prep_release prep_release)
+components=(esm_rcfile esm_runscripts esm_parser)
+branch=(develop develop develop)
 
 # Which version of ESM-Tools shall be tested
-esm_tools_branch='prep_release'
+esm_tools_branch='geomar_awicm3'
 
 # Which plugins shall be installed during testing
-plugins="preprocess"
+# plugins="preprocess"
+plugins=""
 #
 ###########################################################################
 #
@@ -76,9 +80,10 @@ for configuration in ${configurations} ; do
     module load anaconda3/bleeding_edge
   elif [[ "$HOSTNAME" =~ juwels ]] ; then
     module --force purge
-    module use /gpfs/software/juwels/otherstages
-    module load Stages/Devel-2019a
-    module load GCCcore/.8.3.0
+    module use $OTHERSTAGES 
+    module load Stages/2019a
+	 module load Intel/2019.3.199-GCC-8.3.0
+	 module load IntelMPI/2019.6.154
     module load Python/3.6.8
     module load git
   else
@@ -107,14 +112,14 @@ for configuration in ${configurations} ; do
     echo "`date`: OK: Python virtual env setup" | tee -a ${logdir}/test_${configuration}.log
 
     # backup esmtoolsrc and install
-    cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
+    #cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
     git clone -b ${esm_tools_branch} https://github.com/esm-tools/esm_tools.git
     cd esm_tools
     # TODO: on blogin an "pip install ." works on mistral it gives an error even though we are inside a venv
     # pip install -e . as a workaround works.
     pip install -e .
     if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: pip install . failed" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     else    
@@ -122,14 +127,14 @@ for configuration in ${configurations} ; do
     fi
 
     if ! [[ ${#components[@]} -eq ${#branch[@]} ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: components and branch must have the same length" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
     for i in ${!components[@]}; do
       esm_versions upgrade ${components[$i]}=${branch[$i]}
       if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+        #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: esm_versions upgrade ${components[$i]}=${branch[$i]} failed" | tee -a ${logdir}/test_${configuration}.log
         exit 1
       fi
@@ -146,7 +151,7 @@ for configuration in ${configurations} ; do
       cd $plugin 
       pip install -e .
       if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+        #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: pip install git+https://github.com/esm-tools-plugins/${plugin}.git failed" | tee -a ${logdir}/test_${configuration}.log
         exit 1
       fi
@@ -160,21 +165,21 @@ for configuration in ${configurations} ; do
     # esm_master install-${configuration}
     esm_master get-${configuration}
     if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: esm_master get-${configuration} failed" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
     esm_master comp-${configuration}
     if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: esm_master comp-${configuration} failed" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
     echo "`date`: OK: esm_master install-$configuration" | tee -a ${logdir}/test_${configuration}.log
 
     # backup esmtoolsrc files
-    cp -v ~/.esmtoolsrc ~/.esmtoolsrc_ci
-    cp -v ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
+    #cp -v ~/.esmtoolsrc ~/.esmtoolsrc_ci
+    #cp -v ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
   fi
 
   if [[ "$steps" =~ run ]]; then
@@ -183,12 +188,12 @@ for configuration in ${configurations} ; do
 
     # activate virtual environment with correct esmtoolsrc saved in previous step
     if [[ ! -f env_esm_tools_${configuration}/bin/activate ]]  ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: env_esm_tools_${configuration} not available. Did you run the compile step?" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
     source env_esm_tools_$configuration/bin/activate
-    cp -v ~/.esmtoolsrc_ci ~/.esmtoolsrc
+    #cp -v ~/.esmtoolsrc_ci ~/.esmtoolsrc
 
     # modify test_${configuration}.yaml and start the simulation
     mkdir -p $workdir/$configuration/esm-experiments
@@ -199,17 +204,17 @@ for configuration in ${configurations} ; do
       sed -i "s#   base_dir:.*#   base_dir: ${workdir}/${configuration}/esm-experiments#" test_${configuration}.yaml
       sed -i "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}.yaml
       sed -i "s#   account:.*#   account: ${account}#" test_${configuration}.yaml
-      esm_runscripts -e test_${configuration} test_${configuration}.yaml
+      esm_runscripts --open-run -e test_${configuration} test_${configuration}.yaml
       # TODO: esm_runscripts sometimes returns 0 despite an error 
       if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+        #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: esm_runscripts -e test_${configuration} test_${configuration}.yaml failed" | tee -a ${logdir}/test_${configuration}.log
         exit 1
       else
         echo "`date`: OK: esm_runscripts -e test_${configuration} test_${configuration}.yaml" | tee -a ${logdir}/test_${configuration}.log
       fi
     else
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: $workdir/$configuration/esm_tools/stuff/test_setups/test_${configuration}.yaml not available" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
@@ -237,11 +242,11 @@ for configuration in ${configurations} ; do
             cat ${logfile} | tee -a ${logdir}/test_${configuration}.log
             # exp has finished sucessfully
             if grep -q "Experiment over" ${logfile} ; then
-              cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
+              #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: SUCCESS: Experiment finished successfully" | tee -a ${logdir}/test_${configuration}.log
               break 
             else
-              cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
+              #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: ERROR: Experiment failed" | tee -a ${logdir}/test_${configuration}.log
               exit 1
             fi

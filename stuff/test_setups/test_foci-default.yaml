@@ -1,6 +1,4 @@
 general:
-   use_venv: False
-   verbose: False
    setup_name: "foci"
    version: "default"
 
@@ -12,11 +10,11 @@ general:
    nday: 1 
    
    # machine specific setup 
-   account: set_by_test_foci-default.sh 
-   base_dir: /will/be/set/by/test_foci-default.sh 
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
 
 foci:
-   model_dir: /will/be/set/by/test_foci-default.sh 
+   model_dir: /will/be/set/by/test_setup.sh 
 
 echam:
    resolution: "T63"

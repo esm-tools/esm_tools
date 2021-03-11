@@ -16,9 +16,12 @@ general:
         clean_runs: 2 
 
         # machine specific setup 
-        account: hirace
-        model_dir: /p/project/hirace/wahl1/esm/models/oifs-43r3-v1/
-        base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
+        #account: hirace
+        #model_dir: /p/project/hirace/wahl1/esm/models/oifs-43r3-v1/
+        #base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
+        account: shk00018
+        model_dir: /home/shkifmsw/esm/models/oifs-43r3-v1/
+        base_dir: /home/shkifmsw/esm/esm-experiments/
         # seb-wahl: this does not work and causes really strange
         # behaviour upon restart!
         #choose_computer.name:
@@ -39,7 +42,7 @@ general:
 
 oifs:
         version: 43r3
-        with_xios: True 
+        with_xios: True         
         input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
         rtables_dir: ${pool_dir}/OPENIFS_CY43_GENERAL/rtables/
         vtables_dir: ${pool_dir}/OPENIFS_CY43_GENERAL/vtables/
@@ -56,7 +59,11 @@ oifs:
         lresume: 0
         post_processing: 0
         nproc: 288
-        perturb: 0 
+        perturb: 0
+        ensemble_id: 1
+        pextra: 0  
+        massfixer: 1
+        nfrmasscon: 3 
 
 xios:
         # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 

@@ -1,13 +1,11 @@
 general:
-   use_venv: False
-   verbose: True
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
    compute_time: "00:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-03T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
    
    nyear: 0
    nmonth: 0
@@ -15,11 +13,11 @@ general:
    restart_rate: 1
    restart_unit: days 
    hours: 0
-   account: set_by_test_foci-default.sh 
-   base_dir: /will/be/set/by/test_foci-default.sh 
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
 
 focioifs:
-   model_dir: /will/be/set/by/test_foci-default.sh 
+   model_dir: /will/be/set/by/test_setup.sh 
    
 oifs:
    version: "43r3"

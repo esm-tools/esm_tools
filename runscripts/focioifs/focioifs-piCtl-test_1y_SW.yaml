@@ -6,15 +6,15 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:10:00"
+   compute_time: "03:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
 
-   nyear: 0
+   nyear: 1
    nmonth: 0
-   nday: 1
+   nday: 0
    restart_rate: 1
-   restart_unit: days 
+   restart_unit: years 
    hours: 0
   
    # machine specific setup 
@@ -81,5 +81,5 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_1m"
    nproc: 48

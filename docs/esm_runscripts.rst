@@ -236,7 +236,7 @@ end of their names (i.e. ``fesom.clock_YYYYMMDD-YYYYMMDD``).
 Cleanup of ``run_`` directories
 -------------------------------
 
-.. automethod:: esm_runscripts.SimulationSetup.clean_run_dir
+.. automethod:: esm_runscripts.tidy.clean_run_dir
 
 .. check that the above is changed by the merge of develop in release 5.0, so that it includes
    the delete file functionality.

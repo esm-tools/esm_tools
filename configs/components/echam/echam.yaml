@@ -39,7 +39,11 @@ compile_infos:
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
-            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+
+# kh 02.03.21 comp_command splitted, conf command added
+#           comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            conf_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'
+            comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
           6.3.05p2-concurrent_radiation-paleodyn:
             branch: "ice"

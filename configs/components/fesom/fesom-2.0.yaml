@@ -229,7 +229,7 @@ config_sources:
 
 compiletime_environment_changes:
         add_export_vars:
-                - taken2from:      fesom2_compile
+                taken2from:      fesom2_compile
 
 runtime_environment_changes:
         add_export_vars:

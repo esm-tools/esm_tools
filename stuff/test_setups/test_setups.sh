@@ -39,7 +39,8 @@ components=(esm_rcfile esm_runscripts esm_parser)
 branch=(develop develop develop)
 
 # Which version of ESM-Tools shall be tested
-esm_tools_branch='geomar_awicm3'
+#esm_tools_branch='geomar_awicm3'
+esm_tools_branch='feature/fix_test_script'
 
 # Which plugins shall be installed during testing
 # plugins="preprocess"
@@ -137,6 +138,8 @@ for configuration in ${configurations} ; do
         #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: esm_versions upgrade ${components[$i]}=${branch[$i]} failed" | tee -a ${logdir}/test_${configuration}.log
         exit 1
+      else
+        echo "`date`: OK: esm_versions upgrade ${components[$i]}=${branch[$i]}" | tee -a ${logdir}/test_${configuration}.log
       fi
     done
     esm_versions check | tee -a ${logdir}/test_${configuration}.log

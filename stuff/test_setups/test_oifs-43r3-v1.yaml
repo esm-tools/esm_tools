@@ -18,6 +18,7 @@ general:
         # machine specific setup 
         account: set_by_test_foci-default.sh 
         base_dir: /will/be/set/by/test_foci-default.sh 
+        model_dir: /will/be/set/by/test_foci-default.sh 
 
 oifs:
         version: 43r3

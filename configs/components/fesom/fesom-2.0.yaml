@@ -101,6 +101,10 @@ choose_resolution:
                 nproc: 288
         GLOB:
                 nx: 830305
+        CAVCORE2:
+                nx: 72411
+                mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+                nproc: 288
 
 restart_in_files:
         oce_restart: oce_restart

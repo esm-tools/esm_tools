@@ -1,15 +1,18 @@
 #! /bin/ksh -l
 set -e 
 
+export FUNCTION_PATH=${HOME}/esm-master/esm-runscripts/functions/all
+export FPATH=${FUNCTION_PATH}:$FPATH
 
+machine_name="ollie"   					# only ollie supported yet
 setup_name="fesom"		
 #check=1
 
 compute_time="00:08:00"
 ###############################################################################
 
-INITIAL_DATE=2000-01-01       # Initial exp. date
-FINAL_DATE=2000-03-31        # Final date of the experiment
+INITIAL_DATE_fesom=2000-01-01       # Initial exp. date
+FINAL_DATE_fesom=2000-03-31        # Final date of the experiment
 
 fesom_VERSION="2.0"
 POST_PROCESSING_fesom=0
@@ -17,11 +20,22 @@ SCENARIO_fesom="PI-CTRL"
 
 RES_fesom=CORE2
 
-MODEL_DIR=/work/ollie/dbarbi/modelcodes/fesom-2.0/
-BASE_DIR=/work/ollie/dbarbi/esm_yaml_test/
+geometry___force_rotation___nml_entry=".false."
+geometry___force_rotation___nml_file="namelist.config"
+ale_def___use_partial_cell___nml_entry=".false."
+ale_def___use_partial_cell___nml_file="namelist.config"
+ale_def___which_ale___nml_entry="linfs"
+ale_def___which_ale___nml_file="namelist.config"
+restart_log___restart_length_unit___nml_entry="m"
+restart_log___restart_length_unit___nml_file="namelist.config"
+timestep___step_per_day___nml_entry=288
+timestep___step_per_day___nml_file="namelist.config"
+
+MODEL_DIR="${HOME}/fesom-2.0/"
+BASE_DIR="/work/ollie/lackerma/awicm_pism_tests/"
 
 POOL_DIR_fesom=/work/ollie/pool/FESOM/
-MESH_DIR_fesom=/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/
+MESH_DIR_fesom="/home/ollie/lackerma/mesh_CORE2_final"
 
 NYEAR=0           # Number of years per run
 NMONTH=1          # Number of months per run

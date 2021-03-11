@@ -48,3 +48,15 @@ io_list =  'sst       ',1, 'm', 4,
            'bolus_w   ',1, 'y', 4, !Fer_GM must be .true. otherwise no output
            'fer_K     ',1, 'y', 4, !Fer_GM must be .true. otherwise no output
 /
+
+&diag_list
+ldiag_solver     =.false.
+lcurt_stress_surf=.false.
+ldiag_curl_vel3  =.false.
+ldiag_energy     =.false.
+ldiag_salt3D     =.false.
+ldiag_dMOC       =.false.
+ldiag_DVD        =.false.
+ldiag_forc       =.false.
+/
+

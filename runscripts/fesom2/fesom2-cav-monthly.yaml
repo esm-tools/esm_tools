@@ -1,6 +1,6 @@
 general:
         setup_name: fesom
-        compute_time: "00:08:00"
+        compute_time: "00:15:00"
         initial_date: '2001-01-01'
         final_date: '2001-03-31'
         base_dir: "/work/ollie/lackerma/awicm_pism_tests/"
@@ -12,18 +12,22 @@ fesom:
         version: 2.0
         model_dir: "/home/ollie/lackerma/fesom-2.0/"
         pool_dir: "/work/ollie/pool/FESOM/"
-        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        #mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+        mesh_dir: "/home/ollie/lackerma/mesh_CORE2_final"
         res: CORE2
         namelist_changes:                                                                                                                                  
             namelist.config:
                 timestep:
-                    step_per_day: 288
+                    step_per_day: 48
                 paths:
                     ForcingDataPath: remove_from_namelist
                     OpbndPath: remove_from_namelist
                     TideForcingPath: remove_from_namelist
+                restart_log:
+                    restart_length_unit: "m"
                 ale_def:
                     which_ale: "linfs"
+                    use_partial_cell: ".false."
                 geometry:
                     force_rotation: ".false."
                 run_config:

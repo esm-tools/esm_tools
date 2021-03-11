@@ -1,0 +1,418 @@
+Module for Intel Compiler and Libraries, ifort, icc, icpc; mkl, ipp, tbb,... version 2017.1.132 loaded.
+Module for impi,  version 2017 loaded.
+Module for Python 2.7 from Intel Parallel Studio 2017 loaded
+For osgeo, please add: module load gdal/2.1.1
+Module for pism_externals version 0.7.x_intel_impi loaded
+Module for cmake version 3.13.3 loaded
+Module for udunits version 2.2.26 loaded
+Module for Intel Compiler and Libraries, ifort, icc, icpc; mkl, ipp, tbb,... version 2018.5.274 loaded.
+Module for impi,  version 2018.4.274 loaded.
+Module for hdf5 version 1.10.2_gnu loaded
+Module for centoslibs version 7.5 loaded.
+Module for cdo version 1.9.6 loaded
+Please add >module load centoslibs<, if you are on a compute node to get all libraries.
+Module for nco version 4.7.7 loaded
+Please add >module load centoslibs<, if you are on a compute node to get all libraries.
+Module for netcdf version 4.6.2_intel_18.0.5 loaded
+/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include
+===================================
+/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib
+------> ulimit -s unlimited
+------> ulimit -c unlimited
+------> archive_host=hs
+------> archive_tars=hs_archive_tars
+------> batch_system=slurm
+------> beeond_mountpoint=/mnt/beeond
+------> beeond_partition=mpp_beeond
+------> CC=mpiicc
+------> C_INCLUDE_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:/global/AWIsoft/nco/4.7.7/include:/global/AWIsoft/hdf5/1.10.2_gnu/include:/global/AWIsoft/udunits/2.2.26/include:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/include:/global/AWIsoft/tkleiner/gsl/2.1_intel/include:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/include:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/include:/global/AWIsoft/tkleiner/proj/4.9.1_intel/include:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/include:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/include:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/include:/global/AWIsoft/centoslibs/7.5/include
+------> C_INCLUDE_PATH_modshare=/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/include:1:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/include:1:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/include:1:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/include:1:/global/AWIsoft/udunits/2.2.26/include:1:/global/AWIsoft/tkleiner/proj/4.9.1_intel/include:1:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/include:1:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/include:1:/global/AWIsoft/nco/4.7.7/include:1:/global/AWIsoft/tkleiner/gsl/2.1_intel/include:1:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:1:/global/AWIsoft/hdf5/1.10.2_gnu/include:1:/global/AWIsoft/centoslibs/7.5/include:1
+------> cleanup_beeond_command='echo Nothing to to in $WORK_DIR'
+------> CMAKE_ROOT=/global/AWIsoft/tkleiner/cmake/3.6.1_intel
+------> compute_partition=mpp
+------> cores_per_compute_node=36
+------> cores_per_post_node=1
+------> CPATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:/global/AWIsoft/nco/4.7.7/include:/global/AWIsoft/hdf5/1.10.2_gnu/include:/global/AWIsoft/intel/2018/impi/2018.4.274/include64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/include:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/include:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/include:/global/AWIsoft/udunits/2.2.26/include:/global/AWIsoft/centoslibs/7.5/include
+------> CPATH_modshare=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:1:/global/AWIsoft/centoslibs/7.5/include:1:/global/AWIsoft/hdf5/1.10.2_gnu/include:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/include:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/include:1:/global/AWIsoft/udunits/2.2.26/include:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/include:1:/global/AWIsoft/nco/4.7.7/include:1:/global/AWIsoft/intel/2018/impi/2018.4.274/include64:1
+------> CPLUS_INCLUDE_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:/global/AWIsoft/hdf5/1.10.2_gnu/include:/global/AWIsoft/udunits/2.2.26/include
+------> CPLUS_INCLUDE_PATH_modshare=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include:1:/global/AWIsoft/hdf5/1.10.2_gnu/include:1:/global/AWIsoft/udunits/2.2.26/include:1
+------> cpus_per_core_compute=2
+------> cpus_per_task_post=8
+------> CXX=mpiicpc
+------> DT_RUN_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib
+------> DT_RUN_PATH_modshare=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:1
+------> F77=mpiifort
+------> FC='mpiifort -mkl'
+------> FFTW_ROOT=/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi
+------> from_beeond_command='cp -u /mnt/beeond/\* $WORK_DIR'
+------> GSL_ROOT=/global/AWIsoft/tkleiner/gsl/2.1_intel
+------> HDF5_ROOT=/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi
+------> HDF5ROOT=/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi
+------> IDB_HOME=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/bin/intel64
+------> I_MPI_FABRICS=shm:ofi
+------> I_MPI_OFI_LIBRARY=/usr/lib64/libfabric.so
+------> I_MPI_ROOT=/global/AWIsoft/intel/2018/impi/2018.4.274
+------> INCLUDE=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/include
+------> INCLUDE_modshare=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/include:1
+------> INTEL_LICENSE_FILE=/global/opt/intel/licenses
+------> INTEL_LICENSE_FILE_modshare=/global/opt/intel/licenses:1
+------> IPPROOT=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp
+------> LANGUAGE_TERRITORY=en_US
+------> LAPACK_LIB='-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl'
+------> LD_LIBRARY_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:/global/AWIsoft/hdf5/1.10.2_gnu/lib:/global/AWIsoft/intel/2018/impi/2018.4.274/lib64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/lib/intel64/gcc4.4:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/../compiler/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mpirt/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64:/global/AWIsoft/udunits/2.2.26/lib:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib:/global/AWIsoft/intel//2017/intelpython27/lib:/global/AWIsoft/centoslibs/7.5/lib:/global/AWIsoft/nco/4.7.7/lib
+------> LD_LIBRARY_PATH_modshare=/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/../compiler/lib/intel64:1:/global/AWIsoft/intel//2017/intelpython27/lib:1:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:1:/global/AWIsoft/udunits/2.2.26/lib:1:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:1:/global/AWIsoft/nco/4.7.7/lib:1:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:1:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64:2:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:1:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:1:/global/AWIsoft/hdf5/1.10.2_gnu/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64:1:/global/AWIsoft/centoslibs/7.5/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mpirt/lib/intel64:1:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:1:/global/AWIsoft/intel/2018/impi/2018.4.274/lib64:1:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/lib/intel64/gcc4.4:1
+------> LD_RUN_PATH=/global/AWIsoft/hdf5/1.10.2_gnu/lib:/global/AWIsoft/intel/2018/impi/2018.4.274/lib64:/global/AWIsoft/udunits/2.2.26/lib:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib:/global/AWIsoft/intel//2017/intelpython27/lib
+------> LD_RUN_PATH_modshare=/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:1:/global/AWIsoft/intel//2017/intelpython27/lib:1:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:1:/global/AWIsoft/udunits/2.2.26/lib:1:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:1:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib:1:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:1:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:1:/global/AWIsoft/hdf5/1.10.2_gnu/lib:1:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:1:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:1:/global/AWIsoft/intel/2018/impi/2018.4.274/lib64:1
+------> LIBRARY_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:/global/AWIsoft/hdf5/1.10.2_gnu/lib:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/../compiler/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/lib/intel64/gcc4.4:/global/AWIsoft/udunits/2.2.26/lib
+------> LIBRARY_PATH_modshare=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:1:/global/AWIsoft/hdf5/1.10.2_gnu/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64:1:/global/AWIsoft/udunits/2.2.26/lib:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/../compiler/lib/intel64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb/lib/intel64/gcc4.4:1
+------> _LMFILES_=/global/AWImodules_deprecated/python/2.7-intel2017:/global/AWImodules/pism_externals/0.7.x_intel_impi:/global/AWImodules/cmake/3.13.3:/global/AWImodules/udunits/2.2.26:/global/AWImodules/intel.compiler/18.0.5:/global/AWImodules/intel.mpi/18.0.4:/global/AWImodules/hdf5/1.10.2_gnu:/global/AWImodules/centoslibs/7.5:/global/AWImodules/cdo/1.9.6:/global/AWImodules/nco/4.7.7:/global/AWImodules/netcdf/4.6.2_intel
+------> _LMFILES__modshare=/global/AWImodules/intel.mpi/18.0.4:1:/global/AWImodules/nco/4.7.7:1:/global/AWImodules/cdo/1.9.6:1:/global/AWImodules/pism_externals/0.7.x_intel_impi:1:/global/AWImodules/netcdf/4.6.2_intel:1:/global/AWImodules/intel.compiler/18.0.5:1:/global/AWImodules/cmake/3.13.3:1:/global/AWImodules/centoslibs/7.5:1:/global/AWImodules/hdf5/1.10.2_gnu:1:/global/AWImodules/udunits/2.2.26:1:/global/AWImodules_deprecated/python/2.7-intel2017:1
+------> LOADEDMODULES_modshare=intel.mpi/18.0.4:1:nco/4.7.7:1:cdo/1.9.6:1:pism_externals/0.7.x_intel_impi:1:netcdf/4.6.2_intel:1:intel.compiler/18.0.5:1:cmake/3.13.3:1:centoslibs/7.5:1:hdf5/1.10.2_gnu:1:udunits/2.2.26:1:python/2.7-intel2017:1
+------> LOADEDMODULES=python/2.7-intel2017:pism_externals/0.7.x_intel_impi:cmake/3.13.3:udunits/2.2.26:intel.compiler/18.0.5:intel.mpi/18.0.4:hdf5/1.10.2_gnu:centoslibs/7.5:cdo/1.9.6:nco/4.7.7:netcdf/4.6.2_intel
+------> MANPATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/share/man:/global/AWIsoft/nco/4.7.7/share/man:/global/AWIsoft/hdf5/1.10.2_gnu/share/man:/global/AWIsoft/intel/2018/impi/2018.4.274/man:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/man/common:/global/AWIsoft/udunits/2.2.26/share/man:/global/AWIsoft/intel//2017/intelpython27/share/man::/opt/munge/default/share/man::/global/opt/slurm/default/share/man:
+------> MANPATH_modshare=1:/global/AWIsoft/nco/4.7.7/share/man:1:/global/AWIsoft/intel/2018/impi/2018.4.274/man:1:/global/opt/slurm/default/share/man:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/man/common:1:/global/AWIsoft/intel//2017/intelpython27/share/man:1:/opt/munge/default/share/man:1:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/share/man:1:/global/AWIsoft/hdf5/1.10.2_gnu/share/man:1:/global/AWIsoft/udunits/2.2.26/share/man:1
+------> MKLROOT=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl
+------> MPICC=mpiicc
+------> MPIEXEC=srun
+------> MPIFC=mpiifort
+------> MPIROOT=/global/AWIsoft/intel/2018/impi/2018.4.274/intel64
+------> MPM_LAUNCHER=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/mpm/bin/start_mpm.sh
+------> NETCDF4_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5
+------> NETCDFCPP_LD='-L/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib -Wl,-rpath,/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib -lnetcdf_c++'
+------> NETCDF_CXX_INCLUDE_DIRECTORIES=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include
+------> NETCDF_CXX_LIBRARIES=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib
+------> NETCDF_DIR=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5
+------> NETCDF_Fortran_INCLUDE_DIRECTORIES=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include
+------> NETCDFFROOT=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5
+------> NETCDF_INC_F90=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include
+------> NETCDF_INC=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/include
+------> NETCDF_LD='-L/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib -Wl,-rpath,/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib -lnetcdff -lnetcdf'
+------> NETCDF_LIB=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib
+------> NETCDFROOT=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5
+------> NETCDF_ROOT=/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi
+------> NETCDF=true
+------> NETCDF_VERSION=4.6.2
+------> NLSPATH=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/intel64/locale/%l_%t/%N:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gdb/intel64/py26/share/locale/%l_%t/%N:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64/locale/%l_%t/%N:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64/locale/%l_%t/%N:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64/locale/%l_%t/%N
+------> NLSPATH_modshare=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/intel64/locale/%l_%t/%N:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/compiler/lib/intel64/locale/%l_%t/%N:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64/locale/%l_%t/%N:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gdb/intel64/py26/share/locale/%l_%t/%N:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/ipp/lib/intel64/locale/%l_%t/%N:1
+------> OLDPWD=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts/esm-tools/esm-environment
+------> OMP_NUM_THREADS='\$\{omp_num_threads_${script_type}_${setup_name}\}'
+------> onto_beeond_command='cp -u ${WORK_DIR}/\* /mnt/beeond'
+------> operating_system=linux
+------> PATH_modshare=/global/AWIsoft/intel/2018/impi/2018.4.274/bin64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gui/intel64:1:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/bin:1:/cm/local/apps/environment-modules/current/bin:1:/global/opt/slurm/default/bin:1:/global/AWIsoft/cmake/3.13.3/bin:1:/global/AWIsoft/tkleiner/cmake/3.6.1_intel/bin:1:/usr/bin:1:/opt/munge/default/bin:1:/home/ollie/lackerma/bin:1:/home/ollie/lackerma/.local/bin:1:/global/AWIsoft/miniconda/4.7.12/condabin:1:/usr/local/bin:1:/global/AWIsoft/cdo/1.9.6/bin:1:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/bin:1:/global/AWIsoft/bin:1:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/bin:1:/global/AWIsoft/intel//2017/intelpython27/bin:1:/cm/local/apps/environment-modules/4.0.0/bin:1:/global/AWIsoft/udunits/2.2.26/bin:1:/global/AWIsoft/miniconda/4.7.12/bin:1:/global/AWIsoft/nco/4.7.7/bin:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/bin/intel64:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gdb/intel64/py26/bin:1:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/bin:1:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/bin:1:/global/AWIsoft/tkleiner/gsl/2.1_intel/bin:1:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/bin:1:/global/AWIsoft/centoslibs/7.5/bin:1:/global/AWIsoft/hdf5/1.10.2_gnu/bin:1:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mpirt/bin/intel64:1:/sbin:1:/global/AWIsoft/intel/2018/vtune_amplifier/bin64:1:/usr/sbin:1:/cm/local/apps/environment-modules/4.0.0//bin:1:/global/AWIsoft/centoslibs/7.5/sbin:1:/usr/local/sbin:1:/usr/lib64/qt-3.3/bin:1:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/bin:1
+------> PATH=/work/ollie/jhegewal/sw/cmake/bin:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/bin:/global/AWIsoft/nco/4.7.7/bin:/global/AWIsoft/cdo/1.9.6/bin:/global/AWIsoft/hdf5/1.10.2_gnu/bin:/global/AWIsoft/intel/2018/impi/2018.4.274/bin64:/global/AWIsoft/intel/2018/vtune_amplifier/bin64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/bin/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mpirt/bin/intel64:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gdb/intel64/py26/bin:/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/debugger/gui/intel64:/global/AWIsoft/udunits/2.2.26/bin:/global/AWIsoft/cmake/3.13.3/bin:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/bin:/global/AWIsoft/tkleiner/gsl/2.1_intel/bin:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/bin:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/bin:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/bin:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/bin:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/bin:/global/AWIsoft/tkleiner/cmake/3.6.1_intel/bin:/global/AWIsoft/intel//2017/intelpython27/bin:/cm/local/apps/environment-modules/4.0.0//bin:/global/AWIsoft/miniconda/4.7.12/bin:/global/AWIsoft/miniconda/4.7.12/condabin:/home/ollie/lackerma/.local/bin:/usr/lib64/qt-3.3/bin:/cm/local/apps/environment-modules/4.0.0/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/sbin:/cm/local/apps/environment-modules/current/bin:/opt/munge/default/bin:/global/opt/slurm/default/bin:/global/AWIsoft/bin:/home/ollie/lackerma/bin:/global/AWIsoft/bin:/global/AWIsoft/centoslibs/7.5/bin:/global/AWIsoft/centoslibs/7.5/sbin
+------> PE_ENV=INTEL
+------> PETSC_ARCH=''
+------> PETSC_DIR=/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi
+------> PISM_MPIDO='srun --mpi=pmi2 -n'
+------> PKG_CONFIG_PATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib/pkgconfig:/global/AWIsoft/intel//2017/intelpython27/lib/pkgconfig
+------> PKG_CONFIG_PATH_modshare=/global/AWIsoft/intel//2017/intelpython27/lib/pkgconfig:1:/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib/pkgconfig:1
+------> PNETCDF_ROOT=/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi
+------> post_partition=smp
+------> PROJ4_ROOT=/global/AWIsoft/tkleiner/proj/4.9.1_intel
+------> PROJ_ROOT=/global/AWIsoft/tkleiner/proj/4.9.1_intel
+------> PYTHONHOME=/global/AWIsoft/intel//2017/intelpython27
+------> PYTHONHOME_modshare=/global/AWIsoft/intel//2017/intelpython27:1
+------> PYTHON_LIBRARY=/global/AWIsoft/intel//2017/intelpython27/lib/libpython2.7.so
+------> PYTHONPATH=/global/AWIsoft/tkleiner/lib/python2.7/site-packages:/global/AWIsoft/intel//2017/intelpython27/lib
+------> PYTHONPATH_modshare=/global/AWIsoft/tkleiner/lib/python2.7/site-packages:1:/global/AWIsoft/intel//2017/intelpython27/lib:1
+------> RPATH=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:/global/AWIsoft/hdf5/1.10.2_gnu/lib:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib
+------> RPATH_modshare=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5/lib:1:/global/AWIsoft/hdf5/1.10.2_gnu/lib:1:/global/AWIsoft/tkleiner/petsc/3.5.4_intel_impi/lib:1:/global/AWIsoft/tkleiner/proj/4.9.1_intel/lib:1:/global/AWIsoft/tkleiner/hdf5/1.8.17_intel_impi/lib:1:/global/AWIsoft/tkleiner/udunits/2.2.20_intel/lib:1:/global/AWIsoft/tkleiner/netcdf/4.4.0_intel_impi/lib:1:/global/AWIsoft/tkleiner/pnetcdf/1.7.0_intel_impi/lib:1:/global/AWIsoft/tkleiner/fftw/3.4.3_intel_impi/lib:1:/global/AWIsoft/tkleiner/gsl/2.1_intel/lib:1
+------> tar_compress_program='--use-compress-program=pigz -cvf'
+------> TBBROOT=/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/tbb
+------> thisplace=/home/ollie/lackerma/esm_tools/runscripts/fesom2
+------> UDUNITS2_ROOT=/global/AWIsoft/tkleiner/udunits/2.2.20_intel
+------> UDUNITS2_XML_PATH=/global/AWIsoft/tkleiner/udunits/2.2.20_intel/share/udunits/udunits2.xml
+------> use_beeond=0
+------> use_hyperthreading=0
+------> VALGRIND_LIB=/global/AWIsoft/centoslibs/7.5/lib/valgrind
+------> VT_ROOT=/global/AWIsoft/intel/2018/itac_latest
+------> with_xthi=0
+------> xthi=/global/AWIsoft/xthi/xthi.intel
+------> ZLIBROOT=/usr
+------> 		Running on linux system
+------> cp='cp -pv'
+------> get_archive=''
+------> gunzip='gzip -d'
+------> ln='ln -sfv'
+------> mkdir='mkdir -pv'
+------> mv='mv -v'
+------> put_archive=''
+------> rm='rm -v'
+------> rtp=pftp
+------> rtp_post=pftp
+------> ACCOUNT=default
+------> account_flag=''
+------> ACTUAL_SCRIPT_DIR=/home/ollie/lackerma/esm_tools/runscripts/fesom2
+------> exclusive_compute=--exclusive
+------> exclusive_post=''
+------> hyper_flag=''
+------> JOB_ID=114849
+------> launcher_flags='-l --kill-on-bad-exit=1 --cpu_bind=cores'
+------> launcher=srun
+------> mem_flag_compute=''
+------> mem_flag_post=''
+------> notification_flag=' --mail-type=NONE '
+------> reservation_compute=''
+------> reservation_post=''
+------> SCRIPT_NAME=fesom2-ollie-initial-monthly.run
+------> single_proc_submit_flag='--ntasks-per-node=1'
+------> SLURM_MAIL_TYPE=NONE
+------> submit_flags='\$\{exclusive_${next_script}\} \$\{reservation_${next_script}\} ${account_flag} --partition=\$\{${next_script}_partition\} --time=\$\{${next_script}_time\} \$\{mem_flag_${next_script}\} --output=${EXP_ID}_${next_script}_%j.log --error=${EXP_ID}_${next_script}_%j.log ${notification_flag} --ntasks=\$\{tasks_${next_script}\} ${hyper_flag} --job-name=${USER_JOBNAME:-${EXP_ID}}'
+------> submit=sbatch
+------> SUBMITTED=0
+------> this_total_nnodes=ERR
+------> 		No iterative coupling
+------> CHUNK_FILE_fesom=/cav_ksh01.chunk
+--------->  ---------------------------------------------------------------------------------------------------
+--------->  YAML list of fesom: Setting environmental variable AWI_FESOM_YAML for fesom output scheduler
+--------->  ---------------------------------------------------------------------------------------------------
+--------->  ---
+output_schedules:
+  - vars: [restart]
+    unit: m
+    first: 1
+    rate: 1
+  - vars: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]
+    unit: m
+    rate: 1
+  - vars: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
+    unit: d
+    rate: 1
+  - vars: [tso]
+    unit: s
+    rate: 12
+  - vars: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]
+    unit: y
+    first: 1000
+    rate: 1
+--------->  ---------------------------------------------------------------------------------------------------
+--------->  end of YAML environmental variable AWI_FESOM_YAML
+--------->  ---------------------------------------------------------------------------------------------------
+---------> AWI_FESOM_YAML=$'---\noutput_schedules:\n  - vars: [restart]\n    unit: m\n    first: 1\n    rate: 1\n  - vars: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]\n    unit: m\n    rate: 1\n  - vars: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]\n    unit: d\n    rate: 1\n  - vars: [tso]\n    unit: s\n    rate: 12\n  - vars: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]\n    unit: y\n    first: 1000\n    rate: 1'
+---------> COMMAND_fesom=fvom.x
+---------> EXE_fesom=fvom.x
+---------> fesom_BRANCH=master
+---------> LEAPYEAR_fesom=0
+---------> MESH_ROTATED_fesom=0
+---------> NX_fesom=126858
+---------> NY_fesom=1
+---------> ocemod=fesom2.0
+---------> OLD_MESH_FORMAT_fesom=0
+---------> PARENT_DATE_fesom=''
+---------> RESTART_fesom=12
+---------> RESTART_FLAG_fesom=last
+---------> STEPS_PER_DAY_fesom=48
+---------> THREADS_fesom=1
+---------> TIME_DIMENSION_fesom=time
+---------> TIME_STEP_fesom=1800
+---------> use_icesheet_coupling=0
+---------> WITH_PART_FORMAT_fesom=0
+---------> All vars relevant for general_calendar fesom set, proceeding...
+---------> Reading date from date_file...
+---------> CALENDAR_SET_fesom=1
+---------> CALTYPE_fesom=1
+---------> cud=date_file
+---------> CURRENT_DATE_fesom=date_file
+---------> DATE_FILE_fesom=cav_ksh01_fesom.date
+---------> DAYS_SINCE_INITIAL_fesom=366
+---------> df_uc=DATE_FILE
+---------> END_DATE_fesom=20001231
+---------> END_VALS_fesom='2000 12 31'
+---------> FIN_DATE_fesom=20000331
+---------> FIN_VALS_fesom='2000 03 31'
+---------> FORMAT_fesom=''
+---------> from_file=0
+---------> INI_DATE_fesom=20000101
+---------> INI_VALS_fesom='2000 01 01'
+---------> LOG_FILE_fesom=cav_ksh01_fesom_compute.log
+---------> NDAY_fesom=0
+---------> next_chunk_setup=fesom
+---------> NEXT_DATE_fesom=20010101
+---------> NHOUR_fesom=0
+---------> NMINUTE_fesom=0
+---------> NMONTH_fesom=0
+---------> NSECOND_fesom=0
+---------> NYEAR_fesom=1
+---------> PARENT_DATE_fesom=19991231
+---------> PARENT_EXP_ID_fesom=cav_ksh01
+---------> POST_FILE_fesom=cav_ksh01_fesom.postdate
+---------> PREV_DATE_fesom=19991231
+---------> PREV_VALS_fesom='1999 12 31'
+---------> readin='this_current_date this_run_number'
+---------> restarted=0
+---------> RUN_NUMBER_fesom=1
+---------> RUNTIME_fesom=31622400
+---------> RUNTIME_YEARS_fesom=1
+---------> SCRIPT_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts
+---------> seconds=31622400
+---------> START_DATE_fesom=20000101
+---------> START_VALS_fesom='2000 01 01'
+---------> this_datefile=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts/cav_ksh01_fesom.date
+---------> this_run_number=1
+---------> WF_fesom=no_warning
+---------> YEAR_OFFSET_fesom=1
+---------> YR0_fesom=2000
+---------> YR0_INI_fesom=2000
+---------> YR0_PREV_fesom=1999
+---------> YRN_fesom=2000
+---------> YRN_FIN_fesom=2000
+---------> 
+---------> ACTUAL_SCRIPT_DIR is /home/ollie/lackerma/esm_tools/runscripts/fesom2
+---------> SUPPOSED_SCRIPT_DIR is /work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+‘/home/ollie/lackerma/esm_tools/runscripts/fesom2/fesom2-ollie-initial-monthly.run’ -> ‘/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts/fesom2-ollie-initial-monthly.run’
+---------> 		Running from SCRIPT_DIR=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+---------> OLDPWD=/home/ollie/lackerma/esm_tools/runscripts/fesom2
+---------> PWD=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+---------> SUPPOSED_SCRIPT_DIR=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+---------> WORKING_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts
+---------> CONFIG_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/config/
+---------> fesom_DEFAULT_LOG_DIR=''
+---------> i=fesom
+---------> LOG_DIR_fesom=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/log/fesom/
+---------> LOG_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/log/
+---------> POST_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/post_20000101/
+---------> seperate_iterative_coupling_directories=0
+---------> TOPLEVEL=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01
+---------> WORK_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/work/
+---------> CLIMATE_DATA_DIR_fesom=/work/ollie/pool/FESOM//hydrography/
+---------> FORCING_DATA_DIR_fesom=/work/ollie/pool/FESOM//forcing/
+---------> INI_DATA_fesom=/work/ollie/pool/FESOM//pool-data/
+---------> INIECH_fesom=/home/ollie/lackerma/mesh_CORE2_final//tarfilesCORE2/input/echam6
+---------> INIJSB_fesom=/home/ollie/lackerma/mesh_CORE2_final//tarfilesCORE2/input/jsbach
+---------> INI_RESTART_DIR_fesom_protect=/dev/null/
+---------> MESH_DIR_fesom=/home/ollie/lackerma/mesh_CORE2_final/
+------> AWI_FESOM_YAML=$'---\noutput_schedules:\n  - vars: [restart]\n    unit: m\n    first: 1\n    rate: 1\n  - vars: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]\n    unit: m\n    rate: 1\n  - vars: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]\n    unit: d\n    rate: 1\n  - vars: [tso]\n    unit: s\n    rate: 12\n  - vars: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]\n    unit: y\n    first: 1000\n    rate: 1'
+------> CALENDAR_SET_fesom=1
+------> CALTYPE_fesom=1
+------> CLIMATE_DATA_DIR_fesom=/work/ollie/pool/FESOM//hydrography/
+------> COMMAND_fesom=fvom.x
+------> CONFIG_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/config/
+------> cud=date_file
+------> CURRENT_DATE_fesom=date_file
+------> DATE_FILE_fesom=cav_ksh01_fesom.date
+------> DAYS_SINCE_INITIAL_fesom=366
+------> df_uc=DATE_FILE
+------> END_DATE_fesom=20001231
+------> END_VALS_fesom='2000 12 31'
+------> EXE_fesom=fvom.x
+------> fesom_BRANCH=master
+------> fesom_DEFAULT_LOG_DIR=''
+------> FIN_DATE_fesom=20000331
+------> FIN_VALS_fesom='2000 03 31'
+------> FORCING_DATA_DIR_fesom=/work/ollie/pool/FESOM//forcing/
+------> FORMAT_fesom=''
+------> from_file=0
+------> i=fesom
+------> INI_DATA_fesom=/work/ollie/pool/FESOM//pool-data/
+------> INI_DATE_fesom=20000101
+------> INIECH_fesom=/home/ollie/lackerma/mesh_CORE2_final//tarfilesCORE2/input/echam6
+------> INIJSB_fesom=/home/ollie/lackerma/mesh_CORE2_final//tarfilesCORE2/input/jsbach
+------> INI_RESTART_DIR_fesom_protect=/dev/null/
+------> INI_VALS_fesom='2000 01 01'
+------> LEAPYEAR_fesom=0
+------> LOG_DIR_fesom=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/log/fesom/
+------> LOG_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/log/
+------> LOG_FILE_fesom=cav_ksh01_fesom_compute.log
+------> MESH_DIR_fesom=/home/ollie/lackerma/mesh_CORE2_final/
+------> MESH_ROTATED_fesom=0
+------> model=fesom
+------> NDAY_fesom=0
+------> next_chunk_setup=fesom
+------> NEXT_DATE_fesom=20010101
+------> NHOUR_fesom=0
+------> NMINUTE_fesom=0
+------> NMONTH_fesom=0
+------> NSECOND_fesom=0
+------> NX_fesom=126858
+------> NYEAR_fesom=1
+------> NY_fesom=1
+------> ocemod=fesom2.0
+------> OLD_MESH_FORMAT_fesom=0
+------> OLDPWD=/home/ollie/lackerma/esm_tools/runscripts/fesom2
+------> PARENT_DATE_fesom=19991231
+------> PARENT_EXP_ID_fesom=cav_ksh01
+------> POST_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/post_20000101/
+------> POST_FILE_fesom=cav_ksh01_fesom.postdate
+------> PREV_DATE_fesom=19991231
+------> PREV_VALS_fesom='1999 12 31'
+------> PWD=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+------> readin='this_current_date this_run_number'
+------> restarted=0
+------> RESTART_fesom=12
+------> RESTART_FLAG_fesom=last
+------> RUN_NUMBER_fesom=1
+------> RUNTIME_fesom=31622400
+------> RUNTIME_YEARS_fesom=1
+------> SCRIPT_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts
+------> seconds=31622400
+------> seperate_iterative_coupling_directories=0
+------> START_DATE_fesom=20000101
+------> START_VALS_fesom='2000 01 01'
+------> STEPS_PER_DAY_fesom=48
+------> SUPPOSED_SCRIPT_DIR=/work/ollie/lackerma/awicm_pism_tests/cav_ksh01/scripts
+------> this_datefile=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts/cav_ksh01_fesom.date
+------> this_run_number=1
+------> THREADS_fesom=1
+------> TIME_DIMENSION_fesom=time
+------> TIME_STEP_fesom=1800
+------> TOPLEVEL=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01
+------> use_icesheet_coupling=0
+------> WF_fesom=no_warning
+------> WITH_PART_FORMAT_fesom=0
+------> WORK_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/work/
+------> WORKING_DIR=/work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts
+------> YEAR_OFFSET_fesom=1
+------> YR0_fesom=2000
+------> YR0_INI_fesom=2000
+------> YR0_PREV_fesom=1999
+------> YRN_fesom=2000
+------> YRN_FIN_fesom=2000
+---------> cpus_per_task_compute=2
+---------> offset=0
+---------> run_type=compute
+---------> tasks_compute=0
+---------> tasks_last_model=0
+---------> tasks_per_compute_node=36
+---------> tasks_per_core=1
+---------> total_nb_of_nodes=0
+---------> TOTAL_NNODES_compute=0
+---------> undersubscribed=0
+---------> 		Set OMP_NUM_THREADS to 
+---------> 		Set cdo to cdo
+---------> 		Set afterburner to cdo after
+---------> after='cdo after'
+---------> cdo=cdo
+---------> OMP_NUM_THREADS=''
+---------> 
+---------> 		No post processing activated
+---------> postprocess=0
+------> after='cdo after'
+------> cdo=cdo
+------> cpus_per_task_compute=2
+------> offset=0
+------> OMP_NUM_THREADS=''
+------> postprocess=0
+------> run_type=compute
+------> tasks_compute=0
+------> tasks_last_model=0
+------> tasks_per_compute_node=36
+------> tasks_per_core=1
+------> total_nb_of_nodes=0
+------> TOTAL_NNODES_compute=0
+------> undersubscribed=0
+------> 		Actual phases of this job: prep=   ; work=    ; tidy=  resubmit
+------> actual_prep_phases='   '
+------> actual_tidy_phases='  resubmit'
+------> actual_work_phases='    '
+------> clean_work=''
+------> execute_simulation=''
+------> modify_folders=''
+------> move_from_beeond=''
+------> move_to_beeond=''
+------> next_chunk=''
+------> phase=resubmit
+------> prep_folders=''
+------> prep_work=''
+------> submit_post=''
+---------> 
+---------> 		cd /work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts; sbatch --exclusive --partition=mpp --time=00:08:00 --output=cav_ksh01_compute_%j.log --error=cav_ksh01_compute_%j.log --mail-type=NONE --ntasks=0 --job-name=cav_ksh01 /work/ollie/lackerma/awicm_pism_tests//cav_ksh01/scripts/fesom2-ollie-initial-monthly.run -e cav_ksh01  -t compute

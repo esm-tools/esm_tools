@@ -1,0 +1,50 @@
+general:
+    account: "ba0989"
+    setup_name: "awicm"
+    version: "2.0"
+    compute_time: "00:45:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-03-31"
+    base_dir: "/work/ba0989/a270124/esm-experiments/icebergs"
+    nmonth: 1
+    nyear: 0
+awicm:
+    postprocessing: false
+    model_dir: "/pf/a/a270124/awicm-2.0"
+    scenario: "PI-CTRL"
+echam:
+    version: "6.3.04p1"
+    res: T63
+    ini_restart_dir: "/work/ba0989/a270124/restarts_shan/picontrol/"
+    ini_parent_exp_id: "picontrol"
+    ini_parent_date: "$(( ${initial_date} - ${echam.time_step}seconds ))"
+    restart_unit: "months"
+    restart_rate: 1
+    restart_first: 1
+    lresume: 0
+jsbach:
+    dataset: "r0010"
+    dynamic_vegetations: true
+fesom:
+    use_icebergs: false
+    namelist_changes:
+        namelist.config:
+            icebergs:
+                use_icebergs: false
+                use_icesheet_coupling: false
+                ib_num: 10000 
+    
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/pool/data/AWICM/FESOM2/"
+    climate_data_dir: "/pool/data/AWICM/FESOM2/INITIAL/phc3.0/"
+    forcing_data_dir: "/pool/data/AWICM/FESOM2/FORCING/CORE2/"
+    mesh_dir: "/mnt/lustre02/work/ab0995/a270029/fesom2.0/meshes/core2/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    iceberg_dir: "/work/ba1066/a270124/iceberg/ib_10000/"
+    ini_restart_dir: "/work/ba0989/a270124/restarts_shan/picontrol/"
+    ini_parent_exp_id: "picontrol"
+    ini_parent_date: 30991231
+    lresume: 1

@@ -1,0 +1,50 @@
+general:
+    #account: "ba0989"
+    setup_name: "awicm"
+    version: "2.0"
+    compute_time: "00:45:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-03-31"
+    base_dir: "/work/ollie/lackerma/awicm_pism_tests/"
+    nmonth: 0
+    nyear: 1
+awicm:
+    postprocessing: false
+    model_dir: "/home/ollie/lackerma/awicm-2.0"
+    scenario: "PI-CTRL"
+echam:
+    version: "6.3.04p1"
+    res: T63
+    ini_restart_dir: "/work/ollie/sxu/AWICM-2.0/restart_files/picontrol/"
+    ini_parent_exp_id: "picontrol"
+    ini_parent_date: "$(( ${initial_date} - ${echam.time_step}seconds ))"
+    restart_unit: "months"
+    restart_rate: 12
+    restart_first: 1
+    lresume: 0
+jsbach:
+    dataset: "r0010"
+    dynamic_vegetations: true
+fesom:
+    use_icebergs: true
+    namelist_changes:
+        namelist.config:
+            icebergs:
+                use_icebergs: true
+                use_icesheet_coupling: false
+                ib_num: 10000 
+    
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/work/ollie/pool/FESOM/"
+    climate_data_dir: "/home/ollie/lackerma/fesom2_climate/"
+    forcing_data_dir: "/home/ollie/lackerma/fesom2_forcing_dkrz/"
+    mesh_dir: "/work/ollie/sxu/AWICM-2.0/meshes/core2_dkrz/"
+    restart_rate: 12
+    restart_unit: "m"
+    restart_first: 1
+    iceberg_dir: "/work/ollie/lackerma/iceberg/ib_10000/"
+    ini_restart_dir: "/work/ollie/sxu/AWICM-2.0/restart_files/picontrol/"
+    ini_parent_exp_id: "picontrol"
+    ini_parent_date: 30991231
+    lresume: 1

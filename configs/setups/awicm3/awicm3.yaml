@@ -117,7 +117,8 @@ general:
 oifs:
         version: "43r3"
 
-        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
+        execution_command_script: ${executable} -v ecmwf -e ${oifs.input_expid}
+        execution_command: prog_oifs.sh %o %t
 
         pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
@@ -236,6 +237,8 @@ oifs:
 
 fesom:
         version: "2.0"
+        execution_command_script: ${executable} 
+        execution_command: prog_fesom.sh %o %t
         time_step: 1800
         resolution: CORE2
         lresume: false
@@ -352,8 +355,9 @@ xios:
 
 
 rnfmap:
-        #model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
-        #setup_dir: ${general.model_dir}
+        execution_command_script: ${executable} 
+        execution_command: prog_rnfmap.sh %o %t
+
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
 

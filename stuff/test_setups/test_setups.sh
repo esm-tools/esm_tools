@@ -36,14 +36,6 @@ workdir=$WORK/tmp
 # thing left in this script
 account=shk00018
 
-# test a specific version of a tool?
-components=(esm_rcfile esm_runscripts esm_parser)
-branch=(develop develop develop)
-
-# Which version of ESM-Tools shall be tested
-#esm_tools_branch='geomar_awicm3'
-esm_tools_branch='feature/fix_test_script'
-
 # Which plugins shall be installed during testing
 plugins="preprocess postprocess"
 #plugins=""
@@ -55,10 +47,19 @@ plugins="preprocess postprocess"
 # if set to no, the current installation will be used
 test_install='no'
 
+# If test_install=yes: test install a specific version of a tool?
+components=(esm_rcfile esm_runscripts esm_parser)
+branch=(develop develop develop)
+
+# IF test_install=yes: Which version of ESM-Tools shall be tested
+esm_tools_branch='feature/fix_test_script'
+
 # Open run or contained run (i.e. use the virtual env feature?) 
 runtype='--open-run'
 # Open run and using a test install into a venv won't work as expected 
 # as the venv is not used upon resubmission of a job (limitation of ESM-Tools)
+# this only works if you use the release branch of each tool
+# as the venv is generated based on the release branch of each tool.
 [[ "$test_install" == 'yes' ]] && runtype='--contained-run' 
 #
 ###########################################################################

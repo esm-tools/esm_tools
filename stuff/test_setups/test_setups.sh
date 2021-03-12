@@ -231,9 +231,10 @@ for configuration in ${configurations} ; do
     fi    
 
     if [[ -f test_${configuration}.yaml ]]  ; then
-      sed "s#   base_dir:.*#   base_dir: ${workdir}/${configuration}/esm-experiments#" test_${configuration}.yaml >  test_${configuration}_tmp.yaml
-      sed "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}.yaml > test_${configuration}_tmp.yaml
-      sed "s#   account:.*#   account: ${account}#" test_${configuration}.yaml > test_${configuration}_tmp.yaml
+      cp test_${configuration}.yaml test_${configuration}_tmp.yaml
+      sed -i "s#   base_dir:.*#   base_dir: ${workdir}/${configuration}/esm-experiments#" test_${configuration}_tmp.yaml
+      sed -i "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}_tmp.yaml
+      sed -i "s#   account:.*#   account: ${account}#" test_${configuration}_tmp.yaml
       esm_runscripts $runtype -e test_${configuration} test_${configuration}_tmp.yaml
 
       # TODO: esm_runscripts sometimes returns 0 despite an error 

@@ -150,6 +150,7 @@ oifs:
         # 575 would also be ok (575 = 23 * 25)
         # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
         nproc: 36
+        omp_num_threads: 2
         choose_general.resolution:
                 TL159_CORE2:
                         nproc: 36
@@ -243,6 +244,7 @@ fesom:
         resolution: CORE2
         lresume: false
         nproc: 72
+        omp_num_threads: 1
         choose_general.resolution:
                 TCO159_CORE2:
                         nproc: 144
@@ -362,6 +364,7 @@ rnfmap:
         runoff_maps_name: _${fesom.resolution}
 
         nproc: 1
+        omp_num_threads: 1
         time_step: ${oasis3mct.coupling_time_step}
 
         coupling_fields:

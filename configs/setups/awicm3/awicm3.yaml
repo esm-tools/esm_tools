@@ -13,8 +13,8 @@ general:
 
         include_models:
                 - fesom
-                - rnfmap
                 - oifs
+                - rnfmap
                 - oasis3mct
 
         available_versions:
@@ -364,7 +364,7 @@ rnfmap:
         runoff_maps_name: _${fesom.resolution}
 
         nproc: 1
-        omp_num_threads: 1
+        omp_num_threads: ${computer.cores_per_node}
         time_step: ${oasis3mct.coupling_time_step}
 
         coupling_fields:

@@ -806,14 +806,6 @@ choose_version:
                                 NAMRES:
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
-<<<<<<< HEAD
-                                        NRESTS:
-                                                - -1
-                                                - $(( -${simulation_length_seconds} / ${time_step} ))
-
-                                        #NRESTS(1): -1
-                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-=======
 #<<<<<<< HEAD JS: I ditched the head but I did not know which one is final. @ Miguel, pls check when merging
 #                                        NRESTS:
 #                                                - -1
@@ -826,8 +818,7 @@ choose_version:
                                         #        - -1
                                         #        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
                                         NRESTS(1): -${next_step} 
-#>>>>>>> nproca_nprocb_to_nproc
->>>>>>> 6a7100d... status at the end of the day
+#>>>>>>> 6a7100d... status at the end of the day
 
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}

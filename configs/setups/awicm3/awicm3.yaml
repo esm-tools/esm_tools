@@ -567,3 +567,9 @@ oasis3mct:
         restart_out_sources:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
+
+
+#######################################################################################
+# Setting of launcher flags for srun
+computer:
+        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=none"

@@ -36,6 +36,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        taskset: false
 
         reusable_filetypes: [input, bin, src]
 
@@ -118,7 +119,7 @@ oifs:
         version: "43r3"
 
         choose_general.taskset:
-                false: 
+                false:
                         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
                 true:
                         execution_command_script: ${executable} -v ecmwf -e ${oifs.input_expid}
@@ -243,7 +244,7 @@ oifs:
 fesom:
         version: "2.0"
         choose_general.taskset:
-                false: 
+                false:
                         execution_command: ${executable}
                 true:
                         execution_command_script: ${executable}
@@ -366,7 +367,7 @@ xios:
 
 rnfmap:
         choose_general.taskset:
-                false: 
+                false:
                         execution_command: ${executable}
                 true:
                         execution_command_script: ${executable}

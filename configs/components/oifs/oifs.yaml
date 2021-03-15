@@ -530,19 +530,10 @@ log_in_work:
 #======================================================================================
 
 # Indexing logic for WAM restart files
-#<<<<<<< HEAD
-#days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
-#days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
-#days_string: "<--format(%06d)-- ${days_since_initial}"
-#days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
-#======= JS: I ditched the HEAD since I don't know which one is better. @ Miguel, pls check when merging
-days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
-days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
-next_ndays_minus1: "$(( ${next_ndays} - 1 ))"
+days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
+days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
-days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
-next_ndays_minus1_string: "<--format(%06d)-- ${next_ndays_minus1}"
-#>>>>>>> 6a7100d... status at the end of the day
+days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
 this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 
@@ -806,19 +797,12 @@ choose_version:
                                 NAMRES:
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
-#<<<<<<< HEAD JS: I ditched the head but I did not know which one is final. @ Miguel, pls check when merging
-#                                        NRESTS:
-#                                                - -1
-#                                                - $(( -${simulation_length_seconds} / ${time_step} ))
+                                        NRESTS:
+                                                - -1
+                                                - $(( -${simulation_length_seconds} / ${time_step} ))
 
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-#=======
-                                        #NRESTS:
-                                        #        - -1
-                                        #        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
-                                        NRESTS(1): -${next_step} 
-#>>>>>>> 6a7100d... status at the end of the day
 
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}

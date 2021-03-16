@@ -107,7 +107,7 @@ general:
                                 compute_recipe: ${compute_recipe_no_preprocess}
 
         # Load general environment for the whole coupled setup
-        dr_hook_ignore_signals: The Wizard Lizard
+        dr_hook_ignore_signals: -1
         further_reading:
                - oifs/oifs.env.yaml
 
@@ -199,17 +199,10 @@ oifs:
         runtime_environment_changes:
                 add_export_vars:
                         # Turn on FESOM coupling
-                        - 'Something_random=${general.dr_hook_ignore_signals}'
-                        - 'FESOM_USE_CPLNG="active"'
-                        - 'ECE_CPL_NEMO_LIM="false"'
-                        - 'ECE_CPL_FESOM_FESIM="true"'
-                        - 'ECE_AWI_CPL_FESOM="true"'
-
-        compiletime_environment_changes:
-                choose_computer.name:
-                        ollie:
-                                add_export_vars:
-                                        bestbandever: the wizard lizard
+                        FESOM_USE_CPLNG: '"active"'
+                        ECE_CPL_NEMO_LIM: '"false"'
+                        ECE_CPL_FESOM_FESIM: '"true"'
+                        ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
 

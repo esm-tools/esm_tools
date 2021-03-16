@@ -112,8 +112,7 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         
-        # nprocb must be 1
-        # nproca must be not a prime number for OpenIFS parallelisation to work
+        # nproc must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
         #
         # We want to use 1 CPU for runoff mapper
@@ -121,8 +120,7 @@ oifs:
         # (287 = 41 * 7)
         # so that the configuration fills up the compute nodes
         # 575 would also be ok (575 = 23 * 25)
-        nproca: 287
-        nprocb: 1
+        nproc: 287
         
         # By default we turn off ECWAM wave model
         wam: False
@@ -137,16 +135,15 @@ oifs:
         
         choose_resolution:
                 TCO95:
-                     nproca: 287
+                     nproc: 287
                 TCO199:
-                     nproca: 575
+                     nproc: 575
                 TCO399:
-                     nproca: 862                       
+                     nproc: 862                       
 
         choose_general.resolution:
                 TCO95_ORCA05:
-                        nproca: 279
-                        nprocb: 1
+                        nproc: 279
 
 nemo:
         
@@ -204,15 +201,13 @@ xios:
         model_dir: ${general.model_dir}/xios-${nemo.version}
         setup_dir: ${general.model_dir}
         
-        nproca: ${computer.cores_per_node}
-        nprocb: 1
+        nproc: ${computer.cores_per_node}
         
 
 rnfmap: 
         model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
         setup_dir: ${general.model_dir}
-        nproca: 1
-        nprocb: 1 
+        nproc: 1
         time_step: ${oasis3mct.coupling_time_step}       
 
 #########################################################################################
@@ -584,83 +579,65 @@ choose_cores_per_node:
                 choose_resolution:
                         T159_ORCA05:
                                 oifs:
-                                        nproca: 287
-                                        nprocb: 1
+                                        nproc: 287
                                 nemo:
                                         nproca: 24
                                         nprocb: 20
                                 xios:
-                                        nproca: 24
-                                        nprocb: 1
+                                        nproc: 24
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1
                         T511_ORCA05:
                                 oifs:
-                                        nproca: 1536
-                                        nprocb: 1
+                                        nproc: 1536
                                 nemo:
                                         nproca: 16
                                         nprocb: 24
                                 xios:
-                                        nproca: 24
-                                        nprocb: 1
+                                        nproc: 24
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1
         36:
                 choose_resolution:
                         T159_ORCA05:
                                 oifs:
-                                        nproca: 395
-                                        nprocb: 1
+                                        nproc: 395
                                 nemo:
                                         nproca: 22
                                         nprocb: 18
                                 xios:
-                                        nproca: 36
-                                        nprocb: 1
+                                        nproc: 36
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1
                         T511_ORCA05:
                                 oifs:
-                                        nproca: 1512
-                                        nprocb: 1
+                                        nproc: 1512
                                 nemo:
                                         nproca: 22
                                         nprocb: 18
                                 xios:
-                                        nproca: 36
-                                        nprocb: 1
+                                        nproc: 36
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1
         40:
                 choose_resolution:
                         T159_ORCA05:
                                 oifs:
-                                        nproca: 400
-                                        nprocb: 1
+                                        nproc: 400
                                 nemo:
                                         nproca: 20
                                         nprocb: 20
                                 xios:
-                                        nproca: 40
-                                        nprocb: 1
+                                        nproc: 40
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1
                         T511_ORCA05:
                                 oifs:
-                                        nproca: 2000
-                                        nprocb: 1
+                                        nproc: 2000
                                 nemo:
                                         nproca: 20
                                         nprocb: 20
                                 xios:
-                                        nproca: 40
-                                        nprocb: 1
+                                        nproc: 40
                                 rnfmap:
-                                        nproca: 1
-                                        nprocb: 1
+                                        nproc: 1

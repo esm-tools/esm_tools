@@ -55,8 +55,7 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 0
-        nproca: 288
-        nprocb: 1
+        nproc: 288
         perturb: 0 
 
 xios:
@@ -66,5 +65,4 @@ xios:
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
         # 1m surface + pressure levels
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
-        nproca: 96
-        nprocb: 1
+        nproc: 96

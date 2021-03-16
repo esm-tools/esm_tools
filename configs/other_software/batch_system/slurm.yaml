@@ -32,6 +32,7 @@ choose_mail_user:
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
 tasks_flag: "--ntasks=@tasks@"
+nodes_flag: "--nodes=@nodes@"
 partition_flag: "--partition=${partition}"
 time_flag: "--time=${compute_time}"
 additional_flags: ""

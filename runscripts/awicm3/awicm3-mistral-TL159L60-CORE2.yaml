@@ -1,18 +1,21 @@
 general:
     setup_name: "awicm3"
     version: "1.0-deck"
-    compute_time: "00:30:00"
+    account: "ab0246"
+    partition: "compute2"
+    compute_time: "00:02:00"
     initial_date: "1990-01-01"
-    final_date: "1990-01-02"
-    base_dir: "/work/ollie/jstreffi/runtime/awicm-3.1/"
+    final_date: "1995-04-01"
+    base_dir: "/mnt/lustre01/work/ab0246/a270092/runtime/awicm-3.1/"
     nday: 0
     nmonth: 1
     nyear: 0
-    taskset: false #true
+    taskset: true
+    use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/ollie/jstreffi/model_codes/awicm3-1.0-deck/"
+    model_dir: "/pf/a/a270092/esm_tools/awicm3-1.0-deck/"
 
 fesom:
     resolution: "CORE2"
@@ -23,7 +26,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 288
+    nproc: 72
 
 oifs:
     resolution: "TL159"
@@ -33,8 +36,8 @@ oifs:
     wam: false
     lresume: false
     time_step: 3600
-    nproc: 72
-    omp_num_threads: 1
+    nproca: 72
+    omp_num_threads: 2
 
 oasis3mct:
     lresume: false # Set to false to generate the rst files for first leg

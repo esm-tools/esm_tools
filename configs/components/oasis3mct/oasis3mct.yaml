@@ -1,6 +1,3 @@
-# TODO: remove this when control from awicm3.yaml is made possible
-further_reading:
-        - oifs/oifs.env.yaml
 model: oasis3mct
 #model_dir: ${esm_master_dir}/oasis
 cf_name_dir: ${model_dir}

@@ -126,8 +126,8 @@ export_vars:
         # Linear Algebra (LAPACK)
         #########################################################################
         #
-        LAPACK_LIB: '-mkl=sequential'
-        LAPACK_LIB_DEFAULT: '-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+        LAPACK_LIB: "'-mkl=sequential'"
+        LAPACK_LIB_DEFAULT: "'-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
 
         #########################################################################
         # General Software (Perl, usw.)
@@ -141,7 +141,7 @@ export_vars:
         # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
         # it's used by other models it stays in mistral.yaml for now
         #########################################################################
-        OASIS3MCT_FC_LIB: "-L$NETCDFFROOT/lib -lnetcdff"
+        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
         #########################################################################
         # LD_LIBRARY_PATH
@@ -150,9 +150,9 @@ export_vars:
         # to be at the end!!
         #########################################################################
         #
-        LD_LIBRARY_PATH: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
+        LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
         # avoid GLIBCXX_3.4.15 not found error
-        LD_LIBRARY_PATH: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
+        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
         # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
         # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 
@@ -175,7 +175,7 @@ export_vars:
         OMPI_MCA_mtl_mxm_np: 0
 
         MXM_RDMA_PORTS: mlx5_0:1
-        MXM_LOG_LEVEL: FATAL'
+        MXM_LOG_LEVEL: FATAL
         ################################################
 
 choose_useMPI:
@@ -216,7 +216,7 @@ choose_useMPI:
                 cc: mpiicc
                 cxx: mpiicpc
                 add_export_vars:
-                        LAPACK_LIB_DEFAULT: '-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+                        LAPACK_LIB_DEFAULT: '-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
         openmpi:
                 add_module_actions:
                         - "load openmpi/2.0.2p2_hpcx-intel14"

@@ -198,7 +198,7 @@ ensemble_id: 1
 
 orb_switch: False
 orb_mode: "variable_year"
-orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
+orb_iyear: ${start_date!syear}
 
 restart: 1
 
@@ -370,10 +370,7 @@ runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
 ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
-simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
 
-seconds_since_initial: $((${start_date} - ${initial_date}))
-seconds_since_initial_end: $((${end_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
@@ -387,17 +384,35 @@ lresume: false
 massfixer: 1
 nfrmasscon: 12
 
-start_seconds: "$((${start_date} - ${initial_date}))"
+choose_run_number:
+        1:
+                start_seconds: "$((${start_date} - ${initial_date}))"
+                simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
+                seconds_since_initial: $((${start_date} - ${initial_date}))
+                seconds_since_initial_end: $((${end_date} - ${initial_date}))
+                next_seconds: "$((${next_date} - ${initial_date}))"
+                wam_start_date: "${initial_date!syear!smonth!sday}000000"
+        2:
+                start_seconds: "$((${start_date} - ${initial_date}))"
+                simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
+                seconds_since_initial: $((${start_date} - ${initial_date}))
+                seconds_since_initial_end: $((${end_date} - ${initial_date}))
+                next_seconds: "$((${next_date} - ${initial_date}))"
+                wam_start_date: "${initial_date!syear!smonth!sday}000000"
+        "*":
+                simulation_length_seconds: "$(( ${next_date} - ${last_start_date} ))"
+                start_seconds: "$((${start_date} - ${last_start_date}))"
+                seconds_since_initial: $((${start_date} - ${last_start_date}))
+                seconds_since_initial_end: $((${end_date} - ${last_start_date}))
+                next_seconds: "$((${next_date} - ${last_start_date}))"
+                wam_start_date: "${last_start_date!syear!smonth!sday}000000"
+
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
 start_ndays_string: "<--format(%08d)-- ${start_ndays}"
 #end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
-next_seconds: "$((${next_date} - ${initial_date}))"
 next_ndays: "$(( ${next_seconds} / 86400 ))"
 next_ndays_string: "<--format(%08d)-- ${next_ndays}"
-
-# WAMstartdate
-wam_start_date: "${initial_date!syear!smonth!sday}000000"
 
 # ICMCL start and end
 icmcl_end_date: $(( ${next_date} + 1days ))
@@ -535,6 +550,7 @@ days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
 days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
+old_prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond}"
 this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 
 # BEFORE RUN: copy from RESTART to WORK
@@ -553,11 +569,21 @@ restart_in_sources:
 
 # WORK (current leg directory):
 restart_in_in_work:
-        srf: srf${start_ndays_string}0000.*
         rcf: rcf
         waminfo: waminfo
-        BLS: BLS${start_filebase_wam}${prev_wam}.*
-        LAW: LAW${start_filebase_wam}${prev_wam}.*
+        choose_run_number:
+                1:
+                        srf: srf${start_ndays_string}0000.*
+                        BLS: BLS${start_filebase_wam}${prev_wam}.*
+                        LAW: LAW${start_filebase_wam}${prev_wam}.*
+                2:
+                        srf: srf${start_ndays_string}0000.*
+                        BLS: BLS${start_filebase_wam}${prev_wam}.*
+                        LAW: LAW${start_filebase_wam}${prev_wam}.*
+                "*":
+                        srf: srf${start_ndays_string}0000.*
+                        BLS: BLS${start_filebase_wam}${old_prev_wam}.*
+                        LAW: LAW${start_filebase_wam}${old_prev_wam}.*
 
 
 # AFTER RUN: copy WORK to RESTART
@@ -648,10 +674,8 @@ choose_pextra:
                                         NFP3DFS: 25
                                         MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
 
-##
-## would that we with or without ECWAM, sir?
-##
 
+# Turns on/off the wave model WAM inside OpenIFS
 choose_wam:
         1:
                 wam_number: "1"
@@ -673,9 +697,9 @@ choose_wam:
                                         LWCOU2W: ".true."
                         wam_namelist:
                                 NALINE:
-                                        CBPLTDT: "${wam_start_date}" # This was missing and present in oifs.functions
-                                        CDATECURA: "${wam_start_date}" # This was missing and present in oifs.functions
-                                        CDATEF: "${wam_start_date}" # I think this is for generating the output with the correct date stamp
+                                        CBPLTDT: "${wam_start_date}"
+                                        CDATECURA: "${wam_start_date}"
+                                        CDATEF: "${wam_start_date}"
 
                 add_restart_in_files:
                         BLS: BLS
@@ -980,7 +1004,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/change_icm_date.sh ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id} ${run_number}"
                 type: shell
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script

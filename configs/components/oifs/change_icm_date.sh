@@ -16,7 +16,7 @@ outdir=$6
 with_wam=$7
 perturb=$8
 nx=$9
-ensemble_id=${10}
+ensemble_id=$10
 
 if [[ "$(hostname -f)" =~ ollie ]] ; then
     module purge
@@ -31,14 +31,15 @@ elif [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     module load cdo
 
 elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
-    module load intel/19.0.5 impi/2019.5
-     export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
+	 module load intel/19.0.5 impi/2019.5
+	 export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
 elif [[ "$(hostname -f)" =~ juwels ]] ; then
+	 
     # new Intel 2019 settings 
     # self compiled netcdf etc from Sebastian Wahl
     module --force purge
     module use $OTHERSTAGES
-    module load Stages/Devel-2019a    
+    module load Stages/Devel-2019a
     module load Intel/2019.5.281-GCC-8.3.0
     module load ParaStationMPI/5.4.4-1-mt    
     module load Python/3.6.8
@@ -48,9 +49,9 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 else
    echo
-   echo $0 has not been adapted for $(hostname)
-   echo
-   exit 1
+	echo $0 has not been adapted for $(hostname)
+	echo
+	exit 1
 fi 
 
 echo " OpenIFS preprocessing "
@@ -63,17 +64,25 @@ cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "
-echo " Exp ID: $expid "
+echo " InExp ID: $inexpid "
+echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb: $perturb "
+echo " Style: $style"
 
-ndate=$(date -u -d "${inidate}" +%Y%m%d)
+if [[ "x${style}" == "xjesus" ]] ; then
+   ndate=$(date -u -d "${inidate}" +%Y%m%d)
+else
+   ndate=$(date -u -d "${startdate}" +%Y%m%d)
+fi
 initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
-
+endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
 echo " Initial time: $initime "
 echo " Start time: $starttime "
+echo " End time: $endtime "
 echo " "
 
 echo " * Change dataDate in files: "
@@ -82,18 +91,22 @@ echo " $files "
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
-if [ -f $old ]; then 
-    grib_set -s dataDate=$ndate $old $new 
-    echo " Made new file: " $new " with date " $ndate 
-else     
-    echo " Could not find file " $old 
+if [ -f $old ]; then                                                                                                   
+    cp $old $old\_ori
+    rm $old                                              
+    grib_set -s dataDate=$ndate $old\_ori $new
+    echo " Made new file: " $new " with date " $ndate                                                                                                                 
+else                                                                                                                                                                 
+    echo " Could not find file " $old                                                                                                                                 
     exit  
 fi 
 
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -137,7 +150,9 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -153,10 +168,12 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         
         ## new file
         new=${outdir}/$file
-   
+
         if [ -f $old ]; then
+            cp $old $old\_ori
+            rm $old 
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new
+            grib_set -s dataDate=$ndate $old\_ori $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old
@@ -164,7 +181,4 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         fi
     done
 fi
-
-
-
 

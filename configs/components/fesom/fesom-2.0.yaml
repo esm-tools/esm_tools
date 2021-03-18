@@ -100,6 +100,8 @@ choose_resolution:
                 nproc: 288
         GLOB:
                 nx: 830305
+        D3:
+                nx: 3160340
 
 restart_in_files:
         oce_restart: oce_restart

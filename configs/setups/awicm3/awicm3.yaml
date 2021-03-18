@@ -268,7 +268,6 @@ fesom:
 
         pool_dir: "${general.pool_dir}/fesom2/"
         mesh_dir: "${pool_dir}/core2_meanz/"
-        nam_sbc_dir: /work/ollie/dsein/input/forcing/CORE2
 
         restart_unit: "d"
         leapyear: True

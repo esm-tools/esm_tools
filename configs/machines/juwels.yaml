@@ -10,7 +10,7 @@ accounting: true
 #compiler_mpi: intel2019_impi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2019_parastation
+compiler_mpi: intel2020_psmpi2020
 iolibraries: geomar_libs
 
 # slurm setup
@@ -68,6 +68,29 @@ export_vars:
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
+
+   intel2020_psmpi2020:
+      add_module_actions:
+        - "load Stages/2020"
+        - "load Intel/2020.2.254-GCC-9.3.0"
+        - "load ParaStationMPI/5.4.7-1"
+        - "load CMake/3.18.0"
+        - "load Python/3.8.5"
+        - "load imkl/2020.2.254"
+        - "load netCDF-Fortran/4.5.3"
+        - "load netCDF/4.7.4"
+        - "load Perl/5.32.0"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
+        NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
 
    intel2019_impi2019:
       add_module_actions:

@@ -267,7 +267,6 @@ fesom:
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
-        mesh_dir: "${pool_dir}/core2_meanz/"
 
         restart_unit: "d"
         leapyear: True

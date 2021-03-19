@@ -15,12 +15,12 @@ general:
 
 awicm3:
     postprocessing: false
-    model_dir: "/pf/a/a270092/esm_tools/awicm3-1.0-deck/"
+    model_dir: "/pf/a/a270092/model_codes/awicm3-1.0-deck/"
 
 fesom:
     resolution: "CORE2"
+    mesh_dir: "${pool_dir}/core2_meanz/"
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
-    #mesh_dir: "${pool_dir}/core2_meanz/"
     restart_rate: 1
     restart_unit: "m"
     restart_first: 1

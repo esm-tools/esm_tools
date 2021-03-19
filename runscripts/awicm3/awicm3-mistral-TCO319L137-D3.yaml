@@ -16,20 +16,20 @@ awicm3:
 
 fesom:
     resolution: "D3"
-    #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
-    #mesh_dir: "${pool_dir}/core2_meanz/"
     restart_rate: 1
     restart_unit: "d"
     restart_first: 1
     lresume: false
-    time_step: 1800
+    time_step: 100
     nproc: 576
+    namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/awicm-3-D3test/"
+
 
 oifs:
     resolution: "TCO319"
     levels: "L137"
     lresume: false
-    time_step: 3600
+    time_step: 450
     nproc: 576
     prepifs_expid: a0iw
     input_expid: awi3

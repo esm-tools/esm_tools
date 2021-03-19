@@ -107,8 +107,10 @@ general:
                 true:   # If restart, use no preprocessing:
                                 compute_recipe: ${compute_recipe_no_preprocess}
 
-        # TODO: add here the further_reading of the oifs environment for compilation
-        # when that option works
+        # Load general environment for the whole coupled setup
+        dr_hook_ignore_signals: -1
+        further_reading:
+               - oifs/oifs.env.yaml
 
 
 #########################################################################################
@@ -200,10 +202,10 @@ oifs:
         runtime_environment_changes:
                 add_export_vars:
                         # Turn on FESOM coupling
-                        - 'FESOM_USE_CPLNG="active"'
-                        - 'ECE_CPL_NEMO_LIM="false"'
-                        - 'ECE_CPL_FESOM_FESIM="true"'
-                        - 'ECE_AWI_CPL_FESOM="true"'
+                        FESOM_USE_CPLNG: '"active"'
+                        ECE_CPL_NEMO_LIM: '"false"'
+                        ECE_CPL_FESOM_FESIM: '"true"'
+                        ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
 
@@ -341,12 +343,11 @@ fesom:
         compiletime_environment_changes:
                 choose_computer.name:
                         mistral:
-                                # TODO: remove the double add_ when environment is fixed
-                                add_add_export_vars:
-                                        - branch_deck: d4139d9
+                                add_export_vars:
+                                        branch_deck: d4139d9
                         "*":
                                 add_export_vars:
-                                        - branch_deck: juwels_chunk_io
+                                        branch_deck: juwels_chunk_io
 
 further_reading:
         - fesom/fesom-2.0.io.yaml

@@ -91,6 +91,7 @@ choose_compiler_mpi:
         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
+        ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020
 
    intel2019_impi2019:
       add_module_actions:

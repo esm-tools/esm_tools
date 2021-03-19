@@ -197,16 +197,15 @@ oifs:
         # preprocessing and postprocessing is done via shell scripts for simplicity. We preprocess the first leg to have arbitrary inital dates. We don't need to do that anymore afterwards, therefore we skrip leg two. Starting from third leg we preprocess to trick OpenIFS into thinking it's in the second leg forever. This way we circumvent issues associated with long simulations (memory and runtime excursions)
         preprocess:
                 preprocess_shell:
-
-                        choose_run_number: 
+                        choose_general.run_number: 
                                 1:
-                                        method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${thisrun_input_dir}/ ${oifs.input_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday}  ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+                                        method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${thisrun_input_dir}/ ${oifs.input_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
                                         type: shell
                                 2:
                                         method: "${general.esm_function_dir}/components/oifs/skip.sh"
                                         type: shell
                                 "*":
-                                        method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${thisrun_input_dir}/ ${oifs.input_expid} ${oifs.input_expid} ${last_start_date!syear!smonth!sday} ${start_date!syear!smonth!sday}  ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}; 
+                                        method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${thisrun_input_dir}/ ${oifs.input_expid} ${oifs.input_expid} ${last_start_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}; 
                                                 ${general.esm_function_dir}/components/oifs/change_rcf_date.sh ${thisrun_input_dir}/ ${last_start_date!syear!smonth!sday} ${last_start_date!sday} ${oifs.time_step} ${oifs.seconds_since_initial} ${oifs.days_since_initial} ${oifs.wam}"
                                         type: shell
         # Not yet implemented!!

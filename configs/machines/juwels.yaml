@@ -45,17 +45,17 @@ pool_directories:
 # choose block
 choose_jobtype:
         tidy_and_resubmit:
-                partition: devel
+                partition: batch
         post:
-                partition: devel
+                partition: batch
         compute:
-                partition: devel
+                partition: batch
 
 choose_partition:
         batch:
-                cores_per_node: 24
+                cores_per_node: 48
         devel:
-                cores_per_node: 24
+                cores_per_node: 48
 
 # basic modules and export vars needed
 # for all compiler and I/O settings

@@ -276,6 +276,9 @@ fesom:
         model_tag: "awicm-3-deck"
         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
 
+        # Move in the future to fesom-2.0.yaml
+        mesh_dir: "${pool_dir}/${resolution}/"
+
         surf_relax_s: "0.0"
 
         namelist_changes:

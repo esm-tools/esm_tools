@@ -1,0 +1,86 @@
+general:
+    setup_name: "awiesm"
+    version: "2.1"
+    compute_time: "00:15:00"
+    initial_date: "2000-01-01"
+    final_date: "4500-12-31"
+    base_dir: "/work/ollie/lackerma/AWICM2_PISM"
+    nmonth: 0
+    nyear: 1
+    use_venv: False
+    clean_old_rundirs_except: 2
+    clean_old_rundirs_keep_every: 25
+    description: >
+            This experiment is the Last Glacial Maximum control run for AWI-ESM
+            2.1. It uses Tarasov et al.'s GLAC-1D reconstruction at 21.0 ka BP
+            for ice sheet geometry. Greenhouse gas forcing is extracted from
+            Köhler et al., ESSD 2018. (doi 10.1594/PANGAEA.871273). Orbital
+            forcing follows Berger, 1978. The simulation initializes from a
+            present-day state.
+
+awiesm:
+    postprocessing: false
+    model_dir: "/home/ollie/lackerma/awiesm-2.1"
+
+echam:
+    lresume: 0
+    ini_parent_exp_id: LGM_Ctrl_001
+    fake_initial_date: "2561-01-01"
+    ini_parent_date: "$(( ${fake_initial_date} - ${echam.time_step}seconds ))"
+    ini_parent_dir: "/work/ba0989/a270124/esm-experiments/icebergs/antarctic/restart_files_paul_lgm/echam/"
+    restart_rate: 1
+    restart_unit: "years"
+    nprocar: 0
+    nprocbr: 0
+    add_input_sources:
+            jansurf: "/work/ba0989/a270077/PalModII/phase_space_analysis/boundary_conditions/GLAC1D_LGM/echam/T63CORE2_jan_surf.nc"
+    namelist_changes:
+            namelist.echam:
+                    parctl:
+                            nprocar: 0
+                            nprocbr: 0
+                    runctl:
+                            l_orbvsop87: false
+                            default_output: true
+                    radctl:
+                            # NOTE(PG): From Peter Köhler:
+                            co2vmr: 187.240e-6
+                            ch4vmr: 377.910e-9
+                            n2ovmr: 206.460e-9
+                            # NOTE(PG): From the Berger program:
+                            cecc: 0.018994
+                            cobld: 22.9449
+                            clonp: 294.239
+                            yr_perp: "remove_from_namelist"
+
+jsbach:
+        add_input_sources:
+            jsbach_1850: "/work/ba0989/a270077/PalModII/phase_space_analysis/boundary_conditions/GLAC1D_LGM/jsbach/jsbach_T63CORE2_11tiles_5layers_1850_dynveg.nc"
+        dynamic_vegetations: true
+fesom:
+    use_icebergs: true
+    iceberg_dir: "/work/ba0989/a270124/esm-experiments/icebergs/antarctic/icb_test/"
+    resolution: "CORE2_LGM"
+    add_choose_resolution:
+            CORE2_LGM:
+                    nx: 93233 
+                    mesh_dir: "/work/ba1066/a270124/mesh_CORE2_GLAC1D_LGM/"
+                    nproc: 288
+    pool_dir: "/pool/data/AWICM/FESOM2/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    add_required_plugins:
+            - "git+https:/gitlab.awi.de/paleodyn/Projects/PalMod/gfw_creator.git"
+
+    namelist_changes:
+            namelist.config:
+                    icebergs:
+                            use_icebergs: true
+                            use_icesheet_coupling: false
+                            ib_num: 44648
+                            steps_per_ib_step: 16
+                    paths:
+                            ClimateDataPath: "/work/ba0989/a270077/PalModII/phase_space_analysis/nonstandard_pool_files/fesom/hydrography/"
+                    geometry:
+                            force_rotation: true

@@ -50,7 +50,7 @@ compiler_mpi: intel2019_impi2019
 #iolibraries: system_libs
 #
 # for FOCIOIFS use
-#compiler_mpi: intel2019_ompi
+# compiler_mpi: intel2019_ompi
 # for FOCI use
 # compiler_mpi: intel2019_impi2019
 # for both FOCI and FOCIOIFS use

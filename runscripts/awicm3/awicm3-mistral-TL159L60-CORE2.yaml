@@ -10,7 +10,8 @@ general:
     nday: 3
     nmonth: 0
     nyear: 0
-    taskset: true
+    taskset: false
+    hyperthreading_flag: true  # We are not acutally using hyperthreading, but openmp instead. which needs the same modification to the sbatch command.
     use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 awicm3:

@@ -12,11 +12,12 @@ inexpid=$2
 outexpid=$3
 inidate=$4
 startdate=$5
-outdir=$6
-with_wam=$7
-perturb=$8
-nx=$9
-ensemble_id=$10
+with_wam=$6
+perturb=$7
+nx=$8
+ensemble_id=${9}
+
+outdir=$indir
 
 if [[ "$(hostname -f)" =~ ollie ]] ; then
     module purge

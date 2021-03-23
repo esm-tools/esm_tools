@@ -392,6 +392,7 @@ choose_general.run_number:
                 seconds_since_initial_end: $((${end_date} - ${initial_date}))
                 next_seconds: "$((${next_date} - ${initial_date}))"
                 wam_start_date: "${initial_date!syear!smonth!sday}000000"
+                prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
         2:
                 start_seconds: "$((${start_date} - ${initial_date}))"
                 simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
@@ -399,13 +400,15 @@ choose_general.run_number:
                 seconds_since_initial_end: $((${end_date} - ${initial_date}))
                 next_seconds: "$((${next_date} - ${initial_date}))"
                 wam_start_date: "${initial_date!syear!smonth!sday}000000"
+                prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
         "*":
                 simulation_length_seconds: "$(( ${next_date} - ${last_start_date} ))"
-                start_seconds: "$((${start_date} - ${last_start_date}))"
+                start_seconds: "$((${next_date} - ${last_start_date}))"
                 seconds_since_initial: $((${start_date} - ${last_start_date}))
                 seconds_since_initial_end: $((${end_date} - ${last_start_date}))
                 next_seconds: "$((${next_date} - ${last_start_date}))"
                 wam_start_date: "${last_start_date!syear!smonth!sday}000000"
+                prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond"
 
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
@@ -549,8 +552,6 @@ days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
 days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
 days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
-prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-old_prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond}"
 this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
 
 # BEFORE RUN: copy from RESTART to WORK
@@ -571,19 +572,9 @@ restart_in_sources:
 restart_in_in_work:
         rcf: rcf
         waminfo: waminfo
-        choose_general.run_number:
-                1:
-                        srf: srf${start_ndays_string}0000.*
-                        BLS: BLS${start_filebase_wam}${prev_wam}.*
-                        LAW: LAW${start_filebase_wam}${prev_wam}.*
-                2:
-                        srf: srf${start_ndays_string}0000.*
-                        BLS: BLS${start_filebase_wam}${prev_wam}.*
-                        LAW: LAW${start_filebase_wam}${prev_wam}.*
-                "*":
-                        srf: srf${start_ndays_string}0000.*
-                        BLS: BLS${start_filebase_wam}${old_prev_wam}.*
-                        LAW: LAW${start_filebase_wam}${old_prev_wam}.*
+        srf: srf${start_ndays_string}0000.*
+        BLS: BLS${start_filebase_wam}${prev_wam}.*
+        LAW: LAW${start_filebase_wam}${prev_wam}.*
 
 
 # AFTER RUN: copy WORK to RESTART

@@ -19,12 +19,12 @@ restart_in_files:
     restart: restart
 restart_in_sources:
     restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
-restart_in_in_workdir:
+restart_in_in_work:
     restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
 
 restart_out_files:
     restart: restart
-restart_out_in_workdir:
+restart_out_in_work:
     restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"
 restart_out_sources:
     restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"

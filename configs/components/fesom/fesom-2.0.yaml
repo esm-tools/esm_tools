@@ -16,6 +16,8 @@ choose_version:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     - github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
+  2.0-master:
+    branch: master
   2.0-esm_interface:
     branch: using_esm-interface_yac
     destination: fesom-2.0

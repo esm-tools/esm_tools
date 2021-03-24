@@ -18,9 +18,13 @@ general:
                 - oasis3mct
 
         available_versions:
+        - '1.0-master'
         - '1.0-deck'
         - '1.0'
         choose_version:
+          1.0-master:
+            couplings:
+            - fesom-2.0-master+oifs-43r3-master
           1.0-deck:
             couplings:
             - fesom-2.0+oifs-43r3
@@ -30,7 +34,7 @@ general:
             add_include_models:
             - xios
 
-        version: "1.0-deck"
+        versions: "1.0-deck"
         scenario: "PI-CTRL"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
@@ -196,6 +200,8 @@ oifs:
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
                 "1.0-deck":
                         with_xios: false
+                "1.0-master":
+                        with_xios: false
 
         with_xios: false
 
@@ -208,7 +214,6 @@ oifs:
                         ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
-
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
 
         coupling_fields:
@@ -273,8 +278,6 @@ fesom:
         restart_unit: "d"
         leapyear: True
 
-        model_tag: "awicm-3-deck"
-        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
 
         # Move in the future to fesom-2.0.yaml
         mesh_dir: "${pool_dir}/${resolution}/"
@@ -294,13 +297,20 @@ fesom:
         # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
         # old experiments. 5e-3 is a better value so it is used for XIOS version
         choose_general.version:
+                "1.0-master":
+                        model_tag: "awicm-3-master"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                 "1.0-deck":
+                        model_tag: "awicm-3-deck"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                         add_namelist_changes:
                                 namelist.cvmix:
                                         param_kpp:
                                                 kpp_kv0: 5e-2
                 # Use better oce_tra parameters for the XIOS version that match the fesom-bounded namelist
                 "1.0":
+                        model_tag: "awicm-3-deck"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:

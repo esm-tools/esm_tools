@@ -3,10 +3,10 @@ general:
     version: "1.0-deck"
     compute_time: "00:30:00"
     initial_date: "1990-01-01"
-    final_date: "1990-01-02"
+    final_date: "1990-01-05"
     base_dir: "/work/ollie/jstreffi/runtime/awicm-3.1/"
-    nday: 0
-    nmonth: 1
+    nday: 1
+    nmonth: 0
     nyear: 0
     taskset: false #true
 
@@ -19,11 +19,11 @@ fesom:
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
     mesh_dir: "${pool_dir}/core2_meanz/"
     restart_rate: 1
-    restart_unit: "m"
+    restart_unit: "d"
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 288
+    nproc: 72
 
 oifs:
     resolution: "TL159"

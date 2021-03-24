@@ -527,7 +527,10 @@ Two types of `yaml` elements can be nested inside an environment changes:
 
 * Use ``add_export_vars`` to export one or a list of environment variables. Shell
   command ``export`` is not needed here, just define the variable as
-  ``VAR_NAME=VAR_VALUE`` or as a nested dictionary.
+  ``VAR_NAME: VAR_VALUE`` or as a nested dictionary.
+
+For more information about ``esm_environment`` package, please check
+:ref:`esm_environment:ESM Environment`.
 
 **Example**
 

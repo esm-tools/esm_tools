@@ -229,12 +229,12 @@ config_sources:
 
 compiletime_environment_changes:
         add_export_vars:
-                - taken2from:      fesom2_compile
+                taken2from:      fesom2_compile
 
 runtime_environment_changes:
         add_export_vars:
-                - takenfrom:      fesom2_run
-                - taken2from:     fesom2_ru
+                takenfrom:      fesom2_run
+                taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"

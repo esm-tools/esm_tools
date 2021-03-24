@@ -238,9 +238,6 @@ Cleanup of ``run_`` directories
 
 .. automethod:: esm_runscripts.tidy.clean_run_dir
 
-.. check that the above is changed by the merge of develop in release 5.0, so that it includes
-   the delete file functionality.
-
 Debugging an Experiment
 -----------------------
 

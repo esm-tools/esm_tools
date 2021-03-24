@@ -551,4 +551,6 @@ oasis3mct:
 #######################################################################################
 # Setting of launcher flags for srun
 computer:
-        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=none"
+        choose_general.taskset:
+                true:
+                        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"

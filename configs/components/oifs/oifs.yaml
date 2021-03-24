@@ -402,13 +402,13 @@ choose_general.run_number:
                 wam_start_date: "${initial_date!syear!smonth!sday}000000"
                 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
         "*":
+                start_seconds: "$((${start_date} - ${last_start_date}))"
                 simulation_length_seconds: "$(( ${next_date} - ${last_start_date} ))"
-                start_seconds: "$((${next_date} - ${last_start_date}))"
                 seconds_since_initial: $((${start_date} - ${last_start_date}))
                 seconds_since_initial_end: $((${end_date} - ${last_start_date}))
                 next_seconds: "$((${next_date} - ${last_start_date}))"
                 wam_start_date: "${last_start_date!syear!smonth!sday}000000"
-                prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond"
+                prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond}"
 
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"

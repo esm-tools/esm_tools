@@ -52,16 +52,17 @@ module_actions:
         - "load cdo nco"
         - "load python/3.9.1"
         - "list"
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+
+FC: ftn
+F77: ftn
+MPIFC: ftn
+MPICC: cc
+CC: cc
+CXX: cc
 
 export_vars:
         LC_ALL: en_US.UTF-8
-
-        FC: ${fc}
-        F77: ${f77}
-        MPIFC: ${mpifc}
-        MPICC: ${mpicc}
-        CC: ${cc}
-        CXX: ${cxx}
 
         HDF5ROOT: $HDF5_ROOT
 
@@ -94,6 +95,13 @@ choose_useMPI:
 
                 add_export_vars:
                         MPIROOT: ${I_MPI_ROOT}/intel64
+        craympi:
+                FC: ftn
+                F77: ftn
+                MPIFC: ftn
+                MPICC: cc
+                CC: cc
+                CXX: cc
 
 further_reading:
         - batch_system/slurm.yaml

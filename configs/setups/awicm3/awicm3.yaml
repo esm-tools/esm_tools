@@ -47,6 +47,8 @@ general:
                         pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
+                aleph:
+                        pool_dir: "/proj/awi/jstreffi/input"
 
         compute_recipe_with_preprocess:
             - "venv_bootstrap"

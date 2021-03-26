@@ -46,7 +46,9 @@ useMPI: craympi
 
 module_actions:
         - "purge"
-        - "PrgEnv-cray/6.0.4"
+        - "load PrgEnv-cray/6.0.4"
+        - "load cray-mpich/7.7.3"
+        - "load craype-x86-skylake"
         - "load cmake"
         - "load cray-netcdf-hdf5paralle"
         - "load cdo nco"
@@ -59,7 +61,7 @@ F77: ftn
 MPIFC: ftn
 MPICC: cc
 CC: cc
-CXX: cc
+CXX: CC
 
 export_vars:
         LC_ALL: en_US.UTF-8
@@ -84,8 +86,25 @@ export_vars:
 choose_useMPI:
         intelmpi: #Only work on if we get stuck badly with CRAY
                 add_module_actions:
-                        - "unload intel.mpi"
-                        - "load intel.mpi"
+                        - "unload craype-x86-skylake"
+                        - "unload PrgEnv-pgi"
+                        - "unload PrgEnv-intel"
+                        - "unload PrgEnv-cray"
+                        - "unload PrgEnv-gnu"
+                        - "unload cray-netcdf"
+                        - "unload cray-hdf5"
+                        - "unload cray-parallel-netcdf"
+                        - "unload papi"
+                        - "load PrgEnv-intel"
+                        - "load craype-x86-skylake"
+                        - "load craype-hugepages2M"
+                        - "unload perftools-base/7.0.4"
+                        - "load cray-netcdf/4.6.1.3"
+                        - "load cray-hdf5/1.10.2.0"
+                        - "load cray-parallel-netcdf/1.11.1.1"
+                        - "load papi/5.6.0.4"
+                        - "load gridftp/6.0"
+
                 fc: '"mpiifort -mkl"'
                 f77: '"mpiifort -mkl"'
                 mpifc: mpiifort
@@ -101,7 +120,7 @@ choose_useMPI:
                 MPIFC: ftn
                 MPICC: cc
                 CC: cc
-                CXX: cc
+                CXX: CC
 
 further_reading:
         - batch_system/slurm.yaml

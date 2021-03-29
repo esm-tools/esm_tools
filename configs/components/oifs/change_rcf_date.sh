@@ -38,7 +38,7 @@ CSTEP=$(printf $(($((SECONDS_SINCE_INITAL))/$TIMESTEP)))
 sed -i `grep -n "CSTEP" ${WORKDIR}/rcf|cut -d ':' -f 1`"c \ CSTEP   = \" $CSTEP\"\," ${WORKDIR}/rcf
 #sed -i "s/CSTEP.*/CSTEP = \"$(($((SECONDS_SINCE_INITAL))/$((TIMESTEP))))\",/" ${WORKDIR}/rcf 
 # CTIME is days since origin
-CTIME=$(printf '%08d' $(($DAYS_SINCE_INITIAL+1)))0000
+CTIME=$(printf '%08d' $(($DAYS_SINCE_INITIAL)))0000
 sed -i `grep -n "CTIME" ${WORKDIR}/rcf|cut -d ':' -f 1`"c \ CTIME   = \"$(printf '%-9s' $CTIME)  \"\," ${WORKDIR}/rcf
 #sed -i "s/CTIME.*/CTIME = \"${NEWDAYS_FMT}\",/" ${WORKDIR}/rcf
 

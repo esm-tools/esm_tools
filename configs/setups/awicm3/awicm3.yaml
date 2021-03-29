@@ -210,7 +210,7 @@ oifs:
                         preprocess:
                                 preprocess_shell:
                                         method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${thisrun_input_dir}/ ${oifs.input_expid} ${oifs.input_expid} ${last_start_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}; 
-                                                ${general.esm_function_dir}/components/oifs/change_rcf_date.sh ${thisrun_input_dir}/ ${last_start_date!syear!smonth!sday} ${last_start_date!sday} ${oifs.time_step} ${oifs.seconds_since_initial} ${oifs.days_since_initial} ${oifs.wam}"
+                                                ${general.esm_function_dir}/components/oifs/change_rcf_date.sh ${thisrun_restart_in_dir}/ ${last_start_date!syear!smonth!sday} ${last_start_date!sday} ${oifs.time_step} ${oifs.seconds_since_initial} ${oifs.start_ndays} ${oifs.wam}"
                                         type: shell
         # Not yet implemented!!
         #postprocess:

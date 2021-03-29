@@ -237,8 +237,8 @@ compiletime_environment_changes:
 
 runtime_environment_changes:
         add_export_vars:
-                - takenfrom:      fesom2_run
-                - taken2from:     fesom2_ru
+                takenfrom:      fesom2_run
+                taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"

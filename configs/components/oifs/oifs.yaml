@@ -409,10 +409,14 @@ choose_general.run_number:
                 next_seconds: "$((${next_date} - ${last_start_date}))"
                 wam_start_date: "${last_start_date!syear!smonth!sday}000000"
                 prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond}"
+                start_ndays_prev: "${prev_run.oifs.start_ndays}"
 
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
+start_ndays_prev: 0
 start_ndays: "$(( ${start_seconds} / 86400 ))"
+start_ndays_in_source: "$(( ${start_ndays} + ${start_ndays_prev} ))"
 start_ndays_string: "<--format(%08d)-- ${start_ndays}"
+start_ndays_in_source_string: "<--format(%08d)-- ${start_ndays_in_source}"
 #end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
 next_ndays: "$(( ${next_seconds} / 86400 ))"
 next_ndays_string: "<--format(%08d)-- ${next_ndays}"
@@ -562,9 +566,9 @@ restart_in_files:
 
 # RESTART (restart files from prev. leg in the general exp dir):
 restart_in_sources:
-        srf: ${in_date_folder}/srf${start_ndays_string}0000.*
+        srf: ${in_date_folder}/srf${start_ndays_in_source_string}0000.*
         rcf: ${in_date_folder}/rcf
-        waminfo: ${in_date_folder}/waminfo${start_ndays_string}
+        waminfo: ${in_date_folder}/waminfo${start_ndays_in_source_string}
         BLS: ${in_date_folder}/BLS${start_filebase_wam}${prev_wam}.*
         LAW: ${in_date_folder}/LAW${start_filebase_wam}${prev_wam}.*
 

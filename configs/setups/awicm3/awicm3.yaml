@@ -221,6 +221,8 @@ oifs:
                     grid: atma
                 A_Runoff:
                     grid: atmr
+                A_Calving:
+                    grid: atmr
 
         input_files:
                 ICMGG_INIT: ICMGG_INIT
@@ -422,10 +424,6 @@ oasis3mct:
                 - oifs
                 - rnfmap
 
-        choose_general.version:
-                "1.0":
-                        add_process_ordering:
-                                - xios
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -451,7 +449,10 @@ oasis3mct:
 
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.version:
-                '1.0-deck'
+                "1.0":
+                        add_process_ordering:
+                                - xios
+                '1.0-deck':
                         coupling_target_fields:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
@@ -462,7 +463,7 @@ oasis3mct:
                                         - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                '*'
+                '*':
                         coupling_target_fields:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'

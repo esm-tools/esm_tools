@@ -288,6 +288,8 @@ coupling_fields:
                 grid: feom
         hydr_oce:
                 grid: feom
+        enth_oce:
+                grid: feom
 
 grids:
         feom:

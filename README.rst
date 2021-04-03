@@ -17,7 +17,7 @@ ollie.awi.de::
     $ module load git
     $ module load python3
 
-mistral.awi.de::
+mistral.dkrz.de::
 
     $ module load git
     $ module load anaconda3

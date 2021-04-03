@@ -59,7 +59,7 @@ for config in configs:
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
                     elif key=="Name" or key=="name":
-                        name = key
+                        name = metadata[key]
                     else:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:

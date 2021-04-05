@@ -45,21 +45,32 @@ old_mesh_format: false
 with_part_format: false
 time_dimension: "time"
 
-pool_dir: ${computer.pool_directories.pool}
-#model_dir: "${esm_master_dir}/fesom-${version}/"
+# pool_dir: ${computer.pool_directories.pool}
+
+
+choose_computer.name:
+    ollie:    
+        pool_dir: "/work/ollie/clidyn/"      
+        climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
+        forcing_data_dir: "${pool_dir}/forcing/"
+        mesh_base_dir: "/work/ollie/clidyn/FESOM2/meshes/"
+    mistral:
+        pool_dir: "/pool/data/AWICM/FESOM2/"      
+        climate_data_dir: "${pool_dir}/INITIAL/phc3.0/FORCING/"
+        forcing_data_dir: "${pool_dir}/forcing/"
+        mesh_base_dir: "/pool/data/AWICM/FESOM2/MESHES_FESOM2.1/"
+
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-climate_data_dir: "${pool_dir}/hydrography/"
-forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/fesom2.1/"
-
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
 
+
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-asforcing: CORE2
+asforcing: JRA55
 
 namelists:
         - namelist.config
@@ -73,18 +84,193 @@ namelists:
 choose_asforcing:
         CORE2:
                 leapyear: false
+                forcing_folder: "CORE2"
+                
+                Ce_atm_oce: 1.75e-3
+                Ch_atm_oce: 1.75e-3
+                Cd_atm_oce: 1.0e-3
+                Ce_atm_ice: 1.75e-3
+                Ch_atm_ice: 1.75e-3
+                Cd_atm_ice: 1.2e-3
+            
+                AOMIP_drag_coeff: False
+                ncar_bulk_formulae: True
+                ncar_bulk_z_wind: 10.0
+                ncar_bulk_z_tair: 10.0
+                ncar_bulk_z_shum: 10.0
+                
+                xwind_prefix: "u_10."
+                ywind_prefix: "v_10."
+                humi_prefix: "q_10."
+                qsr_prefix: "ncar_rad."
+                qlw_prefix: "ncar_rad."
+                tair_prefix: "t_10."
+                prec_prefix: "ncar_precip."
+                snow_prefix: "ncar_precip."
+                mslp_prefix: "slp."
+                
+                nm_xwind_var: "U_10_MOD"
+                nm_ywind_var: "V_10_MOD"
+                nm_humi_var: "Q_10_MOD"
+                nm_qsr_var: "SWDN_MOD"
+                nm_qlw_var: "LWDN_MOD"
+                nm_tair_var: "T_10_MOD"
+                nm_prec_var: "RAIN"
+                nm_snow_var: "SNOW"
+                nm_mslp_var: "SLP"
+                
+                nm_nc_iyear: 1948
+                nm_nc_imm: 1
+                nm_nc_idd: 1
+                nm_nc_freq: 1
+                nm_nc_tmid: 1
+                l_xwind: True
+                l_ywind: True
+                l_humi: True
+                l_qsr: True
+                l_qlw: True
+                l_tair: True
+                l_prec: True
+                l_mslp: False
+                l_cloud: False
+                l_snow: True
+                
+                runoff_file: "runoff.nc"
+                sss_data_file: "PHC2_salx.nc"
+                
+                runoff_data_source: 'CORE2'
+                sss_data_source: 'CORE2'
+                
+        JRA55:
+                leapyear: true
+                forcing_folder: "/JRA55-do-v1.4.0/"
+                
+                Ce_atm_oce: 1.75e-3
+                Ch_atm_oce: 1.75e-3
+                Cd_atm_oce: 1.0e-3
+                Ce_atm_ice: 1.75e-3
+                Ch_atm_ice: 1.75e-3
+                Cd_atm_ice: 1.2e-3
+            
+                AOMIP_drag_coeff: False
+                ncar_bulk_formulae: True
+                ncar_bulk_z_wind: 10.0
+                ncar_bulk_z_tair: 10.0
+                ncar_bulk_z_shum: 10.0
+                
+                xwind_prefix: "uas."
+                ywind_prefix: "vas."
+                humi_prefix: "huss."
+                qsr_prefix: "rsds."
+                qlw_prefix: "rlds."
+                tair_prefix: "tas."
+                prec_prefix: "prra."
+                snow_prefix: "prsn."
+                mslp_prefix: "psl."
+                
+                nm_xwind_var: "uas"
+                nm_ywind_var: "vas"
+                nm_humi_var: "huss"
+                nm_qsr_var: "rsds"
+                nm_qlw_var: "rlds"
+                nm_tair_var: "tas"
+                nm_prec_var: "prra"
+                nm_snow_var: "prsn"
+                nm_mslp_var: "psl"
+        
+                nm_nc_iyear: 1900
+                nm_nc_imm: 1
+                nm_nc_idd: 1
+                nm_nc_freq: 1
+                nm_nc_tmid: 0
+                l_xwind: True
+                l_ywind: True
+                l_humi: True
+                l_qsr: True
+                l_qlw: True
+                l_tair: True
+                l_prec: True
+                l_mslp: False
+                l_cloud: False
+                l_snow: True
+                
+                runoff_file: "runoff.nc"
+                sss_data_file: "PHC2_salx.nc"
+                
+                runoff_data_source: 'CORE2'
+                sss_data_source: 'CORE2'
+        
+        ERA5:
+                leapyear: true
+                forcing_folder: "/ERA5/"
+                
+                Ce_atm_oce: 1.75e-3
+                Ch_atm_oce: 1.75e-3
+                Cd_atm_oce: 1.0e-3
+                Ce_atm_ice: 1.75e-3
+                Ch_atm_ice: 1.75e-3
+                Cd_atm_ice: 1.2e-3
+            
+                AOMIP_drag_coeff: False
+                ncar_bulk_formulae: True
+                ncar_bulk_z_wind: 10.0
+                ncar_bulk_z_tair: 2.0
+                ncar_bulk_z_shum: 2.0
+                
+                xwind_prefix: "u."
+                ywind_prefix: "v."
+                humi_prefix: "q."
+                qsr_prefix: "ssrd."
+                qlw_prefix: "strd."
+                tair_prefix: "t2m."
+                prec_prefix: "rf."
+                snow_prefix: "sf."
+                mslp_prefix: "sp."
+        
+                nm_xwind_var: "u"
+                nm_ywind_var: "v"
+                nm_humi_var: "q"
+                nm_qsr_var: "ssrd"
+                nm_qlw_var: "strd"
+                nm_tair_var: "t2m"
+                nm_prec_var: "rf"
+                nm_snow_var: "sf"
+                nm_mslp_var: "sp"
+        
+                nm_nc_iyear: 1900
+                nm_nc_imm: 1
+                nm_nc_idd: 1
+                nm_nc_freq: 1
+                nm_nc_tmid: 0
+                l_xwind: True
+                l_ywind: True
+                l_humi: True
+                l_qsr: True
+                l_qlw: True
+                l_tair: True
+                l_prec: True
+                l_mslp: False
+                l_cloud: False
+                l_snow: True
+                
+                runoff_file: "runoff.nc"
+                sss_data_file: "PHC2_salx.nc"
+                
+                runoff_data_source: 'CORE2'
+                sss_data_source: 'CORE2'
+                
         ECHAM5:
                 leapyear: true
 
-
-
 choose_resolution:
-        CORE2:
+        core2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+                mesh_dir: "${mesh_base_dir}/core2/"
                 nproc: 288
-        GLOB:
-                nx: 830305
+        pi:
+                nx: 3140
+                mesh_dir: "${mesh_base_dir}/pi/"
+                nproc: 4
 
 restart_in_files:
         oce_restart: oce_restart
@@ -107,7 +293,7 @@ restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
 
-outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
+outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, w]
 
 outdata_sources:
         "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
@@ -137,35 +323,82 @@ namelist_changes:
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
-                        ForcingDataPath: "${forcing_data_dir}"
+#                         ForcingDataPath: "${forcing_data_dir}"
                         MeshPath: "${mesh_dir}"
-                        OpbndPath: "${opbnd_dir}"
+#                         OpbndPath: "${opbnd_dir}"
                         ClimateDataPath: "${climate_data_dir}"
-                        TideForcingPath: "${tide_forcing_dir}"
+#                         TideForcingPath: "${tide_forcing_dir}"
                         ResultPath: "${work_dir}"
                 timestep:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout:
-                        restartflag: "${restart_flag}"
-                        output_length: "${restart_rate}"
-                        output_length_unit: "${restart_unit}"
+                restart_log:
+#                         restartflag: "${restart_flag}"
+#                         output_length: "${restart_rate}"
+#                         output_length_unit: "${restart_unit}"
                         restart_length: "${restart_rate}"
                         restart_length_unit: "${restart_unit}"
+                        
         namelist.forcing:
-                namsbc:
-                        nm_xwind_file: "${forcing_data_dir}/u_10."
-                        nm_ywind_file: "${forcing_data_dir}/v_10."
-                        nm_humi_file: "${forcing_data_dir}/q_10."
-                        nm_qsr_file: "${forcing_data_dir}/ncar_rad."
-                        nm_qlw_file: "${forcing_data_dir}/ncar_rad."
-                        nm_tair_file: "${forcing_data_dir}/t_10."
-                        nm_prec_file: "${forcing_data_dir}/ncar_precip."
-                        nm_snow_file: "${forcing_data_dir}/ncar_precip."
-                        nm_mslp_file: "${forcing_data_dir}/slp."
-                        nm_runoff_file: "${forcing_data_dir}/runoff.nc"
-                        nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
+                
+                forcing_exchange_coeff:
+                        Ce_atm_oce: ${Ce_atm_oce}
+                        Ch_atm_oce: ${Ch_atm_oce}
+                        Cd_atm_oce: ${Cd_atm_oce}
+                        Ce_atm_ice: ${Ce_atm_ice}
+                        Ch_atm_ice: ${Ch_atm_ice}
+                        Cd_atm_ice: ${Cd_atm_ice}
+                        
+                forcing_bulk:
+                        AOMIP_drag_coeff: ${AOMIP_drag_coeff}
+                        ncar_bulk_formulae: ${ncar_bulk_formulae}
+                        ncar_bulk_z_wind: ${ncar_bulk_z_wind}
+                        ncar_bulk_z_tair: ${ncar_bulk_z_tair}
+                        ncar_bulk_z_shum: ${ncar_bulk_z_shum}
+                
+                nam_sbc:
+                        nm_xwind_file: "${forcing_data_dir}/${forcing_folder}/${xwind_prefix}"
+                        nm_ywind_file: "${forcing_data_dir}/${forcing_folder}/${ywind_prefix}"
+                        nm_humi_file: "${forcing_data_dir}/${forcing_folder}/${humi_prefix}"
+                        nm_qsr_file: "${forcing_data_dir}/${forcing_folder}/${qsr_prefix}"
+                        nm_qlw_file: "${forcing_data_dir}/${forcing_folder}/${qlw_prefix}"
+                        nm_tair_file: "${forcing_data_dir}/${forcing_folder}/${tair_prefix}"
+                        nm_prec_file: "${forcing_data_dir}/${forcing_folder}/${prec_prefix}"
+                        nm_snow_file: "${forcing_data_dir}/${forcing_folder}/${snow_prefix}"
+                        nm_mslp_file: "${forcing_data_dir}/${forcing_folder}/${mslp_prefix}"
+                        
+                        nm_xwind_var: ${nm_xwind_var}
+                        nm_ywind_var: ${nm_ywind_var}
+                        nm_humi_var: ${nm_humi_var}
+                        nm_qsr_var: ${nm_qsr_var}
+                        nm_qlw_var: ${nm_qlw_var}
+                        nm_tair_var: ${nm_tair_var}
+                        nm_prec_var: ${nm_prec_var}
+                        nm_snow_var: ${nm_snow_var}
+                        nm_mslp_var: ${nm_mslp_var}
+                        
+                        nm_nc_iyear: ${nm_nc_iyear}
+                        nm_nc_imm: ${nm_nc_imm}
+                        nm_nc_idd: ${nm_nc_idd}
+                        nm_nc_freq: ${nm_nc_freq}
+                        nm_nc_tmid: ${nm_nc_tmid}
+                        l_xwind: ${l_xwind}
+                        l_ywind: ${l_ywind}
+                        l_humi: ${l_humi}
+                        l_qsr: ${l_qsr}
+                        l_qlw: ${l_qlw}
+                        l_tair: ${l_tair}
+                        l_prec: ${l_prec}
+                        l_mslp: ${l_mslp}
+                        l_cloud: ${l_cloud}
+                        l_snow: ${l_snow}
+                        
+                        nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
+                        nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+                        
+                        runoff_data_source: ${runoff_data_source}
+                        sss_data_source: ${sss_data_source}
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

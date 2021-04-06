@@ -112,7 +112,7 @@ compile_infos:
             - oasis3mct-4.0-oifsdeck
             branch: awicm-3-deck-hotfix-1
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+              -v -j1 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3

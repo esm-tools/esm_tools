@@ -1,0 +1,15 @@
+general:
+        iterative_coupling: True
+
+model1:
+        setup_name: vilma
+        runscript: vilma_test_run.yaml
+        chunk_size: 20000
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism-ollie-initial-yearly.yaml
+        chunk_size: 2500
+        chunk_unit: "years"
+

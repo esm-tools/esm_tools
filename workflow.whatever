@@ -1,0 +1,13 @@
+
+
+
+
+	compute -> tidy -> (resubmit)
+
+	compute -> tidy -> couple_out -> (resubmit)
+
+	couple_in -> compute -> tidy -> couple_out -> (resubmit)
+
+	couple_in -> compute -> tidy -> couple_out 
+				     -> post_ATM + post_BOT + post_fesom -> (resubmit)
+				     -> some_day_in_the_future

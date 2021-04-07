@@ -24,12 +24,14 @@ choose_version:
                 git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
                 install_bins: bin/vega_vip.x
                 branch: ${version}
+                nproc: 1
         3d:
                 clean_command: ${defaults.clean_command}
                 comp_command: ${defaults.comp_command}
                 git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
                 install_bins: bin/vega_vip.x
                 branch: ${version}
+                nproc: 8
 
 
 resolution: '512x1024'
@@ -38,9 +40,10 @@ eislastfile: ice5g_total.nc
 eislastconf: loadh_ice5g_total.inp
 bedrockfile: ETOPO1_Bed_n256.nc
 wepochsfile: automatic
-tinitfile: automatic
+tintfile: automatic
 
 
+coupled_to_ice: False
 
 choose_coupled_to_ice:
         True:
@@ -177,7 +180,12 @@ choose_tintfile:
                         tint.inp:
                                 - "<--append-- 0 0"
                                 - "<--append-- 42.0 -42.0 ${time_step}"
-                tintfile: ${base_dir}/${expid}/config/tint.inp
+
+                                  #add_config_sources:
+                                  #tint: ${base_dir}/${expid}/config/tint.inp
+                                  #"*":
+                                  #add_config_sources:
+                                  #tint: ${tintfile}
 
 choose_wepochsfile:
         "automatic":
@@ -189,17 +197,15 @@ choose_wepochsfile:
                                 # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
                                 #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
                                 # done
-                tintfile: ${base_dir}/${expid}/config/wepochs.inp
+                                 
+                                  #add_config_sources:
+                                  #wepochs: ${base_dir}/${expid}/config/wepochs.inp
+                                  #"*":
+                                  #add_config_sources:
+                                  #wepochs: ${wepochsfile}
 
 
 execution_command: "vilma_wrapper.sh"
-
-input_sources:
-        vega_oce.dat: ${ini_input_dir}/vega_oce.dat
-        vega_rpt.dat: ${ini_input_dir}/vega_rpt.dat
-        vega_deg1.dat: ${ini_input_dir}/vega_deg1.dat
-        vega1.nc: ${ini_input_dir}/vega1.nc
-        dflag.nc: ${ini_input_dir}/dflag.nc
 
 
 restart_in_sources:
@@ -214,6 +220,11 @@ restart_in_sources:
         pefgh.nc: pefgh.nc
         pjj.nc: pjj.nc
         ve_struct.nc: ve_struct.nc
+        vega_oce.dat: vega_oce.dat
+        vega_rpt.dat: vega_rpt.dat
+        vega_deg1.dat: vega_deg1.dat
+        vega1.nc: vega1.nc
+        dflag.nc: dflag.nc
 
 restart_in_targets:
         io.tmp: io.tmp
@@ -234,9 +245,9 @@ restart_in_targets:
         dflag.nc: out/dflag.nc
 
 config_sources:
-        eislastconf: ${eislastconf}
-        wepochs: wepochsfile
-        tint: tintfile
+        #wepochs: ${actual_wepochsfile}
+        #tint: ${actual_tintfile}
+        eislastconf: ${ini_input_dir}/${eislastconf}
 
 forcing_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
@@ -255,15 +266,24 @@ outdata_sources:
         vegalis: vega.lis
         radii: out/radii.dat
         rsl: out/rsl.nc
+
+restart_out_sources:
+        restarts: restart/*.nc
+        io: io.tmp
         dflag: out/dflag.nc
         vega1: out/vega1.nc
         vega_deg1: out/vega_deg1.dat
         vega_oce: out/vega_out.dat
         vega_rpt: out/vega_rpt.dat
 
-restart_out_sources:
+restart_out_targets:
         restarts: restart/*.nc
         io: io.tmp
+        dflag: dflag.nc
+        vega1: vega1.nc
+        vega_deg1: vega_deg1.dat
+        vega_oce: vega_out.dat
+        vega_rpt: vega_rpt.dat
 
 log_sources:
         restart_log: restart.log

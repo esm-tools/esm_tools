@@ -11,19 +11,29 @@ jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
 
-choose_jobtype:
-        post:
-                partition: smp
-        compute:
-                partition: mpp
-        tidy_and_resubmit:
-                partition: mpp
 
-choose_partition:
-        "mpp":
+partitions:
+        compute:
+                name: mpp
                 cores_per_node: 36
-        "smp":
+        pp:
+                name: smp
                 cores_per_node: 1
+
+
+                #choose_jobtype:
+                #post:
+                #partition: smp
+                #compute:
+                #partition: mpp
+                #tidy_and_resubmit:
+                #partition: mpp
+
+                #choose_partition:
+                #"mpp":
+                #cores_per_node: 36
+                #"smp":
+                #cores_per_node: 1
 
 logical_cpus_per_core: 2
 

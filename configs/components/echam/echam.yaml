@@ -154,7 +154,7 @@ choose_resolution:
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.cores_per_node:
+                choose_computer.partitions.compute.cores_per_node:
                         24:
                                 nproca: 24
                                 nprocb: 18

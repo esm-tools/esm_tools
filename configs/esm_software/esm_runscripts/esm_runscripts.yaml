@@ -1,8 +1,8 @@
 choose_job_type:
 
-        postprocess:
-                recipe:
-                        - "postprocess"
+        #postprocess:
+        #        recipe:
+        #                - "postprocess"
 
         prepare:
                 recipe:
@@ -21,12 +21,16 @@ choose_job_type:
                         - "set_logfile"
 
 
-        tidy:
+        observe:
                 recipe:
                         - "init_monitor_file"
-                        - "get_last_jobid"
+                          #- "get_last_jobid"
                         - "wait_and_observe"
                         - "wake_up_call"
+
+
+        tidy:
+                recipe:
                         - "tidy_coupler"
                         - "assemble"
                         - "check_for_unknown_files"
@@ -35,14 +39,14 @@ choose_job_type:
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
                         - "clean_run_dir"
-                        - "start_post_job"
-                        - "signal_tidy_completion"
-                        - "_increment_date_and_run_number"
-                        - "_write_date_file"
-                        - "maybe_resubmit"
+                          #- "start_post_job"
+                          #- "signal_tidy_completion"
+                          #- "_increment_date_and_run_number"
+                          #- "_write_date_file"
+                          #- "maybe_resubmit"
 
 
-        compute:
+        prepcompute:
                 recipe:
                         - "venv_bootstrap"
                         - "_create_setup_folders"
@@ -54,7 +58,8 @@ choose_job_type:
                         - "_show_simulation_info"
                         - "create_new_files"
                         - "prepare_coupler_files"
-                        - "add_batch_hostfile"
+                          #- "calculate_requirements"
+                          #- "add_batch_hostfile"
                         - "assemble"
                         - "log_used_files"
                         - "_write_finalized_config"
@@ -62,14 +67,15 @@ choose_job_type:
                         - "modify_namelists"
                         - "modify_files"
                         - "copy_files_to_work"
-                        - "write_simple_runscript"
+                          #- "write_simple_runscript"
                         - "report_missing_files"
                         - "database_entry"
-                        - "submit"
+                          #- "submit"
 
         inspect:
                 recipe:
                         - "assemble"
+                        - "inspect_workflow"
                         - "inspect_overview"
                         - "inspect_namelists"
                         - "inspect_size"

@@ -11,3 +11,11 @@ vilma:
         model_dir: /work/ollie/dbarbi/modelcodes/vilma-1d/
         pool_dir: ${model_dir}
         lresume: False
+
+        do_post: True
+        postprocessing_dir: /work/ollie/dbarbi/some/path
+        postprocessing_scripts: 
+                vilma2ice:
+                        postprocessing_envsetup_function: vilma2ice.py
+                        postprocessing_script: vilma2ice.functions
+

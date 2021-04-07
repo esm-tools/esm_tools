@@ -14,7 +14,7 @@ core:
                         - "initialize_coupler"
                         - "set_logfile"
 
-                compute:
+                prepcompute:
                         - "compile_model"
                         - "_create_setup_folders"
                         - "_create_component_folders"
@@ -33,10 +33,6 @@ core:
                         - "copy_files_to_work"
 
                 tidy:
-                        - "init_monitor_file"
-                        - "get_last_jobid"
-                        - "wait_and_observe"
-                        - "wake_up_call"
                         - "tidy_coupler"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
@@ -45,14 +41,18 @@ core:
                         - "_increment_date_and_run_number"
                         - "_write_date_file"
                         - "signal_tidy_completion"
-                        - "maybe_resubmit"
                         - "throw_away_some_infiles"
 
-                postprocess:
-                        - "_assemble_postprocess_tasks"
+
+                observe:          
+                        - "init_monitor_file"
+                          #- "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
 
                 inspect:
                         - "inspect_overview"
+                        - "inspect_workflow"
                         - "inspect_namelists"
                         - "inspect_folder"
                         - "inspect_file"
@@ -69,11 +69,14 @@ core:
                         - "database_entry"
 
                 batch_system:
+                        #- "calculate_requirements"
                         - "write_simple_runscript"
-                        - "submit"
 
                 virtual_env_builder:
                         - "venv_bootstrap"
+
+                resubmit:
+                        - "submit"
 
 
 

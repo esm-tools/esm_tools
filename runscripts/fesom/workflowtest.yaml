@@ -1,0 +1,35 @@
+general:
+        setup_name: fesom
+        compute_time: "00:08:00"
+        initial_date: '2000-01-01'
+        final_date: '2000-01-31'
+        base_dir: "/work/ollie/dbarbi/esm_yaml_test/"
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+fesom:
+        version: 1.4
+        model_dir: "/work/ollie/dbarbi/modelcodes/fesom-1.4/"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/pool/FESOM/meshes_default/core/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        post_processing: 0
+
+        #        further_reading: "fesom_output_control.yaml"
+
+        workflow:
+                subjobs:
+                        postpro1:
+                                nproc: 1
+                                run_after: tidy
+                                #submit_to_batch_system: True
+                                #run_on_queue: mpp
+                                script: stupidtestscript.sh
+                                script_dir: /work/ollie/dbarbi/esm_tools/dataprocessings/fesom
+                                env_preparation: testenv.py 
+

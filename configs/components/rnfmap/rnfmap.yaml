@@ -17,11 +17,14 @@ description: |
 ##
 available_versions:
 - ec-earth
+- awicm3
 - focioifs
 - focioifs1
 choose_version:
   ec-earth:
     branch: esm-tools
+  awicm3:
+    branch: awicm-3-frontiers
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:

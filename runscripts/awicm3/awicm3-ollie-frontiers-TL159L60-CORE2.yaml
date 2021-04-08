@@ -12,7 +12,7 @@ general:
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/ollie/jstreffi/model_codes/awicm3-1.0-deck/"
+    model_dir: "/home/ollie/jstreffi/model_codes/awicm3-1.0-master/"
 
 fesom:
     resolution: "CORE2"

@@ -8,7 +8,7 @@ batch_system: "pbs"
 operating_system: "SLES"
 
 jobtype: compute
-sh_interpreter: "/usr/bin/sh"
+sh_interpreter: "/bin/sh"
 
 
 choose_jobtype:
@@ -42,11 +42,12 @@ hyper_flag: ""
 #
 #
 
-useMPI: craympi
+useMPI: cray_mpich
 
 module_actions:
-        - "purge"
-        - "load PrgEnv-cray/6.0.4"
+        #- "purge"
+        - "load ${PrgEnv}"
+        - "load alps pbs"
         - "load cray-mpich/7.7.3"
         - "load craype-x86-skylake"
         - "load cmake"
@@ -86,17 +87,11 @@ export_vars:
 choose_useMPI:
         intelmpi: #Only work on if we get stuck badly with CRAY
                 add_module_actions:
-                        - "unload craype-x86-skylake"
                         - "unload PrgEnv-pgi"
-                        - "unload PrgEnv-intel"
-                        - "unload PrgEnv-cray"
                         - "unload PrgEnv-gnu"
                         - "unload cray-netcdf"
                         - "unload cray-hdf5"
                         - "unload cray-parallel-netcdf"
-                        - "unload papi"
-                        - "load PrgEnv-intel"
-                        - "load craype-x86-skylake"
                         - "load craype-hugepages2M"
                         - "unload perftools-base/7.0.4"
                         - "load cray-netcdf/4.6.1.3"
@@ -105,6 +100,8 @@ choose_useMPI:
                         - "load papi/5.6.0.4"
                         - "load gridftp/6.0"
 
+                PrgEnv: PrgEnv-intel
+
                 fc: '"mpiifort -mkl"'
                 f77: '"mpiifort -mkl"'
                 mpifc: mpiifort
@@ -112,16 +109,21 @@ choose_useMPI:
                 cc: mpiicc
                 cxx: mpiicpc
 
+                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc
+                        env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
+
                 add_export_vars:
                         MPIROOT: ${I_MPI_ROOT}/intel64
-        craympi:
-                FC: ftn
-                F77: ftn
-                MPIFC: ftn
-                MPICC: cc
-                CC: cc
-                CXX: CC
+                        KMP_AFFINITY: disabled
+        cray_mpich:
+                PrgEnv: PrgEnv-cray/6.0.4
+
+                fc: ftn
+                f77: ftn
+                mpifc: ftn
+                mpicc: cc
+                cc: cc
+                cxx: CC
 
 further_reading:
-        - batch_system/slurm.yaml
-        #- batch_system/pbs.yaml TODO
+        - batch_system/pbs.yaml

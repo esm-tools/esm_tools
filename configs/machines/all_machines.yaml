@@ -27,5 +27,5 @@ glogin:
 
 aleph:
         login_nodes: 'elogin*'
-        #compute_nodes: '^[A-Za-z0-9]+\.usr\.hlrn\.de$'
+        compute_nodes: 'mom*'
         post_nodes: 'elogin*'

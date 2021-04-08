@@ -3,7 +3,7 @@
 name: aleph
 
 accounting: true
-batch_system: "slurm" #TODO change to pbs
+batch_system: "pbs"
 
 operating_system: "SLES"
 

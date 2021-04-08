@@ -109,6 +109,7 @@ compile_infos:
               -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
           43r3:
             branch: oifs-deck

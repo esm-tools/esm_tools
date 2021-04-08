@@ -17,7 +17,7 @@ general:
                 - rnfmap
                 - oasis3mct
 
-        available_versions:
+        available_version:
         - '1.0-master'
         - '1.0-deck'
         - '1.0'

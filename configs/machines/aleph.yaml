@@ -3,7 +3,7 @@
 name: aleph
 
 accounting: true
-batch_system: "pbs"
+batch_system: "slurm" #TODO change to pbs
 
 operating_system: "SLES"
 
@@ -45,24 +45,25 @@ hyper_flag: ""
 useMPI: cray_mpich
 
 module_actions:
-        #- "purge"
         - "load ${PrgEnv}"
         - "load alps pbs"
         - "load cray-mpich/7.7.3"
         - "load craype-x86-skylake"
-        - "load cmake"
-        - "load cray-netcdf-hdf5paralle"
-        - "load cdo nco"
+        - "load cmake/3.14.0"
+        - "load cray-hdf5/1.10.2.0"
+        - "load cray-netcdf/4.6.1.3"
+        - "load cdo/1.9.5"
+        - "load nco/4.9.4"
         - "load python/3.9.1"
         - "list"
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 
-FC: ftn
-F77: ftn
-MPIFC: ftn
-MPICC: cc
-CC: cc
-CXX: CC
+fc: ftn
+f77: ftn
+mpifc: ftn
+mpicc: cc
+cc: cc
+cxx: CC
 
 export_vars:
         LC_ALL: en_US.UTF-8

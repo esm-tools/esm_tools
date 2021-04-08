@@ -105,6 +105,8 @@ overcommit_nodes: None
 overcommit_rule: ""
 
 choose_overcommit_nodes:
+    None:
+        overcommit_rule: ""
     "*":
         overcommit_rule:  "--overcommit --nodes=${overcommit_nodes}"
 

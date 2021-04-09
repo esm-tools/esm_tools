@@ -56,14 +56,6 @@ module_actions:
         - "load nco/4.9.4"
         - "load python/3.9.1"
         - "list"
-# some yamls use computer.fc, etc to identify the compiler, so we need to add them
-
-fc: ftn
-f77: ftn
-mpifc: ftn
-mpicc: cc
-cc: cc
-cxx: CC
 
 export_vars:
         LC_ALL: en_US.UTF-8

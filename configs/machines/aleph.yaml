@@ -120,8 +120,5 @@ choose_useMPI:
                 cc: cc
                 cxx: CC
 
-                add_export_vars:
-                        OASIS_FFLAGS: "-emf"
-
 further_reading:
         - batch_system/pbs.yaml

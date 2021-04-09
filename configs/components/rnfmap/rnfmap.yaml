@@ -25,6 +25,7 @@ choose_version:
     branch: esm-tools
   awicm3:
     branch: awicm-3-frontiers
+    destination: rnfmap
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:

@@ -301,8 +301,7 @@ fesom:
         choose_general.version:
                 "1.0-master":
                         model_tag: "awicm-3-master"
-                        # namelist_dir: "${model_dir}/fesom-2.0-master/config/" TODO: this is the line we actually want to use
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+                        namelist_dir: "${model_dir}/config/"
                 "1.0-deck":
                         model_tag: "awicm-3-deck"
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"

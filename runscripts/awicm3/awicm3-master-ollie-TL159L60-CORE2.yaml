@@ -24,6 +24,10 @@ fesom:
     lresume: false
     time_step: 1800
     nproc: 72
+    namelist_changes:
+        namelist.config:
+            geometry:
+                force_rotation: false
 
 oifs:
     resolution: "TL159"

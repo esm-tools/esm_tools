@@ -81,6 +81,8 @@ export_vars:
         XML2ROOT: /usr
         ZLIBROOT: /usr
 
+        ECCODESROOT: /home/awiiccp2/software/ecmwf/eccodes_cce_mpich
+
         MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
@@ -122,6 +124,9 @@ choose_useMPI:
                 mpicc: cc
                 cc: cc
                 cxx: CC
+
+                add_export_vars:
+                        OASIS_FFLAGS: "-emf"
 
 further_reading:
         - batch_system/slurm.yaml

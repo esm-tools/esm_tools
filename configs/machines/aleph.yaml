@@ -104,7 +104,7 @@ choose_useMPI:
                 cc: mpiicc
                 cxx: mpiicpc
 
-                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc
+                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
                         env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
 
                 add_export_vars:

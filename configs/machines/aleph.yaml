@@ -31,8 +31,8 @@ threads_per_core: 1
 pool_dir: "/proj/awi"
 
 pool_directories:
-        pool: "/proj/awi"
-        projects: "/proj/awi"
+        pool: "/proj/awi/"
+        projects: "/proj/awi/"
 
 
 submitted: false

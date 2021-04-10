@@ -98,6 +98,12 @@ choose_general.setup_name:
                         file_def: file_def
         awicm3:
                 xml_dir: "${pool_dir}"
+choose_computer.name:
+        ollie:
+                add_environment_changes:
+                        add_module_actions:
+                                - "unload netcdf; load netcdf/4.4.1.1_intel_mpi"
+
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml

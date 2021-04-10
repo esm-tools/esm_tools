@@ -1,0 +1,124 @@
+# THE aleph.iccp.kr YAML config file
+
+name: aleph
+
+accounting: true
+batch_system: "pbs"
+
+operating_system: "SLES"
+
+jobtype: compute
+sh_interpreter: "/bin/sh"
+
+
+choose_jobtype:
+        post:
+                partition: serial
+        compute:
+                partition: iccp
+        tidy_and_resubmit:
+                partition: iccp
+
+choose_partition:
+        "iccp":
+                cores_per_node: 40
+        "serial":
+                cores_per_node: 1
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+pool_dir: "/proj/awi"
+
+pool_directories:
+        pool: "/proj/awi/"
+        projects: "/proj/awi/"
+
+
+submitted: false
+hyper_flag: ""
+
+# standard environment setup
+#
+#
+
+useMPI: cray_mpich
+
+module_actions:
+        - "load ${PrgEnv}"
+        - "load alps pbs"
+        - "load cray-mpich/7.7.3"
+        - "load craype-x86-skylake"
+        - "load cmake/3.14.0"
+        - "load cray-hdf5/1.10.2.0"
+        - "load cray-netcdf/4.6.1.3"
+        - "load cdo/1.9.5"
+        - "load nco/4.9.4"
+        - "load python/3.9.1"
+        - "list"
+
+export_vars:
+        LC_ALL: en_US.UTF-8
+
+        HDF5ROOT: $HDF5_ROOT
+
+        NETCDFFROOT: $NETCDF_DIR
+        NETCDFROOT: $NETCDF_DIR
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+
+        PERL5LIB: /usr/lib64/perl5
+        #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        #LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
+
+        ECCODESROOT: /home/awiiccp2/software/ecmwf/eccodes_cce_mpich
+
+        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+choose_useMPI:
+        intelmpi: #Only work on if we get stuck badly with CRAY
+                add_module_actions:
+                        - "unload PrgEnv-pgi"
+                        - "unload PrgEnv-gnu"
+                        - "unload cray-netcdf"
+                        - "unload cray-hdf5"
+                        - "unload cray-parallel-netcdf"
+                        - "load craype-hugepages2M"
+                        - "unload perftools-base/7.0.4"
+                        - "load cray-netcdf/4.6.1.3"
+                        - "load cray-hdf5/1.10.2.0"
+                        - "load cray-parallel-netcdf/1.11.1.1"
+                        - "load papi/5.6.0.4"
+                        - "load gridftp/6.0"
+
+                PrgEnv: PrgEnv-intel
+
+                fc: '"mpiifort -mkl"'
+                f77: '"mpiifort -mkl"'
+                mpifc: mpiifort
+                mpicc: mpiicc
+                cc: mpiicc
+                cxx: mpiicpc
+
+                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
+                        env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
+
+                add_export_vars:
+                        MPIROOT: ${I_MPI_ROOT}/intel64
+                        KMP_AFFINITY: disabled
+        cray_mpich:
+                PrgEnv: PrgEnv-cray/6.0.4
+
+                fc: ftn
+                f77: ftn
+                mpifc: ftn
+                mpicc: cc
+                cc: cc
+                cxx: CC
+
+further_reading:
+        - batch_system/pbs.yaml

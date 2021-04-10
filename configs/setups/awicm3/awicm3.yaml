@@ -51,6 +51,8 @@ general:
                         pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
+                aleph:
+                        pool_dir: "/proj/awi/jstreffi/input"
 
         compute_recipe_with_preprocess:
             - "venv_bootstrap"
@@ -115,6 +117,7 @@ general:
         dr_hook_ignore_signals: -1
         further_reading:
                - oifs/oifs.env.yaml
+               - oasis3mct/oasis3mct.env.yaml
 
 
 #########################################################################################

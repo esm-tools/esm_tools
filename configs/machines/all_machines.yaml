@@ -24,3 +24,8 @@ glogin:
         login_nodes: 'glogin*'
         compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
         post_nodes: 'glogin*'
+
+aleph:
+        login_nodes: 'elogin*'
+        compute_nodes: 'mom*'
+        post_nodes: 'elogin*'

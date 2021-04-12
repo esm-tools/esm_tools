@@ -304,13 +304,17 @@ choose_scenario:
                 add_input_files:
                         MAC-SP: MAC-SP
         HIST:
-                greenhouse_dir: "${forcing_dir}"
+                greenhouse_dir: "${input_dir}"
                 forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: histaerofin
+                        # aerocoarse: piaerocoarse
+                        # aerofarir: piaerofarir
+                        # aerofin: histaerofin
                         sst: amipsst
                         sic: amipsic
+                        # deniz TODO: explain
+                        aerocoarse_kinne_1850: piaerocoarse   # deniz: added these
+                        aerofarir_kinne_1850: piaerofarir
+                        aerofin_kinne_1850: piaerofin
                         ozone: histozone
                         greenhouse: histgreenh
                         volcanir: histvolcanir
@@ -465,16 +469,29 @@ input_in_work:
 forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
+        # deniz: TODO: write comment
+        aerocoarse_kinne_1850: "aero_coarse_@YEAR_1850@.nc"
+        aerofarir_kinne_1850: "aero_farir_@YEAR_1850@.nc"
+        aerofin_kinne_1850: "aero_fine_@YEAR_1850@.nc"
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
-        volcir: "strat_aerosol_ir_@YEAR@.nc"
+        volcanir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
 
 forcing_additional_information:
+        aerocoarse_kinne_1850:       # deniz: added these 3 file types
+                - need_year_before
+                - need_year_after
+        aerofarir_kinne_1850:
+                - need_year_before
+                - need_year_after
+        aerofin_kinne_1850:
+                - need_year_before
+                - need_year_after
         aerocoarse:
                 - need_year_before
                 - need_year_after
@@ -487,6 +504,18 @@ forcing_additional_information:
         ozone:
                 - need_year_before
                 - need_year_after
+        # deniz: added these 3 variables. They were present in the esm-tools r4
+        volcanir:
+                - need_year_before
+                - need_year_after
+        volcsw:
+                - need_year_before
+                - need_year_after
+        swflux:
+                - need_year_before
+                - need_year_after
+                
+                
 
 streams:
         - echam

@@ -34,7 +34,7 @@ general:
             add_include_models:
             - xios
 
-        versions: "1.0-deck"
+        version: "1.0-deck"
         scenario: "PI-CTRL"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false

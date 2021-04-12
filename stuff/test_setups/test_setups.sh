@@ -37,7 +37,7 @@ workdir=$WORK/tmp
 account=shk00018
 
 # Which plugins shall be installed during testing
-plugins="preprocess postprocess"
+#plugins="preprocess postprocess"
 #plugins=""
 
 # Test installation of ESM-Tools?

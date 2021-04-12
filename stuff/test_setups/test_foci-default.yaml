@@ -1,4 +1,5 @@
 general:
+   verbose: False
    setup_name: "foci"
    version: "default"
 

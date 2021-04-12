@@ -1,5 +1,5 @@
 general:
-   
+   verbose: False 
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 

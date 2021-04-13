@@ -19,12 +19,16 @@ general:
 
         available_versions:
         - '1.0-master'
+        - '1.0-frontiers'
         - '1.0-deck'
         - '1.0'
         choose_version:
           1.0-master:
             couplings:
             - fesom-2.0-master+oifs-43r3-master
+          1.0-frontiers:
+            couplings:
+            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
           1.0-deck:
             couplings:
             - fesom-2.0+oifs-43r3
@@ -303,8 +307,10 @@ fesom:
         # old experiments. 5e-3 is a better value so it is used for XIOS version
         choose_general.version:
                 "1.0-master":
-                        model_tag: "awicm-3-master"
                         namelist_dir: "${model_dir}/config/"
+                "1.0-frontiers":
+                        model_tag: "awicm-3-frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                 "1.0-deck":
                         model_tag: "awicm-3-deck"
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"

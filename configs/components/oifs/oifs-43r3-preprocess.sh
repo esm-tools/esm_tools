@@ -56,11 +56,14 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+elif [[ "$(hostname)" =~ nesh ]] ; then
+	 module load intel/19.0.4 intelmpi/19.0.4 
+	 export PATH=/gxfs_home/geomar/smomw235/sw/HPC_libraries/intel2019.0.4_impi2019.0.4_20210122/bin:$PATH
 else
    echo
 	echo $0 has not been adapted for $(hostname)
 	echo
-	exit 1
+	exit 
 fi 
 
 echo " OpenIFS preprocessing "

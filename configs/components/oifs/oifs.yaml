@@ -464,9 +464,9 @@ bin_sources:
 #======================================================================================
 
 input_files:
-        ICMGG_INIT: ICMGG_INIT
-        ICMGG_INIUA: ICMGG_INIUA
-        ICMSH_INIT: ICMSH_INIT
+        #ICMGG_INIT: ICMGG_INIT
+        #ICMGG_INIUA: ICMGG_INIUA
+        #ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
         #rtables: rtables
         #vtables: vtables

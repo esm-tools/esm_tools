@@ -1,11 +1,12 @@
 general:
         use_venv: False
         verbose: False
+        homedir: !ENV ${HOME}
 
         setup_name: oifs
         compute_time: "00:30:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1979-01-04T00:00:00"
+        final_date: "1979-01-03T00:00:00"
         nyear: 0
         nmonth: 0
         nday: 1 
@@ -13,32 +14,12 @@ general:
         restart_unit: days
 
         # cleanup of rundir
-        clean_runs: 2 
+        # clean_runs: 2 
 
         # machine specific setup 
-        #account: hirace
-        #model_dir: /p/project/hirace/wahl1/esm/models/oifs-43r3-v1/
-        #base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
-        account: shk00018
-        model_dir: /home/shkifmsw/esm/models/oifs-43r3-v1/
-        base_dir: /home/shkifmsw/esm/esm-experiments/
-        # seb-wahl: this does not work and causes really strange
-        # behaviour upon restart!
-        #choose_computer.name:
-        #   blogin:
-        #      account: shk00018
-        #      my_work_env: /home/shkifmsw/esm/
-        #   glogin:
-        #      account: shk00018
-        #      my_work_env: /home/shkifmsw/esm/
-        #   juwels:
-        #      account: hirace 
-        #      my_work_env: /p/project/hirace/wahl1/esm/ 
-        #   mistral:
-        #      account: bb0519 
-        #      my_work_env: /pf/b/b350071/esm 
-        #model_dir: ${my_work_env}/models/oifs-43r3-v1/
-        #base_dir: ${my_work_env}/esm-experiments/
+        #account: shk00018
+        model_dir: ${homedir}/esm/models/oifs-43r3-v1/
+        base_dir: ${homedir}/esm/esm-experiments/
 
 oifs:
         version: 43r3

@@ -97,6 +97,9 @@ oifs:
              - 'FOCI_USE_CPLNG="active"'
              - 'FESOM_USE_CPLNG="no"'
              - 'ECE_USE_CPLNG="no"'
+             #FOCI_USE_CPLNG: "active"
+             #FESOM_USE_CPLNG: "no"
+             #ECE_USE_CPLNG: "no"
           choose_computer.name:
              blogin:
                 compiler_mpi: intel2019_ompi

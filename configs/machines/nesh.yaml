@@ -71,17 +71,17 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/19.0.4"
          - "load intelmpi/19.0.4"
-      #choose_general.setup_name:
-      #   # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
-      #   focioifs:
-      #      add_module_actions:
-      #         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-      #   oifs:
-      #      add_module_actions:
-      #         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-      #   foci:
-      #      add_module_actions:
-      #         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
+      choose_general.setup_name:
+         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
+         focioifs:
+            add_module_actions:
+               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
+         oifs:
+            add_module_actions:
+               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
+         foci:
+            add_module_actions:
+               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
       add_export_vars:
          FC: mpiifort
          F77: mpiifort

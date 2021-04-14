@@ -85,6 +85,7 @@ compile_infos:
         - 40r1
         - 43r3-master
         - 43r3-awi-frontiers
+        - 43r3-awi-frontiers-xios
         - 43r3-awi
         - 43r3-awi-e1
         - 43r3
@@ -122,6 +123,16 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
+          43r3-awi-frontiers-xios:
+            requires:
+            - oasis3mct-4.0-awicm3-frontiers
+            branch: awicm-3-frontiers
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: true 
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make

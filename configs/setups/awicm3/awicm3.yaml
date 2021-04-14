@@ -20,6 +20,7 @@ general:
         available_versions:
         - '1.0-master'
         - '1.0-frontiers'
+        - '1.0-frontiers-xios'
         - '1.0-deck'
         - '1.0'
         choose_version:
@@ -29,6 +30,9 @@ general:
           1.0-frontiers:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
+          1.0-frontiers-xios:
+            couplings:
+            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers+xios-2.5
           1.0-deck:
             couplings:
             - fesom-2.0+oifs-43r3
@@ -309,6 +313,9 @@ fesom:
                 "1.0-master":
                         namelist_dir: "${model_dir}/config/"
                 "1.0-frontiers":
+                        model_tag: "awicm-3-frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+                "1.0-frontiers-xios":
                         model_tag: "awicm-3-frontiers"
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                 "1.0-deck":

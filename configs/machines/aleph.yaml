@@ -83,6 +83,9 @@ choose_useMPI:
                 add_module_actions:
                         - "unload PrgEnv-pgi"
                         - "unload PrgEnv-gnu"
+                        - "unload cray-netcdf"
+                        - "unload cray-hdf5"
+                        - "unload cray-parallel-netcdf"
                         - "unload cray-netcdf-hdf5parallel"
                         - "load craype-hugepages2M"
                         - "unload perftools-base/7.0.4"

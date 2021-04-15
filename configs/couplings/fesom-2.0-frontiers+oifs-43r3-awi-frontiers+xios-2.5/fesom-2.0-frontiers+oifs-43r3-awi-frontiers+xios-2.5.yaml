@@ -1,9 +1,9 @@
 components:
+- xios-2.5
 - rnfmap-awicm3
 - oifs-43r3-awi-frontiers
 - fesom-2.0-frontiers
 - oasis3mct-4.0-awicm3-frontiers
-- xios-2.5
 coupling_changes:
 - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
 - sed -i '/OIFS_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt

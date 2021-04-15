@@ -36,7 +36,12 @@ choose_version:
     use_oasis: ''
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5
-    archfile: ESMTOOLS_generic_oasis_intel
+    #choose_computer.useMPI:
+    #  cray_mpich:
+    #    archfile: ESMTOOLS_generic_oasis_cray
+    #  intelmpi:
+    #    archfile: ESMTOOLS_generic_oasis_intel
+    archfile: ESMTOOLS_generic_oasis_cray # TODO: fix and use choose block above
     use_oasis: --use_oasis oasis3_mct
     branch: master
   # XIOS with oasis dependencies and oasis support  

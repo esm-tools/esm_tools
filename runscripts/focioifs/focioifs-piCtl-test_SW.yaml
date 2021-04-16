@@ -3,6 +3,7 @@ general:
    use_venv: False
    verbose: False 
    homedir: !ENV ${HOME}
+   #homedir: /gxfs_home/geomar/smomw235 
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
@@ -26,6 +27,10 @@ focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.0
   
 oifs:
+   runtime_environment_changes:
+      choose_computer.name:
+         nesh:
+            compiler_mpi: intel2019_impi2019
    version: "43r3"
    with_xios: True
    scenario: "piControl"
@@ -44,7 +49,7 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   nproc: 287
+   nproc: 47 
    use_ocean_currents: 0
 
 oasis3mct:
@@ -53,9 +58,9 @@ oasis3mct:
       
 nemo:
    resolution: "ORCA05"
-   jpni: 24
-   jpnj: 18
-   nproc: 432
+   jpni: 8 
+   jpnj: 4 
+   nproc: 32 
    
 rnfmap:
    nproc: 1
@@ -63,4 +68,4 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
-   nproc: 48
+   nproc: 16

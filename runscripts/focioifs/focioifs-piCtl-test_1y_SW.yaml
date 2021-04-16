@@ -1,14 +1,16 @@
 
 general:
    use_venv: False
-   verbose: True
+   verbose: False 
+   homedir: !ENV ${HOME}
+   #homedir: /gxfs_home/geomar/smomw235 
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
    compute_time: "03:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
 
    nyear: 1
    nmonth: 0
@@ -18,31 +20,11 @@ general:
    hours: 0
   
    # machine specific setup 
-   #account: hirace 
-   #base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
-   account: shk00018
-   base_dir: /home/shkifmsw/esm/esm-experiments/
-   # seb-wahl: this does not work and causes really strange
-   # behaviour upon restart!
-   #choose_computer.name:
-   #   blogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   glogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   juwels:
-   #      account: hirace 
-   #      my_work_env: /p/project/hirace/wahl1/esm/ 
-   #   mistral:
-   #      account: bb0519 
-   #      my_work_env: /pf/b/b350071/esm 
-   #model_dir: ${my_work_env}/models/focioifs-2.0/
-   #base_dir: ${my_work_env}/esm-experiments/
+   #account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
 
 focioifs:
-   #model_dir: /p/project/hirace/wahl1/esm/models/focioifs-2.0
-   model_dir: /home/shkifmsw/esm/models/focioifs-2.0
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
   
 oifs:
    version: "43r3"
@@ -82,4 +64,4 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_1m"
-   nproc: 48
+   nproc: 32

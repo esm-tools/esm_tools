@@ -119,3 +119,5 @@ ENV/
 
 # ESM-Master local files
 configs/esm_software/esm_master/esm_master.pkl
+
+.DS_Store # ignore metadata from macOS file systems

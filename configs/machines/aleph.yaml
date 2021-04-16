@@ -78,9 +78,6 @@ export_vars:
 
         ECCODESROOT: /home/awiiccp2/software/ecmwf/eccodes_cce_mpich
 
-        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
-
 choose_useMPI:
         intelmpi: #Only work on if we get stuck badly with CRAY
                 add_module_actions:

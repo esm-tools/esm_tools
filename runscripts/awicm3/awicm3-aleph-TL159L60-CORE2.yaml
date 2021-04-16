@@ -4,7 +4,7 @@ general:
     account: "awiiccp"
     compute_time: "00:15:00"
     initial_date: "1990-01-01"
-    final_date: "1990-01-05"
+    final_date: "1990-01-01"
     base_dir: /scratch/awiiccp2/
     nday: 1
     nmonth: 0

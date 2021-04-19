@@ -4,15 +4,15 @@ general:
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
-   compute_time: "01:00:00"
+   compute_time: "10:00:00"
    partition: batch
    account: hirace
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-03-01T00:00:00"         # Final date of the experiment
+   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
    version: "default"
-   postprocessing: 1
-   nyear: 0
-   nmonth: 1
+   postprocessing: 0
+   nyear: 10
+   nmonth: 0
    nday: 0
    restart_rate: 1
    restart_unit: days 
@@ -43,24 +43,31 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   post_processing: 1
+   post_processing: 0
    nproc: 287 
    use_ocean_currents: 0
 
 oasis3mct:
    norestart: F
    use_lucia: True
+   export_mode: EXPORTED
+   coupling_time_step: 3600
       
 nemo:
    resolution: "ORCA05"
    jpni: 24
    jpnj: 18
    nproc: 432
+
+   add_namelist_changes:
+        namelist_cfg:
+            namtra_ldf:
+                rn_aht_0: 600
    
 rnfmap:
    nproc: 1
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/p/project/hirace/kjellsson1/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "/p/project/hirace/kjellsson1/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_1m"
    nproc: 48

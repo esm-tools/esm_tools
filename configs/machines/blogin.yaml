@@ -171,7 +171,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX" 
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

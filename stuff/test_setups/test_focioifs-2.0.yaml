@@ -1,30 +1,29 @@
-
 general:
+   verbose: False 
    setup_name: "focioifs"      
-   resolution: "T95_ORCA05"
-   compute_time: "02:00:00"
-   account: shkifmsw 
-   #partition: standard96
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "00:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
-   version: "default"
-   postprocessing: 1
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   
    nyear: 0
    nmonth: 0
    nday: 1
    restart_rate: 1
    restart_unit: days 
-   base_dir: /home/shkifmsw/esm/esm-experiments/
    hours: 0
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
 
 focioifs:
-   model_dir: /home/shkifmsw/esm//models/focioifs-2.0/
+   model_dir: /will/be/set/by/test_setup.sh 
    
 oifs:
    version: "43r3"
+   with_xios: True
    scenario: "piControl"
    mip: "cmip6"
-   #pool_dir: "/scratch/usr/shkifmsw/foci_input2/"
    input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
    rtables_dir: "${pool_dir}/OPENIFS43R3_GENERAL/rtables/"
    vtables_dir: "${pool_dir}/OPENIFS43R3_GENERAL/vtables/"
@@ -39,13 +38,11 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   post_processing: 1
-   nproca: 287
-   nprocb: 1  
-   use_ocean_currents: 1
+   nproc: 287
+   use_ocean_currents: 0
 
 oasis3mct:
-   norestart: T
+   norestart: F
    use_lucia: True
       
 nemo:
@@ -53,10 +50,11 @@ nemo:
    jpni: 24
    jpnj: 18
    nproc: 432
+   
 rnfmap:
-   nproca: 1
-   nprocb: 1
+   nproc: 1
 
 xios: 
-   nproca: 36
-   nprocb: 1
+   with_model: focioifs 
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   nproc: 48

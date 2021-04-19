@@ -1,6 +1,8 @@
 
 general:
-   #use_venv: False
+   use_venv: False
+   verbose: True
+   
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
@@ -16,8 +18,10 @@ general:
    hours: 0
   
    # machine specific setup 
-   account: hirace 
-   base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
+   #account: hirace 
+   #base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
+   account: shk00018
+   base_dir: /home/shkifmsw/esm/esm-experiments/
    # seb-wahl: this does not work and causes really strange
    # behaviour upon restart!
    #choose_computer.name:
@@ -37,8 +41,9 @@ general:
    #base_dir: ${my_work_env}/esm-experiments/
 
 focioifs:
-   model_dir: /p/project/hirace/wahl1/esm/models/focioifs-2.0
-   
+   #model_dir: /p/project/hirace/wahl1/esm/models/focioifs-2.0
+   model_dir: /home/shkifmsw/esm/models/focioifs-2.0
+  
 oifs:
    version: "43r3"
    with_xios: True
@@ -58,8 +63,7 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   nproca: 287
-   nprocb: 1  
+   nproc: 287
    use_ocean_currents: 0
 
 oasis3mct:
@@ -73,11 +77,9 @@ nemo:
    nproc: 432
    
 rnfmap:
-   nproca: 1
-   nprocb: 1
+   nproc: 1
 
 xios: 
    with_model: focioifs 
    xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
-   nproca: 48
-   nprocb: 1
+   nproc: 48

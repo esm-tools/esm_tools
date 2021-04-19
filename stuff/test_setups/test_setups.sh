@@ -17,11 +17,16 @@
 # Which configuration(s) shall be tested?
 # Can be overwritten by command line argument
 # Use space as separator for multiple configurations
-configurations="foci-default"
+#configurations="foci-default focioifs-2.0"
+configurations="foci-default focioifs-2.0 oifs-43r3-v1 "
+#configurations="focioifs-2.0 foci-default"
+#configurations="focioifs-2.0"
+#configurations="foci-default"
 
 # Which steps to test? Valid options are 'run' and 'compile'
 # put steps="compile run" to first compile and the run a test simulation
 steps="compile run"
+#steps="run"
 
 # work directory
 workdir=$WORK/tmp
@@ -29,17 +34,33 @@ workdir=$WORK/tmp
 # Account for model run
 # TODO: make this a command line argument as it is the only machine specific 
 # thing left in this script
-account=bb0519
-
-# test a specific version of a tool?
-components=(esm_runscripts esm_master esm_parser esm_environment)
-branch=(prep_release prep_release prep_release prep_release)
-
-# Which version of ESM-Tools shall be tested
-esm_tools_branch='prep_release'
+account=shk00018
 
 # Which plugins shall be installed during testing
-plugins="preprocess"
+#plugins="preprocess postprocess"
+#plugins=""
+
+# Test installation of ESM-Tools?
+# If set to yes, ESM-Tools will be installed from scratch into
+# $workdir/$configuration/env_esm_tools_$configuration
+# for each of the configurations listed above
+# if set to no, the current installation will be used
+test_install='no'
+
+# If test_install=yes: test install a specific version of a tool?
+components=(esm_rcfile esm_runscripts esm_parser)
+branch=(develop develop develop)
+
+# IF test_install=yes: Which version of ESM-Tools shall be tested
+esm_tools_branch='feature/fix_test_script'
+
+# Open run or contained run (i.e. use the virtual env feature?) 
+runtype='--open-run'
+# Open run and using a test install into a venv won't work as expected 
+# as the venv is not used upon resubmission of a job (limitation of ESM-Tools)
+# this only works if you use the release branch of each tool
+# as the venv is generated based on the release branch of each tool.
+[[ "$test_install" == 'yes' ]] && runtype='--contained-run' 
 #
 ###########################################################################
 #
@@ -53,9 +74,18 @@ if [[ $# -ge 1 ]] ; then
 fi
 
 logdir=$(pwd)
+scriptdir=$(pwd)
 
 # Loop over configurations to be tested
 for configuration in ${configurations} ; do
+  # if don't do a test installation into a venv we need to make sure
+  # we find the test yamls
+  if [[ "$test_install" == 'no' ]] ; then
+    if [[ ! -f test_${configuration}.yaml ]] ; then
+      echo "`date`: ERROR: test_${configuration}.yaml not available in $(pwd)" | tee -a ${logdir}/test_${configuration}.log
+      exit 1
+    fi
+  fi
   # the following uses the fact that the name of a configuration in
   # ESM-Toos is always configuration=<model or setup>-<version string that may contain '-'>
   # so we need a split on the first '-'
@@ -76,9 +106,10 @@ for configuration in ${configurations} ; do
     module load anaconda3/bleeding_edge
   elif [[ "$HOSTNAME" =~ juwels ]] ; then
     module --force purge
-    module use /gpfs/software/juwels/otherstages
-    module load Stages/Devel-2019a
-    module load GCCcore/.8.3.0
+    module use $OTHERSTAGES 
+    module load Stages/2019a
+	 module load Intel/2019.3.199-GCC-8.3.0
+	 module load IntelMPI/2019.6.154
     module load Python/3.6.8
     module load git
   else
@@ -97,120 +128,125 @@ for configuration in ${configurations} ; do
     rm -rf $workdir/${configuration}
     mkdir $workdir/$configuration; cd $workdir/$configuration
 
-    # setup virtual environment
-    rm -rf env_esm_tools_$configuration
-    python -m venv env_esm_tools_$configuration
-    source env_esm_tools_$configuration/bin/activate
-    # numpy is required by esm_tools and must be available inside the venv
-    #pip install --upgrade pip
-    pip install numpy
-    echo "`date`: OK: Python virtual env setup" | tee -a ${logdir}/test_${configuration}.log
+    if [[ "$test_install" == 'yes' ]] ; then
+      # setup virtual environment
+      rm -rf env_esm_tools_$configuration
+      python -m venv env_esm_tools_$configuration
+      source env_esm_tools_$configuration/bin/activate
+      # numpy is required by esm_tools and must be available inside the venv
+      #pip install --upgrade pip
+      pip install numpy
+      echo "`date`: OK: Python virtual env setup" | tee -a ${logdir}/test_${configuration}.log
 
-    # backup esmtoolsrc and install
-    cp -pv ~/.esmtoolsrc ~/.esmtoolsrc_ci_backup
-    git clone -b ${esm_tools_branch} https://github.com/esm-tools/esm_tools.git
-    cd esm_tools
-    # TODO: on blogin an "pip install ." works on mistral it gives an error even though we are inside a venv
-    # pip install -e . as a workaround works.
-    pip install -e .
-    if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-      echo "`date`: ERROR: pip install . failed" | tee -a ${logdir}/test_${configuration}.log
-      exit 1
-    else    
-      echo "`date`: OK: pip install ." | tee -a ${logdir}/test_${configuration}.log
-    fi
-
-    if ! [[ ${#components[@]} -eq ${#branch[@]} ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-      echo "`date`: ERROR: components and branch must have the same length" | tee -a ${logdir}/test_${configuration}.log
-      exit 1
-    fi
-    for i in ${!components[@]}; do
-      esm_versions upgrade ${components[$i]}=${branch[$i]}
-      if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-        echo "`date`: ERROR: esm_versions upgrade ${components[$i]}=${branch[$i]} failed" | tee -a ${logdir}/test_${configuration}.log
-        exit 1
-      fi
-    done
-    esm_versions check | tee -a ${logdir}/test_${configuration}.log
-
-    # install plugins
-    mkdir -p $workdir/$configuration/plugins
-    for plugin in $plugins ; do
-      # TODO: this does not work (at least not in a venv on mistral)
-      # pip install git+https://github.com/esm-tools-plugins/${plugin}.git
-      cd $workdir/$configuration/plugins/
-      git clone https://github.com/esm-tools-plugins/${plugin}.git
-      cd $plugin 
+      # install
+      git clone -b ${esm_tools_branch} https://github.com/esm-tools/esm_tools.git
+      cd esm_tools
+      # TODO: on blogin an "pip install ." works on mistral it gives an error even though we are inside a venv
+      # pip install -e . as a workaround works.
       pip install -e .
       if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-        echo "`date`: ERROR: pip install git+https://github.com/esm-tools-plugins/${plugin}.git failed" | tee -a ${logdir}/test_${configuration}.log
+        echo "`date`: ERROR: pip install . failed" | tee -a ${logdir}/test_${configuration}.log
+        exit 1
+      else    
+        echo "`date`: OK: pip install ." | tee -a ${logdir}/test_${configuration}.log
+      fi
+
+      if ! [[ ${#components[@]} -eq ${#branch[@]} ]] ; then
+        echo "`date`: ERROR: components and branch must have the same length" | tee -a ${logdir}/test_${configuration}.log
         exit 1
       fi
-    done
+      for i in ${!components[@]}; do
+        esm_versions upgrade ${components[$i]}=${branch[$i]}
+        if [[ $? -gt 0 ]] ; then
+          echo "`date`: ERROR: esm_versions upgrade ${components[$i]}=${branch[$i]} failed" | tee -a ${logdir}/test_${configuration}.log
+          exit 1
+        else
+          echo "`date`: OK: esm_versions upgrade ${components[$i]}=${branch[$i]}" | tee -a ${logdir}/test_${configuration}.log
+        fi
+      done
+      esm_versions check | tee -a ${logdir}/test_${configuration}.log
+
+      # install plugins
+      mkdir -p $workdir/$configuration/plugins
+      for plugin in $plugins ; do
+        # TODO: this does not work (at least not in a venv on mistral)
+        # pip install git+https://github.com/esm-tools-plugins/${plugin}.git
+        cd $workdir/$configuration/plugins/
+        git clone https://github.com/esm-tools-plugins/${plugin}.git
+        cd $plugin 
+        pip install -e .
+        if [[ $? -gt 0 ]] ; then
+          echo "`date`: ERROR: pip install git+https://github.com/esm-tools-plugins/${plugin}.git failed" | tee -a ${logdir}/test_${configuration}.log
+          exit 1
+        fi
+      done
+
+    fi # test_install
 
     # compile
+    esm_versions check | tee -a ${logdir}/test_${configuration}.log
+
     mkdir -p $workdir/$configuration/models
     rm -rf $workdir/$configuration/models/${configuration}
     cd $workdir/$configuration/models
+
     # install does not work for OIFS at the moment, need to file an issue
     # esm_master install-${configuration}
     esm_master get-${configuration}
     if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: esm_master get-${configuration} failed" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
+
     esm_master comp-${configuration}
     if [[ $? -gt 0 ]] ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
+      #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
       echo "`date`: ERROR: esm_master comp-${configuration} failed" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
     echo "`date`: OK: esm_master install-$configuration" | tee -a ${logdir}/test_${configuration}.log
 
-    # backup esmtoolsrc files
-    cp -v ~/.esmtoolsrc ~/.esmtoolsrc_ci
-    cp -v ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
   fi
 
   if [[ "$steps" =~ run ]]; then
 
     cd $workdir/$configuration
 
-    # activate virtual environment with correct esmtoolsrc saved in previous step
-    if [[ ! -f env_esm_tools_${configuration}/bin/activate ]]  ; then
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-      echo "`date`: ERROR: env_esm_tools_${configuration} not available. Did you run the compile step?" | tee -a ${logdir}/test_${configuration}.log
-      exit 1
-    fi
-    source env_esm_tools_$configuration/bin/activate
-    cp -v ~/.esmtoolsrc_ci ~/.esmtoolsrc
+    if [[ "$test_install" == 'yes' ]] ; then
+      # activate virtual environment with correct esmtoolsrc saved in previous step
+      if [[ ! -f env_esm_tools_${configuration}/bin/activate ]]  ; then
+        echo "`date`: ERROR: env_esm_tools_${configuration} not available. Did you run the compile step?" | tee -a ${logdir}/test_${configuration}.log
+        exit 1
+      fi
+      source env_esm_tools_$configuration/bin/activate
+	 fi
 
     # modify test_${configuration}.yaml and start the simulation
     mkdir -p $workdir/$configuration/esm-experiments
     rm -rf $workdir/$configuration/esm-experiments/test_${configuration}
 
-    cd $workdir/$configuration/esm_tools/stuff/test_setups
+    if [[ "$test_install" == 'yes' ]] ; then
+       cd $workdir/$configuration/esm_tools/stuff/test_setups
+	 else
+	    cd $scriptdir 
+    fi    
+
     if [[ -f test_${configuration}.yaml ]]  ; then
-      sed -i "s#   base_dir:.*#   base_dir: ${workdir}/${configuration}/esm-experiments#" test_${configuration}.yaml
-      sed -i "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}.yaml
-      sed -i "s#   account:.*#   account: ${account}#" test_${configuration}.yaml
-      esm_runscripts -e test_${configuration} test_${configuration}.yaml
+      cp test_${configuration}.yaml test_${configuration}_tmp.yaml
+      sed -i "s#   base_dir:.*#   base_dir: ${workdir}/${configuration}/esm-experiments#" test_${configuration}_tmp.yaml
+      sed -i "s#   model_dir:.*#   model_dir: ${workdir}/${configuration}/models/$configuration#" test_${configuration}_tmp.yaml
+      sed -i "s#   account:.*#   account: ${account}#" test_${configuration}_tmp.yaml
+      esm_runscripts $runtype -e test_${configuration} test_${configuration}_tmp.yaml
+
       # TODO: esm_runscripts sometimes returns 0 despite an error 
       if [[ $? -gt 0 ]] ; then
-        cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
         echo "`date`: ERROR: esm_runscripts -e test_${configuration} test_${configuration}.yaml failed" | tee -a ${logdir}/test_${configuration}.log
         exit 1
       else
         echo "`date`: OK: esm_runscripts -e test_${configuration} test_${configuration}.yaml" | tee -a ${logdir}/test_${configuration}.log
       fi
     else
-      cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc # restore .esmtoolsrc
-      echo "`date`: ERROR: $workdir/$configuration/esm_tools/stuff/test_setups/test_${configuration}.yaml not available" | tee -a ${logdir}/test_${configuration}.log
+      echo "`date`: ERROR: test_${configuration}.yaml not available in $(pwd)" | tee -a ${logdir}/test_${configuration}.log
       exit 1
     fi
 
@@ -237,11 +273,10 @@ for configuration in ${configurations} ; do
             cat ${logfile} | tee -a ${logdir}/test_${configuration}.log
             # exp has finished sucessfully
             if grep -q "Experiment over" ${logfile} ; then
-              cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: SUCCESS: Experiment finished successfully" | tee -a ${logdir}/test_${configuration}.log
               break 
             else
-              cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
+              #cp -pv ~/.esmtoolsrc_ci_backup ~/.esmtoolsrc
               echo "`date`: ERROR: Experiment failed" | tee -a ${logdir}/test_${configuration}.log
               exit 1
             fi
@@ -261,8 +296,6 @@ for configuration in ${configurations} ; do
       fi
     done # while [ true ] ; do
 
-    #echo "`date`: ERROR: Test experiment for $configuration failed with unknown error $?" | tee -a ${logdir}/test_${configuration}.log
-    #exit 1
   fi
 
 done # loop over configurations

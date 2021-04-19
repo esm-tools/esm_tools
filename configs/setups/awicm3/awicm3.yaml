@@ -44,7 +44,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
-        taskset: false
+        heterogeneous_parallelization: false
 
         reusable_filetypes: [input, bin, src]
 
@@ -131,7 +131,7 @@ general:
 oifs:
         version: "43r3"
 
-        choose_general.taskset:
+        choose_general.heterogeneous_parallelization:
                 false:
                         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
                 true:
@@ -259,7 +259,7 @@ oifs:
 
 fesom:
         version: "2.0"
-        choose_general.taskset:
+        choose_general.heterogeneous_parallelization:
                 false:
                         execution_command: ${executable}
                 true:
@@ -389,7 +389,7 @@ xios:
 
 
 rnfmap:
-        choose_general.taskset:
+        choose_general.heterogeneous_parallelization:
                 false:
                         execution_command: ${executable}
                 true:
@@ -609,6 +609,6 @@ oasis3mct:
 #######################################################################################
 # Setting of launcher flags for srun
 computer:
-        choose_general.taskset:
+        choose_general.heterogeneous_parallelization:
                 true:
                         launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"

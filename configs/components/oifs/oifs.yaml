@@ -361,114 +361,16 @@ namelist_changes:
                         ORBMODE: "${orb_mode}"
                         ORBIY: "${orb_iyear}"
 
-
-# Where does end_date and start_date come from
-# Why is it set to 364 days even when I ask for a 5-day run
-#runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
-# For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
-runtime_seconds: "$(( ${next_date} - ${start_date} ))"
-timestep_per_run: $((${runtime_seconds} / ${time_step}))
-ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
-ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
-
-steps_since_initial: $((${seconds_since_initial} / ${time_step}))
-
-next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
-steps_per_day: "$(( 86400 / ${time_step} ))"
-custop: "h${oifs.next_step}"
-#custop: "t${oifs.next_step}" # TODO: delete this comment
-nfrres: 1
-#nfrres: "${next_step}" # TODO: delete this comment
 lresume: false
+restart_rate: 1
+restart_unit: "months"
 
 massfixer: 1
 nfrmasscon: 12
 
-choose_general.run_number:
-        1:
-                start_seconds: "$((${start_date} - ${initial_date}))"
-                simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
-                seconds_since_initial: $((${start_date} - ${initial_date}))
-                seconds_since_initial_end: $((${end_date} - ${initial_date}))
-                next_seconds: "$((${next_date} - ${initial_date}))"
-                wam_start_date: "${initial_date!syear!smonth!sday}000000"
-                prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-        2:
-                start_seconds: "$((${start_date} - ${initial_date}))"
-                simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
-                seconds_since_initial: $((${start_date} - ${initial_date}))
-                seconds_since_initial_end: $((${end_date} - ${initial_date}))
-                next_seconds: "$((${next_date} - ${initial_date}))"
-                wam_start_date: "${initial_date!syear!smonth!sday}000000"
-                prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-        "*":
-                start_seconds: "$((${start_date} - ${last_start_date}))"
-                simulation_length_seconds: "$(( ${next_date} - ${last_start_date} ))"
-                seconds_since_initial: $((${start_date} - ${last_start_date}))
-                seconds_since_initial_end: $((${end_date} - ${last_start_date}))
-                next_seconds: "$((${next_date} - ${last_start_date}))"
-                wam_start_date: "${last_start_date!syear!smonth!sday}000000"
-                prev_wam: "${days_minus1_string}${last_parent_date!shour!sminute!ssecond}"
-                start_ndays_prev: "${prev_run.oifs.start_ndays}"
-
-#start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
-start_ndays_prev: 0
-start_ndays: "$(( ${start_seconds} / 86400 ))"
-start_ndays_in_source: "$(( ${start_ndays} + ${start_ndays_prev} ))"
-start_ndays_string: "<--format(%08d)-- ${start_ndays}"
-start_ndays_in_source_string: "<--format(%08d)-- ${start_ndays_in_source}"
-#end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
-next_ndays: "$(( ${next_seconds} / 86400 ))"
-next_ndays_string: "<--format(%08d)-- ${next_ndays}"
-
-# ICMCL start and end
-icmcl_end_date: $(( ${next_date} + 1days ))
-icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
-
-# WAM restart files are named with the number of
-# days, hours, minutes, seconds since the last run
-# with one time step subtracted.
-# So restarting after 8 days with 30 min time step has
-# time stamp 000007233000
-# Here we calculate this
-#
-# how do we subtract one time step
-#start_seconds_wam: "$(( ${start_seconds} - ${time_step} ))"
-#start_ndays_wam: "$(( ${start_seconds_wam} / 86400 ))"
-#start_nhours_wam: "$(( $(( ${start_seconds_wam} - $(( ${start_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-#start_remaining_seconds: "$(( ${start_seconds_wam} - $(( ${start_nhours_wam} * 3600 )) - $(( ${start_ndays_wam} * 86400 )) ))"
-#start_nmins_wam: "$(( ${start_remaining_seconds} / 60 ))"
-#start_ndays_string_wam: "<--format(%06d)-- ${start_ndays_wam}"
-#start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
-#start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
-#start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
-#start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
-
-#end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
-#end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
-#end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-#end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
-#end_nmins_wam: "$(( ${end_remaining_seconds} / 60 ))"
-#end_ndays_string_wam: "<--format(%06d)-- ${end_ndays_wam}"
-#end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
-#end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
-#end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
-#end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-end_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
-
-run_number_minus1: "$(( ${run_number} - 1 ))"
-run_number_string: "<--format(%05d)-- ${run_number}"
-run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
-
-
-restart_rate: 1
-restart_unit: "months"
-
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
-
 
 choose_levels:
         L60:
@@ -480,8 +382,67 @@ choose_levels:
         L137:
                 levels_number: 137
 
+
+#======================================================================================
+# TIME VARIABLES
+#======================================================================================
+# Time variables are needed for correctly copying srf and WAM files, but also for being
+# able to use Jan's strategy to avoid OIFS from crashing during very long runs,
+# associated to the well known memory issue documented here:
+#     https://confluence.ecmwf.int/pages/viewpage.action?pageId=192905300
+
+# The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
+# OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
+# memory issues mentioned before. This is done by declaring the pseudo_initial_date
+# as the last start date.
+choose_general.run_number:
+        1:
+                pseudo_initial_date: "${initial_date}"
+                prev_pseudo_initial_date: "${initial_date}"
+                start_ndays_source: "${start_ndays}"
+        2:
+                pseudo_initial_date: "${initial_date}"
+                prev_pseudo_initial_date: "${initial_date}"
+                start_ndays_source: "${start_ndays}"
+        "*":
+                pseudo_initial_date: "${last_start_date}"
+                prev_pseudo_initial_date: "${prev_run.oifs.pseudo_initial_date}"
+                start_ndays_source: "${prev_run.oifs.next_ndays}"
+
+# Simulaton length for the fort.4 namelist
+simulation_length_seconds: "$(( ${next_date} - ${pseudo_initial_date} ))"
+seconds_since_initial: "$(( ${start_date} - ${pseudo_initial_date} ))"
+wam_start_date: "${pseudo_initial_date!syear!smonth!sday}000000"
+
+# ICMCL start and end
+icmcl_end_date: "$(( ${next_date} + 1days ))"
+icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
+
+# Where does end_date and start_date come from
+# Why is it set to 364 days even when I ask for a 5-day run
+#runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+# For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
+runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+timestep_per_run: $((${runtime_seconds} / ${time_step}))
+ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
+
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+steps_per_day: "$(( 86400 / ${time_step} ))"
+custop: "h${oifs.next_step}"
+#custop: "t${oifs.next_step}" # TODO: delete this comment
+nfrres: 1
+#nfrres: "${next_step}" # TODO: delete this comment
+
+
+#======================================================================================
+# BINARY FILES
+#======================================================================================
 bin_sources:
         bin: ${bin_dir}/${executable}
+
 
 #======================================================================================
 # INPUT FILES
@@ -547,16 +508,38 @@ log_in_work:
         NODE: NODE.001_01
         ifsstat: ifs.stat
 
+
 #======================================================================================
 # RESTART FILES
 #======================================================================================
 
-# Indexing logic for WAM restart files
-days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
-days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
-days_string: "<--format(%06d)-- ${days_since_initial}"
-days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
-this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
+# NDAYS variables for SRF and WAMINFO files
+# ndays_source_in
+ndays_source_in: "<--format(%08d)-- ${start_ndays_source}"
+# ndays_work_in
+start_ndays: "$(( ${seconds_since_initial} / 86400 ))"
+ndays_work_in: "<--format(%08d)-- ${start_ndays}"
+# ndays_out
+next_ndays: "$(( ${simulation_length_seconds} / 86400 ))"
+ndays_out: "<--format(%08d)-- ${next_ndays}"
+
+# WAM variables
+# filebase
+filebase_wam_source: "${prev_run.oifs.filebase_wam_work}"
+pseudo_initial_date_minus_step: "$(( ${pseudo_initial_date} - ${time_step}seconds ))"
+filebase_wam_work: "${pseudo_initial_date_minus_step!syear!smonth!sday}000000_"
+# wam_source_in
+source_ndays_wam: "$(( ${start_ndays_source} - 1 ))"
+source_days_string: "<--format(%06d)-- ${source_ndays_wam}"
+wam_source_in: "${source_days_string}${parent_date!shour!sminute!ssecond}"
+# wam_work_in
+start_ndays_wam: "$(( ${start_ndays} - 1 ))"
+start_days_string: "<--format(%06d)-- ${start_ndays_wam}"
+wam_work_in: "${start_days_string}${parent_date!shour!sminute!ssecond}"
+# wam_out
+next_ndays_wam: "$(( ${next_ndays} - 1 ))"
+next_days_string: "<--format(%06d)-- ${next_ndays_wam}"
+wam_out: "${next_days_string}${parent_date!shour!sminute!ssecond}"
 
 # BEFORE RUN: copy from RESTART to WORK
 # ----------
@@ -566,19 +549,19 @@ restart_in_files:
 
 # RESTART (restart files from prev. leg in the general exp dir):
 restart_in_sources:
-        srf: ${in_date_folder}/srf${start_ndays_in_source_string}0000.*
+        srf: ${in_date_folder}/srf${ndays_source_in}0000.*
         rcf: ${in_date_folder}/rcf
-        waminfo: ${in_date_folder}/waminfo${start_ndays_in_source_string}
-        BLS: ${in_date_folder}/BLS${start_filebase_wam}${prev_wam}.*
-        LAW: ${in_date_folder}/LAW${start_filebase_wam}${prev_wam}.*
+        waminfo: ${in_date_folder}/waminfo${ndays_source_in}
+        BLS: ${in_date_folder}/BLS${filebase_wam_source}${wam_source_in}.*
+        LAW: ${in_date_folder}/LAW${filebase_wam_source}${wam_source_in}.*
 
 # WORK (current leg directory):
 restart_in_in_work:
         rcf: rcf
         waminfo: waminfo
-        srf: srf${start_ndays_string}0000.*
-        BLS: BLS${start_filebase_wam}${prev_wam}.*
-        LAW: LAW${start_filebase_wam}${prev_wam}.*
+        srf: srf${ndays_work_in}0000.*
+        BLS: BLS${filebase_wam_work}${wam_work_in}.*
+        LAW: LAW${filebase_wam_work}${wam_work_in}.*
 
 
 # AFTER RUN: copy WORK to RESTART
@@ -589,19 +572,19 @@ restart_out_files:
 
 # WORK (restart files generated during this leg, to be copied to the exp dir):
 restart_out_sources:
-        srf: srf${next_ndays_string}0000.*
+        srf: srf${ndays_out}0000.*
         rcf: rcf
         waminfo: waminfo
-        BLS: BLS${end_filebase_wam}${this_wam}.*
-        LAW: LAW${end_filebase_wam}${this_wam}.*
+        BLS: BLS${filebase_wam_work}${wam_out}.*
+        LAW: LAW${filebase_wam_work}${wam_out}.*
 
 # RESTART (restart files from this leg in the general exp dir, for the next leg restart)
 restart_out_targets:
-        srf: ${out_date_folder}/srf${next_ndays_string}0000.*
+        srf: ${out_date_folder}/srf${ndays_out}0000.*
         rcf: ${out_date_folder}/rcf
-        waminfo: ${out_date_folder}/waminfo${next_ndays_string}
-        BLS: ${out_date_folder}/BLS${end_filebase_wam}${this_wam}.*
-        LAW: ${out_date_folder}/LAW${end_filebase_wam}${this_wam}.*
+        waminfo: ${out_date_folder}/waminfo${ndays_out}
+        BLS: ${out_date_folder}/BLS${filebase_wam_work}${wam_out}.*
+        LAW: ${out_date_folder}/LAW${filebase_wam_work}${wam_out}.*
 
 
 #======================================================================================

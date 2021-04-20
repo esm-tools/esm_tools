@@ -47,12 +47,12 @@ release5_esm_plugin_manager:
                 Your version of this package is very old. Please consider updating to release 5 .
         action: DELAY(1)
 
-hosing_esm_tools:
-        package: "esm_tools"
-        versions: ">=5.0.5"
-        message: |
-                "ESM Tools version 5.0.5 allows for the generation of hosing files in AWI-ESM-2.1 and AWI-ESM-2.2
-                To use that, you still need to install a plugin. Please run:
-
-                $ pip install --user gfw_creator"
-        action: DELAY(1)
+        #hosing_esm_tools:
+        #package: "esm_tools"
+        #versions: ">=5.0.5"
+        #message: |
+        #        "ESM Tools version 5.0.5 allows for the generation of hosing files in AWI-ESM-2.1 and AWI-ESM-2.2
+        #        To use that, you still need to install a plugin. Please run:
+        #
+        #        $ pip install --user gfw_creator"
+        #action: DELAY(1)

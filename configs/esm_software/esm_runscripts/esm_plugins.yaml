@@ -14,14 +14,18 @@ core:
                         - "initialize_coupler"
                         - "set_logfile"
 
-                prepcompute:
-                        - "compile_model"
+                prepexp:
                         - "_create_setup_folders"
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
-                        - "_write_finalized_config"
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
+                        
+
+
+                prepcompute:
+                        - "compile_model"
+                        - "_write_finalized_config"
                         - "_show_simulation_info"
                         - "assemble_filelists"
                         - "copy_files_to_thisrun"
@@ -77,6 +81,13 @@ core:
 
                 resubmit:
                         - "submit"
+
+                chunky_parts:
+                        - "_update_run_in_chunk"
+                        - "_update_chunk_date_file"
+
+                workflow:
+                        - "assemble_workflow"
 
 
 

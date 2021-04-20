@@ -7,6 +7,9 @@ choose_job_type:
         prepare:
                 recipe:
                         - "_read_date_file"
+                        #- "setup_correct_chunk_config"
+                        - "_update_run_in_chunk"
+                        - "assemble_workflow"  
                         - "check_model_lresume"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
@@ -19,6 +22,17 @@ choose_job_type:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
+                        - "_update_chunk_date_file"
+        
+
+        prepexp:
+                recipe:
+                        - "venv_bootstrap"
+                        - "_create_setup_folders"
+                        - "_create_component_folders"
+                        - "initialize_experiment_logfile"
+                        - "copy_tools_to_thisrun"
+                        - "_copy_preliminary_files_from_experiment_to_thisrun"
 
 
         observe:
@@ -48,13 +62,7 @@ choose_job_type:
 
         prepcompute:
                 recipe:
-                        - "venv_bootstrap"
-                        - "_create_setup_folders"
-                        - "_create_component_folders"
-                        - "initialize_experiment_logfile"
-                        - "copy_tools_to_thisrun"
                         - "compile_model"
-                        - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
                         - "create_new_files"
                         - "prepare_coupler_files"

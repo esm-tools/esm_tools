@@ -1,7 +1,7 @@
 general:
         base_dir: /work/ollie/dbarbi/vilma_exp/
         initial_date: -120000-01-01
-        final_date: -01-12-31
+        final_date: -119001-12-31
         setup_name: vilma
         compute_time: 00:00:01
         nyear: 1000
@@ -11,3 +11,5 @@ vilma:
         model_dir: /work/ollie/dbarbi/modelcodes/vilma-1d/
         pool_dir: ${model_dir}
         lresume: False
+        scenario: small
+

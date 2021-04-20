@@ -9,9 +9,9 @@ pool_dir: /dev/null
 model_dir: /dev/null
 bin_dir: ${model_dir}/bin
 
-ini_input_dir: ${pool_dir}/ice5g
 ini_forcing_dir: ${pool_dir}/config
-ini_parent_dir: ${pool_dir}/ice5g
+
+scenario: ice5g
 
 available_versions:
 - 1d
@@ -34,67 +34,38 @@ choose_version:
                 nproc: 8
 
 
-resolution: '512x1024'
+choose_scenario:
+        ice5g:
+                ini_input_dir: ${pool_dir}/ice5g
+                ini_parent_dir: ${pool_dir}/ice5g
+                resolution: '512x1024'
+                eislastfile: ice5g_total.nc
+                eislastconf: loadh_ice5g_total.inp
+                bedrockfile: ETOPO1_Bed_n256.nc
+        ice6g:
+                ini_input_dir: ${pool_dir}/ice6g
+                ini_parent_dir: ${pool_dir}/ice6g
+                resolution: '512x1024' # ??? not used at all
+                eislastfile: ice6g_total.nc
+                eislastconf: loadh_ice6g_total.inp
+                bedrockfile: ice6g_bed.nc
+        small:
+                ini_input_dir: ${pool_dir}/small_setup
+                ini_parent_dir: ${pool_dir}/small_setup
+                resolution: '512x1024' # ??? not used at all
+                eislastfile: initial_topo.nc
+                eislastconf: load_hist.inp
+                bedrockfile: ice_thickness_forcing.nc
 
-eislastfile: ice5g_total.nc
-eislastconf: loadh_ice5g_total.inp
-bedrockfile: ETOPO1_Bed_n256.nc
+
+
+
 wepochsfile: automatic
 tintfile: automatic
 
 
 coupled_to_ice: False
-
-choose_coupled_to_ice:
-        True:
-                compute_recipe:
-                        - "venv_bootstrap"
-                        - "_create_setup_folders"
-                        - "_create_component_folders"
-                        - "initialize_experiment_logfile"
-                        - "copy_tools_to_thisrun"
-                        - "compile_model"
-                        - "_copy_preliminary_files_from_experiment_to_thisrun"
-                        - "_show_simulation_info"
-                        - "create_new_files"
-                        - "prepare_coupler_files"
-                        - "add_batch_hostfile"
-                        - "assemble"
-                        - "log_used_files"
-                        - "_write_finalized_config"
-                        - "copy_files_to_thisrun"
-                        - "ice2vilma"
-                        - "modify_namelists"
-                        - "modify_files"
-                        - "copy_files_to_work"
-                        - "write_simple_runscript"
-                        - "report_missing_files"
-                        - "database_entry"
-                        - "submit"
-
-                tidy_recipe:
-                        - "init_monitor_file"
-                        - "get_last_jobid"
-                        - "wait_and_observe"
-                        - "wake_up_call"
-                        - "tidy_coupler"
-                        - "assemble"
-                        - "check_for_unknown_files"
-                        - "log_used_files"
-                        - "throw_away_some_infiles"
-                        - "copy_stuff_back_from_work"
-                        - "vilma2ice"
-                        - "copy_all_results_to_exp"
-                        - "clean_run_dir"
-                        - "start_post_job"
-                        - "signal_tidy_completion"
-                        - "_increment_date_and_run_number"
-                        - "_write_date_file"
-                        - "maybe_resubmit"
-
-
-
-
+coupled_to_ocean: False
 
 # parameters:
 #
@@ -169,7 +140,7 @@ create_config:
                 - "<--append-- ${l_wepo}"
                 - "<--append-- restart/restart.log"
 
-        load_hist.inp:
+        inp/load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
                 - "<--append-- ${eislastfile}"
                 - "<--append-- ${bedrockfile} ${eislastfile}"
@@ -177,7 +148,7 @@ create_config:
 choose_tintfile:
         "automatic":
                 add_create_config:        
-                        tint.inp:
+                        inp/tint.inp:
                                 - "<--append-- 0 0"
                                 - "<--append-- 42.0 -42.0 ${time_step}"
 
@@ -191,7 +162,7 @@ choose_wepochsfile:
         "automatic":
                 OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
                 add_create_config:        
-                        wepochs.inp:
+                        inp/wepochs.inp:
                                 - "<--append-- [[OUTPUT_DATES-->od]]"
                                 # ???
                                 # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
@@ -245,15 +216,27 @@ restart_in_targets:
         dflag.nc: out/dflag.nc
 
 config_sources:
-        #wepochs: ${actual_wepochsfile}
-        #tint: ${actual_tintfile}
         eislastconf: ${ini_input_dir}/${eislastconf}
+
+config_targets:
+        eislastconf: inp/${eislastconf}
 
 forcing_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
         bedrockfile: ${ini_input_dir}/${bedrockfile}
+        
+        # There are different visko.inp files available, all having a different
+        # number of lines (seemingly radial layers). It is a bit confusing to
+        # understand how that can work. What vilma does is this: It first reads in 
+        # densi.inp, that looks like this:
+        # lower_radius   upper_radius    delta_radius    densi0   densi1
+        # out of the first three the number of layers between lower_radius and
+        # upper_radius is calculated. While reading visko.inp it looks for the visko
+        # that is valid for each layer.
+
         densi: ${ini_forcing_dir}/densi.inp
-        visko: ${ini_input_dir}/visko.inp
+        #visko: ${ini_input_dir}/visko.inp
+        visko: ${ini_forcing_dir}/simple_visko.inp
 
 forcing_targets:
         densi: inp/densi.inp
@@ -287,4 +270,32 @@ restart_out_targets:
 
 log_sources:
         restart_log: restart.log
+
+
+
+
+choose_coupled_to_ice:
+        True:
+                add_workflow:
+                        next_run_triggered_by: couple_out
+
+                        subjobs:
+                                couple_in_ice:
+                                        nproc: 1
+                                        run_before: prepcompute
+                                        script_dir: ${esm_function_dir}/couplings/vilma
+                                        script: coupling_ice2vilma.functions
+                                        call_function: ice2vilma
+                                        subjob_cluster: couple_in
+                                        env_preparation: couple_in_env.py
+
+                                couple_out_ice:
+                                        nproc: 1
+                                        run_after: tidy
+                                        script_dir: ${esm_function_dir}/couplings/vilma
+                                        script: coupling_vilma2ice.functions
+                                        call_function: vilma2ice
+                                        subjob_cluster: couple_out
+                                        env_preparation: couple_out_env.py
+
 

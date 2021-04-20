@@ -27,10 +27,10 @@ focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.0
   
 oifs:
-   runtime_environment_changes:
-      choose_computer.name:
-         nesh:
-            compiler_mpi: intel2019_impi2019
+   #runtime_environment_changes:
+   #   choose_computer.name:
+   #      nesh:
+   #         compiler_mpi: intel2020_impi2020
    version: "43r3"
    with_xios: True
    scenario: "piControl"

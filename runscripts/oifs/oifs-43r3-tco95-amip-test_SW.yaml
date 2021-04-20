@@ -53,4 +53,4 @@ xios:
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
         # 1m surface + pressure levels
         #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl
-        nproc: 96
+        nproc: 32

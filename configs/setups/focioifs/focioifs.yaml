@@ -93,7 +93,8 @@ oifs:
              juwels:
                 compiler_mpi: intel2019_parastation 
              nesh:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2020_impi2020
+
         runtime_environment_changes:
           add_export_vars:
              # Turn on FOCI coupling        
@@ -111,7 +112,7 @@ oifs:
              juwels:
                 compiler_mpi: intel2019_parastation 
              nesh:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2020_impi2020
 
         version: "43r3"
         

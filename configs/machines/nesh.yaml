@@ -143,7 +143,7 @@ choose_compiler_mpi:
 
    intel2020_ompi:
       add_module_actions:
-         - "load intel/19.0.4"
+         - "load intel/20.0.4"
          - "load openmpi-intel20/3.1.6"
       add_export_vars:  
          FC: mpifort

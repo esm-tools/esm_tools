@@ -50,6 +50,4 @@ choose_debugger:
 
 submitted: false
 
-pre_run_commands: "qalter $PBS_JOBID -o ${thisrun_logfile}"
-
 execution_command: "${debugger_flags_prelauncher} ${launcher} @components@"

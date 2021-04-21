@@ -1,9 +1,15 @@
 model: vilma
+
+
+
+# defaults
+
 version: 1d
 internal_version: 'I189'
 
 logfile: 'vega.log'
 executable: 'vega_vip.x'
+execution_command: "vilma_wrapper.sh"
 
 pool_dir: /dev/null
 model_dir: /dev/null
@@ -17,52 +23,8 @@ available_versions:
 - 1d
 - 3d
 
-choose_version:
-        1d:
-                clean_command: ${defaults.clean_command}
-                comp_command: ${defaults.comp_command}
-                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
-                install_bins: bin/vega_vip.x
-                branch: ${version}
-                nproc: 1
-        3d:
-                clean_command: ${defaults.clean_command}
-                comp_command: ${defaults.comp_command}
-                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
-                install_bins: bin/vega_vip.x
-                branch: ${version}
-                nproc: 8
-
-
-choose_scenario:
-        ice5g:
-                ini_input_dir: ${pool_dir}/ice5g
-                ini_parent_dir: ${pool_dir}/ice5g
-                resolution: '512x1024'
-                eislastfile: ice5g_total.nc
-                eislastconf: loadh_ice5g_total.inp
-                bedrockfile: ETOPO1_Bed_n256.nc
-        ice6g:
-                ini_input_dir: ${pool_dir}/ice6g
-                ini_parent_dir: ${pool_dir}/ice6g
-                resolution: '512x1024' # ??? not used at all
-                eislastfile: ice6g_total.nc
-                eislastconf: loadh_ice6g_total.inp
-                bedrockfile: ice6g_bed.nc
-        small:
-                ini_input_dir: ${pool_dir}/small_setup
-                ini_parent_dir: ${pool_dir}/small_setup
-                resolution: '512x1024' # ??? not used at all
-                eislastfile: initial_topo.nc
-                eislastconf: load_hist.inp
-                bedrockfile: ice_thickness_forcing.nc
-
-
-
-
 wepochsfile: automatic
 tintfile: automatic
-
 
 coupled_to_ice: False
 coupled_to_ocean: False
@@ -104,11 +66,6 @@ l_wepo: 1
 
 # calendar stuff
 #
-#final_year: ${final_date!syear}
-#initial_year: ${initial_date!syear}
-#last_year: ${end_date!syear}
-#start_year: ${start_date!syear}
-
 fyear: $(( ${final_date!syear} / 1000. ))
 
 dtimes: $(( ${final_date!syear} / 1000. - ${initial_date!syear} / 1000. ))
@@ -124,6 +81,81 @@ etime: $(( ${lastyear_p1} / 1000. ))
 wetime: $(( ${finalyear_p1} / 1000. ))
 
 
+# different setups and scenarios 
+
+
+choose_version:
+        1d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+                nproc: 1
+        3d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+                nproc: 8
+
+
+choose_scenario:
+        ice5g:
+                ini_input_dir: ${pool_dir}/ice5g
+                ini_parent_dir: ${pool_dir}/ice5g
+                resolution: '512x1024'
+                eislastfile: ice5g_total.nc
+                eislastconf: loadh_ice5g_total.inp
+                bedrockfile: ETOPO1_Bed_n256.nc
+        ice6g:
+                ini_input_dir: ${pool_dir}/ice6g
+                ini_parent_dir: ${pool_dir}/ice6g
+                resolution: '512x1024' # ??? not used at all
+                eislastfile: ice6g_total.nc
+                eislastconf: loadh_ice6g_total.inp
+                bedrockfile: ice6g_bed.nc
+        small:
+                ini_input_dir: ${pool_dir}/small_setup
+                ini_parent_dir: ${pool_dir}/small_setup
+                resolution: '512x1024' # ??? not used at all
+                eislastfile: initial_topo.nc
+                eislastconf: couple_eislastconf.inp
+                bedrockfile: ice_thickness_forcing.nc
+
+
+choose_coupled_to_ice:
+        True:
+                add_workflow:
+                        next_run_triggered_by: couple_out
+
+                        subjobs:
+                                couple_in_ice:
+                                        nproc: 1
+                                        run_before: prepcompute
+                                        script_dir: ${esm_function_dir}/couplings/vilma
+                                        script: coupling_ice2vilma.functions
+                                        call_function: ice2vilma
+                                        subjob_cluster: couple_in
+                                        env_preparation: couple_in_env.py
+
+                                couple_out_ice:
+                                        nproc: 1
+                                        run_after: tidy
+                                        script_dir: ${esm_function_dir}/couplings/vilma
+                                        script: coupling_vilma2ice.functions
+                                        call_function: vilma2ice
+                                        subjob_cluster: couple_out
+                                        env_preparation: couple_out_env.py
+        False:
+                add_config_sources:
+                        eislastconf: ${ini_input_dir}/${eislastconf}
+                add_config_targets:
+                        eislastconf: inp/${eislastconf}
+
+
+# files to be created
 create_config:
         vilma_wrapper.sh:
                 - "<--append-- #!/bin/ksh"
@@ -139,11 +171,13 @@ create_config:
                 - "<--append-- ${itimes}"
                 - "<--append-- ${l_wepo}"
                 - "<--append-- restart/restart.log"
+                - "<--append-- ${btime} ${etime}"
+                - "<--append-- END"
 
         inp/load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
-                - "<--append-- ${eislastfile}"
-                - "<--append-- ${bedrockfile} ${eislastfile}"
+                - "<--append-- ${bedrockfile}"
+                - "<--append-- ${eislastfile} ${bedrockfile}"
 
 choose_tintfile:
         "automatic":
@@ -152,11 +186,6 @@ choose_tintfile:
                                 - "<--append-- 0 0"
                                 - "<--append-- 42.0 -42.0 ${time_step}"
 
-                                  #add_config_sources:
-                                  #tint: ${base_dir}/${expid}/config/tint.inp
-                                  #"*":
-                                  #add_config_sources:
-                                  #tint: ${tintfile}
 
 choose_wepochsfile:
         "automatic":
@@ -164,21 +193,14 @@ choose_wepochsfile:
                 add_create_config:        
                         inp/wepochs.inp:
                                 - "<--append-- [[OUTPUT_DATES-->od]]"
-                                # ???
-                                # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
-                                #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
-                                # done
-                                 
-                                  #add_config_sources:
-                                  #wepochs: ${base_dir}/${expid}/config/wepochs.inp
-                                  #"*":
-                                  #add_config_sources:
-                                  #wepochs: ${wepochsfile}
+
+create_folders:
+        - ${work_dir}/out
+        - ${work_dir}/restart
 
 
-execution_command: "vilma_wrapper.sh"
-
-
+# files to be copied
+#
 restart_in_sources:
         io.tmp: io.tmp
         restart.log: restart.log
@@ -215,11 +237,6 @@ restart_in_targets:
         vega1.nc: out/vega1.nc
         dflag.nc: out/dflag.nc
 
-config_sources:
-        eislastconf: ${ini_input_dir}/${eislastconf}
-
-config_targets:
-        eislastconf: inp/${eislastconf}
 
 forcing_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
@@ -235,8 +252,7 @@ forcing_sources:
         # that is valid for each layer.
 
         densi: ${ini_forcing_dir}/densi.inp
-        #visko: ${ini_input_dir}/visko.inp
-        visko: ${ini_forcing_dir}/simple_visko.inp
+        visko: ${ini_input_dir}/visko.inp
 
 forcing_targets:
         densi: inp/densi.inp
@@ -271,31 +287,5 @@ restart_out_targets:
 log_sources:
         restart_log: restart.log
 
-
-
-
-choose_coupled_to_ice:
-        True:
-                add_workflow:
-                        next_run_triggered_by: couple_out
-
-                        subjobs:
-                                couple_in_ice:
-                                        nproc: 1
-                                        run_before: prepcompute
-                                        script_dir: ${esm_function_dir}/couplings/vilma
-                                        script: coupling_ice2vilma.functions
-                                        call_function: ice2vilma
-                                        subjob_cluster: couple_in
-                                        env_preparation: couple_in_env.py
-
-                                couple_out_ice:
-                                        nproc: 1
-                                        run_after: tidy
-                                        script_dir: ${esm_function_dir}/couplings/vilma
-                                        script: coupling_vilma2ice.functions
-                                        call_function: vilma2ice
-                                        subjob_cluster: couple_out
-                                        env_preparation: couple_out_env.py
 
 

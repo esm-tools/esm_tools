@@ -32,6 +32,7 @@ core:
                         - "modify_namelists"
                         - "modify_files"
                         - "create_new_files"
+                        - "create_empty_folders"
                         - "prepare_coupler_files"
                         - "add_batch_hostfile"
                         - "copy_files_to_work"

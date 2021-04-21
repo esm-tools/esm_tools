@@ -65,6 +65,7 @@ choose_job_type:
                         - "compile_model"
                         - "_show_simulation_info"
                         - "create_new_files"
+                        - "create_empty_folders"
                         - "prepare_coupler_files"
                           #- "calculate_requirements"
                           #- "add_batch_hostfile"

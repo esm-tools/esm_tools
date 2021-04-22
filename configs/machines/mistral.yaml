@@ -61,7 +61,7 @@ module_actions:
         - "load autoconf/2.69"
         - "load nco"
         - "load cdo"
-        - "load gcc/7.1.0"
+        - "load gcc/4.8.2"
 
 export_vars:
         #########################################################################

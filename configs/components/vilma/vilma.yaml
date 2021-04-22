@@ -285,6 +285,9 @@ restart_out_targets:
         vega_rpt: vega_rpt.dat
 
 log_sources:
+        restart_log: restart/restart.log
+
+log_targets:
         restart_log: restart.log
 
 

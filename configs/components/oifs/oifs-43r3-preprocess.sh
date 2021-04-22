@@ -58,10 +58,19 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 else
-   echo
-	echo $0 has not been adapted for $(hostname)
-	echo
-	exit 1
+     module load PrgEnv-cray/6.0.4
+     module load alps pbs
+     module load cray-mpich/7.7.3
+     module load craype-x86-skylake
+     module load cmake/3.14.0
+     module load cray-hdf5-parallel/1.10.2.0
+     module load cray-netcdf-hdf5parallel/4.6.1.3
+     module load cdo/1.9.5
+     module load fftw/2.1.5.9
+     module load nco/4.9.4
+     module load proj4/5.1.0
+     module load python/3.9.1
+     export PATH=$PATH:/home/awiiccp2/software/ecmwf/eccodes_cce_mpich/bin
 fi 
 
 echo " OpenIFS preprocessing "

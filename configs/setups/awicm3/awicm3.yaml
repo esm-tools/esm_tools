@@ -588,12 +588,3 @@ oasis3mct:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
-
-#######################################################################################
-# Setting of launcher flags for srun
-computer:
-        choose_general.heterogeneous_parallelization:
-                true:
-                        choose_computer.batch_system:
-                                slurm:
-                                        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"

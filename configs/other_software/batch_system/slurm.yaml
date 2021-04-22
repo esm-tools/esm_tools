@@ -41,9 +41,15 @@ thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+choose_general.heterogeneous_parallelization:
+        true:
+                cpu_bind: "none"
+        "*":
+                cpu_bind: "cores"
+
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:

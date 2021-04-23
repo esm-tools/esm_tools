@@ -6,7 +6,7 @@ general:
         compute_time: 00:04:00
         nyear: 1000
         use_venv: False
-        submit_to_batch_system: False
+        #submit_to_batch_system: False
 
 vilma:
         model_dir: /work/ollie/dbarbi/modelcodes/vilma-1d/

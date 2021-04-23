@@ -21,18 +21,12 @@ function quit_install () {
 if [[ -z ${LANG+x} ]]; then
     err_msg="LANG environment variable is not set"
     shall_exit=true
-elif [[ ${LANG} != "en_US.UTF-8" ]]; then
-    err_msg="LANG environment variable is not set correctly. The current value is ${LANG}"
-    shall_exit=true
 fi
 
 
 # check if LC_ALL variable is set to the correct value
 if [[ -z ${LC_ALL+x} ]]; then
     err_msg="LC_ALL variable is not set"
-    shall_exit=true
-elif [[ ${LC_ALL} != "en_US.UTF-8" ]]; then
-    err_msg="LC_ALL environment variable is not set correctly. The current value is ${LC_ALL}"
     shall_exit=true
 fi
 

@@ -8,7 +8,7 @@ general:
     nday: 1
     nmonth: 0
     nyear: 0
-    taskset: false #true
+    heterogeneous_parallelization: false #true
 
 awicm3:
     postprocessing: false

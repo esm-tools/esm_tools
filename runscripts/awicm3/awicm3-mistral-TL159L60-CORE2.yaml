@@ -10,7 +10,7 @@ general:
     nday: 0
     nmonth: 1
     nyear: 0
-    taskset: true
+    heterogeneous_parallelization: true
     use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 awicm3:

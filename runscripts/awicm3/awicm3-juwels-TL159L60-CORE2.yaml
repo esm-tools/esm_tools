@@ -2,7 +2,7 @@ general:
     setup_name: "awicm3"
     version: "1.0-deck"
     account: "esmtst"
-    taskset: true
+    heterogeneous_parallelization: true
     compute_time: "00:05:00"
     initial_date: "1990-01-01"
     final_date: "1990-01-03"

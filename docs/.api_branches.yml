@@ -1,2 +1,1 @@
-esm_environment: "develop"
-esm_runscripts: "develop"
+esm_runscripts: "release"

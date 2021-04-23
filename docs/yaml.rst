@@ -829,3 +829,31 @@ This means that for a scenario ``PI-CTRL`` the files that are handled by ESM-Too
 and ``piozone``, and they are tagged with new general `keys` (``sst``, ``sic``, ...) that
 are common to all scenarios. The source files not included in ``forcing_files`` won't be
 used.
+
+Accessing Variables from the Previous Run (``prev_run``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to use the ``prev_run`` dictionary, in order to access values of
+variables from the previous run, in the current run. The idea behind this functionality
+is that variables from the previous run can be called from the yaml files with a very
+similar syntax to the one that would be used for the current run.
+
+The syntax for that is as follows:
+
+.. code-block:: yaml
+
+   <your_var>: ${prev_run.<path>.<to>.<the>.<var>.<in>.<the>.<previous>.<run>}
+
+For example, let's assume we want to access the `time_step` from the previous run
+of a `FESOM` simulation and store it in a variable called `prev_time_step`:
+
+.. code-block:: yaml
+
+   prev_time_step: ${prev_run.fesom.time_step}
+
+.. Note:: Only the single previous simulation loaded
+
+.. Warning:: Use this feature only when there is no other way of accessing the
+   information needed. Note that, for example, dates of the previous run are
+   already available in the current run, under variables such as
+   ``last_start_date``, ``parent_start_date``, etc.

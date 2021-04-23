@@ -52,7 +52,9 @@ module_actions:
         - "load cmake/3.14.0"
         - "load cray-netcdf-hdf5parallel"
         - "load cdo/1.9.5"
+        - "load fftw/2.1.5.9"
         - "load nco/4.9.4"
+        - "load proj4/5.1.0"
         - "load python/3.9.1"
         - "list"
 
@@ -74,9 +76,7 @@ export_vars:
         ZLIBROOT: /usr
 
         ECCODESROOT: /home/awiiccp2/software/ecmwf/eccodes_cce_mpich
-
-        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+        TMPDIR: /tmp
 
 choose_useMPI:
         intelmpi: #Only work on if we get stuck badly with CRAY
@@ -119,6 +119,8 @@ choose_useMPI:
                 mpicc: cc
                 cc: cc
                 cxx: CC
+                add_export_vars:
+                        CRAYPE_LINK_TYPE: dynamic
 
 further_reading:
         - batch_system/pbs.yaml

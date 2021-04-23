@@ -48,7 +48,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
-        taskset: false
+        heterogeneous_parallelization: false
 
         reusable_filetypes: [input, bin, src]
 
@@ -60,7 +60,7 @@ general:
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:
-                        pool_dir: "/proj/awi/jstreffi/input"
+                        pool_dir: "/proj/awi/input"
 
         compute_recipe_with_preprocess:
             - "venv_bootstrap"
@@ -135,12 +135,7 @@ general:
 oifs:
         version: "43r3"
 
-        choose_general.taskset:
-                false:
-                        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
-                true:
-                        execution_command_script: ${executable} -v ecmwf -e ${oifs.input_expid}
-                        execution_command: prog_oifs.sh %o %t
+        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
@@ -263,12 +258,6 @@ oifs:
 
 fesom:
         version: "2.0"
-        choose_general.taskset:
-                false:
-                        execution_command: ${executable}
-                true:
-                        execution_command_script: ${executable}
-                        execution_command: prog_fesom.sh %o %t
         time_step: 1800
         resolution: CORE2
         lresume: false
@@ -396,12 +385,6 @@ xios:
 
 
 rnfmap:
-        choose_general.taskset:
-                false:
-                        execution_command: ${executable}
-                true:
-                        execution_command_script: ${executable}
-                        execution_command: prog_rnfmap.sh %o %t
 
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
@@ -612,10 +595,3 @@ oasis3mct:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
-
-#######################################################################################
-# Setting of launcher flags for srun
-computer:
-        choose_general.taskset:
-                true:
-                        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"

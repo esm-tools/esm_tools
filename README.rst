@@ -20,6 +20,7 @@ ollie.awi.de::
 mistral.dkrz.de::
 
     $ module load git
+    $ module unload netcdf_c
     $ module load anaconda3
 
 glogin.hlrn.de / blogin.hlrn.de::
@@ -32,28 +33,38 @@ juwels.fz-juelich.de::
     $ module load git
     $ module load Python-3.6.8
 
+aleph::
+
+    $ module load git
+    $ module load python
+
 Note that some machines might raise an error ``conflict netcdf_c`` when loading ``anaconda3``. In that case you will need to swap ``netcdf_c`` with ``anaconda3``::
 
-    $ module swap netcdf_c anaconda3
+    $ module unload netcdf_c
+    $ module load anaconda3
 
 
 
 Installing
 ----------
 
-First, make sure you add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+1. First, make sure you add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-    $ export PATH=$PATH:~/.local/bin
-    $ export LC_ALL=en_US.UTF-8
-    $ export LANG=en_US.UTF-8
+        $ export PATH=$PATH:~/.local/bin
+        $ export LC_ALL=en_US.UTF-8
+        $ export LANG=en_US.UTF-8
 
-To use the new version of the esm-tools, now rewritten in Python, clone this repository::
+2. Inside the same login or profile file, add also the ``module`` commands necessary for the HPC system you are using (find the lines in the section above).
 
-    $ git clone https://github.com/esm-tools/esm_tools.git
+3. You can choose to source now your login or profile file, so that the ``module`` and ``export`` commands are run (e.g. ``$ source ~/.bash_profile``).
 
-Then, run the ``install.sh``::
+4. To use the new version of the ESM-Tools, now rewritten in Python, clone this repository::
 
-    $ ./install.sh
+        $ git clone https://github.com/esm-tools/esm_tools.git
+
+5. Then, run the ``install.sh``::
+
+        $ ./install.sh
 
 You should now have the command line tools ``esm_master`` and ``esm_runscripts``, which replace the old version.
 

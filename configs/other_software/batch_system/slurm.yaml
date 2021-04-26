@@ -41,10 +41,12 @@ thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
-choose_general.heterogeneous_parallelization:
+heterogeneous_parallelization: false
+
+choose_heterogeneous_parallelization:
         true:
                 cpu_bind: "none"
-        "*":
+        false:
                 cpu_bind: "cores"
 
 choose_launcher:

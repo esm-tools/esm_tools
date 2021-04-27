@@ -70,19 +70,19 @@ echam:
                         nproca: 24
                         nprocb: 18
 
-        compiletime_environment_changes:
+        add_compiletime_environment_changes:
             add_export_vars:
                 # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
-                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                - 'configure_opts=--with-coupler=oasis3-mct'
-                - "paul=was_here"
+                OIFS_OASIS_BASE: '$(pwd)/oasis'
+                OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                configure_opts: '--with-coupler=oasis3-mct'
+                paul: "was_here"
 
-        choose_computer.name:
+        choose_computer.name: # MA: This block is probably not necessary anymore
             ollie:
                 add_compiletime_environment_changes:
                     add_export_vars:
-                        - 'configure_opts=--with-coupler=oasis3-mct'
+                        configure_opts[(0)]: '--with-coupler=oasis3-mct'
 
 
 #########################################################################################

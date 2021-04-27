@@ -60,12 +60,15 @@ general:
                         compute_time: "02:00:00"
         multi_srun:
             climate_srun:
-                - echam
-                - fesom
+                models:
+                  - echam
+                  - fesom
             ice_srun:
-                - pism
+                models: 
+                  - pism
             couple_srun:
-                - scope
+                models:
+                  - scope
 
 
 #########################################################################################

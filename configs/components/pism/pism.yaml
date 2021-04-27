@@ -79,7 +79,7 @@ pool_dir: "${computer.pool_directories.pool}/pool_pism"
 cold_start_file: "${pool_dir}/input/${domain}/pismr_${domain}_${resolution}.nc"
 spinup_file: "/no/default/was/set"
 
-choose_computer.cores_per_node:
+choose_computer.partitions.compute.cores_per_node:
     24:
         nnodes: 4
         nproca: 96

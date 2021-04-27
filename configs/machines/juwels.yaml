@@ -7,10 +7,7 @@ jobtype: compute
 accounting: true
 
 # default settings for compiler, mpi and I/O libs
-#compiler_mpi: intel2019_impi2019
-#iolibraries: system_libs
-# for FOCI/FOCIOIFS use
-compiler_mpi: intel2019_parastation
+compiler_mpi: intel2019_impi2019
 iolibraries: geomar_libs
 
 # slurm setup
@@ -61,29 +58,61 @@ choose_partition:
 # for all compiler and I/O settings
 module_actions:
         - "--force purge"
-        - "use /gpfs/software/juwels/otherstages"
+        - "use $OTHERSTAGES" 
 
 export_vars:
         LC_ALL: en_US.UTF-8
+        PROJECT: /p/project/hirace
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
 
    intel2019_impi2019:
       add_module_actions:
-         - "load Stages/Devel-2019a"
+         - "load Stages/2019a"
          - "load Intel/2019.5.281-GCC-8.3.0"
          - "load IntelMPI/2019.6.154"
          - "load CMake"
          - "load Python/3.6.8"
          - "load imkl/2019.3.199"
-         #TODO check if we need perl
-         #- "load Perl/5.28.1"
-      # FOCI needs the release_mt version of intel mpi
-      choose_general.setup_name:
-         foci:
-            add_module_actions:
-               - "source /gpfs/software/juwels/stages/Devel-2019a/software/impi/2019.6.154-iccifort-2019.3.199-GCC-8.3.0/bin/mpivars.sh release_mt"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+   intel2020_impi:
+      add_module_actions:
+         - "load Stages/2020"
+         - "load Intel/2020.2.254-GCC-9.3.0"
+         - "load IntelMPI/2019.8.254"
+         - "load CMake"
+         - "load Python/3.8.5"
+         - "load imkl/2020.2.254"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+
+   intel2020_impi_dev:
+      add_module_actions:
+         - "load Stages/Devel-2020"
+         - "load Intel/2020.4.304-GCC-9.3.0"
+         - "load IntelMPI/2019.8.254"
+         - "load CMake"
+         - "load Python/3.8.5"
+         - "load imkl/2020.2.254"
+         - "load UCX/1.9.0"
       add_export_vars:
          FC: mpiifort
          F77: mpiifort
@@ -96,14 +125,50 @@ choose_compiler_mpi:
 
    intel2019_parastation:
       add_module_actions:
-         - "load Stages/Devel-2019a"
+         - "load Stages/2019a"
          - "load Intel/2019.5.281-GCC-8.3.0"
          - "load ParaStationMPI/5.4.4-1-mt"
          - "load CMake"
          - "load Python/3.6.8"
          - "load imkl/2019.3.199"
+      add_export_vars:
+         FC: mpifort
+         F77: mpifort
+         MPIFC: mpifort
+         FCFLAGS: -free
+         CC: mpicc
+         CXX: mpic++
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+   intel2020_parastation:
+      add_module_actions:
+         - "load Stages/2020"
+         - "load Intel/2020.2.254-GCC-9.3.0"
+         - "load ParaStationMPI/5.4.7-1"
+         - "load CMake"
+         - "load Python/3.8.5"
+         - "load imkl/2020.2.254"
          #TODO check if we need perl
          #- "load Perl/5.28.1"
+      add_export_vars:
+         FC: mpifort
+         F77: mpifort
+         MPIFC: mpifort
+         FCFLAGS: -free
+         CC: mpicc
+         CXX: mpic++
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+   intel2020_parastation_dev:
+      add_module_actions:
+         - "load Stages/Devel-2020"
+         - "load Intel/2020.4.304-GCC-9.3.0"
+         - "load ParaStationMPI/5.4.7-1-mt"
+         - "load CMake"
+         - "load Python/3.8.5"
+         - "load imkl/2020.2.254"
       add_export_vars:
          FC: mpifort
          F77: mpifort
@@ -140,9 +205,86 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2020_impi:
+             add_export_vars:
+                IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.2.254_impi2019.8.254_20210427
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2020_impi_dev:
+             add_export_vars:
+                IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.4.304_impi2019.8.254_20210427
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
           intel2019_parastation:
              add_export_vars:
                 IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2020_parastation:
+             add_export_vars:
+                IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2020_parastation_dev:
+             add_export_vars:
+                IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.4.304_parastation_5.4.7-1-mt_20210427
                 PATH: $IO_LIB_ROOT/bin:$PATH
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 

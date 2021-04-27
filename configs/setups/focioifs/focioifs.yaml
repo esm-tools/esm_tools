@@ -91,7 +91,7 @@ oifs:
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
-                compiler_mpi: intel2019_parastation 
+                compiler_mpi: intel2020_parastation 
              nesh:
                 compiler_mpi: intel2020_impi2020
 
@@ -110,9 +110,11 @@ oifs:
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
-                compiler_mpi: intel2019_parastation 
+                compiler_mpi: intel2020_parastation 
              nesh:
                 compiler_mpi: intel2020_impi2020
+                add_module_actions:
+                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
 
         version: "43r3"
         

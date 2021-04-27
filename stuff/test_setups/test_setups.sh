@@ -12,34 +12,19 @@
 #
 ###########################################################################
 #
-# Set properties for testing
+# Set basic properties for testing
 #
 # Which configuration(s) shall be tested?
 # Can be overwritten by command line argument
 # Use space as separator for multiple configurations
-#configurations="foci-default focioifs-2.0"
 configurations="foci-default focioifs-2.0 oifs-43r3-v1 "
-#configurations="focioifs-2.0 foci-default"
-#configurations="focioifs-2.0"
-#configurations="foci-default"
 
 # Which steps to test? Valid options are 'run' and 'compile'
 # put steps="compile run" to first compile and the run a test simulation
 steps="compile run"
-#steps="run"
-
-# work directory
-workdir=$WORK/tmp
-
-# Account for model run
-# TODO: make this a command line argument as it is the only machine specific 
-# thing left in this script
-account=shk00018
-
-# Which plugins shall be installed during testing
-#plugins="preprocess postprocess"
-#plugins=""
-
+#
+# Advanced settings
+#
 # Test installation of ESM-Tools?
 # If set to yes, ESM-Tools will be installed from scratch into
 # $workdir/$configuration/env_esm_tools_$configuration
@@ -62,6 +47,56 @@ runtype='--open-run'
 # as the venv is generated based on the release branch of each tool.
 [[ "$test_install" == 'yes' ]] && runtype='--contained-run' 
 #
+# Which plugins shall be installed during testing (not needed anymore as automatic
+# plugin installation now works)
+# plugins="preprocess postprocess"
+#
+# setup environment, make sure python3 is available
+#
+workdir=
+account=None
+if [[ "$HOSTNAME" =~ blogin ]] ; then
+  module load git
+  module load anaconda3/2019.10
+  workdir=$WORK/tmp
+  account=$USER
+elif [[ "$HOSTNAME" =~ glogin ]] ; then
+  module load git
+  module load anaconda3
+  workdir=$WORK/tmp
+  account=$USER
+elif [[ "$HOSTNAME" =~ mlogin ]] ; then
+  #module load git
+  module unload netcdf_c/4.3.2-gcc48 
+  module load anaconda3/bleeding_edge
+  workdir=/work/bb0519/tmp
+  account=bb0519
+elif [[ "$HOSTNAME" =~ juwels ]] ; then
+  module --force purge
+  module use $OTHERSTAGES 
+  # testing the intel2019 stage
+  #module load Stages/2019a
+  #module load Intel/2019.3.199-GCC-8.3.0
+  #module load Python/3.6.8
+  #module load git
+  # testing the intel2020 stage
+  module load Stages/Devel-2020
+  module load Intel/2020.4.304-GCC-9.3.0 
+  module load IntelMPI/2019.8.254
+  module load imkl/2020.2.254
+  module load Python/3.8.5 
+  module load git
+  workdir=$PROJECT/$USER/tmp
+  account=$PROJECT
+elif [[ "$HOSTNAME" =~ nesh-fe ]] ; then
+  module load python/3.8.6
+  workdir=$WORK/tmp
+  account=None
+else
+  echo "`date`: ERROR: $0 not yet ported to $HOSTNAME" | tee -a ${logdir}/test_${configuration}.log
+  exit 1
+fi
+
 ###########################################################################
 #
 # allow command line override of configuration
@@ -91,31 +126,6 @@ for configuration in ${configurations} ; do
   # so we need a split on the first '-'
   model=${configuration%%-*} # the characters BEFORE the first hyphen
   version=${configuration#*-} # the characters AFTER the first hyphen
-  #
-  # setup environment, make sure python3 is available
-  #
-  if [[ "$HOSTNAME" =~ blogin ]] ; then
-    module load git
-    module load anaconda3/2019.10
-  elif [[ "$HOSTNAME" =~ glogin ]] ; then
-    module load git
-    module load anaconda3
-  elif [[ "$HOSTNAME" =~ mlogin ]] ; then
-    #module load git
-    module unload netcdf_c/4.3.2-gcc48 
-    module load anaconda3/bleeding_edge
-  elif [[ "$HOSTNAME" =~ juwels ]] ; then
-    module --force purge
-    module use $OTHERSTAGES 
-    module load Stages/2019a
-	 module load Intel/2019.3.199-GCC-8.3.0
-	 module load IntelMPI/2019.6.154
-    module load Python/3.6.8
-    module load git
-  else
-    echo "`date`: ERROR: $0 not yet ported to $HOSTNAME" | tee -a ${logdir}/test_${configuration}.log
-    exit 1
-  fi
 
   mkdir -p $workdir
   cd $workdir || exit 1

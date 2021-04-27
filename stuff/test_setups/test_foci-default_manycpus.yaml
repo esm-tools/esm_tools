@@ -1,0 +1,37 @@
+computer:
+   additional_flags: --mem=72000
+general:
+   verbose: False
+   setup_name: "foci"
+   version: "default"
+
+   compute_time: "00:15:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nday: 1 
+   
+   # machine specific setup 
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
+
+foci:
+   model_dir: /will/be/set/by/test_setup.sh 
+
+echam:
+   resolution: "T63"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproca: 12
+   nprocb: 24
+   
+nemo:
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   jpni: 16
+   jpnj: 16
+   nproc: 256
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs

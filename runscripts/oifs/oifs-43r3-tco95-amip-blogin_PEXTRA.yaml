@@ -40,6 +40,7 @@ general:
 oifs:
         version: 43r3
         with_xios: True         
+        wam: False
         input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
         rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
         vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/

@@ -1,19 +1,24 @@
 general:
-        use_venv: False
+        #use_venv: False
         verbose: False
-
+        
+        install_esm_tools_branch: geomar_awicm3
+        install_esm_runscripts_branch: develop
+        install_esm_parser_branch: develop
+        install_esm_rcfile_branch: develop
+        
         setup_name: oifs
         compute_time: "00:30:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1979-01-16T00:00:00"
+        final_date: "1983-01-01T00:00:00"
         nyear: 0
-        nmonth: 0
-        nday: 5
+        nmonth: 1
+        nday: 0
         restart_rate: 1
         restart_unit: days
 
         # cleanup of rundir
-        clean_runs: 2 
+        clean_runs: 4
 
         # machine specific setup 
         account: shk00018
@@ -40,6 +45,7 @@ general:
 oifs:
         version: 43r3
         with_xios: True         
+        wam: True
         input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
         rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
         vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/

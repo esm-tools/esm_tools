@@ -32,7 +32,7 @@ general:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
           1.0-frontiers-xios:
             couplings:
-            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers+xios-2.5
+            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers-xios+xios-2.5
           1.0-deck:
             couplings:
             - fesom-2.0+oifs-43r3

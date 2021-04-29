@@ -8,6 +8,8 @@ general:
     nday: 1
     nmonth: 0
     nyear: 0
+
+computer:
     heterogeneous_parallelization: false #true
 
 awicm3:

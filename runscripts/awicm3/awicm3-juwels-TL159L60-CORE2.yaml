@@ -2,7 +2,6 @@ general:
     setup_name: "awicm3"
     version: "1.0-deck"
     account: "esmtst"
-    heterogeneous_parallelization: true
     compute_time: "00:05:00"
     initial_date: "1990-01-01"
     final_date: "1990-01-03"
@@ -10,6 +9,9 @@ general:
     nday: 0
     nmonth: 1
     nyear: 0
+
+computer:
+    heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false

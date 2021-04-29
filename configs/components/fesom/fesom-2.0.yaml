@@ -104,7 +104,7 @@ restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
 
-restart_in_in_workdir:
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
 restart_in_sources:
@@ -114,7 +114,7 @@ restart_in_sources:
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
 restart_out_sources:

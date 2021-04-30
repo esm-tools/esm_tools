@@ -3,7 +3,6 @@
 name: blogin
 account: None
 
-# set default for hyperthreading_flag
 use_hyperthreading: False
 choose_use_hyperthreading:
         "1":
@@ -48,13 +47,6 @@ pool_dir:  "/scratch/usr/hbkawi"
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
-#iolibraries: system_libs
-#
-# for FOCIOIFS use
-# compiler_mpi: intel2019_ompi
-# for FOCI use
-# compiler_mpi: intel2019_impi2019
-# for both FOCI and FOCIOIFS use
 iolibraries: geomar_libs
 
 # basic modules and export vars needed
@@ -78,17 +70,6 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/19.0.5"
          - "load impi/2019.5"
-      choose_general.setup_name:
-         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
-         focioifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-         oifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-         foci:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
          FC: mpiifort
          F77: mpiifort
@@ -171,7 +152,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

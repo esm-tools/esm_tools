@@ -57,7 +57,11 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     export IO_LIB_ROOT=/p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020/
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+elif [[ "$(hostname)" =~ nesh ]] ; then
+	 module load intel/19.0.4 intelmpi/19.0.4 
+	 export PATH=/gxfs_home/geomar/smomw235/sw/HPC_libraries/intel2019.0.4_impi2019.0.4_20210122/bin:$PATH
 else
+     # get rid of all these ifs when using env.sh
      module load PrgEnv-cray/6.0.4
      module load alps pbs
      module load cray-mpich/7.7.3

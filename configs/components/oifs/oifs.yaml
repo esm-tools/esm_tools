@@ -24,6 +24,8 @@ license_text: |
 # Force namelist fort.4 to be written in uppercase
 namelist_case: "uppercase"
 
+reusable_filetypes: [input, bin, src]
+
 ##
 ## Directories
 ##
@@ -156,7 +158,7 @@ compile_infos:
           #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
           #  install_bins: make/esm/oifs/bin/oifs
           43r3-foci:
-            branch: oifs-geomar
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
@@ -164,7 +166,7 @@ compile_infos:
             - oasis3mct-4.0
             - xios-2.5_r1910
           43r3-v1:
-            branch: oifs-geomar
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
@@ -400,10 +402,10 @@ steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
-custop: "h${oifs.next_step}"
-#custop: "t${oifs.next_step}" # TODO: delete this comment
-nfrres: 1
-#nfrres: "${next_step}" # TODO: delete this comment
+#custop: "h${oifs.next_step}" # this assumes time step 1hr. REMOVE
+custop: "t${oifs.next_step}" 
+#nfrres: 1 #this means write restarts every time step
+nfrres: "${next_step}" 
 lresume: false
 
 massfixer: 1
@@ -511,7 +513,6 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-                        ICMCL_INIT: ICMCL_INIT
                 choose_mip:
                         "cmip5":
                                 cmip5_data_dir_nml: ./cmip5_data/
@@ -527,9 +528,7 @@ choose_copy_forcing:
                                         # Add CO2 etc for all scenarios and years
                                         CMIP6DATA: CMIP6DATA
         false:
-                forcing_files:
-                        ICMCL_INIT: ICMCL_INIT
-
+                forcing_files: {}
 
 #======================================================================================
 # LOG FILES
@@ -552,12 +551,16 @@ log_in_work:
 #======================================================================================
 
 # Indexing logic for WAM restart files
+# This was simplified by Miguel but it will be completely changed when eternal run branch is merged
 days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
 days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
 days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
+
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
-this_wam: "${days_string}${parent_date!shour!sminute!ssecond}"
+this_wam: "${next_ndays_minus1_string}${parent_date!shour!sminute!ssecond}"
+this_bls: "BLS${end_filebase_wam}${this_wam}"
+this_law: "LAW${end_filebase_wam}${this_wam}"
 
 # BEFORE RUN: copy from RESTART to WORK
 # ----------
@@ -633,10 +636,13 @@ outdata_sources:
 
 ignore_files:
         drhook: drhook
+        ICMCL: ICMCL
 ignore_in_work:
         drhook: drhook*
+        ICMCL: ICMCL*
 ignore_sources:
         drhook: drhook*
+        ICMCL: ICMCL*
 
 
 ## Using XIOS?
@@ -683,10 +689,11 @@ choose_wam:
                         wam_subgrid_0: wam_subgrid_0
                         wam_subgrid_1: wam_subgrid_1
                         wam_subgrid_2: wam_subgrid_2
-                        uwavein: uwavein
-                        specwavein: specwavein
-                        sfcwindin: sfcwindin
-                        cdwavein: cdwavein
+                        # these are produced by preprocess script?
+                        #uwavein: uwavein
+                        #specwavein: specwavein
+                        #sfcwindin: sfcwindin
+                        #cdwavein: cdwavein
 
                 add_namelist_changes:
                         fort.4:
@@ -769,7 +776,6 @@ choose_massfixer:
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
                                 NAMGFL:
-                                        LTRCMFIX: ".true."
                                         LTRCMFIX_PS: ".true."
                                         YS_NL%LMASSFIX: ".true."
                                         YR_NL%LMASSFIX: ".true."
@@ -817,14 +823,20 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
+###### feature/awicm3_prep_merge_geomar
                                         NRESTS:
                                                 - -1
                                                 - $(( -${simulation_length_seconds} / ${time_step} ))
 
                                         #NRESTS(1): -1
                                         #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
+#####
+                                        #NRESTS:
+                                        #        - -1
+                                        #        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
+                                        NRESTS(1): -${next_step} 
+##### geomar_awicm3
 
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
@@ -951,7 +963,7 @@ input_in_work:
         vtables: vtables/*
         ifsdata: ifsdata/*
         tl_data: ${res_number_tl}/*
-        o3_data: ${res_number_tl}/o3chem_l${nlev}/*
+        o3_data: ${res_number_tl}/o3chem_l${nlev}/*        
 
 forcing_in_work:
         ICMCL_INIT: ICMCL${oifs.input_expid}INIT
@@ -1002,7 +1014,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id} jesus"
                 type: shell
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script

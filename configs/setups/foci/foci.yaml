@@ -32,20 +32,44 @@ general:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
         
-        environment_changes:
-            choose_computer.name:
-                mistral:
-                        add_export_vars:
-                                # (additional) settings used in FOCI up to v1.21
-                                 - 'ECHAM6_THREADS=1'
-                                 - 'NEMO_THREADS=1'
-                                 - 'I_MPI_SLURM_EXT=0'
-
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
 echam:
+        # Ok here's something that's not intuitive and certainly needs improvement in the next version
+        # compiletime and runtime env changes have to be placed within one of the components (does not
+        # matter which one) and then they are valid for all components.
+        compiletime_environment_changes:
+          choose_computer.name:
+             juwels:
+                compiler_mpi: intel2019_impi2019 
+             blogin:
+                compiler_mpi: intel2019_impi2019
+             glogin:
+                compiler_mpi: intel2019_impi2019
+             nesh:
+                compiler_mpi: intel2019_impi2019
+
+        runtime_environment_changes:
+          choose_computer.name:
+             juwels:
+                compiler_mpi: intel2019_impi2019 
+                add_module_actions:
+                   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
+             blogin:
+                compiler_mpi: intel2019_impi2019
+                add_module_actions:
+                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+             glogin:
+                compiler_mpi: intel2019_impi2019
+                add_module_actions:
+                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+             nesh:
+                compiler_mpi: intel2019_impi2019
+                add_module_actions:
+                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+
         version: "6.3.05p2-foci"
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"

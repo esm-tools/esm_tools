@@ -1,12 +1,11 @@
 general:
         use_venv: False
         verbose: False
-        homedir: !ENV ${HOME}
 
         setup_name: oifs
         compute_time: "00:30:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1979-01-03T00:00:00"
+        final_date: "1979-01-04T00:00:00"
         nyear: 0
         nmonth: 0
         nday: 1 
@@ -17,9 +16,9 @@ general:
         # clean_runs: 2 
 
         # machine specific setup 
-        #account: shk00018
-        model_dir: ${homedir}/esm/models/oifs-43r3-v1/
-        base_dir: ${homedir}/esm/esm-experiments/
+        account: set_by_test_foci-default.sh 
+        base_dir: /will/be/set/by/test_foci-default.sh 
+        model_dir: /will/be/set/by/test_foci-default.sh 
 
 oifs:
         version: 43r3

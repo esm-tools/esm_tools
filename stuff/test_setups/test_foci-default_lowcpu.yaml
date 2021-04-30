@@ -1,23 +1,21 @@
 general:
-   use_venv: False
    verbose: False
    setup_name: "foci"
    version: "default"
-   homedir: !ENV ${HOME}
 
    compute_time: "00:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
    postprocessing: 0
    scenario: "PI-CTRL"
    nday: 1 
    
    # machine specific setup 
-   # account: shk00018
-   base_dir: ${homedir}/esm/esm-experiments/
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
 
 foci:
-   model_dir: ${general.homedir}/esm/models/foci-default/
+   model_dir: /will/be/set/by/test_setup.sh 
 
 echam:
    resolution: "T63"

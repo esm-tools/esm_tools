@@ -46,8 +46,6 @@ general:
         compute_time: "00:30:00"
         heterogeneous_parallelization: false
 
-        reusable_filetypes: [input, bin, src]
-
         choose_computer.name:
                 mistral:
                         pool_dir: "/work/ab0246/a270092/input"
@@ -164,6 +162,7 @@ oifs:
         # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
         nproc: 36
         omp_num_threads: 2
+
         choose_general.resolution:
                 TL159_CORE2:
                         nproc: 36
@@ -226,18 +225,9 @@ oifs:
                 A_Calving:
                     grid: atmr
 
-        input_files:
-                ICMGG_INIT: ICMGG_INIT
-                ICMGG_INIUA: ICMGG_INIUA
-                ICMSH_INIT: ICMSH_INIT
-
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
-
-        # Remove ICMCL_INIT forcing
-        remove_forcing_files:
-                - ICMCL_INIT
 
         # preprocessing and postprocessing scripts needed here
         ############################################################
@@ -384,6 +374,7 @@ rnfmap:
 
         nproc: 1
         omp_num_threads: ${computer.cores_per_node}
+
         time_step: ${oasis3mct.coupling_time_step}
 
         coupling_fields:

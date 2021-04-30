@@ -63,10 +63,11 @@ general:
         compute_time: "01:30:00"
 
 
-preprocess:
-        preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
-                type: shell
+#preprocess:
+#         preprocess_shell:
+#                  method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id} jesus"
+#                #method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
+#                type: shell
 
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27
@@ -90,20 +91,30 @@ oifs:
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
-                compiler_mpi: intel2019_parastation 
+                compiler_mpi: intel2020_parastation 
+             nesh:
+                compiler_mpi: intel2020_impi2020
+
         runtime_environment_changes:
           add_export_vars:
              # Turn on FOCI coupling        
              - 'FOCI_USE_CPLNG="active"'
              - 'FESOM_USE_CPLNG="no"'
              - 'ECE_USE_CPLNG="no"'
+             #FOCI_USE_CPLNG: "active"
+             #FESOM_USE_CPLNG: "no"
+             #ECE_USE_CPLNG: "no"
           choose_computer.name:
              blogin:
                 compiler_mpi: intel2019_ompi
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
-                compiler_mpi: intel2019_parastation 
+                compiler_mpi: intel2020_parastation 
+             nesh:
+                compiler_mpi: intel2020_impi2020
+                add_module_actions:
+                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
 
         version: "43r3"
         
@@ -145,6 +156,26 @@ oifs:
                 TCO95_ORCA05:
                         nproc: 279
 
+
+        # split fields to A, R and L grid
+        # A grid is wet points except lakes
+        # L grid is wet points including lakes
+        # R grid is dry points
+        foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain]
+        foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
+                        A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow,
+                        AIceEvap, A_dQnsdT]
+        foci_fields_r: [A_Runoff]
+        
+        coupling_fields:
+                "[[foci_fields_a-->FIELD]]":
+                        grid: atma
+                "[[foci_fields_l-->FIELD]]":
+                        grid: atml
+                "[[foci_fields_r-->FIELD]]":
+                        grid: atmr
+
+
 nemo:
         
         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
@@ -184,17 +215,9 @@ nemo:
         # A grid is wet points except lakes
         # L grid is wet points including lakes
         # R grid is dry points
-        foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain]
-        foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
-        foci_fields_r: [A_Runoff]
-
-        coupling_fields:
-                "[[foci_fields_a-->FIELD]]":
-                        grid: atma
-                "[[foci_fields_l-->FIELD]]":
-                        grid: atml
-                "[[foci_fields_r-->FIELD]]":
-                        grid: atmr
+        #foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain]
+        #foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
+        #foci_fields_r: [A_Runoff]
 
 
 xios:
@@ -243,7 +266,7 @@ oasis3mct:
         o2a_seq: 1
 
         coupling_time_step: 10800
-        export_mode: EXPOUT 
+        export_mode: EXPORTED
         
         coupling_target_fields:
                 # Coupling ocean fields to atm

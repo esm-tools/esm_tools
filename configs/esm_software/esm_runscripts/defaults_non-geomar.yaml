@@ -1,0 +1,11 @@
+
+per_model_defaults:
+        file_movements:
+                default:
+                        all_directions: copy
+                bin:
+                        init_to_exp:    copy
+                        exp_to_run:     copy
+                        run_to_work:    copy
+                        work_to_run:    copy
+

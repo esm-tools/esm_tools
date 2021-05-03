@@ -16,7 +16,7 @@ startdate=$6
 enddate=$7
 outdir=$8
 with_wam=$9
-perturb=$10
+perturb=${10}
 nx=${11}
 ensemble_id=${12}
 
@@ -53,17 +53,28 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     module load Python/3.6.8
     module load imkl/2019.3.199
     #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
-    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
+    #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
+    export IO_LIB_ROOT=/p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020/
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 elif [[ "$(hostname)" =~ nesh ]] ; then
 	 module load intel/19.0.4 intelmpi/19.0.4 
 	 export PATH=/gxfs_home/geomar/smomw235/sw/HPC_libraries/intel2019.0.4_impi2019.0.4_20210122/bin:$PATH
 else
-   echo
-	echo $0 has not been adapted for $(hostname)
-	echo
-	exit 
+     # get rid of all these ifs when using env.sh
+     module load PrgEnv-cray/6.0.4
+     module load alps pbs
+     module load cray-mpich/7.7.3
+     module load craype-x86-skylake
+     module load cmake/3.14.0
+     module load cray-hdf5-parallel/1.10.2.0
+     module load cray-netcdf-hdf5parallel/4.6.1.3
+     module load cdo/1.9.5
+     module load fftw/2.1.5.9
+     module load nco/4.9.4
+     module load proj4/5.1.0
+     module load python/3.9.1
+     export PATH=$PATH:/home/awiiccp2/software/ecmwf/eccodes_cce_mpich/bin
 fi 
 
 echo " OpenIFS preprocessing "
@@ -76,9 +87,12 @@ cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "
-echo " Exp ID: $expid "
+echo " InExp ID: $inexpid "
+echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb: $perturb "
+echo " Style: $style"
 
 if [[ "x${style}" == "xjesus" ]] ; then
    ndate=$(date -u -d "${inidate}" +%Y%m%d)
@@ -100,8 +114,10 @@ echo " $files "
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
-if [ -f $old ]; then                                                                                                                                                 
-    grib_set -s dataDate=$ndate $old $new 
+if [ -f $old ]; then                                                                                                   
+    cp $old $old\_ori
+    rm $old                                              
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 
@@ -111,7 +127,9 @@ fi
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -160,7 +178,9 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -176,10 +196,12 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         
         ## new file
         new=${outdir}/$file
-   
+
         if [ -f $old ]; then
+            cp $old $old\_ori
+            rm $old 
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new
+            grib_set -s dataDate=$ndate $old\_ori $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

@@ -17,16 +17,20 @@ description: |
 ##
 available_versions:
 - ec-earth
+- awicm3
 - focioifs
 - focioifs1
 choose_version:
   ec-earth:
     branch: esm-tools
+  awicm3:
+    branch: awicm-3-frontiers
+    destination: rnfmap
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:
     branch: esm-tools-focioifs
-clean_command: rm -rf bin; cd src; make clean
+clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
 install_bins: bin/rnfma
@@ -81,9 +85,6 @@ input_in_work:
 input_sources:
         runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}.nc
 
-runoff_fields_recv: [R_Runoff_atm] 
-runoff_fields_send: [R_Runoff_oce]
-
 coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
                 grid: rnfa
@@ -105,6 +106,8 @@ grids:
 
 choose_general.setup_name:
         focioifs:
+                runoff_fields_recv: [R_Runoff_atm] 
+                runoff_fields_send: [R_Runoff_oce]
                 add_grids:
                         opaf:
                                 name: opaf
@@ -112,6 +115,14 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 2
+        awicm3:
+                choose_general.version:
+                        '1.0-deck':
+                                runoff_fields_recv: [R_Runoff_atm] 
+                                runoff_fields_send: [R_Runoff_oce]
+                        '*':
+                                runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
+                                runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

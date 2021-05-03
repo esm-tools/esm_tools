@@ -663,6 +663,13 @@ coupling_fields:
         "[[foci_fields-->FIELD]]":
                 grid: atmo
 
+        co2_atmo:
+                grid: atmo
+        co2c_atm:
+                grid: atmo
+        w10w_atm:
+                grid: atmo
+
 grids:
         atmo:
                 name: atmo

@@ -44,7 +44,7 @@ oasis3mct:
     time_step: 7200
 
 xios:
-    xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199/output_3h+6hrLev/
+    xml_dir: /home/awiiccp2/esm/esm_tools/namelists/oifs/43r3/xios
     with_model: oifs
     nproc: 40
 

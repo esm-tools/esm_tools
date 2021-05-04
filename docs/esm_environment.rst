@@ -132,5 +132,5 @@ General environment for setups
 To define a general ``environment_changes`` **for all the components of a setup**,
 include the ``environment_changes`` inside the ``general`` section of the setup
 file. **This will ignore all the** ``environment_changes`` **defined by the standalone
-files**. It still possible to add component-specific ``environment_changes`` **from
+files**. It is still possible to add component-specific ``environment_changes`` **from
 the component chapter inside the setup file**.

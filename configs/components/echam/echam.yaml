@@ -269,6 +269,9 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofin: piaerofin
                         aerofarir: piaerofarir
+                        ozonea: piozonea
+                        ozoneb: piozoneb
+                        ozonec: piozonec
                         ozone: piozone
         PALEO:
                 forcing_files:
@@ -470,6 +473,9 @@ forcing_in_work:
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
+        ozonea: "ozon1988"
+        ozoneb: "ozon1989"
+        ozonec: "ozon1990"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
@@ -503,6 +509,10 @@ streams:
         - sp6h
         - glim
         - spim
+        - wiso
+        - accw_wiso
+        - sf_wiso
+        - rad
 
 streamsnc:
         - aclcim
@@ -632,6 +642,12 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
+        o18_atmo:
+                grid: atmo
+        hdo_atmo:
+                grid: atmo
+        o16_atmo:
+                grid: atmo
                 #description: |
                 #       whatever snt means
                 #unit: kg m s
@@ -660,6 +676,18 @@ coupling_fields:
         heat_swa:
                 grid: atmo
         hydr_atm:
+                grid: atmo
+        w1_atm:
+                grid: atmo
+        w2_atm:
+                grid: atmo
+        w3_atm:
+                grid: atmo
+        i1_atm:
+                grid: atmo
+        i2_atm:
+                grid: atmo
+        i3_atm:
                 grid: atmo
 
         "[[foci_fields-->FIELD]]":

@@ -194,7 +194,7 @@ choose_asforcing:
                 l_cloud: False
                 l_snow: True
                 
-                runoff_file: "runoff.nc"
+                runoff_file: "CORE2_runoff.nc"
                 sss_data_file: "PHC2_salx.nc"
                 
                 runoff_data_source: 'CORE2'
@@ -253,7 +253,7 @@ choose_asforcing:
                 l_cloud: False
                 l_snow: True
                 
-                runoff_file: "runoff.nc"
+                runoff_file: "CORE2_runoff.nc"
                 sss_data_file: "PHC2_salx.nc"
                 
                 runoff_data_source: 'CORE2'

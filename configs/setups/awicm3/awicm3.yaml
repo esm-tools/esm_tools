@@ -44,7 +44,6 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
-        heterogeneous_parallelization: false
 
         reusable_filetypes: [input, bin, src]
 
@@ -588,3 +587,6 @@ oasis3mct:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
+
+computer:
+        heterogeneous_parallelization: false

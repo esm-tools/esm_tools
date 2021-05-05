@@ -1,0 +1,11 @@
+components:
+- echam-6.3.05p2-concurrent_radiation-paleodyn
+- fesom-2.0-recom
+# MA: fesom-2.0-recom version is actually a branch of version 2.1. It is implemented
+# as a 2.0 because the yaml file for fesom-2.1.yaml is not yet finalised. TODO: Change
+# name when things are name properly after full support of ESM-Tools for fesom-2.1.
+- oasis3mct-2.8
+coupling_changes:
+- sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation-paleodyn/config/mh-linux
+- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation-paleodyn/configure.ac

@@ -13,7 +13,7 @@ general:
             - "_copy_preliminary_files_from_experiment_to_thisrun"
             - "_show_simulation_info"
             - "create_new_files"
-            - "create_hosing_files"
+#            - "create_hosing_files"
             - "prepare_coupler_files"
             - "add_batch_hostfile"
             - "assemble"
@@ -52,6 +52,8 @@ general:
           '2.1-recom':
             couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
             - fesom-2.0-wiso+echam-6.3.05p2-wiso+recom-2.0
+            add_include_models:
+            - recom
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
@@ -64,7 +66,9 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
-
+#        required_plugins: 
+#        - "git+https://github.com/esm-tools-plugins/create_hosing_files"
+        
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -177,9 +181,16 @@ fesom:
         asforcing: ECHAM5
 
 
+########################################################################################
 
 
-
+recom:
+        namelist_dir: ${fesom.model_dir}/config/
+#        remove_namelist_changes: namelist.recom
+        namelist_changes: 
+                namelist.recom: 
+                        paciso:
+                                ciso_atbox: false
 
 #########################################################################################
 

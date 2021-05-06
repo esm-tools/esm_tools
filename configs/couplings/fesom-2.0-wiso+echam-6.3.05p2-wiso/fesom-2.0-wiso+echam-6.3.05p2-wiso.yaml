@@ -1,5 +1,5 @@
 components:
-- echam-6.3.05p2-concurrent_radiation-paleodyn
+- echam-6.3.05p2-wiso
 - fesom-2.0-wiso
 # MA: fesom-2.0-wiso version is actually a branch of version 2.1. It is implemented
 # as a 2.0 because the yaml file for fesom-2.1.yaml is not yet finalised. TODO: Change
@@ -7,5 +7,5 @@ components:
 - oasis3mct-2.8
 coupling_changes:
 - sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
-- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation-paleodyn/config/mh-linux
-- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-concurrent_radiation-paleodyn/configure.ac
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-wiso/config/mh-linux
+- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-wiso/configure.ac

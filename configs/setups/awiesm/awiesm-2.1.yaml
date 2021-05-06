@@ -82,7 +82,11 @@ echam:
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.05p2-concurrent_radiation-paleodyn"
+        choose_general.version:
+                2.1:
+                        version: "6.3.05p2-concurrent_radiation-paleodyn"
+                "*":
+                        version: "6.3.05p2-wiso"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:

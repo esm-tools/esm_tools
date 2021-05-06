@@ -1,3 +1,12 @@
+# It is currently under investigation whether the extra
+# #SBATCH flags below improve model performance
+# Sebastian Wahl 05/2021
+#
+computer:
+   additional_flags:
+      - --mem=72000
+      - --constraint="cascade"
+
 general:
    use_venv: False
    verbose: False
@@ -5,12 +14,12 @@ general:
    version: "default"
    homedir: !ENV ${HOME}
 
-   compute_time: "00:15:00"
+   compute_time: "01:30:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
    postprocessing: 0
    scenario: "PI-CTRL"
-   nday: 1 
+   nmonth: 12
    
    # machine specific setup 
    # account: shk00018
@@ -21,15 +30,17 @@ foci:
 
 echam:
    resolution: "T63"
-   restart_rate: ${general.nday}
-   restart_unit: "days"
-   nproca: 4
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   nproca: 12
    nprocb: 24
    
 nemo:
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AOW"
-   restart_rate: ${general.nday}
-   restart_unit: "days"
-   nproc: 24
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   jpni: 16
+   jpnj: 16
+   nproc: 256
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs

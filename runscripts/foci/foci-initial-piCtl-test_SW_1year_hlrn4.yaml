@@ -3,6 +3,7 @@ general:
    verbose: False
    setup_name: "foci"
    version: "default"
+   homedir: !ENV ${HOME}
 
    compute_time: "01:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
@@ -13,27 +14,10 @@ general:
    
    # machine specific setup 
    account: shk00018
-   base_dir: /home/shkifmsw/esm/esm-experiments/
-   # seb-wahl: this does not work and causes really strange
-   # behaviour upon restart!
-   #choose_computer.name:
-   #   blogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   glogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   juwels:
-   #      account: hirace 
-   #      my_work_env: /p/project/hirace/wahl1/esm/ 
-   #   mistral:
-   #      account: bb0519 
-   #      my_work_env: /pf/b/b350071/esm 
-   #model_dir: ${my_work_env}/models/oifs-43r3-v1/
-   #base_dir: ${my_work_env}/esm-experiments/
+   base_dir: ${homedir}/esm/esm-experiments/
 
 foci:
-   model_dir: /home/shkifmsw/esm/models/foci-default/
+   model_dir: ${general.homedir}/esm/models/foci-default/
 
 echam:
    resolution: "T63"

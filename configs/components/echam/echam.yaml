@@ -64,10 +64,10 @@ compile_infos:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-wiso:
-            branch: wiso
-            clean_command: make clean
-            comp_command: make; make install
-            conf_command: ./configure
+            branch: "wiso"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
         clean_command: ${defaults.clean_command}
         comp_command: ${defaults.comp_command}
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git

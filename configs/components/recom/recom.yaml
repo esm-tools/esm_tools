@@ -109,6 +109,7 @@ config_files:
 
 config_sources:
         recom:  "${namelist_dir}/namelist.recom"
+        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 
 restart_in_files:

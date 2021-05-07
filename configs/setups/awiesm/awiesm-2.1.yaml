@@ -13,7 +13,7 @@ general:
             - "_copy_preliminary_files_from_experiment_to_thisrun"
             - "_show_simulation_info"
             - "create_new_files"
-#            - "create_hosing_files"
+            - "create_hosing_files"
             - "prepare_coupler_files"
             - "add_batch_hostfile"
             - "assemble"
@@ -66,9 +66,6 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
-#        required_plugins: 
-#        - "git+https://github.com/esm-tools-plugins/create_hosing_files"
-        
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -87,10 +84,12 @@ echam:
                 - sst
                 - sic
         choose_general.version:
-                2.1:
-                        version: "6.3.05p2-concurrent_radiation-paleodyn"
-                "*":
+                2.1-wiso:
                         version: "6.3.05p2-wiso"
+                2.1-recom:
+                        version: "6.3.05p2-wiso"
+                "*":
+                        version: "6.3.05p2-concurrent_radiation-paleodyn"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -185,10 +184,11 @@ fesom:
 
 
 recom:
+        version: "2.0"
         namelist_dir: ${fesom.model_dir}/config/
 #        remove_namelist_changes: namelist.recom
-        namelist_changes: 
-                namelist.recom: 
+        namelist_changes:
+                namelist.recom:
                         paciso:
                                 ciso_atbox: false
 

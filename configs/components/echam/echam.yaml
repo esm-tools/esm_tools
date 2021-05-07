@@ -232,7 +232,7 @@ choose_version:
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
-                namelist_changes:
+                add_namelist_changes:
                         namelist.echam:
                                 parctl:
                                         nproca: "${nproca}"

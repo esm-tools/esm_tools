@@ -83,10 +83,12 @@ echam:
                 - sst
                 - sic
         choose_general.version:
-                2.1:
-                        version: "6.3.05p2-concurrent_radiation-paleodyn"
-                "*":
+                2.1-wiso:
                         version: "6.3.05p2-wiso"
+                2.1-recom:
+                        version: "6.3.05p2-wiso"
+                "*":
+                        version: "6.3.05p2-concurrent_radiation-paleodyn"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:

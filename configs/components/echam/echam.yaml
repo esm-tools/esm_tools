@@ -237,7 +237,7 @@ choose_version:
                                 parctl:
                                         nproca: "${nproca}"
                                         nprocb: "${nprocb}"
-                                        nprocar: "${nproar}"
+                                        nprocar: "${nprocar}"
                                         nprocbr: "${nprocbr}"
                                 runctl:
                                         default_output: True

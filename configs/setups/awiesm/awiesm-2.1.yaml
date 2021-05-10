@@ -194,7 +194,7 @@ recom:
                 2.1-recom:
                         version: "2.0"
                         namelist_dir: ${fesom.model_dir}/config/
-                        remove_namelist_changes: namelist.recom
+                        remove_namelist_changes: [namelist.recom]
 
                         # Include the extra namelist that is not included by default in recom.yaml
                         add_namelists:

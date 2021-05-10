@@ -157,6 +157,12 @@ fesom:
                         version: "1.4"
                 2.0:
                         version: "2.0"
+                2.1-recom:
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_config_sources:
+                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
+                        add_config_in_work:
+                                oce:     namelist.oce
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288
@@ -188,20 +194,17 @@ recom:
                 2.1-recom:
                         version: "2.0"
                         namelist_dir: ${fesom.model_dir}/config/
-#                        remove_namelist_changes: namelist.recom
-                        namelist_changes:
-                                namelist.recom:
-                                        paciso:
-                                                ciso_atbox: false
-                                namelist.io.recom.ciso:
-                                        a_section_here:
-                                                a_var_here: true
+                        remove_namelist_changes: namelist.recom
 
                         # Include the extra namelist that is not included by default in recom.yaml
                         add_namelists:
                                 - namelist.io.recom.ciso
                         add_config_files:
                                 io.recom.ciso: io.recom.ciso
+                        add_config_sources:
+                                recom: ${namelist_dir}/namelist.recom.ciso
+                        add_config_in_work:
+                                recom: namelist.recom
                 "*":
                         not_used: ""
 

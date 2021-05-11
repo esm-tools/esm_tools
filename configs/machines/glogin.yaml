@@ -3,7 +3,6 @@
 name: glogin
 account: None
 
-# set default for hyperthreading_flag
 use_hyperthreading: False
 choose_use_hyperthreading:
         "1":
@@ -50,13 +49,6 @@ pool_dir:  "/scratch/usr/hbkawi"
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
-#iolibraries: system_libs
-#
-# for FOCIOIFS use
-# compiler_mpi: intel2019_ompi
-# for FOCI use
-# compiler_mpi: intel2019_impi2019
-# for both FOCI and FOCIOIFS use 
 iolibraries: geomar_libs
 
 # basic modules and export vars needed
@@ -70,9 +62,9 @@ module_actions:
    - "load cdo nco"
 
 export_vars:
-   - "LC_ALL=en_US.UTF-8"
+   LC_ALL: en_US.UTF-8
    # Recommended by HLNR support when using an MPI binary and srun
-   - "SLURM_CPU_BIND=none"
+   SLURM_CPU_BIND: none
 
 choose_compiler_mpi:
 
@@ -80,40 +72,29 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/19.0.5"
          - "load impi/2019.5"
-      choose_general.setup_name:
-         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
-         focioifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 
-         oifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 
-         foci:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt" 
       add_export_vars:
-         - "FC=mpiifort"
-         - "F77=mpiifort"
-         - "MPIFC=mpiifort"
-         - "FCFLAGS=-free"
-         - "CC=mpiicc"
-         - "CXX=mpiicpc"
-         - "MPIROOT=\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         - "MPI_LIB=\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""         
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
    intel2019_ompi:
       add_module_actions:
          - "load intel/19.0.5"
          - "load openmpi/intel/3.1.6"
-      add_export_vars:  
-         - "FC=mpifort"
-         - "F77=mpifort"
-         - "MPIFC=mpifort"
-         - "FCFLAGS=-free"
-         - "CC=mpicc"
-         - "CXX=mpic++"
-         - "MPIROOT=\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         - "MPI_LIB=\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+      add_export_vars:
+         FC: mpifort
+         F77: mpifort
+         MPIFC: mpifort
+         FCFLAGS: -free
+         CC: mpicc
+         CXX: mpic++
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
 choose_iolibraries:
 
@@ -123,55 +104,55 @@ choose_iolibraries:
          - "load netcdf"
        # TODO: find the correct libraries and dependencies
        add_export_vars:
-         - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-         - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+         NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+         LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
 
     geomar_libs:
        choose_compiler_mpi:
           intel2019_impi2019:
              add_export_vars:
-                - "IO_LIB_ROOT=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811"
-                - "PATH=$IO_LIB_ROOT/bin:$PATH"
-                - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-                - "SZIPROOT=$IO_LIB_ROOT"
-                - "HDF5ROOT=$IO_LIB_ROOT"
-                - "HDF5_ROOT=$HDF5ROOT"
-                - "NETCDFROOT=$IO_LIB_ROOT"
-                - "NETCDFFROOT=$IO_LIB_ROOT"
-                - "ECCODESROOT=$IO_LIB_ROOT"
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
 
-                - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-                - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
-                - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
           intel2019_ompi:
              add_export_vars:
-                - "IO_LIB_ROOT=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117"
-                - "PATH=$IO_LIB_ROOT/bin:$PATH"
-                - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-                - "SZIPROOT=$IO_LIB_ROOT"
-                - "HDF5ROOT=$IO_LIB_ROOT"
-                - "HDF5_ROOT=$HDF5ROOT"
-                - "NETCDFROOT=$IO_LIB_ROOT"
-                - "NETCDFFROOT=$IO_LIB_ROOT"
-                - "ECCODESROOT=$IO_LIB_ROOT"
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
 
-                - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-                - "NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include"
-                - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"
 cc: "$CC"
-mpifc: "$MPIFC" 
+mpifc: "$MPIFC"
 mpicc: "$MPICC"
-cxx: "$CXX" 
+cxx: "$CXX"
 
 launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
 

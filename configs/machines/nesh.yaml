@@ -45,16 +45,8 @@ pool_directories:
 
 pool_dir: "/not/available/on/nesh/" 
 
-# default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
-#iolibraries: system_libs
-#
-# for FOCIOIFS use
-#compiler_mpi: intel2019_ompi
-# for FOCI use
-# compiler_mpi: intel2019_impi2019
-# for both FOCI and FOCIOIFS use 
 iolibraries: geomar_libs
 
 # basic modules and export vars needed
@@ -65,22 +57,17 @@ module_actions:
 export_vars:
    LC_ALL: en_US.UTF-8
 
+computer:
+   additional_flags:
+      - --mem=72000
+      - --contraint="cascade"
+
 choose_compiler_mpi:
 
    intel2020_impi2020:
       add_module_actions:
          - "load intel/20.0.4"
          - "load intelmpi/20.0.4"
-      choose_general.setup_name:
-         focioifs:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-         oifs:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-         foci:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
       add_export_vars:
          FC: mpiifort
          F77: mpiifort
@@ -99,17 +86,6 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/19.0.4"
          - "load intelmpi/19.0.4"
-      choose_general.setup_name:
-         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
-         focioifs:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-         oifs:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
-         foci:
-            add_module_actions:
-               - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt" 
       add_export_vars:
          FC: mpiifort
          F77: mpiifort

@@ -13,14 +13,22 @@ general:
 
         include_models:
                 - fesom
-                - rnfmap
                 - oifs
+                - rnfmap
                 - oasis3mct
 
         available_versions:
+        - '1.0-master'
+        - '1.0-frontiers'
         - '1.0-deck'
         - '1.0'
         choose_version:
+          1.0-master:
+            couplings:
+            - fesom-2.0-master+oifs-43r3-master
+          1.0-frontiers:
+            couplings:
+            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
           1.0-deck:
             couplings:
             - fesom-2.0+oifs-43r3
@@ -36,6 +44,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        heterogeneous_parallelization: false
 
         choose_computer.name:
                 mistral:
@@ -44,6 +53,8 @@ general:
                         pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
+                aleph:
+                        pool_dir: "/proj/awi/input"
 
         compute_recipe_with_preprocess:
             - "venv_bootstrap"
@@ -104,6 +115,12 @@ general:
                 true:   # If restart, use no preprocessing:
                                 compute_recipe: ${compute_recipe_no_preprocess}
 
+        # Load general environment for the whole coupled setup
+        dr_hook_ignore_signals: -1
+        further_reading:
+               - oifs/oifs.env.yaml
+               - oasis3mct/oasis3mct.env.yaml
+
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -144,6 +161,8 @@ oifs:
         # 575 would also be ok (575 = 23 * 25)
         # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
         nproc: 36
+        omp_num_threads: 2
+
         choose_general.resolution:
                 TL159_CORE2:
                         nproc: 36
@@ -154,6 +173,7 @@ oifs:
         wam: true
 
         perturb: 0
+        ensemble_id: 1
 
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
@@ -181,25 +201,28 @@ oifs:
                         #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
                 "1.0-deck":
                         with_xios: false
+                "1.0-master":
+                        with_xios: false
 
         with_xios: false
 
         runtime_environment_changes:
                 add_export_vars:
                         # Turn on FESOM coupling
-                        - 'FESOM_USE_CPLNG="active"'
-                        - 'ECE_CPL_NEMO_LIM="false"'
-                        - 'ECE_CPL_FESOM_FESIM="true"'
-                        - 'ECE_AWI_CPL_FESOM="true"'
+                        FESOM_USE_CPLNG: '"active"'
+                        ECE_CPL_NEMO_LIM: '"false"'
+                        ECE_CPL_FESOM_FESIM: '"true"'
+                        ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
-
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
 
         coupling_fields:
                 "[[awicm3_fields-->FIELD]]":
                     grid: atma
                 A_Runoff:
+                    grid: atmr
+                A_Calving:
                     grid: atmr
 
         prepifs_dir: ${input_dir}/${res_level}/
@@ -210,7 +233,7 @@ oifs:
         ############################################################
         preprocess:
                 preprocess_shell:
-                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${prepifs_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.prepifs_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
+                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${thisrun_input_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.input_expid} ${oifs.input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
                         type: shell
 
         #postprocess:
@@ -225,6 +248,7 @@ fesom:
         resolution: CORE2
         lresume: false
         nproc: 72
+        omp_num_threads: 1
         choose_general.resolution:
                 TCO159_CORE2:
                         nproc: 144
@@ -238,16 +262,15 @@ fesom:
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
-        mesh_dir: "${pool_dir}/core2_meanz/"
-        nam_sbc_dir: /work/ollie/dsein/input/forcing/CORE2
 
         restart_unit: "d"
         leapyear: True
 
-        model_tag: "awicm-3-deck"
-        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
 
-        surf_relax_s: 0.0
+        # Move in the future to fesom-2.0.yaml
+        mesh_dir: "${pool_dir}/${resolution}/"
+
+        surf_relax_s: "0.0"
 
         namelist_changes:
                 namelist.config:
@@ -262,13 +285,22 @@ fesom:
         # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
         # old experiments. 5e-3 is a better value so it is used for XIOS version
         choose_general.version:
+                "1.0-master":
+                        namelist_dir: "${model_dir}/config/"
+                "1.0-frontiers":
+                        model_tag: "awicm-3-frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                 "1.0-deck":
+                        model_tag: "awicm-3-deck"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                         add_namelist_changes:
                                 namelist.cvmix:
                                         param_kpp:
                                                 kpp_kv0: 5e-2
                 # Use better oce_tra parameters for the XIOS version that match the fesom-bounded namelist
                 "1.0":
+                        model_tag: "awicm-3-deck"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:
@@ -315,10 +347,10 @@ fesom:
                 choose_computer.name:
                         mistral:
                                 add_export_vars:
-                                        - branch_deck: d4139d9
+                                        branch_deck: d4139d9
                         "*":
                                 add_export_vars:
-                                        - branch_deck: juwels_chunk_io
+                                        branch_deck: juwels_chunk_io
 
 further_reading:
         - fesom/fesom-2.0.io.yaml
@@ -336,12 +368,13 @@ xios:
 
 
 rnfmap:
-        #model_dir: ${general.model_dir}/rnfmap-${rnfmap.version}
-        #setup_dir: ${general.model_dir}
+
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
 
         nproc: 1
+        omp_num_threads: ${computer.cores_per_node}
+
         time_step: ${oasis3mct.coupling_time_step}
 
         coupling_fields:
@@ -374,10 +407,6 @@ oasis3mct:
                 - oifs
                 - rnfmap
 
-        choose_general.version:
-                "1.0":
-                        add_process_ordering:
-                                - xios
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -401,17 +430,34 @@ oasis3mct:
         o2r_seq: 1
         r2a_seq: 2
 
-        coupling_time_step: 3600
-        coupling_target_fields:
-                rstas.nc:
-                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
-                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
-                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                        - 'R_Runoff_atm <--bicubic-- A_Runoff'
-                        - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
-                rstos.nc:
-                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+        coupling_time_step: "${oasis3mct.time_step}"
+        choose_general.version:
+                "1.0":
+                        add_process_ordering:
+                                - xios
+                '1.0-deck':
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm <--bicubic-- A_Runoff'
+                                        - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                '*':
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--bicubic-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+
 
         coupling_directions:
                 'atma->feom':
@@ -532,3 +578,4 @@ oasis3mct:
         restart_out_sources:
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
+

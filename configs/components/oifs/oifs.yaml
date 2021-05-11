@@ -85,6 +85,8 @@ compile_infos:
         - oasis3mct-4.0
         available_versions:
         - 40r1
+        - 43r3-master
+        - 43r3-awi-frontiers
         - 43r3-awi
         - 43r3-awi-e1
         - 43r3
@@ -102,19 +104,39 @@ compile_infos:
             branch: foci_conserv
             comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
             destination: 40r1
+          43r3-master:
+            requires:
+            - oasis3mct-4.0-awicm3-frontiers
+            branch: master
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
+          43r3-awi-frontiers:
+            requires:
+            - oasis3mct-4.0-awicm3-frontiers
+            branch: awicm-3-frontiers
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             with_xios: false # for now, later the default will be with_xios: true
           43r3-awi:
             requires:
             - oasis3mct-4.0-oifsdeck
-            branch: awicm-3-deck
+            branch: awicm-3-deck-hotfix-1
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+              -v -j8 -f oifs.cfg; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
@@ -123,7 +145,7 @@ compile_infos:
             - oasis3mct-4.0-oifsdeck
             - xios-2.5
             branch: fix-mkl
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
@@ -132,13 +154,13 @@ compile_infos:
           #  - oasis3mct-fociagrif
           #  branch: oifs-foci
           #  comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-          #    -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+          #    -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
           #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
           #  install_bins: make/esm/oifs/bin/oifs
           43r3-foci:
             branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
@@ -146,7 +168,7 @@ compile_infos:
           43r3-v1:
             branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
@@ -356,6 +378,8 @@ namelist_changes:
                 NAMCT0:
                         LFDBOP: "${lfdbop}"
                         LSMSSIG: "${lsmssig}"
+                # For this changes to have an effect use a version of OpenIFS that
+                # contains yomorb.F90
                 NAMORB:
                         LCORBMD:  "${orb_switch}"
                         ORBMODE: "${orb_mode}"
@@ -370,8 +394,10 @@ runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
 ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
+simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
 
 seconds_since_initial: $((${start_date} - ${initial_date}))
+seconds_since_initial_end: $((${end_date} - ${initial_date}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
@@ -525,12 +551,12 @@ log_in_work:
 #======================================================================================
 
 # Indexing logic for WAM restart files
-days_since_initial: "$(( ${seconds_since_initial} / 86400 ))"
-days_since_initial_minus1: "$(( ${days_since_initial} - 1 ))"
-next_ndays_minus1: "$(( ${next_ndays} - 1 ))"
+# This was simplified by Miguel but it will be completely changed when eternal run branch is merged
+days_since_initial: "$(( ${seconds_since_initial_end} / 86400 ))"
+days_since_initial_start: "$(( ${seconds_since_initial} / 86400 - 1 ))"
 days_string: "<--format(%06d)-- ${days_since_initial}"
-days_minus1_string: "<--format(%06d)-- ${days_since_initial_minus1}"
-next_ndays_minus1_string: "<--format(%06d)-- ${next_ndays_minus1}"
+days_minus1_string: "<--format(%06d)-- ${days_since_initial_start}"
+
 prev_wam: "${days_minus1_string}${parent_date!shour!sminute!ssecond}"
 this_wam: "${next_ndays_minus1_string}${parent_date!shour!sminute!ssecond}"
 this_bls: "BLS${end_filebase_wam}${this_wam}"
@@ -798,10 +824,19 @@ choose_version:
                         fort.4:
                                 NAMRES:
                                         NFRRES: ${nfrres}
+###### feature/awicm3_prep_merge_geomar
+                                        NRESTS:
+                                                - -1
+                                                - $(( -${simulation_length_seconds} / ${time_step} ))
+
+                                        #NRESTS(1): -1
+                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
+#####
                                         #NRESTS:
                                         #        - -1
                                         #        - $(( -${timestep_per_run}*${general.run_number} )) # TODO: Change this to flexible time stepping if it works, maybe to -${oifs.next_step}?
                                         NRESTS(1): -${next_step} 
+##### geomar_awicm3
 
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}

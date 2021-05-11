@@ -14,8 +14,18 @@ choose_version:
     branch: 2.0.2
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    - github.com/FESOM/fesom2.git
+    - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
+  2.0-master:
+    branch: master
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-frontiers:
+    branch: awicm-3-frontiers
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
   2.0-esm_interface:
     branch: using_esm-interface_yac
     destination: fesom-2.0
@@ -42,7 +52,7 @@ choose_version:
 install_bins: bin/fesom.x
 git-repository:
 - https://gitlab.dkrz.de/FESOM/fesom2.git
-- github.com/FESOM/fesom2.git
+- https://github.com/FESOM/fesom2.git
 
 
 restart_rate: "12"
@@ -100,6 +110,9 @@ choose_resolution:
                 nproc: 288
         GLOB:
                 nx: 830305
+        D3:
+                nx: 3160340
+                mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
         oce_restart: oce_restart
@@ -230,12 +243,12 @@ config_sources:
 
 compiletime_environment_changes:
         add_export_vars:
-                - taken2from:      fesom2_compile
+                taken2from:      fesom2_compile
 
 runtime_environment_changes:
         add_export_vars:
-                - takenfrom:      fesom2_run
-                - taken2from:     fesom2_ru
+                takenfrom:      fesom2_run
+                taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"
@@ -282,6 +295,8 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
+                grid: feom
+        enth_oce:
                 grid: feom
 
 grids:

@@ -66,6 +66,11 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
+                                # NOTE(PG): Almost no one in paleodyn uses the
+                                # stream-style output, and most people expect a
+                                # ${EXPID}_echam_${DATE} file. Turning default
+                                # output on does that:
+                                default_output: True
                                 lcouple: .true.
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
         model_dir: ${general.model_dir}/echam-${echam.version}

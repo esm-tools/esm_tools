@@ -86,6 +86,7 @@ core:
                 chunky_parts:
                         - "_update_run_in_chunk"
                         - "_update_chunk_date_file"
+                        - "set_chunk_calendar"
 
                 workflow:
                         - "assemble_workflow"

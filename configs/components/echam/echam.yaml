@@ -156,7 +156,7 @@ choose_resolution:
                 _ny: 96
                 choose_computer.partitions.compute.cores_per_node:
                         24:
-                                nproca: 24
+                                nproca: 24              # toxic combination? 
                                 nprocb: 18
 
                         36:

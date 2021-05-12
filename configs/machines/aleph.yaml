@@ -121,6 +121,13 @@ choose_useMPI:
                 cxx: CC
                 add_export_vars:
                         CRAYPE_LINK_TYPE: dynamic
+                        # Prepend labels to the stdout/sterr lines
+                        PMI_LABEL_ERROUT: 1
+
+                label_format: '"[@MODEL@]%l:"'
+                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
+                        env OMP_NUM_THREADS=@omp_num_threads@
+                        env PMI_LABEL_ERROUT_FORMAT=${label_format}"
 
 further_reading:
         - batch_system/pbs.yaml

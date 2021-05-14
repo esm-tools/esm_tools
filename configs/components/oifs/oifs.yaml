@@ -382,8 +382,8 @@ custop: "t${oifs.next_step}"
 nfrres: "${next_step}" 
 lresume: false
 
-massfixer: 1
-nfrmasscon: 12
+massfixer: 2
+nfrmasscon: 1
 
 start_seconds: "$((${start_date} - ${initial_date}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
@@ -738,7 +738,7 @@ choose_massfixer:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".true."
-                                        LMASDRY: ".true." 
+                                        LMASDRY: ".false." 
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
         2:      
@@ -746,11 +746,12 @@ choose_massfixer:
                         fort.4: 
                                 NAMDYN: 
                                         LMASCOR: ".true."
-                                        LMASDRY: ".true."
+                                        LMASDRY: ".false."
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
                                 NAMGFL:
-                                        LTRCMFIX_PS: ".true."
+                                        #LTRCMFIX_PS: ".true."
+                                        LTRCMFMG: ".true."
                                         YS_NL%LMASSFIX: ".true."
                                         YR_NL%LMASSFIX: ".true."
                                         YI_NL%LMASSFIX: ".true."

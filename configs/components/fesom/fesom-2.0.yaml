@@ -9,6 +9,8 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
+use_icebergs: False
+
 choose_version:
   '2.0':
     branch: 2.0.2
@@ -70,7 +72,7 @@ forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/fesom2/"
 
-opbnd_dir: "somepath"
+oy 17pbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
 
 steps_per_day: "$(( 86400 / ${time_step} ))"
@@ -99,34 +101,74 @@ choose_resolution:
                 nproc: 288
         GLOB:
                 nx: 830305
+        CAVCORE2:
+                nx: 72411
+                mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+                nproc: 288
 
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
+        icb_restart: icb_restart
 
 restart_in_in_workdir:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
+        icb_restart: icb_restart
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-
-outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
+        icb_restart: iceberg.restart #.${parent_date!syear}
 
 outdata_sources:
         "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
 outdata_targets:
         "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+
+choose_use_icebergs:
+        True:
+            ib_num_old: 0
+            ib_num_new: 0
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+            
+            input_in_work:
+                    longitude: "icb_longitude.dat"
+                    latitude: "icb_latitude.dat"
+                    length: "icb_length.dat"
+                    height: "icb_height.dat"
+                    scaling: "icb_scaling.dat"
+            
+            input_sources:
+                    longitude: "${iceberg_dir}/LON.dat"
+                    latitude: "${iceberg_dir}/LAT.dat"
+                    length: "${iceberg_dir}/LENGTH.dat"
+                    height: "${iceberg_dir}/HEIGHT.dat"
+                    scaling: "${iceberg_dir}/SCALING.dat"
+            
+            input_files:
+                    longitude: "longitude" 
+                    latitude: "latitude" 
+                    length: "length" 
+                    height: "height"
+                    scaling: "scaling"
+        
+        False:
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
 
 log_files:
         clock: clock
@@ -229,12 +271,12 @@ config_sources:
 
 compiletime_environment_changes:
         add_export_vars:
-                - taken2from:      fesom2_compile
+                taken2from:      fesom2_compile
 
 runtime_environment_changes:
         add_export_vars:
-                - takenfrom:      fesom2_run
-                - taken2from:     fesom2_ru
+                takenfrom:      fesom2_run
+                taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"

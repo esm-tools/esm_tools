@@ -42,7 +42,7 @@ name_flag: "--job-name=${expid}"
 
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --cpu-freq=high"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:

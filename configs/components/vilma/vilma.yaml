@@ -105,6 +105,7 @@ choose_scenario:
         ice5g:
                 ini_input_dir: ${pool_dir}/ice5g
                 ini_parent_dir: ${pool_dir}/ice5g
+                grid_input: n256
                 resolution: '512x1024'
                 eislastfile: ice5g_total.nc
                 eislastconf: loadh_ice5g_total.inp
@@ -112,6 +113,7 @@ choose_scenario:
         ice6g:
                 ini_input_dir: ${pool_dir}/ice6g
                 ini_parent_dir: ${pool_dir}/ice6g
+                grid_input: n256
                 resolution: '512x1024' # ??? not used at all
                 eislastfile: ice6g_total.nc
                 eislastconf: loadh_ice6g_total.inp
@@ -119,10 +121,11 @@ choose_scenario:
         small:
                 ini_input_dir: ${pool_dir}/small_setup
                 ini_parent_dir: ${pool_dir}/small_setup
+                grid_input: n128
                 resolution: '512x1024' # ??? not used at all
-                eislastfile: initial_topo.nc
+                bedrockfile: initial_topo.nc
                 eislastconf: couple_eislastconf.inp
-                bedrockfile: ice_thickness_forcing.nc
+                eislastfile: ice_thickness_forcing.nc
 
 
 choose_coupled_to_ice:
@@ -176,8 +179,8 @@ create_config:
 
         inp/load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
-                - "<--append-- ${bedrockfile}"
-                - "<--append-- ${eislastfile} ${bedrockfile}"
+                - "<--append-- ${eislastfile}"
+                - "<--append-- ${bedrockfile} ${eislastfile}"
 
 choose_tintfile:
         "automatic":

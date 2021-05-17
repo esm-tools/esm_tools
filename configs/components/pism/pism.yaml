@@ -100,6 +100,9 @@ bin_sources:
 bin_in_work:
         "pism_bin": "pismr"
 
+solidearth_initialize_method: regrid # either dummy, regrid or first_timestep
+#solidearth_initialize_file: #needed if method is dummy
+
 further_reading:
     - pism/pism.domains.yaml
     - pism/pism.compiletime_env_changes.yaml

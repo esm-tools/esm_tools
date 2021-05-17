@@ -163,6 +163,12 @@ fesom:
                                 oce:     "${namelist_dir}/namelist.oce.recom.ciso"
                         add_config_in_work:
                                 oce:     namelist.oce
+                        #remove_namelist_changes.namelist.config: [inout]
+                        add_namelist_changes: 
+                                namelist.config: 
+                                        restart_log: 
+                                                restart_length: "${restart_rate}"
+                                                restart_length_unit: "${restart_unit}"
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288
@@ -177,7 +183,7 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        add_namelist_changes:
+        namelist_changes:
                 namelist.oce:
                         boundary:
                                 restore_s_surf: 0.0
@@ -193,8 +199,26 @@ recom:
         choose_general.version:
                 2.1-recom:
                         version: "2.0"
+                        bgc_num: 31
+                        add_namelist_changes:
+                            namelist.recom:
+                                pavariables:
+                                    bgc_num: "${bgc_num}"
+                        data_path: /work/ollie/mbutzin/fesom2/input/dust/
+
+                        restart_name: "restart."
+ 
+                        remove_namelist_changes.namelist.recom.pavariables: 
+                            - constant_CO2
+                            - firstyearoffesomcycle
+                            - lastyearoffesomcycle
+                            - numofCO2cycles
+                            - currentCO2cycle
+                            - REcoM_PI
+                        remove_namelist_changes.namelist.recom.paco2_flux_param:
+                            - CO2_for_spinup
+
                         namelist_dir: ${fesom.model_dir}/config/
-                        remove_namelist_changes: [namelist.recom]
 
                         # Include the extra namelist that is not included by default in recom.yaml
                         add_namelists:

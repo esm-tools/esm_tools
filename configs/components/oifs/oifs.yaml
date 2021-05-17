@@ -553,6 +553,14 @@ restart_in_sources:
         BLS: ${in_date_folder}/BLS${start_filebase_wam}${prev_wam}.*
         LAW: ${in_date_folder}/LAW${start_filebase_wam}${prev_wam}.*
 
+choose_general.run_number:
+        1:
+                add_restart_in_sources:
+                        srf: ${in_date_folder}/srf*
+                        waminfo: ${in_date_folder}/waminfo*
+                        BLS: ${in_date_folder}/BLS*
+                        LAW: ${in_date_folder}/LAW*
+
 # WORK (current leg directory):
 restart_in_in_work:
         srf: srf${start_ndays_string}0000.*

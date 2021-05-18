@@ -1,7 +1,7 @@
 general:
         base_dir: /work/ollie/dbarbi/experiments/
         initial_date: -120000-01-01
-        final_date: -118001-12-31
+        final_date: -119001-12-31
         setup_name: vilma
         compute_time: 00:06:00
         nyear: 1000
@@ -24,15 +24,17 @@ vilma:
                                 script: pseudo_couple_in_vilma.sh
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 call_function: call_this
-                                env_preparation: testenv_ci_vilma.py
+                                env_preparation: env_ci_vilma.py
                                 run_only: first_run_in_chunk
                                 skip_chunk_number: 1
 
                         couple_out:
                                 nproc: 1
                                 run_after: tidy
-                                script: pseudo_couple_out_vilma.sh
+                                #script: pseudo_couple_out_vilma.sh
+                                script: coupling_vilma2ice.functions
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
-                                call_function: call_this
-                                env_preparation: testenv_co_vilma.py
+                                #call_function: call_this
+                                call_function: vilma2ice
+                                env_preparation: env_co_vilma.py
                                 run_only: last_run_in_chunk

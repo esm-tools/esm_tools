@@ -2,7 +2,7 @@ general:
         setup_name: pism
         compute_time: "00:01:00"
         initial_date: "2000-01-01"
-        final_date: "2001-12-31"
+        final_date: "2000-12-31"
         base_dir: /work/ollie/dbarbi/experiments
         nyear: 1
         #clean_old_rundirs_keep_every: 5
@@ -27,7 +27,7 @@ pism:
                                 script: pseudo_couple_in_pism.sh
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 call_function: call_this
-                                env_preparation: testenv_ci_pism.py
+                                env_preparation: env_ci_pism.py
                                 run_only: first_run_in_chunk
                                 skip_chunk_number: 1
 
@@ -37,5 +37,5 @@ pism:
                                 script: pseudo_couple_out_pism.sh
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 call_function: call_this
-                                env_preparation: testenv_co_pism.py
+                                env_preparation: env_co_pism.py
                                 run_only: last_run_in_chunk

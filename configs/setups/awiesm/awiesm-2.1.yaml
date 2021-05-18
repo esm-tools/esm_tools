@@ -163,10 +163,10 @@ fesom:
                                 oce:     "${namelist_dir}/namelist.oce.recom.ciso"
                         add_config_in_work:
                                 oce:     namelist.oce
-                        #remove_namelist_changes.namelist.config: [inout]
-                        add_namelist_changes: 
-                                namelist.config: 
-                                        restart_log: 
+                        remove_namelist_changes.namelist.config: [inout]
+                        add_namelist_changes:
+                                namelist.config:
+                                        restart_log:
                                                 restart_length: "${restart_rate}"
                                                 restart_length_unit: "${restart_unit}"
         choose_general.resolution:
@@ -207,8 +207,8 @@ recom:
                         data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
- 
-                        remove_namelist_changes.namelist.recom.pavariables: 
+
+                        remove_namelist_changes.namelist.recom.pavariables:
                             - constant_CO2
                             - firstyearoffesomcycle
                             - lastyearoffesomcycle

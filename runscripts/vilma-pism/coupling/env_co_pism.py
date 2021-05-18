@@ -12,10 +12,12 @@ def prepare_environment(config):
             "pism_solidearth_initialize_method": config["pism"]["solidearth_initialize_method"],
             "pism_solidearth_initialize_dummyrun_file": config["pism"].get("solidearth_initialize_dummyrun_file", ""),
             "INPUT_GRID_pism": config["pism"].get("input_grid", default_input_grid),
+            "INPUT_FILE_pism": config["pism"].get("cli_input_file_pism"),
             "YR0_INI_pism": config["general"]["initial_date"].syear,
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "END_YEAR_pism": config["general"]["end_date"].syear,
-            "NYEAR_pism_standalone": config["general"]["nyear"]
+            "NYEAR_pism_standalone": config["general"]["nyear"],
+            "latest_ex_file_pism": config["pism"]["outdata_targets"]["ex_file"],
             }
     print (environment_dict)
     return environment_dict

@@ -100,7 +100,7 @@ function pism_solidearth_initialize_ice_thickness_file {
                                 cdo -s \
                                         selvar,${ICE_THICKNESS_VARNAME_pism},${MASK_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism}  \
                                         -select,timestep=1 \
-                                        ${DATA_DIR_pism}/latest_ex_file_pism.nc \
+                                        ${DATA_DIR_pism}/${latest_ex_file_pism} \
                                         ${solidearth_ice_thickness_file}
                     ;;
                     *)
@@ -124,7 +124,7 @@ function pism_solidearth_append_ice_thickness_file {
         cdo -s \
                 selvar,${ICE_THICKNESS_VARNAME_pism},${MASK_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism}  \
                 -select,timestep=-1 \
-                ${DATA_DIR_pism}/latest_ex_file_pism.nc \
+                ${DATA_DIR_pism}/${latest_ex_file_pism} \
                 ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc
 
         ncap2 -s "time=${END_YEAR_pism}" ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc -A ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc

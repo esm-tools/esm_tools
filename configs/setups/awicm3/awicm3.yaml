@@ -360,10 +360,8 @@ fesom:
                         "*":
                                 add_export_vars:
                                         branch_deck: juwels_chunk_io
-
-further_reading:
-        - fesom/fesom-2.0.io.yaml
-
+#further_reading:
+#       - fesom/fesom-2.0.io.yaml
 
 xios:
         #model_dir: ${general.model_dir}/xios-${xios.version}
@@ -531,17 +529,14 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: "2.0"
 
-        input_files:
-                rmp: rmp
+        input_files: {}
 
         input_in_work:
-                rmp: rmp_*.nc
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
 
         input_sources:
-                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                 areas: ${pool_dir}/areas.nc
                 masks: ${pool_dir}/masks.nc
                 grids: ${pool_dir}/grids.nc
@@ -551,6 +546,7 @@ oasis3mct:
                 rstos.nc: rstos.nc
 
         restart_in_in_work:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
@@ -565,25 +561,32 @@ oasis3mct:
                                                 grids: grids
                 true:
                         lag: "${time_step}"
+                        add_restart_in_files:
+                                rmp: rmp
                         choose_general.run_number:
                                 1:
                                         add_restart_in_sources:
                                                 rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
                                                 rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
+                                                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                                 "*":
                                         add_restart_in_sources:
                                                 rstas.nc: rstas.nc
                                                 rstos.nc: rstos.nc
+                                                rmp: rmp_*.nc
 
         restart_out_files:
+                rmp: rmp
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_in_work:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_sources:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 

@@ -240,7 +240,6 @@ config_files:
         forcing: forcing
         ice:     ice
         oce:     oce
-        diag:    diag
         io:      io
 
 config_sources:

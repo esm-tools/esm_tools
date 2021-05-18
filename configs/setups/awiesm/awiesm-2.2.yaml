@@ -64,7 +64,7 @@ general:
                   - echam
                   - fesom
             ice_srun:
-                models: 
+                models:
                   - pism
             couple_srun:
                 models:
@@ -167,6 +167,8 @@ fesom:
 
         add_namelist_changes:
                 namelist.oce:
+                        oce_tra:
+                                surf_relax_s: 0.0
                         boundary:
                                 restore_s_surf: 0.0
 

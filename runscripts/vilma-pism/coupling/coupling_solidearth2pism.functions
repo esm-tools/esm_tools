@@ -16,6 +16,7 @@ function solidearth2pism {
         echo
         echo "                 *** F I N I S H E D    solidearth2pism *** "
         echo "                =================================================================="
+	exit -2
 }
 
 function iterative_coupling_solid_earth_pism_regrid_rename {

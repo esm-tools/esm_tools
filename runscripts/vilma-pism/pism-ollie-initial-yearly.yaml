@@ -25,9 +25,11 @@ pism:
                         couple_in:
                                 nproc: 1
                                 run_before: prepcompute
-                                script: pseudo_couple_in_pism.sh
+                                #script: pseudo_couple_in_pism.sh
+                                script: coupling_solidearth2pism.functions
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
-                                call_function: call_this
+                                #call_function: call_this
+                                call_function: solidearth2pism
                                 env_preparation: env_ci_pism.py
                                 run_only: first_run_in_chunk
                                 skip_chunk_number: 1

@@ -31,9 +31,11 @@ function iterative_coupling_vilma_ice_write_names {
 
 function iterative_coupling_vilma_ice_make_forcing {
 
+	echo "Generating ${COUPLE_DIR}/bedrock_change.nc..."
         ice_bedrock_change_file=${COUPLE_DIR}/bedrock_change.nc
 
         cp ${DATA_DIR_vilma}/rsl.nc ${COUPLE_DIR}/new_bedrock.nc
+
 
         # Subtract the previous bedrock conditions to obtain the change
         # At first time step there are no previous conditions to subtract
@@ -48,7 +50,9 @@ function iterative_coupling_vilma_ice_make_forcing {
         # rsl is minus the change in bedrock
         ncap2 -s 'rsl=-rsl' ${ice_bedrock_change_file} -A ${ice_bedrock_change_file}
 
+	cp ${COUPLE_DIR}/bedrock_change.nc  ${COUPLE_DIR}/bedrock_change_${RUN_DATE_STAMP}.nc
         # The new conditions become the old for the next timestep 
         mv ${COUPLE_DIR}/new_bedrock.nc ${COUPLE_DIR}/old_bedrock.nc
+	cp ${COUPLE_DIR}/old_bedrock.nc ${COUPLE_DIR}/old_bedrock_${RUN_DATE_STAMP}.nc
 
 }

@@ -8,6 +8,7 @@ function solidearth2pism {
 
         if [[ "x${SOLID_EARTH_TO_PISM}" == "x1" ]]; then
                 read_names solidearth ice
+                iterative_coupling_pism_solidearth_write_grid
                 iterative_coupling_solid_earth_pism_regrid_rename
                 iterative_coupling_solid_earth_pism_update_restart_file
         else
@@ -31,6 +32,14 @@ function iterative_coupling_solid_earth_pism_regrid_rename {
         cdo -s \
                 chname,${bedrock_change_name},topg \
                 ${COUPLE_DIR}/bedrock_change_regrid.nc ${COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc
+}
+
+function iterative_coupling_pism_solidearth_write_grid {
+        if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
+
+                cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+                      ${COUPLE_DIR}/ice.griddes  
+        fi
 }
 
 function iterative_coupling_solid_earth_pism_update_restart_file {

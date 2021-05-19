@@ -18,6 +18,7 @@ def prepare_environment(config):
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "NYEAR_pism_standalone": config["general"]["nyear"],
             "latest_ex_file_pism": config["pism"]["outdata_targets"]["ex_file"],
+            "RUN_DATE_STAMP": config["general"]["run_datestamp"],
             }
     print (environment_dict)
     return environment_dict

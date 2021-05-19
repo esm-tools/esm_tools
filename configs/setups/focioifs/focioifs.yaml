@@ -19,11 +19,11 @@ general:
            - "log_used_files"
            - "_write_finalized_config"
            - "copy_files_to_thisrun"
-           - "preprocess"
            - "modify_namelists"
            - "modify_files"
            - "copy_files_to_work"
            - "write_simple_runscript"
+           - "preprocess"
            - "report_missing_files"
            - "database_entry"
            - "submit"
@@ -62,12 +62,6 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
-
-#preprocess:
-#         preprocess_shell:
-#                  method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id} jesus"
-#                #method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${oifs.input_dir}/${oifs.prepifs_startdate}${oifs.hours}/ ${oifs.prepifs_expid} ${oifs.input_expid} ${start_date!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${work_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id}"
-#                type: shell
 
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27

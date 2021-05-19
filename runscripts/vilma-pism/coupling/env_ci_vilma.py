@@ -24,7 +24,7 @@ def prepare_environment(config):
             "ADD_UNCHANGED_ICE": config["vilma"].get("add_unchanged_ice", False),
             "EISLASTFILE_vilma":  config["vilma"]["eislastfile"],
             "RUN_NUMBER_vilma": config["general"]["run_number"],
-            "DATA_DIR_vilma": config["vilma"]["experiment_outdata_dir"],
+            "DATA_DIR_vilma": config["vilma"]["experiment_restart_out_dir"],
             "INITIAL_YEAR_vilma": config["general"]["initial_date"].syear,
             "NYEAR_vilma_standalone": config["general"]["nyear"],
             "FINAL_YEAR_vilma": config["general"]["final_date"].syear,

@@ -1,10 +1,16 @@
 def prepare_environment(config):
+
+
+
     environment_dict = {
             "TEST_IN_ENV": "testvar_in_env_exported_couple_in_vilma",
             "ICE_TO_VILMA": 1,
             "VILMA_GRID_input": config["vilma"]["grid_input"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
-            "solidearth_ice_thickness_file": config["vilma"]["eislastfile"],
+            "solidearth_ice_thickness_file":(
+                config["general"]["experiment_couple_dir"] +
+                "/ice_thickness.nc"
+                ),
             #"ice_thickness_name": from names file
             #"ice_mask_name": from names file
             #"ice_topography_name": from names file
@@ -16,9 +22,17 @@ def prepare_environment(config):
             #"VALUE_FLOATING_ice": from names file
             #"VALUE_OCEAN_ice": from names file
             "ADD_UNCHANGED_ICE": config["vilma"].get("add_unchanged_ice", False),
-            "EISLASTFILE_vilma": config["vilma"].get("eislastfile"),
+            "EISLASTFILE_vilma":  config["vilma"]["eislastfile"],
             "RUN_NUMBER_vilma": config["general"]["run_number"],
             "DATA_DIR_vilma": config["vilma"]["experiment_outdata_dir"],
+            "INITIAL_YEAR_vilma": config["general"]["initial_date"].syear,
+            "NYEAR_vilma_standalone": config["general"]["nyear"],
+            "FINAL_YEAR_vilma": config["general"]["final_date"].syear,
+            "EISLASTCONF_vilma":(
+                config["vilma"]["experiment_config_dir"] +
+                "/inp/" +
+                config["vilma"]["eislastconf"]
+                )
 
             }
     

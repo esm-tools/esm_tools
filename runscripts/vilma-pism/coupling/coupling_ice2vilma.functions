@@ -49,8 +49,8 @@ function iterative_coupling_ice_vilma_make_eislastfile {
                 cdo -s \
                         add ${COUPLE_DIR}/tmp2_${ice_thickness_name}.nc ${ADD_UNCHANGED_ICE_file} \
                         ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
+		rm ${COUPLE_DIR}/tmp2_${ice_thickness_name}.nc
 
-                rm tmp2_${ice_thickness_name}.nc
         else
                 cdo -s \
                         setmisstoc,0 \
@@ -69,7 +69,7 @@ function iterative_coupling_ice_vilma_make_eislastfile {
 
 # Clean up
         # In principle one can delete: rm ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
-        rm tmp_${ice_thickness_name}.nc
+	rm ${COUPLE_DIR}/tmp_${ice_thickness_name}.nc
 }
 
 function iterative_coupling_ice_vilma_make_dflag {
@@ -117,11 +117,9 @@ function iterative_coupling_ice_vilma_make_dflag {
                 rm ${COUPLE_DIR}/dflag-tmp_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
                 rm ${COUPLE_DIR}/dflag-tmp2_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
                 rm ${COUPLE_DIR}/dflag-tmp3_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc       
-        else
-                continue
         fi
 
-        rm tmp_${ice_mask_name}.nc         
+        rm ${COUPLE_DIR}/tmp_${ice_mask_name}.nc         
 }
 
 function iterative_coupling_ice_vilma_make_loadh {
@@ -151,10 +149,11 @@ function iterative_coupling_ice_vilma_make_loadh {
                 echo "${LOADH_NEXT_VALUE}" >> ${COUPLE_DIR}/eislastconf_vilma.inp
             done
 
+
+	    EISLASTCONFDIR=`dirname  ${EISLASTCONF_vilma}`
+	    mkdir -p ${EISLASTCONFDIR}
             cp ${COUPLE_DIR}/eislastconf_vilma.inp ${EISLASTCONF_vilma}
 
-        else
-            continue
         fi
 
 }

@@ -21,9 +21,11 @@ vilma:
                         couple_in:
                                 nproc: 1
                                 run_before: prepcompute
-                                script: pseudo_couple_in_vilma.sh
+                                #script: pseudo_couple_in_vilma.sh
+                                script: coupling_ice2vilma.functions
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
-                                call_function: call_this
+                                #call_function: call_this
+                                call_function: ice2vilma
                                 env_preparation: env_ci_vilma.py
                                 run_only: first_run_in_chunk
                                 skip_chunk_number: 1

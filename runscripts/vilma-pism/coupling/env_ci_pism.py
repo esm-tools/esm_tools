@@ -11,7 +11,7 @@ def prepare_environment(config):
                 "/bedrock_change.nc"
                 ),
             "RESTART_DIR_pism": config["pism"]["experiment_restart_in_dir"],
-
+            "latest_restart_file_pism": config["pism"]["restart_in_targets"]["restart"],
             }
 
     print(environment_dict)

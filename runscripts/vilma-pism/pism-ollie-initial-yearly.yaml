@@ -1,6 +1,6 @@
 general:
         setup_name: pism
-        compute_time: "00:01:00"
+        compute_time: "00:02:00"
         initial_date: "2000-01-01"
         final_date: "2000-12-31"
         base_dir: /work/ollie/dbarbi/experiments

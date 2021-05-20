@@ -57,4 +57,4 @@ else
 fi
 
 
-pip install --user -e .
+pip install -e .

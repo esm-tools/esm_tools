@@ -29,8 +29,9 @@ choose_jobtype:
         post:
                 partition: compute
         compute:
-                partition: compute
-
+# kh 22.01.21
+#               partition: compute
+                partition: compute2
 
 choose_partition:
         "compute":
@@ -176,6 +177,16 @@ export_vars:
 
         MXM_RDMA_PORTS: mlx5_0:1
         MXM_LOG_LEVEL: FATAL
+# kh 22.01.21
+        I_MPI_STATS: ipm
+        I_MPI_STATS_FILE: prof_mpi_mistral.dat
+
+# kh 01.04.21 avoid problems at mpi startup if a hybrid configuration (MPI + OpenMP) for a multi program environment is used, 
+# also see https://www.dkrz.de/up/help/known-issues topic "Fatal error in MPI_Init: Other MPI error ..."
+        I_MPI_SLURM_EXT: 0
+
+# kh 02.04.21
+        KMP_AFFINITY: verbose 
         ################################################
 
 choose_useMPI:

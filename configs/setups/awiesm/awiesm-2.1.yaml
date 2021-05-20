@@ -99,7 +99,7 @@ echam:
                         nprocar: 24
                         nprocbr: 18
                         npromar: 8
-                        lrad_async: true
+                        lrad_async: False
                         lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24

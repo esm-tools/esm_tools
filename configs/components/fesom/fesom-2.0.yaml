@@ -185,12 +185,12 @@ namelist_changes:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-#                inout:
-#                        restartflag: "${restart_flag}"
-#                        output_length: "${restart_rate}"
-#                        output_length_unit: "${restart_unit}"
-#                        restart_length: "${restart_rate}"
-#                        restart_length_unit: "${restart_unit}"
+                inout:
+                        restartflag: "${restart_flag}"
+                        output_length: "${restart_rate}"
+                        output_length_unit: "${restart_unit}"
+                        restart_length: "${restart_rate}"
+                        restart_length_unit: "${restart_unit}"
         namelist.forcing:
                 namsbc:
                         nm_xwind_file: "${forcing_data_dir}/u_10."
@@ -240,7 +240,6 @@ config_files:
         forcing: forcing
         ice:     ice
         oce:     oce
-        diag:    diag
         io:      io
 
 config_sources:

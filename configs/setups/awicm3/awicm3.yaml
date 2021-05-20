@@ -96,15 +96,11 @@ general:
             - "database_entry"
             - "submit"
 
-        choose_oifs.lresume:
-                false:
-                        choose_run_number:
-                                1:      # If first leg, use preprocessing
-                                        compute_recipe: ${compute_recipe_with_preprocess}
-                                "*":    # If not first leg, use no preprocessing
-                                        compute_recipe: ${compute_recipe_no_preprocess}
-                true:   # If restart, use no preprocessing:
-                                compute_recipe: ${compute_recipe_no_preprocess}
+        choose_run_number:
+                1:      # If first leg, use preprocessing
+                        compute_recipe: ${compute_recipe_with_preprocess}
+                "*":    # If not first leg, use no preprocessing
+                        compute_recipe: ${compute_recipe_no_preprocess}
 
         # TODO: add here the further_reading of the oifs environment for compilation
         # when that option works

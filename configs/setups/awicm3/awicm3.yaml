@@ -331,10 +331,10 @@ fesom:
                         mistral:
                                 # TODO: remove the double add_ when environment is fixed
                                 add_add_export_vars:
-                                        - branch_deck: d4139d9
+                                        branch_deck: d4139d9
                         "*":
                                 add_export_vars:
-                                        - branch_deck: juwels_chunk_io
+                                        branch_deck: juwels_chunk_io
 
 further_reading:
         - fesom/fesom-2.0.io.yaml

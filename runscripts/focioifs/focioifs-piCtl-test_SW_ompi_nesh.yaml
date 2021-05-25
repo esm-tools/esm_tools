@@ -5,7 +5,6 @@ general:
    use_venv: False
    verbose: False 
    homedir: !ENV ${HOME}
-   #homedir: /gxfs_home/geomar/smomw235 
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"

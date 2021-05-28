@@ -106,10 +106,10 @@ choose_ALE_scheme:
 add_namelist_changes:
     namelist.oce:
         oce_dyn:
-			K_gm: ${K_gm}
+            K_gm: ${K_gm}
             K_gm_max: ${K_gm_max}
-		oce_tra:
-			K_hor: ${K_hor}
+        oce_tra:
+            K_hor: ${K_hor}
 
 
 choose_asforcing:

@@ -12,6 +12,7 @@ def prepare_environment(config):
                 ),
             "RESTART_DIR_pism": config["pism"]["experiment_restart_in_dir"],
             "latest_restart_file_pism": config["pism"]["restart_in_in_work"]["restart"],
+            "RUN_DATE_STAMP": config["general"]["run_datestamp"],
             }
 
     print(environment_dict)

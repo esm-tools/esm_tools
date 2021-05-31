@@ -21,6 +21,7 @@ function solidearth2pism {
 
 function iterative_coupling_solid_earth_pism_regrid_rename {
 
+	echo "Regridding and renaming solidearth results for next pism run..."
 # Regrid: use remapbic because is gives smoother results and conservatism is not essential in this case
         cdo -s \
                 remapbic,${COUPLE_DIR}/ice.griddes \
@@ -35,6 +36,8 @@ function iterative_coupling_solid_earth_pism_regrid_rename {
 }
 
 function iterative_coupling_pism_solidearth_write_grid {
+	echo "Writing ice.griddes for next pism run..."
+
         if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
 
                 cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
@@ -44,6 +47,7 @@ function iterative_coupling_pism_solidearth_write_grid {
 
 function iterative_coupling_solid_earth_pism_update_restart_file {
 
+	echo "Changing pism restart file with last solidearth results..."
 # Import the restart file to be changed
         cp $(readlink ${RESTART_DIR_pism}/${latest_restart_file_pism}) ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc
 
@@ -64,7 +68,8 @@ function iterative_coupling_solid_earth_pism_update_restart_file {
                 ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc
 
 # Export the changed restart file
-        cp ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc $(readlink ${RESTART_DIR_pism}/${latest_restart_file_pism})
+        cp ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc ${RESTART_DIR_pism}/${latest_restart_file_pism}
+        cp ${RESTART_DIR_pism}/${latest_restart_file_pism} ${RESTART_DIR_pism}/${latest_restart_file_pism}_${RUN_DATE_STAMP}
 
 # Clean up
         rm ${COUPLE_DIR}/tmp.nc 

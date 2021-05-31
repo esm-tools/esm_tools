@@ -20,6 +20,7 @@ function ice2vilma {
         echo "                =================================================================="
 }
 
+
 function iterative_coupling_ice_vilma_regrid {
 
 # Regrid to vilma input grid
@@ -38,6 +39,8 @@ function iterative_coupling_ice_vilma_regrid {
 }
 
 function iterative_coupling_ice_vilma_make_eislastfile {
+
+	echo "Preparing vilma eislastfile for next ice sheet run..."
 
         ADD_UNCHANGED_ICE=${ADD_UNCHANGED_ICE:-0} # Options to add ice that is left unchanged by the ice sheet model results
         if [ "x${ADD_UNCHANGED_ICE}" == "x1" ]; then
@@ -65,7 +68,15 @@ function iterative_coupling_ice_vilma_make_eislastfile {
         ncatted -a long_name,epoch,o,c,'ka BP' ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
         ncrename -v ${ice_thickness_name},Ice ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
 
+	if [[ -e  "${EISLASTFILE_vilma}" ]]
+	then
+		cp ${EISLASTFILE_vilma} ${EISLASTFILE_vilma}_unchanged_${RUN_DATE_STAMP}
+		rm ${EISLASTFILE_vilma}
+	fi
+
         cp ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${EISLASTFILE_vilma}
+        cp ${EISLASTFILE_vilma} ${EISLASTFILE_vilma}_changed_${RUN_DATE_STAMP}
+
 
 # Clean up
         # In principle one can delete: rm ${COUPLE_DIR}/eislastfile_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
@@ -73,6 +84,8 @@ function iterative_coupling_ice_vilma_make_eislastfile {
 }
 
 function iterative_coupling_ice_vilma_make_dflag {
+
+	echo "Preparing dflag.nc for next ice sheet run..."
 
         if [[ ${RUN_NUMBER_vilma} > 1 ]]; then
 
@@ -110,7 +123,16 @@ function iterative_coupling_ice_vilma_make_dflag {
                 ncatted -O -a reference,flg,d,, ${COUPLE_DIR}/dflag-tmp3_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
                 ncks -v flg ${COUPLE_DIR}/dflag-tmp3_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
 
+		if [[ -e  "${DATA_DIR_vilma}/dflag.nc" ]]
+		then
+			cp ${DATA_DIR_vilma}/dflag.nc ${DATA_DIR_vilma}/dflag.nc_unchanged_${RUN_DATE_STAMP}
+			rm ${DATA_DIR_vilma}/dflag.nc
+		fi
+
+
                 cp ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${DATA_DIR_vilma}/dflag.nc
+                cp ${DATA_DIR_vilma}/dflag.nc ${DATA_DIR_vilma}/dflag.nc_changed_${RUN_DATE_STAMP}
+
 
 # Clean up
                 # In principle one can delete: rm ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
@@ -123,6 +145,7 @@ function iterative_coupling_ice_vilma_make_dflag {
 }
 
 function iterative_coupling_ice_vilma_make_loadh {
+	echo "Preparing ${EISLASTCONF_vilma} for next ice run..."
 
         if [ $RUN_NUMBER_ice -eq 1 ]; then
 
@@ -152,7 +175,16 @@ function iterative_coupling_ice_vilma_make_loadh {
 
 	    EISLASTCONFDIR=`dirname  ${EISLASTCONF_vilma}`
 	    mkdir -p ${EISLASTCONFDIR}
+		
+	    if [[ -e  "${EISLASTCONF_vilma}" ]]
+	    then
+		cp ${EISLASTCONF_vilma} ${EISLASTCONF_vilma}_unchanged_${RUN_DATE_STAMP}
+		rm ${EISLASTCONF_vilma}
+	    fi
+
             cp ${COUPLE_DIR}/eislastconf_vilma.inp ${EISLASTCONF_vilma}
+            cp ${EISLASTCONF_vilma} ${EISLASTCONF_vilma}_changed_${RUN_DATE_STAMP}
+
 
         fi
 

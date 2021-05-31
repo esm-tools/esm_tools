@@ -130,32 +130,15 @@ choose_scenario:
 
 choose_coupled_to_ice:
         True:
-                add_workflow:
-                        next_run_triggered_by: couple_out
+                choose_run_number:
+                        1: 
+                                nothing: special
+                        "*":
+                                add_input_sources:
+                                        eislastfile: ${experiment_input_dir}/${eislastfile}
+                                add_config_sources:
+                                        eislastconf: ${experiment_input_dir}/${eislastconf}
 
-                        subjobs:
-                                couple_in_ice:
-                                        nproc: 1
-                                        run_before: prepcompute
-                                        script_dir: ${esm_function_dir}/couplings/vilma
-                                        script: coupling_ice2vilma.functions
-                                        call_function: ice2vilma
-                                        subjob_cluster: couple_in
-                                        env_preparation: couple_in_env.py
-
-                                couple_out_ice:
-                                        nproc: 1
-                                        run_after: tidy
-                                        script_dir: ${esm_function_dir}/couplings/vilma
-                                        script: coupling_vilma2ice.functions
-                                        call_function: vilma2ice
-                                        subjob_cluster: couple_out
-                                        env_preparation: couple_out_env.py
-        False:
-                add_config_sources:
-                        eislastconf: ${ini_input_dir}/${eislastconf}
-                add_config_targets:
-                        eislastconf: inp/${eislastconf}
 
 
 # files to be created
@@ -241,7 +224,14 @@ restart_in_targets:
         dflag.nc: out/dflag.nc
 
 
-forcing_sources:
+config_sources:
+        eislastconf: ${ini_input_dir}/${eislastconf}
+
+config_targets:
+        eislastconf: inp/${eislastconf}
+
+
+input_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
         bedrockfile: ${ini_input_dir}/${bedrockfile}
         
@@ -257,7 +247,7 @@ forcing_sources:
         densi: ${ini_forcing_dir}/densi.inp
         visko: ${ini_input_dir}/visko.inp
 
-forcing_targets:
+input_targets:
         densi: inp/densi.inp
         visko: inp/visko.inp
         

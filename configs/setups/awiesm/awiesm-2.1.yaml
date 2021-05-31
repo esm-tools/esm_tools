@@ -80,18 +80,20 @@ echam:
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
-                        nprocb: 18
-                        nprocar: 24
-                        nprocbr: 18
+                        nprocb: 24
+                        # NOTE(PG): These should be set to 24/24 once DKRZ
+                        # gives us a working fast-radiation version.
+                        nprocar: 0
+                        nprocbr: 0
                         npromar: 8
                         lrad_async: true
                         lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
 
         add_compiletime_environment_changes:
             add_export_vars:

@@ -23,7 +23,7 @@ general:
 
         # machine specific setup 
         #account: shk00018
-        model_dir: ${homedir}/esm/models/intel2020/oifs-43r3-v1/
+        model_dir: ${homedir}/esm/models/oifs-43r3-v1/
         base_dir: ${homedir}/esm/esm-experiments/
 
 oifs:

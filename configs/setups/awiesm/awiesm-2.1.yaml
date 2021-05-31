@@ -45,6 +45,7 @@ general:
             couplings:
             - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
         scenario: "PALEO"
+        variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -165,6 +166,9 @@ fesom:
                         boundary:
                                 restore_s_surf: 0.0
 
+        choose_general.variant:
+            beta:
+                K_gm_max: "remove_from_namelist"
         leapyear: True
         asforcing: ECHAM5
 

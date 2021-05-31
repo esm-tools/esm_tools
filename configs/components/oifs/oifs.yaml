@@ -312,7 +312,7 @@ choose_computer.cores_per_node:
 #======================================================================================
 
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
-sclct_switch: 2 # @JOAKIM which one as default?
+sclct_switch: 0 # @JOAKIM which one as default?
 
 # Namelist modifications for truncation types
 nlon: "$(( ${nlat}*2 ))"

@@ -17,7 +17,7 @@ per_model_defaults:
          all_directions: copy
       bin:
          init_to_exp: copy
-         exp_to_run: link
+         exp_to_run: copy
          run_to_work: link
          work_to_run: link
       forcing:

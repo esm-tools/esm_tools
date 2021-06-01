@@ -48,6 +48,11 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
+                                # NOTE(PG): Almost no one in paleodyn uses the
+                                # stream-style output, and most people expect a
+                                # ${EXPID}_echam_${DATE} file. Turning default
+                                # output on does that:
+                                default_output: True
                                 lcouple: .true.
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
         model_dir: ${general.model_dir}/echam-${echam.version}
@@ -62,13 +67,13 @@ echam:
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF87K:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
 
         add_compiletime_environment_changes:
             add_export_vars:
@@ -93,7 +98,7 @@ jsbach:
         choose_jsbach.dataset:
                 "r0009":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
-                "r0008":        
+                "r0008":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:

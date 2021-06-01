@@ -495,26 +495,25 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: "2.0"
 
-        input_files:
-                rmp: rmp
+        input_files: {}
 
         input_in_work:
-                rmp: rmp_*.nc
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
 
         input_sources:
-                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                 areas: ${pool_dir}/areas.nc
                 masks: ${pool_dir}/masks.nc
                 grids: ${pool_dir}/grids.nc
 
         restart_in_files:
+                rmp: rmp
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_in_in_work:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
@@ -529,25 +528,34 @@ oasis3mct:
                                                 grids: grids
                 true:
                         lag: "${time_step}"
-                        choose_general.run_number:
-                                1:
+                        # If ini_restart_dir is not specified in the runscript and, therefore,
+                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # sources when the run_number is 1
+                        load_restart_from_pool: "$(( '${pool_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        choose_load_restart_from_pool:
+                                true:
                                         add_restart_in_sources:
+                                                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                                                 rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
                                                 rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
-                                "*":
-                                        add_restart_in_sources:
-                                                rstas.nc: rstas.nc
-                                                rstos.nc: rstos.nc
+
+        restart_in_sources:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
 
         restart_out_files:
+                rmp: rmp
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_in_work:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_sources:
+                rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 

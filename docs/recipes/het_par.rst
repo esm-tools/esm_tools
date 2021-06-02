@@ -5,7 +5,7 @@ Heterogeneous Paralelization Run (MPI/OpenMP)
 
 **Feature available since version:** 5.1
 
-In order to run a simulation with hybrid MPI/OpenMP parallelization you include the
+In order to run a simulation with hybrid MPI/OpenMP parallelization include the
 following in your runscript:
 
 1. Add ``heterogenous_parallelization: true`` in the ``computer`` section of your
@@ -26,7 +26,7 @@ Example
    .. tab:: AWICM3
 
       In `AWICM3` we have 3 components: `FESOM-2`, `OpenIFS` and `RNFMAP`. We want to
-      run `OpenIFS` with 8 OpenMP threads, `RNFMAP` with 48, and `FESOM-2` with one.
+      run `OpenIFS` with 8 OpenMP threads, `RNFMAP` with 48, and `FESOM-2` with 1.
       Then, the following lines need to be added to our runscript:
 
       .. code-block:: yaml

@@ -1,5 +1,5 @@
-Heterogeneous Paralelization Run (MPI/OpenMP)
-=============================================
+Heterogeneous Parallelization Run (MPI/OpenMP)
+==============================================
 
 .. use = for sections, ~ for subsections and - for subsubsections
 

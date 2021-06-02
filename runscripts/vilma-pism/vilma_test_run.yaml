@@ -25,7 +25,7 @@ vilma:
                                 script: coupling_ice2vilma.functions
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 call_function: ice2vilma
-                                env_preparation: env_ci_vilma.py
+                                env_preparation: env_vilma.py
                                 run_only: first_run_in_chunk
                                 #skip_chunk_number: 1
         
@@ -35,5 +35,5 @@ vilma:
                                 script: coupling_vilma2ice.functions
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 call_function: vilma2ice
-                                env_preparation: env_co_vilma.py
+                                env_preparation: env_vilma.py
                                 run_only: last_run_in_chunk

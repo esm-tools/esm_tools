@@ -49,7 +49,7 @@ function iterative_coupling_solid_earth_pism_update_restart_file {
 
 	echo "Changing pism restart file with last solidearth results..."
 # Import the restart file to be changed
-        cp $(readlink ${RESTART_DIR_pism}/${latest_restart_file_pism}) ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc
+        cp $(readlink ${RESTART_DIR_pism}/${latest_restart_file_pism}_unchanged_${LAST_RUN_DATE_STAMP}) ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc
 
 # Select topg (bedrock height), add the change, and replace this variable in the restart file
         cdo -s \
@@ -69,7 +69,7 @@ function iterative_coupling_solid_earth_pism_update_restart_file {
 
 # Export the changed restart file
         cp ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc ${RESTART_DIR_pism}/${latest_restart_file_pism}
-        cp ${RESTART_DIR_pism}/${latest_restart_file_pism} ${RESTART_DIR_pism}/${latest_restart_file_pism}_${RUN_DATE_STAMP}
+        cp ${RESTART_DIR_pism}/${latest_restart_file_pism} ${RESTART_DIR_pism}/${latest_restart_file_pism}_changed_${RUN_DATE_STAMP}
 
 # Clean up
         rm ${COUPLE_DIR}/tmp.nc 

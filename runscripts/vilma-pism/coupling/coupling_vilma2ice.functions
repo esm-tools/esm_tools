@@ -8,7 +8,8 @@ function vilma2ice {
 
         if [[ "x$VILMA_TO_ICE" == "x1" ]]; then
 
-                iterative_coupling_vilma_ice_write_names
+		iterative_coupling_vilma_remove_unchanged_files_for_safety
+		iterative_coupling_vilma_ice_write_names
                 iterative_coupling_vilma_ice_make_forcing
 
         else
@@ -18,6 +19,39 @@ function vilma2ice {
         echo "                 *** F I N I S H E D    vilma2ice *** "
         echo "                =================================================================="
 }
+
+
+
+function iterative_coupling_vilma_remove_unchanged_files_for_safety {
+	echo "Removing files to be changed by vilma couple_in later, so that the run intentionally"
+	echo "crashes if something goes wrong. Removing:"
+	
+
+	if [[ -e  "${EISLASTFILE_vilma}" ]]
+	then
+		echo "   - ${EISLASTFILE_vilma}"
+		cp ${EISLASTFILE_vilma} ${EISLASTFILE_vilma}_unchanged_${RUN_DATE_STAMP}
+		rm ${EISLASTFILE_vilma}
+	fi
+
+
+	if [[ -e  "${DATA_DIR_vilma}/dflag.nc" ]]
+	then
+		echo "   - ${DATA_DIR_vilma}/dflag.nc"
+		cp ${DATA_DIR_vilma}/dflag.nc ${DATA_DIR_vilma}/dflag.nc_unchanged_${RUN_DATE_STAMP}
+		rm ${DATA_DIR_vilma}/dflag.nc
+	fi
+	    
+	if [[ -e  "${EISLASTCONF_vilma}" ]]
+	then
+		echo "   - ${EISLASTCONF_vilma}"
+		cp ${EISLASTCONF_vilma} ${EISLASTCONF_vilma}_unchanged_${RUN_DATE_STAMP}
+		rm ${EISLASTCONF_vilma}
+	fi
+}
+
+
+
 
 function iterative_coupling_vilma_ice_write_names {
         : > ${COUPLE_DIR}/solidearth_names_for_ice.dat

@@ -3,8 +3,8 @@ def prepare_environment(config):
 
 
     environment_dict = {
-            "TEST_IN_ENV": "testvar_in_env_exported_couple_in_vilma",
             "ICE_TO_VILMA": 1,
+            "VILMA_TO_ICE": 1,
             "VILMA_GRID_input": config["vilma"]["grid_input"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "solidearth_ice_thickness_file":(
@@ -19,6 +19,7 @@ def prepare_environment(config):
                 ),
             "RUN_NUMBER_vilma": config["general"]["run_number"],
             "RUN_DATE_STAMP": config["general"]["run_datestamp"],
+            "LAST_RUN_DATE_STAMP": config["general"]["last_run_datestamp"],
             "DATA_DIR_vilma": config["vilma"]["experiment_restart_out_dir"],
             "INITIAL_YEAR_vilma": config["general"]["initial_date"].syear,
             "NYEAR_vilma_standalone": config["general"]["nyear"],

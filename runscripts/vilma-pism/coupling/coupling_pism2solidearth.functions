@@ -8,7 +8,8 @@ function pism2solidearth {
         echo "                PISM_TO_SOLID_EARTH=${PISM_TO_SOLID_EARTH}"
 
         if [[ "x${PISM_TO_SOLID_EARTH}" == "x1" ]]; then
-                iterative_coupling_pism_solidearth_write_grid
+		iterative_coupling_pism_remove_unchanged_files_for_safety
+		iterative_coupling_pism_solidearth_write_grid
                 iterative_coupling_pism_solidearth_write_names
                 iterative_coupling_pism_solidearth_make_forcing
         else
@@ -18,6 +19,22 @@ function pism2solidearth {
         echo "                 *** F I N I S H E D    pism2solidearth *** "
         echo "                =================================================================="
 }
+
+
+function iterative_coupling_pism_remove_unchanged_files_for_safety {
+	echo "Removing files to be changed by pism couple_in later, so that the run intentionally"
+	echo "crashes if something goes wrong. Removing:"
+	
+
+	if [[ -e  "${RESTART_DIR_pism}/${latest_restart_file_pism}" ]]
+	then
+		echo "   - ${RESTART_DIR_pism}/${restart_file_pism}"
+        	cp $(readlink ${RESTART_DIR_pism}/${restart_file_pism}) ${RESTART_DIR_pism}/${restart_file_pism}_unchanged_${RUN_DATE_STAMP}.nc
+		rm ${RESTART_DIR_pism}/${latest_restart_file_pism}
+	fi
+
+}
+
 
 
 function iterative_coupling_pism_solidearth_make_forcing {

@@ -220,7 +220,7 @@ ensemble_id: 1
 
 orb_switch: False
 orb_mode: "variable_year"
-orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
+orb_iyear: ${initial_date_cold!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
 
 restart: 1
 
@@ -388,14 +388,23 @@ namelist_changes:
 # Why is it set to 364 days even when I ask for a 5-day run
 #runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 # For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
+choose_lresume:
+        false:
+                initial_date_cold: "${initial_date}"
+        true:
+                choose_general.run_number:
+                        1:
+                                nothing: 0
+                        "*":
+                                initial_date_cold: "${initial_date}"
 runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
 ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
 ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
-simulation_length_seconds: "$(( ${next_date} - ${initial_date} ))"
+simulation_length_seconds: "$(( ${next_date} - ${initial_date_cold} ))"
 
-seconds_since_initial: $((${start_date} - ${initial_date}))
-seconds_since_initial_end: $((${end_date} - ${initial_date}))
+seconds_since_initial: $((${start_date} - ${initial_date_cold}))
+seconds_since_initial_end: $((${end_date} - ${initial_date_cold}))
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
@@ -409,17 +418,17 @@ lresume: false
 massfixer: 1
 nfrmasscon: 12
 
-start_seconds: "$((${start_date} - ${initial_date}))"
+start_seconds: "$((${start_date} - ${initial_date_cold}))"
 #start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
 start_ndays: "$(( ${start_seconds} / 86400 ))"
 start_ndays_string: "<--format(%08d)-- ${start_ndays}"
-#end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
-next_seconds: "$((${next_date} - ${initial_date}))"
+#end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date_cold}))"
+next_seconds: "$((${next_date} - ${initial_date_cold}))"
 next_ndays: "$(( ${next_seconds} / 86400 ))"
 next_ndays_string: "<--format(%08d)-- ${next_ndays}"
 
 # WAMstartdate
-wam_start_date: "${initial_date!syear!smonth!sday}000000"
+wam_start_date: "${initial_date_cold!syear!smonth!sday}000000"
 
 # ICMCL start and end
 icmcl_end_date: $(( ${next_date} + 1days ))
@@ -442,10 +451,10 @@ icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 #start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
 #start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
 #start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
-#start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
+#start_filebase_wam: "${initial_date_cold!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+start_filebase_wam: "${initial_date_cold!syear!smonth!sday}000000_"
 
-#end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
+#end_seconds_wam: "$(( ${end_date} - ${initial_date_cold} - ${time_step} ))"
 #end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
 #end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
 #end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
@@ -454,8 +463,8 @@ start_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
 #end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
 #end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
 #end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
-#end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-end_filebase_wam: "${initial_date!syear!smonth!sday}000000_"
+#end_filebase_wam: "${initial_date_cold!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
+end_filebase_wam: "${initial_date_cold!syear!smonth!sday}000000_"
 
 run_number_minus1: "$(( ${run_number} - 1 ))"
 run_number_string: "<--format(%05d)-- ${run_number}"
@@ -1002,7 +1011,7 @@ choose_output:
 
 preprocess:
         preprocess_shell:
-                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date_cold!syear!smonth!sday} ${initial_date_cold!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
                 type: shell
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script

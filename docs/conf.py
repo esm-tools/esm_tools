@@ -275,7 +275,7 @@ html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
 # Add custom css (to disable the horizontal scrolling in tables).
 def setup(app):
-    app.add_stylesheet('custom.css')
+    app.add_css_file('custom.css')
 
 # -- Options for HTMLHelp output ---------------------------------------
 

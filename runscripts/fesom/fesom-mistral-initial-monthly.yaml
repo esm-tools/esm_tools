@@ -1,0 +1,34 @@
+general:
+        setup_name: fesom
+        account: ab0995
+        compute_time: "02:00:00"
+
+        initial_date: "2000-01-01"
+        final_date: "2000-02-29"
+
+        base_dir: /work/ab0995/a270058/fesomtests/
+
+        nyear: 0
+        nmonth: 1
+
+        use_venv: False
+
+fesom:
+        version: "1.4"
+        scenario: "PI-CTRL"
+        #res: "CORE2"
+        resolution: "GLOB"
+        asforcing: "JRA55"
+        model_dir: /work/ab0995/a270058/modelcodes/fesom-1.4/
+        pool_dir: /mnt/lustre02/work/bm0944/input/
+        mesh_dir: /pool/data/AWICM/FESOM1/MESHES/glob/
+
+        lresume: 0
+
+        restart_rate: 1
+        restart_unit: 'm'
+        restart_first: 1
+
+        #        further_reading:
+        #        - "fesom_output_control.yaml"
+

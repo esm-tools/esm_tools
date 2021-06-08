@@ -35,8 +35,12 @@ choose_version:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
   "2.5":
-    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5
-    archfile: ESMTOOLS_generic_oasis_intel
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
+    choose_computer.useMPI:
+      cray_mpich:
+        archfile: ESMTOOLS_generic_oasis_cray
+      intelmpi:
+        archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
   # XIOS with oasis dependencies and oasis support  
@@ -54,8 +58,8 @@ choose_version:
     archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
-clean_command: rm -rf bin lib obj ppsrc
-comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
@@ -77,12 +81,12 @@ choose_general.setup_name:
                         domain_def: domain_def
                         field_def: field_def
                         file_def: file_def
-        oifs: 
+        oifs:
                 xml_dir: "${computer.pool_directories.focipool}"
                 add_config_files:
                         context_ifs: context_ifs
                         ifs_xml: ifs_xml
-        focioifs: 
+        focioifs:
                 xml_dir: "${computer.pool_directories.focipool}"
                 add_config_files:
                         context_ifs: context_ifs
@@ -98,6 +102,7 @@ choose_general.setup_name:
                         file_def: file_def
         awicm3:
                 xml_dir: "${pool_dir}"
+
 
 config_sources:
         domain_def: ${xml_dir}/domain_def.xml
@@ -117,3 +122,6 @@ config_in_work:
 
 bin_sources:
         server: ${bin_dir}/xios.x
+
+further_reading:
+        - xios/xios.env.yaml

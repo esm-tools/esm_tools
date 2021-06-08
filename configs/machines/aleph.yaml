@@ -50,8 +50,8 @@ module_actions:
         - "load cray-mpich/7.7.3"
         - "load craype-x86-skylake"
         - "load cmake/3.14.0"
+        - "load cray-netcdf-hdf5parallel"
         - "load cray-hdf5-parallel/1.10.2.0"
-        - "load cray-netcdf-hdf5parallel/4.6.1.3"
         - "load cdo/1.9.5"
         - "load fftw/2.1.5.9"
         - "load nco/4.9.4"
@@ -87,6 +87,7 @@ choose_useMPI:
                         - "unload cray-netcdf"
                         - "unload cray-hdf5"
                         - "unload cray-parallel-netcdf"
+                        - "unload cray-netcdf-hdf5parallel"
                         - "load craype-hugepages2M"
                         - "unload perftools-base/7.0.4"
                         - "load cray-netcdf/4.6.1.3"
@@ -103,6 +104,7 @@ choose_useMPI:
                 mpicc: mpiicc
                 cc: mpiicc
                 cxx: mpiicpc
+                c++_lib: stdc++
 
                 launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
                         env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
@@ -119,6 +121,7 @@ choose_useMPI:
                 mpicc: cc
                 cc: cc
                 cxx: CC
+                c++_lib: cray-c++-rts
                 add_export_vars:
                         CRAYPE_LINK_TYPE: dynamic
                         # Prepend labels to the stdout/sterr lines

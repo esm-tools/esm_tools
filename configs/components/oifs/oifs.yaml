@@ -34,7 +34,8 @@ bin_dir: ${setup_dir}/bin
 #bin_dir: ${model_dir}/bin
 # seb-wahl: make focipool default until all OIFS data is available
 # in the "general" pool directory
-pool_dir: "${computer.pool_directories.focipool}"
+# JS: can use just use ${computer.pool_directories.pool} by now?
+pool_dir: "${computer.pool_directories.pool}"
 input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
@@ -85,6 +86,7 @@ compile_infos:
         - 40r1
         - 43r3-master
         - 43r3-awi-frontiers
+        - 43r3-awi-frontiers-xios
         - 43r3-awi
         - 43r3-awi-e1
         - 43r3
@@ -122,13 +124,22 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
+          43r3-awi-frontiers-xios:
+            requires:
+            - oasis3mct-4.0-awicm3-frontiers
+            branch: awicm-3-frontiers-xios
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: true 
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
-            with_xios: false # for now, later the default will be with_xios: true
+            with_xios: false
           43r3-awi:
             requires:
             - oasis3mct-4.0-oifsdeck
@@ -146,7 +157,7 @@ compile_infos:
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
-            destination: oifs-43r3
+            #destination: oifs-43r3 # TODO: JS: Had to comment this out. When I use destination the $model_dir changes, but $XIOS_TOPLEVEL is still pointing at oifs-43r3-awi-e1 leading to failed oasis lib including
           #43r3-foci:
           #  requires:
           #  - oasis3mct-fociagrif

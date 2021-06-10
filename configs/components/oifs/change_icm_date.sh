@@ -15,7 +15,7 @@ startdate=$5
 with_wam=$6
 perturb=$7
 nx=$8
-ensemble_id=${9}
+ensemble_id=$9
 
 outdir=$indir
 

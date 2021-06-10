@@ -104,7 +104,6 @@ choose_useMPI:
                 mpicc: mpiicc
                 cc: mpiicc
                 cxx: mpiicpc
-                c++_lib: stdc++
 
                 launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
                         env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
@@ -121,7 +120,6 @@ choose_useMPI:
                 mpicc: cc
                 cc: cc
                 cxx: CC
-                c++_lib: cray-c++-rts
                 add_export_vars:
                         CRAYPE_LINK_TYPE: dynamic
                         # Prepend labels to the stdout/sterr lines

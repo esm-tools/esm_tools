@@ -1,15 +1,11 @@
 model: esm_interface
 
-version: 1.0
+version: generic
 
 available_versions:
-- '1.0'
 - generic
 
 choose_version:
-  '1.0':
-    branch: dev_prototype_awicm
-    comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
   generic:
     branch: generic
     comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`

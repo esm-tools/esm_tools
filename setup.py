@@ -17,6 +17,7 @@ requirements = [
     "esm_runscripts @ git+https://github.com/esm-tools/esm_runscripts.git",
     "esm_rcfile @ git+https://github.com/esm-tools/esm_rcfile.git",
     "esm_version_checker @ git+https://github.com/esm-tools/esm_version_checker.git",
+    "gfw-creator",
 ]
 
 setup_requirements = []
@@ -54,7 +55,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm_tools/esm_tools",
-    version="5.0.13",
+    version="5.1.6",
     zip_safe=False,
 )
 

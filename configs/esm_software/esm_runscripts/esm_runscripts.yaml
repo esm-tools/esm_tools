@@ -11,14 +11,22 @@ choose_job_type:
                         - "_update_run_in_chunk"
                         - "assemble_workflow"  
                         - "check_model_lresume"
+
+# kh 01.12.20 this must be done before resolve_some_choose_blocks, because potentially also choosable
+# entries can be overridden via usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
+                        - "apply_last_minute_changes"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
                         - "set_chunk_calendar"
                         - "resolve_some_choose_blocks"
+
+# kh 01.12.20 moved up a few positions
+#                       - "apply_last_minute_changes"
                         - "_add_all_folders"
                         - "set_prev_date"
                         - "set_parent_info"
                         - "finalize_config"
+                        - "restore_protected_last_minute_changes"
                         - "add_submission_info"
                         - "initialize_batch_system"
                         - "initialize_coupler"

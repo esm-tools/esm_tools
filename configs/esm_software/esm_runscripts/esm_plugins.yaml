@@ -64,6 +64,10 @@ core:
                         - "inspect_size"
                         - "inspect_config"
 
+                          #last_minute:
+                          #- "apply_last_minute_changes"
+                          #- "restore_protected_last_minute_changes"
+
                 filelists:
                         - "assemble"
                         - "log_used_files"

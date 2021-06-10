@@ -14,7 +14,7 @@ Then you can start by cloning the repository ``esm_tools.git``::
 
 $ git clone https://github.com/esm-tools/esm_tools.git
 
-This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
+This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines, etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
 
 Accessing components in DKRZ server
 -----------------------------------

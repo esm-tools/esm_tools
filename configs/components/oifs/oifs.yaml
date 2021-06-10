@@ -63,6 +63,7 @@ parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
 #       but I want the expid for my run to be ECE3.
 
 metadata:
+        Name: OpenIFS
         Institute: ECMWF
         Description:
                 OpenIFS provides research institutions with an easy-to-use version
@@ -70,7 +71,7 @@ metadata:
         Authors: Glenn Carver (openifs-support@ecmwf.int)
         Website: https://www.ecmwf.int/en/research/projects/openifs
         License:
-                Please make sure you have a licence to use OIFS. In case you are
+                Please make sure you have a licence to use OpenIFS. In case you are
                 unsure, please contact redmine...
 
 compile_infos:

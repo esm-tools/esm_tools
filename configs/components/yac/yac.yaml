@@ -10,12 +10,17 @@ environment_changes:
                                 - "load automake"
 
 available_versions:
-- 1.5.4
+- 1.5.5
 clean_command: make clean
 comp_command: make
 conf_command: autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2
   --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack
   --disable-lib-only --enable-silent-rules
+destination: yac
+choose_version:
+        1.5.5:
+                branch: v1.5.5
+                repo_tag: v1.5.5
 git-repository: https://gitlab.dkrz.de/dkrz-sw/yac.git
 
 metadata:
@@ -23,9 +28,4 @@ metadata:
 
 
 config_files:
-    coupling_xml:  coupling_xml
     coupling_xsd:  coupling_xsd
-
-config_sources:
-    coupling_xsd:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xsd"
-    coupling_xml:  "/work/ollie/nwieters/ESM/Test_esm_tools/esm_experiments/mynamelists/coupling.xml"

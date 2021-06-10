@@ -1,0 +1,34 @@
+model: "tux"
+version: "1.0"
+type: figure
+
+available_versions:
+- "1.0"
+
+choose_version:
+    "1.0":
+        destination: "tux-1.0"
+        choose_computer.name:
+            mistral:
+                add_compiletime_environment_changes:
+                    add_module_actions:
+                        - "load imagemagick/6.9.1-7-gcc48"
+
+curl-repository: "https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png"
+
+# options to pass to curl. Eg. --silent, --verbose, ...
+repo_options: "--silent  --create-dirs  --output ${destination}/${install_bins}"   
+
+install_bins: "img/tux.svg"
+clean_command: "rm -fr ${install_bins}"
+comp_command: "display ${install_bins}"
+
+metadata:
+        Institute: wiki
+        Description:
+            "Tux image"
+        Authors: "who knows"
+        Publications:
+            - "are you serious?"
+        License:
+            GPL

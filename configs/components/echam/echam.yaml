@@ -39,7 +39,11 @@ compile_infos:
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
-            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+
+# kh 02.03.21 comp_command splitted, conf command added
+#           comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            conf_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'
+            comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.dkrz.de/PalMod/echam6-PalMod.git"
           6.3.05p2-concurrent_radiation-paleodyn:
             branch: "ice"
@@ -156,12 +160,12 @@ choose_resolution:
                 _ny: 96
                 choose_computer.partitions.compute.cores_per_node:
                         24:
-                                nproca: 24              # toxic combination? 
-                                nprocb: 18
+                                nproca: 24
+                                nprocb: 24
 
                         36:
                                 nproca: 24
-                                nprocb: 18
+                                nprocb: 24
 
         T31:
                 levels: "L19"
@@ -199,14 +203,16 @@ choose_version:
         6.3.05p2-concurrent_radiation-paleodyn:
                 choose_computer.name:
                     mistral:
-                        add_add_compiletime_environment_changes:
-                            add_add_export_vars:
-                                - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        add_add_runtime_environment_changes:
-                            add_add_export_vars:
-                                - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                test1:
+                    test2: true
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:

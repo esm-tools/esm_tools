@@ -46,6 +46,7 @@ for config in configs:
     with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
         metadata = d.get("metadata")
+        name = config.upper()
         with open("metadata/"+config+".csv", "w") as table:
             if metadata:
                 for key in metadata:
@@ -57,10 +58,12 @@ for config in configs:
                             table.write(public_string+'"\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
+                    elif key=="Name" or key=="name":
+                        name = metadata[key]
                     else:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:
-            rst.write("%s\n" % config.upper())
+            rst.write("%s\n" % name)
             rst.write("-"*len(config) + "\n")
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))

@@ -82,33 +82,33 @@ module_actions:
         - "list"
 
 export_vars:
-        - "LC_ALL=en_US.UTF-8"
+        LC_ALL: en_US.UTF-8
 
-        - 'FC=${fc}'
-        - 'F77=${f77}'
-        - 'MPIFC=${mpifc}'
-        - 'MPICC=${mpicc}'
-        - 'CC=${cc}'
-        - 'CXX=${cxx}'
+        FC: ${fc}
+        F77: ${f77}
+        MPIFC: ${mpifc}
+        MPICC: ${mpicc}
+        CC: ${cc}
+        CXX: ${cxx}
 
-        - 'HDF5ROOT=$HDF5_ROOT'
+        HDF5ROOT: $HDF5_ROOT
 
-        - 'NETCDFFROOT=$NETCDF_DIR'
-        - 'NETCDFROOT=$NETCDF_DIR'
-        - 'NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include'
-        - 'NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include'
-        - 'NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib'
+        NETCDFFROOT: $NETCDF_DIR
+        NETCDFROOT: $NETCDF_DIR
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 
-        - 'PERL5LIB=/usr/lib64/perl5'
-        - 'LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
-        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'XML2ROOT=/usr'
-        - 'ZLIBROOT=/usr'
+        PERL5LIB: /usr/lib64/perl5
+        LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
 
-        - "MPIROOT=$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-        - "MPI_LIB=$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-        - 'PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH'
+        PATH: /work/ollie/jhegewal/sw/cmake/bin:$PATH
 
 choose_useMPI:
         intelmpi:
@@ -123,7 +123,7 @@ choose_useMPI:
                 cxx: mpiicpc
 
                 add_export_vars:
-                        - 'MPIROOT=${I_MPI_ROOT}/intel64'
+                        MPIROOT: ${I_MPI_ROOT}/intel64
 
 further_reading:
         - batch_system/slurm.yaml

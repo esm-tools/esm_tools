@@ -218,9 +218,9 @@ namelist_changes:
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
-                        ForcingDataPath: "${forcing_data_dir}"
+                        #ForcingDataPath: "${forcing_data_dir}"
                         MeshPath: "${mesh_dir}"
-                        OpbndPath: "${opbnd_dir}"
+                        #OpbndPath: "${opbnd_dir}"
                         ClimateDataPath: "${climate_data_dir}"
                         TideForcingPath: "${tide_forcing_dir}"
                         ResultPath: "${work_dir}"

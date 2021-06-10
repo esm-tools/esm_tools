@@ -116,8 +116,8 @@ choose_useMPI:
                 add_module_actions:
                         - "unload intel.mpi"
                         - "load intel.mpi"
-                fc: "mpiifort -mkl"
-                f77: "mpiifort -mkl"
+                fc: '"mpiifort -mkl"'
+                f77: '"mpiifort -mkl"'
                 mpifc: mpiifort
                 mpicc: mpiicc
                 cc: mpiicc

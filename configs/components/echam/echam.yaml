@@ -161,11 +161,11 @@ choose_resolution:
                 choose_computer.cores_per_node:
                         24:
                                 nproca: 24
-                                nprocb: 18
+                                nprocb: 24
 
                         36:
                                 nproca: 24
-                                nprocb: 18
+                                nprocb: 24
 
         T31:
                 levels: "L19"

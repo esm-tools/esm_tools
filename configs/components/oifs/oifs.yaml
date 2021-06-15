@@ -1049,7 +1049,6 @@ choose_output:
 choose_general.run_number:
         1:
                 pseudo_initial_date: "${initial_date}"
-                #TODO: prev_pseudo_initial_date: "${initial_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
@@ -1063,20 +1062,18 @@ choose_general.run_number:
                         ${oifs.nx}
                         ${oifs.ensemble_id}"
         2:
-                pseudo_initial_date: "${initial_date}"
-                #TODO: prev_pseudo_initial_date: "${initial_date}"
+                pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh"
         "*":
-                pseudo_initial_date: "${last_start_date}"
-                #TODO: prev_pseudo_initial_date: "${prev_run.oifs.pseudo_initial_date}"
+                pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
                         ${thisrun_input_dir}/
                         ${oifs.input_expid}
                         ${oifs.input_expid}
-                        ${last_start_date!syear!smonth!sday}
+                        ${pseudo_initial_date!syear!smonth!sday}
                         ${start_date!syear!smonth!sday}
                         ${oifs.wam_number}
                         ${oifs.perturb}
@@ -1084,7 +1081,7 @@ choose_general.run_number:
                         ${oifs.ensemble_id};
                     ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
                         ${thisrun_restart_in_dir}/
-                        ${last_start_date!syear!smonth!sday}
+                        ${pseudo_initial_date!syear!smonth!sday}
                         ${oifs.time_step}
                         ${oifs.seconds_since_initial}
                         ${oifs.start_ndays}

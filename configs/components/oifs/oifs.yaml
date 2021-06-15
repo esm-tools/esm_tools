@@ -132,7 +132,7 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
-            with_xios: true 
+            with_xios: true
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
@@ -231,11 +231,7 @@ ensemble_id: 1
 
 orb_switch: False
 orb_mode: "variable_year"
-#<<<<<<< HEAD
-#orb_iyear: ${initial_date_cold!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
-#=======
 orb_iyear: ${start_date!syear}
-#>>>>>>> origin/eternal_restarts_for_oifs_cherrypick_no_develop
 
 restart: 1
 
@@ -251,8 +247,8 @@ namelists:
 choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.
-        TCO95: 
-                nx: 40320 
+        TCO95:
+                nx: 40320
                 ny: 1
                 time_step: 3600
                 oasis_grid_name: "096"
@@ -398,39 +394,17 @@ namelist_changes:
                         ORBMODE: "${orb_mode}"
                         ORBIY: "${orb_iyear}"
 
-#<<<<<<< HEAD
-#
-## Where does end_date and start_date come from
-## Why is it set to 364 days even when I ask for a 5-day run
-##runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
-## For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
-choose_lresume:
-        false:
-                initial_date_cold: "${initial_date}"
-        true:
-                choose_general.run_number:
-                        1:
-                                nothing: 0
-                        "*":
-                                initial_date_cold: "${initial_date}"
-#runtime_seconds: "$(( ${next_date} - ${start_date} ))"
-#timestep_per_run: $((${runtime_seconds} / ${time_step}))
-#ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
-#ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
-#TODO:simulation_length_seconds: "$(( ${next_date} - ${initial_date_cold} ))"
-#
-#TODO:seconds_since_initial: $((${start_date} - ${initial_date_cold}))
-#TODO:seconds_since_initial_end: $((${end_date} - ${initial_date_cold}))
-#steps_since_initial: $((${seconds_since_initial} / ${time_step}))
-#
-#next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
-#steps_per_day: "$(( 86400 / ${time_step} ))"
-#custop: "h${oifs.next_step}"
-#custop: "t${oifs.next_step}" # TODO: delete this comment
-#nfrres: 1
-#nfrres: "${next_step}" # TODO: delete this comment
-#=======
-#>>>>>>> origin/eternal_restarts_for_oifs_cherrypick_no_develop
+## TODO: MA I don't think this is necessary anymore. Remove after testing a branchoff exp
+#choose_lresume:
+#        false:
+#                initial_date_cold: "${initial_date}"
+#        true:
+#                choose_general.run_number:
+#                        1:
+#                                nothing: 0
+#                        "*":
+#                                initial_date_cold: "${initial_date}"
+
 lresume: false
 restart_rate: 1
 restart_unit: "months"
@@ -438,65 +412,6 @@ restart_unit: "months"
 massfixer: 1
 nfrmasscon: 12
 
-#<<<<<<< HEAD
-#start_seconds: "$((${start_date} - ${initial_date_cold}))"
-##start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
-#start_ndays: "$(( ${start_seconds} / 86400 ))"
-#start_ndays_string: "<--format(%08d)-- ${start_ndays}"
-##end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date_cold}))"
-#next_seconds: "$((${next_date} - ${initial_date_cold}))"
-#next_ndays: "$(( ${next_seconds} / 86400 ))"
-#next_ndays_string: "<--format(%08d)-- ${next_ndays}"
-#
-## WAMstartdate
-#wam_start_date: "${initial_date_cold!syear!smonth!sday}000000"
-#
-## ICMCL start and end
-#icmcl_end_date: $(( ${next_date} + 1days ))
-#icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
-#
-## WAM restart files are named with the number of
-## days, hours, minutes, seconds since the last run
-## with one time step subtracted.
-## So restarting after 8 days with 30 min time step has
-## time stamp 000007233000
-## Here we calculate this
-##
-## how do we subtract one time step
-##start_seconds_wam: "$(( ${start_seconds} - ${time_step} ))"
-##start_ndays_wam: "$(( ${start_seconds_wam} / 86400 ))"
-##start_nhours_wam: "$(( $(( ${start_seconds_wam} - $(( ${start_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-##start_remaining_seconds: "$(( ${start_seconds_wam} - $(( ${start_nhours_wam} * 3600 )) - $(( ${start_ndays_wam} * 86400 )) ))"
-##start_nmins_wam: "$(( ${start_remaining_seconds} / 60 ))"
-##start_ndays_string_wam: "<--format(%06d)-- ${start_ndays_wam}"
-##start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
-##start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
-##start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
-##start_filebase_wam: "${initial_date_cold!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-#start_filebase_wam: "${initial_date_cold!syear!smonth!sday}000000_"
-#
-##end_seconds_wam: "$(( ${end_date} - ${initial_date_cold} - ${time_step} ))"
-##end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
-##end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-##end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
-##end_nmins_wam: "$(( ${end_remaining_seconds} / 60 ))"
-##end_ndays_string_wam: "<--format(%06d)-- ${end_ndays_wam}"
-##end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
-##end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
-##end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
-##end_filebase_wam: "${initial_date_cold!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-#end_filebase_wam: "${initial_date_cold!syear!smonth!sday}000000_"
-#
-#run_number_minus1: "$(( ${run_number} - 1 ))"
-#run_number_string: "<--format(%05d)-- ${run_number}"
-#run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
-#
-#
-#restart_rate: 1
-#restart_unit: "months"
-#
-#=======
-#>>>>>>> origin/eternal_restarts_for_oifs_cherrypick_no_develop
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
@@ -516,29 +431,11 @@ choose_levels:
 # TIME VARIABLES
 #======================================================================================
 # Time variables are needed for correctly copying srf and WAM files, but also for being
-# able to use Jan's strategy to avoid OIFS from crashing during very long runs,
-# associated to the well known memory issue documented here:
+# able to use Jan Streffing's strategy to avoid OIFS from crashing during very long
+# runs, associated to the well known memory issue documented here:
 #     https://confluence.ecmwf.int/pages/viewpage.action?pageId=192905300
 
-# The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
-# OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
-# memory issues mentioned before. This is done by declaring the pseudo_initial_date
-# as the last start date.
-choose_general.run_number:
-        1:
-                pseudo_initial_date: "${initial_date}"
-                prev_pseudo_initial_date: "${initial_date}"
-                start_ndays_source: "${start_ndays}"
-        2:
-                pseudo_initial_date: "${initial_date}"
-                prev_pseudo_initial_date: "${initial_date}"
-                start_ndays_source: "${start_ndays}"
-        "*":
-                pseudo_initial_date: "${last_start_date}"
-                prev_pseudo_initial_date: "${prev_run.oifs.pseudo_initial_date}"
-                start_ndays_source: "${prev_run.oifs.next_ndays}"
-
-# Simulaton length for the fort.4 namelist
+# Simulaton length for the fort.4 namelist and wam_namelist
 simulation_length_seconds: "$(( ${next_date} - ${pseudo_initial_date} ))"
 seconds_since_initial: "$(( ${start_date} - ${pseudo_initial_date} ))"
 wam_start_date: "${pseudo_initial_date!syear!smonth!sday}000000"
@@ -547,19 +444,24 @@ wam_start_date: "${pseudo_initial_date!syear!smonth!sday}000000"
 icmcl_end_date: "$(( ${next_date} + 1days ))"
 icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 
-# Where does end_date and start_date come from
-# Why is it set to 364 days even when I ask for a 5-day run
-#runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
-# For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
+# Time steps in this run
 runtime_seconds: "$(( ${next_date} - ${start_date} ))"
 timestep_per_run: $((${runtime_seconds} / ${time_step}))
+
+# Number of days in this run
 ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
 ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
 
+# Number of steps since the beginning of the simulation or the "pseudo-beginning"
 steps_since_initial: $((${seconds_since_initial} / ${time_step}))
 
+# Number of total steps at the end of the run
 next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+
+# Number of steps per day in this run
 steps_per_day: "$(( 86400 / ${time_step} ))"
+
+# @JOAKIM: do we need a switch here?
 custop: "h${oifs.next_step}"
 #custop: "t${oifs.next_step}" # TODO: delete this comment
 nfrres: 1
@@ -587,6 +489,7 @@ input_files:
         tl_data: tl_data
         o3_data: o3_data
         # also missing: modify_init for ensemble stuff
+
 
 #======================================================================================
 # FORCING FILES
@@ -643,6 +546,7 @@ log_in_work:
 #======================================================================================
 
 # NDAYS variables for SRF and WAMINFO files
+# -----------------------------------------
 # ndays_source_in
 ndays_source_in: "<--format(%08d)-- ${start_ndays_source}"
 # ndays_work_in
@@ -653,10 +557,10 @@ next_ndays: "$(( ${simulation_length_seconds} / 86400 ))"
 ndays_out: "<--format(%08d)-- ${next_ndays}"
 
 # WAM variables
+# -------------
 # filebase
 filebase_wam_source: "${prev_run.oifs.filebase_wam_work}"
-pseudo_initial_date_minus_step: "$(( ${pseudo_initial_date} - ${time_step}seconds ))"
-filebase_wam_work: "${pseudo_initial_date_minus_step!syear!smonth!sday}000000_"
+filebase_wam_work: "${pseudo_initial_date!syear!smonth!sday}000000_"
 # wam_source_in
 source_ndays_wam: "$(( ${start_ndays_source} - 1 ))"
 source_days_string: "<--format(%06d)-- ${source_ndays_wam}"
@@ -693,7 +597,7 @@ restart_in_in_work:
         LAW: LAW${filebase_wam_work}${wam_work_in}.*
 
 
-# AFTER RUN: copy WORK to RESTART
+# AFTER RUN: copy from WORK to RESTART
 # ---------
 restart_out_files:
         srf: srf
@@ -750,7 +654,11 @@ ignore_sources:
         drhook: drhook*
 
 
-## Using XIOS?
+#======================================================================================
+# XIOS
+#======================================================================================
+
+# Using XIOS?
 choose_with_xios:
         1:
                 include_models:
@@ -767,6 +675,10 @@ choose_with_xios:
                         ICMSH: ICMSH
 
 
+#======================================================================================
+# PETRA
+#======================================================================================
+
 choose_pextra:
         1:
                 add_namelist_changes:
@@ -781,6 +693,10 @@ choose_pextra:
                                         NFP3DFS: 25
                                         MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
 
+
+#======================================================================================
+# WAVE MODEL (WAM)
+#======================================================================================
 
 # Turns on/off the wave model WAM inside OpenIFS
 choose_wam:
@@ -832,6 +748,11 @@ choose_wam:
                                         LWCOU: ".false."
                                         LWCOU2W: ".false."
 
+
+#======================================================================================
+# OTHER CONFIGS AND SWITCHES
+#======================================================================================
+
 # For coupled setups we can use ocean currents
 choose_use_ocean_currents:
         1:
@@ -852,13 +773,12 @@ choose_use_ocean_currents:
 ## 2 - mass fixer for dry mass and cloud variables
 ##
 ## LMASCOR turns it on/off
-## NFRMASSCON is correction frequency in time steps 
+## NFRMASSCON is correction frequency in time steps
 ## (once per day might be ok)
 ##
 choose_massfixer:
         0:
-                add_namelist_changes: 
-                        fort.4:
+                add_namelist_changes:                        fort.4:
                                 NAMDYN:
                                         LMASCOR: ".false."
         1:
@@ -866,13 +786,13 @@ choose_massfixer:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".true."
-                                        LMASDRY: ".true." 
+                                        LMASDRY: ".true."
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
-        2:      
-                add_namelist_changes: 
-                        fort.4: 
-                                NAMDYN: 
+        2:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
                                         LMASCOR: ".true."
                                         LMASDRY: ".true."
                                 NAMCT0:
@@ -1003,9 +923,9 @@ choose_mip:
 #                                                        O3SCEN: O3SCEN
 
 
-##
-## sources
-##
+#======================================================================================
+# INPUT AND FORCING FILES
+#======================================================================================
 
 prepifs_dir: ${input_dir}/${prepifs_startdate}${hours}/
 tl_o3_data_dir: ${input_dir}
@@ -1075,6 +995,10 @@ forcing_in_work:
         O3SCEN: cmip6_data/o3_scenarios/*
 
 
+#======================================================================================
+# GRIDS
+#======================================================================================
+
 # A grid at N80 resolution is A080 etc.
 grids:
         atma:
@@ -1091,8 +1015,13 @@ grids:
                 name: ${oasis_grid_name_r}
                 nx: "${nx}"
                 ny: "${ny}"
-                oasis_grid_type: "D"     
-   
+                oasis_grid_type: "D"
+
+
+#======================================================================================
+# OUTPUT CONFIG
+#======================================================================================
+
 choose_output:
         "default":
                 add_namelist_changes:
@@ -1107,16 +1036,68 @@ choose_output:
                                 NAMCT0:
                                         NFRPOS: 12
                                         NFRHIS: 12
+#======================================================================================
+# PREPROCESS: eternal runs
+#======================================================================================
+# TODO: style Jesus not supported yet by these new preprocessing scripts @JOAKIM
 
+# The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
+# OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
+# memory issues mentioned before. This is done by declaring the pseudo_initial_date
+# as the last start date.
+choose_general.run_number:
+        1:
+                pseudo_initial_date: "${initial_date}"
+                #TODO: prev_pseudo_initial_date: "${initial_date}"
+                start_ndays_source: "${start_ndays}"
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${initial_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id}"
+        2:
+                pseudo_initial_date: "${initial_date}"
+                #TODO: prev_pseudo_initial_date: "${initial_date}"
+                start_ndays_source: "${start_ndays}"
+                preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh"
+        "*":
+                pseudo_initial_date: "${last_start_date}"
+                #TODO: prev_pseudo_initial_date: "${prev_run.oifs.pseudo_initial_date}"
+                start_ndays_source: "${prev_run.oifs.next_ndays}"
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${last_start_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id};
+                    ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${thisrun_restart_in_dir}/
+                        ${last_start_date!syear!smonth!sday}
+                        ${oifs.time_step}
+                        ${oifs.seconds_since_initial}
+                        ${oifs.start_ndays}
+                        ${oifs.wam}"
 
 preprocess:
         preprocess_shell:
-#<<<<<<< HEAD
-#                method: "$${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${initial_date_cold!syear!smonth!sday} ${initial_date_cold!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
-#=======
-                method: "${general.esm_function_dir}/components/oifs/change_icm_date.sh ${input_dir}/${prepifs_startdate}${hours}/ ${prepifs_expid} ${input_expid} ${initial_date!syear!smonth!sday} ${start_date!syear!smonth!sday} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id} ${run_number}"
-#>>>>>>> origin/eternal_restarts_for_oifs_cherrypick_no_develop
+                method: "${preprocess_method}"
                 type: shell
+
+
+#======================================================================================
+# POSTPROCESS
+#======================================================================================
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script
 # not working as expected as there is no "wait" after submit in the compute recipe below
@@ -1124,6 +1105,11 @@ postprocess:
         postprocess_shell:
                 method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
+
+
+#======================================================================================
+# RECIPE
+#======================================================================================
 
 compute_recipe:
    - "venv_bootstrap"
@@ -1141,6 +1127,7 @@ compute_recipe:
    - "log_used_files"
    - "_write_finalized_config"
    - "copy_files_to_thisrun"
+   - "write_env"
    - "preprocess"
    - "modify_namelists"
    - "modify_files"

@@ -74,6 +74,7 @@ core:
 
                 batch_system:
                         - "write_simple_runscript"
+                        - "write_env"
                         - "submit"
 
                 virtual_env_builder:

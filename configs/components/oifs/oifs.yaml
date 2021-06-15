@@ -778,7 +778,8 @@ choose_use_ocean_currents:
 ##
 choose_massfixer:
         0:
-                add_namelist_changes:                        fort.4:
+                add_namelist_changes:
+                        fort.4:
                                 NAMDYN:
                                         LMASCOR: ".false."
         1:

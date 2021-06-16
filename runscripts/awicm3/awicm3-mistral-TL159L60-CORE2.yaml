@@ -3,12 +3,12 @@ general:
     version: "1.0-deck"
     account: "ab0246"
     partition: "compute2"
-    compute_time: "00:02:00"
+    compute_time: "00:05:00"
     initial_date: "1990-01-01"
-    final_date: "1995-04-01"
+    final_date: "1990-02-01"
     base_dir: "/mnt/lustre01/work/ab0246/a270092/runtime/awicm-3.1/"
-    nday: 0
-    nmonth: 1
+    nday: 3
+    nmonth: 0
     nyear: 0
     use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
@@ -23,9 +23,10 @@ fesom:
     resolution: "CORE2"
     mesh_dir: "${pool_dir}/core2_meanz/"
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
-    restart_rate: 1
-    restart_unit: "m"
-    restart_first: 1
+    #mesh_dir: "${pool_dir}/core2_meanz/"
+    restart_rate: 3
+    restart_unit: "d"
+    restart_first: 3
     lresume: false
     time_step: 1800
     nproc: 72

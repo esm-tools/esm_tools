@@ -3,7 +3,6 @@
 #########################################################################################
 general:
 
-
         model: awicm3
 
         model_dir: ${esm_master_dir}/awicm3-${version}
@@ -65,60 +64,8 @@ general:
                 aleph:
                         pool_dir: "/proj/awi/input"
 
-        compute_recipe_with_preprocess:
-            - "venv_bootstrap"
-            - "_create_setup_folders"
-            - "_create_component_folders"
-            - "initialize_experiment_logfile"
-            - "copy_tools_to_thisrun"
-            - "compile_model"
-            - "_copy_preliminary_files_from_experiment_to_thisrun"
-            - "_show_simulation_info"
-            - "create_new_files"
-            - "prepare_coupler_files"
-            - "add_batch_hostfile"
-            - "assemble"
-            - "log_used_files"
-            - "_write_finalized_config"
-            - "copy_files_to_thisrun"
-            - "preprocess"
-            - "modify_namelists"
-            - "modify_files"
-            - "copy_files_to_work"
-            - "write_simple_runscript"
-            - "report_missing_files"
-            - "database_entry"
-            - "submit"
-
-        compute_recipe_no_preprocess:
-            - "venv_bootstrap"
-            - "_create_setup_folders"
-            - "_create_component_folders"
-            - "initialize_experiment_logfile"
-            - "copy_tools_to_thisrun"
-            - "compile_model"
-            - "_copy_preliminary_files_from_experiment_to_thisrun"
-            - "_show_simulation_info"
-            - "create_new_files"
-            - "prepare_coupler_files"
-            - "add_batch_hostfile"
-            - "assemble"
-            - "log_used_files"
-            - "_write_finalized_config"
-            - "copy_files_to_thisrun"
-            - "modify_namelists"
-            - "modify_files"
-            - "copy_files_to_work"
-            - "write_simple_runscript"
-            - "report_missing_files"
-            - "database_entry"
-            - "submit"
-
-        choose_run_number:
-                1:      # If first leg, use preprocessing
-                        compute_recipe: ${compute_recipe_with_preprocess}
-                "*":    # If not first leg, use no preprocessing
-                        compute_recipe: ${compute_recipe_no_preprocess}
+        # Load compute recipe from oifs.yaml
+        compute_recipe: ${oifs.compute_recipe}
 
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
@@ -195,13 +142,6 @@ oifs:
                                                 NIO_SERV_METHOD: 2
                                                 NMSG_LEVEL_CLIENT: 0
                                                 NMSG_LEVEL_SERVER: 1
-                        #compiletime_environment_changes:
-                        #        add_export_vars:
-                        #                - 'OIFS_XIOS=enable'
-                        #                - 'OIFS_XIOS_DIR=${general.model_dir}/xios'
-                        #                - 'OIFS_XIOS_INCLUDE=-I${general.model_dir}/xios/inc/'
-                        #                #- 'OIFS_XIOS_LIB=-L$OIFS_XIOS_DIR/lib -lxios'
-
 
         runtime_environment_changes:
                 add_export_vars:
@@ -231,21 +171,9 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
 
-        # Remove ICMCL_INIT forcing
+        # Remove ICMCL_INIT forcing, which is only required for standalone simulations
         remove_forcing_files:
                 - ICMCL_INIT
-
-        # preprocessing and postprocessing scripts needed here
-        ############################################################
-        preprocess:
-                preprocess_shell:
-                        method: "${general.esm_function_dir}/components/oifs/oifs-43r3-preprocess.sh ${thisrun_input_dir}/ ${icmcl_dir}/${icmcl_file} ${oifs.input_expid} ${oifs.input_expid} ${initial_date_cold!syear!smonth!sday} ${initial_date_cold!syear!smonth!sday} ${oifs.icmcl_end_date_formatted} ${thisrun_input_dir} ${oifs.wam_number} ${oifs.perturb} ${oifs.nx} ${oifs.ensemble_id} nostyle"
-                        type: shell
-
-        #postprocess:
-        #        postprocess_shell:
-        #                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-        #                type: shell
 
 
 fesom:
@@ -361,6 +289,8 @@ fesom:
                                 add_export_vars:
                                         branch_deck: juwels_chunk_io
 
+# TODO: remove this as this generates a lot of output. This should be loaded from the
+# runscript if the user want's it (I need to talk to Marylou about it)
 further_reading:
         - fesom/fesom-2.0.io.yaml
 
@@ -406,6 +336,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
+        #pool_dir: ${general.pool_dir}/oasis_experimental/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"

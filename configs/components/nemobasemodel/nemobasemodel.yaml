@@ -14,6 +14,10 @@ choose_version:
     archfile: ESMTOOLS_generic_oasis_intel
     branch: esm-tools
     git-repository: https://git.geomar.de/foci/src/nemo.git
+  3.6foci_agrif:
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
+    branch: esm-tools
+    git-repository: https://git.geomar.de/foci/src/nemo.git
   # Test using Jan-Klaus Rieck's OMIP configuration
   3.6ogcm_test:
     archfile: ESMTOOLS_generic_intel
@@ -30,3 +34,4 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/c
   ${nemo.version}/BLD/bin/oceanx
 destination: nemo-${nemo.version}
 install_bins: CONFIG/${nemo.version}/BLD/bin/oceanx
+

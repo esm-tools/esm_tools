@@ -28,7 +28,7 @@ choose_version:
     - xios-2.0_r982
     # TODO: test with newer version of XIOS
     # - xios-2.5_r1910
-    - nemobasemodel-3.6foci
+    - nemobasemodel-3.6foci_agrif
     branch: master 
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git

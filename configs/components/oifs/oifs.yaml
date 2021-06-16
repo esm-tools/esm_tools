@@ -24,6 +24,8 @@ license_text: |
 # Force namelist fort.4 to be written in uppercase
 namelist_case: "uppercase"
 
+reusable_filetypes: [input, bin, src]
+
 ##
 ## Directories
 ##
@@ -167,7 +169,7 @@ compile_infos:
           #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
           #  install_bins: make/esm/oifs/bin/oifs
           43r3-foci:
-            branch: oifs-geomar
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
@@ -175,7 +177,7 @@ compile_infos:
             - oasis3mct-4.0
             - xios-2.5_r1910
           43r3-v1:
-            branch: oifs-geomar
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
@@ -394,21 +396,13 @@ namelist_changes:
                         ORBMODE: "${orb_mode}"
                         ORBIY: "${orb_iyear}"
 
-## TODO: MA I don't think this is necessary anymore. Remove after testing a branchoff exp
-#choose_lresume:
-#        false:
-#                initial_date_cold: "${initial_date}"
-#        true:
-#                choose_general.run_number:
-#                        1:
-#                                nothing: 0
-#                        "*":
-#                                initial_date_cold: "${initial_date}"
-
 lresume: false
 restart_rate: 1
 restart_unit: "months"
 
+# @JOAKIM: we need to discuss the values, you used to have:
+# massfixer: 2
+# nfrmasscon: 1
 massfixer: 1
 nfrmasscon: 12
 
@@ -504,7 +498,8 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-                        ICMCL_INIT: ICMCL_INIT
+# @JOAKIM: You deleted this once, can we get rid of it?
+#                        ICMCL_INIT: ICMCL_INIT
                 choose_mip:
                         "cmip5":
                                 cmip5_data_dir_nml: ./cmip5_data/
@@ -520,8 +515,8 @@ choose_copy_forcing:
                                         # Add CO2 etc for all scenarios and years
                                         CMIP6DATA: CMIP6DATA
         false:
-                forcing_files:
-                        ICMCL_INIT: ICMCL_INIT
+                forcing_files: {}
+#                        ICMCL_INIT: ICMCL_INIT
 
 
 #======================================================================================
@@ -648,10 +643,13 @@ outdata_sources:
 
 ignore_files:
         drhook: drhook
+        ICMCL: ICMCL
 ignore_in_work:
         drhook: drhook*
+        ICMCL: ICMCL*
 ignore_sources:
         drhook: drhook*
+        ICMCL: ICMCL*
 
 
 #======================================================================================
@@ -787,7 +785,7 @@ choose_massfixer:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".true."
-                                        LMASDRY: ".true."
+                                        LMASDRY: ".false."
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
         2:
@@ -795,12 +793,12 @@ choose_massfixer:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".true."
-                                        LMASDRY: ".true."
+                                        LMASDRY: ".false."
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
                                 NAMGFL:
-                                        LTRCMFIX: ".true."
-                                        LTRCMFIX_PS: ".true."
+                                        #LTRCMFIX_PS: ".true."
+                                        LTRCMFMG: ".true."
                                         YS_NL%LMASSFIX: ".true."
                                         YR_NL%LMASSFIX: ".true."
                                         YI_NL%LMASSFIX: ".true."
@@ -847,6 +845,7 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
+                                        # @JOAKIM: check if it's working
                                         #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
                                         NRESTS:
@@ -1040,7 +1039,7 @@ choose_output:
 #======================================================================================
 # PREPROCESS: eternal runs
 #======================================================================================
-# TODO: style Jesus not supported yet by these new preprocessing scripts @JOAKIM
+# @JOAKIM: please compare your preprocessing scripts with the new ones
 
 # Determine whether the experiment is branched off or a cold start
 eternal_run_number: "{general.run_number}"

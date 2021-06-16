@@ -36,15 +36,6 @@ echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
 echo " Perturb: $perturb "
-# Miguel: Style is not supported anymore in this preprocessing scripts, I don't
-# understand why it's being removed. @JAN, @JOAKIM?
-echo " Style: $style"
-
-#if [[ "x${style}" == "xjesus" ]] ; then
-#   ndate=$(date -u -d "${inidate}" +%Y%m%d)
-#else
-#   ndate=$(date -u -d "${startdate}" +%Y%m%d)
-#fi
 ndate=$(date -u -d "${inidate}" +%Y%m%d)
 initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)

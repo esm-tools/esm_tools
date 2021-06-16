@@ -1042,25 +1042,25 @@ choose_output:
 # @JOAKIM: please compare your preprocessing scripts with the new ones
 
 # Determine whether the experiment is branched off or a cold start
-eternal_run_number: "{general.run_number}"
-branchoff: false
-choose_general.run_number:
-        1:
-                choose_lresume:
-                        true:
-                            eternal_run_number: 0
-                            branchoff: true
-        2:
-                branchoff: "${prev_run.oifs.branchoff}"
-                choose_branchoff:
-                        true:
-                            eternal_run_number: 0
+#eternal_run_number: "${general.run_number}"
+#branchoff: false
+#choose_general.run_number:
+#        1:
+#                choose_lresume:
+#                        true:
+#                            eternal_run_number: 0
+#                            branchoff: true
+#        2:
+#                branchoff: "${prev_run.oifs.branchoff}"
+#                choose_branchoff:
+#                        true:
+#                            eternal_run_number: 0
 
 # The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
 # OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
 # memory issues mentioned before. This is done by declaring the pseudo_initial_date
 # as the last start date.
-choose_eternal_run_number:
+choose_general.run_number:
         1:
                 pseudo_initial_date: "${initial_date}"
                 start_ndays_source: "${start_ndays}"

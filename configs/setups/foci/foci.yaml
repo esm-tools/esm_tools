@@ -27,10 +27,14 @@ general:
         
         available_versions:
         - default
+        - agrif 
         choose_version:
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          agrif:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
         
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -177,7 +181,6 @@ echam:
               - echam
               - accw
               - co2
-              - surf
               - tdiag
 
         check_error:
@@ -236,11 +239,16 @@ jsbach:
               - nitro
               - veg
               - yasso
+              - surf
+              - nitro
+              - land
 
 nemo:
-        #choose_general.version:
-        #        default:
-        #                version: "3.6foci"
+        choose_general.version:
+                default:
+                        version: "ORCA05_LIM2_KCM_AOW"
+                agrif:
+                        version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -272,6 +280,14 @@ oasis3mct:
         a2o_seq: 3
 
         coupling_time_step: 10800
+
+        #export_mode_a2o: EXPORTED
+        choose_general.version:
+                default:
+                        export_mode_a2o: EXPORTED     
+                agrif:
+                        export_mode_a2o: EXPNEST     
+                        tada: testtest
         coupling_target_fields:
                 sstocean:
                         - 'AIceFrac <--conserv-- OIceFrac'
@@ -304,9 +320,11 @@ oasis3mct:
                 'atmo->opat':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
+                        export_mode: ${export_mode_a2o}
                 'atmo->opac':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
+                        export_mode: ${export_mode_a2o}
 
         coupling_methods:
                 conserv:

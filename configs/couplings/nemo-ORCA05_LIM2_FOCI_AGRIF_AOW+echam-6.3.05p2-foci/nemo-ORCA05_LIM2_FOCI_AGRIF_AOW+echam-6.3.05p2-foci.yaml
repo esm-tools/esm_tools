@@ -1,0 +1,6 @@
+components:
+- echam-6.3.05p2-foci
+- nemo-ORCA05_LIM2_FOCI_AGRIF_AOW
+- oasis3mct-foci
+coupling_changes:
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-foci/CMakeLists.txt

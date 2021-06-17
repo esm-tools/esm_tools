@@ -21,6 +21,7 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
+    namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-frontiers:
     branch: awicm-3-frontiers
     destination: fesom-2.0
@@ -78,7 +79,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${model_dir}/fesom-2.0/config/"
+namelist_dir: "${esm_namelist_dir}/fesom2/
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"

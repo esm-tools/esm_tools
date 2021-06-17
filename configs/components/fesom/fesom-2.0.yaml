@@ -79,7 +79,7 @@ bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/
+namelist_dir: "${esm_namelist_dir}/fesom2/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"

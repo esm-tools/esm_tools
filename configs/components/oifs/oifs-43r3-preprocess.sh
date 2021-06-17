@@ -52,6 +52,7 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     module load ParaStationMPI/5.4.4-1-mt    
     module load Python/3.6.8
     module load imkl/2019.3.199
+    export PATH=$IO_LIB_ROOT/bin:$PATH:/p/project/chhb19/jstreffi/software/cdo/cdo-1.9.8/src/
     #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
     #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
     export IO_LIB_ROOT=/p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020/

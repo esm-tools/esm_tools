@@ -21,6 +21,7 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
+    namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-frontiers:
     branch: awicm-3-frontiers
     destination: fesom-2.0

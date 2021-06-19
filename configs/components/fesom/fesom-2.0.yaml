@@ -268,11 +268,6 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:

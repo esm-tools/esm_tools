@@ -1051,16 +1051,24 @@ choose_output:
 #                            eternal_run_number: 0
 #                            branchoff: true
 #        2:
-#                branchoff: "${prev_run.oifs.branchoff}"
-#                choose_branchoff:
+#                prev_branchoff: "${prev_run.oifs.branchoff}"
+#                choose_prev_branchoff:
 #                        true:
 #                            eternal_run_number: 0
+
+eternal_run_number: "$((
+        0 if (${lresume} and ${general.run_number} == 1)
+            or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
+        else ${general.run_number}
+    ))"
+
+#eternal_run_number: 0 #"$(( 0 ))"
 
 # The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
 # OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
 # memory issues mentioned before. This is done by declaring the pseudo_initial_date
 # as the last start date.
-choose_general.run_number:
+choose_eternal_run_number:
         1:
                 pseudo_initial_date: "${initial_date}"
                 start_ndays_source: "${start_ndays}"
@@ -1074,11 +1082,13 @@ choose_general.run_number:
                         ${oifs.wam_number}
                         ${oifs.perturb}
                         ${oifs.nx}
-                        ${oifs.ensemble_id}"
+                        ${oifs.ensemble_id};
+                    echo 'OPTION1: ${eternal_run_number}'"
         2:
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
-                preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh"
+                preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
+                    echo 'OPTION2: ${eternal_run_number}'"
         "*":
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
@@ -1099,7 +1109,8 @@ choose_general.run_number:
                         ${oifs.time_step}
                         ${oifs.seconds_since_initial}
                         ${oifs.start_ndays}
-                        ${oifs.wam}"
+                        ${oifs.wam};
+                    echo 'OPTION3: ${eternal_run_number}'"
 
 preprocess:
         preprocess_shell:

@@ -165,9 +165,9 @@ restart_out_sources:
 outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
 
 outdata_sources:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
+        fesom: "*.fesom.*.nc"
 outdata_targets:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 log_files:
         clock: clock

@@ -291,9 +291,8 @@ fesom:
 
 # TODO: remove this as this generates a lot of output. This should be loaded from the
 # runscript if the user want's it (I need to talk to Marylou about it)
-further_reading:
-        - fesom/fesom-2.0.io.yaml
-
+#further_reading:
+#       - fesom/fesom-2.0.io.yaml
 
 xios:
         #model_dir: ${general.model_dir}/xios-${xios.version}

@@ -21,6 +21,7 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
+    namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-frontiers:
     branch: awicm-3-frontiers
     destination: fesom-2.0
@@ -138,9 +139,9 @@ restart_out_sources:
 outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
 
 outdata_sources:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
+        fesom: "*.fesom.*.nc"
 outdata_targets:
-        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 log_files:
         clock: clock
@@ -267,11 +268,6 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:

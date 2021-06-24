@@ -7,11 +7,11 @@ jobtype: compute
 accounting: true
 
 # default settings for compiler, mpi and I/O libs
-compiler_mpi: intel_2019a_impi2019
+#compiler_mpi: intel_2019a_impi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-#compiler_mpi: intel2019_impi2019 #intel2020_psmpi2020
-iolibraries: geomar_libs
+compiler_mpi: intel2020_psmpi2020
+iolibraries: system_libs
 
 # slurm setup
 batch_system: slurm
@@ -22,16 +22,34 @@ launcher_flags: "-l "
 # set default for hyperthreading_flag
 hyperthreading_flag: ""
 
-use_hyperthreading: True
+use_hyperthreading: False
 choose_use_hyperthreading:
         "1":
                 hyperthreading_flag: ""
         True:
                 hyperthreading_flag: ""
         "0":
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
         False:
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
 
 sh_interpreter: "/usr/bin/bash"
 
@@ -94,7 +112,7 @@ choose_compiler_mpi:
         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
         ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_impi2020
         LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
-
+        PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel2020_psmpi2020:
       add_module_actions:
@@ -114,12 +132,14 @@ choose_compiler_mpi:
         FCFLAGS: -free
         CC: mpicc
         CXX: mpic++
+        MAIN_LDFLAGS: -openmp
         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
         ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020
         LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
+        PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel_2019a_impi2019:
       add_module_actions:

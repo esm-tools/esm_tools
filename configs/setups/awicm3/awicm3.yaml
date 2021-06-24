@@ -202,7 +202,7 @@ fesom:
 
 
         # Move in the future to fesom-2.0.yaml
-        mesh_dir: "${pool_dir}/${resolution}/"
+        mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 
         surf_relax_s: "0.0"
 
@@ -336,7 +336,6 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        #pool_dir: ${general.pool_dir}/oasis_experimental/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"

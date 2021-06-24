@@ -1042,19 +1042,25 @@ choose_output:
 # @JOAKIM: please compare your preprocessing scripts with the new ones
 
 # Determine whether the experiment is branched off or a cold start
-#eternal_run_number: "${general.run_number}"
-#branchoff: false
+branchoff: false
 #choose_general.run_number:
 #        1:
 #                choose_lresume:
+#                        # Is branchoff
 #                        true:
 #                            eternal_run_number: 0
 #                            branchoff: true
+#                        false:
+#                            eternal_run_number: "${general.run_number}"
 #        2:
 #                prev_branchoff: "${prev_run.oifs.branchoff}"
 #                choose_prev_branchoff:
 #                        true:
 #                            eternal_run_number: 0
+#                        false:
+#                            eternal_run_number: "${general.run_number}"
+#        "*":
+#                            eternal_run_number: "${general.run_number}"
 
 eternal_run_number: "$((
         0 if (${lresume} and ${general.run_number} == 1)
@@ -1111,6 +1117,9 @@ choose_eternal_run_number:
                         ${oifs.start_ndays}
                         ${oifs.wam};
                     echo 'OPTION3: ${eternal_run_number}'"
+                choose_eternal_run_number:
+                        0:
+                                branchoff: true
 
 preprocess:
         preprocess_shell:

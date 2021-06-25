@@ -40,10 +40,20 @@ general:
         version: "2.1"
         available_versions:
         - '2.1'
+        - '2.1-wiso'
+        - '2.1-recom'
         choose_version:
           '2.1':
             couplings:
             - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
+          '2.1-wiso':
+            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
+            - fesom-2.0-wiso+echam-6.3.05p2-wiso
+          '2.1-recom':
+            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
+            - fesom-2.0-wiso+echam-6.3.05p2-wiso+recom-2.0
+            add_include_models:
+            - recom
         scenario: "PALEO"
         variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -56,7 +66,6 @@ general:
                         compute_time: "02:00:00"
                 T63_REF:
                         compute_time: "02:00:00"
-
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -80,7 +89,13 @@ echam:
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.05p2-concurrent_radiation-paleodyn"
+        choose_general.version:
+                2.1-wiso:
+                        version: "6.3.05p2-wiso"
+                2.1-recom:
+                        version: "6.3.05p2-wiso"
+                "*":
+                        version: "6.3.05p2-concurrent_radiation-paleodyn"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -92,7 +107,7 @@ echam:
                         nprocar: 0
                         nprocbr: 0
                         npromar: 8
-                        lrad_async: true
+                        lrad_async: False
                         lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
@@ -150,6 +165,18 @@ fesom:
                         version: "1.4"
                 2.0:
                         version: "2.0"
+                2.1-recom:
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_config_sources:
+                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
+                        add_config_in_work:
+                                oce:     namelist.oce
+                        remove_namelist_changes.namelist.config: [inout]
+                        add_namelist_changes:
+                                namelist.config:
+                                        restart_log:
+                                                restart_length: "${restart_rate}"
+                                                restart_length_unit: "${restart_unit}"
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288
@@ -164,7 +191,7 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        add_namelist_changes:
+        namelist_changes:
                 namelist.oce:
                         oce_tra:
                                 surf_relax_s: 0.0
@@ -178,9 +205,45 @@ fesom:
         asforcing: ECHAM5
 
 
+#########################################################################################
 
 
+recom:
+        choose_general.version:
+                2.1-recom:
+                        version: "2.0"
+                        bgc_num: 31
+                        add_namelist_changes:
+                            namelist.recom:
+                                pavariables:
+                                    bgc_num: "${bgc_num}"
+                        data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
+                        restart_name: "restart."
+
+                        remove_namelist_changes.namelist.recom.pavariables:
+                            - constant_CO2
+                            - firstyearoffesomcycle
+                            - lastyearoffesomcycle
+                            - numofCO2cycles
+                            - currentCO2cycle
+                            - REcoM_PI
+                        remove_namelist_changes.namelist.recom.paco2_flux_param:
+                            - CO2_for_spinup
+
+                        namelist_dir: ${fesom.model_dir}/config/
+
+                        # Include the extra namelist that is not included by default in recom.yaml
+                        add_namelists:
+                                - namelist.io.recom.ciso
+                        add_config_files:
+                                io.recom.ciso: io.recom.ciso
+                        add_config_sources:
+                                recom: ${namelist_dir}/namelist.recom.ciso
+                        add_config_in_work:
+                                recom: namelist.recom
+                "*":
+                        not_used: ""
 
 #########################################################################################
 
@@ -205,6 +268,9 @@ oasis3mct:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
                         - 'snt_atmo <--distwgt-- snt_feom'
+                        - 'o18_atmo <--distwgt-- o18_feom'
+                        - 'hdo_atmo <--distwgt-- hdo_feom'
+                        - 'o16_atmo <--distwgt-- o16_feom'
 
                 a2o_flux:
                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'
@@ -216,6 +282,12 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
+                        - 'w1_oce <--distwgt-- w1_atm'
+                        - 'w2_oce <--distwgt-- w2_atm'
+                        - 'w3_oce <--distwgt-- w3_atm'
+                        - 'i1_oce <--distwgt-- i1_atm'
+                        - 'i2_oce <--distwgt-- i2_atm'
+                        - 'i3_oce <--distwgt-- i3_atm'
 
 
         coupling_directions:

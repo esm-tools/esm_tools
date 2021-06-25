@@ -231,6 +231,33 @@ choose_version:
                                         lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
+        6.3.05p2-wiso:
+                choose_computer.name:
+                    mistral:
+                        add_compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        add_runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+                                        nproca: "${nproca}"
+                                        nprocb: "${nprocb}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                runctl:
+                                        default_output: True
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                wisoctl:
+                                        lwiso_rerun: False
+                                        lwiso: False
+                                        nwiso: 0
+
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007

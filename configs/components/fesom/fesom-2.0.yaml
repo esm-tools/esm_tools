@@ -16,6 +16,12 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
+  2.0pico:
+    branch: pico_cpl
+    destination: fesom-2.0pico
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+    install_bins: bin/fesom.x
   2.0-esm_interface:
     branch: using_esm-interface_yac
     destination: fesom-2.0
@@ -61,6 +67,13 @@ git-repository:
 - https://github.com/FESOM/fesom2.git
 - https://gitlab.dkrz.de/FESOM/fesom2.git
 
+
+choose_computer.name:
+        mistral:
+                add_compiletime_environment_changes:
+                        add_module_actions:
+                                - "unload gcc"
+                                - "load gcc/4.8.2"
 
 
 restart_rate: "12"

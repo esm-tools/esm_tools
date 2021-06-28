@@ -513,6 +513,17 @@ streamsnc:
         - jsbid
         - sp6h
         - spim
+        - sp
+        - gl
+        - g3b
+        - scm
+        - ma
+        - surf
+        - cfddiag
+        - aeropt
+        - co2
+        - tdiag
+        
 
           #prev_date: 18500101
 # BUG: PG Why do we need lists here?

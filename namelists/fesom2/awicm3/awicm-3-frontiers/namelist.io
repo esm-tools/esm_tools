@@ -6,7 +6,7 @@ ldiag_energy     =.false.
 ldiag_salt3D     =.false.
 ldiag_dMOC       =.false.
 ldiag_DVD        =.false.
-ldiag_forc       =.false.
+ldiag_forc       =.true.
 /
 
 &nml_listsize
@@ -42,4 +42,13 @@ io_list =  'sst       ',1, 'm', 4,
            'bolus_u   ',1, 'y', 4,
            'bolus_v   ',1, 'y', 4,
            'bolus_w   ',1, 'y', 4,
+           'snow      ',1, 'm', 4,
+           'subli     ',1, 'm', 4,
+           'thdgrsn   ',1, 'm', 4,
+           'thdgr     ',1, 'm', 4,
+           'flice     ',1, 'm', 4,
+           'ist       ',1, 'm', 4,
+           'alb       ',1, 'm', 4,
+           'fh       ',1, 'm', 4,
+           'fw       ',1, 'm', 4,
 /

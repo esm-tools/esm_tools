@@ -1041,34 +1041,15 @@ choose_output:
 #======================================================================================
 # @JOAKIM: please compare your preprocessing scripts with the new ones
 
-# Determine whether the experiment is branched off or a cold start
+# Determine the eternal_run_number variable. Normally this variable would be the same
+# as general.run_number, but for branchoff experiments should be 0 so that the 3rd
+# preprocessing option is used, instead of the options 1 or 2.
 branchoff: false
-#choose_general.run_number:
-#        1:
-#                choose_lresume:
-#                        # Is branchoff
-#                        true:
-#                            eternal_run_number: 0
-#                            branchoff: true
-#                        false:
-#                            eternal_run_number: "${general.run_number}"
-#        2:
-#                prev_branchoff: "${prev_run.oifs.branchoff}"
-#                choose_prev_branchoff:
-#                        true:
-#                            eternal_run_number: 0
-#                        false:
-#                            eternal_run_number: "${general.run_number}"
-#        "*":
-#                            eternal_run_number: "${general.run_number}"
-
 eternal_run_number: "$((
         0 if (${lresume} and ${general.run_number} == 1)
             or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
         else ${general.run_number}
     ))"
-
-#eternal_run_number: 0 #"$(( 0 ))"
 
 # The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
 # OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
@@ -1117,6 +1098,7 @@ choose_eternal_run_number:
                         ${oifs.start_ndays}
                         ${oifs.wam};
                     echo 'OPTION3: ${eternal_run_number}'"
+                # If this is run 1 or 2 of an experiment, lable it as branchoff
                 choose_eternal_run_number:
                         0:
                                 branchoff: true

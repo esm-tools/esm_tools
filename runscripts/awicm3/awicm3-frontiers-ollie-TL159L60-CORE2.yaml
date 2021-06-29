@@ -1,16 +1,16 @@
 general:
     setup_name: "awicm3"
     version: "1.0-frontiers"
-    compute_time: "08:00:00"
+    compute_time: "00:10:00"
     initial_date: "1990-01-01"
-    final_date: "1995-01-01"
+    final_date: "1990-01-02"
     base_dir: "/work/ollie/jstreffi/runtime/awicm-3.1/"
-    nday: 0
+    nday: 1
     nmonth: 0
-    nyear: 5
+    nyear: 0
 
 computer:
-    heterogeneous_parallelization: false
+    heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false
@@ -20,16 +20,13 @@ fesom:
     resolution: "CORE2"
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
     mesh_dir: "${pool_dir}/core2_meanz/"
-    restart_rate: 5
-    restart_unit: "y"
-    restart_first: 5
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 144
+    nproc: 72
   
-rnfmap:
-    omp_num_threads: 1
-
 oifs:
     resolution: "TL159"
     levels: "L60"
@@ -38,8 +35,8 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 288
-    omp_num_threads: 1
+    nproc: 36
+    omp_num_threads: 2
 
 oasis3mct:
     pool_dir: /work/ollie/jstreffi/input/oasis_experimental/cy43r3/TL159-CORE2/

@@ -226,7 +226,7 @@ recom:
                         add_config_files:
                                 io.recom.ciso: io.recom.ciso
                         add_config_sources:
-                                recom: ${namelist_dir}/namelist.recom.ciso
+                                recom: ${namelist_dir}/namelist.recom
                         add_config_in_work:
                                 recom: namelist.recom
                 "*":

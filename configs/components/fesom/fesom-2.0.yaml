@@ -176,7 +176,7 @@ restart_in_sources:
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
-restart_in_sources:
+
 
 restart_out_files:
         oce_restart: oce_restart

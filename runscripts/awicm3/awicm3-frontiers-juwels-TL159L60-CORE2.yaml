@@ -3,8 +3,8 @@ general:
     version: "1.0-frontiers"
     account: "hhb20"
     compute_time: "00:15:00"
-    initial_date: "1990-01-01"
-    final_date: "2000-01-01"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-02"
     base_dir: "/p/scratch/chhb20/jstreffi/runtime/awicm-3.1/"
     nday: 5
     nmonth: 0
@@ -14,7 +14,7 @@ computer:
     heterogeneous_parallelization: true
 awicm3:
     postprocessing: false
-    model_dir: "/p/project/chhb19/jstreffi/esm_tools/model_codes/awicm3-1.0-frontiers/"
+    model_dir: "/p/project/chhb19/jstreffi/model_codes/awicm3-1.0-frontiers/"
     pool_dir: "/p/project/chhb19/jstreffi/input/"
 
 fesom:
@@ -26,7 +26,7 @@ fesom:
     restart_first: 5
     lresume: false
     time_step: 2400
-    nproc: 288
+    nproc: 48
 
 oifs:
     resolution: "TL159"

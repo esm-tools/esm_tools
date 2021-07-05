@@ -335,7 +335,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        pool_dir: ${general.pool_dir}/oasis_experimental/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
 

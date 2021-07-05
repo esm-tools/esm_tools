@@ -173,6 +173,7 @@ choose_compiler_mpi:
          LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
          CMAKE_LIBRARY_PATH: $EBROOTNETCDF/lib64:$CMAKE_LIBRARY_PATH
          CMAKE_PREFIX_PATH: $EBROOTNETCDF:$CMAKE_PREFIX_PATH
+         PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel_Develop_2019a_impi2019:
       add_module_actions:

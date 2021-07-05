@@ -6,7 +6,7 @@ gamma0=0.003            ! [m/s],   backgroung viscosity= gamma0*len, it should b
 gamma1=0.1          ! [nodim], for computation of the flow aware viscosity
 gamma2=0.285            ! [s/m],   is only used in easy backscatter option
 Div_c=.5  	       ! the strength of the modified Leith viscosity, nondimensional, 0.3 -- 1.0
-Leith_c=.05	       ! the strength of the Leith viscosity
+Leith_c=.5	       ! the strength of the Leith viscosity
 visc_option=5          ! 1=Harmonic Leith parameterization;
                        ! 2=Laplacian+Leith+biharmonic background
                        ! 3=Biharmonic Leith parameterization
@@ -63,7 +63,7 @@ double_diffusion=.false.               ! for KPP,dd switch
 K_ver=1.0e-5
 K_hor=3000.
 surf_relax_T=0.0
-surf_relax_S=1.929e-06       ! 50m/300days 6.43e-07! m/s 10./(180.*86400.) !Automatically set to 0.0 for AWICM3! 
+surf_relax_S=0.0 !1.929e-06       ! 50m/300days 6.43e-07! m/s 10./(180.*86400.)
 balance_salt_water =.true.   ! balance virtual-salt or freshwater flux or not
 clim_relax=0.0	                    ! 1/s, geometrical information has to be supplied
 ref_sss_local=.true.

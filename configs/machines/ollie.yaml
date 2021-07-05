@@ -58,15 +58,14 @@ useMPI: intelmpi
 module_actions:
         - "purge"
         - "load cmake"
-        - "load udunits"
-        - "load gribapi/1.28.0"
         - "unload intel.compiler"
-        - "load intel.compiler"
-        - "unload netcdf"
-        - "load hdf5"
-        - "load centoslibs cdo nco netcdf/4.6.2_intel"
+        - "unload intel.mpi"
+        - "unload netcdf nco ncl"
+        - "load intel.compiler/18.0.5" 
+        - "load intel.mpi/18.0.4"
+        - "load centoslibs cdo netcdf/4.4.0_intel"
         - "load automake"
-        - "load python3/3.7.7_intel2020u2"
+        #- "load python3/3.7.7_intel2020u2"
         - "load git"
         # - "load python3/3.6.5_intel2019"
         - "list"
@@ -102,9 +101,6 @@ export_vars:
 
 choose_useMPI:
         intelmpi:
-                add_module_actions:
-                        - "unload intel.mpi"
-                        - "load intel.mpi"
                 fc: '"mpiifort -mkl"'
                 f77: '"mpiifort -mkl"'
                 mpifc: mpiifort

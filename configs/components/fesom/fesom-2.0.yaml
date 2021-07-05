@@ -294,6 +294,20 @@ coupling_fields:
                 grid: feom
         enth_oce:
                 grid: feom
+        O_2m_temperature:
+                grid: feom
+        O_2m_humidity:
+                grid: feom
+        O_10m_u_wind:
+                grid: feom
+        O_10m_v_wind:
+                grid: feom
+        O_surf_srad_down:
+                grid: feom
+        O_surf_trad_down:
+                grid: feom
+        O_surf_pressure:
+                grid: feom
 
 grids:
         feom:

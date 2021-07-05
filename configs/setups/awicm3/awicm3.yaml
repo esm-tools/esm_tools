@@ -152,7 +152,7 @@ oifs:
                         ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
-        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
+        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_2m_temperature, A_2m_humidity, A_10m_u_wind, A_10m_v_wind, A_surf_srad_down, A_surf_trad_down, A_surf_pressure]
 
         coupling_fields:
                 "[[awicm3_fields-->FIELD]]":
@@ -381,6 +381,7 @@ oasis3mct:
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm <--bicubic-- A_Runoff'
                                         - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
+                                        - 'O_2m_temperature:O_2m_humidity:O_10m_u_wind:O_10m_v_wind:O_surf_srad_down:O_surf_trad_down:O_surf_pressure <--bicubic_glb-- A_2m_temperature:A_2m_humidity:A_10m_u_wind:A_10m_v_wind:A_surf_srad_down:A_surf_trad_down:A_surf_pressure' 
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                 '*':
@@ -392,6 +393,7 @@ oasis3mct:
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--bicubic-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                        - 'O_2m_temperature:O_2m_humidity:O_10m_u_wind:O_10m_v_wind:O_surf_srad_down:O_surf_trad_down:O_surf_pressure <--bicubic_glb-- A_2m_temperature:A_2m_humidity:A_10m_u_wind:A_10m_v_wind:A_surf_srad_down:A_surf_trad_down:A_surf_pressure' 
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 

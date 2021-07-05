@@ -36,6 +36,12 @@ compile_infos:
           6.3.05p2:
             branch: 6.3.05p2
             destination: echam-6.3.05p2
+          6.3.05p2_untouched:
+            branch: 6.3.05p2_untouched
+            destination: echam-6.3.05p2-untouched
+          6.3.05p2_untouched_cplfesom:
+            branch: 6.3.05p2_untouched_cplfesom
+            destination: echam-6.3.05p2-untouched-cplfesom
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean

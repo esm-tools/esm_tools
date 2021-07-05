@@ -30,7 +30,7 @@ pism:
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 #call_function: call_this
                                 call_function: solidearth2pism
-                                env_preparation: env_ci_pism.py
+                                env_preparation: env_pism.py
                                 run_only: first_run_in_chunk
                                 skip_chunk_number: 1
 
@@ -42,5 +42,19 @@ pism:
                                 script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
                                 #call_function: call_this
                                 call_function: pism2solidearth
-                                env_preparation: env_co_pism.py
+                                env_preparation: env_pism.py
                                 run_only: last_run_in_chunk
+
+
+
+
+                                compute - tidy -
+
+                                couple_in - compute - tidy - couple_out - 
+
+                                couple_in - compute - tidy - couple_out -
+                                                           - postpro1
+                                                           - postpro2
+                                                           - monitoring
+                                                           - ...
+                                

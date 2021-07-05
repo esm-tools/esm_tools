@@ -54,8 +54,8 @@ $ esm_versions clean
 
 You can also choose to manually uninstall. In order to do that, remove the installed Python packages and delete the ``esm_*`` executables. The following commands will do the trick if you installed with the ``install.sh`` script or installed using ``pip`` with ``user`` mode ::
 
-$ rm ~/.local/bin/esm*
-$ rm ~/.local/lib/python3.6/site-packages/esm*
+$ rm -rf ~/.local/bin/esm*
+$ rm -rf ~/.local/lib/python3.6/site-packages/esm*
 
 Note that you may have a different Python version, so the second command might need to be adapted. You may also use ``pip`` to uninstall any of the packages::
 

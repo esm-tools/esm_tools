@@ -1,0 +1,27 @@
+&JSBACH_CTL
+  STANDALONE = .false.
+  ! --- number of tiles ---
+  NTILES = 11
+  USE_BETHY = .true.
+  USE_PHENOLOGY = .true.
+  USE_ALBEDO = .true.
+  WITH_YASSO = .true.
+  WITH_HD = .true.
+  USE_ROUGHNESS_LAI = .true.
+  USE_ROUGHNESS_ORO = .false.
+  VEG_AT_1200 = .false.
+  ! --- output options ---
+  FILE_TYPE = 1
+  FILE_ZTYPE = 1
+  LPOST_ECHAM = .false. ! variables in echam output will not be printed twice
+  DEBUG = .FALSE.
+/
+&SOIL_CTL
+  NSOIL = 5
+/
+&HYDROLOGY_CTL
+  LDEBUGHD = .false.
+  DIAG_WATER_BUDGET = .true.
+/
+!because of the large sensitivity of HD model discharge to the changes in HYDROLOGY_CTL
+!it is recommended not to modify HD parameters via namelist (the default values will be used)

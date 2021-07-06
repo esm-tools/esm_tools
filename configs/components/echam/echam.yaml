@@ -97,7 +97,7 @@ include_models:
 executable: echam6
 version: 6.3.04p1
 resolution: T63
-scenario: "PI-CTRL"
+scenario: "PI-CTRL-SPINUP"
 postprocessing_stream: 'BOT ATM LOG'
 yr_perp_off: false
 transient_advance_forcing: false
@@ -259,7 +259,74 @@ choose_version:
 #               lrad_async: true
 #               lrestart_from_old: false
 
+# consider all possible echam/jsbach streams so that none is lost in the tidy-work process if stream definitions are changed in namelist.echam
+# -> this does not work well; all `<expname>_<current_date>.01_*` files should be moved from `work` to `outdata/<model>` 
+# -> actual output streams are defined in namelist.echam
+# -> all streams wanted as given by namelist.echam must occur in these lists:
+streams:
+        - accw
+        - aclcim
+        - aeropt
+        - cfdiag
+        - co2
+        - cosp
+        - echam
+        - forcing
+        - g3b1hi
+        - g3bday
+        - g3bid
+        - g3bim
+        - glday
+        - glim
+        - rad
+        - surf
+        - sp6h
+        - spim
+        - tdiag
+        - tracer # if namelist.echam:submodelctl:lco2=true
+        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used
+        - co2mon
+        - g3bmon
+        - glmon
+        - spmon
+        - tracermon
+streamsnc:
+        - accw
+        - aclcim
+        - aeropt
+        - cfdiag
+        - co2
+        - cosp
+        - echam
+        - forcing
+        - g3b1hi
+        - g3bday
+        - g3bid
+        - g3bim
+        - glday
+        - glim
+        - rad
+        - surf
+        - sp6h
+        - spim
+        - tdiag
+        - tracer # if namelist.echam:submodelctl:lco2=true
+        # reduced echam it PI-CTRL-SPINUP/namelist.echam is used
+        - co2mon
+        - g3bmon
+        - glmon
+        - spmon
+        - tracermon
+
 choose_scenario:
+        "PI-CTRL-SPINUP":
+                forcing_files:
+                        sst: pisst
+                        sic: pisic
+                        aerocoarse: piaerocoarse
+                        aerofin: piaerofin
+                        aerofarir: piaerofarir
+                        ozone: piozone
         "PI-CTRL":
                 forcing_files:
                         sst: pisst
@@ -487,48 +554,6 @@ forcing_additional_information:
         ozone:
                 - need_year_before
                 - need_year_after
-
-streams:
-        - echam
-        - accw
-        - co2
-        - g3bid
-        - g3bim
-        - g3bday
-        - g3b1hi
-        - glday
-        - aclcim
-        - sp6h
-        - glim
-        - spim
-
-streamsnc:
-        - aclcim
-        - g3b1hi
-        - g3bday
-        - g3bid
-        - g3bim
-        - glday
-        - glim
-        - jsbid
-        - sp6h
-        - spim
-        - sp
-        - gl
-        - g3b
-        - scm
-        - ma
-        - surf
-        - cfddiag
-        - aeropt
-        - co2
-        - tdiag
-        
-
-          #prev_date: 18500101
-# BUG: PG Why do we need lists here?
-
-
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 

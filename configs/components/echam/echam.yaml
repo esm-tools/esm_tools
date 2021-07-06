@@ -64,10 +64,10 @@ compile_infos:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-wiso:
-            branch: wiso
-            clean_command: make clean
-            comp_command: make; make install
-            conf_command: ./configure
+            branch: "wiso"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
         clean_command: ${defaults.clean_command}
         comp_command: ${defaults.comp_command}
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
@@ -233,6 +233,33 @@ choose_version:
                                         lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
+        6.3.05p2-wiso:
+                choose_computer.name:
+                    mistral:
+                        add_compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        add_runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+                                        nproca: "${nproca}"
+                                        nprocb: "${nprocb}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                runctl:
+                                        default_output: True
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                wisoctl:
+                                        lwiso_rerun: False
+                                        lwiso: False
+                                        nwiso: 0
+
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007
@@ -271,6 +298,9 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofin: piaerofin
                         aerofarir: piaerofarir
+                        ozonea: piozonea
+                        ozoneb: piozoneb
+                        ozonec: piozonec
                         ozone: piozone
         PALEO:
                 forcing_files:
@@ -472,6 +502,9 @@ forcing_in_work:
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
+        ozonea: "ozon1988"
+        ozoneb: "ozon1989"
+        ozonec: "ozon1990"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
@@ -505,6 +538,10 @@ streams:
         - sp6h
         - glim
         - spim
+        - wiso
+        - accw_wiso
+        - sf_wiso
+        - rad
 
 streamsnc:
         - aclcim
@@ -634,6 +671,12 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
+        o18_atmo:
+                grid: atmo
+        hdo_atmo:
+                grid: atmo
+        o16_atmo:
+                grid: atmo
                 #description: |
                 #       whatever snt means
                 #unit: kg m s
@@ -662,6 +705,18 @@ coupling_fields:
         heat_swa:
                 grid: atmo
         hydr_atm:
+                grid: atmo
+        w1_atm:
+                grid: atmo
+        w2_atm:
+                grid: atmo
+        w3_atm:
+                grid: atmo
+        i1_atm:
+                grid: atmo
+        i2_atm:
+                grid: atmo
+        i3_atm:
                 grid: atmo
 
         "[[foci_fields-->FIELD]]":

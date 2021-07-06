@@ -51,7 +51,7 @@ choose_heterogeneous_parallelization:
 
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --cpu-freq=high"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:

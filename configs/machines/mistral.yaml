@@ -162,7 +162,7 @@ export_vars:
         # MPI environent variables important at runtime
         I_MPI_FABRICS: shm:dapl
         I_MPI_FALLBACK: disable
-        I_MPI_SLURM_EXT: 1
+        # I_MPI_SLURM_EXT: 1
         I_MPI_LARGE_SCALE_THRESHOLD: 8192
         I_MPI_DYNAMIC_CONNECTION: 1
 

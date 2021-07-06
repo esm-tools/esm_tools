@@ -48,6 +48,16 @@ choose_version:
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
                                 dynveg: "_no_dynveg"
                 choose_echam.scenario:
+                        PI-CTRL-SPINUP:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
                         PI-CTRL:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -70,6 +80,16 @@ choose_version:
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
                                 dynveg: "_no_dynveg"
                 choose_echam.scenario:
+                        PI-CTRL-SPINUP:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
                         PI-CTRL:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -167,6 +187,16 @@ choose_version:
                         false:
                                 dynveg: "_no_dynveg"
                 choose_echam.scenario:
+                        PI-CTRL-SPINUP:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
                         PI-CTRL:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -288,17 +318,26 @@ forcing_additional_information:
                 - need_timestep_before
                 - need_timestep_after
 
-
-streams:
-        - jsbach
-        - jsbid
-        - yasso
-        - surf
-        - nitro
-        - veg
-        - land
-
-
+choose_scenario:
+        "PI-CTRL-SPINUP": # reduced echam output defined in PI-CTRL-SPINUP namelist.echam
+                streams:
+                        - jsbachmon
+                        - landmon
+                        - vegmon
+                        # necessary for restart:
+                        - jsbach 
+                        - veg
+                        - yasso
+                        - surf
+        "*":
+                streams:
+                        - jsbach
+                        - jsbid
+                        - yasso
+                        - surf
+                        - nitro
+                        - veg
+                        - land
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 

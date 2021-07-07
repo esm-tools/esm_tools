@@ -10,44 +10,12 @@ comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
 choose_version:
-  '2.0':
-    branch: 2.0.2
+  '2.1':
+    branch: ???
     git-repository:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0pico:
-    branch: pico_cpl
-    destination: fesom-2.0pico
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-esm_interface:
-    branch: using_esm-interface_yac
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-  2.0-jio:
-    branch: juwels_chunk_io
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    #- https://github.com/FESOM/fesom2.git # Change later to this repository
-  2.0-paleodyn:
-    branch: paleodyn_frozen
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
-    # files will be cleared from the src folder. After Dima's update we will return
-    # fesom-2.0 master branch back and remove this part
-    branch: recom-update
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
 
 install_bins: bin/fesom.x
 git-repository:
@@ -101,6 +69,28 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+
+# Settings for Gent/McWilliams based upon the selected ALE scheme.
+ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+K_gm: 3000.0
+K_hor: 3000.0
+K_gm_max: 2000.0
+
+choose_ALE_scheme:
+    linfs:
+        K_gm: 5000.0
+        K_hor: 5000.0
+    zstar:
+        K_gm_max: 2000.0
+        K_hor: 3000.0
+
+add_namelist_changes:
+    namelist.oce:
+        oce_dyn:
+            K_gm: ${K_gm}
+            K_gm_max: ${K_gm_max}
+        oce_tra:
+            K_hor: ${K_hor}
 
 
 choose_asforcing:

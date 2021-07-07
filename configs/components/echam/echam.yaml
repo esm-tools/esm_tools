@@ -669,17 +669,18 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
-        o18_atmo:
+        o18w_atm:
                 grid: atmo
-        hdo_atmo:
+        hdow_atm:
                 grid: atmo
-        o16_atmo:
+        o16w_atm:
                 grid: atmo
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
+        o18i_atm:
+                grid: atmo
+        hdoi_atm:
+                grid: atmo
+        o16i_atm:
+                grid: atmo
         taux_atm:
                 grid: atmo
         tauy_atm:

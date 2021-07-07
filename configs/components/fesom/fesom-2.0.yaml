@@ -130,6 +130,7 @@ choose_ALE_scheme:
     zstar:
         K_gm_max: 2000.0
         K_hor: 3000.0
+        K_gm: remove_from_namelist
 
 add_namelist_changes:
     namelist.oce:
@@ -356,17 +357,18 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-        o18_feom:
+        o18w_oce:
                 grid: feom
-        hdo_feom:
+        hdow_oce:
                 grid: feom
-        o16_feom:
+        o16w_oce:
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
+        o18i_oce:
+                grid: feom
+        hdoi_oce:
+                grid: feom
+        o16i_oce:
+                grid: feom
         taux_oce:
                 grid: feom
         tauy_oce:

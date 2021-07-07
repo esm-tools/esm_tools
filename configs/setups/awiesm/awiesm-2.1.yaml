@@ -217,9 +217,12 @@ oasis3mct:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
                         - 'snt_atmo <--distwgt-- snt_feom'
-                        - 'o18_atmo <--distwgt-- o18_feom'
-                        - 'hdo_atmo <--distwgt-- hdo_feom'
-                        - 'o16_atmo <--distwgt-- o16_feom'
+                        - 'o18w_atm <--distwgt-- o18w_oce'
+                        - 'hdow_atm <--distwgt-- hdow_oce'
+                        - 'o16w_atm <--distwgt-- o16w_oce'
+                        - 'o18i_atm <--distwgt-- o18i_oce'
+                        - 'hdoi_atm <--distwgt-- hdoi_oce'
+                        - 'o16i_atm <--distwgt-- o16i_oce'
 
                 a2o_flux:
                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'

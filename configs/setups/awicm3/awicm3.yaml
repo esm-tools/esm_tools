@@ -387,13 +387,12 @@ oasis3mct:
                 '*':
                         coupling_target_fields:
                                 rstas.nc:
-                                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
-                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--bicubic-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
-                                        - 'O_2m_temperature:O_2m_humidity:O_10m_u_wind:O_10m_v_wind:O_surf_srad_down:O_surf_trad_down:O_surf_pressure <--bicubic_glb-- A_2m_temperature:A_2m_humidity:A_10m_u_wind:A_10m_v_wind:A_surf_srad_down:A_surf_trad_down:A_surf_pressure' 
+                                        - 'heat_oce:heat_swo:heat_ico <--gauswgt_gss-- A_Qns_oce:A_Qs_all:A_Q_ice'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--gauswgt_gss-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                        - 'O_2m_temperature:O_2m_humidity:O_10m_u_wind:O_10m_v_wind:O_surf_srad_down:O_surf_trad_down:O_surf_pressure <--gauswgt_i-- A_2m_temperature:A_2m_humidity:A_10m_u_wind:A_10m_v_wind:A_surf_srad_down:A_surf_trad_down:A_surf_pressure' 
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
@@ -452,6 +451,18 @@ oasis3mct:
                         postprocessing:
                                 conserv:
                                         method: glbpos
+                                        algorithm: opt
+                gauswgt_gss:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 9
+                                        weight: "2.0"
+                        postprocessing:
+                                conserv:
+                                        method: gsspos
                                         algorithm: opt
                 gauswgt_i:
                         time_transformation: instant

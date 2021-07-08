@@ -1,0 +1,18 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
+
+model1:
+        setup_name: awiesm
+        runscript: awicm-ollie-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism-ollie-initial-yearly.yaml
+        chunk_size: 10
+        chunk_unit: "years"
+

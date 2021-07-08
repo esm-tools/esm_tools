@@ -4,14 +4,14 @@
     use_bethy = .true.
     use_phenology = .true.
     use_albedo = .true.
-    with_yasso = .true.
+    with_yasso = .false.
     with_hd = .true.
     use_roughness_lai = .true.
     use_roughness_oro = .false.
     veg_at_1200 = .false.
     use_dynveg = .true.
     use_disturbance = .true.
-    with_nitrogen = .true.
+    with_nitrogen = .false.
     lcc_forcing_type = 'transitions'
     lcc_scheme = 2
     test_cconservation = .true.

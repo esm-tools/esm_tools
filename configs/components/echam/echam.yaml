@@ -300,6 +300,7 @@ choose_scenario:
                         - spmon
                         - g3bmon
                         - glmon
+                        - tracer # if namelist.echam:submodelctl:lco2=true
                         # necessary for restart:
                         - echam 
                         - accw
@@ -308,6 +309,7 @@ choose_scenario:
                         - spmon
                         - g3bmon
                         - glmon
+                        - tracer # if namelist.echam:submodelctl:lco2=true
                         # necessary for restart:
                         - echam 
                         - accw

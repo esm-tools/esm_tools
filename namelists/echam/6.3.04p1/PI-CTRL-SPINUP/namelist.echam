@@ -125,8 +125,12 @@
     lpost = 0 ! no default jsbach-stream 'veg' output
 /
 &set_stream
+    stream = 'nitro'
+    lpost = 0 ! no jsbach-stream 'nitro' output also if namelist.jsbach:jsbach_ctl:with_nitrogen=true
+/
+&set_stream
     stream = 'yasso'
-    lpost = 0 ! no jsbach-stream 'yasso' output also if namelist.jsbach:yasso=true
+    lpost = 0 ! no jsbach-stream 'yasso' output also if namelist.jsbach:jsbach_ctl:with_yasso=true
 /
 &radctl
     iaero = 3

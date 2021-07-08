@@ -317,8 +317,8 @@ forcing_additional_information:
         Ndepo:
                 - need_timestep_before
                 - need_timestep_after
-
-choose_scenario:
+                
+choose_echam.scenario:
         "PI-CTRL-SPINUP": # reduced echam output defined in PI-CTRL-SPINUP namelist.echam
                 streams:
                         - jsbachmon

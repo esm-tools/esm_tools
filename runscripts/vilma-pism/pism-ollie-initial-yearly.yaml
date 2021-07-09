@@ -46,15 +46,3 @@ pism:
                                 run_only: last_run_in_chunk
 
 
-
-
-                                compute - tidy -
-
-                                couple_in - compute - tidy - couple_out - 
-
-                                couple_in - compute - tidy - couple_out -
-                                                           - postpro1
-                                                           - postpro2
-                                                           - monitoring
-                                                           - ...
-                                

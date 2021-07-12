@@ -18,9 +18,9 @@
     default_output = .false.
 /
 &wisoctl
-    lwiso = .true.
-    lwiso_rerun = .true.
-    nwiso = 3
+    lwiso = .false.
+    lwiso_rerun = .false.
+    nwiso = 0
 /
 &parctl
     nproca = 24

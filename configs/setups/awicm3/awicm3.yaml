@@ -463,11 +463,13 @@ oasis3mct:
         input_files: {}
 
         input_in_work:
+                rmp: rmp_*.nc
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
 
         input_sources:
+                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
                 areas: ${pool_dir}/areas.nc
                 masks: ${pool_dir}/masks.nc
                 grids: ${pool_dir}/grids.nc
@@ -488,6 +490,7 @@ oasis3mct:
                         choose_general.run_number:
                                 1:
                                         add_input_files:
+                                                rmp: rmp
                                                 areas: areas
                                                 masks: masks
                                                 grids: grids

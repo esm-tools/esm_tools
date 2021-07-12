@@ -12,9 +12,27 @@ choose_use_hyperthreading:
         True:
                 hyperthreading_flag: ""
         "0":
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
         False:
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
 
 accounting: true
 

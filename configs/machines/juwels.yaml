@@ -8,6 +8,7 @@ accounting: true
 
 # default settings for compiler, mpi and I/O libs
 compiler_mpi: intel_2019a_impi2019
+useMPI: intelmpi
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
 #compiler_mpi: intel2020_psmpi2020

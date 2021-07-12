@@ -343,6 +343,7 @@ oasis3mct:
                 - fesom
                 - oifs
                 - rnfmap
+                - xios
 
 
         # lresume needs to be true to allow usage of flxatmos and sstocean

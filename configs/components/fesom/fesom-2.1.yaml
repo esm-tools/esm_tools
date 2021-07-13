@@ -150,6 +150,13 @@ log_sources:
         mesh_diag: fesom.mesh.diag.nc
 
 
+# Is it a branchoff experiment?
+branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
+choose_branchoff:
+        true:
+                yearnew: "$(( ${initial_date!syear} - 1 ))"
+        false:
+                yearnew: "${initial_date!syear}"
 
 
 

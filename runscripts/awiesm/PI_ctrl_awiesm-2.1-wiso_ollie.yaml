@@ -14,23 +14,19 @@ echam:
     restart_unit: "years"
     nproca: 24
     nprocb:  24 
-    nprocar: 24 
-    nprocbr: 24
-    lresume: 0
-    ini_parent_exp_id: piw_zstar_swon
-    ini_parent_date: "26811231"
-    ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/echam/"
+    nprocar: 0 
+    nprocbr: 0 
     namelist_changes:
             namelist.echam:
                     parctl:
                             nproca: 24 
                             nprocb: 24
-                            nprocar: 24 
-                            nprocbr: 24
+                            nprocar: 0 
+                            nprocbr: 0 
                     runctl:
                             default_output: True
                     radctl:
-                            lrad_async: True 
+                            lrad_async: False 
                     wisoctl:
                             lwiso_rerun: False 
                             lwiso: False
@@ -54,10 +50,6 @@ fesom:
     restart_rate: 1
     restart_unit: "y"
     restart_first: 1
-    lresume: 0 
-    ini_parent_exp_id: piw_zstar_swon 
-    ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/fesom/"
-    ini_parent_date: "2681-12-31"
     namelist_changes:
         namelist.config:
             paths:
@@ -74,8 +66,3 @@ jsbach:
         # NOTE: This will be incorporated into the pool at a later stage
         jsbach_1850: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
 
-oasis3mct:
-    lresume: 0
-    ini_parent_exp_id: "piw_zstar_swon"
-    ini_parent_date: "26811231"
-    ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/oasis3mct/"

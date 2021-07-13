@@ -21,9 +21,9 @@ Sice=4.0               ! Ice salinity 3.2--5.0 ppt.
 h0=.5                  ! Lead closing parameter [m] 
 emiss_ice=0.97         ! Emissivity of Snow/Ice,
 emiss_wat=0.97         ! Emissivity of open water
-! TCO159
-albsn=0.77             ! Albedo: frozen snow  (boardband albedos must be lower for AWICM3 to account for lack for melt ponds etc.)
-albsnm=0.65            !         melting snow
+! TCO159 AWICM3
+albsn=0.77             ! Albedo: frozen snow  
+albsnm=0.72            !         melting snow (For NH -0.12 in ice_thero_cpl.F90 to account for meltponds)
 albi=0.65              !         frozen ice
 albim=0.55             !         melting ice
 albw=0.066             !         open water

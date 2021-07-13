@@ -1,0 +1,42 @@
+nocycles: 1
+
+choose_general.nyear:
+        0:
+                choose_general.nmonth:
+                        0:
+                                choose_general.nday:
+                                        0:
+                                                dont: know
+                                        "*": 
+                                                actual_restart: daily
+                        "*":
+                                actual_restart: monthly
+        "*":
+                actual_restart: yearly
+
+choose_actual_restart:
+        yearly:
+                choose_restart_unit: 
+                     
+                        "months":
+                                nocycles: $(( ${general.nyear} / ${restart_rate} * 12 ))
+                        "years":
+                                nocycles: $(( ${general.nyear} / ${restart_rate} ))
+        monthly:
+                choose_restart_unit: 
+                        "months":
+                                nocycles: $(( ${general.nmonths} / ${restart_rate} ))
+                        
+        daily:
+                choose_restart_unit:
+                        "days":
+                                nocycles: $(( ${general.ndays} / ${restart_rate} ))
+
+choose_nocycles:
+        1:
+                do: nothing
+        add_namelist_changes:
+                namelist.echam:
+                        runctl:
+                                nocycles: ${nocycles}
+

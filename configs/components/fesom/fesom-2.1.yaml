@@ -163,7 +163,7 @@ choose_branchoff:
 namelist_changes:
         namelist.config:
                 clockinit:
-                        yearnew: "${initial_date!syear}"
+                        yearnew: "${yearnew}"
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:

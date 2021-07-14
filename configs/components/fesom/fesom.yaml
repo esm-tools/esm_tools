@@ -227,7 +227,7 @@ choose_lresume:
                                 add_namelist_changes:
                                         namelist.config:
                                                 clockinit:
-                                                        yearnew: "${first_initial_year}"
+                                                        yearnew: "$(( ${first_initial_year} - 1))"
 
 
 

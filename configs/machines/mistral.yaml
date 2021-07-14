@@ -61,6 +61,8 @@ module_actions:
         - "load autoconf/2.69"
         - "load nco"
         - "load cdo"
+        - "load libaec" # if namelist.echam:runctl:OUT_ZTYPE=1 -> szip compression for grib output -> needs szlib or libaec
+        - "list"
 
 export_vars:
         #########################################################################

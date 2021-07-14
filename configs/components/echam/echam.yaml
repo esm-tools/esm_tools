@@ -530,6 +530,7 @@ streams:
         - sp6h
         - glim
         - spim
+        - aeropt
 
 streamsnc:
         - aclcim

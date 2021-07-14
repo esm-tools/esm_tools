@@ -38,10 +38,10 @@ compile_infos:
             destination: echam-6.3.05p2
           6.3.05p2_untouched:
             branch: 6.3.05p2_untouched
-            destination: echam-6.3.05p2-untouched
+            destination: echam-6.3.05p2_untouched
           6.3.05p2_untouched_cplfesom:
             branch: 6.3.05p2_untouched_cplfesom
-            destination: echam-6.3.05p2-untouched-cplfesom
+            destination: echam-6.3.05p2_untouched_cplfesom
           6.3.05p2-concurrent_radiation:
             branch: concurrent_radiation
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -119,7 +119,7 @@ ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
 
 pseudo_start_date: ${start_date}
-pseudo_end_date: ${next_date}
+pseudo_end_date: $((${next_date} + 1years))
 pseudo_resume_date: ${start_date}
 #year_before_date: $(( ${start_date} - "1 years" )) # irgendwie so
 #year_before_length: $((${start_date} - ${year_before_date} ))
@@ -189,26 +189,47 @@ choose_resolution:
 choose_version:
         6.3.04p1:
                 repo_tag: 6.3.04p1
+                jsbachversion: "3.20"
                 dataset: r0007
         6.3.04p1-paleodyn:
                 repo_tag: 6.3.04p1
+                jsbachversion: "3.20"
                 dataset: r0007
         6.3.04p1-esm_interface:
                 dataset: r0007
+                jsbachversion: "3.20"
         6.3.04p1-esm_interface-yac:
                 dataset: r0007
+                jsbachversion: "3.20"
         6.3.05p2:
+                jsbachversion: "3.20p1"
                 repo_tag: 6.3.05p2
                 dataset: r0007
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
+                jsbachversion: "3.20p1"
                 repo_tag: not_set
                 dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
 
+        6.3.05p2_untouched:
+                jsbachversion: "3.20p1"
+                repo_tag: not_set
+                dataset: r0007
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+        6.3.05p2_untouched_cplfesom:
+                jsbachversion: "3.20p1"
+                repo_tag: not_set
+                dataset: r0007
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+
+
         6.3.05p2-concurrent_radiation-paleodyn:
+                jsbachversion: "3.20p1"
                 choose_computer.name:
                     mistral:
                         compiletime_environment_changes:
@@ -240,6 +261,7 @@ choose_version:
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-concurrent_radiation:
+                jsbachversion: "3.20p1"
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:

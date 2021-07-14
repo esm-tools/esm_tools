@@ -21,8 +21,8 @@ cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
 dynamic_vegetations: False
 
+version: ${echam.jsbachversion}
 
-version: "3.20"
 dataset: r0009
 
 config_sources:

@@ -16,6 +16,8 @@ available_versions:
 - '2.0'
 - '2.0-r' # OG: temporarily here
 - '2.0-jio'
+- '2.1'
+
 choose_version:
   '1.4-recom-awicm':
     destination: fesom-1.4

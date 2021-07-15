@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <context id="ifs" src="./context_ifs.xml" />
+  <context id="ifs" src="./context.xml" />
 
   <context id="xios">
     <variable_definition>

@@ -117,6 +117,7 @@ choose_resolution:
         CAVCORE2:
                 nx: 72411
 
+ini_restart_date_in: ${parent_date!syear!smonth!sday}
 
 restart_in_files:
         oce_restart: oce_restart
@@ -128,9 +129,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${restart_date_in}.oce.diag.nc
+        oce_restart: fesom.${restart_date_in}.oce.nc
+        ice_restart: fesom.${restart_date_in}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -221,13 +222,16 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
 choose_branchoff:
         true:
                 yearnew: "$(( ${initial_date!syear} - 1 ))"
+                restart_date_in: ${ini_restart_date_in}
         false:
                 yearnew: "${initial_date!syear}"
+                restart_date_in: ${parent_date!syear!smonth!sday}
 
 
 

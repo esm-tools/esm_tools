@@ -39,6 +39,7 @@ metadata:
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 data_path: ""
+ini_restart_date_in: ${parent_date!syear!smonth!sday}
 
 scenario: "preindustrial"
 
@@ -103,6 +104,13 @@ choose_lresume:
                         namelist.recom:
                                 pavariables:
                                         recom_restart: false
+# Is it a branchoff experiment?
+branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
+choose_branchoff:
+        true:
+                restart_date_in: ${ini_restart_date_in}
+        false:
+                restart_date_in: ${parent_date!syear!smonth!sday}
 
 config_files:
         recom:  recom
@@ -118,7 +126,7 @@ restart_in_in_work:
         bio_restart: fesom.${parent_date!syear}.bio.nc
 
 restart_in_sources:
-        bio_restart: fesom.${parent_date!syear!smonth!sday}.bio.nc
+        bio_restart: fesom.${restart_date_in}.bio.nc
 
 restart_out_files:
         bio_restart: bio_restart

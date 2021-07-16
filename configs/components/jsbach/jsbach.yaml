@@ -170,6 +170,10 @@ choose_version:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
                                         cover_fract: cover_fract_HIST
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976

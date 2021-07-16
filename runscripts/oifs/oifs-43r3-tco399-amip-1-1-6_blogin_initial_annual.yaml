@@ -1,0 +1,52 @@
+general:
+        use_venv: False
+        verbose: False
+        
+        setup_name: oifs
+        compute_time: "4:00:00"
+        account: shk00018
+        initial_date: "1979-01-01T00:00:00"
+        final_date: "2015-01-01T00:00:00"
+        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-slask/
+        nyear: 0
+        nmonth: 1
+        nday: 0
+        restart_rate: 1
+        restart_unit: days 
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        time_step: 900.0
+        pool_dir: /scratch/usr/shkjocke/foci_input2
+        input_dir: ${pool_dir}/OPENIFS43R3-TCO399/
+        rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
+        vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
+        clim_dir: ${pool_dir}/OPENIFS43R3-TCO399/399_4/
+        ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
+        cmip6_data_dir: ${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/
+        mip: cmip6
+        scenario: historical 
+        icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO399-AMIP/
+        icmcl_file: ICMCLh9twINIT_AMIP-1-1-6_19790101_20171231_new
+        prepifs_expid: h9tw 
+        prepifs_startdate: 20080101
+        resolution: TCO399
+        levels: L91
+        lresume: 0
+        post_processing: 0
+        nproc: 1536
+        #nprocb: 1
+        perturb: 0
+        ensemble_id: 1
+
+xios:
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO399/output_1ts+3hr+6hrPLev+1dayPV+Amon
+        # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO399/output_3h+6hrLev
+        # 1m surface + pressure levels
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO399/output_1m_sfc_pl
+        with_model: oifs
+        nproc: 192
+        #nprocb: 1

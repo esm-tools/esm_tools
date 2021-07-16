@@ -1,14 +1,17 @@
 general:
     setup_name: "awicm3"
     version: "1.0-frontiers"
-    compute_time: "00:30:00"
+    compute_time: "08:00:00"
     initial_date: "2000-01-01"
-    final_date: "2000-01-01"
+    final_date: "2050-01-01"
     taskset: true
     base_dir: "/work/ollie/jstreffi/runtime/awicm-3.1/"
-    nday: 
-    nmonth: 4
-    nyear: 0
+    nday: 0
+    nmonth: 0
+    nyear: 10
+
+computer:
+    heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false
@@ -18,31 +21,16 @@ fesom:
     resolution: "CORE2"
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
     mesh_dir: "/work/ollie/projects/clidyn/FESOM2/meshes/core2/"
-    restart_rate: 4
-    restart_unit: "m"
-    restart_first: 4
+    restart_rate: 10
+    restart_unit: "y"
+    restart_first: 10
     lresume: false
-    time_step: 1800
+    time_step: 2400
     nproc: 144
     #add_namelist_changes:
-    #    namelist.io:
-    #        nml_list:
-    #            io_list: [
-    #                'salt    ',1, 's', 4,
-    #                'temp      ',1, 's', 4,
-    #                'runoff    ',1, 's', 4,
-    #                'evap      ',1, 's', 4,
-    #                'subl      ',1, 's', 4,
-    #                'prec      ',1, 's', 4,
-    #                'swr      ',1, 's', 4,
-    #                'lwr      ',1, 's', 4,
-    #                'qsi       ',1, 's', 4,
-    #                'qso       ',1, 's', 4,
-    #                'alb       ',1, 's', 4,
-    #                'ist       ',1, 's', 4,
-    #                'hsn       ',1, 's', 4,
-    #                'u         ',1, 's', 4,
-    #                'v         ',1, 's', 4,]
+    #        namelist.ice:
+    #                ice_dyn:
+    #                        whichEVP: 0
 
 oifs:
     resolution: "TCO159"
@@ -57,5 +45,4 @@ oifs:
 
 oasis3mct:
     lresume: true # Set to false to generate the rst files for first leg
-    time_step: 3600
-    pool_dir: "/work/ollie/jstreffi/input/oasis_experimental/cy43r3/TCO159-CORE2/"
+    time_step: 7200

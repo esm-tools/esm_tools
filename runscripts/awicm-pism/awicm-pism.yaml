@@ -7,7 +7,7 @@ general:
 model1:
         setup_name: awiesm
         runscript: awicm-ollie-initial-yearly.yaml
-        chunk_size: 1
+        chunk_size: 2
         chunk_unit: "years"
 
 model2:

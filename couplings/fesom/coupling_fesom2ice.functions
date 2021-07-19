@@ -509,7 +509,8 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 #
 # HOT fix, part 2/2
 #
-	if [ ${FLAG_SWITCHED_PYTHON} -eq 1 ] ; then
+        FLAG_SWITCHED_PYTHON=0
+        if [ ${FLAG_SWITCHED_PYTHON} -eq 1 ] ; then
 	    echo "     ## DEactivate HOT fix for the ${module_python2} vs ${module_python3} problem"
 	    echo "     ## unload ${module_python2} and load ${module_python3}"
 	    echo "     ## HOT fix for the ${module_python2} (needed for pyfesom) vs ${module_python3} problem"

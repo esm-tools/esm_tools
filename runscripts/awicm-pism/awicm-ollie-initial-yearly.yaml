@@ -2,7 +2,7 @@ general:
     setup_name: "awiesm"
     compute_time: "01:00:00"
     initial_date: "2000-01-01"
-    final_date: "2001-12-31"
+    final_date: "2010-12-31"
     project_base: !ENV ${PROJECT_BASE}
     base_dir: "${project_base}/experiments/"
     nmonth: 0
@@ -18,13 +18,34 @@ awiesm:
 
 echam:
     version: "6.3.05p2-concurrent_radiation-paleodyn"
-    restart_unit: "months"
-    restart_rate: 12
+    restart_unit: "years"
+    restart_rate: 1
     nproca: 24
     nprocb: 24
     lresume: false
     nprocar: "remove_from_namelist"
     nprocbr: "remove_from_namelist"
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2echam.functions
+                    script_dir: ${project_base}/software/github.com/esm-tools/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: ice2echam
+                    env_preparation: env_echam.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: ${project_base}/software/github.com/esm-tools/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: echam2ice
+                    env_preparation: env_echam.py
+                    run_only: last_run_in_chunk
 
 fesom:
     version: "2.0"
@@ -34,8 +55,8 @@ fesom:
     mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
     iceberg_dir: "/home/ollie/lackerma/iceberg/ib_10000/"
     use_icebergs: false
-    restart_rate: 12
-    restart_unit: "m"
+    restart_rate: 1
+    restart_unit: "y"
     restart_first: 1
     nproc: 288
     lresume: 0

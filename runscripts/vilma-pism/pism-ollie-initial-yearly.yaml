@@ -3,7 +3,8 @@ general:
         compute_time: "00:02:00"
         initial_date: "2000-01-01"
         final_date: "2001-12-31"
-        base_dir: /work/ollie/dbarbi/experiments
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
         nyear: 1
         #clean_old_rundirs_keep_every: 5
         #clean_old_rundirs_except: 2
@@ -44,17 +45,3 @@ pism:
                                 call_function: pism2solidearth
                                 env_preparation: env_pism.py
                                 run_only: last_run_in_chunk
-
-
-
-
-                                compute - tidy -
-
-                                couple_in - compute - tidy - couple_out - 
-
-                                couple_in - compute - tidy - couple_out -
-                                                           - postpro1
-                                                           - postpro2
-                                                           - monitoring
-                                                           - ...
-                                

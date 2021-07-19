@@ -456,8 +456,7 @@ next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
 # @JOAKIM: do we need a switch here?
-custop: "h${oifs.next_step}"
-#custop: "t${oifs.next_step}" # TODO: delete this comment
+custop: "t${oifs.next_step}" # TODO: delete this comment
 nfrres: 1
 #nfrres: "${next_step}" # TODO: delete this comment
 
@@ -850,18 +849,13 @@ choose_version:
                                         NFRRES: ${nfrres}
                                         NRESTS:
                                                 - -1
-                                                - $(( -${simulation_length_seconds} / ${time_step} ))
-
-                                        #NRESTS(1): -1
-                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-
+                                                - $(( -${simulation_length_seconds} / 3600 ))
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
-
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "${custop}"
+                                        CUSTOP: "t${oifs.next_step}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 

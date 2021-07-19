@@ -111,7 +111,7 @@ Contribution to Other Packages
 
 4. Follow steps 5-7 in :ref:`contributing:Contribution to esm_tools Package`.
 
-Get Back to the Standard Fistribution
+Get Back to the Standard Distribution
 -------------------------------------
 
 Once finished with the contribution, you might want to get back to the standard

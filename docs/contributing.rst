@@ -10,7 +10,7 @@ helps, and credit will always be given.
 You can contribute in many ways:
 
 Types of Contributions
-----------------------
+======================
 
 Report Bugs
 ~~~~~~~~~~~
@@ -55,7 +55,7 @@ If you are proposing a feature:
   are welcome :)
 
 Get Started!
-------------
+============
 
 Ready to contribute? Here's how to set up `esm-tools` packages for local development (see :ref:`packages:Python Packages` for a list of available packages). Note that the procedure of contributing to the `esm_tools` package (see :ref:`contributing:Contribution to esm_tools Package`) is different from the one to contribute to the other packages (:ref:`contributing:Contribution to other Packages`).
 
@@ -111,8 +111,27 @@ Contribution to Other Packages
 
 4. Follow steps 5-7 in :ref:`contributing:Contribution to esm_tools Package`.
 
+Get Back to the Standard Fistribution
+-------------------------------------
+
+Once finished with the contribution, you might want to get back to the standard
+non-editable mode version of the package in the ``release`` branch. To do that
+please follow these steps:
+
+1. Uninstall all `ESM-Tools` packages (:ref:`Installation:Uninstall ESM-Tools`). This
+   will not remove the folder where you installed the package in editable mode, just
+   delete the links to that folder.
+
+2. Navigate to the ``esm_tools`` folder and run the ``./install.sh`` script.
+
+3. Check that your package is now installed in the folder
+   ``~/.local/lib/python3.<version>/site-packages/``.
+
+.. Note:: If the package is still shows the path to the editable-mode folder, try
+   running ``pip install --use-feature=in-tree-build .`` from ``esm_tools``.
+
 Pull Request Guidelines
------------------------
+=======================
 
 Before you submit a pull request, check that it meets these guidelines:
 
@@ -127,7 +146,7 @@ Before you submit a pull request, check that it meets these guidelines:
    and make sure that the tests pass for all supported Python versions.
 
 Deploying
----------
+=========
 
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).

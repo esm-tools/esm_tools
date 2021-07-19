@@ -495,25 +495,39 @@ forcing_additional_information:
         aerocoarse:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         aerofin:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         aerofarir:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         ozone:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         # deniz: added these 3 variables. They were present in the esm-tools r4
         volcanir:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         volcsw:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         swflux:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
                 
                 
 

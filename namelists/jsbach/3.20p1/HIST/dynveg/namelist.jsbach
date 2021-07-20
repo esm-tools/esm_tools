@@ -39,10 +39,4 @@
     file_name = 'lightning.nc'
     action_cycle = 'all'
 /
-&input_ctl
-    ! only read first record of population_density file (i.e. year 1850)
-    var_name = 'population_density'
-    dt_update = 0
-    init_rec = 1
-/
 

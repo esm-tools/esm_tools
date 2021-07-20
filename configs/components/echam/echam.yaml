@@ -602,6 +602,7 @@ streams:
         - accw
         - aclcim
         - aeropt
+        - cfdiag
         - co2
         - cosp
         - echam

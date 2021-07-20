@@ -126,9 +126,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${parent_date!syear}.oce.diag.nc
+        oce_restart: fesom.${parent_date!syear}.oce.nc
+        ice_restart: fesom.${parent_date!syear}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -141,9 +141,9 @@ restart_out_in_work:
         ice_restart: fesom.${end_date!syear}.ice.nc
 
 restart_out_sources:
-        oce_diag: fesom.${end_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${end_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${end_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${end_date!syear}.oce.diag.nc
+        oce_restart: fesom.${end_date!syear}.oce.nc
+        ice_restart: fesom.${end_date!syear}.ice.nc
 
 
 
@@ -227,7 +227,7 @@ choose_lresume:
                                 add_namelist_changes:
                                         namelist.config:
                                                 clockinit:
-                                                        yearnew: "${first_initial_year}"
+                                                        yearnew: "$(( ${first_initial_year} - 1))"
 
 
 

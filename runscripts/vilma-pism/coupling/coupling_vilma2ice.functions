@@ -35,11 +35,11 @@ function iterative_coupling_vilma_remove_unchanged_files_for_safety {
 	fi
 
 
-	if [[ -e  "${DATA_DIR_vilma}/dflag.nc" ]]
+	if [[ -e  "${RESTART_DIR_vilma}/dflag.nc" ]]
 	then
-		echo "   - ${DATA_DIR_vilma}/dflag.nc"
-		cp ${DATA_DIR_vilma}/dflag.nc ${DATA_DIR_vilma}/dflag.nc_unchanged_${RUN_DATE_STAMP}
-		rm ${DATA_DIR_vilma}/dflag.nc
+		echo "   - ${RESTART_DIR_vilma}/dflag.nc"
+		cp ${RESTART_DIR_vilma}/dflag.nc ${RESTART_DIR_vilma}/dflag.nc_unchanged_${RUN_DATE_STAMP}
+		rm ${RESTART_DIR_vilma}/dflag.nc
 	fi
 	    
 	if [[ -e  "${EISLASTCONF_vilma}" ]]
@@ -68,7 +68,7 @@ function iterative_coupling_vilma_ice_make_forcing {
 	echo "Generating ${COUPLE_DIR}/bedrock_change.nc..."
         ice_bedrock_change_file=${COUPLE_DIR}/bedrock_change.nc
 
-        cp ${DATA_DIR_vilma}/rsl.nc ${COUPLE_DIR}/new_bedrock.nc
+        cp ${OUTDATA_DIR_vilma}/out/rsl.nc ${COUPLE_DIR}/new_bedrock.nc
 
 
         # Subtract the previous bedrock conditions to obtain the change

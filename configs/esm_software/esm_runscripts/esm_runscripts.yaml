@@ -31,7 +31,10 @@ choose_job_type:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
-        
+
+        assemble:
+                recipe:
+                        - "assemble"
 
         prepexp:
                 recipe:

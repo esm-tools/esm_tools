@@ -1,5 +1,6 @@
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
+    print (config)
     environment_dict = {
             "PISM_TO_SOLID_EARTH": 1,
             "SOLID_EARTH_TO_PISM": 1,
@@ -23,11 +24,12 @@ def prepare_environment(config):
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "NYEAR_pism_standalone": config["general"]["nyear"],
             "latest_ex_file_pism": config["pism"]["outdata_targets"]["ex_file"],
-            "latest_restart_file_pism": config["pism"]["restart_in_in_work"]["restart"],
-            "restart_file_pism": config["pism"]["restart_in_in_work"]["restart"],
             "RUN_DATE_STAMP": config["general"]["run_datestamp"],
             "LAST_RUN_DATE_STAMP": config["general"]["last_run_datestamp"],
             }
+
+    if config["general"]["run_number"] > 1:
+        environment_dict["latest_restart_file_pism"] = config["pism"]["restart_in_targets"]["restart"]
     print (environment_dict)
     return environment_dict
 

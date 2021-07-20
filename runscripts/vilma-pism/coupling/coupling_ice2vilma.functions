@@ -94,7 +94,7 @@ function iterative_coupling_ice_vilma_make_dflag {
                 ncap2 -s "flg2=mask*0; where(mask==${VALUE_LAND_ice}){flg2=0;} where(mask==${VALUE_GROUNDED_ice}){flg2=2;} where((mask==${VALUE_GROUNDED_ice}) && (${ice_topography_name} < 0)){flg2=3;} where(mask==${VALUE_FLOATING_ice}){flg2=4;} where(mask==${VALUE_OCEAN_ice}){flg2=1;}" ${COUPLE_DIR}/tmp_${ice_mask_name}.nc ${COUPLE_DIR}/dflag-tmp_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
 
 # Import the existing dflag file that is to be changed
-                cp ${DATA_DIR_vilma}/dflag.nc_unchanged_${LAST_RUN_DATE_STAMP} ${COUPLE_DIR}/to_merge.nc
+                cp ${RESTART_DIR_vilma}/dflag.nc_unchanged_${LAST_RUN_DATE_STAMP} ${COUPLE_DIR}/to_merge.nc
                 ncrename -d epoch,time -v epoch,time ${COUPLE_DIR}/to_merge.nc
                 ncap2 -s "time=time * 1000." ${COUPLE_DIR}/to_merge.nc -A ${COUPLE_DIR}/to_merge.nc
 
@@ -117,8 +117,8 @@ function iterative_coupling_ice_vilma_make_dflag {
                 ncatted -O -a reference,flg,d,, ${COUPLE_DIR}/dflag-tmp3_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
                 ncks -v flg ${COUPLE_DIR}/dflag-tmp3_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc
 
-                cp ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${DATA_DIR_vilma}/dflag.nc
-                cp ${DATA_DIR_vilma}/dflag.nc ${DATA_DIR_vilma}/dflag.nc_changed_${RUN_DATE_STAMP}
+                cp ${COUPLE_DIR}/dflag_vilma_${CURRENT_YEAR_ice}-${END_YEAR_ice}.nc ${RESTART_DIR_vilma}/dflag.nc
+                cp ${RESTART_DIR_vilma}/dflag.nc ${RESTART_DIR_vilma}/dflag.nc_changed_${RUN_DATE_STAMP}
 
 
 # Clean up

@@ -24,8 +24,6 @@ emiss_wat=0.97         ! Emissivity of open water
 ! TCO159 AWICM3
 albsn=0.78             ! Albedo: frozen snow  
 albsnm=0.74            !         melting snow 
-albsnm_sh=0.74         !         melting snow southern hemisphere
-albsnm_nh=0.62         !         melting snow northern hemisphere accounting for meltponds
 albi=0.68              !         frozen ice
 albim=0.6              !         melting ice
 albw=0.066             !         open water

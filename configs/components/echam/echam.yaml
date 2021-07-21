@@ -290,6 +290,7 @@ streams:
         - glmon
         - spmon
         - tracermon
+
 streamsnc:
         - accw
         - aclcim
@@ -307,6 +308,7 @@ streamsnc:
         - glim
         - rad
         - surf
+        - jsbid
         - sp6h
         - spim
         - tdiag
@@ -317,6 +319,12 @@ streamsnc:
         - glmon
         - spmon
         - tracermon
+        - sp
+        - gl
+        - g3b
+        - scm
+        - ma
+        
 
 choose_scenario:
         "PI-CTRL-SPINUP":
@@ -595,76 +603,9 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-                
-                
-
-streams:
-        - accw
-        - aclcim
-        - aeropt
-        - cfdiag
-        - co2
-        - cosp
-        - echam
-        - forcing
-        - g3b1hi
-        - g3bday
-        - g3bid
-        - g3bim
-        - glday
-        - glim
-        - rad
-        - surf
-        - sp6h
-        - spim
-        - tdiag
-        - tracer # if namelist.echam:submodelctl:lco2=true
-        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used
-        - co2mon
-        - g3bmon
-        - glmon
-        - spmon
-        - tracermon
-
-streamsnc:
-        - accw
-        - aclcim
-        - aeropt
-        - cfddiag
-        - co2
-        - cosp
-        - echam
-        - forcing
-        - g3b1hi
-        - g3bday
-        - g3bid
-        - g3bim
-        - glday
-        - glim
-        - rad
-        - surf
-        - jsbid
-        - sp6h
-        - spim
-        - tdiag
-        - tracer # if namelist.echam:submodelctl:lco2=true
-        # reduced echam it PI-CTRL-SPINUP/namelist.echam is used
-        - co2mon
-        - g3bmon
-        - glmon
-        - spmon
-        - tracermon
-        - sp
-        - gl
-        - g3b
-        - scm
-        - ma
-        
 
           #prev_date: 18500101
 # BUG: PG Why do we need lists here?
-
-
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 

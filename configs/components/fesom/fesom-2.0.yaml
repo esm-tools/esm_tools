@@ -118,23 +118,46 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-
-restart_in_in_workdir:
-        oce_restart: fesom.${parent_date!syear}.oce.restart
-        ice_restart: fesom.${parent_date!syear}.ice.restart
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
+restart_in_in_work:
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 restart_in_sources:
-        oce_restart: fesom.${parent_date!syear}.oce.restart
-        ice_restart: fesom.${parent_date!syear}.ice.restart
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
-        oce_restart: fesom.${end_date!syear}.oce.restart
-        ice_restart: fesom.${end_date!syear}.ice.restart
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
+restart_out_in_work:
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 restart_out_sources:
-        oce_restart: fesom.${end_date!syear}.oce.restart
-        ice_restart: fesom.${end_date!syear}.ice.restart
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 
 outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
 
@@ -155,6 +178,15 @@ log_sources:
         clock: fesom.clock
         mesh_diag: fesom.mesh.diag.nc
 
+file_movements:
+        restart_in:
+            all_directions: move
+            #init_to_exp: copy
+            #exp_to_run: move
+            #run_to_work: move
+            #work_to_run: move
+        restart_out:
+            all_directions: move
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"

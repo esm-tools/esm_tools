@@ -166,7 +166,6 @@ choose_version:
                                 add_input_files:
                                         jsbach: jsbach_1850
                                 forcing_files:
-                                        Ndepo: Ndepo_1850
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
                                         cover_fract: cover_fract_HIST

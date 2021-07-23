@@ -604,9 +604,6 @@ forcing_additional_information:
                 - need_2years_before
                 - need_2years_after
 
-          #prev_date: 18500101
-# BUG: PG Why do we need lists here?
-
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
 ignore_files:

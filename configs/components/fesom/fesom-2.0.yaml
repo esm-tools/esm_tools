@@ -132,8 +132,8 @@ restart_in_in_work:
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
-        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*
         fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 
@@ -147,15 +147,15 @@ restart_out_files:
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
-        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*
         fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
-        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*
         fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*
 
@@ -180,11 +180,11 @@ log_sources:
 
 file_movements:
         restart_in:
-            all_directions: move
-            #init_to_exp: copy
-            #exp_to_run: move
-            #run_to_work: move
-            #work_to_run: move
+            #all_directions: move
+            init_to_exp: copy
+            exp_to_run: move
+            run_to_work: move
+            work_to_run: move
         restart_out:
             all_directions: move
 

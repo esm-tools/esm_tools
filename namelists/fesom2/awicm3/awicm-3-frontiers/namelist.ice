@@ -22,10 +22,10 @@ h0=.5                  ! Lead closing parameter [m]
 emiss_ice=0.97         ! Emissivity of Snow/Ice,
 emiss_wat=0.97         ! Emissivity of open water
 ! TCO159 AWICM3
-albsn=0.78             ! Albedo: frozen snow  
-albsnm=0.74            !         melting snow 
-albi=0.68              !         frozen ice
-albim=0.6              !         melting ice
+albsn=0.81             ! Albedo: frozen snow  
+albsnm=0.77            !         melting snow (in NH -0.12)
+albi=0.7               !         frozen ice
+albim=0.68             !         melting ice (in NH -0.12)
 albw=0.066             !         open water
 ! TL159
 !albsn=0.72             ! Albedo: frozen snow  (boardband albedos must be lower for AWICM3 to account for lack for melt ponds etc.)

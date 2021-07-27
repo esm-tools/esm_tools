@@ -42,6 +42,9 @@ echam2ice() {
         iterative_coupling_echam6_ice_write_grid
         iterative_coupling_echam6_ice_write_names
 
+        echo "*** build dynamic link of ${RESTART_DIR_echam}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_echam.nc"
+        ln -s ${RESTART_DIR_echam}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_echam.nc ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+
         echo "                 *** F I N I S E D      echam2ice *** "
         echo "                =================================================================="
 }

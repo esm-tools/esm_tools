@@ -11,8 +11,8 @@ general:
         standalone: True
 
         include_models:
-                - recom
                 - fesom
+                - recom
 
         choose_version:
           '2.0':

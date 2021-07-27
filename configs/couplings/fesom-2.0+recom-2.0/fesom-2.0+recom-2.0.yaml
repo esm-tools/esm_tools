@@ -1,5 +1,6 @@
 components:
-  - recom-2.0-r
   - fesom-2.0-r
+  - recom-2.0-r
+preserve_order: True
 coupling_changes:
    - sed -i '/RECOM_COUPLED/s/OFF/ON/g' fesom-2.0-r/CMakeLists.txt

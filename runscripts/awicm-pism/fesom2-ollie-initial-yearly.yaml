@@ -1,0 +1,43 @@
+general:
+        setup_name: fesom
+        compute_time: "00:45:00"
+        initial_date: '2001-01-01'
+        final_date: '2002-12-31'
+        base_dir: "/work/ollie/lackerma/awicm_pism_tests"
+        nyear: 1
+        nmonth: 0
+
+
+fesom:
+        version: 2.0
+        model_dir: "/home/ollie/lackerma/model_codes/awiesm-2.1/fesom-2.0/"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'y'
+        post_processing: 0
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                    couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: coupling_ice2fesom.functions
+                        script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                        call_function: ice2fesom
+                        env_preparation: env_fesom.py
+                        run_only: first_run_in_chunk
+                        #skip_chunk_number: 1
+
+                    couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_fesom2ice.functions
+                        script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                        call_function: fesom2ice
+                        env_preparation: env_fesom.py
+                        run_only: last_run_in_chunk

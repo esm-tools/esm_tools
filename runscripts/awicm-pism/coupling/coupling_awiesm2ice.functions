@@ -1,0 +1,7 @@
+#!/bin/ksh
+awiesm2ice() {
+    echam2ice
+    fesom2ice
+
+    ln -s ${RESTART_DIR_echam}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_echam.nc ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+}

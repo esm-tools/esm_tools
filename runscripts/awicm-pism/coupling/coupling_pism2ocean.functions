@@ -3,10 +3,6 @@
 
 function pism2ocean {
     echo " *** S T A R T I N G    pism2ocean *** (PISM version ${VERSION_pism})"
-    
-    #LA DEBUBG: Just for testing -----------------------------
-    #return
-    # --------------------------------------------------------
 
     . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
@@ -79,7 +75,7 @@ function pism2ocean {
 	    ;;
 	"BASALSHELF_WATER_ICEBERG_MODEL")
             #iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
-            #iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+            iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
 	    ;;
         *)
             echo " UNKNOWN mass balance selected!"
@@ -220,10 +216,9 @@ function iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing {
 ########################################################################
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # iceberg coupling LA
-    latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-    if [[ -f ${latest_pism_output} ]]; then
-        #pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
-        pism_discharge_file=${latest_pism_output}
+    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
+        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}
     fi

@@ -2,10 +2,6 @@
 
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***)"
-    
-    #LA DEBUBG: Just for testing -----------------------------
-    #return
-    # --------------------------------------------------------
 
     . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions

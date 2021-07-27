@@ -1012,6 +1012,26 @@ ic_atm2pism_ablation_pdd_set_options_atmo_given() {
             ${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)
         echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
         >> ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_PISM}.dat
+		
+        #        ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+        #    echo "pism_set_forcing_file___atmosphere_lapse_rate=${COUPLE_DIR}/surface_altitude_coarse_resolution.nc" >> \
+	#	${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+	#else
+        #    echo "pism_set_coupler___atmosphere=given" >> \
+	#	${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+        #fi
+        #
+        #echo "pism_set_coupler___surface=pdd" \
+        #>> ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+
+        #echo "pism_set_forcing_file___atmosphere_given=${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc" \
+        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+
+        #number_of_timesteps_in_atmo_given_file=$(cdo -s \
+        #    nyear \
+        #    ${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc)
+        #echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
+        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
 }
 
 
@@ -1152,7 +1172,11 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
  xlen                                  = ${number_of_x_points}
  ylen                                  = ${number_of_y_points}
  tlen                                  = ${number_of_timesteps}
+<<<<<<< HEAD
  filename_in                           = '${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_PISM}.nc'
+=======
+ filename_in                           = '${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc'
+>>>>>>> ac9d66fc262682021c8236c613171a6c074a4233
  precipitation_varname                 = 'precipitation'
  temperature_varname                   = 'air_temp'
  shortwave_radiation_downward_varname  = 'swd'

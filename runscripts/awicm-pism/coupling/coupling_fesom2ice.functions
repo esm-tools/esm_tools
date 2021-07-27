@@ -3,10 +3,6 @@
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
-    
-    #LA DEBUBG: Just for testing -----------------------------
-    #return
-    # --------------------------------------------------------
 
     . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
@@ -549,7 +545,7 @@ function fesom_ice_concatenate_files {
 	# New cdo versions sometimes do not allow to overwrite files for
 	# "collective" commands. Hence delete existing old output file
 	[[ -f ocean_file_for_ice.nc ]] && rm ocean_file_for_ice.nc
-	${cdo} merge \
+	${cdo} -s merge \
 	    ${processed_fesom1x_file3D_T_list_for_ice} \
 	    ${processed_fesom1x_file3D_S_list_for_ice} \
 	    ${processed_fesom1x_file2D_list_for_ice} \

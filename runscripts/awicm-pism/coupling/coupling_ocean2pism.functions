@@ -23,9 +23,7 @@ function ocean2pism {
     iter_coup_regrid_method_oce2ice=${iter_coup_regrid_method_oce2ice:-EXTRAPOLATE}
     iter_coup_interact_method_oce2ice=${iter_coup_interact_method_oce2ice:-OCEANTEMPSALT}
 
-    echo "*** read names ocean ice ***"
     read_names ocean ice
-    echo "*** save griddes ice ***"
     save_griddes ice
 
     NOCOLOR='\033[0m'
@@ -290,7 +288,11 @@ function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {
 #EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
+<<<<<<< HEAD
 	${COUPLE_DIR}/ocean_file_for_ice.nc \
+=======
+	ocean_file_for_ice.nc \
+>>>>>>> ac9d66fc262682021c8236c613171a6c074a4233
 	ocean_file_for_ice.pism_names.nc
 
     echo "     ...done."

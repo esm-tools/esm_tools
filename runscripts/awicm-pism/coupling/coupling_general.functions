@@ -347,7 +347,7 @@ function get_units4pism_version {
 		    ;;
 	    esac
 	    ;;
-	"1.0" | "1.1")
+	"1.0" | "1.1" | "1.2")
 	    case ${__varname} in
 		#
 		# Atmosphere/Surface forcing related variables
@@ -439,7 +439,6 @@ function iterative_coupling_pism_regrid_add_xy_array {
 
     test_file_or_exit $PISM_GRID_XY_FILE 11
 
-    # LA: warum funktioniert das nicht?
     ncrename -v .x,x_org_$$ -v .y,y_org_$$ $_file_name_add_xy && \
 	ncks -A -v x,y $PISM_GRID_XY_FILE $_file_name_add_xy
 

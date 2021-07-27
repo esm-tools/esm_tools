@@ -18,7 +18,9 @@ yearnew=<startyear>
 
 &paths
 MeshPath=<meshpath>
+OpbndPath=''
 ClimateDataPath=<climatedatapath>
+ForcingDataPath=<forcingdatapath>
 TideForcingPath=<tideforcingpath>
 ResultPath=<resultpath>
 /

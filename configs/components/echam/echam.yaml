@@ -552,6 +552,9 @@ outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
         "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
+        #"[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*_STREAM
+        #"[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*_STREAM.codes
+        #"[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}_STREAM.nc
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM

@@ -1,6 +1,7 @@
 general:
         iterative_coupling: True
-        base_dir: /work/ollie/dbarbi/experiments/
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
         use_venv: False
 
 model1:

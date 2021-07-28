@@ -1,12 +1,11 @@
 general:
-    user: !ENV ${USER}
     setup_name: "awicm3"
     version: "1.0-frontiers"
     account: "hhb19"
     compute_time: "08:00:00"
     initial_date: "1990-01-01"
     final_date: "1991-01-03"
-    base_dir: "/p/scratch/chhb19/${user}/runtime/awicm-3.1/"
+    base_dir: "/p/scratch/chhb19/semmler1/runtime/awicm-3.1/"
     nday: 1
     nmonth: 0
     nyear: 0
@@ -15,8 +14,7 @@ computer:
     heterogeneous_parallelization: true
 awicm3:
     postprocessing: false
-
-    model_dir: "/p/project/chhb19/{user}/model_codes/awicm3-1.0-frontiers/"
+    model_dir: "/p/project/chhb19/semmler1/model_codes/awicm3-1.0-frontiers/"
     pool_dir: "/p/project/chhb19/jstreffi/input/"
 
 fesom:
@@ -26,8 +24,7 @@ fesom:
     restart_rate: 1
     restart_unit: "d"
     restart_first: 1
-    lresume: true
-    heterogeneous_parallelization: false
+    lresume: false
     ini_parent_exp_id: "placeholder"
     ini_parent_date: "1989-12-31"
     ini_parent_dir: "/p/project/chhb19/hegewald1/fesom_restarts/D3/"

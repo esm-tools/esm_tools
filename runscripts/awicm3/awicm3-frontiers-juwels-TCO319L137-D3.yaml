@@ -16,7 +16,7 @@ computer:
 awicm3:
     postprocessing: false
 
-    model_dir: "/p/project/chhb19/{user}/model_codes/awicm3-1.0-frontiers/"
+    model_dir: "/p/project/chhb19/${user}/model_codes/awicm3-1.0-frontiers/"
     pool_dir: "/p/project/chhb19/jstreffi/input/"
 
 fesom:

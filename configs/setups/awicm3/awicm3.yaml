@@ -70,8 +70,8 @@ general:
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
         further_reading:
-               - oifs/oifs.env.yaml
-               - oasis3mct/oasis3mct.env.yaml
+                - oifs/oifs.env.yaml
+                - oasis3mct/oasis3mct.env.yaml
 
 
 #########################################################################################
@@ -81,6 +81,7 @@ general:
 oifs:
         version: "43r3"
 
+        add_compute_recipe: ["oasis_rmp_rst_to_input"]
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
@@ -188,6 +189,8 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
+
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -335,7 +338,8 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis_experimental/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        pool_dir: ${general.pool_dir}/oasis_experimental/
+        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
 
@@ -344,6 +348,8 @@ oasis3mct:
                 - oifs
                 - rnfmap
 
+        required_plugins:
+                - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -351,7 +357,7 @@ oasis3mct:
         lresume: True
         ini_parent_date: "19500101" # not used, but needs to be present
         ini_parent_exp_id: "khw0030" # not used, but needs to be present
-        ini_restart_dir: "${pool_dir}"
+        ini_restart_dir: "${input_dir}"
 
         output_exchanged_vars: false
 
@@ -481,10 +487,10 @@ oasis3mct:
                 grids: grids.nc
 
         input_sources:
-                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
-                areas: ${pool_dir}/areas.nc
-                masks: ${pool_dir}/masks.nc
-                grids: ${pool_dir}/grids.nc
+                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                areas: ${input_dir}/areas.nc
+                masks: ${input_dir}/masks.nc
+                grids: ${input_dir}/grids.nc
 
         restart_in_files:
                 rmp: rmp
@@ -511,13 +517,13 @@ oasis3mct:
                         # If ini_restart_dir is not specified in the runscript and, therefore,
                         # it is not a branched off experiment add the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( '${pool_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
                                         add_restart_in_sources:
-                                                rmp: ${pool_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${pool_dir}/${fesom.nproc}/rstas.nc
-                                                rstos.nc: ${pool_dir}/${fesom.nproc}/rstos.nc
+                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                                rstas.nc: ${input_dir}/${fesom.nproc}/rstas.nc
+                                                rstos.nc: ${input_dir}/${fesom.nproc}/rstos.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

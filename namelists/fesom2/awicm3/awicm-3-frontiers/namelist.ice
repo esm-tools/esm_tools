@@ -1,6 +1,6 @@
 ! Ice namelist
 &ice_dyn
-whichEVP=2             ! 0=standart; 1=mEVP; 2=aEVP
+whichEVP=0             ! 0=standart; 1=mEVP; 2=aEVP
 Pstar=30000.0          ! [N/m^2]
 ellipse=2.0
 c_pressure=20.0        ! ice concentration parameter used in ice strength computation
@@ -22,10 +22,10 @@ h0=.5                  ! Lead closing parameter [m]
 emiss_ice=0.97         ! Emissivity of Snow/Ice,
 emiss_wat=0.97         ! Emissivity of open water
 ! TCO159 AWICM3
-albsn=0.77             ! Albedo: frozen snow  
-albsnm=0.72            !         melting snow (For NH -0.12 in ice_thero_cpl.F90 to account for meltponds)
-albi=0.65              !         frozen ice
-albim=0.55             !         melting ice
+albsn=0.81             ! Albedo: frozen snow  
+albsnm=0.77            !         melting snow (in NH -0.12)
+albi=0.7               !         frozen ice
+albim=0.68             !         melting ice (in NH -0.12)
 albw=0.066             !         open water
 ! TL159
 !albsn=0.72             ! Albedo: frozen snow  (boardband albedos must be lower for AWICM3 to account for lack for melt ponds etc.)

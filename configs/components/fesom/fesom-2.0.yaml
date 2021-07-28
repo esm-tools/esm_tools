@@ -128,14 +128,14 @@ restart_in_in_work:
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
-        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*
-        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/np${nproc}.info
-        fesom_raw_restart: fesom_raw_restart/np${nproc}/*
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
 
 restart_out_files:
         oce_restart: oce_restart

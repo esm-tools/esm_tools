@@ -26,6 +26,7 @@ available_versions:
 - '4.0'
 - 4.0-oifsdeck
 - 4.0-awicm3-frontiers
+- 4.0-awicm3-frontiers-frozen
 choose_version:
   '2.8':
     branch: '2.8'
@@ -33,6 +34,8 @@ choose_version:
     branch: '3.0'
   '4.0':
     branch: '4.0'
+  4.0-awicm3-frontiers-frozen:
+    branch: awicm3-frontiers-freeze-candidate-1
   4.0-awicm3-frontiers:
     branch: awicm-3-frontiers
   4.0-oifsdeck:

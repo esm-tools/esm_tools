@@ -19,6 +19,7 @@ general:
         available_versions:
         - '1.0-master'
         - '1.0-frontiers'
+        - '1.0-frontiers-frozen'
         - '1.0-frontiers-xios'
         - '1.0-deck'
         - '1.0'
@@ -29,6 +30,9 @@ general:
           1.0-frontiers:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
+          1.0-frontiers-frozen:
+            couplings:
+                    - fesom-2.0-frontiers-frozen+oifs-43r3-awi-frontiers-frozen
           1.0-frontiers-xios:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers-xios+xios-2.5

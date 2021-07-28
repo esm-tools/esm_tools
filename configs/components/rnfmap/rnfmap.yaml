@@ -18,6 +18,7 @@ description: |
 available_versions:
 - ec-earth
 - awicm3
+- awicm3-frontiers-frozen
 - focioifs
 - focioifs1
 choose_version:
@@ -25,6 +26,9 @@ choose_version:
     branch: esm-tools
   awicm3:
     branch: awicm-3-frontiers
+    destination: rnfmap
+  awicm3-frontiers-frozen:
+    branch: awicm3-frontiers-freeze-candidate-1
     destination: rnfmap
   focioifs:
     branch: esm-tools-focioifs

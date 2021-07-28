@@ -1,7 +1,7 @@
 def prepare_environment(config):
     environment_dict = {
             "ICE_TO_FESOM": 0,
-            "FESOM_TO_ICE": 0,
+            "FESOM_TO_ICE": 1,
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "xMESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],

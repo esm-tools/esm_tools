@@ -268,32 +268,54 @@ double_loop() {
 		loc1=$location2
 		loc2=$location1
 	fi
-    if [[ $verbose = 1 ]]; then; echo "loc1=$loc1"; fi
-    if [[ $verbose = 1 ]]; then; echo "loc2=$loc2"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "loc1=$loc1"
+    fi
+    if [[ $verbose = 1 ]]; then
+        echo "loc2=$loc2"
+    fi
 
 	start_pre=0
 	len_pre=$(( loc1 - 1 ))
-    if [[ $verbose = 1 ]]; then; echo "len_pre=$len_pre"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "len_pre=$len_pre"
+    fi
 	prefix=`printf '%s' "$template" | awk -v start="$start_pre" -v len="$len_pre" '{print substr ($0, start, len)}'`
-    if [[ $verbose = 1 ]]; then; echo "prefix=$prefix"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "prefix=$prefix"
+    fi
 
 	start_mid=$(( loc1 + 10 ))
-    if [[ $verbose = 1 ]]; then; echo "start_mid=$start_mid"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "start_mid=$start_mid"
+    fi
 	len_mid=$(( loc2 - start_mid ))
-    if [[ $verbose = 1 ]]; then; echo "len_mid=$len_mid"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "len_mid=$len_mid"
+    fi
 	middle=`printf '%s' "$template" | awk -v start="$start_mid" -v len="$len_mid" '{print substr ($0, start, len)}'`
-    if [[ $verbose = 1 ]]; then; echo "middle=$middle"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "middle=$middle"
+    fi
 
 	start_end=$((loc2 + 10))
-    if [[ $verbose = 1 ]]; then; echo "start_end=$start_end"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "start_end=$start_end"
+    fi
 	len_end=$((len_temp - start_end + 1))
-    if [[ $verbose = 1 ]]; then; echo "len_end=$len_end"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "len_end=$len_end"
+    fi
 	lastbit=`printf '%s' "$template" | awk -v start="$start_end" -v len="$len_end" '{print substr ($0, start, len)}'`
-    if [[ $verbose = 1 ]]; then; echo "lastbit=$lastbit"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "lastbit=$lastbit"
+    fi
 	if [[ "x${lastbit}" == "x" ]]; then
 		nolastbit=1
 	fi
-    if [[ $verbose = 1 ]]; then; echo "nolastbit=$nolastbit"; fi
+    if [[ $verbose = 1 ]]; then
+        echo "nolastbit=$nolastbit"
+    fi
 
 	substreams1=""; substreams2=""; list_of_files=""
 	firstline=1
@@ -305,36 +327,60 @@ double_loop() {
     fi
     if files=$(ls $searchtemplate 2>/dev/null); then
         for file in $files; do
-            if [[ $verbose = 1 ]]; then; echo "file     =$file"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "file     =$file"
+            fi
 			len_file=`printf '%s' "$file" | awk '{ print length($0) }'`
-            if [[ $verbose = 1 ]]; then; echo "len_file=$len_file"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "len_file=$len_file"
+            fi
 
             file_tmp=${file:$len_pre:$len_file}
-            if [[ $verbose = 1 ]]; then; echo "file_tmp=$file_tmp"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "file_tmp=$file_tmp"
+            fi
 			start_mid=`awk -v a="$file_tmp" -v b="${middle}" 'BEGIN{print index(a,b)}'`
-            if [[ $verbose = 1 ]]; then; echo "start_mid=$start_mid"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "start_mid=$start_mid"
+            fi
             start_mid=$(( start_mid + len_pre ))
-            if [[ $verbose = 1 ]]; then; echo "start_mid=$start_mid"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "start_mid=$start_mid"
+            fi
 			if [[ "${nolastbit}" == 0 ]]; then
 				start_end=`awk -v a="$file" -v b="${lastbit}" 'BEGIN{print index(a,b)}'`
 			else
 				start_end=$(( len_file + 1 ))
 			fi
-            if [[ $verbose = 1 ]]; then; echo "start_end=$start_end"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "start_end=$start_end"
+            fi
 
 			sub1_start=$loc1
-            if [[ $verbose = 1 ]]; then; echo "sub1_start=$sub1_start"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub1_start=$sub1_start"
+            fi
 			sub1_len=$(( start_mid - sub1_start ))
-            if [[ $verbose = 1 ]]; then; echo "sub1_len=$sub1_len"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub1_len=$sub1_len"
+            fi
 			sub1=`printf '%s' "$file" | awk -v start="${sub1_start}" -v len="${sub1_len}" '{print substr ($0, start, len)}'`
-            if [[ $verbose = 1 ]]; then; echo "sub1=$sub1"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub1=$sub1"
+            fi
 
 			sub2_start=$((start_mid + len_mid ))
-            if [[ $verbose = 1 ]]; then; echo "sub2_start=$sub2_start"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub2_start=$sub2_start"
+            fi
 			sub2_len=$((start_end - sub2_start))
-            if [[ $verbose = 1 ]]; then; echo "sub2_len=$sub2_len"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub2_len=$sub2_len"
+            fi
 			sub2=`printf '%s' "$file" | awk -v start="${sub2_start}" -v len="${sub2_len}" '{print substr ($0, start, len)}'`
-            if [[ $verbose = 1 ]]; then; echo "sub2=$sub2"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "sub2=$sub2"
+            fi
 
 			if [[ $location1 -lt $location2 ]]; then
 				substream1=${sub1}
@@ -343,31 +389,57 @@ double_loop() {
 				substream1=${sub2}
 				substream2=${sub1}
 			fi
-            if [[ $verbose = 1 ]]; then; echo "substream1=$substream1"; fi
-            if [[ $verbose = 1 ]]; then; echo "substream2=$substream2"; fi
+            if [[ $verbose = 1 ]]; then
+                echo "substream1=$substream1"
+            fi
+            if [[ $verbose = 1 ]]; then
+                echo "substream2=$substream2"
+            fi
 
 			found=0	
 			for stream in $substreams1; do
-                if [[ $verbose = 1 ]]; then; echo "prefix=$prefix"; fi
-				if [[ "x${stream}" = "x${substream1}" ]]; then; found=1; fi
+                if [[ $verbose = 1 ]]; then
+                    echo "prefix=$prefix"
+                fi
+				if [[ "x${stream}" = "x${substream1}" ]]; then
+                                    found=1
+                                fi
 			done
-			if [[ "x$found" = "x0" ]]; then; substreams1="${substreams1} $substream1"; fi
-            if [[ $verbose = 1 ]]; then; echo "substreams1=$substreams1"; fi
+			if [[ "x$found" = "x0" ]]; then
+                            substreams1="${substreams1} $substream1"
+                        fi
+            if [[ $verbose = 1 ]]; then
+                echo "substreams1=$substreams1"
+            fi
 			found=0	
 			for stream in $substreams2; do
-                if [[ $verbose = 1 ]]; then; echo "stream=$stream"; fi
-				if [[ "x${stream}" = "x${substream2}" ]]; then; found=1; fi
+                if [[ $verbose = 1 ]]; then
+                    echo "stream=$stream"
+                fi
+				if [[ "x${stream}" = "x${substream2}" ]]; then
+                                    found=1
+                                fi
 			done
-			if [[ "x$found" = "x0" ]]; then; substreams2="${substreams2} $substream2"; fi
-            if [[ $verbose = 1 ]]; then; echo "substreams2=$substreams2"; fi
+			if [[ "x$found" = "x0" ]]; then
+                            substreams2="${substreams2} $substream2"
+                        fi
+            if [[ $verbose = 1 ]]; then
+                echo "substreams2=$substreams2"
+            fi
 		done
 	
 		for substream1 in $substreams1; do
-            if [[ $verbose = 2 ]]; then; echo "substream1=$substream1"; fi
+            if [[ $verbose = 2 ]]; then
+                echo "substream1=$substream1"
+            fi
 			for substream2 in $substreams2; do
-                if [[ $verbose = 2 ]]; then; echo "substream2=$substream2"; fi
+                if [[ $verbose = 2 ]]; then
+                    echo "substream2=$substream2"
+                fi
 				file=`echo $template | sed "s/SUBSTREAM1/${substream1}/" | sed "s/SUBSTREAM2/${substream2}/" `
-                if [[ $verbose = 2 ]]; then; echo "file=$file"; fi
+                if [[ $verbose = 2 ]]; then
+                    echo "file=$file"
+                fi
 				if found=$(ls $file 2>/dev/null); then
 					filesize=$(stat -c%s "$file")
 					if [[ ("$filesize" > "$critsize") ]]; then 

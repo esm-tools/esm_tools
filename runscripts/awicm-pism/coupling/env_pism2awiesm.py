@@ -33,7 +33,7 @@ def prepare_environment(config):
             "INPUT_FILE_pism": config["pism"].get("cli_input_file_pism"),
             
             "PISM_TO_OCEAN": 0,
-            "OCEAN_TO_PISM": 0,
+            "OCEAN_TO_PISM": 1,
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],
@@ -43,7 +43,7 @@ def prepare_environment(config):
             "MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": "/home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             }
     print (environment_dict)
     return environment_dict

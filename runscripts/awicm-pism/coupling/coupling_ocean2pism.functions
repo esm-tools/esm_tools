@@ -150,9 +150,11 @@ function ocean2pism {
 	"OCEANTEMP")
             iterative_coupling_ocean_pism_compute_ocean_temp_forcing ${PISM_OCEAN_FORCING_FILE}
 	    ;;
-	"OCEANTEMPSALT" | "PICO_OCEAN")
+	"OCEANTEMPSALT")
             iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing ${PISM_OCEAN_FORCING_FILE}
-            
+            ;; 
+        "PICO_OCEAN")
+            iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing ${PISM_OCEAN_FORCING_FILE}
             PISM_OCEAN_PICO_BASINS_FILE=${PISM_OCEAN_PICO_BASINS_FILE:-${PISM_OCEAN_FORCING_FILE}}
             echo " * Doing iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ..."
             iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ${PISM_OCEAN_PICO_BASINS_FILE} ${PISM_OCEAN_FORCING_FILE}
@@ -288,11 +290,7 @@ function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {
 #EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-<<<<<<< HEAD
 	${COUPLE_DIR}/ocean_file_for_ice.nc \
-=======
-	ocean_file_for_ice.nc \
->>>>>>> ac9d66fc262682021c8236c613171a6c074a4233
 	ocean_file_for_ice.pism_names.nc
 
     echo "     ...done."

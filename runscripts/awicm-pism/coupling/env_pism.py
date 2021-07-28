@@ -2,7 +2,7 @@ def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
     environment_dict = {
             "PISM_TO_OCEAN": 0,
-            "OCEAN_TO_PISM": 0,
+            "OCEAN_TO_PISM": 1,
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "VERSION_pism": config["pism"]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config["pism"]["pool_dir"],
@@ -15,11 +15,11 @@ def prepare_environment(config):
             "MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": "/home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "DOMAIN_pism": config["pism"]["domain"],
             "RES_pism": config["pism"]["resolution"],
             "EXE_pism": config["pism"]["executable"],
-            "PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
+            #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
             #"RESTART_DIR_pism": config["pism"]["experiment_restart_in_dir"],
             #"ice_bedrock_change_file": (

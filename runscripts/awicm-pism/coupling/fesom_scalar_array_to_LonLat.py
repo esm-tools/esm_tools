@@ -120,7 +120,7 @@ ilevel = -1
 #for depth in mesh_diag.zbar.squeeze().values:
 for depth in mesh.zlev:
     # Some information
-    idepth = np.int(depth)
+    idepth = int(depth)
     #
     # Prepare data for final netcdf output
     #
@@ -151,7 +151,7 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
     #for depth in mesh_diag.zbar.squeeze().values:
     for depth in mesh.zlev[:-1]:
         # Some information
-        idepth = np.int(depth)
+        idepth = int(depth)
         print('*   depth='+str(idepth)+' ('+str(depth)+\
         ')  ++ time('+str(itime)+') = '+str(time_read))
 

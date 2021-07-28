@@ -6,5 +6,5 @@ awiesm2pism() {
     . ${FUNCTION_PATH}/general_lists.functions
     
     atmosphere2pism
-    #ocean2pism
+    ocean2pism
 }

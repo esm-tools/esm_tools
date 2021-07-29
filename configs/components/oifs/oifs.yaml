@@ -127,10 +127,6 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
           43r3-awi-frontiers-frozen:
             requires:
                     - oasis3mct-4.0-awicm3-frontiers-frozen
@@ -141,7 +137,6 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
->>>>>>> Stashed changes
           43r3-awi-frontiers-xios:
             requires:
             - oasis3mct-4.0-awicm3-frontiers
@@ -151,10 +146,6 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: true
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make

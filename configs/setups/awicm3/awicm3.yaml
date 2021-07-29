@@ -231,6 +231,9 @@ fesom:
                 "1.0-frontiers":
                         model_tag: "awicm-3-frontiers"
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+                "1.0-frontiers-frozen":
+                        model_tag: "awicm-3-frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
                 "1.0-frontiers-xios":
                         model_tag: "awicm-3-frontiers"
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"

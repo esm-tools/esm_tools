@@ -836,7 +836,7 @@ File movements
 --------------
 
 Inside the file dictionaries realm, it is possible to specify the type of movement you
-want to carry out (among ``copy``, ``link`` and ``move``), for an specific file or file
+want to carry out (among ``copy``, ``link`` and ``move``), for a specific file or file
 type, and for a given direction. By default all files are ``copied`` in all directions.
 
 The syntax for defining a file movement for a given file type is:
@@ -847,7 +847,7 @@ The syntax for defining a file movement for a given file type is:
        file_movements:
            <file_type>:
                <direction1>: <copy/link/move>
-               <direction2>: <copy/ink/move>
+               <direction2>: <copy/link/move>
                [ ... ]
 
 where the ``file_type`` in one among the :ref:`yaml:File Dictionary Types`, and the
@@ -864,11 +864,11 @@ Movement file directions
 ------------------- -------------------------------------------------------------------
 ``work_to_run``     From the work folder to the corresponding run folder
 ------------------- -------------------------------------------------------------------
-``all_directions``  The directions not specifically defined, use this movement
+``all_directions``  Directions not specifically defined, use this movement
 =================== ===================================================================
 
 It is also possible to do the same for specific files instead of for all files inside
-a ``file_type``. The syntax is identical:
+a ``file_type``. The syntax logic is the same:
 
 .. code-block:: yaml
 
@@ -876,16 +876,16 @@ a ``file_type``. The syntax is identical:
        file_movements:
            <file_key>:
                <direction1>: <copy/link/move>
-               <direction2>: <copy/ink/move>
+               <direction2>: <copy/link/move>
                [ ... ]
 
 where ``file_key`` is the key you used to identify your file inside the
 ``<file_type>_files``, having to add to it ``_in`` or ``_out`` if the file is a
 restart, in order to specify in which direction to apply this.
 
-Movements specific for files are still compatible with the ``file_type`` option, and
+Movements specific to files are still compatible with the ``file_type`` option, and
 only the moves specifically defined for files in the ``file_movements`` will differ
-from those defined with ``file_type``.
+from those defined using the ``file_type``.
 
 Accessing Variables from the Previous Run (``prev_run``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

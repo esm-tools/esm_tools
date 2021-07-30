@@ -1,3 +1,8 @@
+general:
+        openmp: False
+        heterogeneous_parallelization: False
+
+
 
 per_model_defaults:
         file_movements:

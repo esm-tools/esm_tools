@@ -42,13 +42,38 @@ thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${gener
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
-heterogeneous_parallelization: false
+heterogeneous_parallelization: ${general.heterogeneous_parallelization}
+openmp: ${general.openmp}
+
+request_nodes_instead_of_cores: False
 
 choose_heterogeneous_parallelization:
         true:
+                openmp: True
+                request_nodes_instead_of_cores: True
+        false:
+                openmp: False
+
+
+choose_request_nodes_instead_of_cores: 
+        True:
+                add_unset_vars:
+                        - "SLURM_DISTRIBUTION"
+                        - "SLURM_NTASKS"
+                        - "SLURM_NPROCS"
+                        - "SLURM_ARBITRARY_NODELIST"
+
+choose_openmp: 
+        true:
                 cpu_bind: "none"
+                omp_stack_size: "128M"
+
+                add_export_vars: 
+                        "OMP_SCHEDULE": "STATIC"
+                        "OMP_STACKSIZE": ${omp_stack_size}
         false:
                 cpu_bind: "cores"
+
 
 choose_launcher:
         srun:

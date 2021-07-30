@@ -4,8 +4,8 @@ model: vilma
 
 # defaults
 
-version: 1d
-internal_version: 'I189'
+version: 3d
+internal_version: 'I189'  # really?
 
 logfile: 'vega.log'
 executable: 'vega_vip.x'
@@ -20,7 +20,7 @@ ini_forcing_dir: ${pool_dir}/config
 scenario: ice5g
 
 available_versions:
-- 1d
+- 3d
 
 wepochsfile: automatic
 tintfile: automatic
@@ -31,7 +31,11 @@ coupled_to_ocean: False
 # parameters:
 #
 # time step (in ka) if 0 read from tint in s:
-time_step: 0.025
+# time step should be less than maxwell time, i.e. lowest viscosity in file 
+# devided by stress, 100e09 (result in seconds)
+# for now:
+#
+time_step: 0.0025 # 2.5 years, smaller time step than in 1d
 output_interval: 0.1
 
 l_rot: 1
@@ -44,7 +48,7 @@ l_prem: 1
 #       1: read
 #       2: adjust
 #       MUST BE 0 for 1d
-l_visc: 0
+l_visc: 1
 
 # toroidal loading (don't change)
 l_toro: 0
@@ -79,12 +83,15 @@ wetime: $(( ${finalyear_p1} / 1000. ))
 # different setups and scenarios 
 
 
-clean_command: ${defaults.clean_command}
+clean_command: rm -rf build lib include CMakeCache.txt
 comp_command: ${defaults.comp_command}
 git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
 install_bins: bin/vega_vip.x
 branch: ${version}
-nproc: 1
+nproc: 8
+
+
+visco_dir: ${pool_dir}/visco
 
 choose_scenario:
         ice5g:
@@ -243,6 +250,7 @@ config_targets:
 input_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
         bedrockfile: ${ini_input_dir}/${bedrockfile}
+        viscofile: ${visco_dir}/${viscofile}
         
         # There are different visko.inp files available, all having a different
         # number of lines (seemingly radial layers). It is a bit confusing to
@@ -259,6 +267,7 @@ input_sources:
 input_targets:
         densi: inp/densi.inp
         visko: inp/visko.inp
+        viscofile: out/visc3d_new.nc
         
 bin_sources:
         exec: ${bin_dir}/${executable}
@@ -288,6 +297,7 @@ restart_out_targets:
 
 log_sources:
         restart_log: restart/restart.log
+        vega_log: vega.log
 
 log_targets:
         restart_log: restart.log

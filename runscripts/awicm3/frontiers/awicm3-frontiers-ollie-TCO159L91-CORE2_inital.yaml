@@ -1,18 +1,19 @@
 general:
+    user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "1.0-frontiers"
+    version: "frontiers"
     compute_time: "00:30:00"
     initial_date: "2000-01-01"
     final_date: "2000-01-02"
     taskset: true
-    base_dir: "/work/ollie/jstreffi/runtime/awicm-3.1/"
+    base_dir: "/work/ollie/${user}/runtime/${setup_name}-${version}/"
     nday: 1
     nmonth: 0
     nyear: 0
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/ollie/jstreffi/model_codes/awicm3-1.0-frontiers/"
+    model_dir: "/home/ollie/${user}/model_codes/${setup_name}-${version}/"
 
 fesom:
     resolution: "CORE2"

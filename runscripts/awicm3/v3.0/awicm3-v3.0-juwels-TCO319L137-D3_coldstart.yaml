@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "frontiers"
+    version: "v3.0"
     account: "hhb19"
     compute_time: "08:00:00"
     initial_date: "1990-01-01"
@@ -26,11 +26,11 @@ fesom:
     restart_rate: 1
     restart_unit: "d"
     restart_first: 1
-    lresume: true
+    lresume: false
     ini_parent_exp_id: "placeholder"
     ini_parent_date: "1989-12-31"
     ini_parent_dir: "/p/project/chhb19/hegewald1/fesom_restarts/D3/"
-    time_step: 100
+    time_step: 400
     nproc: 576
 
 oifs:

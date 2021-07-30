@@ -1,26 +1,25 @@
 general:
+    user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "1.0-frontiers"
-    account: "awiiccp"
+    version: "frontiers"
     compute_time: "00:30:00"
     initial_date: "1990-01-01"
     final_date: "1991-01-01"
-    base_dir: /scratch/awiiccp2/
+    base_dir: "/scratch/${user}/runtime/${setup_name}-${version}/"
     nday: 1
     nmonth: 0
     nyear: 0
-    use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
 computer:
     heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false
-    model_dir: /home/awiiccp2/esm/model_codes/awicm3-1.0-frontiers/
+    model_dir: "/home/${user}/model_codes/${setup_name}-${version}/"
 
 fesom:
     resolution: "CORE2"
-    mesh_dir: "${pool_dir}/core2_meanz/"
+    mesh_dir: "${pool_dir}/core2/"
     #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
     restart_rate: 1
     restart_unit: "d"

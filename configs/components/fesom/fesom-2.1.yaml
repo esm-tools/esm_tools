@@ -21,14 +21,6 @@ git-repository:
 - https://github.com/FESOM/fesom2.git
 
 
-choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
-
-
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
@@ -54,6 +46,10 @@ choose_computer.name:
         pool_dir: "${computer.pool_directories.pool}/AWICM/"
         climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/FORCING/"
         mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+        add_compiletime_environment_changes:
+            add_module_actions:
+                - "unload gcc"
+                - "load gcc/4.8.2"
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"

@@ -17,24 +17,24 @@ general:
                 - oasis3mct
 
         available_versions:
-        - '3.0'
+        - 'v3.0'
         - 'master'
         - 'frontiers'
         - 'frontiers-xios'
         - 'deck'
         choose_version:
-          3.0:
+          v3.0:
             couplings:
-            - fesom-2.0-frozen+oifs-43r3-awi-frozen
+            - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
           master:
             couplings:
             - fesom-2.0-master+oifs-43r3-master
           frontiers:
             couplings:
-            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
+            - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers
           frontiers-xios:
             couplings:
-            - fesom-2.0-frontiers+oifs-43r3-awi-frontiers-xios+xios-2.5
+            - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
@@ -43,7 +43,7 @@ general:
             couplings:
             - fesom-2.0+oifs-43r3
 
-        version: "3.0"
+        version: "v3.0"
         scenario: "piControl"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
@@ -99,7 +99,7 @@ oifs:
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
         choose_general.version:
-                "3.0":
+                "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/3.0
                 "frontiers":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
@@ -224,7 +224,7 @@ fesom:
                                 surf_relax_s: "${surf_relax_s}"
 
         choose_general.version:
-                "3.0":
+                "v3.0":
                         namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/3.0/"
                 "master":
                         namelist_dir: "${model_dir}/config/"

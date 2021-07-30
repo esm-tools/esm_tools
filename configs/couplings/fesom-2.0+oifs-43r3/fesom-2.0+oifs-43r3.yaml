@@ -1,6 +1,6 @@
 components:
 - rnfmap-ec-earth
-- oifs-43r3-awi
+- oifs-43r3-awicm-deck
 - fesom-2.0-jio
 - oasis3mct-4.0-oifsdeck
 coupling_changes:

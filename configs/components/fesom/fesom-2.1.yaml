@@ -10,17 +10,15 @@ comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
 choose_version:
+  2.1-unstable:
+    branch: master
+    namelist_dir: "${model_dir}/config/"
   '2.1':
-    branch: 2.1
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-
+    branch: "2.1.0"
+destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
-- https://gitlab.dkrz.de/FESOM/fesom2.git
 
 
 choose_computer.name:
@@ -47,21 +45,28 @@ old_mesh_format: false
 with_part_format: false
 time_dimension: "time"
 
-pool_dir: ${computer.pool_directories.pool}
-#model_dir: "${esm_master_dir}/fesom-${version}/"
+choose_computer.name:
+    ollie:
+        pool_dir: "${computer.pool_directories.pool}/../clidyn/"
+    mistral:
+        pool_dir: "${computer.pool_directories.pool}/AWICM/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/FORCING/"
+        mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-climate_data_dir: "${pool_dir}/hydrography/"
+climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
 forcing_data_dir: "${pool_dir}/forcing/"
+mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/"
+namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
 
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-asforcing: CORE2
+asforcing: JRA55
 
 namelists:
         - namelist.config
@@ -69,6 +74,8 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+        - namelist.cvmix
+        - namelist.icepack
 
 # Settings for Gent/McWilliams based upon the selected ALE scheme.
 ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
@@ -83,14 +90,16 @@ choose_ALE_scheme:
     zstar:
         K_gm_max: 2000.0
         K_hor: 3000.0
-
-add_namelist_changes:
-    namelist.oce:
-        oce_dyn:
-            K_gm: ${K_gm}
-            K_gm_max: ${K_gm_max}
-        oce_tra:
-            K_hor: ${K_hor}
+add_choose_version:
+        # The following ALE schemes only work for master
+        2.1-master:
+                add_namelist_changes:
+                    namelist.oce:
+                        oce_dyn:
+                            K_gm: ${K_gm}
+                            K_gm_max: ${K_gm_max}
+                        oce_tra:
+                            K_hor: ${K_hor}
 
 
 choose_asforcing:
@@ -104,7 +113,7 @@ choose_asforcing:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+                mesh_dir: "${pool_dir}/meshes/core2/"
                 nproc: 288
         GLOB:
                 nx: 830305
@@ -167,24 +176,19 @@ namelist_changes:
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
-                        ForcingDataPath: "${forcing_data_dir}"
                         MeshPath: "${mesh_dir}"
-                        OpbndPath: "${opbnd_dir}"
                         ClimateDataPath: "${climate_data_dir}"
-                        TideForcingPath: "${tide_forcing_dir}"
                         ResultPath: "${work_dir}"
                 timestep:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout:
-                        restartflag: "${restart_flag}"
-                        output_length: "${restart_rate}"
-                        output_length_unit: "${restart_unit}"
+                restart_log:
                         restart_length: "${restart_rate}"
                         restart_length_unit: "${restart_unit}"
         namelist.forcing:
-                namsbc:
+                # TODO: check these paths
+                nam_sbc:
                         nm_xwind_file: "${forcing_data_dir}/u_10."
                         nm_ywind_file: "${forcing_data_dir}/v_10."
                         nm_humi_file: "${forcing_data_dir}/q_10."
@@ -229,6 +233,7 @@ bin_sources:
 
 config_files:
         config:  config
+        cvmix:   cvmix
         forcing: forcing
         ice:     ice
         oce:     oce
@@ -236,6 +241,7 @@ config_files:
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
+        cvmix:   "${namelist_dir}/namelist.cvmix"
         forcing: "${namelist_dir}/namelist.forcing"
         ice:     "${namelist_dir}/namelist.ice"
         oce:     "${namelist_dir}/namelist.oce"
@@ -253,6 +259,7 @@ runtime_environment_changes:
 
 config_in_work:
         config:  "namelist.config"
+        cvmix:   "namelist.cvmix"
         forcing: "namelist.forcing"
         ice:     "namelist.ice"
         oce:     "namelist.oce"

@@ -100,7 +100,7 @@ oifs:
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
         choose_general.version:
                 "v3.0":
-                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/3.0
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
                 "frontiers":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                 "frontiers-xios":
@@ -225,7 +225,7 @@ fesom:
 
         choose_general.version:
                 "v3.0":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/3.0/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/v3.0/"
                 "master":
                         namelist_dir: "${model_dir}/config/"
                 "frontiers":

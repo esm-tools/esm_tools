@@ -17,17 +17,17 @@ description: |
 ##
 available_versions:
 - ec-earth
-- awicm3
-- awicm3-frontiers-frozen
+- awicm-3.0
+- awicm-frontiers
 - focioifs
 - focioifs1
 choose_version:
   ec-earth:
     branch: esm-tools
-  awicm3:
+  awicm-frontiers:
     branch: awicm-3-frontiers
     destination: rnfmap
-  awicm3-frontiers-frozen:
+  awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
     destination: rnfmap
   focioifs:
@@ -121,7 +121,7 @@ choose_general.setup_name:
                                 number_of_overlapping_points: 2
         awicm3:
                 choose_general.version:
-                        '1.0-deck':
+                        'deck':
                                 runoff_fields_recv: [R_Runoff_atm] 
                                 runoff_fields_send: [R_Runoff_oce]
                         '*':

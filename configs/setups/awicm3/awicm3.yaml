@@ -17,40 +17,34 @@ general:
                 - oasis3mct
 
         available_versions:
-        - '1.0-master'
-        - '1.0-frontiers'
-        - '1.0-frontiers-frozen'
-        - '1.0-frontiers-xios'
-        - '1.0-deck'
-        - '1.0'
+        - '3.0'
+        - 'master'
+        - 'frontiers'
+        - 'frontiers-xios'
+        - 'deck'
         choose_version:
-          1.0-master:
+          3.0:
+            couplings:
+            - fesom-2.0-frozen+oifs-43r3-awi-frozen
+          master:
             couplings:
             - fesom-2.0-master+oifs-43r3-master
-          1.0-frontiers:
+          frontiers:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers
-          1.0-frontiers-frozen:
-            couplings:
-                    - fesom-2.0-frontiers-frozen+oifs-43r3-awi-frontiers-frozen
-          1.0-frontiers-xios:
+          frontiers-xios:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awi-frontiers-xios+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
-          1.0-deck:
+          deck:
             couplings:
             - fesom-2.0+oifs-43r3
-          '1.0':
-            couplings:
-            - fesom-2.0+oifs-43r3+xios-2.5
-            add_include_models:
-            - xios
 
-        version: "1.0-deck"
-        scenario: "PI-CTRL"
+        version: "3.0"
+        scenario: "piControl"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -104,7 +98,24 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
-        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/202011
+        choose_general.version:
+                "3.0":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/3.0
+                "frontiers":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                "frontiers-xios":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                "deck":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/deck
+
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
@@ -137,16 +148,6 @@ oifs:
         resolution: TCO159
         levels: L91
 
-        choose_general.version:
-                "1.0":
-                        add_namelist_changes:
-                                fort.4:
-                                        NAMIO_SERV:
-                                                NPROC_IO: 2
-                                                NPROCESS_LEVEL: 5
-                                                NIO_SERV_METHOD: 2
-                                                NMSG_LEVEL_CLIENT: 0
-                                                NMSG_LEVEL_SERVER: 1
 
         runtime_environment_changes:
                 add_export_vars:
@@ -222,44 +223,30 @@ fesom:
                         oce_tra:
                                 surf_relax_s: "${surf_relax_s}"
 
-        # TODO: make indepent namelists. With XIOS use the latest namelist from fesom-2
-        # Sets kkp_kv0 in namelist.cvmix to 5e-2 for the 1.0-deck version to be able to reproduce
-        # old experiments. 5e-3 is a better value so it is used for XIOS version
         choose_general.version:
-                "1.0-master":
+                "3.0":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/3.0/"
+                "master":
                         namelist_dir: "${model_dir}/config/"
-                "1.0-frontiers":
-                        model_tag: "awicm-3-frontiers"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
-                "1.0-frontiers-frozen":
-                        model_tag: "awicm-3-frontiers"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
-                "1.0-frontiers-xios":
-                        model_tag: "awicm-3-frontiers"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
-                "1.0-deck":
-                        model_tag: "awicm-3-deck"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
+                "frontiers":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/frontiers/"
+                "frontiers-xios":
+                        model_tag: "frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/frontiers/"
+                "deck":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/deck/"
                         add_namelist_changes:
                                 namelist.cvmix:
                                         param_kpp:
                                                 kpp_kv0: 5e-2
-                # Use better oce_tra parameters for the XIOS version that match the fesom-bounded namelist
-                "1.0":
-                        model_tag: "awicm-3-deck"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/${model_tag}/"
-                        add_namelist_changes:
-                                namelist.oce:
-                                        oce_tra:
-                                                use_momix: true
-                                                momix_lat: -50.0
-                                                momix_kv: 0.01
-                                                use_instabmix: true
-                                                instabmix_kv: 0.1
-                                                use_windmix: false
-                                                windmix_kv: 1.e-3
-                                                windmix_nl: 2
-                                                diff_sh_limit: 5.0e-3
+                        compiletime_environment_changes:
+                                choose_computer.name:
+                                        mistral:
+                                                add_export_vars:
+                                                        branch_deck: d4139d9
+                                        "*":
+                                                add_export_vars:
+                                                        branch_deck: juwels_chunk_io
 
         remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
                 - restart_length
@@ -290,24 +277,13 @@ fesom:
                 "[[awicm3_fields-->FIELD]]":
                         grid: feom
 
-        compiletime_environment_changes:
-                choose_computer.name:
-                        mistral:
-                                add_export_vars:
-                                        branch_deck: d4139d9
-                        "*":
-                                add_export_vars:
-                                        branch_deck: juwels_chunk_io
 
-# TODO: remove this as this generates a lot of output. This should be loaded from the
-# runscript if the user want's it (I need to talk to Marylou about it)
-#further_reading:
+# It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
+# By default this option is turned off, and thus the follwing two lines are commented out.                                               
+# further_reading:
 #       - fesom/fesom-2.0.io.yaml
 
 xios:
-        #model_dir: ${general.model_dir}/xios-${xios.version}
-        #setup_dir: ${general.model_dir}
-
         nproc: ${computer.cores_per_node}
 
         #@JAN/JOAKIM: is ok to ignore this files?
@@ -316,7 +292,6 @@ xios:
 
 
 rnfmap:
-
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
 
@@ -382,10 +357,7 @@ oasis3mct:
 
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.version:
-                "1.0":
-                        add_process_ordering:
-                                - xios
-                '1.0-deck':
+                'deck':
                         coupling_target_fields:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'

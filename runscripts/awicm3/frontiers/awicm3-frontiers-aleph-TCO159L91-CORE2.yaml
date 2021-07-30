@@ -1,6 +1,6 @@
 general:
     setup_name: "awicm3"
-    version: "1.0-frontiers"
+    version: "frontiers"
     account: "awiiccp"
     compute_time: "00:60:00"
     initial_date: "2000-01-01"
@@ -12,7 +12,7 @@ general:
 
 awicm3:
     postprocessing: false
-    model_dir: /home/awiiccp2/esm/model_codes/awicm3-1.0-frontiers/
+    model_dir: /home/awiiccp2/esm/model_codes/awicm3-frontiers/
 
 fesom:
     resolution: "CORE2"

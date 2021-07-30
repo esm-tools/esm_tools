@@ -83,7 +83,7 @@ wetime: $(( ${finalyear_p1} / 1000. ))
 # different setups and scenarios 
 
 
-clean_command: rm -rf build lib include CMakeCache.txt
+clean_command: rm -rf build lib CMakeCache.txt
 comp_command: ${defaults.comp_command}
 git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
 install_bins: bin/vega_vip.x

@@ -2,6 +2,14 @@ general:
         openmp: False
         heterogeneous_parallelization: False
 
+        request_nodes_instead_of_cores: False
+
+        choose_heterogeneous_parallelization:
+                true:
+                        openmp: True
+                        request_nodes_instead_of_cores: True
+                false:
+                        openmp: False
 
 
 per_model_defaults:

@@ -137,16 +137,19 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-      
+        module unload netcdf
+        module load netcdf/4.6.0_gnu
+
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
-        cd ${COUPLE_DIR}
         echo "*** Loaded modules: "
         echo $(module list)
 	echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
         #rm sso_par_fil.srv topodata.nc
-        cd -
+        
+        module unload netcdf/4.6.0_gnu
+        module load netcdf/4.6.0_intel
 }
 
 ## @fn update_orography_generate_target_orography_file() 

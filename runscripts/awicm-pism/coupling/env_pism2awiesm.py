@@ -3,7 +3,7 @@ def prepare_environment(config):
     environment_dict = {
             "PISM_TO_ATMOSPHERE": 1,
             "ATMOSPHERE_TO_PISM": 1,
-            "iterative_coupling_atmosphere_pism_regrid_method": "DYN_DOWNSCALE", 
+            "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
             "iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],
@@ -16,7 +16,8 @@ def prepare_environment(config):
             "DOMAIN_pism": config["pism"]["domain"],
             "EXE_pism": config["pism"]["executable"],
             "RES_pism": config["pism"]["resolution"],
-            
+            #"RUN_NUMBER_pism": config["pism"]["run_number"],
+
             "YR0_pism": config["general"]["initial_date"].syear,
             "M0_pism": config["general"]["initial_date"].smonth,
             "D0_pism": config["general"]["initial_date"].sday,

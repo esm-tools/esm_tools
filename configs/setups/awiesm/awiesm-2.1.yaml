@@ -200,10 +200,12 @@ recom:
                 2.1-recom:
                         version: "2.0"
                         bgc_num: 31
-                        add_namelist_changes:
-                            namelist.recom:
-                                pavariables:
-                                    bgc_num: "${bgc_num}"
+                        benthos_num: 8
+                        bottflx_num: 8
+#                        add_namelist_changes:
+#                            namelist.recom:
+#                                pavariables:
+#                                    bgc_num: "${bgc_num}"
                         data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
@@ -221,10 +223,10 @@ recom:
                         namelist_dir: ${fesom.model_dir}/config/
 
                         # Include the extra namelist that is not included by default in recom.yaml
-                        add_namelists:
-                                - namelist.io.recom.ciso
-                        add_config_files:
-                                io.recom.ciso: io.recom.ciso
+#                        add_namelists:
+#                                - namelist.io.recom.ciso
+#                        add_config_files:
+#                                io.recom.ciso: io.recom.ciso
                         add_config_sources:
                                 recom: ${namelist_dir}/namelist.recom
                         add_config_in_work:

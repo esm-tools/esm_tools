@@ -217,6 +217,9 @@ namelist_changes:
                         nm_mslp_file: "${forcing_data_dir}/slp."
                         nm_runoff_file: "${forcing_data_dir}/runoff.nc"
                         nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
+        namelist.oce:
+                oce_tra:
+                        num_tracers: "${num_tracers}"
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

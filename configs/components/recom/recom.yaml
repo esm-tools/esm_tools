@@ -80,7 +80,9 @@ namelists:
 namelist_changes:
         namelist.recom:
                 pavariables:
-                        bgc_num: 22
+                        bgc_num: "${bgc_num}" 
+                        benthos_num: "${benthos_num}"
+                        bottflx_num: "${bottflx_num}"
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         firstyearoffesomcycle: "${firstyearoffesomcycle}"
@@ -109,7 +111,7 @@ config_files:
 
 config_sources:
         recom:  "${namelist_dir}/namelist.recom"
-        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+#        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 restart_name: ""
   

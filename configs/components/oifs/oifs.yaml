@@ -393,6 +393,14 @@ lresume: false
 restart_rate: 1
 restart_unit: "months"
 
+file_movements:
+        restart_in:
+            init_to_exp: link
+            exp_to_run: copy
+            run_to_work: link
+        restart_out:
+            all_directions: move
+
 # @JOAKIM: we need to discuss the values, you used to have:
 # massfixer: 2
 # nfrmasscon: 1

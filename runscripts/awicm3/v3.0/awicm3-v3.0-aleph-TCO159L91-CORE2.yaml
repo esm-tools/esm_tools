@@ -6,14 +6,14 @@ general:
     compute_time: "00:30:00"
     initial_date: "2000-01-01"
     final_date: "2000-01-03"
-    base_dir: "/scratch/${user}/runtime/${setup_name}-${version}/"
+    base_dir: "/scratch/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 1
     nmonth: 0
     nyear: 0
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/${user}/model_codes/${setup_name}-${version}//
+    model_dir: "/home/${user}/model_codes/${general.setup_name}-${general.version}//
 
 fesom:
     resolution: "CORE2"

@@ -6,7 +6,7 @@ general:
     compute_time: "24:00:00"
     initial_date: "2000-01-01"
     final_date: "2050-01-01"
-    base_dir: "/p/scratch/chhb19/${user}/runtime/${setup_name}-${version}/"
+    base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
     nyear: 20
@@ -15,7 +15,7 @@ computer:
     heterogeneous_parallelization: true
 awicm3:
     postprocessing: false
-    model_dir: "/p/project/chhb19/${user}/model_codes/${setup_name}-${version}/"
+    model_dir: "/p/project/chhb19/${user}/model_codes/${general.setup_name}-${general.version}/"
     pool_dir: "/p/project/chhb19/jstreffi/input/"
 
 fesom:

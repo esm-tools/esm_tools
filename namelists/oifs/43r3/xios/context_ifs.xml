@@ -1,15 +1,15 @@
 <context id="ifs">
   <calendar type="Gregorian" />
 
-  <field_definition  src="./ifs_xml/field_def_ifs.xml" />
+  <field_definition  src="./field_def.xml" />
 
-  <file_definition   src="./ifs_xml/file_def_ifs.xml" />
+  <file_definition   src="./file_def.xml" />
 
-  <axis_definition   src="./ifs_xml/axis_def_ifs.xml" />
+  <axis_definition   src="./axis_def.xml" />
 
-  <domain_definition src="./ifs_xml/domain_def_ifs.xml" />
+  <domain_definition src="./domain_def.xml" />
 
-  <grid_definition   src="./ifs_xml/grid_def_ifs.xml" />
+  <grid_definition   src="./grid_def.xml" />
 
   <variable_definition>
     <variable_group id="client_server_comm"> <!-- Tune both "client_server_comm" variables for performance purposes -->

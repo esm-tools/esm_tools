@@ -286,11 +286,6 @@ fesom:
 xios:
         nproc: ${computer.cores_per_node}
 
-        #@JAN/JOAKIM: is ok to ignore this files?
-        remove_config_sources:
-                - ifs_xml
-
-
 rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
@@ -329,6 +324,7 @@ oasis3mct:
                 - fesom
                 - oifs
                 - rnfmap
+                - xios
 
         required_plugins:
                 - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"

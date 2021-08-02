@@ -87,10 +87,10 @@ compile_infos:
         available_versions:
         - 40r1
         - 43r3-master
-        - 43r3-awi-frontiers
-        - 43r3-awi-frontiers-xios
-        - 43r3-awi
-        - 43r3-awi-e1
+        - 43r3-awicm-3.0
+        - 43r3-awicm-frontiers
+        - 43r3-awicm-frontiers-xios
+        - 43r3-awicm-deck
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -108,7 +108,7 @@ compile_infos:
             destination: 40r1
           43r3-master:
             requires:
-            - oasis3mct-4.0-awicm3-frontiers
+            - oasis3mct-4.0-awicm-frontiers
             branch: master
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
@@ -116,9 +116,19 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
-          43r3-awi-frontiers:
+          43r3-awicm-3.0:
             requires:
-            - oasis3mct-4.0-awicm3-frontiers
+            - oasis3mct-4.0-awicm-3.0
+            branch: awicm3-frontiers-freeze-candidate-1
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
+          43r3-awicm-frontiers:
+            requires:
+            - oasis3mct-4.0-awicm-frontiers
             branch: awicm-3-frontiers
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
               -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
@@ -126,23 +136,16 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
-          43r3-awi-frontiers-xios:
+          43r3-awicm-frontiers-xios:
             requires:
-            - oasis3mct-4.0-awicm3-frontiers
+            - oasis3mct-4.0-awicm-frontiers
             branch: awicm-3-frontiers-xios
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: true
-          43r3:
-            branch: oifs-deck
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
-            with_xios: false
-          43r3-awi:
+          43r3-awicm-deck:
             requires:
             - oasis3mct-4.0-oifsdeck
             branch: awicm-3-deck-hotfix-1
@@ -151,23 +154,13 @@ compile_infos:
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
-          43r3-awi-e1:
-            requires:
-            - oasis3mct-4.0-oifsdeck
-            - xios-2.5
-            branch: fix-mkl
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+          43r3:
+            branch: oifs-deck
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
-            #destination: oifs-43r3 # TODO: JS: Had to comment this out. When I use destination the $model_dir changes, but $XIOS_TOPLEVEL is still pointing at oifs-43r3-awi-e1 leading to failed oasis lib including
-          #43r3-foci:
-          #  requires:
-          #  - oasis3mct-fociagrif
-          #  branch: oifs-foci
-          #  comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-          #    -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
-          #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-          #  install_bins: make/esm/oifs/bin/oifs
+            with_xios: false
           43r3-foci:
             branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -400,6 +393,14 @@ lresume: false
 restart_rate: 1
 restart_unit: "months"
 
+file_movements:
+        restart_in:
+            init_to_exp: link
+            exp_to_run: copy
+            run_to_work: link
+        restart_out:
+            all_directions: move
+
 # @JOAKIM: we need to discuss the values, you used to have:
 # massfixer: 2
 # nfrmasscon: 1
@@ -455,11 +456,8 @@ next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
 # Number of steps per day in this run
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-# @JOAKIM: do we need a switch here?
-custop: "h${oifs.next_step}"
-#custop: "t${oifs.next_step}" # TODO: delete this comment
+# By default we output one restart per run
 nfrres: 1
-#nfrres: "${next_step}" # TODO: delete this comment
 
 
 #======================================================================================
@@ -850,18 +848,13 @@ choose_version:
                                         NFRRES: ${nfrres}
                                         NRESTS:
                                                 - -1
-                                                - $(( -${simulation_length_seconds} / ${time_step} ))
-
-                                        #NRESTS(1): -1
-                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-
+                                                - $(( -${simulation_length_seconds} / 3600 ))
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
-
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "${custop}"
+                                        CUSTOP: "t${oifs.next_step}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
@@ -1070,12 +1063,12 @@ choose_eternal_run_number:
                         ${oifs.perturb}
                         ${oifs.nx}
                         ${oifs.ensemble_id};
-                    echo 'OPTION1: ${eternal_run_number}'"
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
-                    echo 'OPTION2: ${eternal_run_number}'"
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
@@ -1097,7 +1090,7 @@ choose_eternal_run_number:
                         ${oifs.seconds_since_initial}
                         ${oifs.start_ndays}
                         ${oifs.wam};
-                    echo 'OPTION3: ${eternal_run_number}'"
+                    echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
                 choose_eternal_run_number:
                         0:

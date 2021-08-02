@@ -43,7 +43,7 @@ name_flag: "--job-name=${expid}"
 
 heterogeneous_parallelization: false
 
-choose_heterogeneous_parallelization:
+add_choose_heterogeneous_parallelization:
         true:
                 cpu_bind: "none"
         false:

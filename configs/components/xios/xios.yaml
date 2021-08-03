@@ -36,10 +36,12 @@ choose_version:
     use_oasis: ''
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
-    choose_computer.useMPI:
+    choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
       cray_mpich:
         archfile: ESMTOOLS_generic_oasis_cray
       intelmpi:
+        archfile: ESMTOOLS_generic_oasis_intel
+      parastationmpi:
         archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master

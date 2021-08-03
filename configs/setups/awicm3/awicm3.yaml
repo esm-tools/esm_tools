@@ -324,7 +324,6 @@ oasis3mct:
                 - fesom
                 - oifs
                 - rnfmap
-                - xios
 
         required_plugins:
                 - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"

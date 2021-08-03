@@ -2,7 +2,7 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "v3.0"
-    compute_time: "00:30:00"
+    compute_time: "08:00:00"
     initial_date: "2000-01-01"
     final_date: "2000-01-02"
     taskset: true
@@ -17,14 +17,14 @@ awicm3:
 
 fesom:
     resolution: "orca25"
-    pool_dir: "/work/ollie/clidyn/FESOM2/meshes/"
+    pool_dir: "/work/ollie/jstreffi/input/fesom2/"
     namelist_dir: "/home/ollie/jstreffi/esm_tools/namelists/fesom2/awicm3/v3.0/orca25/"
     restart_rate: 1
     restart_unit: "d"
     restart_first: 1
     lresume: false
     time_step: 100
-    nproc: 288
+    nproc: 864
 
 oifs:
     resolution: "TCO159"

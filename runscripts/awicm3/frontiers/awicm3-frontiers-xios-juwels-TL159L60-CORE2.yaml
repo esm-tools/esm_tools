@@ -1,12 +1,13 @@
 general:
+    user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "1.0-frontiers-xios"
-    account: "hhb20"
+    version: "frontiers-xios"
+    account: "hhb19"
     compute_time: "00:15:00"
     initial_date: "2000-01-01"
     final_date: "2000-01-02"
-    base_dir: "/p/scratch/chhb20/jstreffi/runtime/awicm-3.1/"
-    nday: 5
+    base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
     nmonth: 0
     nyear: 0
 
@@ -15,16 +16,16 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/p/project/chhb19/jstreffi/model_codes/awicm3-1.0-frontiers-xios/"
+    model_dir: "/p/project/chhb19/${user}/model_codes/${general.setup_name}-${general.version}/"
     pool_dir: "/p/project/chhb19/jstreffi/input/"
 
 fesom:
     resolution: "CORE2"
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
-    restart_rate: 5
+    restart_rate: 1
     restart_unit: "d"
-    restart_first: 5
+    restart_first: 1
     lresume: false
     time_step: 2400
     nproc: 48
@@ -46,7 +47,7 @@ oasis3mct:
     use_lucia: true
 
 xios:                                                                                                  
-    xml_dir: /p/project/chhb19/jstreffi/esm_tools/namelists/oifs/43r3/xios/                                    
+    xml_dir: "/p/project/chhb19/${user}/esm_tools/namelists/oifs/43r3/xios/"                           
     with_model: oifs                                                                                   
     nproc: 48
     omp_num_threads: 1

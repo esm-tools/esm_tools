@@ -103,7 +103,7 @@ choose_general.setup_name:
                         field_def: field_def
                         file_def: file_def
         awicm3:
-                xml_dir: "${pool_dir}"
+                xml_dir: "${general.pool_dir}"
                 add_config_files:
                         context_ifs: context_ifs
                         ifs_xml: ifs_xml

@@ -75,28 +75,6 @@ namelists:
         - namelist.cvmix
         - namelist.icepack
 
-# NOTE: move potentially to AWIESM 2
-## Settings for Gent/McWilliams based upon the selected ALE scheme.
-#ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
-#K_gm: 3000.0
-#K_hor: 3000.0
-#K_gm_max: 2000.0
-#
-#choose_ALE_scheme:
-#    linfs: #AWICM3
-#        K_gm: 5000.0
-#        K_hor: 5000.0
-#    zstar: #DEFAULT
-#        K_gm_max: 2000.0
-#        K_hor: 3000.0
-#
-#add_namelist_changes:
-#    namelist.oce:
-#        oce_dyn:
-#            K_gm: ${K_gm}
-#            K_gm_max: ${K_gm_max}
-#        oce_tra:
-#            K_hor: ${K_hor}
 
 
 choose_resolution:

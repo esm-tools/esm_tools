@@ -107,6 +107,8 @@ oifs:
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                         add_namelist_changes:
                                 fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
                                         NAMIO_SERV:
                                                 NPROC_IO: 2
                                                 NPROCESS_LEVEL: 5

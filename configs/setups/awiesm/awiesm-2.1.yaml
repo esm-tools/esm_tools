@@ -158,6 +158,7 @@ fesom:
                 2.0:
                         version: "2.0"
                 2.1-recom:
+                        num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
                         add_config_sources:
                                 oce:     "${namelist_dir}/namelist.oce.recom.ciso"

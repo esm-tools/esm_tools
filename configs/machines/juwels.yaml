@@ -9,11 +9,12 @@ accounting: true
 # default settings for compiler, mpi and I/O libs
 
 #compiler_mpi: intel_2019a_impi2019
+useMPI: parastationmpi
 compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
 #compiler_mpi: intel2020_psmpi2020
-iolibraries: system_libs
+iolibraries: awi_libs
 
 # slurm setup
 batch_system: slurm
@@ -98,8 +99,6 @@ choose_compiler_mpi:
         - "load CMake/3.18.0"
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
-        - "load netCDF-Fortran/4.5.3"
-        - "load netCDF/4.7.4"
         - "load Perl/5.32.0"
       add_export_vars:
         FC: mpiifort
@@ -110,10 +109,6 @@ choose_compiler_mpi:
         CXX: mpiicpc
         MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-        NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
-        NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
-        ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_impi2020
-        LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
         PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel2020_psmpi2020:
@@ -124,8 +119,6 @@ choose_compiler_mpi:
         - "load CMake/3.18.0"
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
-        - "load netCDF-Fortran/4.5.3"
-        - "load netCDF/4.7.4"
         - "load Perl/5.32.0"
       add_export_vars:
         FC: mpifort
@@ -137,10 +130,6 @@ choose_compiler_mpi:
         MAIN_LDFLAGS: -openmp
         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-        NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
-        NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
-        ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020
-        LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
         PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel_2019a_impi2019:
@@ -152,8 +141,6 @@ choose_compiler_mpi:
          - "load Python/3.6.8"
          - "load imkl/2019.3.199"
          - "load Perl/5.28.1"
-         - "load netCDF/4.6.3"
-         - "load netCDF-Fortran/4.4.5"
          - "unload grib_api"
       # FOCI needs the release_mt version of intel mpi
       choose_general.setup_name:
@@ -169,12 +156,6 @@ choose_compiler_mpi:
          CXX: mpiicpc
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-         NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
-         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
-         ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2019_impi2019
-         LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
-         CMAKE_LIBRARY_PATH: $EBROOTNETCDF/lib64:$CMAKE_LIBRARY_PATH
-         CMAKE_PREFIX_PATH: $EBROOTNETCDF:$CMAKE_PREFIX_PATH
          PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
    intel_Develop_2019a_impi2019:
@@ -200,22 +181,18 @@ choose_compiler_mpi:
          CXX: mpiicpc
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-         NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
-         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
-         ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020
-         LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
 
    intel_2019a_psmpi2019:
       add_module_actions:
          - "load Stages/2019a"
-         - "load Intel/2019.3.199-GCC-8.3.0"
+         - "load Intel/2019.5.281-GCC-8.3.0"
          - "load ParaStationMPI/5.4.4-1-mt"
          - "load CMake"
          - "load Python/3.6.8"
          - "load imkl/2019.3.199"
          - "load Perl/5.28.1"
-         - "load netCDF-Fortran/4.4.5-serial"
-         - "load netCDF/4.6.3-serial"
+         - "unload netCDF-Fortran"
+         - "unload netCDF"
          - "unload grib_api"
       add_export_vars:
          FC: mpifort
@@ -226,23 +203,36 @@ choose_compiler_mpi:
          CXX: mpic++
          MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-         NETCDF_Fortran_INCLUDE_DIRECTORIES: $EBROOTNETCDFMINFORTRAN/include
-         NETCDF_Fortran_LIBRARIES: $EBROOTNETCDFMINFORTRAN/lib
-         ECCODESROOT: /p/project/chhb19/jstreffi/ecmwf/eccodes_intel2019_psmpi2019
-         LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
-         CMAKE_LIBRARY_PATH: $EBROOTNETCDF/lib64:$CMAKE_LIBRARY_PATH
-         CMAKE_PREFIX_PATH: $EBROOTNETCDF:$CMAKE_PREFIX_PATH
-         PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
 choose_iolibraries:
 
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netCDF"
+         - "load netCDF netCDF-Fortran"
+    awi_libs:
+       choose_compiler_mpi:
+          intel_2019a_psmpi2019:
+             add_export_vars:
+                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
     geomar_libs:
        choose_compiler_mpi:
-          intel2019_impi2019:
+          intel2019a_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
                 PATH: $IO_LIB_ROOT/bin:$PATH

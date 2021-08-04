@@ -47,7 +47,7 @@ oasis3mct:
     use_lucia: true
 
 xios:                                                                                                  
-    xml_dir: "/p/project/chhb19/${user}/esm_tools/namelists/oifs/43r3/xios/"                           
+    xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/"                           
     with_model: oifs                                                                                   
     nproc: 48
     omp_num_threads: 1

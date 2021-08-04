@@ -14,7 +14,7 @@ general:
 
 awicm3:
     postprocessing: false
-    model_dir: /home/awiiccp2/esm/model_codes/awicm3-1.0-frontiers/
+    model_dir: /home/awiiccp2/esm/model_codes/awicm3-1.0-frontiers-xios/
 
 fesom:
     resolution: "CORE2"

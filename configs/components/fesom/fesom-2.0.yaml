@@ -114,6 +114,10 @@ choose_resolution:
         D3:
                 nx: 3160340
                 mesh_dir: "${pool_dir}/${resolution}/"
+        DART:
+                nx: 3160340
+                mesh_dir: "${pool_dir}/${resolution}/"
+
 
 restart_in_files:
         oce_restart: oce_restart

@@ -13,7 +13,7 @@ jobs:
           LANG: en_US.UTF-8
     strategy:
       matrix:
-        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9']
+        python-version: [ '3.6', '3.7', '3.8', '3.9']
     name: Python ${{ matrix.python-version }} sample
     steps:
       - uses: actions/checkout@v2

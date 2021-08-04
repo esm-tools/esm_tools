@@ -57,7 +57,7 @@ jobs:
       run: |    
         esm_master status-fesom-2.0
   
-    - name: run get-fesom-2.0
+    - name: run clean-fesom-2.0
       run: |    
-        esm_master get-fesom-2.0
+        esm_master clean-fesom-2.0
         

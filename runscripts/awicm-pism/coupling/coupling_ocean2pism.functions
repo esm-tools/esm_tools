@@ -177,15 +177,30 @@ function ocean2pism {
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
 
-    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
-    
     ln -sf "${COUPLE_DIR}/ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc" "${COUPLE_DIR}/latest_ocean_forcing_file.nc"
+    
+    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
     
     unset cleanup_list file
 
     unset NOCOLOR GREEN
     unset PISM_OCEAN_SWITCH PISM_OCEAN_FILE_SWITCH PISM_OCEAN_FORCING_FILE
 
+    max_retry=12
+    retry=0
+    sleep 10 # Minimum time for st_new.sh to finish
+        
+    while [ ${retry} -lt ${max_retry} ]; do
+        if [ -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+            break # call results.sh outside loop
+        else
+            (( retry = retry + 1 ))
+            sleep 1
+        fi
+    done
+    if [ ! -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+        echo "Something wrong after waiting for 120 seconds!"
+    fi
     echo "     ...done."
 }
 

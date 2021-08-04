@@ -3,8 +3,8 @@ def prepare_environment(config):
     environment_dict = {
             "PISM_TO_ATMOSPHERE": 1,
             "ATMOSPHERE_TO_PISM": 1,
-            "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
-            "iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
+            #"iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
+            #"iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
@@ -42,7 +42,7 @@ def prepare_environment(config):
             "OUTPUT_DIR_pism": config["pism"]["experiment_outdata_dir"],
             "SPINUP_FILE_pism": config["pism"]["spinup_file"],
             "MESH_DIR_fesom": config["general"]["mesh_dir"],
-            "FUNCTION_PATH": "/home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling",
+            "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             }

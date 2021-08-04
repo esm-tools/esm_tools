@@ -13,6 +13,7 @@ jobs:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
     container: koldunovn/esm_test:latest
+      options: --hostname ollie1
 
     # Service containers to run with `gfortran_ubuntu`
     steps:

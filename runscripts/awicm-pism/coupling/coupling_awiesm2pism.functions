@@ -8,5 +8,18 @@ awiesm2pism() {
     atmosphere2pism
     ocean2pism
 
-    sleep 10
+#    max_retry=12
+#    retry=0
+#    sleep 10 # Minimum time for st_new.sh to finish
+#    while [ ${retry} -lt ${max_retry} ]; do
+#        if [ -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+#            break # call results.sh outside loop
+#        else
+#            (( retry = retry + 1 ))
+#            sleep 1
+#        fi
+#    done
+#    if [ ! -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+#        echo "Something wrong after waiting for 120 seconds!"
+#    fi
 }

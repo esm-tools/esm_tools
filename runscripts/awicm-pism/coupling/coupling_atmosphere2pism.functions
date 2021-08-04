@@ -114,9 +114,11 @@ atmosphere2pism() {
     case $iterative_coupling_atmosphere_pism_ablation_method in
         "PDD")
             ic_atm2pism_ablation_pdd
+            latest_atmo_file=${COUPLE_DIR}/atmosphere_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
             ;;
         "DEBM")
             ic_atm2pism_ablation_debm
+            latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
             ;;
         "EBM")
             ic_atm2pism_ablation_ebm
@@ -131,6 +133,23 @@ atmosphere2pism() {
     echo -e "\t\t---> Tidying up after coupling generic atmosphere to specific ice sheet model PISM"
     ic_atm2pism_finish_up
 
+    max_retry=12
+    retry=0
+    sleep 10 # Minimum time for st_new.sh to finish
+        
+    ln -sf ${latest_atmo_file} ${COUPLE_DIR}/latest_atmo_forcing_file.nc
+    
+    while [ ${retry} -lt ${max_retry} ]; do
+        if [ -f ${COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
+            break # call results.sh outside loop
+        else
+            (( retry = retry + 1 ))
+            sleep 1
+        fi
+    done
+    if [ ! -f ${COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
+        echo "Something wrong after waiting for 120 seconds!"
+    fi
     echo -e "\t\t*** F I N I S H E D    atmosphere2pism *** "
     echo -e "\t\t=================================================================="
 }
@@ -1489,8 +1508,6 @@ ic_atm2debm_ablation_debm_run_execute_binary() {
                 fi
                 required_file_exit_code=$((required_file_exit_code + 1))
         done
-        echo "*** modules loaded: "
-        echo $(module list)
         module unload netcdf
         module load netcdf/4.6.0_intel
 
@@ -1705,7 +1722,6 @@ ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files() {
                 ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc \
                 ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
                 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-        ln -sf ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc ${COUPLE_DIR}/latest_surface_given_file.nc
 }
 
 ## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis

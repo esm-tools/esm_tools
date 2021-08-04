@@ -142,8 +142,6 @@ update_orography_run_calnoro() {
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
-        echo "*** Loaded modules: "
-        echo $(module list)
 	echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
         #rm sso_par_fil.srv topodata.nc

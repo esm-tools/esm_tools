@@ -162,7 +162,8 @@ export_vars:
         #
         LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
         # avoid GLIBCXX_3.4.15 not found error
-        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
+        #LD_LIBRARY_PATH[(1)]: /sw/spack-rhel6/gcc-9.1.0-lsnsye/lib64:$LD_LIBRARY_PATH
+        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-5.1.0/lib64:$LD_LIBRARY_PATH
         # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
         # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 

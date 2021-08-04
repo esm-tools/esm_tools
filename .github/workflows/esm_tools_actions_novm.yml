@@ -13,7 +13,7 @@ jobs:
           LANG: en_US.UTF-8
     strategy:
       matrix:
-        python-version: [ '3.6' ]
+        python-version: [ '3.6', '3.7' ]
     name: Python ${{ matrix.python-version }} sample
     steps:
       - uses: actions/checkout@v2
@@ -52,15 +52,15 @@ jobs:
 
       - name: run get-fesom-2.0
         run: |
-          hostname ollie1
+          sudo hostname ollie1
           esm_master get-fesom-2.0
 
       - name: run status-fesom-2.0
         run: |
-          hostnmae ollie1
+          sudo hostnmae ollie1
           esm_master status-fesom-2.0
 
       - name: run clean-fesom-2.0
         run: |
-          hostname ollie1
+          sudo hostname ollie1
           esm_master clean-fesom-2.0

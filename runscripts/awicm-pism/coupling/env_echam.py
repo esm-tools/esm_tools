@@ -11,6 +11,7 @@ def prepare_environment(config):
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "RESTART_DIR_echam": config["echam"]["experiment_restart_out_dir"],
             "DATA_DIR_echam": config["echam"]["experiment_outdata_dir"],
+            "INIT_DIR_echam": config["echam"]["experiment_input_dir"],
             "number_of_years_for_forcing": config["model1"]["chunk_size"],
             "CHUNK_START_DATE_echam": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_echam": config["general"]["chunk_end_date"],

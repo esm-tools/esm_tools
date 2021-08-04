@@ -37,7 +37,7 @@ function ocean2pism {
 	    # Take DIRECTly the forcing coming from the ocean model
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_direct_forcing
             ;;
         "MIXED"|"TS_RESCALED2FLUX")
@@ -47,7 +47,7 @@ function ocean2pism {
 	    #  fluxes -- NOT YET IMPLEMENTED
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing
             ;;
 	"OCEANTEMP")
@@ -57,7 +57,7 @@ function ocean2pism {
 	    # basal ice shelf conditions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean o3d"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_o3d_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_o3d_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_temp_forcing
 	    ;;
 	"OCEANTEMPSALT")
@@ -67,7 +67,7 @@ function ocean2pism {
 	    # computes the basal ice shelf conditions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean th"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_th_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_th_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing
 	    ;;
 	"PICO_OCEAN")
@@ -79,7 +79,7 @@ function ocean2pism {
 	    #PISM_OCEAN_SWITCH="-ocean pico -ocean.pico.continental_shelf_depth 700"
             
             PISM_OCEAN_SWITCH="-ocean pico"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_pico_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_pico_file ${PISM_OCEAN_FORCING_FILE}"
             PISM_OCEAN_PICO_BASINS_FILE=${PISM_OCEAN_PICO_BASINS_FILE:-${PISM_OCEAN_FORCING_FILE}}
             echo " * Doing iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing ..."
             iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing 	
@@ -96,7 +96,7 @@ function ocean2pism {
 	    # only on the 3dim oceanic temperature distribution
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_temp2flux_forcing
 	    ;;
 	"TEMPSALT2FLUX")
@@ -106,7 +106,7 @@ function ocean2pism {
 	    # 3dim oceanic temperature and salinity distributions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_tempsalt2flux_forcing
 	    ;;
         *)
@@ -178,6 +178,9 @@ function ocean2pism {
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
 
     for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    
+    ln -sf "${COUPLE_DIR}/ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc" "${COUPLE_DIR}/latest_ocean_forcing_file.nc"
+    
     unset cleanup_list file
 
     unset NOCOLOR GREEN

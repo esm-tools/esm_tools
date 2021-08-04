@@ -1,5 +1,5 @@
 general:
-    setup_name: "awiesm"
+    setup_name: "awicm"
     compute_time: "02:00:00"
     initial_date: "1850-01-01"
     final_date: "2014-12-31"
@@ -9,19 +9,27 @@ general:
     nyear: 1
 
 echam:
+    #version: "6.3.05p2-concurrent_radiation-paleodyn"
     lresume: true
     restart_unit: "months"
     ini_parent_dir: "/home/ollie/lackerma/restarts_shan_picontrol/"
     ini_parent_exp_id: "picontrol"
     ini_parent_date: "30991231"
 
-awiesm:
-    version: "2.1"
+jsbach:
+    ini_parent_dir: "/home/ollie/lackerma/restarts_shan_picontrol/"
+    ini_parent_exp_id: "picontrol"
+    ini_parent_date: "30991231"
+    dataset: "r0010"
+    dynamic_vegetations: true
+
+awicm:
+    version: "2.0"
     postprocessing: true
     scenario: "HIST"
     # NOTE: In a future version, model code will become part of the experiment
     # tree and will be compiled for you...
-    model_dir: "/home/ollie/lackerma/awiesm-2.1/"
+    model_dir: "/home/ollie/lackerma/awicm-2.0/"
 
 fesom:
     version: "2.0"

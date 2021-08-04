@@ -12,15 +12,18 @@ general:
 
 pism:
         version: "github1.2.1"
-        resolution: "5km"
+        resolution: "10km"
         model_dir: "/pf/a/a270124/pism_v1.2.1/"
-        lresume: 0
+        lresume: 1
+        ini_parent_exp_id: ""
+        ini_parent_date: ""
+        ini_restart_dir: ""
+        spinup_file: "/work/ba1066/a270124/pool_pism/input/nhem/pismr_nhem_10km_LU.nc"
         pool_dir: "/work/ba1066/a270124/pool_pism/"
         ts_interval: "monthly"
         ex_interval: "monthly"
-        domain: "greenland"
+        domain: "nhem"
         force_bootstrap_first_run: True
-        #cli_input_file_pism: "/work/ba1066/a270124/pool_pism/input/nhem/pismr_nhem_10km_LU.nc"
 
         workflow:
                 next_run_triggered_by: couple_out

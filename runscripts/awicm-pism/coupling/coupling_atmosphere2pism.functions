@@ -1101,7 +1101,7 @@ ic_atm2pism_ablation_pdd_set_time_axis() {
         echo -e "\t\t- appending time axis to forcing file >>${COUPLE_DIR}/atmo_given_file.nc<<"
         # Determine how many timesteps we have and set time unit accordingly
         nt=$(${cdo} -s ntime ${COUPLE_DIR}/atmo_given_file.nc)
-        if [ $nt -eq 1 ]; then
+        if [ "x$nt" == "x1" ]; then
                 echo -e "\t\t- only ONE timestep given"
                 time_unit="year"
                 echo "Dont know what to do"
@@ -1703,8 +1703,9 @@ ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files() {
         cdo -O merge \
                 ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_ice_temp_varname}.nc \
                 ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc \
-                ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${CURRENT_YEAR_pism}.nc \
+                ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
                 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        ln -sf ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc ${COUPLE_DIR}/latest_surface_given_file.nc
 }
 
 ## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
@@ -1716,7 +1717,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
 
         # Determine how many timesteps we have and set time unit accordingly
         nt=$(${cdo} -s ntime ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)
-        if [ $nt -eq 1 ]; then
+        if [ "x$nt" == "x1" ]; then
                 echo "                 -   only ONE timestep given"
                 time_unit="year"
                 echo "Dont know what to do"

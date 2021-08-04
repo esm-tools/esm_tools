@@ -7,4 +7,6 @@ awiesm2pism() {
     
     atmosphere2pism
     ocean2pism
+
+    sleep 10
 }

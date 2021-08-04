@@ -344,9 +344,9 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        cp ${FUNCTION_PATH}/jsbach_init_file .
-        cp ${FUNCTION_PATH}/../iterative_coupling/utils/_build/mo_kinds.mod .
-        cp ${FUNCTION_PATH}/../iterative_coupling/utils/_build/mo_vegparams.mod .
+        cp ${FUNCTION_PATH}/utils/_build/jsbach_init_file .
+        cp ${FUNCTION_PATH}/utils/_build//iterative_coupling/utils/_build/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/utils/_build/iterative_coupling/utils/_build/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}

@@ -21,7 +21,7 @@ echam:
     restart_rate: 1
     nproca: 24
     nprocb: 24
-    lresume: true
+    lresume: false
     ini_parent_dir: "/home/ollie/lackerma/restarts_shan_picontrol/"
     ini_parent_exp_id: "picontrol"
     ini_parent_date: "30991231"
@@ -48,6 +48,16 @@ echam:
                     call_function: echam2ice
                     env_preparation: env_echam.py
                     run_only: last_run_in_chunk
+
+#jsbach:
+#    ini_parent_dir: "/home/ollie/lackerma/restarts_shan_picontrol/"
+#    ini_parent_exp_id: "picontrol"
+#    ini_parent_date: "30991231"
+#
+#hdmodel:
+#    ini_parent_dir: "/home/ollie/lackerma/restarts_shan_picontrol/"
+#    ini_parent_exp_id: "picontrol"
+#    ini_parent_date: "30991231"
 
 fesom:
     version: "2.0"

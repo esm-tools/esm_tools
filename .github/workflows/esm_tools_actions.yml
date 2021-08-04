@@ -40,10 +40,6 @@ jobs:
     - name: run esm_plugins
       run: |    
         esm_plugins
-    
-    - name: run esm_plugins
-      run: |    
-        esm_plugins
         
     - name: run esm_versions
       run: |    

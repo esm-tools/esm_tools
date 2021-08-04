@@ -57,7 +57,7 @@ jobs:
 
       - name: run status-fesom-2.0
         run: |
-          sudo hostnmae ollie1
+          sudo hostname ollie1
           esm_master status-fesom-2.0
 
       - name: run clean-fesom-2.0

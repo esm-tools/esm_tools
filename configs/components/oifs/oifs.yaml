@@ -1062,12 +1062,12 @@ choose_eternal_run_number:
                         ${oifs.perturb}
                         ${oifs.nx}
                         ${oifs.ensemble_id};
-                    echo 'OPTION1: ${eternal_run_number}'"
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
-                    echo 'OPTION2: ${eternal_run_number}'"
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
@@ -1089,7 +1089,7 @@ choose_eternal_run_number:
                         ${oifs.seconds_since_initial}
                         ${oifs.start_ndays}
                         ${oifs.wam};
-                    echo 'OPTION3: ${eternal_run_number}'"
+                    echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
                 choose_eternal_run_number:
                         0:

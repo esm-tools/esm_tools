@@ -114,7 +114,7 @@ atmosphere2pism() {
     case $iterative_coupling_atmosphere_pism_ablation_method in
         "PDD")
             ic_atm2pism_ablation_pdd
-            latest_atmo_file=${COUPLE_DIR}/atmosphere_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+            latest_atmo_file=${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
             ;;
         "DEBM")
             ic_atm2pism_ablation_debm

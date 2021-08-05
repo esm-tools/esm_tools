@@ -265,6 +265,12 @@ config_sources:
 compiletime_environment_changes:
         add_export_vars:
                 taken2from:      fesom2_compile
+        choose_computer.name:
+                juwels:
+                        add_module_actions:
+                                - "unload ParaStationMPI"
+                                - "load ParaStationMPI/5.4.4-1"
+                                - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
         add_export_vars:

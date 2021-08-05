@@ -44,7 +44,8 @@ choose_computer.name:
         pool_dir: "${computer.pool_directories.pool}/../clidyn/"
     mistral:
         pool_dir: "${computer.pool_directories.pool}/AWICM/"
-        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/FORCING/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+        forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
         mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
         add_compiletime_environment_changes:
             add_module_actions:

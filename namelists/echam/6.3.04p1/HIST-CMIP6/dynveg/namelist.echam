@@ -50,6 +50,7 @@
 ! the following namelist entries are based on 'cmip6_total.config' from 
 ! /work/bk0988/k204212/cmip6/mpiesm-1.2.01-release/run/standard_options/cmip6_total.config
 ! Wed Oct 23 08:55:40 2019
+! comment out blocks you dont need
 
 &mvstreamctl ! 'default spm glm g3bm'
     filetag = 'echam'
@@ -103,191 +104,191 @@
     stream = 'scm'
     lpost = 0
 /
-&mvstreamctl ! 'cmip6 aeropt3hrpt'
-    filetag = 'aeropt3hrpt'
-    source = 'aeropt'
-    target = '*3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'tau_aero_550:inst>tau_aero_550_pt=11',
-                'omega_aero_550:inst>omega_aero_550_pt=12',
-                'g_aero_550:inst>g_aero_550_pt=13'
-/
-&set_stream ! 'cmip6 aeropt3hrpt'
-    stream = 'aeropt3hrpt'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 afteraeropt3hrpt'
-    filetag = 'aeropt3hrpt'
-    source = 'g3b'
-    target = '*afteraeropt3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'aps:inst>aps_pt=134'
-/
-&set_stream ! 'cmip6 g3bafteraeropt3hrpt'
-    stream = 'g3bafteraeropt3hrpt'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 cfdiag3hrpt'
-    filetag = 'cfdiag3hrpt'
-    source = 'cfdiag'
-    target = '*3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'irsucs:inst>irsucs_pt=6'
-/
-&set_stream ! 'cmip6 cfdiag3hrpt'
-    stream = 'cfdiag3hrpt'
-    lrerun = 0
-/
-&set_stream_element ! 'cmip6 cfdiag3hrpt irsucs_pt'
-    stream = 'cfdiag3hrpt'
-    name = 'irsucs_pt'
-    code = 6
-    lpost = 1
-/
-&mvstreamctl ! 'cmip6 aftercfdiag3hrpt'
-    filetag = 'cfdiag3hrpt'
-    source = 'g3b'
-    target = '*aftercfdiag3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'aps:inst>aps_pt=134'
-/
-&set_stream ! 'cmip6 g3baftercfdiag3hrpt'
-    stream = 'g3baftercfdiag3hrpt'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 echam3hr'
-    filetag = 'echam3hr'
-    source = 'sp', 'g3b'
-    target = '*3hr'
-    interval = 3, 'hours', 'last', 0
-    variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
-                'aprs_na:mean>aprs=144', 'aps:mean>aps=134',
-                'sraf0_na:mean>sraf0=187', 'srad0d_na:mean>srad0d=184',
-                'tradsu_na:mean>tradsu=205', 'trafs_na:mean>trafs=186',
-                'sradsu_na:mean>sradsu=204', 'srads_na:mean>srads=176',
-                'qvi_na:mean>qvi=230', 'trad0_na:mean>trad0=179',
-                'srad0u_na:mean>srad0u=203', 'aclcov_na:mean>aclcov=164',
-                'ahfl_na:mean>ahfl=147', 'ahfs_na:mean>ahfs=146',
-                'rsuscs_na:mean>rsuscs=51', 'traf0_na:mean>traf0=188',
-                'wind10_na:mean>wind10=171', 'rsdscs_na:mean>rsdscs=50',
-                'xlvi_na:mean>xlvi=231', 'xivi_na:mean>xivi=150',
-                'trads_na:mean>trads=177', 'u10:mean>u10=165',
-                'v10:mean>v10=166', 'geosp:mean>geosp=129', 'st:mean>st=130',
-                'lsp:mean>lsp=152'
-/
-&set_stream ! 'cmip6 sp3hr'
-    stream = 'sp3hr'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 g3b3hr'
-    stream = 'g3b3hr'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 echam3hrpt'
-    filetag = 'echam3hrpt'
-    source = 'sp', 'gl', 'g3b'
-    target = '*3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'rsuscs_na:inst>rsuscs_pt=53', 'aps:inst>aps_pt=134',
-                'temp2:inst>temp2_pt=167', 'v10:inst>v10_pt=166',
-                'q2m:inst>q2m_pt=54', 'u10:inst>u10_pt=165',
-                'st:inst>st_pt=130', 'tsurf_na:inst>tsurf_pt=169',
-                'q:inst>q_pt=133', 'albedo_vis_dif:inst>albedo_vis_dif_pt=81',
-                'albedo_nir_dif:inst>albedo_nir_dif_pt=82',
-                'albedo_nir_dir:inst>albedo_nir_dir_pt=80',
-                'albedo_vis_dir:inst>albedo_vis_dir_pt=79',
-                'srad0d_na:inst>srad0d_pt=184', 'ao3:inst>ao3_pt=236',
-                'geosp:inst>geosp_pt=129', 'lsp:inst>lsp_pt=152',
-                'svo:inst>svo_pt=138', 'sd:inst>sd_pt=155'
-/
-&set_stream ! 'cmip6 sp3hrpt'
-    stream = 'sp3hrpt'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 gl3hrpt'
-    stream = 'gl3hrpt'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 g3b3hrpt'
-    stream = 'g3b3hrpt'
-    lrerun = 0
-/
-&set_stream_element ! 'cmip6 g3b3hrpt srad0d_pt'
-    stream = 'g3b3hrpt'
-    name = 'srad0d_pt'
-    code = 184
-    lpost = 1
-/
-&set_stream_element ! 'cmip6 g3b3hrpt tsurf_pt'
-    stream = 'g3b3hrpt'
-    name = 'tsurf_pt'
-    code = 169
-    lpost = 1
-/
-&mvstreamctl ! 'cmip6 echam6hr'
-    filetag = 'echam6hr'
-    source = 'sp', 'gl', 'g3b'
-    target = '*6hr'
-    interval = 6, 'hours', 'last', 0
-    variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
-                'rh2m:mean>rh2m=55', 'u10:mean>u10=165', 'temp2:mean>temp2=167',
-                'geosp:mean>geosp=129', 'st:mean>st=130', 'q:mean>q=133',
-                'lsp:mean>lsp=152', 'sd:mean>sd=155', 'v10:mean>v10=166',
-                'svo:mean>svo=138', 'aps:mean>aps=134'
-/
-&set_stream ! 'cmip6 sp6hr'
-    stream = 'sp6hr'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 gl6hr'
-    stream = 'gl6hr'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 g3b6hr'
-    stream = 'g3b6hr'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 echam6hrpt'
-    filetag = 'echam6hrpt'
-    source = 'sp', 'gl', 'g3b'
-    target = '*6hrpt'
-    interval = 6, 'hours', 'last', 0
-    variables = 'q2m:inst>q2m_pt=54', 'geosp:inst>geosp_pt=129',
-                'st:inst>st_pt=130', 'q:inst>q_pt=133', 'aps:inst>aps_pt=134',
-                'svo:inst>svo_pt=138', 'sn:inst>sn_pt=141',
-                'u10:inst>u10_pt=165', 'v10:inst>v10_pt=166',
-                'temp2:inst>temp2_pt=167', 'tsurf_na:inst>tsurf_pt=169',
-                'wind10_na:inst>wind10_pt=171', 'lsp:inst>lsp_pt=152',
-                'sd:inst>sd_pt=155', 'tsi:inst>tsi_pt=102',
-                'tsw:inst>tsw_pt=103', 'ws:inst>ws_pt=140', 'xl:inst>xl_pt=153',
-                'xi:inst>xi_pt=154', 'wl:inst>wl_pt=193',
-                'seaice:inst>seaice_pt=210', 'siced:inst>siced_pt=211',
-                'sni:inst>sni_pt=214', 'tslm1:inst>tslm1_pt=139'
-/
-&set_stream ! 'cmip6 sp6hrpt'
-    stream = 'sp6hrpt'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 gl6hrpt'
-    stream = 'gl6hrpt'
-    lrerun = 0
-/
-&set_stream ! 'cmip6 g3b6hrpt'
-    stream = 'g3b6hrpt'
-    lrerun = 0
-/
-&set_stream_element ! 'cmip6 g3b6hrpt wind10_pt'
-    stream = 'g3b6hrpt'
-    name = 'wind10_pt'
-    code = 171
-    lpost = 1
-/
-&set_stream_element ! 'cmip6 g3b6hrpt tsurf_pt'
-    stream = 'g3b6hrpt'
-    name = 'tsurf_pt'
-    code = 169
-    lpost = 1
-/
+!&mvstreamctl ! 'cmip6 aeropt3hrpt'
+!    filetag = 'aeropt3hrpt'
+!    source = 'aeropt'
+!    target = '*3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'tau_aero_550:inst>tau_aero_550_pt=11',
+!                'omega_aero_550:inst>omega_aero_550_pt=12',
+!                'g_aero_550:inst>g_aero_550_pt=13'
+!/
+!&set_stream ! 'cmip6 aeropt3hrpt'
+!    stream = 'aeropt3hrpt'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 afteraeropt3hrpt'
+!    filetag = 'aeropt3hrpt'
+!    source = 'g3b'
+!    target = '*afteraeropt3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'aps:inst>aps_pt=134'
+!/
+!&set_stream ! 'cmip6 g3bafteraeropt3hrpt'
+!    stream = 'g3bafteraeropt3hrpt'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 cfdiag3hrpt'
+!    filetag = 'cfdiag3hrpt'
+!    source = 'cfdiag'
+!    target = '*3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'irsucs:inst>irsucs_pt=6'
+!/
+!&set_stream ! 'cmip6 cfdiag3hrpt'
+!    stream = 'cfdiag3hrpt'
+!    lrerun = 0
+!/
+!&set_stream_element ! 'cmip6 cfdiag3hrpt irsucs_pt'
+!    stream = 'cfdiag3hrpt'
+!    name = 'irsucs_pt'
+!    code = 6
+!    lpost = 1
+!/
+!&mvstreamctl ! 'cmip6 aftercfdiag3hrpt'
+!    filetag = 'cfdiag3hrpt'
+!    source = 'g3b'
+!    target = '*aftercfdiag3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'aps:inst>aps_pt=134'
+!/
+!&set_stream ! 'cmip6 g3baftercfdiag3hrpt'
+!    stream = 'g3baftercfdiag3hrpt'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 echam3hr'
+!    filetag = 'echam3hr'
+!    source = 'sp', 'g3b'
+!    target = '*3hr'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
+!                'aprs_na:mean>aprs=144', 'aps:mean>aps=134',
+!                'sraf0_na:mean>sraf0=187', 'srad0d_na:mean>srad0d=184',
+!                'tradsu_na:mean>tradsu=205', 'trafs_na:mean>trafs=186',
+!                'sradsu_na:mean>sradsu=204', 'srads_na:mean>srads=176',
+!                'qvi_na:mean>qvi=230', 'trad0_na:mean>trad0=179',
+!                'srad0u_na:mean>srad0u=203', 'aclcov_na:mean>aclcov=164',
+!                'ahfl_na:mean>ahfl=147', 'ahfs_na:mean>ahfs=146',
+!                'rsuscs_na:mean>rsuscs=51', 'traf0_na:mean>traf0=188',
+!                'wind10_na:mean>wind10=171', 'rsdscs_na:mean>rsdscs=50',
+!                'xlvi_na:mean>xlvi=231', 'xivi_na:mean>xivi=150',
+!                'trads_na:mean>trads=177', 'u10:mean>u10=165',
+!                'v10:mean>v10=166', 'geosp:mean>geosp=129', 'st:mean>st=130',
+!                'lsp:mean>lsp=152'
+!/
+!&set_stream ! 'cmip6 sp3hr'
+!    stream = 'sp3hr'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 g3b3hr'
+!    stream = 'g3b3hr'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 echam3hrpt'
+!    filetag = 'echam3hrpt'
+!    source = 'sp', 'gl', 'g3b'
+!    target = '*3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'rsuscs_na:inst>rsuscs_pt=53', 'aps:inst>aps_pt=134',
+!                'temp2:inst>temp2_pt=167', 'v10:inst>v10_pt=166',
+!                'q2m:inst>q2m_pt=54', 'u10:inst>u10_pt=165',
+!                'st:inst>st_pt=130', 'tsurf_na:inst>tsurf_pt=169',
+!                'q:inst>q_pt=133', 'albedo_vis_dif:inst>albedo_vis_dif_pt=81',
+!                'albedo_nir_dif:inst>albedo_nir_dif_pt=82',
+!                'albedo_nir_dir:inst>albedo_nir_dir_pt=80',
+!                'albedo_vis_dir:inst>albedo_vis_dir_pt=79',
+!                'srad0d_na:inst>srad0d_pt=184', 'ao3:inst>ao3_pt=236',
+!                'geosp:inst>geosp_pt=129', 'lsp:inst>lsp_pt=152',
+!                'svo:inst>svo_pt=138', 'sd:inst>sd_pt=155'
+!/
+!&set_stream ! 'cmip6 sp3hrpt'
+!    stream = 'sp3hrpt'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 gl3hrpt'
+!    stream = 'gl3hrpt'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 g3b3hrpt'
+!    stream = 'g3b3hrpt'
+!    lrerun = 0
+!/
+!&set_stream_element ! 'cmip6 g3b3hrpt srad0d_pt'
+!    stream = 'g3b3hrpt'
+!    name = 'srad0d_pt'
+!    code = 184
+!    lpost = 1
+!/
+!&set_stream_element ! 'cmip6 g3b3hrpt tsurf_pt'
+!    stream = 'g3b3hrpt'
+!    name = 'tsurf_pt'
+!    code = 169
+!    lpost = 1
+!/
+!&mvstreamctl ! 'cmip6 echam6hr'
+!    filetag = 'echam6hr'
+!    source = 'sp', 'gl', 'g3b'
+!    target = '*6hr'
+!    interval = 6, 'hours', 'last', 0
+!    variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
+!                'rh2m:mean>rh2m=55', 'u10:mean>u10=165', 'temp2:mean>temp2=167',
+!                'geosp:mean>geosp=129', 'st:mean>st=130', 'q:mean>q=133',
+!                'lsp:mean>lsp=152', 'sd:mean>sd=155', 'v10:mean>v10=166',
+!                'svo:mean>svo=138', 'aps:mean>aps=134'
+!/
+!&set_stream ! 'cmip6 sp6hr'
+!    stream = 'sp6hr'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 gl6hr'
+!    stream = 'gl6hr'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 g3b6hr'
+!    stream = 'g3b6hr'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 echam6hrpt'
+!    filetag = 'echam6hrpt'
+!    source = 'sp', 'gl', 'g3b'
+!    target = '*6hrpt'
+!    interval = 6, 'hours', 'last', 0
+!    variables = 'q2m:inst>q2m_pt=54', 'geosp:inst>geosp_pt=129',
+!                'st:inst>st_pt=130', 'q:inst>q_pt=133', 'aps:inst>aps_pt=134',
+!                'svo:inst>svo_pt=138', 'sn:inst>sn_pt=141',
+!                'u10:inst>u10_pt=165', 'v10:inst>v10_pt=166',
+!                'temp2:inst>temp2_pt=167', 'tsurf_na:inst>tsurf_pt=169',
+!                'wind10_na:inst>wind10_pt=171', 'lsp:inst>lsp_pt=152',
+!                'sd:inst>sd_pt=155', 'tsi:inst>tsi_pt=102',
+!                'tsw:inst>tsw_pt=103', 'ws:inst>ws_pt=140', 'xl:inst>xl_pt=153',
+!                'xi:inst>xi_pt=154', 'wl:inst>wl_pt=193',
+!                'seaice:inst>seaice_pt=210', 'siced:inst>siced_pt=211',
+!                'sni:inst>sni_pt=214', 'tslm1:inst>tslm1_pt=139'
+!/
+!&set_stream ! 'cmip6 sp6hrpt'
+!    stream = 'sp6hrpt'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 gl6hrpt'
+!    stream = 'gl6hrpt'
+!    lrerun = 0
+!/
+!&set_stream ! 'cmip6 g3b6hrpt'
+!    stream = 'g3b6hrpt'
+!    lrerun = 0
+!/
+!&set_stream_element ! 'cmip6 g3b6hrpt wind10_pt'
+!    stream = 'g3b6hrpt'
+!    name = 'wind10_pt'
+!    code = 171
+!    lpost = 1
+!/
+!&set_stream_element ! 'cmip6 g3b6hrpt tsurf_pt'
+!    stream = 'g3b6hrpt'
+!    name = 'tsurf_pt'
+!    code = 169
+!    lpost = 1
+!/
 &mvstreamctl ! 'cmip6 aeroptday'
     filetag = 'aeroptday'
     source = 'aeropt'
@@ -304,7 +305,7 @@
     source = 'cfdiag'
     target = 'cfdiagday'
     interval = 1, 'days', 'last', 0
-    variables = 'mc:mean>mc=9'
+    variables = 'imc:mean>mc=9'
 /
 &set_stream ! 'cmip6 cfdiagday'
     stream = 'cfdiagday'
@@ -410,10 +411,9 @@
     source = 'cfdiag'
     target = '*mon'
     interval = 1, 'months', 'last', 0
-    variables = 'mc:mean>mc=9', 'dmc:mean>dmc=12', 'mcd:mean>mcd=11',
-                'mcu:mean>mcu=10', 'irld:mean>rld=3', 'irldcs:mean>rldcs=7',
-                'irlu:mean>rlu=1', 'irlucs:mean>rlucs=5', 'irsd:mean>rsd=4',
-                'irsu:mean>rsu=2', 'irsucs:mean>rsucs=6', 'smc:mean>smc=13'
+    variables = 'irlu:mean>rlu=1, irsu:mean>rsu=2, irld:mean>rld=3, irsd:mean>rsd=4, 
+                irlucs:mean>rlucs=5, irsucs:mean>rsucs=6, irldcs:mean>rldcs=7, 
+                mc, mcu, mcd, dmc, smc'
 /
 &set_stream ! 'cmip6 cfdiagmon'
     stream = 'cfdiagmon'
@@ -531,39 +531,39 @@
     stream = 'glaftertdiagmon'
     lrerun = 0
 /
-&mvstreamctl ! 'cmip6 jsbach3hrpt'
-    filetag = 'jsbach3hrpt'
-    source = 'jsbach'
-    target = '*3hrpt'
-    interval = 3, 'hours', 'last', 0
-    variables = 'layer_moisture:inst>layer_moisture_pt=84'
-/
-&set_stream ! 'cmip6 jsbach3hrpt'
-    stream = 'jsbach3hrpt'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 jsbach6hrpt'
-    filetag = 'jsbach6hrpt'
-    source = 'jsbach'
-    target = '*6hrpt'
-    interval = 6, 'hours', 'last', 0
-    variables = 'layer_moisture:inst>layer_moisture_pt=84'
-/
-&set_stream ! 'cmip6 jsbach6hrpt'
-    stream = 'jsbach6hrpt'
-    lrerun = 0
-/
-&mvstreamctl ! 'cmip6 land6hrpt'
-    filetag = 'land6hrpt'
-    source = 'land'
-    target = '*6hrpt'
-    interval = 6, 'hours', 'last', 0
-    variables = 'soil_temperature:inst>soil_temperature_pt=68'
-/
-&set_stream ! 'cmip6 land6hrpt'
-    stream = 'land6hrpt'
-    lrerun = 0
-/
+!&mvstreamctl ! 'cmip6 jsbach3hrpt'
+!    filetag = 'jsbach3hrpt'
+!    source = 'jsbach'
+!    target = '*3hrpt'
+!    interval = 3, 'hours', 'last', 0
+!    variables = 'layer_moisture:inst>layer_moisture_pt=84'
+!/
+!&set_stream ! 'cmip6 jsbach3hrpt'
+!    stream = 'jsbach3hrpt'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 jsbach6hrpt'
+!    filetag = 'jsbach6hrpt'
+!    source = 'jsbach'
+!    target = '*6hrpt'
+!    interval = 6, 'hours', 'last', 0
+!    variables = 'layer_moisture:inst>layer_moisture_pt=84'
+!/
+!&set_stream ! 'cmip6 jsbach6hrpt'
+!    stream = 'jsbach6hrpt'
+!    lrerun = 0
+!/
+!&mvstreamctl ! 'cmip6 land6hrpt'
+!    filetag = 'land6hrpt'
+!    source = 'land'
+!    target = '*6hrpt'
+!    interval = 6, 'hours', 'last', 0
+!    variables = 'soil_temperature:inst>soil_temperature_pt=68'
+!/
+!&set_stream ! 'cmip6 land6hrpt'
+!    stream = 'land6hrpt'
+!    lrerun = 0
+!/
 &mvstreamctl ! 'cmip6 jsbachday'
     filetag = 'jsbachday'
     source = 'jsbach'
@@ -836,7 +836,8 @@
 /
 &set_stream ! 'cmip6 accw'
     stream = 'accw'
-    interval = 3, 'hours', 'last', 0
+!    interval = 3, 'hours', 'last', 0
+    interval = 1, 'month', 'last', 0
 /
 &set_stream ! 'cmip6 aeropt'
     stream = 'aeropt'
@@ -855,10 +856,10 @@
     stream = 'veg'
     interval = 1, 'months', 'last', 0
 /
-&set_stream ! 'cmip6 ma'
-    stream = 'ma'
-    lpost = 1
-/
+!&set_stream ! 'cmip6 ma' hourly output!
+!    stream = 'ma'
+!    lpost = 1
+!/
 &mvstreamctl ! 'cmip6 g3bjsb'
     filetag = 'jsbalone'
     source = 'g3b'

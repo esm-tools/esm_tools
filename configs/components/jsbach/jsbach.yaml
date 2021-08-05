@@ -324,7 +324,7 @@ forcing_additional_information:
 # -> this does not work well; all `<expname>_<current_date>.01_*` files should be moved from `work` to `outdata/<model>` 
 # -> actual output streams are defined in namelist.echam
 # -> all streams wanted as given by namelist.echam must occur in these lists:
-streams:
+streams: # keep alphabetic order; no duplicates in echam.yaml:streams
         - jsbach
         - jsbid
         - land
@@ -332,7 +332,7 @@ streams:
         - surf
         - veg
         - yasso
-        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used
+        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used:
         - jsbachmon
         - landmon
 

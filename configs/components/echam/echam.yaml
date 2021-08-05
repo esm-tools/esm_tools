@@ -263,7 +263,7 @@ choose_version:
 # -> this does not work well; all `<expname>_<current_date>.01_*` files should be moved from `work` to `outdata/<model>` 
 # -> actual output streams are defined in namelist.echam
 # -> all streams wanted as given by namelist.echam must occur in these lists:
-streams:
+streams: # keep alphabetic order; no duplicates in jsbach.yaml:streams
         - accw
         - aclcim
         - aeropt
@@ -272,59 +272,30 @@ streams:
         - cosp
         - echam
         - forcing
+        - g3b
         - g3b1hi
         - g3bday
         - g3bid
         - g3bim
+        - gl
         - glday
         - glim
+        - ma
         - rad
-        - surf
+        - scm
+        - sp
         - sp6h
         - spim
         - tdiag
         - tracer # if namelist.echam:submodelctl:lco2=true
-        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used
+        # reduced echam output if PI-CTRL-SPINUP/namelist.echam is used:
         - co2mon
         - g3bmon
         - glmon
         - spmon
         - tracermon
 
-streamsnc:
-        - accw
-        - aclcim
-        - aeropt
-        - cfdiag
-        - co2
-        - cosp
-        - echam
-        - forcing
-        - g3b1hi
-        - g3bday
-        - g3bid
-        - g3bim
-        - glday
-        - glim
-        - rad
-        - surf
-        - jsbid
-        - sp6h
-        - spim
-        - tdiag
-        - tracer # if namelist.echam:submodelctl:lco2=true
-        # reduced echam it PI-CTRL-SPINUP/namelist.echam is used
-        - co2mon
-        - g3bmon
-        - glmon
-        - spmon
-        - tracermon
-        - sp
-        - gl
-        - g3b
-        - scm
-        - ma
-        
+streamsnc: ${echam.streams}
 
 choose_scenario:
         "PI-CTRL-SPINUP":

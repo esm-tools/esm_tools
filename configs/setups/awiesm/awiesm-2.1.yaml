@@ -188,7 +188,7 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        add_namelist_changes:
+        namelist_changes:
                 namelist.oce:
                         oce_tra:
                                 surf_relax_s: 0.0

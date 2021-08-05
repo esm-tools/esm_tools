@@ -144,13 +144,13 @@ jsbach:
 fesom:
         version: "2.1"
         choose_general.version:
-                1.1:
+                "1.1":
                         version: "1.4"
                 CMIP6:
                         version: "1.4"
-                2.0:
+                "2.0":
                         version: "2.0"
-                2.1:
+                "2.1":
                         version: "2.1"
                         # NOTE: move potentially to AWIESM 2
                         ## Settings for Gent/McWilliams based upon the selected ALE scheme.
@@ -201,6 +201,7 @@ fesom:
         leapyear: True
         asforcing: ECHAM5
 
+        remove_namelist_changes: [namelist.forcing]
 
 
 

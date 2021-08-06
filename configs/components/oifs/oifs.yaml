@@ -395,11 +395,13 @@ restart_unit: "months"
 
 file_movements:
         restart_in:
-            init_to_exp: link
-            exp_to_run: copy
-            run_to_work: link
+            all_directions: link
         restart_out:
             all_directions: move
+        rcf_in:
+            all_directions: copy
+        waminfo_in:
+            all_directions: copy
 
 # @JOAKIM: we need to discuss the values, you used to have:
 # massfixer: 2

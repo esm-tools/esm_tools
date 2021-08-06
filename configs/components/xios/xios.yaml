@@ -36,10 +36,12 @@ choose_version:
     use_oasis: ''
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
-    choose_computer.useMPI:
+    choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
       cray_mpich:
         archfile: ESMTOOLS_generic_oasis_cray
       intelmpi:
+        archfile: ESMTOOLS_generic_oasis_intel
+      parastationmpi:
         archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
@@ -59,7 +61,7 @@ choose_version:
     use_oasis: '' 
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
-comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
@@ -101,7 +103,15 @@ choose_general.setup_name:
                         field_def: field_def
                         file_def: file_def
         awicm3:
-                xml_dir: "${pool_dir}"
+                xml_dir: "${general.pool_dir}"
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
+                        axis_def: axis_def
+                        grid_def: grid_def
 
 
 config_sources:
@@ -109,6 +119,8 @@ config_sources:
         field_def: ${xml_dir}/field_def.xml
         file_def: ${xml_dir}/file_def.xml
         io_def: ${xml_dir}/iodef.xml
+        axis_def: ${xml_dir}/axis_def.xml
+        grid_def: ${xml_dir}/grid_def.xml
         ifs_xml: ${xml_dir}/ifs_xml/*
         context_ifs: ${xml_dir}/context_ifs.xml
 
@@ -117,6 +129,8 @@ config_in_work:
         field_def: field_def.xml
         file_def: file_def.xml
         io_def: iodef.xml
+        axis_def: axis_def.xml
+        grid_def: grid_def.xml
         ifs_xml: ifs_xml/*
         context_ifs: context_ifs.xml
 

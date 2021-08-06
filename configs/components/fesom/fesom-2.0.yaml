@@ -22,6 +22,11 @@ choose_version:
     git-repository:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
+  2.0-awicm-3.0:
+    branch: awicm3-frontiers-freeze-candidate-4
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
   2.0-frontiers:
     branch: awicm-3-frontiers_parallel-restart
     destination: fesom-2.0
@@ -107,17 +112,16 @@ choose_asforcing:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
                 nproc: 288
         GLOB:
                 nx: 830305
         D3:
                 nx: 3160340
-                mesh_dir: "${pool_dir}/${resolution}/"
+        orca25: 
+                nx: 912469
         DART:
                 nx: 3160340
-                mesh_dir: "${pool_dir}/${resolution}/"
-
+mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
         oce_restart: oce_restart

@@ -2,7 +2,7 @@
 
 <file_definition>
     <file_group
-        type="one_file"
+        type="multiple_file"
         format="netcdf4"
         par_access="collective"
         name="awi3_atm"

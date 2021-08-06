@@ -1,0 +1,64 @@
+name: esm-tools no Docker
+
+# Controls when the action will run. Triggers the workflow on push or pull request.
+
+on: [push, pull_request]
+
+
+jobs:
+  basic_tests_no_docker:
+    runs-on: ubuntu-latest
+    env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+    strategy:
+      matrix:
+        python-version: [ '3.6', '3.7', '3.8', '3.9']
+    name: Python ${{ matrix.python-version }} sample
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: add to the path
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+      - name: install esm-tools
+        run: |
+          ./install.sh
+
+      - name: run esm_master first time
+        run: |    
+          yes Y | esm_master
+
+      - name: run esm_master second time
+        run: |    
+          esm_master
+
+      - name: run esm_plugins
+        run: |    
+          esm_plugins
+
+      - name: run esm_plugins
+        run: |    
+          esm_plugins
+
+      - name: run esm_versions
+        run: |    
+          esm_versions check
+
+      - name: run get-fesom-2.0
+        run: |
+          sudo hostname ollie1
+          esm_master get-fesom-2.0
+
+      - name: run status-fesom-2.0
+        run: |
+          esm_master status-fesom-2.0
+
+      - name: run clean-fesom-2.0
+        run: |
+          esm_master clean-fesom-2.0

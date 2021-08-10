@@ -48,19 +48,6 @@ choose_version:
     branch: recom-update
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.0-wiso: # MA: This branch is actually not a 2.0 but a 2.1. TODO: move to
-            # fesom-2.1.yaml when that version is supported
-    branch: wiso
-    destination: fesom-2.0 #MA: TODO: change to 2.1 when fesom-2.1.yaml ready
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.0-recom: # MA: This branch is actually not a 2.0 but a 2.1. TODO: move to
-             # fesom-2.1.yaml when that version is supported
-    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
-    destination: fesom-2.0 #MA: TODO: change to 2.1 when fesom-2.1.yaml ready
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-
 
 install_bins: bin/fesom.x
 git-repository:
@@ -135,31 +122,25 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-#        wiso_restart: wiso_restart
 
 restart_in_in_workdir:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-#        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-#        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-#        wiso_restart: wiso_restart
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-#        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-#        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
 
-outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice]
+#outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice]
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -225,9 +206,6 @@ namelist_changes:
                         nm_mslp_file: "${forcing_data_dir}/slp."
                         nm_runoff_file: "${forcing_data_dir}/runoff.nc"
                         nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
-        namelist.oce:
-                oce_tra:
-                        num_tracers: "${num_tracers}"
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
@@ -300,12 +278,6 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-        o18_feom:
-                grid: feom
-        hdo_feom:
-                grid: feom
-        o16_feom:
-                grid: feom
                 #description: |
                 #       whatever snt means
                 #unit: kg m s
@@ -334,18 +306,6 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
-                grid: feom
-        w1_oce:
-                grid: feom
-        w2_oce:
-                grid: feom
-        w3_oce:
-                grid: feom
-        i1_oce:
-                grid: feom
-        i2_oce:
-                grid: feom
-        i3_oce:
                 grid: feom
 
 grids:

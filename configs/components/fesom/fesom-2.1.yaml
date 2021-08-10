@@ -15,6 +15,14 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-wiso:
+    branch: wiso
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+  2.1-recom:
+    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -81,11 +89,11 @@ namelists:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${mesh_base_dir}/core2/"
+                mesh_dir: "${fesom.mesh_base_dir}/core2/"
                 nproc: 288
         pi:
                 nx: 3140
-                mesh_dir: "${mesh_base_dir}/pi/"
+                mesh_dir: "${fesom.mesh_base_dir}/pi/"
                 nproc: 4
 
 restart_in_files:
@@ -306,6 +314,12 @@ coupling_fields:
                 #unit: kg m s
                 #standard_cf_name: 'shit no tuna?'
                 #cf_code: 42
+        o18_feom:
+                grid: feom
+        hdo_feom:
+                grid: feom
+        o16_feom:
+                grid: feom
         taux_oce:
                 grid: feom
         tauy_oce:
@@ -329,6 +343,18 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
+                grid: feom
+        w1_oce:
+                grid: feom
+        w2_oce:
+                grid: feom
+        w3_oce:
+                grid: feom
+        i1_oce:
+                grid: feom
+        i2_oce:
+                grid: feom
+        i3_oce:
                 grid: feom
 
 grids:

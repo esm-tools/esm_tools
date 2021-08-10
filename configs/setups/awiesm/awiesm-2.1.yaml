@@ -46,14 +46,21 @@ general:
           '2.1':
             couplings:
             - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
+            with_wiso: false
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-wiso':
-            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
-            - fesom-2.0-wiso+echam-6.3.05p2-wiso
+            couplings:
+            - fesom-2.1-wiso+echam-6.3.05p2-wiso
+            with_wiso: true
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-recom':
-            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
-            - fesom-2.0-wiso+echam-6.3.05p2-wiso+recom-2.0
+            couplings:
+            - fesom-2.1-wiso+echam-6.3.05p2-wiso+recom-2.0
             add_include_models:
             - recom
+            with_wiso: true
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+
         scenario: "PALEO"
         variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -90,12 +97,12 @@ echam:
                 - sst
                 - sic
         choose_general.version:
+                "2.1":
+                        version: "6.3.05p2-concurrent_radiation-paleodyn"
                 2.1-wiso:
                         version: "6.3.05p2-wiso"
                 2.1-recom:
                         version: "6.3.05p2-wiso"
-                "*":
-                        version: "6.3.05p2-concurrent_radiation-paleodyn"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -158,6 +165,12 @@ jsbach:
 
 fesom:
         version: "2.1"
+        comp_command: "
+                mkdir -p build;
+                cd build;
+                cmake ${general.fesom_Dflags} ..;
+                make install -j `nproc --all`"
+
         choose_general.version:
                 "1.1":
                         version: "1.4"
@@ -190,6 +203,7 @@ fesom:
                                 oce_tra:
                                     K_hor: ${K_hor}
                 2.1-recom:
+                        version: "2.1-recom"
                         num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
                         add_config_sources:
@@ -202,6 +216,9 @@ fesom:
                                         restart_log:
                                                 restart_length: "${restart_rate}"
                                                 restart_length_unit: "${restart_unit}"
+                                namelist.oce:
+                                        oce_tra:
+                                                num_tracers: "${num_tracers}"
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288
@@ -296,9 +313,6 @@ oasis3mct:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
                         - 'snt_atmo <--distwgt-- snt_feom'
-                        - 'o18_atmo <--distwgt-- o18_feom'
-                        - 'hdo_atmo <--distwgt-- hdo_feom'
-                        - 'o16_atmo <--distwgt-- o16_feom'
 
                 a2o_flux:
                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica'
@@ -310,18 +324,26 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
-                        - 'w1_oce <--distwgt-- w1_atm'
-                        - 'w2_oce <--distwgt-- w2_atm'
-                        - 'w3_oce <--distwgt-- w3_atm'
-                        - 'i1_oce <--distwgt-- i1_atm'
-                        - 'i2_oce <--distwgt-- i2_atm'
-                        - 'i3_oce <--distwgt-- i3_atm'
+
+        choose_general.with_wiso:
+                true:
+                        add_coupling_target_fields:
+                                add_o2a_flux:
+                                        - 'o18_atmo <--distwgt-- o18_feom'
+                                        - 'hdo_atmo <--distwgt-- hdo_feom'
+                                        - 'o16_atmo <--distwgt-- o16_feom'
+                                add_a2o_flux:
+                                        - 'w1_oce <--distwgt-- w1_atm'
+                                        - 'w2_oce <--distwgt-- w2_atm'
+                                        - 'w3_oce <--distwgt-- w3_atm'
+                                        - 'i1_oce <--distwgt-- i1_atm'
+                                        - 'i2_oce <--distwgt-- i2_atm'
+                                        - 'i3_oce <--distwgt-- i3_atm'
 
 
         coupling_directions:
                 'feom->atmo':
                         lag: ${o2a_lag}
-                        seq: 2
                 'atmo->feom':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}

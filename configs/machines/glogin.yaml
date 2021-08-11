@@ -64,7 +64,8 @@ module_actions:
 export_vars:
    LC_ALL: en_US.UTF-8
    # Recommended by HLNR support when using an MPI binary and srun
-   SLURM_CPU_BIND: none
+   # removed by seb-wahl as it slows down ECHAM6 by 50% 
+   #SLURM_CPU_BIND: none
 
 choose_compiler_mpi:
 

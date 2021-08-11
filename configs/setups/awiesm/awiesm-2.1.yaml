@@ -46,12 +46,12 @@ general:
           '2.1':
             couplings:
             - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
-          '2.1-wiso':
-            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
-            - fesom-2.0-wiso+echam-6.3.05p2-wiso
-          '2.1-recom':
-            couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
-            - fesom-2.0-wiso+echam-6.3.05p2-wiso+recom-2.0
+          #'2.1-wiso':
+          #  couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
+          #  - fesom-2.0-wiso+echam-6.3.05p2-wiso
+          #'2.1-recom':
+          #  couplings: # TODO: change fesom-2.0 to fesom-2.1 in the name when fesom-2.1 is supported
+          #  - fesom-2.0-wiso+echam-6.3.05p2-wiso+recom-2.0
         scenario: "PALEO"
         variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}

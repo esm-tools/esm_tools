@@ -3,8 +3,10 @@
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
+    #module unload nco
+    #module load nco/4.7.5-gcc64
 
-    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . ${FUNCTION_PATH}/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
 
     echo "     Starting coupling_fesom2ice.functions ...."
@@ -285,7 +287,10 @@ function fesom_ice_select_relevant_variables {
 
 function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	# Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+        module unload python3
+        module load anaconda3/bleeding_edge
         echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"
+        echo ""; echo " *   using python version $(python --version)"
 
 	pyfesom_script=${FUNCTION_PATH:-${FPATH}}/fesom_scalar_array_to_LonLat.py
 	if [ ! -f $pyfesom_script ] ; then
@@ -373,8 +378,8 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
         
         # Several things might be needed for pyfesom. If it isn't installed;
         # get it
-        module unload python
-        module load ${module_python3}
+        #module unload python
+        #module load ${module_python3}
         for required_python_external in xarray joblib cmocean seawater; do
                 python -c "import $required_python_external" \
                         || pip install --user ${required_python_external} \
@@ -609,6 +614,7 @@ function fesom_ice_rename_level2depth_add_depth {
     # Step 1 : rename dimension "level" into "depth"
     #
     ncrename -d level,depth -v level,depth ${_file_data}
+    #ncrename -d level,depth ${_file_data}
     ncatted -a axis,depth,o,c,'Z' ${_file_data}
 
     #
@@ -631,6 +637,7 @@ function fesom_ice_rename_level2depth_add_depth {
 	else
 	    # As before
 	    ncrename -d level,depth ${_file_depth} ${_file_depth_level}.tmp1
+	    ncrename -d level,depth ${_file_depth_level}.tmp1
 	    ncatted -a axis,level,d,, \
 		-a axis,depth,c,c,'Z' \
 		${_file_depth_level}.tmp1

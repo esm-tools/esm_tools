@@ -1,6 +1,6 @@
 general:
     setup_name: "awiesm"
-    compute_time: "01:00:00"
+    compute_time: "01:45:00"
     initial_date: "2000-01-01"
     final_date: "2010-12-31"
     base_dir: "/work/ba0989/a270124/"
@@ -25,12 +25,12 @@ echam:
                     nprocb: 24
                     nprocar: 0
                     nprocbr: 0
-            runctl:
-                default_output: True 
-            wisoctl:
-                lwiso_rerun: False 
-                lwiso: False 
-                nwiso: 0
+            #runctl:
+            #    default_output: "true"
+            #wisoctl:
+            #    lwiso_rerun: "false"
+            #    lwiso: "false"
+            #    nwiso: 0
     restart_rate: 1
     nproca: 24
     nprocb: 24
@@ -38,8 +38,8 @@ echam:
     ini_restart_dir: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/restart/PI_ctrl_awiesm-2.1_LR/echam/"
     ini_parent_exp_id: "PI_ctrl_awiesm-2.1_LR"
     ini_parent_date: 26081231
-    nprocar: "remove_from_namelist"
-    nprocbr: "remove_from_namelist"
+    #nprocar: "remove_from_namelist"
+    #nprocbr: "remove_from_namelist"
     workflow:
             next_run_triggered_by: couple_out
             subjobs:

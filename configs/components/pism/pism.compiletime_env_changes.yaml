@@ -21,7 +21,7 @@ choose_computer.name:
         environment_changes:
             add_module_actions:
                 - "unload gcc"
-                - "load gcc-7.1.0"
+                - "load gcc/7.1.0"
             add_export_vars:
                 - "UDUNITS2_ROOT=/pf/a/pism_build_sebastian02/local/modules/uunits2/"
                 - "FFTW_ROOT=/pf/a/pism_build_sebastian02/local/modules/fftw/"

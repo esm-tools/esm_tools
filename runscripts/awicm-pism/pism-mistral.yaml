@@ -25,6 +25,18 @@ pism:
         domain: "nhem"
         force_bootstrap_first_run: True
 
+        couplers:
+                surface: 
+                    given:
+                        files:
+                            surface_given_file: "${couple_dir}/latest_atmo_forcing_file.nc"
+                        kv_pairs: 
+                            surface_given_period: 1
+                ocean:
+                    th:
+                        files:
+                            ocean_th_file: "${couple_dir}/latest_ocean_forcing_file.nc"
+
         workflow:
                 next_run_triggered_by: couple_out
                 subjobs:

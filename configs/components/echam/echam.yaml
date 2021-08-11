@@ -64,10 +64,10 @@ compile_infos:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-wiso:
-            branch: wiso
-            clean_command: make clean
-            comp_command: make; make install
-            conf_command: ./configure
+            branch: "wiso"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
         clean_command: ${defaults.clean_command}
         comp_command: ${defaults.comp_command}
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
@@ -83,10 +83,8 @@ metadata:
         Publications:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
-                Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
-                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
-                https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
-                to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
+                Please make sure you have a license to use ECHAM. In case you are
+                unsure, please contact redmine...
 
 standalone_model: True
 
@@ -233,6 +231,29 @@ choose_version:
                                         lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
+        6.3.05p2-wiso:
+                choose_computer.name:
+                    mistral:
+                        add_compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        add_runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+                                        nproca: "${nproca}"
+                                        nprocb: "${nprocb}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                runctl:
+                                        default_output: True
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
                 dataset: r0007
@@ -271,6 +292,9 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofin: piaerofin
                         aerofarir: piaerofarir
+                        ozonea: piozonea
+                        ozoneb: piozoneb
+                        ozonec: piozonec
                         ozone: piozone
         PALEO:
                 forcing_files:
@@ -472,9 +496,12 @@ forcing_in_work:
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
+        ozonea: "ozon1988"
+        ozoneb: "ozon1989"
+        ozonec: "ozon1990"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
-        volcir: "strat_aerosol_ir_@YEAR@.nc"
+        volcanir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
 
@@ -505,6 +532,10 @@ streams:
         - sp6h
         - glim
         - spim
+        - wiso
+        - accw_wiso
+        - sf_wiso
+        - rad
 
 streamsnc:
         - aclcim
@@ -552,15 +583,12 @@ outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
         "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
-        #"[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*_STREAM
-        #"[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*_STREAM.codes
-        #"[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}_STREAM.nc
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -570,7 +598,7 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
@@ -637,11 +665,24 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
+        #o18_atmo:
+        #        grid: atmo
+        #hdo_atmo:
+        #        grid: atmo
+        #o16_atmo:
+        #        grid: atmo
+        #o18w_atm:
+        #        grid: atmo
+        #hdow_atm:
+        #        grid: atmo
+        #o16w_atm:
+        #        grid: atmo
+        #o18i_atm:
+        #        grid: atmo
+        #hdoi_atm:
+        #        grid: atmo
+        #o16i_atm:
+        #        grid: atmo
         taux_atm:
                 grid: atmo
         tauy_atm:
@@ -666,6 +707,18 @@ coupling_fields:
                 grid: atmo
         hydr_atm:
                 grid: atmo
+        #w1_atm:
+        #        grid: atmo
+        #w2_atm:
+        #        grid: atmo
+        #w3_atm:
+        #        grid: atmo
+        #i1_atm:
+        #        grid: atmo
+        #i2_atm:
+        #        grid: atmo
+        #i3_atm:
+        #        grid: atmo
 
         "[[foci_fields-->FIELD]]":
                 grid: atmo

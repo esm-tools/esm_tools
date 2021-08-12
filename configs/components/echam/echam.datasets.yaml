@@ -9,7 +9,6 @@ input_sources:
         "tslclim": "${input_dir}/${resolution}/${resolution}_TSLCLIM.nc"
         "vgratclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VGRATCLIM.nc"
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
-        "MAC-SP": "${input_dir}/MAC-SP.nc"
 
 # forcings
 forcing_sources:
@@ -43,19 +42,25 @@ forcing_sources:
                         to: 1850
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_@YEAR@.nc":
                         from: 1851
-                        to: 2014
-                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2014.nc":
-                        from: 2015
+                        to: 2024
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2024.nc":
+                        from: 2025
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_@YEAR@.nc":
                         from: 1851
-                        to: 2014
-                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2014.nc":
-                        from: 2015
+                        to: 2024
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2024.nc":
+                        from: 2025
         # greenhouse
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        "greenhouse_hist_scenario": 
+                "${greenhouse_dir}/greenhouse_historical.nc": 
+                        to: 2014
+                "${greenhouse_dir}/greenhouse_${scenario}.nc": 
+                        from: 2015
+
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
         # radiation
         "histswflux":
@@ -70,10 +75,27 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2008
+        "ozone_hist_scenario":
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
+                        to: 1850
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        from: 1851
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
+                        from: 1851
+
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
+        # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
+        "MAC-SP": "${input_dir}/MAC-SP.nc"
+
+        "MAC-SP_hist_scenario": 
+                 "${input_dir}/MAC-SP.nc":
+                         to: 2014
+                 "${input_dir}/MAC-SP_${scenario}.nc":
+                         from: 2015
 
 choose_dataset:
         r0004:
@@ -88,38 +110,3 @@ choose_dataset:
                         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc"
                         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1950.nc"
                         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"
-                        "rcp26ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP26_@YEAR@.nc"
-                        "rcp45ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP45_@YEAR@.nc"
-                        "rcp85ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP85_@YEAR@.nc"
-# aero
-                        "rcp26aerofin":
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
-                                        to: 1864
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                                        from: 1865
-                                        to: 2000
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp26_@YEAR@.nc":
-                                        from: 2001
-                                        to: 2014
-                        "rcp45aerofin":
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
-                                        to: 1864
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                                        from: 1865
-                                        to: 2000
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp45_@YEAR@.nc":
-                                        from: 2001
-                                        to: 2014
-                        "rcp85aerofin":
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
-                                        to: 1864
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                                        from: 1865
-                                        to: 2000
-                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp85_@YEAR@.nc":
-                                        from: 2001
-                                        to: 2014
-# greenhouse
-                        "rcp26greenh": "${greenhouse_dir}/greenhouse_rcp26.nc"
-                        "rcp45greenh": "${greenhouse_dir}/greenhouse_rcp45.nc"
-                        "rcp85greenh": "${greenhouse_dir}/greenhouse_rcp85.nc"

@@ -77,6 +77,7 @@ echam:
         version: "6.3.05p2-foci"
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
+        greenhouse_dir: "${pool_dir}/input"
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"

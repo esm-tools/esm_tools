@@ -23,7 +23,7 @@ general:
    base_dir: ${homedir}/esm/esm-experiments/
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/intel2020/focioifs-2.0
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
   
 oifs:
    version: "43r3"

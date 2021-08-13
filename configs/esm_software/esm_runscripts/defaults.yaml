@@ -17,7 +17,7 @@ per_model_defaults:
          all_directions: copy
       bin:
          init_to_exp: copy
-         exp_to_run: link
+         exp_to_run: copy
          run_to_work: link
          work_to_run: link
       forcing:
@@ -28,8 +28,8 @@ per_model_defaults:
          # seb-wahl: need to copy restart files by default
          # as oasis modifies the restart file !!!!
          init_to_exp: copy 
-         exp_to_run: link
-         run_to_work: link
+         exp_to_run: copy
+         run_to_work: copy
          work_to_run: link
       restart_out:
          all_directions: copy

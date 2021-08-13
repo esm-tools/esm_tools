@@ -16,7 +16,7 @@ startdate=$6
 enddate=$7
 outdir=$8
 with_wam=$9
-perturb=$10
+perturb=${10}
 nx=${11}
 ensemble_id=${12}
 
@@ -40,6 +40,7 @@ echo " Output dir: $outdir "
 echo " Exp ID: $expid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb SKT: $perturb "
 
 if [[ "x${style}" == "xjesus" ]] ; then
    ndate=$(date -u -d "${inidate}" +%Y%m%d)

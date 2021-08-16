@@ -1,2 +1,1 @@
-general:
-    use_database: false
+use_database: false

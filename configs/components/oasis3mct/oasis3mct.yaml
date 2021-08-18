@@ -17,6 +17,8 @@ config_sources:
 
 version: '2.8'
 
+debug_level: 1
+
 available_versions:
 - foci
 - fociagrif

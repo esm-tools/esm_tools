@@ -106,6 +106,16 @@ disturbance: "1.000001"
 lresume: false
 dataset: "r0007"
 
+lgfw: False
+choose_general.iterative_coupling:
+        True:
+                choose_general.first_run_in_chunk:
+                        True:
+                                lgfw: True
+                                choose_general.run_number:
+                                        1:
+                                                lgfw: False
+
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
@@ -651,7 +661,8 @@ namelist_changes:
                 parctl:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
-
+                submodelctl:
+                        lgfw: ${lgfw}
 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]

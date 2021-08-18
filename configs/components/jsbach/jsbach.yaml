@@ -356,6 +356,11 @@ restart_out_in_work:
 namelists:
         - "namelist.jsbach"
 
+namelist_changes:
+        namelist.jsbach:
+                hydrology_ctl:
+                        lgfw: ${echam.lgfw}
+
 further_reading:
         - jsbach/jsbach.inherit.yaml
         - jsbach/jsbach.datasets.yaml

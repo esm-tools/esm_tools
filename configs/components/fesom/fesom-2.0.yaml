@@ -114,7 +114,9 @@ choose_asforcing:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+                choose_computer.name:
+                        ollie:
+                                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
                 nproc: 288
         GLOB:
                 nx: 830305

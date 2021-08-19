@@ -87,6 +87,7 @@ climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/fesom2/"
+mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -114,7 +115,6 @@ choose_asforcing:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
                 nproc: 288
         GLOB:
                 nx: 830305

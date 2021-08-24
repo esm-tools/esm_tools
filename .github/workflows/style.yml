@@ -20,6 +20,7 @@ jobs:
       - name: If needed, commit black changes to the pull request
         if: failure()
         run: |
+          export GIT_BRANCH=$(echo ${GITHUB_REF:-dev} | sed s/.*\\///g)
           black .
           git config --global user.name 'autoblack'
           git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.
@@ -33,7 +34,8 @@ jobs:
           echo "The CI knows this:"
           git branch
           git branch --show-current
+          echo "GIT_BRANCH=${GIT_BRANCH}
           echo "____________________________________________"
-          git push --set-upstream origin $(git branch --show-current)
+          git push --set-upstream origin ${GIT_BRANCH}
           echo "Finished push"
 

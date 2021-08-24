@@ -3,7 +3,6 @@ from esm_parser.yaml_to_dict import yaml_file_to_dict
 import yaml
 
 import os
-import sys
 
 
 def main():

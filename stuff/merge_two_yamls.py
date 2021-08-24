@@ -100,7 +100,7 @@ def transform_strs(d, path=None):
                     )
                 else:
                     new_item = item
-                new_list.append(item)
+                new_list.append(new_item)
             d[k] = new_list
         elif isinstance(d[k], str):
             item = d[k]

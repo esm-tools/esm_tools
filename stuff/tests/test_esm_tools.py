@@ -5,8 +5,6 @@
 
 import unittest
 
-from esm_tools import esm_tools
-
 
 class TestEsm_tools(unittest.TestCase):
     """Tests for `esm_tools` package."""

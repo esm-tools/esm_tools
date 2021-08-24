@@ -43,7 +43,7 @@ f77_pattern = r"^\s*F77\s*=\s*[a-zA-Z0-9_]*$"
 
 while line:
     # check for the start of the GCC case statement
-    if re.search(gcc_block_pattern, line) != None:
+    if re.search(gcc_block_pattern, line) is not None:
         inside_gcc_block = True
         # print(f"found the gcc block on line {line_num}")
 
@@ -54,13 +54,13 @@ while line:
         match_FC = re.search(fc_pattern, line)
         match_F77 = re.search(f77_pattern, line)
 
-        if match_FC != None:
+        if match_FC is not None:
             # print(f"FC found on line {line_num}")
             num_spaces = line.find("FC")
             line = " " * num_spaces + "FC = mpif90\n"
             is_file_changed = True
 
-        elif match_F77 != None:
+        elif match_F77 is not None:
             # print(f"F77 found on line {line_num}")
             num_spaces = line.find("F77")
             line = " " * num_spaces + "F77 = mpif90\n"

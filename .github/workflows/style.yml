@@ -8,8 +8,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Set up Python 3.7
+      - name: Setup Python
         uses: actions/setup-python@v1
         with:
           python-version: 3.7
@@ -22,12 +21,12 @@ jobs:
         run: |
           black .
           git config --global user.name 'autoblack'
-          git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.
+          git config --global user.email 'esmtools.bot@gmail.de'  # The robot has fixed your style for you :-)
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
           echo "Hello there"
           git checkout -b $(echo $GITHUB_REF | sed s#refs/heads/##)
           echo "Finished checkout"
-          git commit -am "fixup: Format Python code with Black"
+          git commit -am "fix(style): Format Python code with Black"
           echo "Finished commit"
           git push --set-upstream origin $(echo $GITHUB_REF | sed s#refs/heads/##)
           echo "Finished push"

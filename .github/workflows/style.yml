@@ -20,31 +20,10 @@ jobs:
       - name: If needed, commit black changes to the pull request
         if: failure()
         run: |
-          echo ""
-          echo ""
-          echo ""
-          echo ""
-          echo "Slug variables"
-          echo " - ${{ env.GITHUB_REF_SLUG }}"
-          echo " - ${{ env.GITHUB_HEAD_REF_SLUG }}"
-          echo " - ${{ env.GITHUB_BASE_REF_SLUG }}"
-          echo " - ${{ env.GITHUB_REPOSITORY_SLUG }}"
-          # output e.g. : master feat-new-feature v1.0.0 product-1.0.0-rc.2 new-awesome-product
-          echo "Slug URL variables"
-          echo " - ${{ env.GITHUB_REF_SLUG_URL }}"
-          echo " - ${{ env.GITHUB_HEAD_REF_SLUG_URL }}"
-          echo " - ${{ env.GITHUB_BASE_REF_SLUG_URL }}"
-          echo " - ${{ env.GITHUB_REPOSITORY_SLUG_URL }}"
-          # output e.g. : master feat-new-feature v1-0-0 product-1-0-0-rc-2 new-awesome-product
-          echo "Short SHA variables"
-          echo " - ${{ env.GITHUB_SHA_SHORT }}"
-          # output e.g. : ffac537e
-          echo ""
-          echo ""
-          echo ""
-          echo ""
-          echo ""
-          export GIT_BRANCH=${GITHUB_REF:-dev}
+          echo "Hello there --> $BRANCH_NAME"
+          echo "------------"
+          env
+          echo "------------"
           black .
           git config --global user.name 'autoblack'
           git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.

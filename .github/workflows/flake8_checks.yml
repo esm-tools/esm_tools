@@ -1,5 +1,5 @@
 name: Flake8
-
+on: [pull_request, push] # Do this always
 jobs:
   flake8_py3:
     runs-on: ubuntu-latest

@@ -29,6 +29,11 @@ jobs:
           echo "Finished checkout"
           git commit -am "fixup: Format Python code with Black"
           echo "Finished commit"
+          echo "____________________________________________"
+          echo "The CI knows this:"
+          git branch
+          git branch --show-current
+          echo "____________________________________________"
           git push --set-upstream origin $(git branch --show-current)
           echo "Finished push"
 

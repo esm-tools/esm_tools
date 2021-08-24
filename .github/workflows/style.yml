@@ -20,14 +20,6 @@ jobs:
       - name: If needed, commit black changes to the pull request
         if: failure()
         run: |
-          echo "Hello there --> $BRANCH_NAME"
-          echo "------------"
-          env | sort
-          echo "GITHUB_REF=${GITHUB_REF:-dev_why_not_defined}"
-          # Probably a horrible idea, but whatever:
-          echo "export GITHUB_REF_CLEAN=$(echo $GITHUB_REF | sed s#refs/heads/##); echo $GITHUB_REF_CLEAN"
-          echo "Cleaned GITHUB_REF_CLEAN=${GITHUB_REF_CLEAN}
-          echo "------------"
           black .
           git config --global user.name 'autoblack'
           git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.
@@ -43,6 +35,6 @@ jobs:
           git branch --show-current
           echo "GIT_BRANCH=${GIT_BRANCH}
           echo "____________________________________________"
-          git push --set-upstream origin ${GITHUB_REF_CLEAN}
+          git push --set-upstream origin $(echo $GITHUB_REF | sed s#refs/heads/##)
           echo "Finished push"
 

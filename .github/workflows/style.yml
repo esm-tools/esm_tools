@@ -24,6 +24,9 @@ jobs:
           echo "------------"
           env | sort
           echo "GITHUB_REF=${GITHUB_REF:-dev_why_not_defined}"
+          # Probably a horrible idea, but whatever:
+          echo "GITHUB_REF_CLEAN=$(echo $GITHUB_REF | sed s#refs/heads/##); echo $GITHUB_REF_CLEAN"
+          echo "Cleaned GITHUB_REF=${}
           echo "------------"
           black .
           git config --global user.name 'autoblack'
@@ -40,6 +43,6 @@ jobs:
           git branch --show-current
           echo "GIT_BRANCH=${GIT_BRANCH}
           echo "____________________________________________"
-          # git push --set-upstream origin ${GIT_BRANCH}
+          git push --set-upstream origin ${GITHUB_REF_CLEAN}
           echo "Finished push"
 

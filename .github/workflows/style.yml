@@ -22,7 +22,8 @@ jobs:
         run: |
           echo "Hello there --> $BRANCH_NAME"
           echo "------------"
-          env
+          env | sort
+          echo "GITHUB_REF=${GITHUB_REF:-dev_why_not_defined}"
           echo "------------"
           black .
           git config --global user.name 'autoblack'

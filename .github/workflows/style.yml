@@ -4,7 +4,7 @@
 # https://github.com/cclauss/autoblack
 
 name: autoblack
-on: [pull_request]
+on: [pull_request, push] # Do this always
 jobs:
   build:
     runs-on: ubuntu-latest

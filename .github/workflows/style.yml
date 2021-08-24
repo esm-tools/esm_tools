@@ -25,7 +25,7 @@ jobs:
           git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
           echo "Hello there"
-          git checkout $GITHUB_HEAD_REF
+          git checkout -b $(echo $GITHUB_REF | sed s#refs/heads/##)
           echo "Finished checkout"
           git commit -am "fixup: Format Python code with Black"
           echo "Finished commit"

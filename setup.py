@@ -48,9 +48,22 @@ setup(
     include_package_data=True,
     keywords="esm_tools",
     name="esm_tools",
-    packages=["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
-    package_dir={'esm_tools.configs': "configs", "esm_tools.namelists": "namelists", "esm_tools.runscripts": "runscripts"},
-    package_data={'esm_tools.configs': ['../configs/*'], "esm_tools.namelists": ["../namelists/*"], "esm_tools.runscripts": ["../runscripts/*"]},
+    packages=[
+        "esm_tools",
+        "esm_tools.configs",
+        "esm_tools.namelists",
+        "esm_tools.runscripts",
+    ],
+    package_dir={
+        "esm_tools.configs": "configs",
+        "esm_tools.namelists": "namelists",
+        "esm_tools.runscripts": "runscripts",
+    },
+    package_data={
+        "esm_tools.configs": ["../configs/*"],
+        "esm_tools.namelists": ["../namelists/*"],
+        "esm_tools.runscripts": ["../runscripts/*"],
+    },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
@@ -58,4 +71,3 @@ setup(
     version="5.1.20",
     zip_safe=False,
 )
-

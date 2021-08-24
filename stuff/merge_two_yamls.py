@@ -3,30 +3,33 @@
 import argparse
 import yaml
 
+
 def merge(a, b, path=None):
     "merges b into a"
-    if path is None: path = []
+    if path is None:
+        path = []
     for key in b:
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 merge(a[key], b[key], path + [str(key)])
             elif a[key] == b[key]:
-                pass # same leaf value
+                pass  # same leaf value
             else:
                 if isinstance(a[key], list) and isinstance(b[key], list):
                     a[key] = list(set(a[key] + b[key]))
                 else:
-                    print('Conflict at %s' % '.'.join(path + [str(key)]))
+                    print("Conflict at %s" % ".".join(path + [str(key)]))
                     print(f"a: {a[key]}")
                     print(f"b: {b[key]}")
                     a_or_b = input("Please choose a or b: ")
                     print(f"Ok, setting: {a_or_b}[{key}]")
                     d_to_use = locals()[a_or_b]
                     a[key] = d_to_use[key]
-                    #raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+                    # raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
         else:
             a[key] = b[key]
     return a
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -34,6 +37,7 @@ def parse_args():
     parser.add_argument("yaml2")
     parser.add_argument("yaml_out")
     return parser.parse_args()
+
 
 def yaml_file_to_dict(filepath):
     """
@@ -58,23 +62,32 @@ def yaml_file_to_dict(filepath):
 class quoted(str):
     pass
 
+
 def quoted_presenter(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
+
+
 yaml.add_representer(quoted, quoted_presenter)
+
 
 class literal(str):
     pass
 
+
 def literal_presenter(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+
+
 yaml.add_representer(literal, literal_presenter)
+
 
 def ordered_dict_presenter(dumper, data):
     return dumper.represent_dict(data.items())
 
 
 def transform_strs(d, path=None):
-    if path is None: path = []
+    if path is None:
+        path = []
     for k in d:
         if isinstance(d[k], dict):
             transform_strs(d[k], path + [str(k)])
@@ -82,20 +95,23 @@ def transform_strs(d, path=None):
             new_list = []
             for item in d[k]:
                 if isinstance(item, str):
-                    new_item = literal(item) if "\n" in item or ";" in item else quoted(item)
+                    new_item = (
+                        literal(item) if "\n" in item or ";" in item else quoted(item)
+                    )
                 else:
                     new_item = item
                 new_list.append(item)
             d[k] = new_list
         elif isinstance(d[k], str):
             item = d[k]
-            d[k] =  literal(item) if "\n" in item or ";" in item else quoted(item)
+            d[k] = literal(item) if "\n" in item or ";" in item else quoted(item)
         elif isinstance(d[k], int):
             continue
         else:
             print(d[k], type(d[k]))
             raise Exception("Do not understand...")
     return d
+
 
 def main():
     args = parse_args()
@@ -105,6 +121,7 @@ def main():
 
     with open(args.yaml_out, "w") as yaml_out:
         yaml.dump(transform_strs(d1), yaml_out)
+
 
 if __name__ == "__main__":
     main()

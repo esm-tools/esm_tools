@@ -1,61 +1,63 @@
 &parctl
-  NPROCA       = <nproca>
-  NPROCB       = <nprocb>
+    nproca = '<', 'nproca', '>'
+    nprocb = '<', 'nprocb', '>'
 /
+
 &runctl
-  NPROMA         = 72
-  OUT_EXPNAME    = <cexper>
-  OUT_DATAPATH   = <rundir>
-  OUT_FILETYPE   = 2
-  OUT_ZTYPE      = 0
-  RERUN_FILETYPE = 4
-  LRESUME        = <lresume>
-  LTIMER         = .false.
-  LMIDATM        = .true.
-! LHD            = .true.
-  LCOUPLE        = .true.
-  LCOUPLE_CO2    = .true.
-! LIPCC          = .true.
-  LAMIP          = .false.
-  DT_START       = <yys>,<mms>,<dds>,0,0,0
-  DT_STOP        = <yye>,<mme>,<dde>,0,0,0
-  DELTA_TIME     = <atmstp>
-  NO_CYCLES      = 1
-  PUTOCEAN       = 1,'days','last',0
-  GETOCEAN       = 1,'days','last',0
-  PUTRERUN       = 12,'months','first',0
-  PUTDATA        = 6,'hours','first',0
-  TRIGFILES      = 12,'months','exact',0
-  LDEBUGEV       = .false.
-  lmeltpond      = .false.
+    nproma = 8
+    out_expname = '<', 'cexper', '>'
+    out_datapath = '<', 'rundir', '>'
+    out_filetype = 2
+    out_ztype = 0
+    rerun_filetype = 4
+    lresume = '<', 'lresume', '>'
+    ltimer = .false.
+    lmidatm = .true.
+    lcouple = .true.
+    lcouple_co2 = .true.
+    lamip = .false.
+    dt_start = '<', 'yys', '>', '<', 'mms', '>', '<', 'dds', '>', 0, 0,
+               0
+    dt_stop = '<', 'yye', '>', '<', 'mme', '>', '<', 'dde', '>', 0, 0, 0
+    delta_time = '<', 'atmstp', '>'
+    no_cycles = 1
+    putocean = 1, 'days', 'last', 0
+    getocean = 1, 'days', 'last', 0
+    putrerun = 12, 'months', 'first', 0
+    putdata = 6, 'hours', 'first', 0
+    trigfiles = 12, 'months', 'exact', 0
+    ldebugev = .false.
+    lmeltpond = .false.
 /
+
 &dynctl
-  ENSTDIF      = 1.0
+    enstdif = 1.0
 /
 
 &gwsctl
-  lrmscon_lat  = .false.
+    lrmscon_lat = .false.
 /
+
 &submodelctl
-!  lmethox = .true.
-  lco2         = .false.
+    lco2 = .false.
 /
+
 &radctl
-  iaero   = 3
-  io3     = 4
-  isolrad = 2
-  ico2    = 2
-  ighg    = 0
-  icfc    = 2
-  ich4    = 3
-  in2o    = 3
-  co2vmr    =  353.9e-06
-  ch4vmr    = 1693.6e-09
-  o2vmr     =    0.20946
-  n2ovmr    =  309.5e-09
-  cfcvmr(1) =  252.8e-12
-  cfcvmr(2) =  466.2e-12
+    iaero = 3
+    io3 = 4
+    isolrad = 2
+    ico2 = 2
+    ighg = 0
+    icfc = 2
+    ich4 = 3
+    in2o = 3
+    co2vmr = 0.0003539
+    ch4vmr = 1.6936e-06
+    o2vmr = 0.20946
+    n2ovmr = 3.095e-07
+    cfcvmr(1:2) = 2.528e-10, 4.662e-10
 /
+
 &co2ctl
-  lco2_scenario = .false.
+    lco2_scenario = .false.
 /

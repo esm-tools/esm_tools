@@ -19,5 +19,4 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        uses: suo/flake8-github-action@releases/v1
         run: flake8

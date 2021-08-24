@@ -1,12 +1,11 @@
 # GitHub Action that uses Black to reformat the Python code in an incoming pull request.
 # If all Python code in the pull request is compliant with Black then this Action does nothing.
 # Othewrwise, Black is run and its changes are committed back to the incoming pull request.
-# https://github.com/cclauss/autoblack
 
 name: autoblack
 on: [pull_request, push] # Do this always
 jobs:
-  build:
+  style-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -23,13 +22,13 @@ jobs:
         run: |
           black .
           git config --global user.name 'autoblack'
-          git config --global user.email 'pgierz@awi.de'
+          git config --global user.email 'pgierz@awi.de'  # yes, I am taking credit for fixing your bad style. Deal with it.
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
           echo "Hello there"
           git checkout $GITHUB_HEAD_REF
           echo "Finished checkout"
           git commit -am "fixup: Format Python code with Black"
           echo "Finished commit"
-          git push
+          git push --set-upstream origin $(git branch --show-current)
           echo "Finished push"
 

@@ -77,7 +77,7 @@ choose_version:
        1_namelist_top_cfg: 1_namelist_top_cfg
 
     add_restart_in_sources:    
-       restart_in_nest: 1_${expid}_${prevstep_formatted_nest}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+       restart_in_nest: 1_${parent_expid}_${prevstep_formatted_nest}_restart*_${parent_date!syear!smonth!sday}_*.nc
 
     add_restart_out_sources:
        restart_out_nest: 1_${expid}_${newstep_formatted_nest}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
@@ -89,7 +89,7 @@ choose_version:
              nn_it000: ${thisstep_nest}
              nn_itend: ${newstep_nest}
              nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
-             cn_ocerst_in: ${expid}_${prevstep_formatted_nest}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag} 
              cn_ocerst_indir: '${work_dir}/'
              cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
              cn_ocerst_outdir: '${work_dir}/'
@@ -325,7 +325,7 @@ choose_version:
              to: 1960
 
 
-clean_command: echo Cleaning is handled by nemobasemodel.yaml 
+clean_command: echo Cleaning is handled by nemobasemodel.yaml; cd ../../ 
 comp_command: echo Compilation is handled by nemobasemodel.yaml 
 
 metadata:
@@ -360,8 +360,8 @@ use_agrif:      false
 use_agrif2:     false
 use_agrif3:     false
 
-restart_rate:   1
-restart_unit:   months
+#restart_rate:   1
+#restart_unit:   months
 
 # default directories
 pool_dir: ${computer.pool_directories.focipool}
@@ -378,7 +378,7 @@ model_dir: ${general.model_dir}/nemo-${nemo.version}
 setup_dir: ${general.model_dir}
 bin_dir: ${setup_dir}/bin
 
-start_date_m1: $((${start_date} - ${time_step}seconds))
+# start_date_m1: $((${start_date} - ${time_step}seconds))
 end_date_m1: $((${next_date} - ${time_step}seconds))
 runtime: $((${next_date} - ${start_date}))
 timestep_per_run: $(( ${runtime} / ${time_step} ))
@@ -404,6 +404,21 @@ prevstep_formatted_nest: "<--format(%08d)-- ${prevstep_nest}"
 thisstep_formatted_nest: "<--format(%08d)-- ${thisstep_nest}"
 newstep_formatted_nest: "<--format(%08d)-- ${newstep_nest}"
 
+# generate settings for a restart from a different run
+ini_restart_steps: 0 # this value will be/needs to be set in the runscript
+ini_restart_steps_nest: $(( ${ini_restart_steps} * 3 ))
+global_tag: ""
+choose_general.run_number:
+   1:
+      choose_lresume:
+          true:
+             # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+             global_tag: "_global" 
+             prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+             prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+             restart_in_sources:
+                 restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}_global.nc
+
 coupling_freq_in_steps: 6
 
 # TODO: link with model start and end
@@ -420,7 +435,7 @@ namelist_changes:
                         nn_it000: ${thisstep}
                         nn_itend: ${newstep}
                         nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
-                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
+                        cn_ocerst_in: ${parent_expid}_${prevstep_formatted}_restart_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
                         cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
@@ -579,7 +594,7 @@ choose_use_lim2:
       add_namelist_changes:
          namelist_ice_cfg:
             namicerun:
-               cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}
+               cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
                cn_icerst_indir: '${work_dir}'
                cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                cn_icerst_outdir: '${work_dir}'
@@ -599,7 +614,7 @@ choose_use_lim2:
             add_namelist_changes:
                1_namelist_ice_cfg:
                   namicerun:
-                     cn_icerst_in: ${expid}_${prevstep_formatted_nest}_restart_ice_${start_date_m1!syear!smonth!sday}
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
                      cn_icerst_indir: '${work_dir}'
                      cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                      cn_icerst_outdir: '${work_dir}'
@@ -619,7 +634,7 @@ choose_use_tracer:
       add_namelist_changes:
          namelist_top_cfg:
             namtrc_run:
-               cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
+               cn_trcrst_in: ${parent_expid}_${prevstep_formatted}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
                cn_trcrst_indir: '${work_dir}'
                cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                cn_trcrst_outdir: '${work_dir}'
@@ -650,7 +665,7 @@ choose_use_tracer:
             add_namelist_changes:
                1_namelist_top_cfg:
                   namtrc_run:
-                     cn_trcrst_in: ${expid}_${prevstep_formatted_nest}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
+                     cn_trcrst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
                      cn_trcrst_indir: '${work_dir}'
                      cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                      cn_trcrst_outdir: '${work_dir}'
@@ -768,9 +783,9 @@ namelists:
         - 1_namelist_ice_cfg
 
 ############## restart files:
-
+#
 restart_in_sources:
-        restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}_*.nc
 
 restart_out_sources:
         restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc

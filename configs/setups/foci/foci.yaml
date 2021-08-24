@@ -8,8 +8,19 @@ general:
         #base_dir: ${general.model_dir}/experiments
         #model_dir: ${esm_master_dir}/foci-${version}
 
+        #
+        # settings for restarting from another run
+        #
         lresume: False
-        #nday: 5
+        # settings are only used if lresume = true
+        # default is to start from year 1500 of SW038
+        ini_parent_exp_id: "FOCI1.3-SW038"
+        ini_string_parent_date: "3350-01-01"
+        ini_nemo_restart_steps: 26297472
+        ini_parent_dir: "${pool_dir}/FOCI_RESTART/${ini_parent_exp_id}/"
+        # don't change unless you know what you are doing
+        ini_parent_date: "$(( ${ini_string_parent_date} - ${echam.time_step}seconds ))"       
+
         coupled_setup: True
 
         include_models:
@@ -84,6 +95,11 @@ echam:
         nproca: 24
         nprocb: 24
 
+        lresume: ${general.lresume}
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/echam6/"
+
         # TODO: document this crazy ECHAM6 restart math
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_start_date2: $((${start_date} - 1years - ${time_step}seconds))
@@ -94,13 +110,31 @@ echam:
                         add_namelist_changes:
                                 namelist.echam:
                                         runctl:
-                                               dt_start:
+                                            dt_start:
                                                       - ${pseudo_start_date2!year}
                                                       - ${pseudo_start_date2!month}
                                                       - ${pseudo_start_date2!day}
                                                       - ${pseudo_start_date2!hour}
                                                       - ${pseudo_start_date2!minute}
                                                       - ${pseudo_start_date2!second}
+                        choose_general.run_number:
+                            1:
+                                add_namelist_changes:
+                                    namelist.echam:
+                                        runctl:
+                                            dt_resume:
+                                                - ${pseudo_start_date!year}
+                                                - ${pseudo_start_date!month}
+                                                - ${pseudo_start_date!day}
+                                                - ${pseudo_start_date!hour}
+                                                - ${pseudo_start_date!minute}
+                                                - ${pseudo_start_date!second}
+                            "*":
+                                add_namelist_changes:
+                                    namelist.echam:
+                                        runctl:
+                                            dt_resume: "remove_from_namelist"
+                                                
                 False:
                         add_namelist_changes:
                                 namelist.echam:
@@ -112,6 +146,7 @@ echam:
                                                       - ${pseudo_start_date!hour}
                                                       - ${pseudo_start_date!minute}
                                                       - ${pseudo_start_date!second}
+                                               dt_resume: "remove_from_namelist"
         namelist_changes:
                 namelist.echam:
                         runctl:
@@ -133,7 +168,7 @@ echam:
                                        - ${pseudo_final_date!hour}
                                        - ${pseudo_final_date!minute}
                                        - ${pseudo_final_date!second}
-                                dt_resume: "remove_from_namelist"
+                                #dt_resume: "remove_from_namelist"
                                 #       - ${pseudo_start_date!year}
                                 #       - ${pseudo_start_date!month}
                                 #       - ${pseudo_start_date!day}
@@ -170,19 +205,25 @@ echam:
                      - need_year_after
 
         restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
         restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
 
         restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
         streams:
               - echam
               - accw
               - co2
-              - tdiag
+
+        restartstreams:
+              - echam
+              - accw
+              - co2
 
         check_error:
               "wind speed":
@@ -193,6 +234,11 @@ echam:
 
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
+
+        restart_in_sources:
+              hdrestart: restart_${parent_expid}_hd_${parent_date!syear!smonth!sday}.nc
+        restart_out_sources:
+                hdrestart: restart_${general.expid}_hd_${other_date!syear!smonth!sday}.nc
 
 jsbach:
         version: "3.20p1"
@@ -205,6 +251,12 @@ jsbach:
 
         dynamic_vegetations: True
 
+        # settings for restarting from another run
+        lresume: ${general.lresume}
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/jsbach/" 
+
         # Use initialized carbon and nitrogen pools
         choose_echam.lresume:
                True:
@@ -215,7 +267,6 @@ jsbach:
                                         dynveg_ctl:
                                                read_fpc: False
                                         cbalance_ctl:
-                                               init_npools: False
                                                read_cpools: False
                False:
                       add_input_files:
@@ -227,10 +278,14 @@ jsbach:
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
         restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
+              #"[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+              "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
         restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
+              #"[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
+              "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
 
         restart_out_in_work:
               "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
@@ -244,6 +299,15 @@ jsbach:
               - nitro
               - land
 
+# not yet working, discuss with Dirk @ workshop
+        restartstreams:
+              - jsbach
+              - nitro
+              - veg
+              - yasso
+              - surf
+              - nitro
+
 nemo:
         choose_general.version:
                 default:
@@ -254,6 +318,13 @@ nemo:
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
 
+        # settings for restarting from another run
+        lresume: ${general.lresume}
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${nemo.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+        ini_restart_steps: ${general.ini_nemo_restart_steps}
+
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
 
 xios:
@@ -262,19 +333,18 @@ xios:
 #########################################################################################
 
 oasis3mct:
+        #version: "oasis3mct-4.0"
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
+        input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
                 - nemo
                 - echam
                 - xios
-        # lresume needs to be true to allow usage of flxatmos and sstocean
-        # "restart" files in initial coupling time step
-        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        # settings for restarting from another run
         lresume: true
-        ini_parent_date: "22941231" # not used, but needs to be present
-        ini_parent_exp_id: "khw0030" # not used, but needs to be present
-        ini_restart_dir: "${pool_dir}"
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
 
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${nemo.time_step}"
@@ -388,63 +458,73 @@ oasis3mct:
                                         mapname: rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
                                         map_regrid_on: src
 
-        add_restart_out_files:
+        input_files:
                 rmp_a2n_B: rmp_a2n_B
                 rmp_a2n_C: rmp_a2n_C
                 rmp_n2a_C: rmp_n2a_C
                 areas: areas
                 masks: masks
                 grids: grids
-                sstocean: sstocean
-                flxatmos: flxatmos
 
-        add_restart_out_in_work:
+        input_in_work:
                 rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                sstocean: sstocean
-                flxatmos: flxatmos
+                sstocean_initial: sstocean
+                flxatmos_initial: flxatmos
 
-        add_restart_out_sources:
-                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
-                areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
-                masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
-                grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean: sstocean
-                flxatmos: flxatmos
+        input_sources:
+                rmp_a2n_B: ${input_dir}/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C: ${input_dir}/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C: ${input_dir}/rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                areas: ${input_dir}/areas_${echam.resolution}_${nemo.resolution}_frac.nc
+                masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
+                grids: ${input_dir}/grids_${echam.resolution}_${nemo.resolution}_frac.nc
+                sstocean_initial: ${input_dir}/sstocean_FOCI1.4.1-KJH001_18501231
+                flxatmos_initial: ${input_dir}/flxatmos_FOCI1.4.1-KJH001_18501231
 
-        add_restart_in_files:
-                rmp_a2n_B: rmp_a2n_B
-                rmp_a2n_C: rmp_a2n_C
-                rmp_n2a_C: rmp_n2a_C
-                areas: areas
-                masks: masks
-                grids: grids
-                sstocean: sstocean
-                flxatmos: flxatmos
+        choose_general.lresume:
+                False:
+                    add_input_files:
+                         sstocean_initial: sstocean_initial
+                         flxatmos_initial: flxatmos_initial
+                True:
+                    add_restart_in_files:
+                         sstocean_restart: sstocean_restart
+                         flxatmos_restart: flxatmos_restart
 
-        add_restart_in_in_work:
-                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
-                areas: areas.nc
-                masks: masks.nc
-                grids: grids.nc
-                sstocean: sstocean
-                flxatmos: flxatmos
+        remove_restart_in_files:
+          - grids
+          - areas
+          - masks
+        remove_restart_in_sources:
+          - grids
+          - areas
+          - masks
 
-        add_restart_in_sources:
-                rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
-                rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
-                areas: areas_${echam.resolution}_${nemo.resolution}_frac.nc
-                masks: masks_${echam.resolution}_${nemo.resolution}_frac.nc
-                grids: grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean: sstocean
-                flxatmos: flxatmos
+        restart_out_files:
+                sstocean_restart: sstocean_restart
+                flxatmos_restart: flxatmos_restart
 
+        restart_out_in_work:
+                sstocean_restart: sstocean
+                flxatmos_restart: flxatmos
+
+        restart_out_sources:
+                sstocean_restart: sstocean_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
+                flxatmos_restart: flxatmos_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
+
+        restart_in_in_work:
+                sstocean_restart: sstocean
+                flxatmos_restart: flxatmos
+
+        restart_in_sources:
+                sstocean_restart: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+                flxatmos_restart: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+
+        restart_in_files:
+                sstocean_restart: sstocean_restart
+                flxatmos_restart: flxatmos_restart

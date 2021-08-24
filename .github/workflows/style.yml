@@ -25,7 +25,7 @@ jobs:
           env | sort
           echo "GITHUB_REF=${GITHUB_REF:-dev_why_not_defined}"
           # Probably a horrible idea, but whatever:
-          echo "GITHUB_REF_CLEAN=$(echo $GITHUB_REF | sed s#refs/heads/##); echo $GITHUB_REF_CLEAN"
+          echo "export GITHUB_REF_CLEAN=$(echo $GITHUB_REF | sed s#refs/heads/##); echo $GITHUB_REF_CLEAN"
           echo "Cleaned GITHUB_REF_CLEAN=${GITHUB_REF_CLEAN}
           echo "------------"
           black .

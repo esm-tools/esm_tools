@@ -32,6 +32,7 @@ choose_mail_user:
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
 tasks_flag: "--ntasks=@tasks@"
+nodes_flag: "--nodes=@nodes@"
 partition_flag: "--partition=${partition}"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
@@ -40,9 +41,17 @@ thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+heterogeneous_parallelization: false
+
+choose_heterogeneous_parallelization:
+        true:
+                cpu_bind: "none"
+        false:
+                cpu_bind: "cores"
+
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:

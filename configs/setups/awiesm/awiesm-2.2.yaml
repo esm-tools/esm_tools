@@ -48,6 +48,7 @@ general:
                 couplings:
                     - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2.1+scope-dev+debm-esm_tools
         scenario: "PALEO"
+        variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -64,7 +65,7 @@ general:
                   - echam
                   - fesom
             ice_srun:
-                models: 
+                models:
                   - pism
             couple_srun:
                 models:
@@ -80,6 +81,11 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
+                                # NOTE(PG): Almost no one in paleodyn uses the
+                                # stream-style output, and most people expect a
+                                # ${EXPID}_echam_${DATE} file. Turning default
+                                # output on does that:
+                                default_output: True
                                 lcouple: .true.
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
         model_dir: ${general.model_dir}/echam-${echam.version}
@@ -94,18 +100,18 @@ echam:
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
-                        nprocb: 18
-                        nprocar: 24
-                        nprocbr: 18
+                        nprocb: 24
+                        nprocar: 0
+                        nprocbr: 0
                         npromar: 8
                         lrad_async: true
                         lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
 
         compiletime_environment_changes:
             add_export_vars:
@@ -167,9 +173,14 @@ fesom:
 
         add_namelist_changes:
                 namelist.oce:
+                        oce_tra:
+                                surf_relax_s: 0.0
                         boundary:
                                 restore_s_surf: 0.0
 
+        choose_general.variant:
+            beta:
+                K_gm_max: "remove_from_namelist"
         leapyear: True
         asforcing: ECHAM5
 

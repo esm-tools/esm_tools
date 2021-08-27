@@ -83,8 +83,10 @@ metadata:
         Publications:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
-                Please make sure you have a license to use ECHAM. In case you are
-                unsure, please contact redmine...
+                Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
+                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
+                https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
+                to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
 
 standalone_model: True
 
@@ -161,11 +163,11 @@ choose_resolution:
                 choose_computer.cores_per_node:
                         24:
                                 nproca: 24
-                                nprocb: 18
+                                nprocb: 24
 
                         36:
                                 nproca: 24
-                                nprocb: 18
+                                nprocb: 24
 
         T31:
                 levels: "L19"
@@ -203,14 +205,16 @@ choose_version:
         6.3.05p2-concurrent_radiation-paleodyn:
                 choose_computer.name:
                     mistral:
-                        add_add_compiletime_environment_changes:
-                            add_add_export_vars:
-                                - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        add_add_runtime_environment_changes:
-                            add_add_export_vars:
-                                - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                test1:
+                    test2: true
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:

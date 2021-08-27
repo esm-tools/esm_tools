@@ -66,13 +66,13 @@ echam:
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF87K:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
 
 
 #########################################################################################
@@ -83,7 +83,7 @@ jsbach:
         choose_jsbach.dataset:
                 "r0009":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
-                "r0008":        
+                "r0008":
                         cover_fract_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         namelist_changes:
                 namelist.jsbach:
@@ -124,6 +124,8 @@ fesom:
 
         add_namelist_changes:
                 namelist.oce:
+                        oce_tra:
+                                surf_relax_s: 0.0
                         boundary:
                                 restore_s_surf: 0.0
 

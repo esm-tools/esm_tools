@@ -713,7 +713,7 @@ File Dictionaries
 ~~~~~~~~~~~~~~~~~
 
 File dictionaries are a special type of `YAML` elements that are useful to handle input, output,
-forcing, logging, binary and restart files among others (see `File dictionary types` table),
+forcing, logging, binary and restart files among others (see :ref:`yaml:File Dictionary Types` table),
 and that are normally defined inside the `configuration files` of models. File dictionary's `keys`
 are composed by a file dictionary ``type`` followed by ``_`` and an ``option``, and the `elements`
 consist of a list of ``file_tags`` as `keys` with their respective ``file_paths`` as `values`:
@@ -727,9 +727,10 @@ consist of a list of ``file_tags`` as `keys` with their respective ``file_paths`
 The ``file_tags`` need to be consistent throughout the different ``options`` for files to be
 correctly handled by ESM-Tools. Exceptionally, ``sources`` files can be tagged differently but
 then the option ``files`` is required to link sources tags to general tags used by the other
-options (see `File dictionary options` table below).
+options (see :ref:`yaml:File Dictionary Options` table below).
 
-**File dictionary types**
+File Dictionary Types
+---------------------
 
 .. csv-table::
    :header: Key, Description
@@ -748,7 +749,8 @@ options (see `File dictionary options` table below).
    restart_out,         "Restart files to be copied from the **run directory** into the **experiment directory** (see :ref:`esm_runscripts:Experiment Directory Structure`), during the `tidy and resubmit phase` (e.g. to copy the output restart files from a finished run into the **experiment directory** for later use the next run)."
    viz,                 Files for the visualization tool.
 
-**File dictionary options**
+File Dictionary Options
+-----------------------
 
 .. csv-table::
    :header: Key, Description
@@ -829,3 +831,86 @@ This means that for a scenario ``PI-CTRL`` the files that are handled by ESM-Too
 and ``piozone``, and they are tagged with new general `keys` (``sst``, ``sic``, ...) that
 are common to all scenarios. The source files not included in ``forcing_files`` won't be
 used.
+
+File movements
+--------------
+
+Inside the file dictionaries realm, it is possible to specify the type of movement you
+want to carry out (among ``copy``, ``link`` and ``move``), for a specific file or file
+type, and for a given direction. By default all files are ``copied`` in all directions.
+
+The syntax for defining a file movement for a given file type is:
+
+.. code-block:: yaml
+
+   <model>:
+       file_movements:
+           <file_type>:
+               <direction1>: <copy/link/move>
+               <direction2>: <copy/link/move>
+               [ ... ]
+
+where the ``file_type`` in one among the :ref:`yaml:File Dictionary Types`, and the
+``direction`` one of the following ones:
+
+=================== ===================================================================
+Movement file directions
+=======================================================================================
+``init_to_exp``     Initial files to the corresponding general folder
+------------------- -------------------------------------------------------------------
+``exp_to_run``      From general to the corresponding run folder
+------------------- -------------------------------------------------------------------
+``run_to_work``     From run to the work folder on that run
+------------------- -------------------------------------------------------------------
+``work_to_run``     From the work folder to the corresponding run folder
+------------------- -------------------------------------------------------------------
+``all_directions``  Directions not specifically defined, use this movement
+=================== ===================================================================
+
+It is also possible to do the same for specific files instead of for all files inside
+a ``file_type``. The syntax logic is the same:
+
+.. code-block:: yaml
+
+   <model>:
+       file_movements:
+           <file_key>:
+               <direction1>: <copy/link/move>
+               <direction2>: <copy/link/move>
+               [ ... ]
+
+where ``file_key`` is the key you used to identify your file inside the
+``<file_type>_files``, having to add to it ``_in`` or ``_out`` if the file is a
+restart, in order to specify in which direction to apply this.
+
+Movements specific to files are still compatible with the ``file_type`` option, and
+only the moves specifically defined for files in the ``file_movements`` will differ
+from those defined using the ``file_type``.
+
+Accessing Variables from the Previous Run (``prev_run``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to use the ``prev_run`` dictionary, in order to access values of
+variables from the previous run, in the current run. The idea behind this functionality
+is that variables from the previous run can be called from the yaml files with a very
+similar syntax to the one that would be used for the current run.
+
+The syntax for that is as follows:
+
+.. code-block:: yaml
+
+   <your_var>: ${prev_run.<path>.<to>.<the>.<var>.<in>.<the>.<previous>.<run>}
+
+For example, let's assume we want to access the `time_step` from the previous run
+of a `FESOM` simulation and store it in a variable called `prev_time_step`:
+
+.. code-block:: yaml
+
+   prev_time_step: ${prev_run.fesom.time_step}
+
+.. Note:: Only the single previous simulation loaded
+
+.. Warning:: Use this feature only when there is no other way of accessing the
+   information needed. Note that, for example, dates of the previous run are
+   already available in the current run, under variables such as
+   ``last_start_date``, ``parent_start_date``, etc.

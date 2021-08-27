@@ -172,7 +172,7 @@ oifs:
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
-        ini_parent_dir: "${general.ini_parent_dir}/oifs/"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
 
 nemo:
         
@@ -204,7 +204,7 @@ nemo:
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${nemo.time_step}seconds ))"
-        ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/nemo/"
         ini_restart_steps: ${general.ini_nemo_restart_steps}
         
         choose_general.version:
@@ -258,7 +258,14 @@ oasis3mct:
         lresume: true
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
-        ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
+
+        oasis_date_stamp: "" 
+        choose_lresume:
+                1:
+                        choose_general.run_number:
+                                1:
+                                        oasis_date_stamp: ${general.oasis_date_stamp}
 
         output_exchanged_vars: false
 
@@ -591,12 +598,12 @@ oasis3mct:
                 rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                
                 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
+                sstocean: sstocean${oasis_date_stamp}
+                flxatmos: flxatmos${oasis_date_stamp}
+                rnfatm: rnfatm${oasis_date_stamp}
+                rnrunoff: rnrunoff${oasis_date_stamp}
+                atmtau: atmtau${oasis_date_stamp}
+                atmflx: atmflx${oasis_date_stamp}
 
 
 # Set up CPU layout

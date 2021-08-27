@@ -12,9 +12,9 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "12:00:00"
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1900-01-01T00:00:00"         # Final date of the experiment
+   compute_time: "00:30:00"
+   initial_date: "1920-01-01T00:00:00"       # Initial exp. date
+   final_date: "1920-02-01T00:00:00"         # Final date of the experiment
 
    nyear: 10
    nmonth: 0
@@ -31,7 +31,8 @@ general:
    ini_parent_exp_id: "FOCI_NJK001"
    ini_string_parent_date: "1920-01-01"
    ini_nemo_restart_steps: 1227168
-   ini_parent_dir: "${homedir}/esm/esm-slask/${ini_parent_exp_id}/" 
+   ini_parent_dir: "${homedir}/esm/esm-slask/${ini_parent_exp_id}/"
+   oasis_date_stamp: "_19100101-19191231"
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.0
@@ -54,10 +55,9 @@ oifs:
    prepifs_startdate: 20080101
    resolution: TCO95
    levels: L91
-   lresume: 0
    nproc: 143
    use_ocean_currents: 0
-   initial_date_cold: 1850-01-01
+   initial_date_cold: "1850-01-01"
 
 oasis3mct:
    norestart: F
@@ -65,12 +65,13 @@ oasis3mct:
    #export_mode: EXPOUT   
    
 nemo:
+   lresume: True
    resolution: "ORCA05"
    jpni: 16
    jpnj: 16
    nproc: 256
 
-   add_namelist_changes:
+   namelist_changes:
        namelist_cfg:
            namtra_ldf:
                rn_aht_0: 599

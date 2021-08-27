@@ -235,6 +235,7 @@ oasis3mct:
         mct_version: "4.0"
         norestart: "F"
         use_lucia: True
+        debug_level: 1
         
         process_ordering:
                 - nemo

@@ -168,6 +168,11 @@ oifs:
                 "[[foci_fields_r-->FIELD]]":
                         grid: atmr
 
+        # settings for restarting from another run
+        lresume: ${general.lresume}
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
 
 nemo:
         
@@ -194,7 +199,14 @@ nemo:
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
-        #lresume: ${general.lresume}
+
+        # settings for restarting from another run
+        lresume: ${general.lresume}
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${nemo.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/nemo/"
+        ini_restart_steps: ${general.ini_nemo_restart_steps}
+        
         choose_general.version:
                 default:
                         version: "3.6foci"
@@ -242,13 +254,18 @@ oasis3mct:
                 - rnfmap
                 - xios
         
-        # lresume needs to be true to allow usage of flxatmos and sstocean
-        # "restart" files in initial coupling time step
-        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        # settings for restarting from another run
         lresume: true
-        ini_parent_date: "19500101" # not used, but needs to be present 
-        ini_parent_exp_id: "khw0030" # not used, but needs to be present 
-        ini_restart_dir: "${pool_dir}"
+        ini_parent_exp_id: ${general.ini_parent_exp_id}
+        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
+        ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
+
+        oasis_date_stamp: "" 
+        choose_lresume:
+                1:
+                        choose_general.run_number:
+                                1:
+                                        oasis_date_stamp: ${general.oasis_date_stamp}
 
         output_exchanged_vars: false
 
@@ -581,12 +598,12 @@ oasis3mct:
                 rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                
                 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
+                sstocean: sstocean${oasis_date_stamp}
+                flxatmos: flxatmos${oasis_date_stamp}
+                rnfatm: rnfatm${oasis_date_stamp}
+                rnrunoff: rnrunoff${oasis_date_stamp}
+                atmtau: atmtau${oasis_date_stamp}
+                atmflx: atmflx${oasis_date_stamp}
 
 
 # Set up CPU layout

@@ -9,7 +9,6 @@ general:
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1855-01-01T00:00:00"         # Final date of the experiment
    postprocessing: 0
-   scenario: "PI-CTRL"
    nmonth: 12
    clean_runs: 2
    
@@ -21,6 +20,7 @@ foci:
    model_dir: ${general.homedir}/esm/models/foci-agrif/
 
 echam:
+   scenario: "PI-CTRL"
    resolution: "T63"
    restart_rate: ${general.nmonth}
    restart_unit: "months"

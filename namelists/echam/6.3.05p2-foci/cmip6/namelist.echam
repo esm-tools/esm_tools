@@ -1,0 +1,99 @@
+&parctl
+    nproca = 24
+    nprocb = 24
+    iomode = 0
+    nprocio = 0
+/
+&submodelctl
+    lmethox = .true.
+/
+&qboctl
+    i_time = 0
+/
+&runctl
+    dt_start = 1849, 12, 31, 23, 52, 30
+    dt_stop = 1880, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    out_datapath = './'
+    out_expname = 'EXP_ID'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'days', 'last', 0
+    trigfiles = 1, 'months', 'first', 0
+    nproma = 32
+    lcouple = .false.
+    getocean = 24, 'steps', 'exact', 0
+    putocean = 24, 'steps', 'exact', -450
+    lcouple_co2 = .false.
+    default_output = .false.
+    ltdiag = .true.
+    lresume = .false.
+/
+&gwsctl
+    rmscon_hi = 0.92 ! default is 1.0
+/
+&mvstreamctl ! 'default spm glm g3bm'
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+&mvstreamctl ! 'default co2m'
+    filetag = 'co2'
+    source = 'co2'
+/
+&mvstreamctl ! 'default tdiagm'
+    filetag = 'tdiag'
+    source = 'tdiag'
+    meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp',
+              'gboxarea'
+/
+&mvstreamctl ! 'default jsbachm'
+    filetag = 'jsbach'
+    source = 'jsbach'
+/
+&mvstreamctl ! 'default landm'
+    filetag = 'land'
+    source = 'land'
+/
+&mvstreamctl ! 'default vegm'
+    filetag = 'veg'
+    source = 'veg'
+/
+&mvstreamctl ! 'default surfm'
+    filetag = 'surf'
+    source = 'surf'
+/
+&mvstreamctl ! 'default yassom'
+    filetag = 'yasso'
+    source = 'yasso'
+/
+&set_stream ! 'default jsbach'
+    stream = 'jsbach'
+    lpost = 0
+/
+&set_stream ! 'default land'
+    stream = 'land'
+    lpost = 0
+/
+&set_stream ! 'default veg'
+    stream = 'veg'
+    lpost = 0
+/
+&set_stream ! 'default surf'
+    stream = 'surf'
+    lpost = 0
+/
+&set_stream ! 'default yasso'
+    stream = 'yasso'
+    lpost = 0
+/
+&radctl
+  iaero   = 8
+  ighg    = 1
+  io3     = 4
+  isolrad = 1
+  ico2    = 4
+  ich4    = 4
+  in2o    = 4
+  icfc    = 4  
+/

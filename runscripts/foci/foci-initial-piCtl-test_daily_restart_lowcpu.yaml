@@ -9,17 +9,17 @@ general:
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-04T00:00:00"         # Final date of the experiment
    postprocessing: 0
-   scenario: "PI-CTRL"
    nday: 1 
    
    # machine specific setup 
-   # account: shk00018
+   account: shk00018
    base_dir: ${homedir}/esm/esm-experiments/
 
 foci:
    model_dir: ${general.homedir}/esm/models/foci-default/
 
 echam:
+   scenario: "PI-CTRL"
    resolution: "T63"
    restart_rate: ${general.nday}
    restart_unit: "days"

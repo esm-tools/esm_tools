@@ -94,6 +94,7 @@ executable: echam6
 version: 6.3.04p1
 resolution: T63
 scenario: "PI-CTRL"
+scenario_type: ${scenario} 
 postprocessing_stream: 'BOT ATM LOG'
 yr_perp_off: false
 transient_advance_forcing: false
@@ -128,7 +129,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario_type}"
 
 switch: 1
 value : "echam default"
@@ -297,8 +298,9 @@ choose_scenario:
                         aerofin: piaerofin
                         aerofarir: piaerofarir
                         ozone: 1950ozone
-                add_input_files:
                         MAC-SP: MAC-SP
+        # old hist settings --> need to discuss with deniz whether this is
+        # still needed
         HIST:
                 greenhouse_dir: "${forcing_dir}"
                 forcing_files:
@@ -309,51 +311,43 @@ choose_scenario:
                         sic: amipsic
                         ozone: histozone
                         greenhouse: histgreenh
-                        volcanir: histvolcanir
+                        volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP
-        RCP26:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: rcp26aerofin
-                        ozone: rcp26ozone
-                        greenhouse: rcp26greenh
-                        volcanir: histvolcanir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP
-        RCP45:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: rcp45aerofin
-                        ozone: rcp45ozone
-                        greenhouse: rcp45greenh
-                        volcanir: histvolcanir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP
-        RCP85:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: rcp85aerofin
-                        ozone: rcp85ozone
-                        greenhouse: rcp85greenh
-                        volcanir: histvolcanir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                add_input_files:
                         MAC-SP: MAC-SP
 
+        ssp585:
+                scenario_type: cmip6 
+        ssp370:
+                scenario_type: cmip6 
+        ssp126:
+                scenario_type: cmip6 
+        ssp245:
+                scenario_type: cmip6 
+        ssp534os:
+                scenario_type: cmip6 
+        cmip6hist:
+                scenario_type: cmip6 
+
+choose_scenario_type:
+        cmip6:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse_1849: piaerocoarse
+                        aerocoarse_1850: piaerocoarse
+                        aerocoarse_1851: piaerocoarse
+                        aerofarir_1849: piaerofarir
+                        aerofarir_1850: piaerofarir
+                        aerofarir_1851: piaerofarir
+                        aerofin_1849: piaerofin
+                        aerofin_1850: piaerofin
+                        aerofin_1851: piaerofin
+                        ozone: ozone_hist_scenario
+                        greenhouse: greenhouse_hist_scenario 
+                        volcir: histvolcir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                        MAC-SP: MAC-SP_hist_scenario
 
 choose_lresume:
         False:
@@ -422,13 +416,6 @@ choose_yr_perp_off:
                                 runctl:
                                         l_orbsvop87: ".false."
 
-#choose_transient_advance_forcing:
-        #true:
-                #"[year, co2vmr, ch4vmr, n2ovmr, cecc, cobld, clonp]": "<--grep(${start_date!year})-- ${forcing_table}"
-
-
-
-
 
 bin_files:
         "echam_bin": "echam_bin"
@@ -456,11 +443,24 @@ input_in_work:
         "tslclim": "unit.92"
         "vgratclim": "unit.91"
         "vltclim": "unit.90"
-        "MAC-SP": "MAC-SP.nc"
 
 forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
+        # ok this is another crazy ECHAM6 speciality
+        # every year the background aerosol files for 1849 to 1851 
+        # need to be linked to the same file for historical/scenario runs
+        # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
+        # MAC-SP describes aerosol w.r.t. piControl conditions.
+        aerocoarse_1849: "aero_coarse_1849.nc"
+        aerocoarse_1850: "aero_coarse_1850.nc"
+        aerocoarse_1851: "aero_coarse_1851.nc"
+        aerofin_1849: "aero_fine_1849.nc"
+        aerofin_1850: "aero_fine_1850.nc"
+        aerofin_1851: "aero_fine_1851.nc"
+        aerofarir_1849: "aero_farir_1849.nc"
+        aerofarir_1850: "aero_farir_1850.nc"
+        aerofarir_1851: "aero_farir_1851.nc"
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
@@ -469,6 +469,7 @@ forcing_in_work:
         volcir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
+        "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
         aerocoarse:
@@ -481,6 +482,15 @@ forcing_additional_information:
                 - need_year_before
                 - need_year_after
         ozone:
+                - need_year_before
+                - need_year_after
+        volcsw:
+                - need_year_before
+                - need_year_after
+        volcir:
+                - need_year_before
+                - need_year_after
+        swflux:
                 - need_year_before
                 - need_year_after
 

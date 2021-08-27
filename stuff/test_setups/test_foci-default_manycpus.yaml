@@ -9,7 +9,6 @@ general:
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-03T00:00:00"         # Final date of the experiment
    postprocessing: 0
-   scenario: "PI-CTRL"
    nday: 1 
    
    # machine specific setup 
@@ -20,6 +19,7 @@ foci:
    model_dir: /will/be/set/by/test_setup.sh 
 
 echam:
+   scenario: "PI-CTRL"
    resolution: "T63"
    restart_rate: ${general.nday}
    restart_unit: "days"

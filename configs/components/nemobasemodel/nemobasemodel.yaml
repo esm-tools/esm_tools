@@ -28,7 +28,10 @@ choose_version:
       cd CONFIG; cp ${nemo.version}/cfg.inc cfg.txt;
       ./makenemo -n ${nemo.version} -m ${archfile} -j 24; 
       cp -p ${nemo.version}/BLD/bin/nemo.exe ${nemo.version}/BLD/bin/oceanx
-clean_command: cd CONFIG; ./makenemo -n ${nemo.version} clean
+clean_command: cd CONFIG; 
+   cp ${nemo.version}/cfg.inc cfg.txt; 
+   ./makenemo -n ${nemo.version} -m ${archfile} clean;
+   cd ..
 comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc
   cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe
   ${nemo.version}/BLD/bin/oceanx

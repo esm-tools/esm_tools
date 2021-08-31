@@ -23,7 +23,7 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-4
+    branch: awicm3-frontiers-freeze-candidate-5
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git

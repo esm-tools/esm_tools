@@ -286,7 +286,8 @@ fesom:
 #       - fesom/fesom-2.0.io.yaml
 
 xios:
-        nproc: ${computer.cores_per_node}
+        nproc: 1
+        omp_num_threads: ${computer.cores_per_node}
 
 rnfmap:
         pool_dir: ${general.pool_dir}

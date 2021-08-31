@@ -3,16 +3,16 @@ general:
     setup_name: "awicm3"
     version: "frontiers-xios"
     account: "hhb19"
-    compute_time: "00:15:00"
+    compute_time: "02:00:00"
     initial_date: "2000-01-01"
-    final_date: "2000-01-02"
+    final_date: "2001-01-01"
     base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 1
+    nday: 0
     nmonth: 0
-    nyear: 0
+    nyear: 1
 
 computer:
-    heterogeneous_parallelization: false
+    heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false
@@ -24,30 +24,32 @@ fesom:
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
     restart_rate: 1
-    restart_unit: "d"
+    restart_unit: "y"
     restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 48
+    nproc: 288
 
 oifs:
-    resolution: "TL159"
-    levels: "L60"
-    prepifs_expid: h6mv
+    resolution: "TCO159"
+    levels: "L91"
+    prepifs_expid: h9wu
     input_expid: awi3
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 48
-    omp_num_threads: 2
+    nproc: 384
+    omp_num_threads: 6
 
 oasis3mct:
     lresume: true # Set to false to generate the rst files for first leg
     time_step: 7200
     use_lucia: true
 
-xios:                                                                                                  
-    xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/"                           
-    with_model: oifs                                                                                   
-    nproc: 48
-    omp_num_threads: 1
+xios:
+    xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/"
+    with_model: oifs
+    nproc: 10
+    omp_num_threads: 48
+
+

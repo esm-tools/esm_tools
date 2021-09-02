@@ -11,17 +11,24 @@ indir=$1
 icmcl_file=$2
 inexpid=$3
 outexpid=$4
-startdate=$5
-enddate=$6
-outdir=$7
-with_wam=$8
-perturb=$9
-nx=${10}
-ensemble_id=${11}
+inidate=$5
+startdate=$6
+enddate=$7
+outdir=$8
+with_wam=$9
+perturb=${10}
+nx=${11}
+ensemble_id=${12}
 
-style="jesus"
+style=${13:-"jesus"}
 
-if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
+if [[ "$(hostname -f)" =~ ollie ]] ; then
+    module purge
+    module load intel.compiler
+    module load cdo netcdf/4.6.2_intel
+    export PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu/bin:$PATH
+
+elif [[ "$(hostname -f)" =~ dkrz.de ]] ; then
     export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
     module purge
     module load netcdf_c/4.3.2-gcc48
@@ -45,15 +52,26 @@ elif [[ "$(hostname -f)" =~ juwels ]] ; then
     module load ParaStationMPI/5.4.4-1-mt    
     module load Python/3.6.8
     module load imkl/2019.3.199
+    export PATH=$IO_LIB_ROOT/bin:$PATH:/p/project/chhb19/jstreffi/software/cdo/cdo-1.9.8/src/
     #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
-    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
+    #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
+    export IO_LIB_ROOT=/p/project/chhb19/jstreffi/ecmwf/eccodes_intel2020_psi2020/
     export PATH=$IO_LIB_ROOT/bin:$PATH
     export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 else
-   echo
-	echo $0 has not been adapted for $(hostname)
-	echo
-	exit 1
+     module load PrgEnv-cray/6.0.4
+     module load alps pbs
+     module load cray-mpich/7.7.3
+     module load craype-x86-skylake
+     module load cmake/3.14.0
+     module load cray-hdf5-parallel/1.10.2.0
+     module load cray-netcdf-hdf5parallel/4.6.1.3
+     module load cdo/1.9.5
+     module load fftw/2.1.5.9
+     module load nco/4.9.4
+     module load proj4/5.1.0
+     module load python/3.9.1
+     export PATH=$PATH:/home/awiiccp2/software/ecmwf/eccodes_cce_mpich/bin
 fi 
 
 echo " OpenIFS preprocessing "
@@ -66,14 +84,23 @@ cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "
-echo " Exp ID: $expid "
+echo " InExp ID: $inexpid "
+echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb: $perturb "
+echo " Style: $style"
 
-ndate=$(date -u -d "${startdate}" +%Y%m%d)
+if [[ "x${style}" == "xjesus" ]] ; then
+   ndate=$(date -u -d "${inidate}" +%Y%m%d)
+else
+   ndate=$(date -u -d "${startdate}" +%Y%m%d)
+fi
+initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
 endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
+echo " Initial time: $initime "
 echo " Start time: $starttime "
 echo " End time: $endtime "
 echo " "
@@ -84,8 +111,10 @@ echo " $files "
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
-if [ -f $old ]; then                                                                                                                                                 
-    grib_set -s dataDate=$ndate $old $new                                                                                                                          
+if [ -f $old ]; then                                                                                                   
+    cp $old $old\_ori
+    rm $old                                              
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 
@@ -95,7 +124,9 @@ fi
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -144,7 +175,9 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -154,16 +187,18 @@ fi
 if [[ "x${with_wam}" == "x1" ]] ; then
     files="cdwavein sfcwindin specwavein uwavein"
     for file in $files ; do
-   
+
         ## old file
         old=${indir}/$file 
         
         ## new file
         new=${outdir}/$file
-   
+
         if [ -f $old ]; then
+            cp $old $old\_ori
+            rm $old 
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new 
+            grib_set -s dataDate=$ndate $old\_ori $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

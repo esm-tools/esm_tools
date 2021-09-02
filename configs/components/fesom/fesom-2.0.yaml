@@ -24,6 +24,22 @@ choose_version:
     git-repository:
     - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
+  2.0-master:
+    branch: master
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+    namelist_dir: "${model_dir}/fesom-2.0/config/"
+  2.0-awicm-3.0:
+    branch: awicm3-frontiers-freeze-candidate-5
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-frontiers:
+    branch: awicm-3-frontiers_parallel-restart
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
   2.0-esm_interface:
     branch: using_esm-interface_yac
     destination: fesom-2.0
@@ -36,8 +52,8 @@ choose_version:
     branch: juwels_chunk_io
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    #- https://github.com/FESOM/fesom2.git # Change later to this repository
+    - https://github.com/FESOM/fesom2.git
+    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
@@ -104,6 +120,7 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+        - namelist.cvmix
 
 
 choose_asforcing:
@@ -124,42 +141,74 @@ choose_resolution:
                 nx: 72411
                 mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                 nproc: 288
+        D3:
+                nx: 3160340
+        orca25:
+                nx: 912469
+        DART:
+                nx: 3160340
+mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
-
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        #fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
         fesom: "*.fesom.*.nc"
 
 choose_use_icebergs:
         True:
+
+            add_restart_in_files:
+                    icb_restart: icb_restart
+
+            add_restart_out_files:
+                    icb_restart: icb_restart
 
             input_in_work:
                     longitude: "icb_longitude.dat"
@@ -195,6 +244,15 @@ log_sources:
         clock: fesom.clock
         mesh_diag: fesom.mesh.diag.nc
 
+file_movements:
+        fesom_raw_restart_in:
+                all_directions: move
+        fesom_raw_restart_out:
+                all_directions: move
+        fesom_raw_restart_info_in:
+                all_directions: move
+        fesom_raw_restart_info_out:
+                all_directions: move
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -207,6 +265,9 @@ choose_branchoff:
         false:
                 daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
+                add_restart_in_files:
+                        fesom_raw_restart_info: fesom_raw_restart_info
+                        fesom_raw_restart: fesom_raw_restart
 
 
 
@@ -319,11 +380,6 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:
@@ -347,6 +403,8 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
+                grid: feom
+        enth_oce:
                 grid: feom
 
 grids:

@@ -2,6 +2,6 @@ monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siar
 
 daily_outputs: []
 yearly_outputs: []
-12_second_outputs: []
+12_step_outputs: []
 
 

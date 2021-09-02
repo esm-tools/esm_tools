@@ -3,6 +3,7 @@
 name: blogin
 account: None
 
+# set default for hyperthreading_flag
 use_hyperthreading: False
 choose_use_hyperthreading:
         "1":

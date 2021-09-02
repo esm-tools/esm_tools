@@ -1,0 +1,51 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "frontiers"
+    account: "ab0995"
+    compute_time: "00:15:00"
+    initial_date: "1990-01-01"
+    final_date: "1990-01-02"
+    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+awicm3:
+    postprocessing: false
+    model_dir: "/pf/a/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "D3"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    time_step: 100
+    nproc: 576
+    namelist_dir: "/work/ch0636/a270067/esm_tools/namelists/fesom2/awicm3/awicm-3-D3test/"
+    # Restart options are for outdated restart file types, deactivated by default until fixed
+    lresume: false
+    #ini_parent_exp_id: "DS21"
+    #ini_parent_date: "1989-12-31"
+    #ini_parent_dir: "/work/ch0636/a270067/runtime/awicm-3.1/DS21/"
+    #choose_general.run_number:
+    #    1: 
+    #         restart_in_sources:
+    #             oce_restart: /work/ch0636/a270067/runtime/awicm-3.1/DS21/restart/fesom/fesom.1989.oce.restart.nc
+    #             ice_restart: /work/ch0636/a270067/runtime/awicm-3.1/DS21/restart/fesom/fesom.1989.ice.restart.nc
+
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    lresume: false
+    time_step: 450
+    nproc: 576
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 3600
+

@@ -44,7 +44,7 @@ name_flag: "--job-name=${expid}"
 
 heterogeneous_parallelization: false
 
-choose_heterogeneous_parallelization:
+add_choose_heterogeneous_parallelization:
         true:
                 cpu_bind: "none"
         false:
@@ -108,8 +108,8 @@ check_error:
                 method: "kill"
                 message: "SLURM ERROR: slurm probably didn't find executable"
                 file: "stdout"
-                
-# possibility to use less cores than processes. Useful for test runs / debugging                
+
+# possibility to use less cores than processes. Useful for test runs / debugging
 # can be specified in user runscript
 overcommit_nodes: None
 overcommit_rule: ""

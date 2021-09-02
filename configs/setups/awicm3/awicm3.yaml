@@ -63,7 +63,7 @@ general:
                         pool_dir: "/proj/awi/input"
 
         # Load compute recipe from oifs.yaml
-        compute_recipe: ${oifs.compute_recipe}
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
 
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1

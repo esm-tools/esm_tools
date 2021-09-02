@@ -1121,18 +1121,13 @@ postprocess:
 # RECIPE
 #======================================================================================
 
-compute_recipe:
-   - "venv_bootstrap"
-   - "_create_setup_folders"
-   - "_create_component_folders"
-   - "initialize_experiment_logfile"
-   - "copy_tools_to_thisrun"
+prepcompute_recipe:
    - "compile_model"
-   - "_copy_preliminary_files_from_experiment_to_thisrun"
    - "_show_simulation_info"
    - "create_new_files"
+   - "create_empty_folders"
    - "prepare_coupler_files"
-   - "add_batch_hostfile"
+   #- "add_batch_hostfile"
    - "assemble"
    - "log_used_files"
    - "_write_finalized_config"
@@ -1142,10 +1137,10 @@ compute_recipe:
    - "modify_namelists"
    - "modify_files"
    - "copy_files_to_work"
-   - "write_simple_runscript"
+   #- "write_simple_runscript"
    - "report_missing_files"
    - "database_entry"
-   - "submit"
+   #- "submit"
 # this does not work as expected, solution is work in progress
 #   - "postprocess"
 

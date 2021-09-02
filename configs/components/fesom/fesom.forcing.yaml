@@ -1,3 +1,4 @@
+# WARNING: To be use only with FESOM 2.1
 choose_asforcing:
         CORE2:
                 leapyear: false

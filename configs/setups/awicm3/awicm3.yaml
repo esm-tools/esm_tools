@@ -227,16 +227,16 @@ fesom:
 
         choose_general.version:
                 "v3.0":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/v3.0/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.0/"
                 "master":
                         namelist_dir: "${model_dir}/config/"
                 "frontiers":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/frontiers/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/frontiers/"
                 "frontiers-xios":
                         model_tag: "frontiers"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/frontiers/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/frontiers/"
                 "deck":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/awicm3/deck/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/deck/"
                         add_namelist_changes:
                                 namelist.cvmix:
                                         param_kpp:
@@ -283,18 +283,18 @@ fesom:
 # It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
 # By default this option is turned off, and thus the follwing two lines are commented out.                                               
 # further_reading:
-#       - fesom/fesom-2.0.io.yaml
+#       - fesom/fesom.io.yaml
 
 xios:
         nproc: 1
-        omp_num_threads: ${computer.cores_per_node}
+        omp_num_threads: ${computer.partitions.compute.cores_per_node}
 
 rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
 
         nproc: 1
-        omp_num_threads: ${computer.cores_per_node}
+        omp_num_threads: ${computer.partitions.compute.cores_per_node}
         time_step: ${oasis3mct.coupling_time_step}
 
         coupling_fields:

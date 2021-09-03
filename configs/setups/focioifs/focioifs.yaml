@@ -62,6 +62,13 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
+        # Defaults for restarts. If branching off from a previous experiment, define
+        # there variables in the general section of your runscript
+        ini_parent_exp_id: "NONE"
+        ini_string_parent_date: "30000101"
+        ini_parent_dir: "NONE"
+        ini_nemo_restart_steps: 0
+        oasis_date_stamp: ""
 
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27

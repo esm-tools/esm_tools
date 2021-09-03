@@ -408,17 +408,7 @@ newstep_formatted_nest: "<--format(%08d)-- ${newstep_nest}"
 ini_restart_steps: 0 # this value will be/needs to be set in the runscript
 ini_restart_steps_nest: $(( ${ini_restart_steps} * 3 ))
 global_tag: ""
-choose_general.run_number:
-   1:
-      choose_lresume:
-          true:
-             # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
-             global_tag: "_global" 
-             prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
-             prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
-             restart_in_sources:
-                 restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
-
+   
 coupling_freq_in_steps: 6
 
 # TODO: link with model start and end
@@ -503,7 +493,14 @@ choose_lresume:
                                         nn_msh: 0
                 choose_general.run_number:
                         1:
-                                add_add_namelist_changes:
+                                # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+                                global_tag: "_global" 
+                                prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+                                prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+                                restart_in_sources:
+                                        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
+
+                                add_namelist_changes:
                                         namelist_cfg:
                                                 namrun:
                                                         nn_rstctl: 0
@@ -606,7 +603,7 @@ choose_use_lim2:
             add_namelist_changes:
                namelist_ice_cfg:
                   namiceini:
-                     ln_limini: '.false.'
+                     ln_limini: '.false.'   # CONFLICT
       choose_use_agrif2:
          true:
             add_config_files:

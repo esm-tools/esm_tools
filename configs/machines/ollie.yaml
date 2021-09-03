@@ -63,6 +63,11 @@ choose_heterogeneous_parallelization:
                         - "SLURM_NTASKS"
                         - "SLURM_NPROCS"
                         - "SLURM_ARBITRARY_NODELIST"
+
+unset_vars:
+        - "SLURM_MEM_PER_NODE"
+        - "SLURM_MEM_PER_CPU"
+
 # standard environment setup
 #
 #

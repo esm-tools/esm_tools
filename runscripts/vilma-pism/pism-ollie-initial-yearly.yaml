@@ -45,8 +45,3 @@ pism:
                                 call_function: pism2solidearth
                                 env_preparation: env_pism.py
                                 run_only: last_run_in_chunk
-<<<<<<< HEAD
-
-
-=======
->>>>>>> ac9d66fc262682021c8236c613171a6c074a4233

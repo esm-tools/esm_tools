@@ -183,6 +183,19 @@ oifs:
         remove_forcing_files:
                 - ICMCL_INIT
 
+        # Postprocessing
+        workflow:
+                subjobs:
+                        postprocessing:
+                                batch_or_shell: batch
+                                order_in_cluster: concurrent
+                                run_on_queue: ${computer.partitions.pp.name}
+                                run_after: compute
+                                script_dir: ${general.esm_function_dir}/setups/awicm3
+                                submit_to_batch_system: True
+                                script: postprocessing.sh
+                                nproc: 1
+
 
 fesom:
         version: "2.0"

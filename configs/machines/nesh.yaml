@@ -57,8 +57,7 @@ module_actions:
 export_vars:
    LC_ALL: en_US.UTF-8
 
-computer:
-   additional_flags:
+additional_flags: 
       - --mem=72000
       - --contraint="cascade"
 

@@ -12,23 +12,28 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:10:00"
+   compute_time: "15:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1900-01-01T00:00:00"         # Final date of the experiment
 
-   nyear: 0
+   nyear: 10
    nmonth: 0
-   nday: 1
+   nday: 0
    restart_rate: 1
    restart_unit: days 
    hours: 0
   
    # machine specific setup 
    #account: shk00018
-   base_dir: ${homedir}/esm/esm-experiments/
+   base_dir: ${homedir}/esm/esm-slask/
+
+computer:
+   additional_flags:
+      - --mem=72000
+      - --constraint=skylake
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/intel2020/focioifs-2.0
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
   
 oifs:
    version: "43r3"
@@ -51,21 +56,33 @@ oifs:
    lresume: 0
    nproc: 143
    use_ocean_currents: 0
+   perturb: 0
 
 oasis3mct:
    norestart: F
    use_lucia: True
-      
+   #export_mode: EXPOUT
+   #debug_level: 50
+   pool_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   ini_parent_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   oasis_date_stamp: "" 
+   
 nemo:
    resolution: "ORCA05"
    jpni: 16
    jpnj: 16
    nproc: 256
+
+   add_namelist_changes:
+       namelist_cfg:
+           namtra_ldf:
+               rn_aht_0: 600
    
 rnfmap:
    nproc: 1
 
 xios: 
    with_model: focioifs 
-   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   #xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
    nproc: 16

@@ -60,7 +60,7 @@ export_vars:
 computer:
    additional_flags:
       - --mem=72000
-      - --contraint="cascade"
+      - --constraint="cascade"
 
 choose_compiler_mpi:
 

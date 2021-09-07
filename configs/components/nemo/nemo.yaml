@@ -814,7 +814,7 @@ coupling_fields:
         "[[opac_fields-->FIELD]]":
                 grid: opac
         "[[opar_fields-->FIELD]]":
-                grid: opar
+                grid: rnfo 
 
 grids:
         opat:
@@ -836,3 +836,9 @@ grids:
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 2 
 
+        rnfo:
+                name: rnfo
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0

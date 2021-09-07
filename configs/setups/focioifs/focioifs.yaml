@@ -62,6 +62,11 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
+        ini_parent_exp_id: unknown 
+        ini_parent_date: 1850-01-01 
+        ini_parent_dir: unknown 
+        ini_string_parent_date: "1850-01-01"
+        ini_nemo_restart_steps: 0
 
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27
@@ -260,18 +265,19 @@ oasis3mct:
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
         ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
 
-        oasis_date_stamp: "" 
+        this_oasis_date_stamp: "" 
         choose_lresume:
                 1:
                         choose_general.run_number:
                                 1:
-                                        oasis_date_stamp: ${general.oasis_date_stamp}
+                                        this_oasis_date_stamp: ${oasis_date_stamp}
 
         output_exchanged_vars: false
 
         a2o_lag: "${oifs.time_step}"
         a2r_lag: "${oifs.time_step}"
         o2a_lag: "${nemo.time_step}"
+        r2o_lag: 0 #"${nemo.time_step}" # adding lag here causes deadlock
         a2o_seq: 1
         o2a_seq: 1
 
@@ -296,7 +302,9 @@ oasis3mct:
 
                 # Coupled river routing to ocean runoff mask
                 rnrunoff:
-                        - 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
+                        #- 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
+                        #- 'O_Runoff <--r2oconserv-- R_Runoff_oce'
+                        - 'O_Runoff <--r2obilinear-- R_Runoff_oce'
 
                 # Couple atm fluxes to ocean (non-conserving)
                 flxatmos:
@@ -328,8 +336,8 @@ oasis3mct:
                         lag: ${a2r_lag}
                         seq: 3                
                 # Runoff mapper to runoff points in NEMO
-                'opaf->opar':
-                        lag: 0 #${o2a_lag}
+                'rnfo->rnfo':
+                        lag: ${r2o_lag}
                         seq: 3
                 # NEMO to OIFS wet points including lakes 
                 'opat->atml':
@@ -401,12 +409,40 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
+                                        mapname: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: dst
                         postprocessing:
                                 conserv:
                                         method: glbpos
-                
+
+                r2oconserv:
+                        time_transformation: average
+                        remapping:
+                                - conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: fracnnei
+                                        order: first
+                                - mapping:
+                                        mapname: rmp_rnfo_to_rnfo_CONSERV_FRACNNEI_${nemo.resolution}.nc
+                                        map_regrid_on: dst
+                        postprocessing:
+                                conserv:
+                                        method: global
+
+                r2obilinear:
+                        time_transformation: average
+                        remapping:
+                                - bilinear:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                - mapping:
+                                        mapname: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
+                                        map_regrid_on: dst
+                        postprocessing:
+                                conserv:
+                                        method: global
+
                 # OpenIFS (Lgrid) to NEMO
                 # GAUSWGT remapping. No conservation post processing. 
                 a2ogauswgtnc:
@@ -520,7 +556,8 @@ oasis3mct:
         add_restart_out_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
+                #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 # These four are for AGRIF-OpenIFS remapping
@@ -540,7 +577,8 @@ oasis3mct:
         add_restart_out_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
+                #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -572,7 +610,8 @@ oasis3mct:
         add_restart_in_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
+                #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -590,7 +629,8 @@ oasis3mct:
         add_restart_in_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
-                rmp_r2f_RF: rmp_opaf_to_opar_GAUSWGT_${nemo.resolution}.nc
+                #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
+                rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -598,12 +638,12 @@ oasis3mct:
                 rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                
                 
-                sstocean: sstocean${oasis_date_stamp}
-                flxatmos: flxatmos${oasis_date_stamp}
-                rnfatm: rnfatm${oasis_date_stamp}
-                rnrunoff: rnrunoff${oasis_date_stamp}
-                atmtau: atmtau${oasis_date_stamp}
-                atmflx: atmflx${oasis_date_stamp}
+                sstocean: sstocean${this_oasis_date_stamp}
+                flxatmos: flxatmos${this_oasis_date_stamp}
+                rnfatm: rnfatm${this_oasis_date_stamp}
+                rnrunoff: rnrunoff${this_oasis_date_stamp}
+                atmtau: atmtau${this_oasis_date_stamp}
+                atmflx: atmflx${this_oasis_date_stamp}
 
 
 # Set up CPU layout

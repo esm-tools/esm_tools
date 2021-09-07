@@ -88,7 +88,7 @@ coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
                 grid: rnfa
         "[[runoff_fields_send-->FIELD]]":
-                grid: opaf
+                grid: rnfo #opaf
 
 namelist_changes:
         namelist.runoffmapper:
@@ -112,6 +112,12 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 2
+                        rnfo:
+                                name: rnfo
+                                nx: "${nemo._nx}"
+                                ny: "${nemo._ny}"
+                                oasis_grid_type: "LR"
+                                number_of_overlapping_points: 0
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

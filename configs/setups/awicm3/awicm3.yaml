@@ -440,8 +440,8 @@ oasis3mct:
                                 gauswgt:
                                         search_bin: latitude
                                         nb_of_search_bins: 1
-                                        nb_of_neighbours: 9
-                                        weight: "2.0"
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
                         postprocessing:
                                 conserv:
                                         method: glbpos
@@ -452,8 +452,8 @@ oasis3mct:
                                 gauswgt:
                                         search_bin: latitude
                                         nb_of_search_bins: 1
-                                        nb_of_neighbours: 9
-                                        weight: "2.0"
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
                         postprocessing:
                                 conserv:
                                         method: gsspos
@@ -464,8 +464,8 @@ oasis3mct:
                                 gauswgt:
                                         search_bin: latitude
                                         nb_of_search_bins: 1
-                                        nb_of_neighbours: 9
-                                        weight: "2.0"
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
 
         input_files: {}
 

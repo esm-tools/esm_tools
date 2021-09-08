@@ -32,6 +32,8 @@ config_sources:
 no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "" #"_dynveg"
 
+lgfw: ${echam.lgfw}
+
 choose_version:
         "3.20p1":
                 dataset: r0010
@@ -359,7 +361,17 @@ namelists:
 namelist_changes:
         namelist.jsbach:
                 hydrology_ctl:
-                        lgfw: ${echam.lgfw}
+                        lgfw: "${lgfw}"
+
+#choose_lgfw:
+#        True:
+#                add_input_sources:
+#                        jsbach: "${general.couple_dir}/latest_jsbach_init_file.nc"
+#                add_input_files:
+#                        jsbach: jsbach
+#                add_input_in_work:
+#                        jsbach: "jsbach.nc"
+                
 
 further_reading:
         - jsbach/jsbach.inherit.yaml

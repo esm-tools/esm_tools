@@ -14,8 +14,8 @@ general:
         lresume: False
         # settings are only used if lresume = true
         # default is to start from year 1500 of SW038
-        ini_parent_exp_id: "FOCI1.3-SW038"
-        ini_string_parent_date: "3350-01-01"
+        ini_parent_exp_id: "unset"
+        ini_string_parent_date: "1850-01-01"
         ini_nemo_restart_steps: 26297472
         ini_parent_dir: "${pool_dir}/FOCI_RESTART/${ini_parent_exp_id}/"
         # don't change unless you know what you are doing
@@ -336,10 +336,15 @@ oasis3mct:
                 - echam
                 - xios
         # settings for restarting from another run
-        lresume: ${general.lresume}
+        # lresume: ${general.lresume}
+        # for oasis lresume: true always as otherwise a namcouple with LAG=0 is generated
+        # which causes a deadlock in FOCI. Hence sstocean and flxatmos have to be treated 
+        # always as restart files
+        lresume: true
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
-        ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+        #ini_parent_dir is set below in choose_general.lresume 
+        #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
 
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${nemo.time_step}"
@@ -468,8 +473,6 @@ oasis3mct:
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                sstocean: sstocean
-                flxatmos: flxatmos
 
         input_sources:
                 rmp_a2n_B: ${input_dir}/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
@@ -478,14 +481,19 @@ oasis3mct:
                 areas: ${input_dir}/areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: ${input_dir}/grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean: ${input_dir}/sstocean_FOCI1.4.1-KJH001_18501231
-                flxatmos: ${input_dir}/flxatmos_FOCI1.4.1-KJH001_18501231
 
-        choose_lresume:
-                False:
-                    add_input_files:
-                         sstocean: sstocean
-                         flxatmos: flxatmos
+        choose_general.lresume:
+                true:
+                  ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                  restart_in_sources:
+                     sstocean: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+                     flxatmos: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+
+                false:
+                   ini_parent_dir: "${input_dir}/"
+                   restart_in_sources:
+                       sstocean: sstocean_FOCI1.4.1-KJH001_18501231
+                       flxatmos: flxatmos_FOCI1.4.1-KJH001_18501231
 
         remove_restart_in_files:
           - grids
@@ -513,9 +521,9 @@ oasis3mct:
                 sstocean: sstocean
                 flxatmos: flxatmos
 
-        restart_in_sources:
-                sstocean: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
-                flxatmos: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+        #restart_in_sources:
+        #        sstocean: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+        #        flxatmos: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
 
         restart_in_files:
                 sstocean: sstocean

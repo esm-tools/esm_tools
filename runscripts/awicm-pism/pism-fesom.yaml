@@ -1,0 +1,16 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ollie/lackerma/awicm_pism_tests"
+
+model1:
+        setup_name: pism
+        runscript: pism-ollie-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: fesom
+        runscript: fesom2-ollie-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"

@@ -17,11 +17,6 @@
     lcouple_co2 = .true.
     default_output = .false.
 /
-&wisoctl
-    lwiso = .false.
-    lwiso_rerun = .false.
-    nwiso = 0
-/
 &parctl
     nproca = 24
     nprocb = 24

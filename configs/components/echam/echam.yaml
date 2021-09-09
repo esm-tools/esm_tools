@@ -83,8 +83,10 @@ metadata:
         Publications:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
-                Please make sure you have a license to use ECHAM. In case you are
-                unsure, please contact redmine...
+                Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
+                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
+                https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
+                to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
 
 standalone_model: True
 
@@ -158,7 +160,7 @@ choose_resolution:
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.cores_per_node:
+                choose_computer.partitions.compute.cores_per_node:
                         24:
                                 nproca: 24
                                 nprocb: 24
@@ -253,6 +255,53 @@ choose_version:
                                         default_output: True
                                 radctl:
                                         lrad_async: "${lrad_async}"
+                                wisoctl:
+                                        lwiso: False
+                                        lwiso_rerun: False
+                                        nwiso: 0
+                add_streams:
+                        - wiso
+                        - accw_wiso
+                        - sf_wiso
+                        - rad
+                add_forcing_files:
+                        ozonea: piozonea
+                        ozoneb: piozoneb
+                        ozonec: piozonec
+                add_forcing_in_work:
+                        ozonea: "ozon1988"
+                        ozoneb: "ozon1989"
+                        ozonec: "ozon1990"
+                restart_in_sources:
+                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+                restart_out_sources:
+                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+                add_coupling_fields:
+                        o18w_atm:
+                                grid: atmo
+                        hdow_atm:
+                                grid: atmo
+                        o16w_atm:
+                                grid: atmo
+                        o18i_atm:
+                                grid: atmo
+                        hdoi_atm:
+                                grid: atmo
+                        o16i_atm:
+                                grid: atmo
+                        w1_atm:
+                                grid: atmo
+                        w2_atm:
+                                grid: atmo
+                        w3_atm:
+                                grid: atmo
+                        i1_atm:
+                                grid: atmo
+                        i2_atm:
+                                grid: atmo
+                        i3_atm:
+                                grid: atmo
+
 
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
@@ -292,9 +341,6 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofin: piaerofin
                         aerofarir: piaerofarir
-                        ozonea: piozonea
-                        ozoneb: piozoneb
-                        ozonec: piozonec
                         ozone: piozone
         PALEO:
                 forcing_files:
@@ -496,9 +542,6 @@ forcing_in_work:
         aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
         aerofarir: "aero_farir_@YEAR@.nc"
-        ozonea: "ozon1988"
-        ozoneb: "ozon1989"
-        ozonec: "ozon1990"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
@@ -532,10 +575,6 @@ streams:
         - sp6h
         - glim
         - spim
-        - wiso
-        - accw_wiso
-        - sf_wiso
-        - rad
 
 streamsnc:
         - aclcim
@@ -588,7 +627,7 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -598,7 +637,7 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
 
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
@@ -665,18 +704,6 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
-        o18w_atm:
-                grid: atmo
-        hdow_atm:
-                grid: atmo
-        o16w_atm:
-                grid: atmo
-        o18i_atm:
-                grid: atmo
-        hdoi_atm:
-                grid: atmo
-        o16i_atm:
-                grid: atmo
         taux_atm:
                 grid: atmo
         tauy_atm:
@@ -700,18 +727,6 @@ coupling_fields:
         heat_swa:
                 grid: atmo
         hydr_atm:
-                grid: atmo
-        w1_atm:
-                grid: atmo
-        w2_atm:
-                grid: atmo
-        w3_atm:
-                grid: atmo
-        i1_atm:
-                grid: atmo
-        i2_atm:
-                grid: atmo
-        i3_atm:
                 grid: atmo
 
         "[[foci_fields-->FIELD]]":

@@ -11,19 +11,29 @@ jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
 
-choose_jobtype:
-        post:
-                partition: smp
-        compute:
-                partition: mpp
-        tidy_and_resubmit:
-                partition: mpp
 
-choose_partition:
-        "mpp":
+partitions:
+        compute:
+                name: mpp
                 cores_per_node: 36
-        "smp":
+        pp:
+                name: smp
                 cores_per_node: 1
+
+
+                #choose_jobtype:
+                #post:
+                #partition: smp
+                #compute:
+                #partition: mpp
+                #tidy_and_resubmit:
+                #partition: mpp
+
+                #choose_partition:
+                #"mpp":
+                #cores_per_node: 36
+                #"smp":
+                #cores_per_node: 1
 
 logical_cpus_per_core: 2
 
@@ -99,17 +109,6 @@ export_vars:
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
         PATH: /work/ollie/jhegewal/sw/cmake/bin:$PATH
-
-# kh 26.03.21
-        I_MPI_STATS: ipm
-        I_MPI_STATS_FILE: prof_mpi_ollie.dat
-
-# kh 01.04.21 avoid problems at mpi startup if a hybrid configuration (MPI + OpenMP) for a multi program environment is used, 
-# also see https://www.dkrz.de/up/help/known-issues topic "Fatal error in MPI_Init: Other MPI error ..."
-        I_MPI_SLURM_EXT: 0
-
-# kh 02.04.21
-        KMP_AFFINITY: verbose        
 
 choose_useMPI:
         intelmpi:

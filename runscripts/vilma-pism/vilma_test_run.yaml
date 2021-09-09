@@ -1,0 +1,40 @@
+general:
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
+        initial_date: -120000-01-01
+        final_date: -118001-12-31
+        setup_name: vilma
+        compute_time: 00:06:00
+        nyear: 1000
+        use_venv: False
+        #submit_to_batch_system: False
+
+vilma:
+        model_dir: /work/ollie/dbarbi/modelcodes/vilma-1d/
+        pool_dir: ${model_dir}
+        lresume: False
+        scenario: small
+        coupled_to_ice: True
+
+        workflow:
+                next_run_triggered_by: couple_out
+        
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: coupling_ice2vilma.functions
+                                script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
+                                call_function: ice2vilma
+                                env_preparation: env_vilma.py
+                                run_only: first_run_in_chunk
+                                #skip_chunk_number: 1
+        
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                script: coupling_vilma2ice.functions
+                                script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
+                                call_function: vilma2ice
+                                env_preparation: env_vilma.py
+                                run_only: last_run_in_chunk

@@ -1,0 +1,257 @@
+#!/bin/ksh
+
+function ice2fesom {
+    echo " *** S T A R T I N G    ice2fesom ***)"
+
+    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . ${FUNCTION_PATH}/coupling_general.functions
+    . ${FUNCTION_PATH}/coupling_ocean2pism.functions
+
+    echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
+    if [[ "x$ICE_TO_FESOM" == "x0" ]]; then
+        echo " NOT generating ice forcing for ocean model"
+	echo "   since ICE_TO_FESOM=${ICE_TO_FESOM}"
+	return
+    else
+        echo " Only generating iceberg forcing so far ..."
+        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+        return
+    fi
+
+    #
+    # ==> if [[ $ICE_TO_FESOM -ge 1 ]]; then
+    #
+    # ice2fesom
+    #             4) Remap/Regrid to FESOM grid
+    #             5) FESOM Names
+    #
+    CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
+
+    INTERPOL_TYPE_OCE=${INTERPOL_TYPE_OCE:-"dis"} #Standard=dis : "bil" "con" "dis" "nn"
+
+    WEIGHTS_ICE2OCE=${WEIGHTS_ICE2OCE:-weights_ice2oce.${INTERPOL_TYPE_OCE}.nc}
+    GRIDDES_OCE=${GRIDDES_OCE:-ocean.griddes}
+    OCEAN_PISM_FORCING_FILE="pism_forcing4ocean_verXXXX.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_awicm}.nc"
+    COMBINED_OUTPUT=ice_file_at_ocean.combined.nc
+
+
+    iterative_coupling_ice_fesom1x_write_names
+
+    read_names ice fesom
+    save_griddes ocean
+
+    NOCOLOR='\033[0m'
+    GREEN='\033[32m'
+
+    echo "Grid method (ocean) : ${iter_coup_regrid_method_ice2oce}"
+    echo -e "   --> Grid method >>> ${GREEN}${iter_coup_regrid_method_ice2oce}${NOCOLOR} <<< ocean"
+    case $iter_coup_regrid_method_ice2oce in
+        "INTERPOLATE"|"REMAP")
+            iterative_coupling_ice_ocean_regrid_interpolate
+            ;;
+        "EXTRAPOLATE")
+            iterative_coupling_ice_ocean_regrid_interpolate
+            iterative_coupling_ice_ocean_regrid_extrapolate
+            ;;
+        "NONE")
+	    # Ocean and ice sheet grid are identical !!
+	    INTERPOL_TYPE_OCE=none
+            iterative_coupling_ice_ocean_regrid_none
+            ;;
+        *)
+            echo " UNKNOWN regrid method selected!"
+	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE, NONE"
+	    echo " S T O P   2"
+            exit 2
+    esac
+
+    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    unset cleanup_list file
+    unset NOCOLOR GREEN
+
+    echo "     ...done."
+}
+
+
+
+function iterative_coupling_ice_fesom1x_write_names {
+    echo "Writing fesom1x input names and units for use with generic ocean_file_for_ice.nc"
+    :> ice_names_for_fesom.dat
+
+    #
+    # FESOM names
+    #
+    echo ""; echo " *   freshwater flux"
+    echo "fesom_name_freshwater_flux=wnet" >> ice_names_for_fesom.dat
+    echo "fesom_units_freshwater_flux=W/m2" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   heat flux"
+    echo "fesom_name_heat_flux=qnet" >> ice_names_for_fesom.dat
+    #echo "fesom_units_heat_flux=kg/m2/s" >> ice_names_for_fesom.dat
+    echo "fesom_units_heat_flux=m" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   basal ice shelf temperature gradient"
+    echo "fesom_name_temperature_gradient=dTdz" >> ice_names_for_fesom.dat
+    echo "fesom_unit_temperature_gradient=K/m" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   landmask"
+    echo "fesom_name_landmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_landmask=1" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   oceanmask"
+    echo "fesom_name_oceanmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_oceanmask=1" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   iceshelfmask"
+    echo "fesom_name_iceshelfmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_iceshelfmask=1" >> ice_names_for_fesom.dat
+
+    add_to $(pwd)/ice_names_for_fesom.dat ice_names_for_fesom.dat couple
+    echo "     ...done."
+
+}
+
+#
+# Regrid: Interpolation and extrapolation
+#
+function iterative_coupling_ice_ocean_regrid_interpolate {
+    echo " *   Interpolate GCM forcing..."
+
+    ierr=20
+    for file in ${GRIDDES_OCE:?Missing variable} ${COMBINED_OUTPUT:?Missing variable} ; do
+	ierr=$(( ierr + 1 ))
+	test_file_or_exit $file $ierr #ierr=++20
+    done
+
+    build_weights4remap \
+	${COMBINED_OUTPUT:?Missing variable} \
+	${GRIDDES_OCE:?Missing variable} \
+	${WEIGHTS_ICE2OCE:?Missing variable} \
+	${INTERPOL_TYPE_OCE:?Missing variable} \
+	couple
+    test_file_or_exit $WEIGHTS_ICE2OCE 29
+
+    echo "     => remap,$GRIDDES_OCE,$WEIGHTS_ICE2OCE"
+    $cdo remap,$GRIDDES_OCE,$WEIGHTS_ICE2OCE \
+	${COMBINED_OUTPUT} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}"
+}
+
+
+function iterative_coupling_ice_ocean_regrid_extrapolate {
+    #
+    # This has to be called after the interpolation, because after the
+    # interpolation we have landpoints that does not exist in the
+    # FESOM ocean grid
+    regrid_pism_ocean_extrapolate_misstoc=${regrid_pism_ocean_extrapolate_misstoc:-0}
+    iterative_coupling_pism_ocean_regrid_extra_type=${iterative_coupling_pism_ocean_regrid_extra_type:-setmisstoc}
+    echo " *   Extrapolate GCM forcing with method >>${iterative_coupling_pism_ocean_regrid_extra_type}<< ..."
+
+    _cdo_flag=$( return_allowed_cdo_miss_replace_flags ${iterative_coupling_pism_ocean_regrid_extra_type} ${regrid_pism_ocean_extrapolate_misstoc} )
+
+    _tmp_file=ice_file_at_ocean.${INTERPOL_TYPE_OCE}_before_extrapolation.nc
+    mv ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc ${_tmp_file}
+
+    $cdo $_cdo_flag ${_tmp_file} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    echo " ... done"
+    cleanup_list="${cleanup_list} $(pwd)/${_tmp_file}"
+    unset _cdo_flag _tmp_file
+}
+
+
+function iterative_coupling_ice_ocean_regrid_none {
+    echo " *   Grid-identical GCM forcing (no interpolation)..."
+
+    test_file_or_exit ${COMBINED_OUTPUT} 10
+
+    mv ${COMBINED_OUTPUT} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}"
+}
+
+
+function iterative_coupling_ice_fesom_rename_vars {
+    echo " *   Set final FESOM variable names..."
+
+    test_file_or_exit ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc 11
+
+    ncrename \
+	-v .wnet,${fesom_name_freshwater_flux} \
+	-v .qnet,${fesom_name_heat_flux} \
+	-v .dTdz,${fesom_name_temperature_gradient} \
+	-v .landmask,${fesom_name_landmask} \
+	-v .oceanmask,${fesom_name_oceanmask} \
+	-v .iceshelfmask,${fesom_name_iceshelfmask} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc \
+	${OCEAN_PISM_FORCING_FILE}
+
+    cleanup_list="${cleanup_list} $(pwd)/ice_file_for_ocean.${INTERPOL_TYPE_OCE}.nc"
+}
+
+########################################################################
+########################################################################
+# Lars Ackermann 07.09.2020
+########################################################################
+function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
+    # iceberg coupling LA
+    latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    if [[ -f ${latest_pism_output} ]]; then
+        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+        #pism_discharge_file=${latest_pism_output}
+    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+        pism_discharge_file=${SPINUP_FILE_pism}
+    fi
+
+    COUPLE_DIR=${COUPLE_DIR}
+    echo "COUPLE_DIR: ${COUPLE_DIR}"
+    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+    if [[ -d ${COUPLE_DIR} ]]; then
+        mv ${COUPLE_DIR}/LON.dat ${COUPLE_DIR}/LON.dat.${CURRENT_YEAR_pism}
+        mv ${COUPLE_DIR}/LAT.dat ${COUPLE_DIR}/LAT.dat.${CURRENT_YEAR_pism}
+        mv ${COUPLE_DIR}/LENGTH.dat ${COUPLE_DIR}/LENGTH.dat.${CURRENT_YEAR_pism}
+        mv ${COUPLE_DIR}/HEIGHT.dat ${COUPLE_DIR}/HEIGHT.dat.${CURRENT_YEAR_pism}
+        mv ${COUPLE_DIR}/buoys_track.nc ${COUPLE_DIR}/buoys_track.nc.${CURRENT_YEAR_pism}
+    fi
+
+    cdo mulc,${CHUNK_SIZE_pism_standalone} \
+            -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+    
+    module unload python
+    #module load python3
+    module load python3/3.7.7_intel2020u2
+    
+    if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
+        if [[ ! -f ${COUPLE_DIR}/nod2d.out.rot ]]; then
+            python ${FUNCTION_PATH}/utils/rotate_mesh.py ${MESH_DIR_fesom} ${COUPLE_DIR}
+            cp ${MESH_DIR_fesom}/elem2d.out ${COUPLE_DIR}/elem2d.out
+        fi
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR}
+    else
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR}
+    fi
+
+    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
+    use_icesheet_coupling=1
+
+#    get_ib_num_after_ice_sheet_coupling
+}
+
+#function get_ib_num_after_ice_sheet_coupling {
+#    _a="$( wc -l icb/LON.dat | awk '{ print $1 }' )"
+#    _b="$( cat ../icb/num_non_melted_icb_file )"
+#
+#    ib_num=$(( $_a + $_b ))
+#    general_replace_namelist_value namelist.config icebergs ib_num $ib_num
+#    general_replace_namelist_value namelist.config icebergs use_icesheet_coupling ".true."
+#}
+############################################################################
+############################################################################
+
+
+# -- last line

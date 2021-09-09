@@ -1,0 +1,18 @@
+general:
+        iterative_coupling: True
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
+        use_venv: False
+
+model1:
+        setup_name: pism
+        runscript: pism-ollie-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: vilma
+        runscript: vilma_test_run.yaml
+        chunk_size: 1000
+        chunk_unit: "years"
+

@@ -32,12 +32,13 @@ choose_mail_user:
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
 tasks_flag: "--ntasks=@tasks@"
+partition_flag: "--partition=@partition@"
 nodes_flag: "--nodes=@nodes@"
-partition_flag: "--partition=${partition}"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
-output_path: "${experiment_dir}/scripts/"
-thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+output_path: "${experiment_dir}/log/"
+#thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
@@ -51,7 +52,7 @@ choose_heterogeneous_parallelization:
 
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --cpu-freq=high"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
         mpirun:

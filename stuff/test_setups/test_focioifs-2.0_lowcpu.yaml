@@ -44,6 +44,8 @@ oifs:
 oasis3mct:
    norestart: F
    use_lucia: True
+   ini_parent_dir: "${pool_dir}"
+   oasis_date_stamp: ""
       
 nemo:
    resolution: "ORCA05"

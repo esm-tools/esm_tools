@@ -27,6 +27,7 @@ echam:
    nprocb: 4
    
 nemo:
+   #nest: NPAC10
    nest: VIKING10
    #nest: INALT10x
    resolution: "ORCA05"

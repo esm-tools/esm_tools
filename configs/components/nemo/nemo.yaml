@@ -33,13 +33,10 @@ choose_version:
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
-    # having 3 switches doing the same thing is a nasty workaround for the parser of
-    # the yaml files. I have to discuss this with Miguel. I think I need to restructure
-    # the nesting of the choose_ statements below or the esm_parser has to be updated
-    # to be able to handle the way I set the choose_ statements up.
-    use_agrif: true
-    use_agrif2: true
-    use_agrif3: true
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
     free_surface: linear
 
     add_input_files:
@@ -94,15 +91,15 @@ choose_version:
              cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
              cn_ocerst_outdir: '${work_dir}/'
              nn_stock: ${newstep_nest}
-             nn_leapy: 1
-             nn_rstctl: 2
+             nn_leapy: ${nn_leapy} 
+             nn_rstctl: ${nn_rstctl} 
              ln_rstart: ${nemo.lresume}
           namtsd:                                                
-             ln_tsd_tradmp: '.true.' 
-             ln_tsd_init: '.true.'
+             ln_tsd_tradmp: ${ln_tsd_tradmp} 
+             ln_tsd_init: ${ln_tsd_init} 
           namdom:
              nn_closea: 1
-             nn_msh: 1
+             nn_msh: ${nn_msh} 
              rn_rdt: ${time_step_nest}
           namsbc:
              nn_fsbc: 3 
@@ -355,13 +352,30 @@ hosing:         false
 lresume:        false
 free_surface:   linear
 correct_neg_tracer_conc: true
-nest:           VIKING10 
-use_agrif:      false
-use_agrif2:     false
-use_agrif3:     false
+# use damping?
+ln_tsd_tradmp: false 
 
-#restart_rate:   1
-#restart_unit:   months
+# Nest settings
+nest:           VIKING10 
+use_tracer_agrif:   false
+use_lim2_agrif:     false
+
+# calendar:
+leapyear: True
+nn_leapy: 1 
+
+# Restart or initial run settings
+# values below will be set to false if lresume = true
+ln_tsd_init: true 
+ln_limini: true 
+nn_msh: 1
+# will be set to 0 if lresume = true and run_number=1
+# i.e. restart from another run
+nn_rstctl: 2
+# tracer stuff
+ln_rsttr: ${lresume} 
+nn_rsttr : 2
+ln_trcdta: true
 
 # default directories
 pool_dir: ${computer.pool_directories.focipool}
@@ -372,7 +386,7 @@ agrif_dir: ${pool_dir}/AGRIF/agrif_${nest}
 jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
 jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
 # TODO
-ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
+#ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
 namelist_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
 model_dir: ${general.model_dir}/nemo-${nemo.version}
 setup_dir: ${general.model_dir}
@@ -408,25 +422,13 @@ newstep_formatted_nest: "<--format(%08d)-- ${newstep_nest}"
 ini_restart_steps: 0 # this value will be/needs to be set in the runscript
 ini_restart_steps_nest: $(( ${ini_restart_steps} * 3 ))
 global_tag: ""
-choose_general.run_number:
-   1:
-      choose_lresume:
-          true:
-             # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
-             global_tag: "_global" 
-             prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
-             prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
-             restart_in_sources:
-                 restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
-
+   
 coupling_freq_in_steps: 6
 
 # TODO: link with model start and end
 #jrastart: 1958
 #jraend: 1960
 
-# calendar:
-leapyear: True
 
 namelist_changes:
         namelist_cfg:
@@ -440,15 +442,15 @@ namelist_changes:
                         cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
                         nn_stock: ${newstep}
-                        #nn_leapy: 1
-                        nn_rstctl: 2
+                        nn_leapy: ${nn_leapy} 
+                        nn_rstctl: ${nn_rstctl} 
                         ln_rstart: ${nemo.lresume}
                 namtsd:                                                
-                        ln_tsd_tradmp: '.true.' 
-                        ln_tsd_init: '.true.'
+                        ln_tsd_tradmp: ${ln_tsd_tradmp} 
+                        ln_tsd_init: ${ln_tsd_init} 
                 namdom:
                         nn_closea: 1
-                        nn_msh: 1
+                        nn_msh: ${nn_msh} 
                         rn_rdt: ${time_step}
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
@@ -457,16 +459,8 @@ namelist_changes:
                         jpnj: ${jpnj}
                         jpnij: ${nproc}
 choose_leapyear:
-        True:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namrun:
-                                       nn_leapy: 1 
         False:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namrun:
-                                       nn_leapy: 0 
+              nn_leapy: 1 
 
 choose_free_surface:
         linear:
@@ -493,53 +487,25 @@ choose_hosing:
 
 choose_lresume:
         true:
-                add_namelist_changes:
-                        namelist_cfg:
-                                #namrun:
-                                #        ln_rstart: '.true.'
-                                namtsd:
-                                        ln_tsd_init: '.false.'
-                                namdom:
-                                        nn_msh: 0
+                ln_limini: false
+                ln_tsd_init: false
+                nn_msh: 0
+                                        
                 choose_general.run_number:
                         1:
-                                add_add_namelist_changes:
-                                        namelist_cfg:
-                                                namrun:
-                                                        nn_rstctl: 0
-                choose_use_agrif3: 
-                   true:
-                      add_namelist_changes:
-                         1_namelist_cfg:
-                            #namrun:
-                            #   ln_rstart: '.true.'
-                            namtsd:
-                               ln_tsd_init: '.false.'
-                            namdom:
-                               nn_msh: 0
-                      
-                      choose_general.run_number:
-                         1:
-                            add_namelist_changes:
-                               1_namelist_cfg:
-                                  namrun:
-                                     nn_rstctl: 0
+                                nn_rstctl: 0
+                                nn_rsttr : 0 # only needed if tracers are used
+                                # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+                                global_tag: "_global" 
+                                prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+                                prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+                                restart_in_sources:
+                                        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
+
         false:
                 add_outdata_sources:
                         mesh_mask: mesh_mask*.nc
 
-
-choose_correct_neg_tracer_conc:
-        true:
-                add_namelist_changes:
-                        namelist_top_cfg:
-                                namtrc_rad:
-                                        ln_trcrad: ".true."
-        false:
-                add_namelist_changes:
-                        namelist_top_cfg:
-                                namtrc_rad:
-                                        ln_trcrad: ".false."
 
 # choices:
 #
@@ -574,7 +540,7 @@ choose_resolution:
                    namelist_cfg:
                       namtsd:                                                
                         ln_tsd_tradmp: '.false.' 
-                        ln_tsd_init: '.false.'
+                        ln_tsd_init: '.false.' 
                       nameos:
                         ln_useCT: '.false.'
                 input_files:
@@ -599,15 +565,9 @@ choose_use_lim2:
                cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                cn_icerst_outdir: '${work_dir}'
             namiceini:
-               ln_limini: '.true.'
+               ln_limini: ${ln_limini} 
 
-      choose_lresume:
-         true:
-            add_namelist_changes:
-               namelist_ice_cfg:
-                  namiceini:
-                     ln_limini: '.false.'
-      choose_use_agrif2:
+      choose_use_lim2_agrif:
          true:
             add_config_files:
                1_namelist_ice_cfg: 1_namelist_ice_cfg
@@ -619,13 +579,7 @@ choose_use_lim2:
                      cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                      cn_icerst_outdir: '${work_dir}'
                   namiceini:
-                     ln_limini: '.false.'
-            choose_lresume:
-               true:
-                  add_namelist_changes:
-                     1_namelist_ice_cfg:
-                        namiceini:
-                           ln_limini: '.false.'
+                     ln_limini: ${ln_limini} 
 
 choose_use_tracer:
    true:
@@ -638,27 +592,14 @@ choose_use_tracer:
                cn_trcrst_indir: '${work_dir}'
                cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                cn_trcrst_outdir: '${work_dir}'
-               ln_rsttr: '.false.'
-               nn_rsttr : 0
+               ln_rsttr: ${ln_rsttr} 
+               nn_rsttr : ${nn_rsttr}
             namtrc:
-               ln_trcdta: '.true.'
+               ln_trcdta: ${ln_trcdta} 
+            namtrc_rad:
+               ln_trcrad: ${correct_neg_tracer_conc} 
                
-      choose_lresume:
-         true:
-            add_namelist_changes:
-               namelist_top_cfg:
-                  namtrc_run:
-                     ln_rsttr: '.true.'
-                     nn_rsttr : 2
-                  namtrc:
-                     ln_trcdta: '.false.'
-      choose_general.run_number:
-         1:
-            add_namelist_changes:
-               namelist_top_cfg:
-                  namtrc_run:
-                     nn_rsttr : 0
-      choose_use_agrif:
+      choose_use_tracer_agrif:
          true:
             add_config_files:
                1_namelist_top_cfg: 1_namelist_top_cfg
@@ -669,27 +610,13 @@ choose_use_tracer:
                      cn_trcrst_indir: '${work_dir}'
                      cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
                      cn_trcrst_outdir: '${work_dir}'
-                     ln_rsttr: '.false.'
-                     nn_rsttr : 0
+                     ln_rsttr: ${ln_rsttr} 
+                     nn_rsttr : ${nn_rsttr}
                   namtrc:
-                     ln_trcdta: '.true.'
+                     ln_trcdta: ${ln_trcdta} 
+                  namtrc_rad:
+                     ln_trcrad: ${correct_neg_tracer_conc} 
 
-            choose_lresume:
-               true:
-                  add_namelist_changes:
-                     1_namelist_top_cfg:
-                        namtrc_run:
-                           ln_rsttr: '.true.'
-                           nn_rsttr : 2
-                        namtrc:
-                           ln_trcdta: '.false.'
-            choose_general.run_number:
-               1:
-                  add_namelist_changes:
-                     1_namelist_top_cfg:
-                        namtrc_run:
-                           nn_rsttr : 0
-      
 bin_sources:
         nemo: ${bin_dir}/oceanx
 
@@ -814,7 +741,7 @@ coupling_fields:
         "[[opac_fields-->FIELD]]":
                 grid: opac
         "[[opar_fields-->FIELD]]":
-                grid: rnfo 
+                grid: rnfo
 
 grids:
         opat:
@@ -835,10 +762,10 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 2 
-
         rnfo:
                 name: rnfo
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 0
+

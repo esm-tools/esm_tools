@@ -95,6 +95,14 @@ echam:
         nproca: 24
         nprocb: 24
 
+        # do we want to link files or copy. For ECHAM6 we can't link the restart file
+        # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
+        #file_movements:
+        #   forcing:
+        #      all_directions: "link"
+        #   forcing:
+        #      all_directions: "link"
+
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
@@ -277,14 +285,11 @@ jsbach:
 
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
+
         restart_in_sources:
-              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
-              #"[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
               "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
         restart_out_sources:
-              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
-              #"[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
               "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
 
         restart_out_in_work:
@@ -296,17 +301,7 @@ jsbach:
               - veg
               - yasso
               - surf
-              - nitro
               - land
-
-# not yet working, discuss with Dirk @ workshop
-        restartstreams:
-              - jsbach
-              - nitro
-              - veg
-              - yasso
-              - surf
-              - nitro
 
 nemo:
         choose_general.version:
@@ -341,7 +336,7 @@ oasis3mct:
                 - echam
                 - xios
         # settings for restarting from another run
-        lresume: true
+        lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
         ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
@@ -352,13 +347,13 @@ oasis3mct:
 
         coupling_time_step: 10800
 
-        #export_mode_a2o: EXPORTED
+        export_mode_a2o: EXPORTED
         choose_general.version:
                 default:
                         export_mode_a2o: EXPORTED     
                 agrif:
                         export_mode_a2o: EXPNEST     
-                        tada: testtest
+          
         coupling_target_fields:
                 sstocean:
                         - 'AIceFrac <--conserv-- OIceFrac'
@@ -473,8 +468,8 @@ oasis3mct:
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
-                sstocean_initial: sstocean
-                flxatmos_initial: flxatmos
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         input_sources:
                 rmp_a2n_B: ${input_dir}/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
@@ -483,48 +478,45 @@ oasis3mct:
                 areas: ${input_dir}/areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: ${input_dir}/grids_${echam.resolution}_${nemo.resolution}_frac.nc
-                sstocean_initial: ${input_dir}/sstocean_FOCI1.4.1-KJH001_18501231
-                flxatmos_initial: ${input_dir}/flxatmos_FOCI1.4.1-KJH001_18501231
+                sstocean: ${input_dir}/sstocean_FOCI1.4.1-KJH001_18501231
+                flxatmos: ${input_dir}/flxatmos_FOCI1.4.1-KJH001_18501231
 
-        choose_general.lresume:
+        choose_lresume:
                 False:
                     add_input_files:
-                         sstocean_initial: sstocean_initial
-                         flxatmos_initial: flxatmos_initial
-                True:
-                    add_restart_in_files:
-                         sstocean_restart: sstocean_restart
-                         flxatmos_restart: flxatmos_restart
+                         sstocean: sstocean
+                         flxatmos: flxatmos
 
         remove_restart_in_files:
           - grids
           - areas
           - masks
+
         remove_restart_in_sources:
           - grids
           - areas
           - masks
 
         restart_out_files:
-                sstocean_restart: sstocean_restart
-                flxatmos_restart: flxatmos_restart
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         restart_out_in_work:
-                sstocean_restart: sstocean
-                flxatmos_restart: flxatmos
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         restart_out_sources:
-                sstocean_restart: sstocean_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
-                flxatmos_restart: flxatmos_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
+                sstocean: sstocean_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
+                flxatmos: flxatmos_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
 
         restart_in_in_work:
-                sstocean_restart: sstocean
-                flxatmos_restart: flxatmos
+                sstocean: sstocean
+                flxatmos: flxatmos
 
         restart_in_sources:
-                sstocean_restart: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
-                flxatmos_restart: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+                sstocean: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+                flxatmos: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
 
         restart_in_files:
-                sstocean_restart: sstocean_restart
-                flxatmos_restart: flxatmos_restart
+                sstocean: sstocean
+                flxatmos: flxatmos

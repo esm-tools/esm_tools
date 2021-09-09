@@ -6,8 +6,8 @@ general:
    homedir: !ENV ${HOME}
 
    compute_time: "00:15:00"
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   initial_date: "2021-01-01T00:00:00"       # Initial exp. date
+   final_date: "2021-01-04T00:00:00"         # Final date of the experiment
    postprocessing: 0
    nday: 1 
 

@@ -368,6 +368,7 @@ nn_leapy: 1
 # values below will be set to false if lresume = true
 ln_tsd_init: true 
 ln_limini: true 
+ln_limini_agrif: false
 nn_msh: 1
 # will be set to 0 if lresume = true and run_number=1
 # i.e. restart from another run
@@ -488,6 +489,7 @@ choose_hosing:
 choose_lresume:
         true:
                 ln_limini: false
+                ln_limini_agrif: false
                 ln_tsd_init: false
                 nn_msh: 0
                                         
@@ -579,7 +581,7 @@ choose_use_lim2:
                      cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                      cn_icerst_outdir: '${work_dir}'
                   namiceini:
-                     ln_limini: ${ln_limini} 
+                     ln_limini: ${ln_limini_agrif} 
 
 choose_use_tracer:
    true:

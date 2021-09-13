@@ -32,7 +32,21 @@ general:
         pool_dir: "${computer.pool_directories.focipool}"
         model_dir: ${esm_master_dir}/focioifs-${version}
 
-        lresume: False 
+        #
+        # settings for restarting from another run
+        #
+        lresume: False
+        # settings are only used if lresume = true
+        # the following will be set in the general section of the runscript
+        # in case a restart from another run shall be performed
+        ini_parent_exp_id: "unset"
+        ini_string_parent_date: "1850-01-01"
+        ini_nemo_restart_steps: 0
+        ini_parent_dir: "/path/to/restart/data/"
+        oasis_date_stamp: "18500101"
+        # don't change unless you know what you are doing
+        ini_parent_date: "$(( ${ini_string_parent_date} - ${oifs.time_step}seconds ))"       
+        
         coupled_setup: True
 
         include_models:
@@ -61,12 +75,6 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "01:30:00"
-
-        ini_parent_exp_id: unknown 
-        ini_parent_date: 1850-01-01 
-        ini_parent_dir: unknown 
-        ini_string_parent_date: "1850-01-01"
-        ini_nemo_restart_steps: 0
 
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27

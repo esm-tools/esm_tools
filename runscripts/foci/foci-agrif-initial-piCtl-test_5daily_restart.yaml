@@ -5,7 +5,7 @@ general:
    version: "agrif"
    homedir: !ENV ${HOME}
 
-   compute_time: "00:15:00"
+   compute_time: "00:35:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1850-01-16T00:00:00"         # Final date of the experiment
    postprocessing: 0
@@ -23,21 +23,22 @@ echam:
    resolution: "T63"
    restart_rate: ${general.nday}
    restart_unit: "days"
-   nproca: 8 
-   nprocb: 4
+   nproca: 16
+   nprocb: 12
    
 nemo:
-   #nest: NPAC10
-   nest: VIKING10
+   nest: NPAC10
+   #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
+   #nest: VIKING10
    #nest: INALT10x
    resolution: "ORCA05"
    version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
    restart_rate: ${general.nday}
    restart_unit: "days"
-   jpni: 18
-   jpnj: 12
-   nproc: 216
+   jpni: 36 
+   jpnj: 24
+   nproc: 864
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
    #
 xios:
-   nproc: 16
+   nproc: 36

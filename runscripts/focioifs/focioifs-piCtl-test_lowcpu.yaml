@@ -50,6 +50,7 @@ oifs:
 oasis3mct:
    norestart: F
    use_lucia: True
+   ini_parent_dir: "${oasis3mct.pool_dir}"
    
 nemo:
    resolution: "ORCA05"

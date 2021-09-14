@@ -57,6 +57,7 @@ oifs:
    levels: L91
    nproc: 143
    use_ocean_currents: 0
+   sclct_switch: 2
    initial_date_cold: "1850-01-01"
 
    #namelist_changes:

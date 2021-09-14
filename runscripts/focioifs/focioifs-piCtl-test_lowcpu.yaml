@@ -7,20 +7,20 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:10:00"
+   compute_time: "01:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-06T00:00:00"         # Final date of the experiment
 
    nyear: 0
    nmonth: 0
-   nday: 1
+   nday: 5
    restart_rate: 1
    restart_unit: days 
    hours: 0
   
    # machine specific setup 
    #account: shk00018
-   base_dir: ${homedir}/esm/esm-experiments/
+   base_dir: ${homedir}/esm/esm-slask/
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.0
@@ -49,7 +49,8 @@ oifs:
 
 oasis3mct:
    norestart: F
-   use_lucia: True
+   use_lucia: False
+   debug_level: 50
       
 nemo:
    resolution: "ORCA05"
@@ -62,5 +63,6 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   #xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
    nproc: 16

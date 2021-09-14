@@ -14,7 +14,7 @@ general:
 
    compute_time: "15:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1900-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2500-01-01T00:00:00"         # Final date of the experiment
 
    nyear: 10
    nmonth: 0
@@ -30,7 +30,7 @@ general:
 computer:
    additional_flags:
       - --mem=72000
-      - --constraint=skylake
+      - --constraint=cascade 
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.0
@@ -57,6 +57,12 @@ oifs:
    nproc: 143
    use_ocean_currents: 0
    perturb: 0
+   sclct_switch: 2
+
+   #add_namelist_changes:
+   #    fort.4:
+   #        NAMGFL:
+   #            NMFDIAGLEV: 2
 
 oasis3mct:
    norestart: F
@@ -76,7 +82,9 @@ nemo:
    add_namelist_changes:
        namelist_cfg:
            namtra_ldf:
-               rn_aht_0: 600
+               rn_aht_0: 599
+           namsbc_rnf:
+               rn_rfact: 1.067
    
 rnfmap:
    nproc: 1

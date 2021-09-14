@@ -14,11 +14,12 @@ endyear=1850                    # change via -e
 envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
 
 LAND_FILE_TAGS='jsbach veg surf yasso nitro land'
-ATM_FILE_TAGS='echam co2 accw tdiag'
+ATM_FILE_TAGS='echam co2 accw'
 
 # Other settings
 day="01"
 max_jobs=12
+
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -74,6 +75,7 @@ if [[ ! -r $envfile ]] ; then
 else
 	source $envfile
 fi
+set -x
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -180,12 +182,13 @@ endyear=${enddate%????}
 [[ $enddate != *1231 ]] && ((--endyear))
 
 # Temporary directory
-id=$$
+id="post"
 post_dir=$DATA_DIR/${id}_$startdate-$enddate
-[[ -d $post_dir ]] &&
-    print "Hey: previous job failed or still running; removing temp dir"
-rm -r $post_dir
-mkdir $post_dir
+if [[ -d $post_dir ]] ; then
+    print "Hey: previous job failed or still running; $post_dir exists. Will stop now"
+	 exit 1
+fi
+mkdir -p $post_dir
 
 function rename_files {
 
@@ -229,8 +232,8 @@ print 'ECHAM post-processing started'
 outmod=${DATA_DIR}/${atmmod}
 fileext=.grb
 [[ -d $outmod ]] || ln -s -r ${DATA_DIR}/echam $outmod
-mkdir ${outmod}
-cd ${outmod}
+#mkdir ${outmod}
+cd ${outmod} || exit 1
 
 prefix=${EXP_ID}_${atmmod}
 
@@ -392,6 +395,27 @@ do
         remove_list="$remove_list $inputs"  
     done
 done
+
+wait
+# netcdf conversion
+for ((year=startyear; year<=endyear; ++year))
+do
+
+    for filetag in $(echo $meantags | sed 's/\>/_mm/g') 
+    do
+        output=${prefix}_${filetag}_$year$fileext
+
+        # If too many jobs run at the same time, wait
+        while (( $(jobs -pr | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+        (
+            trap 'echo $? > $post_dir/status' ERR
+				# netcdf conversion for mean files
+				[[ "$fileext" == ".grb" ]] && cdo -t echam6 -f nc4c -z zip_1 copy $output $(basename $output .grb).nc
+        ) &
+		  [[ "$fileext" == ".grb" ]] && remove_list="$remove_list $output" 
+    done
+done
+
 
 wait
 

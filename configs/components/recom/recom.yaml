@@ -122,7 +122,7 @@ restart_in_in_work:
         bio_restart: fesom.${parent_date!syear}.bio.${restart_name}nc
 
 restart_in_sources:
-        bio_restart: fesom.${parent_date!syear!smonth!sday}.bio.${restart_name}nc
+        bio_restart: fesom.${parent_date!syear}.bio.nc
 
 restart_out_files:
         bio_restart: bio_restart
@@ -131,7 +131,7 @@ restart_out_in_work:
         bio_restart: fesom.${end_date!syear}.bio.${restart_name}nc
 
 restart_out_sources:
-        bio_restart: fesom.${end_date!syear!smonth!sday}.bio.${restart_name}nc
+        bio_restart: fesom.${end_date!syear}.bio.nc
 
 
 yearly_outputs: []

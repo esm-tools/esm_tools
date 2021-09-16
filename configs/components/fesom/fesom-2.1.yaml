@@ -3,64 +3,30 @@
 
 model: fesom
 branch: master
-version: "2.0"
+version: "2.1"
 type: ocean
 
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
 choose_version:
-  '2.0':
-    branch: 2.0.2
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0pico:
-    branch: pico_cpl
-    destination: fesom-2.0pico
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-esm_interface:
-    branch: using_esm-interface_yac
-    destination: fesom-2.0
+  2.1-unstable:
+    branch: master
+    namelist_dir: "${model_dir}/config/"
+  '2.1':
+    branch: "2.1.0"
+  2.1-wiso:
+    branch: wiso
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-  2.0-jio:
-    branch: juwels_chunk_io
-    destination: fesom-2.0
+  2.1-recom:
+    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    #- https://github.com/FESOM/fesom2.git # Change later to this repository
-  2.0-paleodyn:
-    branch: paleodyn_frozen
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
-    # files will be cleared from the src folder. After Dima's update we will return
-    # fesom-2.0 master branch back and remove this part
-    branch: recom-update
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-
+destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
-- https://gitlab.dkrz.de/FESOM/fesom2.git
-
-
-choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
 
 
 restart_rate: "12"
@@ -79,21 +45,35 @@ old_mesh_format: false
 with_part_format: false
 time_dimension: "time"
 
-pool_dir: ${computer.pool_directories.pool}
-#model_dir: "${esm_master_dir}/fesom-${version}/"
+pool_dir: "${computer.pool_directories.pool}"
+
+choose_computer.name:
+    ollie:
+        pool_dir: "${computer.pool_directories.pool}/../clidyn/"
+    mistral:
+        pool_dir: "${computer.pool_directories.pool}/AWICM/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+        forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
+        mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+        add_compiletime_environment_changes:
+            add_module_actions:
+                - "unload gcc"
+                - "load gcc/4.8.2"
+
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-climate_data_dir: "${pool_dir}/hydrography/"
+climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
 forcing_data_dir: "${pool_dir}/forcing/"
+mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/2.0/"
+namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
 
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-asforcing: CORE2
+asforcing: JRA55
 
 namelists:
         - namelist.config
@@ -101,23 +81,20 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
-
-
-choose_asforcing:
-        CORE2:
-                leapyear: false
-        ECHAM5:
-                leapyear: true
+        - namelist.cvmix
+        - namelist.icepack
 
 
 
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+                mesh_dir: "${fesom.mesh_base_dir}/core2/"
                 nproc: 288
-        GLOB:
-                nx: 830305
+        pi:
+                nx: 3140
+                mesh_dir: "${fesom.mesh_base_dir}/pi/"
+                nproc: 4
 
 restart_in_files:
         oce_restart: oce_restart
@@ -139,8 +116,6 @@ restart_out_in_workdir:
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-
-#outputs: [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice]
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -169,7 +144,6 @@ choose_branchoff:
                 yearnew: "${initial_date!syear}"
 
 
-
 namelist_changes:
         namelist.config:
                 clockinit:
@@ -177,35 +151,76 @@ namelist_changes:
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
-                        ForcingDataPath: "${forcing_data_dir}"
                         MeshPath: "${mesh_dir}"
-                        OpbndPath: "${opbnd_dir}"
                         ClimateDataPath: "${climate_data_dir}"
-                        TideForcingPath: "${tide_forcing_dir}"
                         ResultPath: "${work_dir}"
                 timestep:
                         step_per_day: "${steps_per_day}"
                         run_length: "${restart_rate}"
                         run_length_unit: "${restart_unit}"
-                inout:
-                        restartflag: "${restart_flag}"
-                        output_length: "${restart_rate}"
-                        output_length_unit: "${restart_unit}"
+                restart_log:
                         restart_length: "${restart_rate}"
                         restart_length_unit: "${restart_unit}"
+
         namelist.forcing:
-                namsbc:
-                        nm_xwind_file: "${forcing_data_dir}/u_10."
-                        nm_ywind_file: "${forcing_data_dir}/v_10."
-                        nm_humi_file: "${forcing_data_dir}/q_10."
-                        nm_qsr_file: "${forcing_data_dir}/ncar_rad."
-                        nm_qlw_file: "${forcing_data_dir}/ncar_rad."
-                        nm_tair_file: "${forcing_data_dir}/t_10."
-                        nm_prec_file: "${forcing_data_dir}/ncar_precip."
-                        nm_snow_file: "${forcing_data_dir}/ncar_precip."
-                        nm_mslp_file: "${forcing_data_dir}/slp."
-                        nm_runoff_file: "${forcing_data_dir}/runoff.nc"
-                        nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
+
+                forcing_exchange_coeff:
+                        Ce_atm_oce: ${Ce_atm_oce}
+                        Ch_atm_oce: ${Ch_atm_oce}
+                        Cd_atm_oce: ${Cd_atm_oce}
+                        Ce_atm_ice: ${Ce_atm_ice}
+                        Ch_atm_ice: ${Ch_atm_ice}
+                        Cd_atm_ice: ${Cd_atm_ice}
+
+                forcing_bulk:
+                        AOMIP_drag_coeff: ${AOMIP_drag_coeff}
+                        ncar_bulk_formulae: ${ncar_bulk_formulae}
+                        ncar_bulk_z_wind: ${ncar_bulk_z_wind}
+                        ncar_bulk_z_tair: ${ncar_bulk_z_tair}
+                        ncar_bulk_z_shum: ${ncar_bulk_z_shum}
+
+                nam_sbc:
+                        nm_xwind_file: "${forcing_data_dir}/${forcing_folder}/${xwind_prefix}"
+                        nm_ywind_file: "${forcing_data_dir}/${forcing_folder}/${ywind_prefix}"
+                        nm_humi_file: "${forcing_data_dir}/${forcing_folder}/${humi_prefix}"
+                        nm_qsr_file: "${forcing_data_dir}/${forcing_folder}/${qsr_prefix}"
+                        nm_qlw_file: "${forcing_data_dir}/${forcing_folder}/${qlw_prefix}"
+                        nm_tair_file: "${forcing_data_dir}/${forcing_folder}/${tair_prefix}"
+                        nm_prec_file: "${forcing_data_dir}/${forcing_folder}/${prec_prefix}"
+                        nm_snow_file: "${forcing_data_dir}/${forcing_folder}/${snow_prefix}"
+                        nm_mslp_file: "${forcing_data_dir}/${forcing_folder}/${mslp_prefix}"
+
+                        nm_xwind_var: ${nm_xwind_var}
+                        nm_ywind_var: ${nm_ywind_var}
+                        nm_humi_var: ${nm_humi_var}
+                        nm_qsr_var: ${nm_qsr_var}
+                        nm_qlw_var: ${nm_qlw_var}
+                        nm_tair_var: ${nm_tair_var}
+                        nm_prec_var: ${nm_prec_var}
+                        nm_snow_var: ${nm_snow_var}
+                        nm_mslp_var: ${nm_mslp_var}
+
+                        nm_nc_iyear: ${nm_nc_iyear}
+                        nm_nc_imm: ${nm_nc_imm}
+                        nm_nc_idd: ${nm_nc_idd}
+                        nm_nc_freq: ${nm_nc_freq}
+                        nm_nc_tmid: ${nm_nc_tmid}
+                        l_xwind: ${l_xwind}
+                        l_ywind: ${l_ywind}
+                        l_humi: ${l_humi}
+                        l_qsr: ${l_qsr}
+                        l_qlw: ${l_qlw}
+                        l_tair: ${l_tair}
+                        l_prec: ${l_prec}
+                        l_mslp: ${l_mslp}
+                        l_cloud: ${l_cloud}
+                        l_snow: ${l_snow}
+
+                        nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
+                        nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+
+                        runoff_data_source: ${runoff_data_source}
+                        sss_data_source: ${sss_data_source}
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
@@ -243,6 +258,8 @@ config_files:
         ice:     ice
         oce:     oce
         io:      io
+        cvmix:   cvmix
+        icepack: icepack
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -250,16 +267,29 @@ config_sources:
         ice:     "${namelist_dir}/namelist.ice"
         oce:     "${namelist_dir}/namelist.oce"
         io:      "${namelist_dir}/namelist.io"
-        diag:    "${namelist_dir}/namelist.diag"
+        cvmix:   "${namelist_dir}/namelist.cvmix"
+        icepack: "${namelist_dir}/namelist.icepack"
 
 compiletime_environment_changes:
         add_export_vars:
                 taken2from:      fesom2_compile
+        choose_computer.name:
+                juwels:
+                        add_module_actions:
+                                - "unload ParaStationMPI"
+                                - "load ParaStationMPI/5.4.4-1"
+                                - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
         add_export_vars:
                 takenfrom:      fesom2_run
                 taken2from:     fesom2_ru
+        choose_computer.name:
+                juwels:
+                        add_module_actions:
+                                - "unload ParaStationMPI"
+                                - "load ParaStationMPI/5.4.4-1"
+                                - "load netCDF-Fortran/4.4.5"
 
 config_in_work:
         config:  "namelist.config"
@@ -267,7 +297,8 @@ config_in_work:
         ice:     "namelist.ice"
         oce:     "namelist.oce"
         io:      "namelist.io"
-        diag:    "namelist.diag"
+        cvmix:   "namelist.cvmix"
+        icepack: "namelist.icepack"
 
 coupling_fields:
         sst_feom:
@@ -283,6 +314,12 @@ coupling_fields:
                 #unit: kg m s
                 #standard_cf_name: 'shit no tuna?'
                 #cf_code: 42
+        o18_feom:
+                grid: feom
+        hdo_feom:
+                grid: feom
+        o16_feom:
+                grid: feom
         taux_oce:
                 grid: feom
         tauy_oce:
@@ -307,6 +344,18 @@ coupling_fields:
                 grid: feom
         hydr_oce:
                 grid: feom
+        w1_oce:
+                grid: feom
+        w2_oce:
+                grid: feom
+        w3_oce:
+                grid: feom
+        i1_oce:
+                grid: feom
+        i2_oce:
+                grid: feom
+        i3_oce:
+                grid: feom
 
 grids:
         feom:
@@ -316,3 +365,6 @@ grids:
                 oasis_grid_type: "U"
                 number_of_overlapping_points: 0 # oasis P-value
 
+
+further_reading:
+        - fesom/fesom-2.1.forcing.yaml

@@ -1,5 +1,6 @@
 # GENERIC YAML CONFIGURATION FILES
-
+#name: bscearth383
+name: generic
 #hyper_flag: "--cpus-per-task=1"
 additional_flags: "--mem=0"
 

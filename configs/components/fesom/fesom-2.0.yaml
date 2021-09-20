@@ -83,11 +83,9 @@ choose_version:
                 i3_oce:
                          grid: feom
        # Settings for Gent/McWilliams based upon the selected ALE scheme.
-        ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
         K_gm: 3000.0
         K_hor: 3000.0
         K_gm_max: 2000.0
-        
         choose_ALE_scheme:
             linfs:
                 K_gm: 5000.0
@@ -96,6 +94,9 @@ choose_version:
                 K_gm_max: 2000.0
                 K_hor: 3000.0
                 K_gm: remove_from_namelist
+            "*":
+                is: invalid
+
         
         add_namelist_changes:
            namelist.oce:

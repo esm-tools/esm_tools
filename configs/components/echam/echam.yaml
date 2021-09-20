@@ -17,6 +17,8 @@ compile_infos:
         - 6.3.04p1-recom-awicm
         - 6.3.05p2-concurrent_radiation-paleodyn
         - 6.3.04p1
+        - 6.3.05p2-wiso
+
         branch: ${echam.version}
         choose_version:
           6.3.02p4:

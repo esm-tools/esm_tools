@@ -37,7 +37,7 @@ input_sources:
 
 
 choose_echam.version:
-        wiso:
+        6.3.05p2-wiso:
                 add_restart_in_files:
                         hdrestart_wiso: hdrestart_wiso
                 add_restart_out_files:

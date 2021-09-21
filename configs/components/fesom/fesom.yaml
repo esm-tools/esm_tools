@@ -16,6 +16,8 @@ available_versions:
 - '2.0'
 - '2.0-r' # OG: temporarily here
 - '2.0-jio'
+- '2.1-recom'
+- '2.1-wiso'
 - '2.1'
 
 choose_version:
@@ -228,7 +230,7 @@ choose_branchoff:
         # Makes sure the <units>new in the namelist make an earlier date than that of
         # of the clock to avoid cold starts for branching off experiments
         true:
-                daynew: 1
+                daynew: "${startday}"
                 yearnew: "$(( ${initial_date!syear} - 1 ))"
         false:
                 daynew: "${initial_date!sdoy}"

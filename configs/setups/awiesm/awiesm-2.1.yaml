@@ -134,18 +134,13 @@ echam:
 
         choose_general.wiso_code:
                 True:
+                        lwiso_rerun: "${general.with_wiso}"
+                        lwiso: "${general.with_wiso}"
                         choose_general.with_wiso:
                                 True:
                                         nwiso: 6 # @MARTIN: is this okay?
                                 False:
                                         nwiso: 0
-                        add_namelist_changes:
-                                namelist.echam:
-                                        wisoctl:
-                                                lwiso_rerun: "${general.with_wiso}"
-                                                lwiso: "${general.with_wiso}"
-                                                nwiso: "${nwiso}"
-
 
 
 #########################################################################################

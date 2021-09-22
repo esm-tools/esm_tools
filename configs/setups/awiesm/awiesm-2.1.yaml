@@ -46,11 +46,13 @@ general:
           '2.1':
             couplings:
             - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
+            wiso_code: false
             with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-wiso':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso
+            wiso_code: true
             with_wiso: true
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-recom':
@@ -58,7 +60,8 @@ general:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso+recom-2.0
             add_include_models:
             - recom
-            with_wiso: true
+            wiso_code: true
+            with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
 
         scenario: "PALEO"
@@ -128,6 +131,20 @@ echam:
                 configure_opts: '--with-coupler=oasis3-mct'
         add_test1:
             test3: false
+
+        choose_general.wiso_code:
+                True:
+                        choose_general.with_wiso:
+                                True:
+                                        nwiso: 6 # @MARTIN: is this okay?
+                                False:
+                                        nwiso: 0
+                        add_namelist_changes:
+                                namelist.echam:
+                                        wisoctl:
+                                                lwiso_rerun: "${general.with_wiso}"
+                                                lwiso: "${general.with_wiso}"
+                                                nwiso: "${nwiso}"
 
 
 
@@ -214,6 +231,14 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 num_tracers: "${num_tracers}"
+        choose_general.wiso_code:
+                True:
+                        add_namelist_changes:
+                                namelist.config:
+                                        run_config:
+                                                lwiso: "${general.with_wiso}"
+
+
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288

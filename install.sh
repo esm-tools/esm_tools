@@ -56,5 +56,12 @@ else
 	echo "No installed git version found."
 fi
 
-
-pip install -e .
+# See here: https://tinyurl.com/5b57knvx
+if [ ! -z ${VIRTUAL_ENV+x} ]; then
+    echo "Detected virtual environment $VIRTUAL_ENV"
+    pip install -e .
+#FIXME(PG): We might still need a case for Conda virtual environments
+else
+    echo "Standard install to user directory (likely ${HOME}/.local)"
+    pip install --user -e .
+fi

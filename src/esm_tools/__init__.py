@@ -269,8 +269,11 @@ def get_namelist_filepath(namelist):
 
 def get_config_filepath(config):
     if EDITABLE_INSTALL:
-        return _get_config_filepath_editable_install(config)
-    return _get_config_filepath_standard_install(config)
+        logger.debug("Assumed editable install!")
+        cpath =  _get_config_filepath_editable_install(config)
+    cpath = _get_config_filepath_standard_install(config)
+    logger.debug("Will return:", cpath)
+    return cpath
 
 
 def get_runscript_filepath(runscript):

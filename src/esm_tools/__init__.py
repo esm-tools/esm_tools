@@ -32,23 +32,33 @@ import pkg_resources
 import yaml
 
 
+def _get_real_dir_from_pth_file(package):
+    site_packages_dirs = [site.getusersitepackages(), site.getsitepackages()]
+    for site_package_dir in site_packages_dirs:
+        # Read the pth file:
+        if pathlib.Path(site_package_dir).exists():
+            with open(f"{site_packages_dir}/esm-tools.egg-link") as f:
+                paths = f.readlines()
+            actual_package_data_dir = f"{paths[0]}/{paths[1]}"
+            return actual_package_data_dir
+
 def _get_namelist_filepath_standard_install(namelist):
     return pkg_resources.resource_filename("esm_tools.namelists", namelist)
 
 def _get_namelist_filepath_editable_install(namelist):
-    return pkg_resources.resource_filename("namelists", namelist)
+    return os.path.join(_get_real_dir_from_pth_file("namelists"), namelist)
 
 def _get_config_filepath_standard_install(config):
     return pkg_resources.resource_filename("esm_tools.configs", config)
 
 def _get_config_filepath_editable_install(config):
-    return pkg_resources.resource_filename("configs", config)
+    return os.path.join(_get_real_dir_from_pth_file("configs"), config)
 
 def _get_runscript_filepath_standard_install(runscript):
     return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
 
 def _get_runscript_filepath_editable_install(runscript):
-    return pkg_resources.resource_filename("runscripts", runscript)
+    return os.path.join(_get_real_dir_from_pth_file("runscripts"), runscript)
 
 
 def get_config_as_str(config):
@@ -58,7 +68,7 @@ def _list_config_dir_standard_install(dir_path):
     return pkg_resources.resource_listdir("esm_tools.configs", dir_path)
 
 def _list_config_dir_editable_install(dir_path):
-    return pkg_resources.resource_listdir("configs", dir_path)
+    return os.listdir(os.path.join(_get_real_dir_from_pth_file("configs"), dir_path))
 
 # For more information on how this works, see here:
 # https://stackoverflow.com/questions/62550952/including-package-data-python-from-top-level-when-package-is-in-subdirectory/62552188#62552188
@@ -116,7 +126,8 @@ def _read_config_editable_install(config):
     # Note the only difference here is apparently swapping out
     # esm_tools.configs for just configs. Not sure how that works, but it seems
     # to be fine...
-    configstr = pkg_resources.resource_string("configs", config)
+    with open(_get_config_filepath_editable_install(config), "r") as cfg:
+        configstr = cfg.read()
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
 
@@ -126,7 +137,7 @@ def _copy_config_folder_standard_install(dest_path):
     return shutil.copytree(src_path, dest_path)
 
 def _copy_config_folder_editable_install(dest_path):
-    src_path = pkg_resources.resource_filename("configs", ".")
+    src_path = _get_config_filepath_editable_install("configs", ".")
     return shutil.copytree(src_path, dest_path)
 
 def _copy_namelist_folder_standard_install(dest_path):
@@ -134,7 +145,7 @@ def _copy_namelist_folder_standard_install(dest_path):
     return shutil.copytree(src_path, dest_path)
 
 def _copy_namelist_folder_editable_install(dest_path):
-    src_path = pkg_resources.resource_filename("namelists", ".")
+    src_path = _get_namelist_filepath_editable_install("namelists", ".")
     return shutil.copytree(src_path, dest_path)
 
 def _copy_runscript_folder_standard_install(dest_path):
@@ -142,7 +153,7 @@ def _copy_runscript_folder_standard_install(dest_path):
     return shutil.copytree(src_path, dest_path)
 
 def _copy_runscript_folder_editable_install(dest_path):
-    src_path = pkg_resources.resource_filename("runscripts", ".")
+    src_path = _get_runscript_filepath_editable_install("runscripts", ".")
     return shutil.copytree(src_path, dest_path)
 
 
@@ -161,7 +172,8 @@ def _read_namelist_editable_install(nml):
         A string representation of the namelist file. This should later be
         passed to the f90nml package.
     """
-    return pkg_resources.resource_string("namelists", nml)
+    with open(_get_namelist_filepath_editable_install("namelists", nml), "r") as nml:
+        return nml.read()
 
 # PG: Blatant theft:
 # https://stackoverflow.com/questions/42582801/check-whether-a-python-package-has-been-installed-in-editable-egg-link-mode

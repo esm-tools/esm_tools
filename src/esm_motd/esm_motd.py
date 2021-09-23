@@ -17,7 +17,7 @@ class motd_handler:
             #sleep(timeout)
             self.database_connected = False
             self.message_dict = {}
-            return 
+            return
         self.database_connected = True
         self.message_dict = yaml.load(self.motdfile, Loader=yaml.FullLoader)
 
@@ -87,7 +87,7 @@ class motd_handler:
                    print (f"Upgrade all packages by typing:              esm_versions upgrade")
                    print ("************************************************************************************")
                    thisaction, thistime = self.action_finder(self.message_dict[message]["action"])
-                   if thisaction == "error" or thistime > time: 
+                   if thisaction == "error" or thistime > time:
                        action = thisaction
                        time = thistime
         self.action_handler(action, time)
@@ -105,11 +105,10 @@ def check_all_esm_packages():
 def get_version_numbers():
     import importlib
     import pkg_resources
-    from esm_version_checker import get_esm_packages  
 
     # get the list of ESM-Tools as a list of strings
-    esm_tools_modules = get_esm_packages()
-    
+    esm_tools_modules = ["esm-tools"]
+
     installed_packages_and_versions = []
     for tool in esm_tools_modules:
         version = "unknown"

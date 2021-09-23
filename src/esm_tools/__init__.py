@@ -52,7 +52,7 @@ def _get_namelist_filepath_standard_install(namelist):
 
 
 def _get_namelist_filepath_editable_install(namelist):
-    return os.path.normpath(f"{_get_real_dir_from_pth_file('namelists')}/{namelist}") + "/"
+    return f"{_get_real_dir_from_pth_file('namelists')}/{namelist}"
 
 
 def _get_config_filepath_standard_install(config):
@@ -60,14 +60,14 @@ def _get_config_filepath_standard_install(config):
 
 
 def _get_config_filepath_editable_install(config):
-    return os.path.normpath(f"{_get_real_dir_from_pth_file('configs')}/{config}") + "/"
+    return f"{_get_real_dir_from_pth_file('configs')}/{config}"
 
 def _get_runscript_filepath_standard_install(runscript):
     return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
 
 
 def _get_runscript_filepath_editable_install(runscript):
-    return os.path.normpath(f"{_get_real_dir_from_pth_file('runscripts')}/{runscript}") + "/"
+    return f"{_get_real_dir_from_pth_file('runscripts')}/{runscript}"
 
 
 def get_config_as_str(config):
@@ -79,7 +79,7 @@ def _list_config_dir_standard_install(dir_path):
 
 
 def _list_config_dir_editable_install(dir_path):
-    return os.listdir(os.path.normpath(f"{_get_real_dir_from_pth_file('configs')}/{dir_path}"))
+    return os.listdir(f"{_get_real_dir_from_pth_file('configs')}/{dir_path}")
 
 
 # For more information on how this works, see here:

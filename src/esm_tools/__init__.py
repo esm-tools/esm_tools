@@ -43,7 +43,7 @@ def _get_real_dir_from_pth_file(package):
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
             logger.debug(f"Reading from {paths[0]}/{paths[1]} as base!!")
-            actual_package_data_dir = f"{paths[0]}/{paths[1]}"
+            actual_package_data_dir = f"{paths[0]}/{paths[1]}/{package}"
             return actual_package_data_dir
 
 

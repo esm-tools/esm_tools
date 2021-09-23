@@ -25,7 +25,9 @@ __email__ = "dirk.barbi@awi.de"
 __version__ = "5.1.21"
 
 import os
+import pathlib
 import shutil
+import site
 import sys
 
 import pkg_resources
@@ -37,25 +39,31 @@ def _get_real_dir_from_pth_file(package):
     for site_package_dir in site_packages_dirs:
         # Read the pth file:
         if pathlib.Path(site_package_dir).exists():
-            with open(f"{site_packages_dir}/esm-tools.egg-link") as f:
+            with open(f"{site_package_dir}/esm-tools.egg-link") as f:
                 paths = f.readlines()
             actual_package_data_dir = f"{paths[0]}/{paths[1]}"
             return actual_package_data_dir
 
+
 def _get_namelist_filepath_standard_install(namelist):
     return pkg_resources.resource_filename("esm_tools.namelists", namelist)
+
 
 def _get_namelist_filepath_editable_install(namelist):
     return os.path.join(_get_real_dir_from_pth_file("namelists"), namelist)
 
+
 def _get_config_filepath_standard_install(config):
     return pkg_resources.resource_filename("esm_tools.configs", config)
+
 
 def _get_config_filepath_editable_install(config):
     return os.path.join(_get_real_dir_from_pth_file("configs"), config)
 
+
 def _get_runscript_filepath_standard_install(runscript):
     return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
+
 
 def _get_runscript_filepath_editable_install(runscript):
     return os.path.join(_get_real_dir_from_pth_file("runscripts"), runscript)
@@ -64,11 +72,14 @@ def _get_runscript_filepath_editable_install(runscript):
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
 
+
 def _list_config_dir_standard_install(dir_path):
     return pkg_resources.resource_listdir("esm_tools.configs", dir_path)
 
+
 def _list_config_dir_editable_install(dir_path):
     return os.listdir(os.path.join(_get_real_dir_from_pth_file("configs"), dir_path))
+
 
 # For more information on how this works, see here:
 # https://stackoverflow.com/questions/62550952/including-package-data-python-from-top-level-when-package-is-in-subdirectory/62552188#62552188
@@ -92,6 +103,7 @@ def _read_config_standard_install(config):
     # configstr = pkg_resources.resource_string("configs", config)
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
+
 
 def _read_namelist_standard_install(nml):
     """
@@ -136,21 +148,26 @@ def _copy_config_folder_standard_install(dest_path):
     src_path = pkg_resources.resource_filename("esm_tools.configs", ".")
     return shutil.copytree(src_path, dest_path)
 
+
 def _copy_config_folder_editable_install(dest_path):
     src_path = _get_config_filepath_editable_install("configs", ".")
     return shutil.copytree(src_path, dest_path)
+
 
 def _copy_namelist_folder_standard_install(dest_path):
     src_path = pkg_resources.resource_filename("esm_tools.namelists", ".")
     return shutil.copytree(src_path, dest_path)
 
+
 def _copy_namelist_folder_editable_install(dest_path):
     src_path = _get_namelist_filepath_editable_install("namelists", ".")
     return shutil.copytree(src_path, dest_path)
 
+
 def _copy_runscript_folder_standard_install(dest_path):
     src_path = pkg_resources.resource_filename("esm_tools.runscripts", ".")
     return shutil.copytree(src_path, dest_path)
+
 
 def _copy_runscript_folder_editable_install(dest_path):
     src_path = _get_runscript_filepath_editable_install("runscripts", ".")
@@ -174,6 +191,7 @@ def _read_namelist_editable_install(nml):
     """
     with open(_get_namelist_filepath_editable_install("namelists", nml), "r") as nml:
         return nml.read()
+
 
 # PG: Blatant theft:
 # https://stackoverflow.com/questions/42582801/check-whether-a-python-package-has-been-installed-in-editable-egg-link-mode
@@ -222,30 +240,36 @@ def list_config_dir(dirpath):
         return _list_config_dir_editable_install(dirpath)
     return _list_config_dir_standard_install(dirpath)
 
+
 def copy_config_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_config_folder_editable_install(dest_path)
     return _copy_config_folder_standard_install(dest_path)
+
 
 def copy_namelist_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_namelist_folder_editable_install(dest_path)
     return _copy_namelist_folder_standard_install(dest_path)
 
+
 def copy_runscript_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_runscript_folder_editable_install(dest_path)
     return _copy_runscript_folder_standard_install(dest_path)
+
 
 def get_namelist_filepath(namelist):
     if EDITABLE_INSTALL:
         return _get_namelist_filepath_editable_install(namelist)
     return _get_namelist_filepath_standard_install(namelist)
 
+
 def get_config_filepath(config):
     if EDITABLE_INSTALL:
         return _get_config_filepath_editable_install(config)
     return _get_config_filepath_standard_install(config)
+
 
 def get_runscript_filepath(runscript):
     if EDITABLE_INSTALL:

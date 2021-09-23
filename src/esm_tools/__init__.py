@@ -271,8 +271,8 @@ def get_config_filepath(config):
     if EDITABLE_INSTALL:
         logger.debug("Assumed editable install!")
         cpath =  _get_config_filepath_editable_install(config)
-    cpath = _get_config_filepath_standard_install(config)
-    logger.debug("Will return:", cpath)
+    else:
+        cpath = _get_config_filepath_standard_install(config)
     return cpath
 
 

@@ -60,7 +60,10 @@ def _get_config_filepath_standard_install(config):
 
 
 def _get_config_filepath_editable_install(config):
-    jpath = os.path.join(_get_real_dir_from_pth_file("configs"), config)
+    loger.debug(f"Assuming config={config}")
+    bpath = _get_real_dir_from_pth_file("configs")
+    logger.debug(f"Assuming bpath={bpath}")
+    jpath = os.path.join(bpath, config)
     logger.debug(f"Will return {jpath}")
     return jpath
 

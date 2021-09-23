@@ -1,0 +1,51 @@
+general:
+   use_venv: False
+   
+   setup_name: nemo
+   compute_time: "00:15:00"
+   account: "bb0519"
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1900-02-01T00:00:00"         # Final date of the experiment
+   nyear: 0
+   nmonth: 1
+   base_dir: /work/bb0519/b350090/esm-experiments/
+   model_dir: /pf/b/b350090/models/nemo-GYRE_XIOS_v4
+
+nemo:
+   version: GYRE_XIOS_v4
+   resolution: "GYRE" 
+   nproc: 24
+   time_step: 600
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+
+xios:
+   xml_dir: /pf/b/b350090/models/nemo-GYRE_XIOS_v4/nemo-GYRE_XIOS_v4/cfgs/GYRE_XIOS_v4/EXPREF/
+   nproc: 1
+   add_config_files:
+      axis_def_oce: axis_def_oce
+      context_nemo: context_nemo
+      field_def_oce: field_def_oce
+      field_def_bgc: field_def_bgc
+      file_def_oce: file_def_oce
+      grid_def_oce: grid_def_oce
+   remove_config_files:
+      - file_def
+   config_sources:
+      axis_def_oce: ${xml_dir}/axis_def_nemo.xml
+      context_nemo: ${xml_dir}/context_nemo.xml
+      domain_def: ${xml_dir}/domain_def_nemo.xml
+      field_def_oce: ${xml_dir}/field_def_nemo-oce.xml
+      field_def_bgc: ${xml_dir}/field_def_nemo-pisces.xml
+      file_def_oce: ${xml_dir}/file_def_nemo.xml
+      grid_def_oce: ${xml_dir}/grid_def_nemo.xml
+      io_def: ${xml_dir}/iodef.xml
+   config_in_work:
+      axis_def_oce: axis_def_nemo.xml
+      context_nemo: context_nemo.xml
+      domain_def: domain_def_nemo.xml
+      field_def_oce: field_def_nemo-oce.xml
+      field_def_bgc: field_def_nemo-pisces.xml
+      file_def_oce: file_def_nemo.xml
+      grid_def_oce: grid_def_nemo.xml
+      io_def: iodef.xml
+      

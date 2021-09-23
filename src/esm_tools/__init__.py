@@ -60,8 +60,9 @@ def _get_config_filepath_standard_install(config):
 
 
 def _get_config_filepath_editable_install(config):
-    return os.path.join(_get_real_dir_from_pth_file("configs"), config)
-
+    jpath = os.path.join(_get_real_dir_from_pth_file("configs"), config)
+    logger.debug(f"Will return {jpath}")
+    return jpath
 
 def _get_runscript_filepath_standard_install(runscript):
     return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
@@ -273,6 +274,7 @@ def get_config_filepath(config):
         cpath =  _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
+    logger.debug(f"Will return: {cpath}")
     return cpath
 
 

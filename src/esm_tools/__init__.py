@@ -30,7 +30,6 @@ import shutil
 import site
 import sys
 
-from loguru import logger
 import pkg_resources
 import yaml
 
@@ -42,7 +41,6 @@ def _get_real_dir_from_pth_file(package):
         if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
-            logger.debug(f"Reading from {paths[0]}/{paths[1]} as base!!")
             actual_package_data_dir = f"{paths[0]}/{paths[1]}/{package}/"
             return actual_package_data_dir
 
@@ -268,11 +266,9 @@ def get_namelist_filepath(namelist):
 
 def get_config_filepath(config):
     if EDITABLE_INSTALL:
-        logger.debug("Assumed editable install!")
         cpath =  _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
-    logger.debug(f"Will return: {cpath}")
     return cpath
 
 

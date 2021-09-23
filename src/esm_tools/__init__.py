@@ -30,6 +30,7 @@ import shutil
 import site
 import sys
 
+from loguru import logger
 import pkg_resources
 import yaml
 

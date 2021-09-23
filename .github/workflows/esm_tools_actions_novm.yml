@@ -25,30 +25,22 @@ jobs:
       - name: add to the path
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-    
+
       - name: install esm-tools
         run: |
           ./install.sh
 
       - name: run esm_master first time
-        run: |    
+        run: |
           yes Y | esm_master
 
       - name: run esm_master second time
-        run: |    
+        run: |
           esm_master
 
       - name: run esm_plugins
-        run: |    
+        run: |
           esm_plugins
-
-      - name: run esm_plugins
-        run: |    
-          esm_plugins
-
-      - name: run esm_versions
-        run: |    
-          esm_versions check
 
       - name: run get-fesom-2.0
         run: |

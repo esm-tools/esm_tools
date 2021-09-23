@@ -65,7 +65,6 @@ setup(
             "esm_runscripts=esm_runscripts.cli:main",
             "esm_tests=esm_tests.cli:main",
             "esm_utilities=esm_utilities.cli:main",
-            "esm_versions=esm_version_checker.cli:main",
         ],
     },
     install_requires=requirements,

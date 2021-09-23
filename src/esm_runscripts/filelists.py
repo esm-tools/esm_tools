@@ -250,9 +250,10 @@ def globbing(config):
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
-                oldconf = copy.deepcopy(config[model])
+                #oldconf = copy.deepcopy(config[model])
                 for descr, filename in six.iteritems(
-                    oldconf[filetype + "_sources"]
+                    copy.deepcopy(config[model][filetype + "_sources"])
+                    #oldconf[filetype + "_sources"]
                 ):  # * only in targets if denotes subfolder
                     if "*" in filename:
                         del config[model][filetype + "_sources"][descr]
@@ -682,7 +683,7 @@ def log_used_files(config):
                 if filetype + "_sources" in config[model]:
                     flist.write("\n" + filetype.upper() + ":\n")
                     for category in config[model][filetype + "_sources"]:
-#                        esm_parser.pprint_config(config[model])
+#                        esm_parser.pprint_config(config[model]) 
                         flist.write(
                             "\nSource: "
                             + config[model][filetype + "_sources"][category]
@@ -765,21 +766,21 @@ def check_for_unknown_files(config):
 
 
 
-def resolve_symlinks(file_source,verbose):
+def resolve_symlinks(file_source):
     if os.path.islink(file_source):
         points_to = os.path.realpath(file_source)
 
         # deniz: check if file links to itself. In UNIX
         # ln -s endless_link endless_link is a valid command
         if os.path.abspath(file_source) == points_to:
-            if verbose:
+            if config["general"]["verbose"]:
                 print(f"file {file_source} links to itself", flush=True)
                 print(datetime.datetime.now(), flush=True)
             return file_source
-
+        
         # recursively find the file that the link is pointing to
-        return resolve_symlinks(points_to,verbose)
-    else:
+        return resolve_symlinks(points_to)
+    else: 
         return(file_source)
 
 
@@ -830,7 +831,7 @@ def copy_files(config, filetypes, source, target):
                             print(datetime.datetime.now(), flush=True)
                         continue
                     dest_dir = os.path.dirname(file_target)
-                    file_source = resolve_symlinks(file_source,config["general"]["verbose"])
+                    file_source = resolve_symlinks(file_source)
                     if not os.path.isdir(file_source):
                         try:
                             if not os.path.isdir(dest_dir):

@@ -53,162 +53,42 @@ class Slurm:
         """
         return os.environ.get("SLURM_JOB_ID")
 
-    def calc_requirements_multi_srun(self, config):
-        print("Paul was here...")
-        for run_type in list(config['general']['multi_srun']):
-            current_hostfile = self.path+"_"+run_type
-            print(f"Writing to: {current_hostfile}")
-            start_proc = 0
-            end_proc = 0
-            with open(current_hostfile, "w") as hostfile:
-                for model in config['general']['multi_srun'][run_type]['models']:
-                    start_proc, start_core, end_proc, end_core = self.mini_calc_reqs(
-                        config, model, hostfile,
-                        start_proc, start_core, end_proc, end_core
-                    )
-            config['general']['multi_srun'][run_type]['hostfile'] = os.path.basename(current_hostfile)
 
-    @staticmethod
-    def mini_calc_reqs(config, model, hostfile, start_proc, start_core, end_proc, end_core):
-        if "nproc" in config[model]:
-            end_proc = start_proc + int(config[model]["nproc"]) - 1
-            if "omp_num_threads" in config[model]:
-                end_core = start_core + int(config[model]["nproc"])*int(config[model]["omp_num_threads"]) - 1
-        elif "nproca" in config[model] and "nprocb" in config[model]:
-            end_proc = start_proc + int(config[model]["nproca"])*int(config[model]["nprocb"]) - 1
 
-            # KH 30.04.20: nprocrad is replaced by more flexible
-            # partitioning using nprocar and nprocbr
-            if "nprocar" in config[model] and "nprocbr" in config[model]:
-                if config[model]["nprocar"] != "remove_from_namelist" and config[model]["nprocbr"] != "remove_from_namelist":
-                    end_proc += config[model]["nprocar"] * config[model]["nprocbr"]
-
+    def write_hostfile(self, config):
+        if "multi_srun" in config["general"]:
+            for run_type in list(config['general']['multi_srun']):
+                current_hostfile = self.path+"_"+run_type
+                write_one_hostfile(current_hostfile, config)
         else:
-            return start_proc, start_core, end_proc, end_core
+            self.write_one_hostfile(self.path, config)
+        return config
 
-        scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"
-        if config["computer"].get("heterogeneous_parallelization", False):
-            command = "./" + config[model].get(
-                "execution_command",config[model]["executable"]
-            )
-            scriptname="script_"+model+".ksh"
-            with open(scriptfolder+scriptname, "w") as f:
-                f.write("#!/bin/ksh"+"\n")
-                f.write("export OMP_NUM_THREADS="+str(config[model]["omp_num_threads"])+"\n")
-                f.write(command+"\n")
-            os.chmod(scriptfolder+scriptname, 0o755)
 
-            progname="prog_"+model+".sh"
-            with open(scriptfolder+progname, "w") as f:
-                f.write("#!/bin/sh"+"\n")
-                f.write("(( init = "+str(start_core)+" + $1 ))"+"\n")
-                f.write("(( index = init * "+str(config[model]["omp_num_threads"])+" ))"+"\n")
-                f.write("(( slot = index % "+str(config["computer"]["cores_per_node"])+" ))"+"\n")
-                f.write("echo "+model+" taskset -c $slot-$((slot + "+str(config[model]["omp_num_threads"])+" - 1"+"))"+"\n")
-                f.write("taskset -c $slot-$((slot + "+str(config[model]["omp_num_threads"])+" - 1)) ./script_"+model+".ksh"+"\n")
-            os.chmod(scriptfolder+progname, 0o755)
-            execution_command_het_par = f"prog_{model}.sh %o %t"
-
-        if config["computer"].get("heterogeneous_parallelization", False):
-            command = "./" + execution_command_het_par
-        elif "execution_command" in config[model]:
-            command = "./" + config[model]["execution_command"]
-        elif "executable" in config[model]:
-            command = "./" + config[model]["executable"]
-        else:
-            return start_proc, start_core, end_proc, end_core
-        hostfile.write(str(start_proc) + "-" + str(end_proc) + "  " + command + "\n")
-        start_proc = end_proc + 1
-        start_core = end_core + 1
-        return start_proc, start_core, end_proc, end_core
-
-    @staticmethod
-    def calc_mpirun_options(config):
-
-        mpirun_options = ""
-        for model in config["general"]["valid_model_names"]:
-
-            if "nproc" in config[model]:
-                no_cpus = str(config[model]["nproc"])
-                if "omp_num_threads" in config[model]:
-                    no_cpus = str(int(config[model]["nproc"]) * int(config[model]["omp_num_threads"]))
-            elif "nproca" in config[model] and "nprocb" in config[model]:
-                no_cpus = str(int(config[model]["nproca"]) * int(config[model]["nprocb"]))
-
-            if "execution_command" in config[model]:
-                mpirun_options += " -np " + no_cpus + " ./" + config[model]["execution_command"] + " :"
-            elif "executable" in config[model]:
-                mpirun_options += " -np " + no_cpus + " ./" + config[model]["executable"] + " :"
-
-        mpirun_options = mpirun_options[:-1]  # remove trailing ":"
-
-        return mpirun_options
-
-    def calc_requirements(self, config):
+    def write_one_hostfile(self, hostfile, config):
         """
-        Calculates requirements and writes them to ``self.path``.
+        Gathers previously prepared requirements 
+        (batch_system.calculate_requirements) and writes them to ``self.path``.
         """
-        if config['general'].get('multi_srun'):
-            self.calc_requirements_multi_srun(config)
-            return
-        if config["computer"].get("launcher") == "mpirun" :
-            with open(self.path, "w") as hostfile:
-               hostfile.write(self.calc_mpirun_options(config))
-        else:
-            start_proc = 0
-            start_core = 0
-            end_proc = 0
-            end_core = 0
-            with open(self.path, "w") as hostfile:
-               for model in config["general"]["valid_model_names"]:
-                    start_proc, start_core, end_proc, end_core = self.mini_calc_reqs(config, model, hostfile, start_proc, start_core, end_proc, end_core)
 
+        with open(hostfile, "w") as hostfile:
+            for model in config["general"]["valid_model_names"]:
+                end_proc = config[model].get("end_proc", None)
+                start_proc = config[model].get("start_proc", None)
 
-    def add_pre_launcher_lines(self, config, sadfile):
-        """
-        Adds pre-launcher lines to the ``sadfile``.
+                if start_proc == None or end_proc == None:
+                    continue
+                
+                if config["computer"].get("heterogeneous_parallelization", False):
+                    command = "./" + config[model].get("execution_command_het_par", None)
+                elif "execution_command" in config[model]:
+                    command = "./" + config[model]["execution_command"]
+                elif "executable" in config[model]:
+                    command = "./" + config[model]["executable"]
+                else:
+                    continue
+                hostfile.write(str(start_proc) + "-" + str(end_proc) + "  " + command + "\n")
 
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary containing information about the experiment and
-            experiment directory.
-        sadfile : io.TextIOWrapper
-            File wrapper object for writing of the lines
-            (``sadfile.write("<your_line_here>")``).
-        """
-        if config["computer"].get("heterogeneous_parallelization", False):
-            self.add_hostlist_file_gen_lines(config, sadfile)
-
-
-    @staticmethod
-    def add_hostlist_file_gen_lines(config, sadfile):
-        sadfile.write("\n"+"#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job" + "\n")
-        sadfile.write("rm -f ./hostlist" + "\n")
-        sadfile.write(f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist\n")
-        sadfile.write("IFS=$'\\n'; set -f" + "\n")
-        sadfile.write("listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))"+"\n")
-        sadfile.write("unset IFS; set +f" + "\n")
-        sadfile.write("rank=0" + "\n")
-        sadfile.write("current_core=0" + "\n")
-        sadfile.write("current_core_mpi=0" + "\n")
-        for model in config["general"]["valid_model_names"]:
-            if model != "oasis3mct":
-                sadfile.write("mpi_tasks_"+model+"="+str(config[model]["nproc"])+ "\n")
-                sadfile.write("omp_threads_"+model+"="+str(config[model]["omp_num_threads"])+ "\n")
-        import pdb
-        #pdb.set_trace()
-        sadfile.write("for model in " + str(config["general"]["valid_model_names"])[1:-1].replace(',', '').replace('\'', '') +" ;do"+ "\n")
-        sadfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
-        sadfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
-        sadfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
-        sadfile.write("        (( index_host = current_core / " + str(config["computer"]["cores_per_node"]) +" ))" + "\n")
-        sadfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
-        sadfile.write("        (( slot =  current_core % " + str(config["computer"]["cores_per_node"]) +" ))" + "\n")
-        sadfile.write("        echo $host_value >> hostlist" + "\n")
-        sadfile.write("        (( current_core = current_core + omp_threads_${model} ))" + "\n")
-        sadfile.write("    done" + "\n")
-        sadfile.write("done" + "\n\n")
 
 
     @staticmethod
@@ -232,8 +112,247 @@ class Slurm:
         if len(squeue_output) == 2:
             return squeue_output[0]
 
-
     @staticmethod
     def job_is_still_running(jobid):
         """Returns a boolean if the job is still running"""
         return bool(Slurm.get_job_state(jobid))
+
+
+############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
+
+
+    def add_pre_launcher_lines(self, config, sadfile):
+        """
+        Adds pre-launcher lines to the ``sadfile``.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        sadfile : io.TextIOWrapper
+            File wrapper object for writing of the lines
+            (``sadfile.write("<your_line_here>")``).
+        """
+        if config["computer"].get("heterogeneous_parallelization", False):
+            self.add_hostlist_file_gen_lines(config, sadfile)
+
+
+
+    @staticmethod
+    def write_het_par_wrappers(config):
+        cores_per_node = config['computer']['partitions']['compute']['cores_per_node']
+
+        scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"
+        if config["computer"].get("heterogeneous_parallelization", False):
+            for model in config["general"]["valid_model_names"]:
+                if "oasis3mct" == model:
+                    continue
+                command = "./" + config[model].get(
+                    "execution_command",config[model]["executable"]
+                )
+                scriptname="script_"+model+".ksh"
+                with open(scriptfolder+scriptname, "w") as f:
+                    f.write("#!/bin/ksh"+"\n")
+                    f.write("export OMP_NUM_THREADS="+str(config[model]["omp_num_threads"])+"\n")
+                    f.write(command+"\n")
+                os.chmod(scriptfolder+scriptname, 0o755)
+
+                progname="prog_"+model+".sh"
+
+                start_core = config[model]["start_core"]
+                end_core = config[model]["end_core"]
+
+                with open(scriptfolder+progname, "w") as f:
+                    f.write("#!/bin/sh"+"\n")
+                    f.write("(( init = "+str(start_core)+" + $1 ))"+"\n")
+                    f.write("(( index = init * "+str(config[model]["omp_num_threads"])+" ))"+"\n")
+                    f.write("(( slot = index % "+str(cores_per_node)+" ))"+"\n")
+                    f.write("echo "+model+" taskset -c $slot-$((slot + "+str(config[model]["omp_num_threads"])+" - 1"+"))"+"\n")
+                    f.write("taskset -c $slot-$((slot + "+str(config[model]["omp_num_threads"])+" - 1)) ./script_"+model+".ksh"+"\n")
+                os.chmod(scriptfolder+progname, 0o755)
+                execution_command_het_par = f"prog_{model}.sh %o %t"
+                config[model]["execution_command_het_par"] = execution_command_het_par
+        return config
+
+
+
+    @staticmethod
+    def add_hostlist_file_gen_lines(config, sadfile):
+        cores_per_node = config['computer']['partitions']['compute']['cores_per_node']
+        sadfile.write("\n"+"#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job" + "\n")
+        sadfile.write("rm -f ./hostlist" + "\n")
+        sadfile.write(f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist\n")
+        sadfile.write("IFS=$'\\n'; set -f" + "\n")
+        sadfile.write("listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))"+"\n")
+        sadfile.write("unset IFS; set +f" + "\n")
+        sadfile.write("rank=0" + "\n")
+        sadfile.write("current_core=0" + "\n")
+        sadfile.write("current_core_mpi=0" + "\n")
+        for model in config["general"]["valid_model_names"]:
+            if model != "oasis3mct":
+                sadfile.write("mpi_tasks_"+model+"="+str(config[model]["nproc"])+ "\n")
+                sadfile.write("omp_threads_"+model+"="+str(config[model]["omp_num_threads"])+ "\n")
+        import pdb
+        #pdb.set_trace()
+        sadfile.write("for model in " + str(config["general"]["valid_model_names"])[1:-1].replace(',', '').replace('\'', '') +" ;do"+ "\n")
+        sadfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
+        sadfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
+        sadfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
+        sadfile.write("        (( index_host = current_core / " + str(cores_per_node) +" ))" + "\n")
+        sadfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
+        sadfile.write("        (( slot =  current_core % " + str(cores_per_node) +" ))" + "\n")
+        sadfile.write("        echo $host_value >> hostlist" + "\n")
+        sadfile.write("        (( current_core = current_core + omp_threads_${model} ))" + "\n")
+        sadfile.write("    done" + "\n")
+        sadfile.write("done" + "\n\n")
+
+
+
+############# MULTI SRUN STUFF ##############
+
+
+    @staticmethod
+    def determine_nodelist(config):
+        setup_name = config['general']['setup_name']
+        if config['general'].get('multi_srun'):
+            for run_type in config['general']['multi_srun']:
+                print(run_type)
+                total_tasks = 0
+                for model in config['general']['multi_srun'][run_type]['models']:
+                    print(total_tasks)
+                    # determine how many nodes that component needs
+                    if "nproc" in config[model]:
+                        print("Adding to total_tasks")
+                        total_tasks += int(config[model]["nproc"])
+                        print(total_tasks)
+                    elif "nproca" in config[model] and "nprocb" in config[model]:
+                        print("Adding to total_tasks")
+                        total_tasks += int(config[model]["nproca"])*int(config[model]["nprocb"])
+                        print(total_tasks)
+
+                        # KH 30.04.20: nprocrad is replaced by more flexible
+                        # partitioning using nprocar and nprocbr
+                        if "nprocar" in config[model] and "nprocbr" in config[model]:
+                            if config[model]["nprocar"] != "remove_from_namelist" and config[model]["nprocbr"] != "remove_from_namelist":
+                                print("Adding to total_tasks")
+                                total_tasks += config[model]["nprocar"] * config[model]["nprocbr"]
+                                print(total_tasks)
+
+                    else:
+                        continue
+                config['general']['multi_srun'][run_type]['total_tasks'] = total_tasks
+            print(config['general']['multi_srun'])
+        return config
+
+
+
+
+def get_run_commands_multisrun(config, commands):
+    default_exec_command = config['computer']["execution_command"]
+    print("---> This is a multi-srun job.")
+    print("The default command:")
+    print(default_exec_command)
+    print("Will be replaced")
+    # Since I am already confused, I need to write comments.
+    #
+    # The next part is actually a shell script fragment, which will be injected
+    # into the "sad" file. sad = Sys Admin Dump. It's sad :-(
+    #
+    # In this part, we figure out what compute nodes we are using so we can
+    # specify nodes for each srun command. That means, ECHAM+FESOM will use one
+    # pre-defined set of nodes, PISM another, and so on. That should be general
+    # enough to also work for other model combos...
+    #
+    # Not sure if this is specific to Mistral as a HPC, Slurm as a batch
+    # system, or whatever else might pop up...
+    # @Dirk, please move this where you see it best (I guess slurm.py)
+    job_node_extraction = r"""
+    # Job nodes extraction
+    nodeslurm=$SLURM_JOB_NODELIST
+    echo "nodeslurm = ${nodeslurm}"
+    # Get rid of the hostname and surrounding brackets:
+    tmp=${nodeslurm#"*["}
+    nodes=${tmp%]*}
+    # Turn it into an array seperated by newlines:
+    myarray=(`echo ${nodes} | sed 's/,/\n/g'`)
+    #
+    idx=0
+    for element in "${myarray[@]}"; do
+        if [[ "$element" == *"-"* ]]; then
+            array=(`echo $element | sed 's/-/\n/g'`)
+            for node in $(seq ${array[0]} ${array[1]}); do
+               nodelist[$idx]=${node}
+               idx=${idx}+1
+            done
+        else
+            nodelist[$idx]=${element}
+            idx=${idx}+1
+        fi
+    done
+
+    for element in "${nodelist[@]}"; do
+        echo "${element}"
+    done
+    """
+
+    def assign_nodes(run_type, need_length=False, start_node=0, num_nodes_first_model=0):
+        template = f"""
+        # Assign nodes for {run_type}
+        {run_type}=""
+        %%NEED_LENGTH%%
+        for idx in $srbseq {start_node} $srbsrb???-1erberberb; do
+            if ssbssb $idx == $srbsrb???-1erberb esbesb; then
+                {run_type}="$scb{run_type}ecb$scbnodelist[$idx]ecb"
+            else
+                {run_type}="$scb{run_type}ecb$scbnodelistssb$idxesbecb,"
+            fi
+        done
+        echo "{run_type} nodes: $scb{run_type}ecb"
+        """
+        # Since Python f-strings and other braces don't play nicely together,
+        # we replace some stuff:
+        #
+        # For the confused:
+        # scb = start curly brace {
+        # ecb = end curly brace }
+        # ssb = start square brace [
+        # esb = end square brace ]
+        # srb = start round brace (
+        # erb = end round brace )
+        template = template.replace("scb", "{")
+        template = template.replace("ecb", "}")
+        template = template.replace("ssb", "[")
+        template = template.replace("esb", "]")
+        template = template.replace("srb", "(")
+        template = template.replace("erb", ")")
+        # Get rid of the starting spaces (they come from Python as the string
+        # is defined inside of this function which is indented (facepalm))
+        template = textwrap.dedent(template)
+        # TODO: Some replacements
+        if need_length:
+            length_stuff = r"length=${#nodelist[@]}"
+            template = template.replace("%%NEED_LENGTH%%", length_stuff)
+            template = template.replace("???", "length")
+        else:
+            template = template.replace("%%NEED_LENGTH%%", "")
+            template = template.replace("???", str(num_nodes_first_model))
+        return template
+
+
+    commands.append(textwrap.dedent(job_node_extraction))
+    cores_per_node = config['computer']['partitions']['compute']['cores_per_node']
+    for idx, run_type in enumerate(config['general']['multi_srun']):
+        if idx == 0:
+            start_node = run_type
+            num_nodes_first_model = config['general']['multi_srun'][run_type]['total_tasks'] / cores_per_node
+            num_nodes_first_model = int(num_nodes_first_model)
+            nodes = assign_nodes(run_type, need_length=False, num_nodes_first_model=num_nodes_first_model)
+        else:
+            nodes = assign_nodes(run_type, need_length=True, start_node=start_node)
+        commands.append(nodes)
+    for run_type in config['general']['multi_srun']:
+        new_exec_command = default_exec_command.replace("hostfile_srun", config['general']['multi_srun'][run_type]['hostfile'])
+        new_exec_command += f" --nodelist ${run_type}"
+        commands.append("time " + new_exec_command + " &")
+    return commands

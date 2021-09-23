@@ -1,62 +1,10 @@
 import sys
 from datetime import datetime
-import os
-import tempfile
 
 import esm_rcfile
 
 import esm_plugin_manager
 import esm_tools
-import esm_parser
-
-
-def symlink(target, link_name, overwrite=False):
-    '''
-    unfortunately Python os.symlink does not have a force option. So, this is a
-    good workaround.
-    source: https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python/55742015#55742015
-    Create a symbolic link named link_name pointing to target.
-    If link_name exists then FileExistsError is raised, unless overwrite=True.
-    When trying to overwrite a directory, IsADirectoryError is raised.
-    '''
-
-    if not overwrite:
-        try:
-            os.symlink(target, link_name)
-        except FileExistsError:
-            error_type = "File Exists"
-            error_text = f"{link_name} already exists. Use overwrite=True"
-            esm_parser.user_error(error_type, error_text, exit_code=1)
-        return
-
-    # os.replace() may fail if files are on different filesystems
-    link_dir = os.path.dirname(link_name)
-
-    # Create link to target with temporary filename
-    while True:
-        temp_link_name = tempfile.mktemp(dir=link_dir)
-
-        # os.* functions mimic as closely as possible system functions
-        # The POSIX symlink() returns EEXIST if link_name already exists
-        # https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlink.html
-        try:
-            os.symlink(target, temp_link_name)
-            break
-        except FileExistsError:
-            pass
-
-    # Replace link_name with temp_link_name
-    try:
-        # Pre-empt os.replace on a directory with a nicer message
-        if not os.path.islink(link_name) and os.path.isdir(link_name):
-            raise IsADirectoryError(f"Cannot symlink over existing directory: '{link_name}'")
-        os.replace(temp_link_name, link_name)
-    except Exception as e:
-        if os.path.islink(temp_link_name):
-            os.remove(temp_link_name)
-        error_type = "Error"
-        error_text = repr(e)
-        esm_parser.user_error(error_type, error_text, exit_code=1)
 
 
 def vprint(message, config):
@@ -163,6 +111,9 @@ def assemble_log_message(
     if message_sep is None:
         message_sep = config["general"].get("experiment_log_file_message_sep", " ")
     if timestampStr_from_Unix:
+        if strftime_str == "%c":
+            # date doesn't do %c as it is supposed to
+            strftime_str = '"%a %b  %e %T %Y"'
         timestampStr = "$(date +" + strftime_str + ")"
     else:
         timestampStr = dateTimeObj.strftime(strftime_str)

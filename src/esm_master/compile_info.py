@@ -16,6 +16,7 @@ from .general_stuff import (
 
 import esm_parser
 from .software_package import *
+import colorama
 
 ######################################################################################
 ############################## Combine all YAMLS #####################################
@@ -614,6 +615,7 @@ class setup_and_model_infos:
         return kind_of_model
 
     def output_available_targets(self, search_keyword):
+        colorama.init(autoreset = True)
         display_info = []
         if search_keyword == "":
             display_info = self.all_packages
@@ -636,15 +638,16 @@ class setup_and_model_infos:
             print()
         elif display_info == self.all_packages:
             print()
-            print(
+            print(colorama.Fore.YELLOW + 
                 "Master Tool for ESM applications, including download and compiler wrapper functions"
             )
-            print("		originally written by Dirk Barbi (dirk.barbi@awi.de)")
-            print(
+            print(colorama.Fore.YELLOW + 
+                "		originally written by Dirk Barbi (dirk.barbi@awi.de)")
+            print(colorama.Fore.YELLOW + 
                 "       further developed as OpenSource, coordinated and maintained at AWI"
             )
             print()
-            print(
+            print(colorama.Fore.YELLOW + 
                 "Obtain from:         https://github.com/esm-tools/esm_master.git"
             )
             print()
@@ -658,32 +661,88 @@ class setup_and_model_infos:
             )
             self.print_nicely(display_info)
             print()
+            
 
     def print_nicely(self, display_info):
+        """Will display all supported models when esm_master is run without
+        any arguments or for the selected model
+        
+        Parameters
+        ----------
+        display_info : list of `software_package` objects
+        
+        """
+        all_available_options = set()  # eg. get, install, clean, ...
         sorted_display = {}
         for kind in self.display_kinds:
             for package in display_info:
+                # add the targets of the current package to all targets
+                all_available_options.update(package.targets)
+                
                 if package.kind == kind:
                     if not kind in sorted_display.keys():
-                        sorted_display.update({kind: {}})
-                    if not package.model in sorted_display[kind]:
-                        sorted_display[kind].update({package.model: []})
-                    if package.version:
-                        sorted_display[kind][package.model].append(
-                            package.version + ": " + str(package.targets)
-                        )
-                    else:
-                        sorted_display[kind][package.model].append(str(package.targets))
+                        sorted_display[kind] = dict()
 
-        for kind in sorted_display.keys():
-            print(kind + ": ")
-            for model in sorted_display[kind]:
-                if len(sorted_display[kind][model]) == 1:
-                    print("    " + model + ": " + sorted_display[kind][model][0])
-                else:
-                    print("    " + model + ": ")
-                    for version in sorted_display[kind][model]:
-                        print("       " + version)
+                    # if model is not encountered yet, then create it first
+                    if not package.model in sorted_display[kind]:
+                        sorted_display[kind][package.model] = dict()
+                        
+                    # then add the version : targets node
+                    if package.version:
+                        sorted_display[kind][package.model][package.version] =\
+                        package.targets
+                    else:
+                        sorted_display[kind][package.model] = package.targets
+          
+        # ===
+        # print the available models and versions
+        # ===
+        all_available_options = sorted(all_available_options)
+        # sort the dictionary alphabetically for better user experience
+        # kind is 'setups', 'components'
+        # Each item of the sorted_display[kind].items() is a tuple of "model"
+        # and dictionary of version and available options. Sort alphabetically
+        # according to the model name, ie. first variable of the tuple
+        alphabetical_dict = {}
+        for kind in sorted_display:
+            # sort the models within each `kind`
+            d = dict( sorted(sorted_display[kind].items(), 
+                key = lambda item: item[0].lower()) )
+            alphabetical_dict[kind] = d
+
+            # sort the versions within each `model`
+            for model in alphabetical_dict[kind]:
+                # only if it has version : target node, ie omit the models 
+                # without version
+                if isinstance(alphabetical_dict[kind][model], dict):
+                    d2 = dict( sorted(alphabetical_dict[kind][model].items(),
+                        key = lambda item : item[0].lower()) )
+                    alphabetical_dict[kind][model] = d2
+         
+        colorama.init(autoreset = True)
+        for kind in alphabetical_dict:
+            print(f"{colorama.Fore.GREEN}{kind.upper()}:")
+            for model in alphabetical_dict[kind]:
+                print(f"    {colorama.Fore.CYAN}{model}:")
+                # some models (eg. setups -> oifsamip don't have a version)
+                if isinstance(alphabetical_dict[kind][model], list):
+                    targets = alphabetical_dict[kind][model]
+                    print(f"        ", end = "")
+                    print(*targets, sep = "  ")
+                
+                # for the rest of the models [kind][model] will further yield
+                # version : targets
+                elif isinstance(alphabetical_dict[kind][model], dict):
+                    max_version_length = max([len(ver) for ver in 
+                        alphabetical_dict[kind][model]])
+
+                    for version in alphabetical_dict[kind][model]:
+                        targets = alphabetical_dict[kind][model][version]
+                        print(f"{colorama.Fore.MAGENTA}        "\
+                              f"{version:<{max_version_length}} :", end = " ")
+                        print(*targets, sep="  ")
+            print()
+
 
     def get_config_entry(self, package, entry):
         try:

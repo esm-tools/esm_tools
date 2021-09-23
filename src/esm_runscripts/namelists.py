@@ -149,7 +149,7 @@ class Namelist:
                         del namelist_changes[namelist][change_chapter][key]
                         if remove_original_key:
                             del namelist_changes[namelist][change_chapter][original_key]
-                            
+
                         # mconfig instead of config, Grrrrr
                         print(f"- NOTE: removing the variable: {key} from the namelist: {namelist}")
 
@@ -203,6 +203,95 @@ class Namelist:
         for namelist, changes in six.iteritems(namelist_changes):
             mconfig["namelists"][namelist].patch(changes)
         return mconfig
+
+    @staticmethod
+    def echam_transient_forcing(config):
+        """
+        Allows for ECHAM specific transient orbital and greenhouse gas forcing .
+
+        User Information
+        ----------------
+        In the configuration file, assume you have::
+
+            echam:
+                use_transient_forcing: True
+                transient_forcing_table: /some/path/to/a/table
+
+        In this case, the entries for co2vmr, n2ovmr, ch4vmr, cecc, cobl, clonp
+        would be extracted from this table according to the current model year,
+        and the radctl section of namelist.echam is modified.
+
+        The forcing table should look like this::
+
+            # Year, CO2, CH4, N2O, Eccentricity, Obliquity, Perihelion
+            1850;  0.000187;  3.779100e-07;  2.064600e-07;  0.018994;  22.944859;  294.23880
+
+        The esm-tools will first check if the current year exists, extract the
+        relevant values for you, and put everything into the radctl section of
+        ``namelist.echam``
+
+        Parameters
+        ----------
+        config : dict
+            The config
+
+        Returns
+        -------
+        config : dict
+            The modified configuration.
+        """
+        if "echam" in config["general"]["valid_model_names"]:
+            # Get the echam namelist:
+            nml = config["echam"]["namelists"]["namelist.echam"]
+            # Get the current radtl chapter or make a new empty one:
+            radctl = nml.get("radctl", f90nml.namelist.Namelist())
+            if config["echam"].get("use_transient_forcing", False):
+                import pandas as pd
+                try:
+                    forcing_table = pd.open_csv(config["echam"]["transient_forcing_table"])
+                    co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[config['general']['current_date'].year]
+                    radctl['co2vmr'] = co2
+                    radctl['n2ovmr'] = n2o
+                    radctl['ch4vmr'] = ch4
+                    radctl['cecc'] = cecc
+                    radctl['cobl'] = cobl
+                    radctl['clonp'] = clonp
+                    print("-------------------------------------------------------------")
+                    print("")
+                    print("              > Applying transient foricng in echam namelist!")
+                    print("")
+                    print("--------------------------------------------------------------")
+                    print("             > The new values are:")
+                    print(f"             CO2:  {radctl['co2vmr']}")
+                    print(f"             N2O:  {radctl['n2ovmr']}")
+                    print(f"             CH4:  {radctl['ch4vmr']}")
+                    print(f"             CECC: {radctl['cecc']}")
+                    print(f"             COBL: {radctl['cobl']}")
+                    print(f"             CLONP:{radctl['clonp']}")
+                except Exception as e:
+                    # Haha something went wrong. Let's be polite about it though
+                    print("There was a problem with reading in the forcing from the transient forcing table")
+                    print()
+                    print("Sorry")
+                    print()
+                    print("Please be sure to use the correct format of your table!")
+                    print("It should be the following:")
+                    print("# Model Year; CO2; N2O; CH4; Eccentricty; Obliquity; Perihelion")
+                    print("Commented lines (with a #) will be ignored in that file")
+                    print("Please note that you need to use a semicolon (;) as a seperator")
+                    print()
+                    print("Also, make sure that you set a valid filepath")
+                    print("We were looking for the following:")
+                    try:
+                        print(config['echam']['transient_forcing_table'])
+                    except KeyError:
+                        print("Oops, looks like you didn't specify which forcing table to use!")
+                        print("You need to set in your echam configuration:")
+                        print("echam:")
+                        print("    transient_forcing_table: /path/to/your/table")
+                        sys.exit(1)
+                    sys.exit(1)
+        return config
 
     @staticmethod
     def apply_echam_disturbance(config):
@@ -322,7 +411,7 @@ class Namelist:
             print(f'::: end of the contents of {nml_name}\n')
         return mconfig
 
-    
+
     @staticmethod
     def nmls_output_all(config):
         six.print_(
@@ -342,6 +431,6 @@ class namelist(Namelist):
             DeprecationWarning,
             stacklevel=2,
         )
-    
+
 
         super(namelist, self).__init__(*args, **kwargs)

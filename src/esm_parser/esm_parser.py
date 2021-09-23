@@ -77,6 +77,7 @@ import numpy
 
 # Third-Party Imports
 import coloredlogs
+import colorama
 import yaml
 import six
 
@@ -138,6 +139,7 @@ constant_blacklist = [r"PATH", r"LD_LIBRARY_PATH", r"NETCDFF_ROOT", r"I_MPI_ROOT
 
 constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
+protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
 
 # Ensure FileNotFoundError exists:
@@ -175,7 +177,7 @@ def look_for_file(model, item, all_config=None):
     runscript_path = ""
     if all_config and all_config['general'].get('runscript_abspath'):
         runscript_path = os.path.dirname(all_config['general']['runscript_abspath'])
-        
+
     # Loop through all possible path combinations
     possible_paths = [ f"{SETUP_PATH}/{model}/{item}",
         f"{COMPONENT_PATH}/{model}/{item}",
@@ -183,9 +185,9 @@ def look_for_file(model, item, all_config=None):
         f"{FUNCTION_PATH}/other_software/{model}/{item}",
         f"{FUNCTION_PATH}/{model}/{item}",
         f"{runscript_path}/{item}",
-        f"{os.getcwd()}/{item}", # last resort: look at the CWD if others fail 
+        f"{os.getcwd()}/{item}", # last resort: look at the CWD if others fail
     ]
-        
+
     endings = [ "", ".yaml", ".yml", ".YAML", ".YML" ]
 
     for possible_path in possible_paths:
@@ -248,12 +250,12 @@ def initialize_from_yaml(filepath):
     for file_ending in YAML_AUTO_EXTENSIONS:
         if filepath.endswith(file_ending) and not file_ending == "":
             user_config = yaml_file_to_dict(filepath)
-            
+
             if not "general" in user_config:
                 user_config['general'] = {}
             # full absolute path of the user runscript including the yaml file
             user_config['general']['runscript_abspath'] = filepath
-            
+
             user_config = complete_config(user_config)
     return user_config
 
@@ -431,17 +433,17 @@ def attach_to_config_and_reduce_keyword(
         del config_to_read_from[full_keyword]
 
 
-def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
+def attach_single_config(config, path, attach_value, all_config=None):
     """
     Parameters
     ----------
     config : dict
         subset of the main configuration, eg. config[model]
-    
+
     all_config : dict
         main configuration
     """
-    include_path, needs_load = look_for_file(path, attach_value, 
+    include_path, needs_load = look_for_file(path, attach_value,
         all_config=all_config)
     if include_path:
         if needs_load:
@@ -456,11 +458,11 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
         print ("Could not find ", path + "/" + attach_value)
         sys.exit(1)
     #DB this is a try:
-    dict_merge(config, attachable_config, **kwargs)
+    dict_merge(config, attachable_config)
     #config.update(attachable_config)
 
 
-def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
+def attach_to_config_and_remove(config, attach_key, all_config=None):
     """
     Attaches extra dict to this one and removes the chapter
 
@@ -489,7 +491,7 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
                 attach_path, attach_value = attach_value.rsplit("/", 1)
             except ValueError:
                 attach_path = "."
-            attach_single_config(config, attach_path, attach_value, all_config=all_config, **kwargs)
+            attach_single_config(config, attach_path, attach_value, all_config=all_config)
 
 
 priority_marker = ">>THIS_ONE<<"
@@ -579,7 +581,7 @@ def new_deep_update(receiving_dict, dict_to_be_included, winner = "receiving", b
 
 
 
-def dict_merge(dct, merge_dct, **kwargs):
+def dict_merge(dct, merge_dct, resolve_nested_adds=False):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
@@ -588,11 +590,6 @@ def dict_merge(dct, merge_dct, **kwargs):
     :param merge_dct: dct merged into dct
     :return: None
     """
-    # option to overwrite a dict value if merge_dict contains empty value. Default
-    # is False
-    dont_overwrite_with_empty_value = kwargs.get("dont_overwrite_with_empty_value", 
-        False)
-
     for k, v in six.iteritems(merge_dct):
         if (
             k in dct
@@ -620,20 +617,27 @@ def dict_merge(dct, merge_dct, **kwargs):
             #
             # An idea...but I have absolutely no clue how to cleanly implement that...
             if k != "debug_info":
-                dict_merge(dct[k], merge_dct[k])
+                dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
             else:
                 if "debug_info" in dct:
                     if isinstance(dct["debug_info"]["loaded_from_file"], str):
                         dct["debug_info"]["loaded_from_file"] = [dct["debug_info"]["loaded_from_file"]]
                     else:
                         dct["debug_info"]["loaded_from_file"].append(merge_dct["debug_info"]["loaded_from_file"])
+        # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
+        # adds should probably resolved in a different place, after the first level
+        # ones are resolved.
+        # If the key exists and starts by ``add_``, it is a nested ``add_`` and is
+        # solved as such
+        elif (
+            resolve_nested_adds
+            and isinstance(k, str)
+            and k.startswith("add_")
+            and k not in protected_adds
+            and isinstance(v, (list, dict))
+        ):
+            add_entries_from_chapter(dct, "".join(k.split("add_")), v)
         else:
-            # keep the value of dct[k] if dct[k] is already set but merge_dct[k]
-            # is empty and protection is requested
-            if k in dct:
-                if dct[k] and not merge_dct[k] and dont_overwrite_with_empty_value:
-                    merge_dct[k] = dct[k]
-
             dct[k] = merge_dct[k]
 
 
@@ -645,26 +649,37 @@ def deep_update(chapter, entries, config, blackdict={}):
      else:
         if chapter not in blackdict:
             dict_merge(config, {chapter: entries})
-     
-        # deniz: bugfix: choose_ blocks with "*" keys don't get updated. Eg. 
+
+        # deniz: bugfix: choose_ blocks with "*" keys don't get updated. Eg.
         # mail1 and mail2 don't get updated since they are initialized as empty
         # strings and are already inside. Current bug fix only correct scalar
-        # types such as strings.  
+        # types such as strings.
         else:
             empty_values = ["", None]  # some possible empty values to override
 
             # strip all whitespace. Eg. "  " -> "", if it is only space
-            if (isinstance(blackdict[chapter], str) and 
+            if (isinstance(blackdict[chapter], str) and
                 blackdict[chapter].isspace()):
                 blackdict[chapter] = re.sub(r"\s+", "", blackdict[chapter])
 
             # The update_key (chapter) is already inside the blackdict however,
-            # its value (entries) it not empty. So, update them 
-            if (blackdict[chapter] in empty_values and entries not in 
+            # its value (entries) it not empty. So, update them
+            if (blackdict[chapter] in empty_values and entries not in
                 empty_values):
                 dict_merge(config, {chapter: entries})
-                
-                
+
+            # Trying to update a dictionary from the same file (in blackdict)
+            # an ``add_`` returns an error
+            if isinstance(blackdict[chapter], dict):
+                user_error(
+                    "Missing 'add_'", (
+                        f"Not possible to update the '{config['model']}.{chapter}' "
+                        + f"dictionary. Please, use 'add_{chapter}' inside the "
+                        + f"'choose_' block, instead of just '{chapter}'."
+                    )
+                )
+
+
 def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=False):
     """Recursively search through the dictionary and replace the keys with the
     ``overwrite`` tag
@@ -722,7 +737,7 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
                     before_str = re.sub(r'\n[ \t]*$', '', before_str)
                     print(before_str)
                     print("---")
-                    
+
                     print("::: value after:")
                     after_str = f"{space}{yaml.dump(receiver[key], indent=4)}"
                     after_str = after_str.replace('\n', f'\n{space}')
@@ -735,8 +750,8 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
                 dict_overwrite(sender[key], receiver[key], key_path=key_path,
                     recursion_level=recursion_level+1, verbose=verbose)
 
-    return receiver                
-                
+    return receiver
+
 
 
 def find_remove_entries_in_config(mapping, model_name, models = []):
@@ -776,7 +791,12 @@ def add_entries_from_chapter(config, add_chapter, add_entries):
             for entry in my_entries:
                 config[add_chapter].append(entry)
         elif type(config[add_chapter]) == dict:
-            dict_merge(config[add_chapter], add_entries)
+            # MA: I'm not supper happy about the resolve_nested_adds implementation
+            dict_merge(
+                config[add_chapter],
+                add_entries,
+                resolve_nested_adds=True,
+            )
     else:
         config[add_chapter] = add_entries
 
@@ -1647,6 +1667,15 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         def func(tree, right, *args, **kwargs)
 
     """
+
+    if len(tree) > 100:
+        print("Maximum recursion depth exceeded.")
+        print (tree)
+        print (func)
+        print (right)
+        sys.exit(-1)
+
+
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
     if level == "mappings":
@@ -1956,24 +1985,24 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     return_dict2 = {}
                     for key in entries_of_key:
                         return_dict2[
-                            lhs.replace("[[" + actual_list + "]]", key).replace(
-                                value_in_list, key
+                            lhs.replace("[[" + actual_list + "]]", str(key)).replace(
+                                value_in_list, str(key)
                             )
-                        ] = rhs.replace(value_in_list, key)
+                        ] = rhs.replace(value_in_list, str(key))
 
                 if isinstance(rhs, list):
                     replaced_list = []
                     for item in rhs:
                         if isinstance(item, str):
                             for key in entries_of_key:
-                                replaced_list.append(item.replace(value_in_list, key))
+                                replaced_list.append(item.replace(value_in_list, str(key)))
                         else:
                             replaced_list.append(item)
                     return_dict2 = {}
                     for key in entries_of_key:
                         return_dict2[
-                            lhs.replace("[[" + actual_list + "]]", key).replace(
-                                value_in_list, key
+                            lhs.replace("[[" + actual_list + "]]", str(key)).replace(
+                                value_in_list, str(key)
                             )
                         ] = replaced_list
 
@@ -2046,6 +2075,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     return_dict = return_dict2
                 return return_dict
             return {lhs: rhs}
+
+
         if isinstance(rhs, str) and list_fence in rhs:
             rhs_list = []
             ok_part, rest = rhs.split(list_fence, 1)
@@ -2066,14 +2097,14 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                             value_in_list, str(entry)
                         )
                     )
-                if isinstance(entries_of_key, str):
-                    entries_of_key = [entries_of_key]
-                for entry in entries_of_key:
-                    rhs_list.append(
-                        rhs.replace("[[" + actual_list + "]]", entry).replace(
-                            value_in_list, entry
-                        )
-                    )
+                #if isinstance(entries_of_key, str):
+                #    entries_of_key = [entries_of_key]
+                #for entry in entries_of_key:
+                #    rhs_list.append(
+                #        rhs.replace("[[" + actual_list + "]]", str(entry)).replace(
+                #            value_in_list, str(entry)
+                #        )
+                #    )
             if list_fence in new_raw:
                 out_list = []
                 for rhs_listitem in rhs_list:
@@ -2580,7 +2611,7 @@ def find_key(d_search, k_search, exc_strings = "", level = "", paths2finds = [],
     return paths2finds
 
 
-def user_note(note_heading, note_text):
+def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
     """
     Notify the user about something. In the future this should also write in the log.
 
@@ -2591,8 +2622,9 @@ def user_note(note_heading, note_text):
     text : str
         Text clarifying the note.
     """
-    print("\n" + note_heading + "\n" + "-" * len(note_heading) + "\n")
-    print(note_text)
+    colorama.init(autoreset=True)
+    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}")
+    print(f"{note_text}\n")
 
 
 def user_error(error_type, error_text, exit_code=1):
@@ -2609,7 +2641,7 @@ def user_error(error_type, error_text, exit_code=1):
         The exit code to send back to the parent process (default to 1)
     """
     error_title = "ERROR: " + error_type
-    user_note(error_title, error_text)
+    user_note(error_title, error_text, color=colorama.Fore.RED)
     sys.exit(exit_code)
 
 
@@ -2693,7 +2725,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         }
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(setup_config["computer"], attachment,
-                all_config = None, dont_overwrite_with_empty_value=True)
+                all_config = None)
         # Add the fake "model" name to the computer:
         setup_config["computer"]["model"] = "computer"
         logger.info("setup config is being updated with setup_relevant_configs")
@@ -2840,7 +2872,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         if not "coupled_setup" in self.config["general"]:
             self._blackdict = blackdict = user_config
 
-        
+
         # deniz: if the user-defined forcing_sources (inside the runscript) is
         # a dictionary with multiple levels then the users need to provide
         # 'overwrite' key at the level that they want to change. Otherwise,
@@ -2849,7 +2881,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # taken
         self.config = dict_overwrite(sender=user_config, receiver=self.config, 
             key_path=[], verbose=self.config['general'].get('verbose', False))
-        
+
         #pprint_config(self.config)
         #sys.exit(0)
 

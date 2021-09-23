@@ -5,12 +5,21 @@ import sys
 
 from esm_parser import pprint_config
 from .helpers import evaluate
-from .compute import _show_simulation_info
+from .prepcompute import _show_simulation_info
 from .namelists import Namelist
-
+from . import workflow
 
 def run_job(config):
     config = evaluate(config, "inspect", "inspect_recipe")
+    return config
+
+
+
+def inspect_workflow(config):
+    if config["general"]["inspect"] == "workflow":
+
+        config = workflow.display_nicely(config)
+        sys.exit(0)
     return config
 
 

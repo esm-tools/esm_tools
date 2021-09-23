@@ -360,7 +360,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                         # If these ``choose_`` are different they can be accessed
                         # simultaneously, then it returns an error
                         esm_parser.user_error("YAML syntax",
-                                    "\The following ``_changes`` can be accessed " +
+                                    "The following ``_changes`` can be accessed " +
                                     "simultaneously in " + fpath + ":\n" +
                                     "    - " + ".".join(changes) + "\n" +
                                     "    - " + ".".join(other_changes) + "\n" +

@@ -1,10 +1,19 @@
-from . import helpers
+import os
 import sys
+import copy
+import logging
+
+import esm_parser
+from esm_calendar import Date, Calendar
+
+from . import helpers
+from . import batch_system
 
 
 def run_job(config):
     helpers.evaluate(config, "prepare", "prepare_recipe")
     return config
+
 
 def mini_resolve_variable_date_file(date_file, config):
     while "${" in date_file:
@@ -57,9 +66,9 @@ def _read_date_file(config):
     return config
 
 
-def check_model_lresume(config):
-    import esm_parser
 
+
+def check_model_lresume(config):
     if config["general"]["run_number"] != 1:
         for model in config["general"]["valid_model_names"]:
             config[model]["lresume"] = True
@@ -102,13 +111,13 @@ def check_model_lresume(config):
 
 
 def resolve_some_choose_blocks(config):
-    from esm_parser import choose_blocks
+    #from esm_parser import choose_blocks
 
     # Component-specific environment variables into ``computer``
     # before ``computer`` ``choose_`` blocks are resolved
     model_env_into_computer(config)
 
-    choose_blocks(config, blackdict=config._blackdict)
+    esm_parser.choose_blocks(config, blackdict=config._blackdict)
     return config
 
 def model_env_into_computer(config):
@@ -149,9 +158,8 @@ def model_env_into_computer(config):
         Asks the user how to proceed.
     '''
 
-    import copy
-    import logging
-    from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
+    #import logging
+    #from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
 
     # Get which type of changes are to be applied to the environment
     run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
@@ -174,7 +182,7 @@ def model_env_into_computer(config):
                 modelconfig["environment_changes"] = modelconfig[thesechanges]
         # Resolve ``choose_`` blocks, ``add_`` and ``remove_`` inside ``environment_
         # changes``
-        basic_choose_blocks(modelconfig["environment_changes"], config)
+        esm_parser.basic_choose_blocks(modelconfig["environment_changes"], config)
         # Set to true when specified by the user in ``env_overwrite`` or when this
         # method has been already called once in this run
         overwrite = config[model].get("env_overwrite", False)
@@ -183,8 +191,14 @@ def model_env_into_computer(config):
         # need of the solving of later ``choose_`` blocks.
         for key, value in modelconfig["environment_changes"].items():
             if (
-                key not in ["export_vars", "module_actions", "unset_vars",
-                            "add_export_vars", "add_module_actions", "add_unset_vars"]
+                key not in [
+                    "export_vars", 
+                    "module_actions", 
+                    "add_export_vars", 
+                    "add_module_actions",
+                    "unset_vars",
+                    "add_unset_vars",
+                    ]
                 and "computer" in config
                 and not overwrite
                 #and run_or_compile=="runtime"
@@ -201,15 +215,14 @@ def model_env_into_computer(config):
                         pprint_config({key: env_vars[key][0]})
                         logging.info("\nIn '" + model + "':")
                         pprint_config({key: value})
-                        # Ask the user how to proceed if it is not a ``tidy_and_
-                        # resubmit`` job
-                        if not config["general"]["jobtype"]=="tidy_and_resubmit":
+                        # Ask the user how to proceed if it is not a `tidy job
+                        if not config["general"]["jobtype"]=="tidy":
                             user_answer = input(
                                 f"Environment variable '{key}' defined in '{model0}' is "
                                 + "going to be overwritten by the one defined in "
                                 + f"'{model}'. Are you okay with that? (Y/n): "
                             )
-                        # If it is a ``tidy_and_resubmit`` job, the user has already
+                        # If it is a ``tidy`` job, the user has already
                         # interacted and accepted the overwriting.
                         else:
                             user_answer = "Y"
@@ -238,7 +251,7 @@ def model_env_into_computer(config):
                             logging.info("Wrong answer, please choose Y/n.")
                 # Merge variable into the ``computer`` dictionary so that it becomes
                 # part of the general environment.
-                dict_merge(config["computer"], {key: value})
+                esm_parser.dict_merge(config["computer"], {key: value})
                 # Add the variable to ``env_vars`` so it can be checked for conflicts
                 # with other models.
                 env_vars[key] = [value, model]
@@ -251,6 +264,17 @@ def _initialize_calendar(config):
     if config["general"]["reset_calendar_to_last"]:
         config = find_last_prepared_run(config)
     config = set_most_dates(config)
+    if not "iterative_coupling" in config["general"]:
+        config["general"]["chunk_number"] = 1
+
+        if config["general"]["run_number"] == 1:
+            config["general"]["first_run_in_chunk"] = True
+        else:
+            config["general"]["first_run_in_chunk"] = False
+        if config["general"]["next_date"] >= config["general"]["final_date"]:
+            config["general"]["last_run_in_chunk"] = True
+        else:
+            config["general"]["last_run_in_chunk"] = False
     return config
 
 
@@ -320,7 +344,6 @@ def set_leapyear(config):
 
 
 def set_overall_calendar(config):
-    from esm_calendar import Calendar
 
     # set the overall calendar
     if config["general"]["leapyear"]:
@@ -329,11 +352,8 @@ def set_overall_calendar(config):
         config["general"]["calendar"] = Calendar(0)
     return config
 
-
+    
 def find_last_prepared_run(config):
-    from esm_calendar import Date, Calendar
-    import os
-    import sys
 
     calendar = config["general"]["calendar"]
     current_date = Date(config["general"]["current_date"], calendar)
@@ -353,8 +373,8 @@ def find_last_prepared_run(config):
 
         next_date = current_date.add(delta_date)
         end_date = next_date - (0, 0, 1, 0, 0, 0)
-
-        datestamp = (
+        
+        datestamp = ( 
             current_date.format(
                 form=9, givenph=False, givenpm=False, givenps=False
             )
@@ -364,11 +384,12 @@ def find_last_prepared_run(config):
             )
         )
 
-        directory = \
-            f"{config['general']['base_dir']}"\
-            f"/{config['general']['expid']}/run_{datestamp}"
-            
-        if os.path.isdir(directory):
+        # Solve base_dir with variables
+        base_dir = esm_parser.find_variable(
+            ["general", "base_dir"], config["general"]["base_dir"], config, [], True
+        )
+
+        if os.path.isdir(base_dir + "/" + config["general"]["expid"] + "/run_" + datestamp):
             config["general"]["current_date"] = current_date
             return config
 
@@ -379,7 +400,6 @@ def find_last_prepared_run(config):
 
 
 def set_most_dates(config):
-    from esm_calendar import Calendar, Date
 
     calendar = config["general"]["calendar"]
     if isinstance(config["general"]["current_date"], Date):
@@ -444,6 +464,7 @@ def _add_all_folders(config):
         "config",
         "log",
         "mon",
+        "couple",
         "scripts",
         "ignore",
         "unknown",
@@ -494,9 +515,9 @@ def _add_all_folders(config):
         "analysis",
         "bin",
         "config",
-        "couple",
         "forcing",
         "input",
+        "couple",
         "log",
         "mon",
         "outdata",
@@ -584,7 +605,6 @@ def set_prev_date(config):
 
 
 def set_parent_info(config):
-    import esm_parser
 
     """Sets several variables relevant for the previous date. Loops over all models in ``valid_model_names``, and sets model variables for:
     * ``parent_expid``
@@ -647,10 +667,8 @@ def finalize_config(config):
 
 
 def add_submission_info(config):
-    import os
-    from . import batch_system
 
-    bs = batch_system(config, config["computer"]["batch_system"])
+    bs = batch_system.batch_system(config, config["computer"]["batch_system"])
 
     submitted = bs.check_if_submitted()
     if submitted:
@@ -664,11 +682,12 @@ def add_submission_info(config):
 
 
 def initialize_batch_system(config):
-    from . import batch_system
 
-    config["general"]["batch"] = batch_system(
+    config["general"]["batch"] = batch_system.batch_system(
         config, config["computer"]["batch_system"]
     )
+
+    config = batch_system.find_openmp(config)
     return config
 
 

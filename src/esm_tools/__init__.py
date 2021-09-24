@@ -41,8 +41,8 @@ def _get_real_dir_from_pth_file(package):
         if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
-            actual_package_data_dir = f"{paths[0]}/{paths[1]}/{package}/"
-            return actual_package_data_dir
+            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{package}/")
+            return actual_package_data_dir.resolve()
 
 
 def _get_namelist_filepath_standard_install(namelist):
@@ -149,7 +149,7 @@ def _copy_config_folder_standard_install(dest_path):
 
 
 def _copy_config_folder_editable_install(dest_path):
-    src_path = _get_config_filepath_editable_install("configs", ".")
+    src_path = _get_config_filepath_editable_install("")
     return shutil.copytree(src_path, dest_path)
 
 
@@ -159,7 +159,7 @@ def _copy_namelist_folder_standard_install(dest_path):
 
 
 def _copy_namelist_folder_editable_install(dest_path):
-    src_path = _get_namelist_filepath_editable_install("namelists", ".")
+    src_path = _get_namelist_filepath_editable_install("")
     return shutil.copytree(src_path, dest_path)
 
 
@@ -169,7 +169,7 @@ def _copy_runscript_folder_standard_install(dest_path):
 
 
 def _copy_runscript_folder_editable_install(dest_path):
-    src_path = _get_runscript_filepath_editable_install("runscripts", ".")
+    src_path = _get_runscript_filepath_editable_install("")
     return shutil.copytree(src_path, dest_path)
 
 

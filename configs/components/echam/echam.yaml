@@ -143,6 +143,10 @@ choose_switch:
 # choice
 #
 
+#lwiso_rerun: False
+#lwiso: False
+#nwiso: 0
+
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
 nprocar: 0
@@ -243,9 +247,6 @@ choose_version:
                             add_export_vars:
                                 NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
                                 LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                lwiso_rerun: False
-                lwiso: False
-                nwiso: 0
                 add_namelist_changes:
                         namelist.echam:
                                 parctl:

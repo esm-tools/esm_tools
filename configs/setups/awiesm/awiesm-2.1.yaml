@@ -138,7 +138,7 @@ echam:
                         lwiso: "${general.with_wiso}"
                         choose_general.with_wiso:
                                 True:
-                                        nwiso: 6 # @MARTIN: is this okay?
+                                        nwiso: 3 
                                 False:
                                         nwiso: 0
 
@@ -340,7 +340,7 @@ oasis3mct:
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
 
-        choose_general.with_wiso:
+        choose_general.wiso_code:
                 true:
                         add_coupling_target_fields:
                                 add_o2a_flux:

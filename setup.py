@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 from os import getenv
 
-with open('README.rst') as readme_file:
+with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 with open("stuff/HISTORY.rst") as history_file:

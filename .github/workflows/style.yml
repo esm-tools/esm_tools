@@ -20,6 +20,7 @@ jobs:
             pwd
             ls -l
             black --check .
+        continue-on-error: True
       - name: If needed, commit black changes to the pull request
         if: failure()
         run: |

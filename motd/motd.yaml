@@ -1,0 +1,80 @@
+release5_esm_tools:
+        package: "esm_tools"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_runscripts:
+        package: "esm_runscripts"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_master:
+        package: "esm_master"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_parser:
+        package: "esm_parser"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_environment:
+        package: "esm_environment"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_version_checker:
+        package: "esm_version_checker"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+release5_esm_plugin_manager:
+        package: "esm_plugin_manager"
+        versions: "<4.0.0"
+        message: |
+                Your version of this package is very old. Please consider updating to release 5 .
+        action: DELAY(1)
+
+hosing_esm_tools:
+        package: "esm_tools"
+        versions: "==5.0.5"
+        message: |
+                "ESM Tools version 5.0.5 allows for the generation of hosing files in AWI-ESM-2.1 and AWI-ESM-2.2
+                To use that, you still need to install a plugin. Please run:
+
+                $ pip install --user gfw_creator"
+        action: DELAY(1)
+
+release5.1_esm_tools:
+        package: "esm_tools"
+        versions: "<5.1.0"
+        message: |
+                "The new minor release 5.1 is now available!
+                This minor release include no new models or couple setups but new features to the following packages:
+                    - esm_master
+                    - esm_parser
+                    - esm_environment
+                    - esm_rcfiles
+                    - esm_version_checker
+                    - esm_tools
+                To get this updates simply run 'esm_versions upgrade'.
+
+                NOTE TO DEVELOPERS AND ADVANCE USERS: if you intend to use an branch of 'esm_tools' that is not 'release'
+                you might face conflicts with the new 'esm_environment'. These conflicts are easily solved by copying the
+                new machine files into your 'esm_tools' branch (make sure you commit the changes in your branch before
+                copying the machine files over). Feel free to contact us if you need any assistance with this issue.
+                "
+        action: DELAY(1)
+

@@ -1,0 +1,33 @@
+# GitHub Action that uses Black to reformat the Python code in an incoming pull request.
+# If all Python code in the pull request is compliant with Black then this Action does nothing.
+# Otherwise, Black is run and its changes are committed back to the incoming pull request.
+
+name: autoblack
+on: [pull_request, push] # Do this always
+jobs:
+  style-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install Black
+        run: pip install black
+      - name: Run black --check .
+        run: black --check .
+      - name: If needed, commit black changes to the pull request
+        if: failure()
+        run: |
+          black .
+          git config --global user.name 'autoblack'
+          git config --global user.email 'esmtools.bot@gmail.de'  # The robot has fixed your style for you :-)
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          echo "Hello there"
+          git checkout -b $(echo $GITHUB_REF | sed s#refs/heads/##)
+          echo "Finished checkout"
+          git commit -am "fix(style): Format Python code with Black"
+          echo "Finished commit"
+          git push --set-upstream origin $(echo $GITHUB_REF | sed s#refs/heads/##)
+          echo "Finished push"
+

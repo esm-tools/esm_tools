@@ -1,11 +1,23 @@
 from . import helpers
 
+
 def run_job(config):
-    config["general"]["relevant_filetypes"] = ["log", "mon", "outdata", "restart_out","bin", "config", "forcing", "input", "restart_in", "ignore"]
+    config["general"]["relevant_filetypes"] = [
+        "log",
+        "mon",
+        "outdata",
+        "restart_out",
+        "bin",
+        "config",
+        "forcing",
+        "input",
+        "restart_in",
+        "ignore",
+    ]
     helpers.evaluate(config, "postprocess", "post_recipe")
     return config
 
-    
+
 def _assemble_postprocess_tasks(config):
     """
     Generates all tasks for post processing which will be written to the sad file.
@@ -25,14 +37,16 @@ def _assemble_postprocess_tasks(config):
 
     post_task_list = []
     for component in config["general"]["valid_model_names"]:
-        post_file.write(40*"+ "+"\n")
+        post_file.write(40 * "+ " + "\n")
         post_file.write("Generating post-processing tasks for: %s \n" % component)
 
         post_task_list.append("\n#Postprocessing %s\n" % component)
-        post_task_list.append("cd "+ config[component]["experiment_outdata_dir"]+"\n")
+        post_task_list.append(
+            "cd " + config[component]["experiment_outdata_dir"] + "\n"
+        )
 
-        pconfig_tasks = config[component].get('postprocess_tasks', {})
-        pconfig_scripts = config[component].get('postprocessing_scripts', {})
+        pconfig_tasks = config[component].get("postprocess_tasks", {})
+        pconfig_scripts = config[component].get("postprocessing_scripts", {})
 
         post_file.write("Configuration for post processing: %s \n" % pconfig_tasks)
         for outfile in pconfig_tasks:
@@ -42,8 +56,16 @@ def _assemble_postprocess_tasks(config):
             # ChainMap here for more than just the bottom...
             #
             # Run CDO tasks (default)
-            task_definition = config[component].get("postprocess_task_definitions", {}).get(ofile_config['post_process'])
-            method_definition = config[component].get("postprocess_method_definitions", {}).get(task_definition['method'])
+            task_definition = (
+                config[component]
+                .get("postprocess_task_definitions", {})
+                .get(ofile_config["post_process"])
+            )
+            method_definition = (
+                config[component]
+                .get("postprocess_method_definitions", {})
+                .get(task_definition["method"])
+            )
 
             program = method_definition.get("program", task_definition["method"])
 
@@ -61,13 +83,20 @@ def _assemble_postprocess_tasks(config):
 
             args = collections.ChainMap(outfile_args, task_def_args)
             flags = outfile_flags + task_def_flags
-            flags = ["-"+flag for flag in flags]
+            flags = ["-" + flag for flag in flags]
 
             # See here: https://stackoverflow.com/questions/21773866/how-to-sort-a-dictionary-based-on-a-list-in-python
-            all_call_things = {"program": program, "outfile": outfile, **args, "flags": flags}
+            all_call_things = {
+                "program": program,
+                "outfile": outfile,
+                **args,
+                "flags": flags,
+            }
             print(all_call_things)
             index_map = {v: i for i, v in enumerate(method_definition["call_order"])}
-            call_list = sorted(all_call_things.items(), key=lambda pair: index_map[pair[0]])
+            call_list = sorted(
+                all_call_things.items(), key=lambda pair: index_map[pair[0]]
+            )
             call = []
             for call_id, call_part in call_list:
                 if isinstance(call_part, str):
@@ -75,11 +104,11 @@ def _assemble_postprocess_tasks(config):
                 elif isinstance(call_part, list):
                     call.append(" ".join(call_part))
                 else:
-                    raise TypeError("Something straaaange happened. Consider starting the debugger.")
-            post_file.write(" ".join(call)+"\n")
+                    raise TypeError(
+                        "Something straaaange happened. Consider starting the debugger."
+                    )
+            post_file.write(" ".join(call) + "\n")
             post_task_list.append(" ".join(call))
-
-
 
         for script in pconfig_scripts:
             postscript_name = pconfig_scripts.get("postprocessing_script_name", None)
@@ -102,7 +131,6 @@ def _assemble_postprocess_tasks(config):
     return config
 
 
-
 def assemble_filename(filename, dirname, config):
     if filename.startswith("/"):
         return filename
@@ -113,9 +141,6 @@ def assemble_filename(filename, dirname, config):
     return os.path.join(["general"]["started_from"], filename)
 
 
-
-
-
 def export_string(environment_dict):
     export_string = []
     for entry in environment_dict:
@@ -123,8 +148,8 @@ def export_string(environment_dict):
         export_string.append([f"export {entry}={value}"])
     return export_string
 
-#?????
-#def write_simple_postscript(config):
+
+# ?????
+# def write_simple_postscript(config):
 #    batch_system.write_simple_runscript(config)
 #    return config
-

@@ -59,7 +59,7 @@ class EsmConfigFileError(Exception):
 # below corrects that issue.
 def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     # pattern for ${VAR} and extract VAR
-    pattern_envvar = re.compile('\${(\w+)}')
+    pattern_envvar = re.compile("\${(\w+)}")
 
     # This pattern matches the valid (uncommented) !ENV lines. Eg.
     # - !ENV ${VAR}
@@ -71,6 +71,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     # e.g. somekey: !ENV somestring${MYENVVAR}blah blah blah
     loader.add_implicit_resolver(tag, pattern_envvar, None)
     loader.env_variables = []
+
     def constructor_env_variables(loader, node):
         """
         Extracts the environment variable from the node's value
@@ -93,7 +94,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
         # read the file into a list of line. This can also be achieved by
         # read() instead but since the YAML files are not large (max few KBs),
         # this is a quicked solution
-        yaml_file = open(fname, 'r')
+        yaml_file = open(fname, "r")
         file_lines = yaml_file.readlines()
         yaml_file.close()
 
@@ -127,13 +128,14 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
 
                     # first check if the variable exists in the shell environment
                     if not os.getenv(env_var):
-                        esm_parser.user_error(f"{env_var} is not defined",
-                            f"{env_var} is not an environment variable. Exiting"
+                        esm_parser.user_error(
+                            f"{env_var} is not defined",
+                            f"{env_var} is not an environment variable. Exiting",
                         )
 
                     # replace {env_var} with the value of the env_var
                     full_value = full_value.replace(
-                        f'${{{env_var}}}', os.getenv(env_var)
+                        f"${{{env_var}}}", os.getenv(env_var)
                     )
                     loader.env_variables.append((env_var, full_value))
                 return full_value
@@ -141,7 +143,6 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
 
     loader.add_constructor(tag, constructor_env_variables)
     return loader
-
 
 
 def yaml_file_to_dict(filepath):
@@ -177,25 +178,31 @@ def yaml_file_to_dict(filepath):
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
                 # Actually load the file
-                yaml_load =  yaml.load(yaml_file, Loader=loader) # yaml.FullLoader)
+                yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)
                 check_changes_duplicates(yaml_load, filepath + extension)
                 # Add the file name you loaded from to track it back:
                 yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
                 if loader.env_variables:
-                    runtime_env_changes = yaml_load.get("computer", {}).get("runtime_environment_changes", {})
+                    runtime_env_changes = yaml_load.get("computer", {}).get(
+                        "runtime_environment_changes", {}
+                    )
                     add_export_vars = runtime_env_changes.get("add_export_vars", {})
                     for env_var_name, env_var_value in loader.env_variables:
                         add_export_vars[env_var_name] = env_var_value
                     # TODO(PG): There is probably a more elegant way of doing this:
-                    yaml_load['computer'] = yaml_load.get("computer") or {}
-                    yaml_load['computer']['runtime_environment_changes'] = yaml_load['computer'].get('runtime_environment_changes') or {}
-                    yaml_load['computer']['runtime_environment_changes']['add_export_vars'] = add_export_vars
+                    yaml_load["computer"] = yaml_load.get("computer") or {}
+                    yaml_load["computer"]["runtime_environment_changes"] = (
+                        yaml_load["computer"].get("runtime_environment_changes") or {}
+                    )
+                    yaml_load["computer"]["runtime_environment_changes"][
+                        "add_export_vars"
+                    ] = add_export_vars
                 return yaml_load
         except IOError as error:
             logger.debug(
-                    f"IOError ({error.errno}): File not found with {filepath+extension}, trying another extension pattern."
+                f"IOError ({error.errno}): File not found with {filepath+extension}, trying another extension pattern."
             )
         except yaml.scanner.ScannerError as yaml_error:
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
@@ -268,9 +275,11 @@ def check_changes_duplicates(yamldict_all, fpath):
         # Perform the check only for the dictionary objects
         if isinstance(yamldict, dict):
             changes_list = esm_parser.find_key(
-                yamldict, "_changes", "add_",paths2finds = [], sep=","
+                yamldict, "_changes", "add_", paths2finds=[], sep=","
             )
-            add_list = esm_parser.find_key(yamldict, ["add_"], "",paths2finds = [], sep=",")
+            add_list = esm_parser.find_key(
+                yamldict, ["add_"], "", paths2finds=[], sep=","
+            )
             if (len(changes_list) + len(add_list)) == 0:
                 continue
 
@@ -297,23 +306,36 @@ def check_changes_duplicates(yamldict_all, fpath):
             changes_no_choose = [x for x in changes_group if "choose_" not in x]
             # If more than one ``_changes`` without ``choose_`` return error
             if len(changes_no_choose) > 1:
-                changes_no_choose = [x.replace(",",".") for x in changes_no_choose]
-                esm_parser.user_error("YAML syntax",
-                            "More than one ``_changes`` out of a ``choose_``in "
-                            + fpath + ":\n    - " + "\n    - ".join(changes_no_choose) +
-                            "\n" + changes_note + "\n\n")
+                changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
+                esm_parser.user_error(
+                    "YAML syntax",
+                    "More than one ``_changes`` out of a ``choose_``in "
+                    + fpath
+                    + ":\n    - "
+                    + "\n    - ".join(changes_no_choose)
+                    + "\n"
+                    + changes_note
+                    + "\n\n",
+                )
             # If only one ``_changes`` without ``choose_`` check for ``_changes`` inside
             # ``choose_`` and return error if any is found
             elif len(changes_no_choose) == 1:
                 changes_group.remove(changes_no_choose[0])
                 if len(changes_group) > 0:
-                    changes_group = [x.replace(",",".") for x in changes_group]
-                    esm_parser.user_error("YAML syntax",
-                                "The general ``" + changes_no_choose[0] +
-                                "`` and ``_changes`` in ``choose_`` are not compatible in "
-                                + fpath + ":\n    - " +
-                                "\n    - ".join(changes_group) + "\n" +
-                                "\n" + changes_note + "\n\n")
+                    changes_group = [x.replace(",", ".") for x in changes_group]
+                    esm_parser.user_error(
+                        "YAML syntax",
+                        "The general ``"
+                        + changes_no_choose[0]
+                        + "`` and ``_changes`` in ``choose_`` are not compatible in "
+                        + fpath
+                        + ":\n    - "
+                        + "\n    - ".join(changes_group)
+                        + "\n"
+                        + "\n"
+                        + changes_note
+                        + "\n\n",
+                    )
 
             # If you reach this point all ``_changes`` are inside
             # some number of ``choose_`` (there are no ``_changes``
@@ -328,7 +350,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 # its case
                 path2choose, case = find_last_choose(changes)
                 # Loop through the changes following the current one
-                for other_changes in changes_group_split[count+1:]:
+                for other_changes in changes_group_split[count + 1 :]:
                     # Find the path of the last ``choose_`` in
                     # ``other_changes`` and its case
                     sub_path2choose, sub_case = find_last_choose(other_changes)
@@ -340,27 +362,49 @@ def check_changes_duplicates(yamldict_all, fpath):
                     # False.namelist_changes)
                     if path2choose in sub_path2choose or sub_path2choose in path2choose:
                         if path2choose in sub_path2choose:
-                            sub_case = sub_path2choose.replace(path2choose + ",", "") \
-                                        .split(",")[0]
+                            sub_case = sub_path2choose.replace(
+                                path2choose + ",", ""
+                            ).split(",")[0]
                         elif sub_path2choose in path2choose:
-                            case = path2choose.replace(sub_path2choose + ",", "") \
-                                        .split(",")[0]
+                            case = path2choose.replace(sub_path2choose + ",", "").split(
+                                ","
+                            )[0]
                         if case == sub_case:
-                            esm_parser.user_error("YAML syntax",
-                                        "The following ``_changes`` can be accessed " +
-                                        "simultaneously in " + fpath + ":\n" +
-                                        "    - " + ".".join(changes) + "\n" +
-                                        "    - " + ".".join(other_changes) + "\n" +
-                                        "\n" + changes_note + "\n\n")
+                            esm_parser.user_error(
+                                "YAML syntax",
+                                "The following ``_changes`` can be accessed "
+                                + "simultaneously in "
+                                + fpath
+                                + ":\n"
+                                + "    - "
+                                + ".".join(changes)
+                                + "\n"
+                                + "    - "
+                                + ".".join(other_changes)
+                                + "\n"
+                                + "\n"
+                                + changes_note
+                                + "\n\n",
+                            )
                     else:
                         # If these ``choose_`` are different they can be accessed
                         # simultaneously, then it returns an error
-                        esm_parser.user_error("YAML syntax",
-                                    "The following ``_changes`` can be accessed " +
-                                    "simultaneously in " + fpath + ":\n" +
-                                    "    - " + ".".join(changes) + "\n" +
-                                    "    - " + ".".join(other_changes) + "\n" +
-                                    "\n" + changes_note + "\n\n")
+                        esm_parser.user_error(
+                            "YAML syntax",
+                            "The following ``_changes`` can be accessed "
+                            + "simultaneously in "
+                            + fpath
+                            + ":\n"
+                            + "    - "
+                            + ".".join(changes)
+                            + "\n"
+                            + "    - "
+                            + ".".join(other_changes)
+                            + "\n"
+                            + "\n"
+                            + changes_note
+                            + "\n\n",
+                        )
 
         # Loop through the different ``add_`` groups
         for add_group in add_groups:
@@ -422,9 +466,9 @@ def find_last_choose(var_path):
     # Find the last ``choose_`` index
     choose_index = var_path.index(last_choose)
     # Defines the path to the last ``choose_``
-    path2choose = ",".join(var_path[:var_path.index(last_choose)+1])
+    path2choose = ",".join(var_path[: var_path.index(last_choose) + 1])
     # Defines the case of the last ``choose_``
-    case = var_path[choose_index+1]
+    case = var_path[choose_index + 1]
     return path2choose, case
 
 
@@ -446,9 +490,9 @@ def check_duplicates(src):
     """
 
     class PreserveDuplicatesLoader(yaml.loader.Loader):
-    # We deliberately define a fresh class inside the function,
-    # because add_constructor is a class method and we don't want to
-    # mutate pyyaml classes.
+        # We deliberately define a fresh class inside the function,
+        # because add_constructor is a class method and we don't want to
+        # mutate pyyaml classes.
         pass
 
     def map_constructor(loader, node, deep=False):
@@ -461,15 +505,20 @@ def check_duplicates(src):
             value = loader.construct_object(value_node, deep=deep)
 
             if key in mapping:
-                esm_parser.user_error("Duplicated variables",
-                    "Key ``{0}`` is duplicated {1}\n\n"
-                    .format(key, str(key_node.start_mark).replace("  ","").split(",")[0]))
+                esm_parser.user_error(
+                    "Duplicated variables",
+                    "Key ``{0}`` is duplicated {1}\n\n".format(
+                        key, str(key_node.start_mark).replace("  ", "").split(",")[0]
+                    ),
+                )
 
             mapping[key] = value
 
         return loader.construct_mapping(node, deep)
 
-    PreserveDuplicatesLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, map_constructor)
+    PreserveDuplicatesLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, map_constructor
+    )
     new_loader = create_env_loader(loader=PreserveDuplicatesLoader)
     return yaml.load(src, Loader=new_loader)
 
@@ -505,7 +554,9 @@ class EsmConfigFileError(Exception):
             print("\n\n\n" + yaml_error)
         else:
             # If tabs are found print the report
-            self.message = "\n\n\n" \
-                           f"Your file {fpath} has tabs, please use ONLY spaces!\n" \
-                            "Tabs are in following lines:\n" + report
+            self.message = (
+                "\n\n\n"
+                f"Your file {fpath} has tabs, please use ONLY spaces!\n"
+                "Tabs are in following lines:\n" + report
+            )
         super().__init__(self.message)

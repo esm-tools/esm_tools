@@ -12,17 +12,18 @@ from . import coupler, database_actions, helpers
 from .filelists import copy_files, resolve_symlinks
 from . import logfiles
 
+
 def run_job(config):
     config["general"]["relevant_filetypes"] = [
         "log",
         "mon",
         "outdata",
         "restart_out",
-        #"bin",
-        #"config",
-        #"forcing",
-        #"input",
-        #"restart_in",
+        # "bin",
+        # "config",
+        # "forcing",
+        # "input",
+        # "restart_in",
         "ignore",
         "unknown",
     ]
@@ -43,83 +44,81 @@ def tidy_coupler(config):
     return config
 
 
-
-
 def clean_run_dir(config):
     """
-     This plugin allows you to clean up the ``run_${DATE}`` folders.
-     To do that you can use the following variables under the
-     ``general`` section of your runscript (documentation follows order
-     of code as it is executed):
+    This plugin allows you to clean up the ``run_${DATE}`` folders.
+    To do that you can use the following variables under the
+    ``general`` section of your runscript (documentation follows order
+    of code as it is executed):
 
-     * ``clean_runs``: **This is the most important variable for most
-       users**. It can take the following values:
-         * ``True``: removes the ``run_`` directory after each run
-           (**overrides every other** ``clean_`` **option**).
+    * ``clean_runs``: **This is the most important variable for most
+      users**. It can take the following values:
+        * ``True``: removes the ``run_`` directory after each run
+          (**overrides every other** ``clean_`` **option**).
 
-         * ``False``: does not remove any ``run_`` directory (default)
-           if no ``clean_`` variable is defined.
+        * ``False``: does not remove any ``run_`` directory (default)
+          if no ``clean_`` variable is defined.
 
-         * ``<int>``: giving an integer as a value results in deleting
-           the ``run_`` folders except for the last <int> runs
-           (recommended option as it allows for debugging of crashed
-           simulations).
+        * ``<int>``: giving an integer as a value results in deleting
+          the ``run_`` folders except for the last <int> runs
+          (recommended option as it allows for debugging of crashed
+          simulations).
 
-       .. Note::
-          ``clean_runs: (bool)`` is incompatible with
-          ``clean_this_rundir`` and ``clean_runs: (int)`` is incompatible
-          with ``clean_old_rundirs_except`` (an error will be raised
-          after the end of the first simulation). The functionality of
-          ``clean_runs`` variable **alone will suffice most of the
-          standard user requirements**. If finer tunning for the removal
-          of ``run_`` directories is required you can used the following
-          variables instead of ``clean_runs``.
+      .. Note::
+         ``clean_runs: (bool)`` is incompatible with
+         ``clean_this_rundir`` and ``clean_runs: (int)`` is incompatible
+         with ``clean_old_rundirs_except`` (an error will be raised
+         after the end of the first simulation). The functionality of
+         ``clean_runs`` variable **alone will suffice most of the
+         standard user requirements**. If finer tunning for the removal
+         of ``run_`` directories is required you can used the following
+         variables instead of ``clean_runs``.
 
-     * ``clean_this_rundir``: (bool) Removes the entire run directory
-       (equivalent to ``clean_runs: (bool)``). ``clean_this_rundir: True``
-       **overrides every other** ``clean_`` **option**.
+    * ``clean_this_rundir``: (bool) Removes the entire run directory
+      (equivalent to ``clean_runs: (bool)``). ``clean_this_rundir: True``
+      **overrides every other** ``clean_`` **option**.
 
-     * ``clean_old_rundirs_except``: (int) Removes the entire run
-       directory except for the last <x> runs (equivalent to
-       ``clean_runs: (int)``).
+    * ``clean_old_rundirs_except``: (int) Removes the entire run
+      directory except for the last <x> runs (equivalent to
+      ``clean_runs: (int)``).
 
-     * ``clean_old_rundirs_keep_every``: (int) Removes the entire
-       run directory except every <x>th run. Compatible with
-       ``clean_old_rundirs_except`` or ``clean_runs: (int)``.
+    * ``clean_old_rundirs_keep_every``: (int) Removes the entire
+      run directory except every <x>th run. Compatible with
+      ``clean_old_rundirs_except`` or ``clean_runs: (int)``.
 
-     * ``clean_<filetype>_dir``: (bool) Erases the run directory
-       for a specific filetype. Compatible with all the other options.
+    * ``clean_<filetype>_dir``: (bool) Erases the run directory
+      for a specific filetype. Compatible with all the other options.
 
-     * ``clean_size``: (int or float) Erases all files with size
-       greater than ``clean_size``, must be specified in bytes! Compatible
-       with all the other options.
+    * ``clean_size``: (int or float) Erases all files with size
+      greater than ``clean_size``, must be specified in bytes! Compatible
+      with all the other options.
 
-     Example
-     -------
+    Example
+    -------
 
-     To delete all the ``run_`` directories in your experiment include this
-     into your runscript:
+    To delete all the ``run_`` directories in your experiment include this
+    into your runscript:
 
-     .. code-block:: yaml
+    .. code-block:: yaml
 
-        general:
-                clean_runs: True
+       general:
+               clean_runs: True
 
-     To keep the last 2 ``run_`` directories:
+    To keep the last 2 ``run_`` directories:
 
-     .. code-block:: yaml
+    .. code-block:: yaml
 
-        general:
-                clean_runs: 2
+       general:
+               clean_runs: 2
 
-     To keep the last 2 runs and every 5 runs:
+    To keep the last 2 runs and every 5 runs:
 
-     .. code-block:: yaml
+    .. code-block:: yaml
 
-        general:
-                clean_old_rundirs_except: 2
-                clean_old_rundirs_keep_every: 5
-     """
+       general:
+               clean_old_rundirs_except: 2
+               clean_old_rundirs_keep_every: 5
+    """
     _clean_run_determine_user_choice(config)
     _clean_this_rundir(config)
     _clean_old_rundirs_except(config)
@@ -267,7 +266,6 @@ def _clean_old_runs_size(config):
             os.remove(file_)
 
 
-
 def throw_away_some_infiles(config):
     if config["general"]["run_number"] == 1:
         return config
@@ -277,13 +275,14 @@ def throw_away_some_infiles(config):
         print(f"{model}")
         if "thisrun_restart_in_dir" in config[model]:
             if os.path.isdir(config[model]["thisrun_restart_in_dir"]):
-                for root, dirs, files in os.walk(config[model]["thisrun_restart_in_dir"]):
+                for root, dirs, files in os.walk(
+                    config[model]["thisrun_restart_in_dir"]
+                ):
                     for name in files:
                         source = os.path.join(root, name)
                         os.remove(source)
                         print(f"Removing {source}")
     return config
-
 
 
 def copy_all_results_to_exp(config):
@@ -301,8 +300,8 @@ def copy_all_results_to_exp(config):
 
         for name in files:
             source = os.path.join(root, name)
-           
-            if not os.stat(source).st_size > 0: # skip empty files
+
+            if not os.stat(source).st_size > 0:  # skip empty files
                 continue
 
             if config["general"]["verbose"]:
@@ -364,15 +363,15 @@ def copy_all_results_to_exp(config):
                     )
             else:
                 linkdest = resolve_symlinks(source)
-                #newlinkdest = (
+                # newlinkdest = (
                 #    destination.rsplit("/", 1)[0] + "/" + linkdest.rsplit("/", 1)[-1]
-                #)
+                # )
                 if os.path.islink(destination):
                     destdest = resolve_symlinks(source)
                     if linkdest == destdest:
                         # both links are identical, skip
                         continue
-                    #os.remove(destination)
+                    # os.remove(destination)
                 if os.path.isfile(destination):
                     os.rename(
                         destination,

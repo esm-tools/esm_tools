@@ -13,7 +13,7 @@ FUNCTION_PATH = esm_rcfile.get_rc_entry("FUNCTION_PATH", default="/dev/null")
 ESM_MASTER_DIR = os.getenv("PWD")
 
 # PG: COMPONENTS_YAML is now built out of multiple small ones
-#COMPONENTS_YAML = FUNCTION_PATH + "/esm_master/setups2models.yaml"
+# COMPONENTS_YAML = FUNCTION_PATH + "/esm_master/setups2models.yaml"
 if not FUNCTION_PATH.startswith("/dev/null"):
     COMPONENTS_DIR = FUNCTION_PATH + "/components/"
     SETUPS_DIR = FUNCTION_PATH + "/setups/"
@@ -29,7 +29,9 @@ else:
     COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
     DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
     ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
-    CONFIG_YAML = esm_tools.get_config_filepath("/esm_software/esm_master/esm_master.yaml")
+    CONFIG_YAML = esm_tools.get_config_filepath(
+        "/esm_software/esm_master/esm_master.yaml"
+    )
     VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
 
 OVERALL_CONF_FILE = esm_rcfile.rcfile
@@ -66,10 +68,10 @@ def tab_completion(parsed_args, setups2models):
         return 0
 
 
-
 ######################################################################################
 ############################## Write a tiny user script ##############################
 ######################################################################################
+
 
 def write_minimal_user_config(config):
     """
@@ -84,23 +86,22 @@ def write_minimal_user_config(config):
     user_config = {}
 
     for model in config["components"]:
-            version = config["components"][model]["version"]
-            model_dir = config["components"][model]["model_dir"]
-            user_config.update(
-                {model: {"model": model, "version": version, "model_dir": model_dir}}
-            )
+        version = config["components"][model]["version"]
+        model_dir = config["components"][model]["model_dir"]
+        user_config.update(
+            {model: {"model": model, "version": version, "model_dir": model_dir}}
+        )
 
     if "setups" in config:
-            coupled = "true"
-            setup = list(config["setups"])[0]
-            version = config["setups"][setup]["version"]
-            model_dir = config["setups"][setup]["model_dir"]
+        coupled = "true"
+        setup = list(config["setups"])[0]
+        version = config["setups"][setup]["version"]
+        model_dir = config["setups"][setup]["model_dir"]
 
     else:
-            coupled = "false"
-            setup = list(config["components"])[0]
-            version = config["components"][setup]["version"]
-
+        coupled = "false"
+        setup = list(config["components"])[0]
+        version = config["components"][setup]["version"]
 
     user_config.update(
         {
@@ -119,13 +120,11 @@ def write_minimal_user_config(config):
         }
     )
 
-    if 'general.yaml' in os.listdir(DEFAULTS_DIR):
+    if "general.yaml" in os.listdir(DEFAULTS_DIR):
         general_config = esm_parser.yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
         user_config["general"].update(general_config)
 
     return user_config
-
-
 
 
 ######################################################################################
@@ -140,7 +139,6 @@ class GeneralInfos:
         self.emc = self.read_and_update_conf_files()
         self.meta_todos, self.meta_command_order = self.get_meta_command()
         self.display_kinds = self.get_display_kinds()
-
 
         if parsed_args.get("verbose", False):
             self.output()
@@ -248,15 +246,21 @@ class version_control_infos:
             try:
                 raw_command = self.config[package.repo_type][todo + "_command"]
 
-# kh 11.09.20 support git options like --recursive
+                # kh 11.09.20 support git options like --recursive
                 # repo_options in the model.yaml is assigned to define_options
                 if package.repo_options:
                     define_options = self.config[package.repo_type]["define_options"]
-                    raw_command = raw_command.replace("${define_options}", define_options)
-                    raw_command = raw_command.replace("${repo_options}", package.repo_options)
+                    raw_command = raw_command.replace(
+                        "${define_options}", define_options
+                    )
+                    raw_command = raw_command.replace(
+                        "${repo_options}", package.repo_options
+                    )
                 else:
                     raw_command = raw_command.replace("${define_options} ", "")
-                    raw_command = raw_command.replace("${repo_options}", "")  # kh 11.09.20 should not really be necessary
+                    raw_command = raw_command.replace(
+                        "${repo_options}", ""
+                    )  # kh 11.09.20 should not really be necessary
                 if package.branch:
                     define_branch = self.config[package.repo_type]["define_branch"]
                     raw_command = raw_command.replace("${define_branch}", define_branch)
@@ -272,11 +276,13 @@ class version_control_infos:
                 else:
                     raw_command = raw_command.replace("${define_tag} ", "")
                     raw_command = raw_command.replace("${tag}", "")
-                    
+
                 # deniz: pipe support. Eg. curl foo.tar.gz | tar xz
                 # pipe_options is given in model yaml file
                 if package.pipe_options:
-                    raw_command = raw_command.replace("${pipe_options}", package.pipe_options)
+                    raw_command = raw_command.replace(
+                        "${pipe_options}", package.pipe_options
+                    )
             except:
                 print("Sorry, no " + todo + "_command defined for " + package.repo_type)
                 sys.exit(42)
@@ -296,7 +302,7 @@ class version_control_infos:
                 if package.repo_type == "curl":
                     raw_command = raw_command.replace("${curl-repository}", repo)
                     # return so that it is not overwritten
-                    return raw_command   
+                    return raw_command
                 if package.clone_destination:
                     raw_command = raw_command + " " + package.clone_destination
                 elif package.destination:
@@ -312,16 +318,3 @@ class version_control_infos:
         esm_parser.pprint_config(self.config)
         print("Known repos: " + str(self.known_repos))
         print("Known vcs-commands: " + str(self.known_todos))
-
-
-
-
-
-
-
-
-
-
-
-
-

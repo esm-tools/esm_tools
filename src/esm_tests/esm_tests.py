@@ -184,7 +184,9 @@ def deep_update(d, u):
 
 
 def copy_comp_files4check_runs(script, script_info, target_dir):
-    files4check_dir = f"{os.path.dirname(script_info['path'])}/comp_files4check_runs/{script}"
+    files4check_dir = (
+        f"{os.path.dirname(script_info['path'])}/comp_files4check_runs/{script}"
+    )
     if os.path.isdir(files4check_dir):
         source_dir = f"{files4check_dir}/{os.listdir(files4check_dir)[0]}"
         combine_folders(source_dir, target_dir)
@@ -392,7 +394,13 @@ def run_test(scripts_info, info):
                             subc += 1
                             v["state"]["run_finished"] = True
                             success = check(
-                                info, "run", model, version, "", script, v,
+                                info,
+                                "run",
+                                model,
+                                version,
+                                "",
+                                script,
+                                v,
                             )
                         elif "ERROR:" in monitoring_out:
                             logger.info(
@@ -403,7 +411,13 @@ def run_test(scripts_info, info):
                             subc += 1
                             v["state"]["run_finished"] = False
                             success = check(
-                                info, "run", model, version, "", script, v,
+                                info,
+                                "run",
+                                model,
+                                version,
+                                "",
+                                script,
+                                v,
                             )
             if not info["keep_run_folders"]:
                 folders_to_remove = [
@@ -607,7 +621,9 @@ def get_rel_paths_compare_files(info, cfile, this_test_dir):
                 break
     elif cfile == "namelists":
         # Get path of the finished_config
-        s_config_yaml, _ = get_rel_paths_compare_files(info, "finished_config", this_test_dir)
+        s_config_yaml, _ = get_rel_paths_compare_files(
+            info, "finished_config", this_test_dir
+        )
         namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
         ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
         ldir.sort()
@@ -693,7 +709,7 @@ def print_diff(sscript, tscript, name, ignore_lines):
             pdifferences += f"\t\t{line}"
 
         logger.info(f"\n\tDifferences in {name}:\n{pdifferences}\n")
-        #input("Press enter to continue...")
+        # input("Press enter to continue...")
         identical = False
 
     return identical, differences
@@ -867,4 +883,3 @@ def sort_dict(dict_to_sort):
 #######################################################################################
 # SCRIPT
 #######################################################################################i
-

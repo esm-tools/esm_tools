@@ -15,38 +15,44 @@ from . import prev_run
 
 import esm_parser
 
+
 class SimulationSetup(object):
     def __init__(self, command_line_config=None, user_config=None):
 
         if not command_line_config and not user_config:
-            raise ValueError("SimulationSetup needs to be initialized with either command_line_config or user_config.")
-        
-        user_config = config_initialization.init_first_user_config(command_line_config, user_config)
+            raise ValueError(
+                "SimulationSetup needs to be initialized with either command_line_config or user_config."
+            )
 
-        self.config = config_initialization.complete_config_from_user_config(user_config)
+        user_config = config_initialization.init_first_user_config(
+            command_line_config, user_config
+        )
 
-        self.config = config_initialization.save_command_line_config(self.config, command_line_config)
+        self.config = config_initialization.complete_config_from_user_config(
+            user_config
+        )
 
-        #self.config = workflow.assemble(self.config)
+        self.config = config_initialization.save_command_line_config(
+            self.config, command_line_config
+        )
+
+        # self.config = workflow.assemble(self.config)
 
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.config = prepare.run_job(self.config)
 
-
-        #esm_parser.pprint_config(self.config)
-        #sys.exit(0)
-
-
+        # esm_parser.pprint_config(self.config)
+        # sys.exit(0)
 
     def __call__(self, kill_after_submit=True):
         if self.config["general"]["jobtype"] == "inspect":
-            #esm_parser.pprint_config(self.config)
+            # esm_parser.pprint_config(self.config)
             self.inspect()
             helpers.end_it_all(self.config)
-        
+
         self.config = prepexp.run_job(self.config)
 
-        #self.pseudocall(kill_after_submit)
+        # self.pseudocall(kill_after_submit)
         # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
         self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
@@ -57,7 +63,6 @@ class SimulationSetup(object):
             sys.stdout = logfiles.logfile_handle
             sys.stderr = logfiles.logfile_handle
 
-
         if self.config["general"]["jobtype"] == "prepcompute":
             self.prepcompute()
         elif self.config["general"]["jobtype"] == "tidy":
@@ -65,21 +70,25 @@ class SimulationSetup(object):
         elif self.config["general"]["jobtype"] == "viz":
             self.viz()
         elif self.config["general"]["jobtype"].startswith("observe"):
-            pid = self.config["general"]["command_line_config"].get("launcher_pid", -666)
+            pid = self.config["general"]["command_line_config"].get(
+                "launcher_pid", -666
+            )
             if not pid == -666:
                 self.observe()
 
-            self.config["general"]["jobtype"] = self.config["general"]["jobtype"].replace("observe_", "")
-            # that last line is necessary so that maybe_resubmit knows which 
+            self.config["general"]["jobtype"] = self.config["general"][
+                "jobtype"
+            ].replace("observe_", "")
+            # that last line is necessary so that maybe_resubmit knows which
             # cluster to look up in the workflow
 
-        else: 
+        else:
             self.assembler()
 
         resubmit.maybe_resubmit(self.config)
-        
+
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
-        
+
         if self.config["general"]["submitted"]:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
@@ -91,24 +100,20 @@ class SimulationSetup(object):
 
         return self.config["general"].get("experiment_over", False)
 
-
-
-
-#########################     OBSERVE      #############################################################
+    #########################     OBSERVE      #############################################################
 
     def observe(self):
-        
-        from . import observe
-        self.config = observe.run_job(self.config)
 
+        from . import observe
+
+        self.config = observe.run_job(self.config)
 
     def assembler(self):
         from . import assembler
+
         self.config = assembler.run_job(self.config)
 
-
-
-###################################     TIDY      #############################################################
+    ###################################     TIDY      #############################################################
     def tidy(self):
         """
         Performs steps for tidying up a simulation after a job has finished and
@@ -128,18 +133,17 @@ class SimulationSetup(object):
         folder**.
         """
         from . import tidy
+
         self.config = tidy.run_job(self.config)
 
-
-###################################     INSPECT      #############################################################
+    ###################################     INSPECT      #############################################################
     def inspect(self):
         from . import inspect
+
         print(f"Inspecting {self.config['general']['experiment_dir']}")
         self.config = inspect.run_job(self.config)
 
-
-
-###################################     PREPCOMPUTE      #############################################################
+    ###################################     PREPCOMPUTE      #############################################################
     def prepcompute(self):
         """
         All steps needed for a model computation.
@@ -151,10 +155,10 @@ class SimulationSetup(object):
             a ``sys.exit()`` as the very last after job submission.
         """
         from . import prepcompute
+
         self.config = prepcompute.run_job(self.config)
 
-
-###################################     VIZ     #############################################################
+    ###################################     VIZ     #############################################################
 
     def viz(self):
         """
@@ -167,7 +171,5 @@ class SimulationSetup(object):
         """
         # NOTE(PG): Local import, not everyone will have viz yet...
         import esm_viz as viz
+
         self.config = viz.run_job(self.config)
-
-
-

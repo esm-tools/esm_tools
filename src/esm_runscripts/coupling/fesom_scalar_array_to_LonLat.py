@@ -22,23 +22,26 @@ Additional code for command line parsing:
 # Command Line Parser
 #
 import argparse
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--FESOM_FILE", nargs="*", required=True)
     parser.add_argument("--FESOM_VARIABLE", nargs="+")
     parser.add_argument("--FESOM_MESH", nargs="+")
-    parser.add_argument("--FESOM_OUTPUT", nargs="*", default='fesom_output.nc4')
+    parser.add_argument("--FESOM_OUTPUT", nargs="*", default="fesom_output.nc4")
     parser.add_argument("--FESOM_MESH_ALPHA", type=int, default=50)
-    parser.add_argument("--FESOM_MESH_BETA",  type=int, default=15)
+    parser.add_argument("--FESOM_MESH_BETA", type=int, default=15)
     parser.add_argument("--FESOM_MESH_GAMMA", type=int, default=-90)
-    #parser.add_argument("--FESOM_MESH_ALPHA", nargs="+", type=float, default=50)   ### more arguments as a list 
-    #parser.add_argument("--FESOM_MESH_BETA", nargs="+", type=float, default=15)
-    #parser.add_argument("--FESOM_MESH_GAMMA", nargs="+", type=float, default=-90)
+    # parser.add_argument("--FESOM_MESH_ALPHA", nargs="+", type=float, default=50)   ### more arguments as a list
+    # parser.add_argument("--FESOM_MESH_BETA", nargs="+", type=float, default=15)
+    # parser.add_argument("--FESOM_MESH_GAMMA", nargs="+", type=float, default=-90)
     return parser.parse_args()
+
 
 args = parse_arguments()
 
-FESOMDATA_OUTPUT = 'fesom_output.nc4'
+FESOMDATA_OUTPUT = "fesom_output.nc4"
 
 NAN_REPLACE = 9.96921e36
 
@@ -48,6 +51,7 @@ NAN_REPLACE = 9.96921e36
 #
 
 import sys
+
 sys.path.append("./")
 sys.path.append("./pyfesom")
 
@@ -61,25 +65,25 @@ import time as time
 # Some information
 #
 
-print('* Start at '+time.ctime(time.time()))
+print("* Start at " + time.ctime(time.time()))
 
 # ----------------------------------------------------------------
 #
 # Read input data
 #
 # mesh
-print('* Read the mesh MESHPATH=' + " ".join(args.FESOM_MESH))
+print("* Read the mesh MESHPATH=" + " ".join(args.FESOM_MESH))
 
 euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
-#euler_angle = [element[0] for element in euler_angle]
+# euler_angle = [element[0] for element in euler_angle]
 
 mesh = pf.load_mesh(*args.FESOM_MESH, abg=euler_angle, get3d=True, usepickle=False)
-#w/o euler_angle: mesh = pf.load_mesh(*args.FESOM_MESH, get3d=True, usepickle=False)
+# w/o euler_angle: mesh = pf.load_mesh(*args.FESOM_MESH, get3d=True, usepickle=False)
 
 #
 # Oceanographic data
 #
-print('* Read the data file args.FESOM_FILE=' + " ".join(args.FESOM_FILE))
+print("* Read the data file args.FESOM_FILE=" + " ".join(args.FESOM_FILE))
 FID = MFDataset(args.FESOM_FILE)
 
 # ----------------------------------------------------------------
@@ -88,10 +92,10 @@ FID = MFDataset(args.FESOM_FILE)
 #
 # mesh.n2d = number of 2d nodes, mesh.e2d = number of 2d elements
 no_hori_elemnt = mesh.n2d
-#no_zlevels = mesh.nlev - 1
+# no_zlevels = mesh.nlev - 1
 no_zlevels = np.size(mesh.zlevs)
 
-timedim = 'time' if 'time' in FID.dimensions else 'T'
+timedim = "time" if "time" in FID.dimensions else "T"
 no_timesteps = FID.dimensions[timedim].dimtotlen
 sizeVert = no_zlevels
 sizeHori = no_hori_elemnt
@@ -109,7 +113,7 @@ TempFields_out = np.zeros(sizeFull, dtype=np.float64)
 #
 # Loop through all depth levels
 #
-print('* Loop for each time step through all depth levels')
+print("* Loop for each time step through all depth levels")
 
 #
 # Depth axis
@@ -122,14 +126,15 @@ for depth in mesh.zlevs:
     # Prepare data for final netcdf output
     #
     ilevel = ilevel + 1
-    print('*   ilevel='+str(ilevel)+' depth='+str(idepth)+\
-    ' ('+str(depth)+')')
+    print(
+        "*   ilevel=" + str(ilevel) + " depth=" + str(idepth) + " (" + str(depth) + ")"
+    )
     depth_out[ilevel] = depth
 
 #
 # Time axis
 #
-time_out = FID.variables['time'][0:no_timesteps]
+time_out = FID.variables["time"][0:no_timesteps]
 
 #
 # Full hydrographic fields
@@ -138,24 +143,33 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
     ##time_out[itime] = FID.variables['time'][itime]
     time_read = time_out[itime]
     # Some information
-    print('*   TIME('+str(itime)+') = '+str(time_read))
+    print("*   TIME(" + str(itime) + ") = " + str(time_read))
 
     ilevel = -1
     for depth in mesh.zlevs:
         # Some information
         idepth = np.int(depth)
-        print('*   depth='+str(idepth)+' ('+str(depth)+\
-        ')  ++ time('+str(itime)+') = '+str(time_read))
+        print(
+            "*   depth="
+            + str(idepth)
+            + " ("
+            + str(depth)
+            + ")  ++ time("
+            + str(itime)
+            + ") = "
+            + str(time_read)
+        )
 
         #
         # Prepare data for final netcdf output
         #
         ilevel = ilevel + 1
 
-        flag_verbose=False
+        flag_verbose = False
 
-        level_data, elem_no_nan = \
-        pf.get_data(FID.variables[args.FESOM_VARIABLE[0]][itime, :], mesh, idepth, flag_verbose)
+        level_data, elem_no_nan = pf.get_data(
+            FID.variables[args.FESOM_VARIABLE[0]][itime, :], mesh, idepth, flag_verbose
+        )
         level_data[np.where(np.isnan(level_data))] = NAN_REPLACE
         TempFields_out[itime, ilevel, :] = level_data
 
@@ -163,11 +177,11 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
 #
 # Output file
 #
-print('*   Create file "'+args.FESOM_OUTPUT[0]+'"')
-#OK: OCE_OUT = Dataset("".join(args.FESOM_OUTPUT), "w", format="NETCDF3_64BIT_OFFSET")
+print('*   Create file "' + args.FESOM_OUTPUT[0] + '"')
+# OK: OCE_OUT = Dataset("".join(args.FESOM_OUTPUT), "w", format="NETCDF3_64BIT_OFFSET")
 OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF3_64BIT_OFFSET")
 
-print('*     Create dimensions and define variables')
+print("*     Create dimensions and define variables")
 #
 # Create dimensions
 #
@@ -182,13 +196,13 @@ OCE_OUT.type = "FESOM_ocean_data"
 OCE_OUT.title = "FESOM hydrographic ocean data"
 OCE_OUT.model_domain = "Generic"
 OCE_OUT.data_input_file = args.FESOM_FILE
-OCE_OUT.insitution = 'Alfred Wegener Institute for Polar and Marine Research (AWI)'
-OCE_OUT.address = 'Handelshafen, Bremerhaven, Germany'
+OCE_OUT.insitution = "Alfred Wegener Institute for Polar and Marine Research (AWI)"
+OCE_OUT.address = "Handelshafen, Bremerhaven, Germany"
 OCE_OUT.department = "Climate"
-OCE_OUT.contact = 'Christian Rodehacke'
-OCE_OUT.web = 'http://www.awi.de'
-OCE_OUT.acknowledgment = 'ZUWEISS, BMWF, Germany'
-OCE_OUT.history = "Created "+time.ctime(time.time())
+OCE_OUT.contact = "Christian Rodehacke"
+OCE_OUT.web = "http://www.awi.de"
+OCE_OUT.acknowledgment = "ZUWEISS, BMWF, Germany"
+OCE_OUT.history = "Created " + time.ctime(time.time())
 
 #
 # Create variables
@@ -203,16 +217,24 @@ depth_var = OCE_OUT.createVariable("depth", "f4", ("level",))
 lon_var = OCE_OUT.createVariable("longitude", "f4", ("horizontal",))
 lat_var = OCE_OUT.createVariable("latitude", "f4", ("horizontal",))
 
-temp_var = OCE_OUT.createVariable(args.FESOM_VARIABLE[0], "f4", \
-    ("time", "level", "horizontal",), fill_value=NAN_REPLACE)
+temp_var = OCE_OUT.createVariable(
+    args.FESOM_VARIABLE[0],
+    "f4",
+    (
+        "time",
+        "level",
+        "horizontal",
+    ),
+    fill_value=NAN_REPLACE,
+)
 #
 # Attributes
 #
 time_var.long_name = "time"
 time_var.axis = "T"
-time_var.units = FID.variables['time'].units #"hours since 0001-0101 0:0:0.0"
-if hasattr(FID.variables['time'], 'calendar'):
-    time_var.calendar = FID.variables['time'].calendar #"standard"
+time_var.units = FID.variables["time"].units  # "hours since 0001-0101 0:0:0.0"
+if hasattr(FID.variables["time"], "calendar"):
+    time_var.calendar = FID.variables["time"].calendar  # "standard"
 
 level_var.long_name = "model_level"
 level_var.description = "Level number"
@@ -225,7 +247,7 @@ hori_var.axis = "X"
 depth_var.long_name = "depth"
 depth_var.units = "m"
 depth_var.description = "depth below sea level"
-depth_var.positive = 'down'
+depth_var.positive = "down"
 
 lon_var.long_name = "longitude"
 lon_var.units = "degrees east"
@@ -241,7 +263,7 @@ temp_var.missing_value = NAN_REPLACE
 #
 # Write the data fields
 #
-print('*     Write the small fields')
+print("*     Write the small fields")
 # -- axis variables
 time_var[:] = time_out
 level_var[:] = np.arange(0, sizeVert, dtype=np.int32)
@@ -252,7 +274,7 @@ depth_var[:] = mesh.zlevs
 lon_var[:] = mesh.x2
 lat_var[:] = mesh.y2
 
-print('*     Write the larger fields')
+print("*     Write the larger fields")
 temp_var[:] = TempFields_out
 
 #
@@ -263,5 +285,5 @@ OCE_OUT.close()
 #
 # Bye bye
 #
-print('End   at '+time.ctime(time.time()))
+print("End   at " + time.ctime(time.time()))
 print("    ... Bye")

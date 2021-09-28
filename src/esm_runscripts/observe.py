@@ -18,28 +18,30 @@ def init_monitor_file(config):
     observe_job = config["general"]["jobtype"]
     actual_job = observe_job.replace("observe_", "")
     called_from = actual_job
-    #called_from = config["general"]["last_jobtype"]
+    # called_from = config["general"]["last_jobtype"]
 
     del config["general"]["command_line_config"]["launcher_pid"]
 
     exp_log_path = (
-        config["general"]["experiment_log_dir"] +
-        config["general"]["expid"] +
-        "_" +
-        called_from + 
-        "_" +
-        config["general"]["run_datestamp"] +
-        #"_" +
-        #str(config["general"]["jobid"]) +
+        config["general"]["experiment_log_dir"]
+        + config["general"]["expid"]
+        + "_"
+        + called_from
+        + "_"
+        + config["general"]["run_datestamp"]
+        +
+        # "_" +
+        # str(config["general"]["jobid"]) +
         ".log"
     )
     log_in_run = (
-        config["general"]["thisrun_log_dir"] +
-        config["general"]["expid"] +
-        "_" + 
-        called_from +
-        #"_" + 
-        #str(config["general"]["jobid"]) +
+        config["general"]["thisrun_log_dir"]
+        + config["general"]["expid"]
+        + "_"
+        + called_from
+        +
+        # "_" +
+        # str(config["general"]["jobid"]) +
         ".log"
     )
 
@@ -48,8 +50,8 @@ def init_monitor_file(config):
 
     monitor_file = logfiles.logfile_handle
 
-    print (called_from)
-    print (exp_log_path)
+    print(called_from)
+    print(exp_log_path)
 
     monitor_file.write("observing job initialized \n")
     monitor_file.write(
@@ -91,7 +93,6 @@ def assemble_error_list(config):
         config["general"]["error_list"] = []
         return config
 
-
     known_methods = ["warn", "kill"]
 
     stdout = (
@@ -100,8 +101,8 @@ def assemble_error_list(config):
         + gconfig["expid"]
         + "_compute_"
         + gconfig["run_datestamp"]
-        #+ "_"
-        #+ gconfig["jobid"]
+        # + "_"
+        # + gconfig["jobid"]
         + ".log"
     )
 
@@ -146,7 +147,7 @@ def assemble_error_list(config):
 
 def check_for_errors(config):
     thisjob = config["general"]["jobtype"]
-    called_from = thisjob.replace("observe_",  "")
+    called_from = thisjob.replace("observe_", "")
     if not called_from == "compute":
         return config
 
@@ -195,5 +196,3 @@ def job_is_still_running(config):
     if psutil.pid_exists(config["general"]["launcher_pid"]):
         return True
     return False
-
-

@@ -14,14 +14,13 @@ import coloredlogs
 
 from .esm_database import *
 
-def parse_shargs():
-    """ The arg parser for interactive use """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("table", nargs='?', default=None)
 
-    parser.add_argument(
-        "-f", "--find", help="Find keyword", default=None
-    )
+def parse_shargs():
+    """The arg parser for interactive use"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("table", nargs="?", default=None)
+
+    parser.add_argument("-f", "--find", help="Find keyword", default=None)
 
     return parser.parse_args()
 
@@ -32,7 +31,7 @@ def main():
     find = None
 
     parsed_args = vars(ARGS)
-    
+
     if "find" in parsed_args:
         find = parsed_args["find"]
 

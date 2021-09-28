@@ -27,6 +27,7 @@ def find_remaining_minutes(seconds):
 # same...
 find_remaining_hours = find_remaining_minutes
 
+
 def date_range(start_date, stop_date, frequency):
     if isinstance(start_date, str):
         start_date = Date(start_date)
@@ -317,9 +318,14 @@ class Date(object):
         self.year, self.month, self.day, self.hour, self.minute, self.second = map(
             int, ndate
         )
-        self.syear, self.smonth, self.sday, self.shour, self.sminute, self.ssecond = map(
-            str, ndate
-        )
+        (
+            self.syear,
+            self.smonth,
+            self.sday,
+            self.shour,
+            self.sminute,
+            self.ssecond,
+        ) = map(str, ndate)
 
         self._calendar = calendar
         self.doy = self.day_of_year()
@@ -617,7 +623,6 @@ class Date(object):
         if diff[1] < 0:
             diff[0] = diff[0] - 1
 
-
         while d2[0] > d1[0]:
             diff[0] += 1
             diff[1] += 12
@@ -800,7 +805,7 @@ class Date(object):
         something similar. Here, we put the overflowed time into the
         appropriate unit.
         """
-        #ndate = copy.deepcopy(self)
+        # ndate = copy.deepcopy(self)
         ndate[4] = ndate[4] + ndate[5] // 60
         ndate[5] = ndate[5] % 60
 
@@ -819,7 +824,6 @@ class Date(object):
             ndate[0] = ndate[0] + (ndate[1] - 1) // 12
             ndate[1] = (ndate[1] - 1) % 12 + 1
 
-
         ndate[0] = ndate[0] + (ndate[1] - 1) // 12
         ndate[1] = (ndate[1] - 1) % 12 + 1
 
@@ -836,12 +840,12 @@ class Date(object):
 
         return ndate
 
-        #self.year, self.month, self.day, self.hour, self.minute, self.second = map(
+        # self.year, self.month, self.day, self.hour, self.minute, self.second = map(
         #    int, ndate
-        #)
-        #self.syear, self.smonth, self.sday, self.shour, self.sminute, self.ssecond = map(
+        # )
+        # self.syear, self.smonth, self.sday, self.shour, self.sminute, self.ssecond = map(
         #    str, ndate
-        #)
+        # )
 
     def add(self, to_add):
         """

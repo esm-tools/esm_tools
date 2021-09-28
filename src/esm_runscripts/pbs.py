@@ -106,11 +106,15 @@ class Pbs:
             # Total number of PEs (MPI-ranks) (e.g. aprun -n)
             nproc = config[model]["nproc"]
             # Cores per node
-            #cores_per_node = config["computer"]["cores_per_node"]
+            # cores_per_node = config["computer"]["cores_per_node"]
             if cluster == "compute":
-                cores_per_node = config['computer']['partitions']['compute']['cores_per_node']
+                cores_per_node = config["computer"]["partitions"]["compute"][
+                    "cores_per_node"
+                ]
             else:
-                cores_per_node = config['computer']['partitions']['pp']['cores_per_node']
+                cores_per_node = config["computer"]["partitions"]["pp"][
+                    "cores_per_node"
+                ]
             # Define OMP threads if heterogeneous MPI-OMP
             if config["computer"].get("heterogeneous_parallelization", False):
                 omp_num_threads = config[model].get("omp_num_threads", 1)

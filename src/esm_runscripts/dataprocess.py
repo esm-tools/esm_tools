@@ -1,21 +1,18 @@
 import os
 import importlib.util
 
+
 def subjob_environment(config, subjob):
 
     task_list = []
     subjob_config = config["general"]["workflow"]["subjobs"][subjob]
-
 
     env_preparation = subjob_config.get("env_preparation", False)
     scriptdir = subjob_config.get("script_dir", False)
 
     if env_preparation:
         env = assemble_filename(env_preparation, scriptdir, config)
-        spec = importlib.util.spec_from_file_location(
-                subjob, 
-                env
-                )
+        spec = importlib.util.spec_from_file_location(subjob, env)
         envmodule = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(envmodule)
 
@@ -23,7 +20,6 @@ def subjob_environment(config, subjob):
         task_list += export_string(env_dict)
 
     return task_list
-
 
 
 def subjob_tasks(config, subjob):
@@ -38,9 +34,8 @@ def subjob_tasks(config, subjob):
     else:
         bare_subjob = subjob
     logfile_name = os.path.basename(old_logfile).replace(
-            config["general"]["jobtype"],
-            bare_subjob
-            )
+        config["general"]["jobtype"], bare_subjob
+    )
 
     new_logfile = os.path.join(logfile_dir, logfile_name)
 
@@ -49,11 +44,11 @@ def subjob_tasks(config, subjob):
     call_function = subjob_config.get("call_function", False)
 
     if script:
-        script = assemble_filename(script, scriptdir, config) 
-        #task_list += add_scriptcall(script, cluster, config)
+        script = assemble_filename(script, scriptdir, config)
+        # task_list += add_scriptcall(script, cluster, config)
         if subjob_config["batch_or_shell"] == "batch":
             task_list += [
-                f"time {config['computer']['launcher']} "\
+                f"time {config['computer']['launcher']} "
                 f"{config['computer']['launcher_flags']} {script} 2>&1 &"
             ]
         else:
@@ -84,13 +79,13 @@ def export_string(environment_dict):
     return export_string
 
 
-#def run_job(config):
+# def run_job(config):
 #    config["general"]["relevant_filetypes"] = ["log", "mon", "outdata", "restart_out","bin", "config", "forcing", "input", "restart_in", "ignore"]
 #    helpers.evaluate(config, "dataprocess", "data_recipe")
 #    return config
 #
-#    
-#def _assemble_dataprocess_tasks(config):
+#
+# def _assemble_dataprocess_tasks(config):
 ##    """
 #    Generates all tasks for data processing which will be written to the sad file.
 #
@@ -126,7 +121,7 @@ def export_string(environment_dict):
 #
 #
 #
-#def cluster_scriptcall(scriptcall, cluster, config):
+# def cluster_scriptcall(scriptcall, cluster, config):
 #
 #    submit = cluster.get("submit_to_batch_system", False)
 #    order = cluster.get("order_in_cluster", False)
@@ -141,7 +136,7 @@ def export_string(environment_dict):
 #
 
 
-#def tasks_of_one_subjob(config, cluster, subjob):
+# def tasks_of_one_subjob(config, cluster, subjob):
 #    task_list = []
 #    subjob_config = config["general"]["worksflow"]["subjobs"][subjob]
 #
@@ -151,32 +146,24 @@ def export_string(environment_dict):
 #    script = subjob_config.get(script, False)
 #
 #    if env_preparation:
-#        env_preparation = assemble_filename(env_preparation, scriptdir, config) 
+#        env_preparation = assemble_filename(env_preparation, scriptdir, config)
 #        task_list.append(add_environment(env_preparation, config))
 #
 ##    if script:
-#        script = assemble_filename(script, scriptdir, config) 
+#        script = assemble_filename(script, scriptdir, config)
 #        task_list.append(add_scriptcall(script, cluster, config))
 #
 #    return task_list
 #
 #
 #
-#def tasks_of_one_cluster(config, cluster):
+# def tasks_of_one_cluster(config, cluster):
 #    task_list = []
 #    clusterconfig = config["general"]["next_clusters"][cluster]
 #    for subjob in clusterconfig["subjobs"]:
 #        task_list.append(tasks_of_one_subjob(config, cluster, subjob))
 #
 ##    return task_list
-    
-
-        
-
-
-
-
-
 
 
 #    for component in config["general"]["valid_model_names"]:
@@ -186,19 +173,19 @@ def export_string(environment_dict):
 #        post_task_list.append("\n#Postprocessing %s\n" % component)
 #        post_task_list.append("cd "+ config[component]["experiment_outdata_dir"]+"\n")
 #
- #       pconfig_tasks = config[component].get('postprocess_tasks', {})
- ##       pconfig_scripts = config[component].get('postprocessing_scripts', {})
+#       pconfig_tasks = config[component].get('postprocess_tasks', {})
+##       pconfig_scripts = config[component].get('postprocessing_scripts', {})
 #
 #        post_file.write("Configuration for post processing: %s \n" % pconfig_tasks)
 #
- #       for script in pconfig_scripts:
- #           postscript_name = pconfig_scripts.get("postprocessing_script_name", None)
- ##           postscript_dir = pconfig_scripts.get("postprocessing_dir", None)
+#       for script in pconfig_scripts:
+#           postscript_name = pconfig_scripts.get("postprocessing_script_name", None)
+##           postscript_dir = pconfig_scripts.get("postprocessing_dir", None)
 #
 #            envscript_name = pconfig_scripts.get("postprocessing_envscript_name", None)
 #
 #            postscript_name = assemble_filename(postscript_name, postscript_dir, config)
- #           envscript_name = assemble_filename(envscript_name, postscript_dir, config)
+#           envscript_name = assemble_filename(envscript_name, postscript_dir, config)
 ##
 #            if envscript_name:
 #                environment_dict = envscript_name(config)
@@ -214,8 +201,7 @@ def export_string(environment_dict):
 #
 #
 
-#?????
-#def write_simple_postscript(config):
+# ?????
+# def write_simple_postscript(config):
 #    batch_system.write_simple_runscript(config)
 #    return config
-

@@ -14,6 +14,7 @@ import yaml
 import time
 from esm_runscripts import color_diff
 
+
 def compile_run_all(dir_name, esm_elements, option):
 
     # Create directory
@@ -23,7 +24,9 @@ def compile_run_all(dir_name, esm_elements, option):
             return
     else:
         if os.path.isdir(dir_name):
-            delete = input(f"{dir_name} already exists, do you want to delete it and calculate it again (y/n)? ")
+            delete = input(
+                f"{dir_name} already exists, do you want to delete it and calculate it again (y/n)? "
+            )
             if delete is "y":
                 shutil.rmtree(dir_name)
             else:
@@ -50,15 +53,26 @@ def compile_run_all(dir_name, esm_elements, option):
         for version in versions:
             c += 1
 
-            if option=="compile":
+            if option == "compile":
                 comp_specific(element, version)
-            elif option=="run":
+            elif option == "run":
                 run_specific(element, version)
             else:
                 logger.error(f"Option {option} not valid!")
 
-            run = c/niter
-            print('|' + u'\u2588' * round(rep*run) + ' ' * round(rep*(1-run)) + '| ' + str(round(run*1000)/10) + '%   ' + element + version + ' '*20, end="\r")
+            run = c / niter
+            print(
+                "|"
+                + "\u2588" * round(rep * run)
+                + " " * round(rep * (1 - run))
+                + "| "
+                + str(round(run * 1000) / 10)
+                + "%   "
+                + element
+                + version
+                + " " * 20,
+                end="\r",
+            )
 
     os.chdir(top_dir)
 
@@ -76,7 +90,7 @@ def comp_specific(element, version):
             if len(found_format) > 0:
                 if ";" not in found_format[0] and "/" not in found_format[0]:
                     folders.append(found_format[0])
-    if len(folders)==0:
+    if len(folders) == 0:
         logger.warning(f'NOT TESTING {element + version}: "cd" command not found')
         return
     prim_f = folders[0]
@@ -97,7 +111,9 @@ def comp_specific(element, version):
     for f in lfiles:
         if f.startswith("comp-"):
             if os.path.isfile(prim_f + "/" + f):
-                logger.debug(f"{prim_f + '/' + f} already existed. REMOVED and copied again!")
+                logger.debug(
+                    f"{prim_f + '/' + f} already existed. REMOVED and copied again!"
+                )
                 os.remove(prim_f + "/" + f)
             shutil.move(f, prim_f)
             file_counter += 1
@@ -130,7 +146,7 @@ def run_specific(element, version):
         },
         element: {
             "model_dir": "nowhere",
-        }
+        },
     }
     # Prepare the yaml file
     with open("generic_runscript.yaml", "w") as runscript_file:
@@ -138,7 +154,9 @@ def run_specific(element, version):
 
     # Run checks
     this_dir = os.getcwd()
-    out = sh(f"esm_runscripts generic_runscript.yaml -e env_testing -c -v --open-run -U")
+    out = sh(
+        f"esm_runscripts generic_runscript.yaml -e env_testing -c -v --open-run -U"
+    )
     if os.path.isdir("/work/ollie/mandresm/esm_yaml_test/env_testing/scripts"):
         os.chdir("/work/ollie/mandresm/esm_yaml_test/env_testing/scripts")
     else:
@@ -150,7 +168,10 @@ def run_specific(element, version):
     # File copying and cleanup
     os.mkdir(f"{element}{vname}")
     test_path = "/work/ollie/mandresm/esm_yaml_test/env_testing"
-    sad_path = test_path + "/run_20000101-20001231/scripts/env_testing_compute_20000101-20001231.sad"
+    sad_path = (
+        test_path
+        + "/run_20000101-20001231/scripts/env_testing_compute_20000101-20001231.sad"
+    )
     if not os.path.isfile(sad_path):
         logger.error(f"{element}{vname} sad file was not generated properly")
     else:
@@ -159,8 +180,10 @@ def run_specific(element, version):
 
 
 def sh(inp_str):
-    p = subprocess.Popen(inp_str.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = p.communicate()[0].decode('utf-8')
+    p = subprocess.Popen(
+        inp_str.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out = p.communicate()[0].decode("utf-8")
     return out
 
 
@@ -215,9 +238,11 @@ def compare_scripts(stable, test):
             if "comp-" in f or "run-" in f:
                 comps.append(f)
 
-        logger.info("\n" + len(element)*"=" + f"\n{element}\n" + len(element)*"=" + "\n")
+        logger.info(
+            "\n" + len(element) * "=" + f"\n{element}\n" + len(element) * "=" + "\n"
+        )
         for comp in comps:
-            logger.info(f"\n{comp}\n" + len(comp)*"-" + "\n")
+            logger.info(f"\n{comp}\n" + len(comp) * "-" + "\n")
             comp_s = sta + "/" + comp
             comp_t = tes + "/" + comp
             if not os.path.isfile(comp_t):
@@ -268,7 +293,9 @@ def change_computer(option, version_yaml):
     if not computer:
         return
 
-    all_machines_path = f"{os.path.expanduser('~')}/esm_tools/configs/machines/all_machines.yaml"
+    all_machines_path = (
+        f"{os.path.expanduser('~')}/esm_tools/configs/machines/all_machines.yaml"
+    )
 
     if option == "change":
         with open(all_machines_path, "r") as machines_file:
@@ -299,8 +326,8 @@ if os.path.isfile(f"esm_test_{option}.log"):
     os.remove(f"esm_test_{option}.log")
 logger.add(f"esm_test_{option}.log", format="{time} {level} {message}")
 
-if option=="compile" or option=="run":
-    if option=="compile":
+if option == "compile" or option == "run":
+    if option == "compile":
         folder_name = "comp"
     else:
         folder_name = "run"
@@ -326,7 +353,7 @@ if option=="compile" or option=="run":
     # Print differences
     compare_scripts(f"{folder_name}_stable", f"{folder_name}_test")
 
-elif option=="diff":
+elif option == "diff":
     # Print differences
     compare_scripts(f"{version_yaml}_stable", f"{version_yaml}_test")
 

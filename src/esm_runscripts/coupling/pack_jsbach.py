@@ -4,36 +4,39 @@ import xarray as xr
 import sys
 import argparse
 
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='pack jsbach')
+    parser = argparse.ArgumentParser(description="pack jsbach")
     parser.add_argument("var_name")
     parser.add_argument("var_file")
     parser.add_argument("lsm_file")
     return parser.parse_args()
 
 
-def pack_jsbach_var(var_name, var_file, lsm_name, lsm_file, out_name=None, out_file=None):
+def pack_jsbach_var(
+    var_name, var_file, lsm_name, lsm_file, out_name=None, out_file=None
+):
     # Assign the output variable name and file name to be the same as var_name
     # and var_file, unless otherwise specified:
     if out_name == None:
         out_name = var_name
     if out_file == None:
-        out_file = var_name+"_landpoint_grid.nc"
+        out_file = var_name + "_landpoint_grid.nc"
     # Load the variable and land-sea mask from the files
     var_DataArray, lsm_DataArray = xr.open_dataset(var_file), xr.open_dataset(lsm_file)
     var, lsm = var_DataArray[var_name], lsm_DataArray[lsm_name]
     # Make sure that the landpoint dimension is the last one, otherwise crash,
     # since unpacking won't work correctly:
-    assert var.dims[-2] == 'lat'
-    assert var.dims[-1] == 'lon'
+    assert var.dims[-2] == "lat"
+    assert var.dims[-1] == "lon"
     # Make an empty array with the land-sea shape, plus any "extra" dimensions
     # For example: tiles, soil layers, canopy layers...)
     if var.ndim == 1:
         print("I cannot reduce a 1D array!")
         sys.exit()
     elif var.ndim == 2:
-	# The lsm.data.sum() is needed, because we need to find out the number of land-sea points. 
-	# Thre is probably a better way of doing this
+        # The lsm.data.sum() is needed, because we need to find out the number of land-sea points.
+        # Thre is probably a better way of doing this
         var_packed = np.empty(int(lsm.data.sum()))
     elif var.ndim == 3:
         var_packed = np.empty((var.shape[0], int(lsm.data.sum())))
@@ -42,7 +45,9 @@ def pack_jsbach_var(var_name, var_file, lsm_name, lsm_file, out_name=None, out_f
     else:
         # The rerun_jsbach.nc file appears to only have at most 3 dimensions,
         # so crash if somehow there are 4!
-        print("Opps, your array has more dimensions than unpack_jsbach.py knows how to handle! Goodbye!")
+        print(
+            "Opps, your array has more dimensions than unpack_jsbach.py knows how to handle! Goodbye!"
+        )
         sys.exit()
     # Fill the empty array with nan:
     var_packed[:] = np.nan
@@ -67,14 +72,15 @@ def pack_jsbach_var(var_name, var_file, lsm_name, lsm_file, out_name=None, out_f
     return var_packed
 
     # Define dimension and coordinates to save in netcdf file
-    dims = (*var_DataArray[var_name].dims[:-2], 'landpoint')
-    coords = 'landpoint'
+    dims = (*var_DataArray[var_name].dims[:-2], "landpoint")
+    coords = "landpoint"
     # Construct a labeled output DataArray from the packed array
-    var_packed_DataArray=xr.DataArray(var_packed, dims=dims, name=out_name)
+    var_packed_DataArray = xr.DataArray(var_packed, dims=dims, name=out_name)
     # Save to disk
     var_packed_DataArray.to_netcdf(out_file)
     # Return the DataArray (for interactive use only...)
     return out_file
+
 
 def pack_up_with_loop(arr):
     output_arr = np.array([])
@@ -84,6 +90,7 @@ def pack_up_with_loop(arr):
             if not arr.mask[j, i]:
                 output_arr = np.append(output_arr, arr[j, i])
     return output_arr
+
 
 if __name__ == "__main__":
     args = parse_arguments()

@@ -7,6 +7,7 @@ import questionary
 import esm_parser
 from esm_calendar import Date, Calendar
 
+
 class PrevRunInfo(dict):
     """
     A dictionary subclass to access information from the previous run. The object is
@@ -35,7 +36,6 @@ class PrevRunInfo(dict):
        ``last_start_date``, ``parent_start_date``, etc.
     """
 
-
     def __init__(self, config={}, prev_config=None):
         """
         Links the current ``config`` and ``prev_config`` to the object.
@@ -63,7 +63,6 @@ class PrevRunInfo(dict):
         # Counter for debuggin
         self._prev_config_count = 0
 
-
     def components_with_prev_run(self):
         """
         Lists components containning variables using the ``prev_run`` feature. Reading
@@ -76,7 +75,8 @@ class PrevRunInfo(dict):
             # Make sure prev_run is not included and also that general is the last of
             # the components
             components = [
-                component for component in components
+                component
+                for component in components
                 if component not in ["prev_run", "general"]
             ]
             components.append("general")
@@ -92,7 +92,6 @@ class PrevRunInfo(dict):
             self._components = c_with_prev_run
         else:
             self._components = []
-
 
     def str_value_in_nested_dictionary(self, string_to_search, nested_dict):
         """
@@ -130,7 +129,6 @@ class PrevRunInfo(dict):
 
         return found
 
-
     def __getitem__(self, key):
         """
         Defines the special behaviour for accessing a ``key`` of the object (i.e. when
@@ -155,7 +153,6 @@ class PrevRunInfo(dict):
 
         return value
 
-
     def get(self, *args, **kwargs):
         """
         Defines the special behaviour for the ``get`` method of the object (i.e. when
@@ -178,10 +175,9 @@ class PrevRunInfo(dict):
                 value = self._prev_config.get(*args, **kwargs)
         # If the previous config is not loaded yet, return get of an empty dict
         else:
-           value = {}.get(*args, **kwargs)
+            value = {}.get(*args, **kwargs)
 
         return value
-
 
     def prev_run_config(self):
         """
@@ -196,8 +192,8 @@ class PrevRunInfo(dict):
         )
         # This is necessary to display the message only once, instead of twice
         self.warn = (
-            fromdir == scriptsdir and
-            self._config["general"].get("jobtype", "") == "compute"
+            fromdir == scriptsdir
+            and self._config["general"].get("jobtype", "") == "compute"
         )
         # Check for interactive, or submitted from a computing node, to avoid
         # using ``input()`` or ``questionaries`` in the second case
@@ -221,7 +217,7 @@ class PrevRunInfo(dict):
                 # For debugging purposes: this line should not be reached more that
                 # once per component including ``prev_run`` variables
                 self._prev_config_count += 1
-                #print(f"PREV CONFIG COUNT: {self._prev_config_count}")
+                # print(f"PREV CONFIG COUNT: {self._prev_config_count}")
 
                 # Open the file and load the previous run information
                 with open(prev_run_config_file, "r") as prev_file:
@@ -244,10 +240,7 @@ class PrevRunInfo(dict):
                     form=9, givenph=False, givenpm=False, givenps=False
                 )
                 # Dates don't match
-                if (
-                    calc_prev_date_stamp != prev_date_stamp and
-                    self.warn
-                ):
+                if calc_prev_date_stamp != prev_date_stamp and self.warn:
                     esm_parser.user_note(
                         f"End date of the previous configuration file for '{component}'"
                         + " not coinciding:",
@@ -255,16 +248,16 @@ class PrevRunInfo(dict):
                             f"    File loaded: {prev_run_config_file}\n"
                             + f"    This previous date: {calc_prev_date}\n"
                             + f"    Previous date in prev config: {prev_date}\n"
-                        )
+                        ),
                     )
                     # Only ask the user about a mismatch when manually restarted
                     if self.isinteractive:
                         no_input = True
                         while no_input:
                             answer = input(f"Do you want to proceed anyway?[y/n]: ")
-                            if answer=="y":
+                            if answer == "y":
                                 no_input = False
-                            elif answer=="n":
+                            elif answer == "n":
                                 sys.exit(0)
                             else:
                                 print("Incorrect answer.")
@@ -281,7 +274,6 @@ class PrevRunInfo(dict):
                 # the models need the general configuration from the previous run.
                 if component != "general":
                     self._prev_config["general"] = prev_config["general"]
-
 
     def find_config(self, component):
         """
@@ -321,14 +313,13 @@ class PrevRunInfo(dict):
         prev_run_config_file = ""
         # This experiment ``config_dir``
         config_dir = (
-            self._config.get("general", {}).get("experiment_dir", "")
-            + "/config/"
+            self._config.get("general", {}).get("experiment_dir", "") + "/config/"
         )
         # Find ``lresume`` and ``run_number`` for this component
         lresume = self._config.get(component, {}).get("lresume", False)
         run_number = self._config.get("general", {}).get("run_number", 1)
         # It's run 1
-        if run_number==1:
+        if run_number == 1:
             # It's a branchoff experiment
             if lresume:
                 # The user needs to provide the path to the config file of the previous
@@ -339,14 +330,14 @@ class PrevRunInfo(dict):
                 if not user_prev_run_config_full_path:
                     esm_parser.user_error(
                         "'prev_run_config_file' not defined",
-                        "You are trying to run a branchoff experiment that uses the " +
-                        f"'prev_run' functionality for '{component}' without " +
-                        "specifying the path to the previous config file. " +
-                        "Please, add to your runscript the following:\n\n" +
-                        f"{component}:\n" +
-                        "\tprev_run_config_file: <path_to_config_file>\n\n" +
-                        "Note: the path to the config file from the parent " +
-                        "is '<path_to_parent_exp>/configs/*_finished_*.yaml_<DATE>'."
+                        "You are trying to run a branchoff experiment that uses the "
+                        + f"'prev_run' functionality for '{component}' without "
+                        + "specifying the path to the previous config file. "
+                        + "Please, add to your runscript the following:\n\n"
+                        + f"{component}:\n"
+                        + "\tprev_run_config_file: <path_to_config_file>\n\n"
+                        + "Note: the path to the config file from the parent "
+                        + "is '<path_to_parent_exp>/configs/*_finished_*.yaml_<DATE>'.",
                     )
                 # Resolve for variables in the provided path
                 if "${" in user_prev_run_config_full_path:
@@ -355,7 +346,7 @@ class PrevRunInfo(dict):
                         user_prev_run_config_full_path,
                         self._config,
                         [],
-                        True
+                        True,
                     )
                 # Separate the base name from the path to the file
                 user_prev_run_config_file = os.path.basename(
@@ -375,11 +366,14 @@ class PrevRunInfo(dict):
 
         # Check for errors
         if not os.path.isdir(config_dir):
-            esm_parser.user_error("Config folder not existing", (
-                f"The config folder {config_dir} does not exist. " +
-                "The existance of this folder is a requirement for the use of the " +
-                "prev_run feature."
-            ))
+            esm_parser.user_error(
+                "Config folder not existing",
+                (
+                    f"The config folder {config_dir} does not exist. "
+                    + "The existance of this folder is a requirement for the use of the "
+                    + "prev_run feature."
+                ),
+            )
 
         # Calculate previous date. This point is reached some times before it is
         # calculated in prepare.py, that's why we need the calculation here. It's only
@@ -391,14 +385,7 @@ class PrevRunInfo(dict):
             time_step = int(time_step)
         except ValueError:
             time_step = 1
-        prev_date = current_date - (
-            0,
-            0,
-            0,
-            0,
-            0,
-            time_step
-        )
+        prev_date = current_date - (0, 0, 0, 0, 0, time_step)
 
         # Calculate end date for the previous run
         prev_datestamp = prev_date.format(
@@ -419,17 +406,16 @@ class PrevRunInfo(dict):
         # ---------------------------------
         # Continuing run, not branched off, but no timestamped config files. Select the
         # one without timestamp (the case for run 1 in spinup).
-        if len(potential_prev_configs)==0 and run_number>1:
+        if len(potential_prev_configs) == 0 and run_number > 1:
             prev_run_config_file = (
-                self._config["general"]["expid"] +
-                "_finished_config.yaml"
+                self._config["general"]["expid"] + "_finished_config.yaml"
             )
         # Continuing run, not branched off, and one potential file. That's our file!
-        elif len(potential_prev_configs)==1 and run_number>1:
+        elif len(potential_prev_configs) == 1 and run_number > 1:
             prev_run_config_file = potential_prev_configs[0]
         # Continuing run, too many possibilities, if interactive, ask the user,
         # otherwise, crash the simulation
-        elif len(potential_prev_configs)>1 and run_number>1:
+        elif len(potential_prev_configs) > 1 and run_number > 1:
             if self.warn:
                 if self.isinteractive:
                     text = (
@@ -444,11 +430,11 @@ class PrevRunInfo(dict):
                     # Error
                     esm_parser.user_error(
                         "Too many possible config files",
-                        "There is more than one config file with the same final date " +
-                        "as the one required for the continuation of this experiment." +
-                        " Please, resubmit the simulation, then you'll be ask about " +
-                        "which file you'd like to use. This error comes from the " +
-                        f"PrevRunInfo class, for the '{component}' component."
+                        "There is more than one config file with the same final date "
+                        + "as the one required for the continuation of this experiment."
+                        + " Please, resubmit the simulation, then you'll be ask about "
+                        + "which file you'd like to use. This error comes from the "
+                        + f"PrevRunInfo class, for the '{component}' component.",
                     )
             else:
                 # If started by the user in a directory different than the experiment
@@ -458,19 +444,18 @@ class PrevRunInfo(dict):
         # Branch off, load what the user specifies in the runscript (only branchoffs
         # reach this point as run_number=1 and spinup have returned already up in this
         # method)
-        elif run_number==1:
+        elif run_number == 1:
             prev_run_config_file = user_prev_run_config_file
             prev_run_config_path = f"{config_dir}/{prev_run_config_file}"
             if not os.path.isfile(prev_run_config_path):
                 esm_parser.user_error(
                     "'prev_run_config_file' incorrectly defined",
-                    f"The file defined in the '{component}.prev_run_config_path' " +
-                    f"({prev_run_config_path}) does not exist."
+                    f"The file defined in the '{component}.prev_run_config_path' "
+                    + f"({prev_run_config_path}) does not exist.",
                 )
 
         prev_run_config_path = f"{config_dir}/{prev_run_config_file}"
         return prev_run_config_path, prev_date
-
 
     def ask_about_files(self, potential_prev_configs, component, config_dir, text):
         """
@@ -488,18 +473,19 @@ class PrevRunInfo(dict):
         text : str
             Text to be displayed in the questionary.
         """
-        questionary.print(100*"=")
+        questionary.print(100 * "=")
         questionary.print(text)
-        questionary.print(100*"=")
+        questionary.print(100 * "=")
 
         user_confirmed = False
         while not user_confirmed:
             response = questionary.select(
                 f"Which one do you want to use?",
-                choices = (
+                choices=(
                     potential_prev_configs
                     + ["[Quit] None of the files, stop simulation now"]
-                )).ask()  # returns value of selection
+                ),
+            ).ask()  # returns value of selection
             if "[Quit]" in response:
                 if questionary.confirm("Are you sure?").ask():
                     sys.exit(0)

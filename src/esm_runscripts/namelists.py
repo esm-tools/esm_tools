@@ -143,7 +143,9 @@ class Namelist:
                             if key2.lower() == key.lower() and key2 != key:
                                 original_key = key2
                                 remove_original_key = True
-                                namelist_removes.append((namelist, change_chapter, original_key))
+                                namelist_removes.append(
+                                    (namelist, change_chapter, original_key)
+                                )
 
                         # remove both lowercase and mixed case variables
                         del namelist_changes[namelist][change_chapter][key]
@@ -151,7 +153,9 @@ class Namelist:
                             del namelist_changes[namelist][change_chapter][original_key]
 
                         # mconfig instead of config, Grrrrr
-                        print(f"- NOTE: removing the variable: {key} from the namelist: {namelist}")
+                        print(
+                            f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
+                        )
 
         for remove in namelist_removes:
             namelist, change_chapter, key = remove
@@ -247,20 +251,31 @@ class Namelist:
             radctl = nml.get("radctl", f90nml.namelist.Namelist())
             if config["echam"].get("use_transient_forcing", False):
                 import pandas as pd
+
                 try:
-                    forcing_table = pd.open_csv(config["echam"]["transient_forcing_table"])
-                    co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[config['general']['current_date'].year]
-                    radctl['co2vmr'] = co2
-                    radctl['n2ovmr'] = n2o
-                    radctl['ch4vmr'] = ch4
-                    radctl['cecc'] = cecc
-                    radctl['cobl'] = cobl
-                    radctl['clonp'] = clonp
-                    print("-------------------------------------------------------------")
+                    forcing_table = pd.open_csv(
+                        config["echam"]["transient_forcing_table"]
+                    )
+                    co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[
+                        config["general"]["current_date"].year
+                    ]
+                    radctl["co2vmr"] = co2
+                    radctl["n2ovmr"] = n2o
+                    radctl["ch4vmr"] = ch4
+                    radctl["cecc"] = cecc
+                    radctl["cobl"] = cobl
+                    radctl["clonp"] = clonp
+                    print(
+                        "-------------------------------------------------------------"
+                    )
                     print("")
-                    print("              > Applying transient foricng in echam namelist!")
+                    print(
+                        "              > Applying transient foricng in echam namelist!"
+                    )
                     print("")
-                    print("--------------------------------------------------------------")
+                    print(
+                        "--------------------------------------------------------------"
+                    )
                     print("             > The new values are:")
                     print(f"             CO2:  {radctl['co2vmr']}")
                     print(f"             N2O:  {radctl['n2ovmr']}")
@@ -270,22 +285,30 @@ class Namelist:
                     print(f"             CLONP:{radctl['clonp']}")
                 except Exception as e:
                     # Haha something went wrong. Let's be polite about it though
-                    print("There was a problem with reading in the forcing from the transient forcing table")
+                    print(
+                        "There was a problem with reading in the forcing from the transient forcing table"
+                    )
                     print()
                     print("Sorry")
                     print()
                     print("Please be sure to use the correct format of your table!")
                     print("It should be the following:")
-                    print("# Model Year; CO2; N2O; CH4; Eccentricty; Obliquity; Perihelion")
+                    print(
+                        "# Model Year; CO2; N2O; CH4; Eccentricty; Obliquity; Perihelion"
+                    )
                     print("Commented lines (with a #) will be ignored in that file")
-                    print("Please note that you need to use a semicolon (;) as a seperator")
+                    print(
+                        "Please note that you need to use a semicolon (;) as a seperator"
+                    )
                     print()
                     print("Also, make sure that you set a valid filepath")
                     print("We were looking for the following:")
                     try:
-                        print(config['echam']['transient_forcing_table'])
+                        print(config["echam"]["transient_forcing_table"])
                     except KeyError:
-                        print("Oops, looks like you didn't specify which forcing table to use!")
+                        print(
+                            "Oops, looks like you didn't specify which forcing table to use!"
+                        )
                         print("You need to set in your echam configuration:")
                         print("echam:")
                         print("    transient_forcing_table: /path/to/your/table")
@@ -322,7 +345,8 @@ class Namelist:
             else:
                 disturbance_file = None
                 if config["general"]["verbose"]:
-                    print("WARNING: "
+                    print(
+                        "WARNING: "
                         + config["general"]["experiment_scripts_dir"]
                         + "/disturb_years.dat",
                         "was not found",
@@ -403,14 +427,13 @@ class Namelist:
         for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
             all_nmls[nml_name] = nml_obj  # PG: or a string representation?
         for nml_name, nml in all_nmls.items():
-            message = f'\nFinal Contents of {nml_name}:'
+            message = f"\nFinal Contents of {nml_name}:"
             six.print_(message)
-            six.print_(len(message) * '-')
+            six.print_(len(message) * "-")
             nml.write(sys.stdout)
-            print('-' * 80)
-            print(f'::: end of the contents of {nml_name}\n')
+            print("-" * 80)
+            print(f"::: end of the contents of {nml_name}\n")
         return mconfig
-
 
     @staticmethod
     def nmls_output_all(config):
@@ -431,6 +454,5 @@ class namelist(Namelist):
             DeprecationWarning,
             stacklevel=2,
         )
-
 
         super(namelist, self).__init__(*args, **kwargs)

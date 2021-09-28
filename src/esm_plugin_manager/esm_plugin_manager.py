@@ -4,6 +4,7 @@ import sys
 import esm_parser
 from esm_parser import yaml_file_to_dict
 
+
 def read_recipe(recipe, additional_dict, needs_parse=True):
     if needs_parse:
         recipe = yaml_file_to_dict(recipe)
@@ -122,11 +123,13 @@ def work_through_recipe(recipe, plugins, config):
         pdb.set_trace()
     recipes = recipe["recipe"]
     for index, workitem in enumerate(recipes, start=1):
-        if config["general"].get("verbose",False):
+        if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
-            message = (f'::: Executing the step:  {workitem}    '
-            f'(step [{index}/{len(recipes)}] of the job:  '
-            f'{recipe["job_type"]})')
+            message = (
+                f"::: Executing the step:  {workitem}    "
+                f"(step [{index}/{len(recipes)}] of the job:  "
+                f'{recipe["job_type"]})'
+            )
 
             print()
             print("=" * len(message))

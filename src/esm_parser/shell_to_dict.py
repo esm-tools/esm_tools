@@ -73,9 +73,7 @@ def ShellscriptToUserConfig(runscript_path):
         all_lines = runscript_file.readlines()
     hashbang = all_lines[0]
     bad_lines = ("load_all_functions", "general_do_it_all", "#", "set ")
-    good_lines = [
-        line.strip() for line in all_lines if not line.startswith(bad_lines)
-    ]
+    good_lines = [line.strip() for line in all_lines if not line.startswith(bad_lines)]
     good_lines.insert(0, hashbang)
     good_lines.insert(1, "set -a")
     # Module commands:
@@ -97,7 +95,9 @@ def ShellscriptToUserConfig(runscript_path):
     for key in all_keys:
         if "()" in key:
             del env_before[key]
-            good_lines.append("unset -f " + key.replace("()","").replace("BASH_FUNC_", ""))
+            good_lines.append(
+                "unset -f " + key.replace("()", "").replace("BASH_FUNC_", "")
+            )
 
     logging.debug("Got environment from the system %s", env_before)
     with open("cleaned_runscript", "w") as cleaned_runscript:
@@ -117,8 +117,8 @@ def ShellscriptToUserConfig(runscript_path):
         if line and "=" in line:
             key, value = line.split("=", 1)
             if "()" not in key:
-                  if value:
-                        env_after[key] = value
+                if value:
+                    env_after[key] = value
     os.remove("cleaned_runscript")
     diffs = list(set(env_after) - set(env_before))
 

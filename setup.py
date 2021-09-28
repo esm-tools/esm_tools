@@ -28,6 +28,7 @@ requirements = [
     "pyyaml",
     "pyyaml>=5.1",
     "questionary",
+    "semver",
     "six",
     "sqlalchemy",
     "tabulate",

@@ -213,17 +213,7 @@ def check_all_esm_packages():
     # Instance the ``motd`` object
     motd = MessageOfTheDayHandler()
     # Check current version of ESM-Tools
-    installed_packages_and_versions = get_version_numbers()
-    # Display the MOTD for each package
-    for (package, version) in installed_packages_and_versions:
-        motd.motd_handler(package, version)
-
-
-def get_version_numbers():
-    """
-    Gets the version number of the ESM-Tools packages.
-    """
-    return ("esm_tools", esm_tools.__version__)
+    motd.motd_handler("esm_tools", esm_tools.__version__)
 
 
 if __name__ == "__main__":

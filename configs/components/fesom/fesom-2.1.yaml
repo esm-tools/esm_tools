@@ -135,12 +135,12 @@ restart_out_files:
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        wiso_restart: wiso_restart
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        wiso_restart: wiso_restart
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
 
 outdata_sources:

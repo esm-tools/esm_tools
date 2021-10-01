@@ -215,6 +215,13 @@ fesom:
                                         run_config:
                                                 lwiso: "${general.with_wiso}"
 
+        choose_general.with_wiso:
+                True:
+                        add_restart_in_files:
+                                wiso_restart: wiso_restart
+                        add_restart_out_files:
+                                wiso_restart: wiso_restart
+
 
         choose_general.resolution:
                 T63_CORE2:

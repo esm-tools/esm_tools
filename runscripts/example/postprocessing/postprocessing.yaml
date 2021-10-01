@@ -1,0 +1,30 @@
+# Begin normal runscript
+general:
+        compute_time: and other stuff
+
+fesom:
+        some: entries
+
+# end normal runscript
+#
+        workflow:
+                subjobs:
+                        unique_name:
+                                # will be executed as part of the running batch job
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script_dir: /path/to/dir/with/postpro/script/and/env.py
+                                script: tiny_postpro.sh
+                                env_preparation: env.py
+                                nproc: 1
+
+                        other_unique_name:
+                                # will get its own batch job
+                                batch_or_shell: batch
+                                run_after: tidy
+                                script_dir: /path/to/dir/with/postpro/script/and/env.py
+                                script: bigger_postpro.sh
+                                env_preparation: env_big.py
+                                submit_to_batch_system: True
+                                nproc: 1
+                                run_on_queue: mpp (for example)

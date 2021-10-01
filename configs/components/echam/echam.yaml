@@ -17,6 +17,7 @@ compile_infos:
         - 6.3.04p1-recom-awicm
         - 6.3.05p2-concurrent_radiation-paleodyn
         - 6.3.05p2-concurrent_radiation-paleodyn-plake
+        - 6.3.05p2-concurrent_radiation-paleodyn-global-plake
         - 6.3.04p1
         branch: ${echam.version}
         choose_version:
@@ -53,6 +54,11 @@ compile_infos:
             git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
           6.3.05p2-concurrent_radiation-paleodyn-plake:
             branch: "lilly_plake"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
+          6.3.05p2-concurrent_radiation-paleodyn-global-plake:
+            branch: "lilly_fix"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
             comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.awi.de/pgierz/echam6.git"

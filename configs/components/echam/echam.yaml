@@ -147,6 +147,10 @@ choose_switch:
 # choice
 #
 
+lwiso_rerun: False
+lwiso: False
+nwiso: 0
+
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
 nprocar: 0
@@ -259,9 +263,9 @@ choose_version:
                                 radctl:
                                         lrad_async: "${lrad_async}"
                                 wisoctl:
-                                        lwiso: False
-                                        lwiso_rerun: False
-                                        nwiso: 0
+                                        lwiso_rerun: "${lwiso_rerun}"
+                                        lwiso: "${lwiso}"
+                                        nwiso: "${nwiso}"
                 add_streams:
                         - wiso
                         - accw_wiso

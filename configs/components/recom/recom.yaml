@@ -44,6 +44,8 @@ scenario: "preindustrial"
 
 time_step: 1800
 
+bgc_num: 22
+
 
 choose_scenario:
         preindustrial:
@@ -81,8 +83,6 @@ namelist_changes:
         namelist.recom:
                 pavariables:
                         bgc_num: "${bgc_num}"
-                        benthos_num: "${benthos_num}"
-                        bottflx_num: "${bottflx_num}"
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         firstyearoffesomcycle: "${firstyearoffesomcycle}"

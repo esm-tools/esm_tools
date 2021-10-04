@@ -284,29 +284,7 @@ choose_version:
                 restart_out_sources:
                         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
                 add_coupling_fields:
-                        o18w_atm:
-                                grid: atmo
-                        hdow_atm:
-                                grid: atmo
-                        o16w_atm:
-                                grid: atmo
-                        o18i_atm:
-                                grid: atmo
-                        hdoi_atm:
-                                grid: atmo
-                        o16i_atm:
-                                grid: atmo
-                        w1_atm:
-                                grid: atmo
-                        w2_atm:
-                                grid: atmo
-                        w3_atm:
-                                grid: atmo
-                        i1_atm:
-                                grid: atmo
-                        i2_atm:
-                                grid: atmo
-                        i3_atm:
+                        "[[wiso_fields-->FIELD]]":
                                 grid: atmo
 
 
@@ -701,6 +679,8 @@ namelist_changes:
 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+wiso_fields: [o18w_atm, hdow_atm, o16w_atm, o18i_atm, hdoi_atm, o16i_atm, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm]
 
 coupling_fields:
         sst_atmo:

@@ -1,6 +1,34 @@
 #########################################################################################
 ######################### AWIESM 2 YAML CONFIGURATION FILE ##############################
 #########################################################################################
+#
+# This file includes the presets for the following versions of AWIESM-2.1:
+# - awiesm-2.1: standard version
+#       + echam branch: concurrent_radiation
+#       + fesom branch: 2.1.0
+# - awiesm-2.1-wiso: Xiaoxu Shi and Martin Werner's version with WISO
+#       + echam branch: wiso
+#       + fesom branch: wiso
+# - awiesm-2.1-recom: Ying Ye and Martin Butzin's version of the wiso branches with
+#     REcoM integrated inside FESOM. Currently WISO on does not work, because a merge
+#     in FESOM source code is needed
+#       + echam branch: wiso
+#       + fesom branch: awiesm2-recom-wiso (TODO: to be merged into wiso branch
+#           eventually)
+#
+# Relevant variables controlling choose_ blocks
+# ---------------------------------------------
+# fesom.ALE_scheme: controls the ALE scheme for fesom, possible values being ``linfs``
+#       and ``zstar``
+#
+# fesom/echam.wiso_code: controls choose_ blocks that are needed in case the source
+#       codes of FESOM and ECHAM include WISO, independently of whether the WISO is used
+#       or not. This variable should not be changed from the runscript as it is bound to
+#       the source code and version.
+#
+# fesom/echam.with_wiso: controls the choose_ blocks that trigger the necessary changes
+#       in the namelists to activate/deactivate WISO, and therefore, it is meant to be
+#       edited in the runscript.
 
 general:
         #        compute_recipe:
@@ -101,6 +129,8 @@ echam:
                         version: "6.3.05p2-wiso"
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
+                        wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
+
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -193,6 +223,7 @@ fesom:
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-recom":
                         version: "2.1-recom"
+                        ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                         num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
                         add_config_sources:
@@ -208,6 +239,7 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 num_tracers: "${num_tracers}"
+                        wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
         choose_general.wiso_code:
                 True:
                         add_namelist_changes:
@@ -234,7 +266,7 @@ fesom:
         opbnd_dir: ""
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        model_dir: ${general.model_dir}/${fesom.destination}
         setup_dir: ${general.model_dir}
 
         namelist_changes:
@@ -290,10 +322,12 @@ recom:
                         bgc_num: 31
                         benthos_num: 8
                         bottflx_num: 8
-#                        add_namelist_changes:
-#                            namelist.recom:
-#                                pavariables:
-#                                    bgc_num: "${bgc_num}"
+                        add_namelist_changes:
+                            namelist.recom:
+                                pavariables:
+                                    benthos_num: "${benthos_num}"
+                                    bottflx_num: "${bottflx_num}"
+
                         data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
@@ -357,8 +391,10 @@ oasis3mct:
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
 
-        choose_general.wiso_code:
-                true:
+        choose_general.version:
+                "2.1-wiso":
+        # choose_general.wiso_code: # MA: after merging FESOM, from Martin B. this can be unified
+        #        true:
                         add_coupling_target_fields:
                                 add_o2a_flux:
                                         - 'o18w_atm <--distwgt-- o18w_oce'
@@ -367,6 +403,19 @@ oasis3mct:
                                         - 'o18i_atm <--distwgt-- o18i_oce'
                                         - 'hdoi_atm <--distwgt-- hdoi_oce'
                                         - 'o16i_atm <--distwgt-- o16i_oce'
+                                add_a2o_flux:
+                                        - 'w1_oce <--distwgt-- w1_atm'
+                                        - 'w2_oce <--distwgt-- w2_atm'
+                                        - 'w3_oce <--distwgt-- w3_atm'
+                                        - 'i1_oce <--distwgt-- i1_atm'
+                                        - 'i2_oce <--distwgt-- i2_atm'
+                                        - 'i3_oce <--distwgt-- i3_atm'
+                "2.1-recom": # MA: after merging in FESOM by Martin B. this can be removed
+                        add_coupling_target_fields:
+                                add_o2a_flux:
+                                        - 'o18_atmo <--distwgt-- o18_feom'
+                                        - 'hdo_atmo <--distwgt-- hdo_feom'
+                                        - 'o16_atmo <--distwgt-- o16_feom'
                                 add_a2o_flux:
                                         - 'w1_oce <--distwgt-- w1_atm'
                                         - 'w2_oce <--distwgt-- w2_atm'

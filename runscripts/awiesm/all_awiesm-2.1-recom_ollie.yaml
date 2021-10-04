@@ -1,0 +1,103 @@
+general:
+#    account: "ab0995"
+    setup_name: "awiesm"
+    version: "2.1-recom"
+    compute_time: "00:30:00"
+    initial_date: "2001-01-01"
+    final_date: "2001-03_31"
+    base_dir: "/work/ollie/yye/AWIESM_runs/test4release"
+#    nday: 1
+    nmonth: 1
+#    nyear: 1
+    use_venv: False
+#    clean_runs: 2
+
+echam:
+    restart_rate: 1
+    restart_unit: "months"
+    nproca: 24
+    nprocb: 24
+    nprocar: 0
+    nprocbr: 0
+    lresume: 0
+    lrad_async: False
+    ini_parent_exp_id: piw_zstar_swon_atbox
+    ini_parent_date: "20021231"
+    ini_parent_dir: "/work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/echam/"
+    namelist_changes:
+            namelist.echam:
+                    runctl:
+                            default_output: True
+
+
+hdmodel:
+    lresume: 0
+    ini_parent_date: "20021231"
+    ini_parent_dir: "/work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/hdmodel/"
+    add_input_sources:
+        hdpara: "/work/ollie/mbutzin/awiesm-2.1-recom/input/piw_zstar_swon/hdmodel/hdpara.nc"
+
+
+awiesm:
+    version: "2.1-recom"
+    postprocessing: false
+    scenario: "PALEO"
+    # NOTE: In a future version, model code will become part of the experiment
+    # tree and will be compiled for you...
+    model_dir: "/home/ollie/yye/my_esm/awiesm-2.1-recom/"
+
+fesom:
+    res: "CORE2"
+    # NOTE: This will be incorporated into the pool at a later stage
+    mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: 0
+    ini_parent_exp_id: piw_zstar_swon_atbox
+    ini_parent_dir: "/work/ollie/yye/AWIESM_runs/test4release/all_pi/restart/fesom/"    
+    ini_parent_date: "2002-12-31"
+    num_tracers: 33
+    namelist_changes:
+        namelist.config:
+            geometry:
+                force_rotation: false
+            paths:
+                # NOTE: This will be incorporated into the pool at a later stage
+                ClimateDataPath: "/work/ollie/mbutzin/fesom2/input/init/"
+                ForcingDataPath: remove_from_namelist
+                OpbndPath: remove_from_namelist
+                TideForcingPath: remove_from_namelist
+    config_sources:
+        io: "${namelist_dir}/namelist.io.recom.ciso"
+
+recom:
+    ini_parent_exp_id: piw_zstar_swon_atbox
+    ini_parent_date: "2002-12-31"
+    lresume: 0
+    ini_parent_dir: "/work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/recom/"
+    bgc_num: 31
+    benthos_num: 8
+    bottflx_num: 8
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                DIC_PI: false
+                # NOTE:this needs to be put into awiesm yaml file
+                REcoMDataPath: "/work/ollie/mbutzin/fesom2/input/dust/pi-mesh/"
+                ciso: true
+                use_atbox: true
+
+jsbach:
+    lresume: 0
+    ini_parent_id: piw_zstar_swon_atbox
+    ini_parent_date: "20021231"
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+        jsbach_1850: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+oasis3mct:
+    lresume: 0
+    ini_parent_exp_id: piw_zstar_swon_atbox
+    ini_parent_date: "20021231"
+    ini_parent_dir: "/work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/oasis3mct/"

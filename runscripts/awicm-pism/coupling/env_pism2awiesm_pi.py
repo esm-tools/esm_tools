@@ -46,6 +46,7 @@ def prepare_environment(config):
             "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            "MACHINE": config["computer"]["name"],
             }
     print (environment_dict)
     return environment_dict

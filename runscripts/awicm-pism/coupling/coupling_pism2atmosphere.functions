@@ -55,27 +55,45 @@ function iterative_coupling_pism_atmosphere_write_grid {
 
 function pism_atmosphere_get_newest_output { 
         echo; echo "                 *   defining the newest PISM file "
+        
         # PG: Modification to ensure that we only use SUMMER values (July for Northern Hemisphere):
-        case $DOMAIN_pism in
-                "nhem" | "laurentide" | "greenland") 
-                        month_to_select=6
-                        ;;
-                "shem" | "antarctica" | "Antarctica")
-                        month_to_select=12
-                        ;;
-                *)
-                        echo "UNKNOWN PISM domain"
-                        exit 42
-        esac
-        echo "                 -   selecting summer values only! Month=$month_to_select "
-        echo "                 -   ifile = ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc; ofile = ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc "
-        cdo -s \
-                -selmon,${month_to_select} \
-                ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc \
-                ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 
-                #${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc \
-        newest_pism_file=${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc
+        # LA: Not sure why. Now taking yearly mean.
+    
+        if [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
+            latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+            cdo -s timsum ${latest_pism_ex_file} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            cdo -s divc,$( cdo ntime ${latest_pism_ex_file} ) ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_dir_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+        elif [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${START_MONTH_pism}${START_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
+            latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+            cdo -s timsum ${latest_pism_ex_file} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            cdo -s divc,$( cdo ntime ${latest_pism_ex_file} ) ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_dir_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+        else
+            echo "*** ${latest_pism_ex_file} not found ***"
+            exit 42
+        fi
+
+        newest_pism_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
         newest_pism_filename=$(basename $newest_pism_file)
+        #case $DOMAIN_pism in
+        #        "nhem" | "laurentide" | "greenland") 
+        #                month_to_select=6
+        #                ;;
+        #        "shem" | "antarctica" | "Antarctica")
+        #                month_to_select=12
+        #                ;;
+        #        *)
+        #                echo "UNKNOWN PISM domain"
+        #                exit 42
+        #esac
+        #echo "                 -   selecting summer values only! Month=$month_to_select "
+        #echo "                 -   ifile = ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc; ofile = ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc "
+        #cdo -s \
+        #        -selmon,${month_to_select} \
+        #        ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc \
+        #        ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 
+        #        #${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc \
+        #newest_pism_file=${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc
+        #newest_pism_filename=$(basename $newest_pism_file)
 
 }
 

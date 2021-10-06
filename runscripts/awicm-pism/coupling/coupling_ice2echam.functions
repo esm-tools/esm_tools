@@ -128,6 +128,13 @@ update_orography_prepare_calnoro() {
 ## @fn update_orography_run_calnoro() 
 update_orography_run_calnoro() {
         echo; echo "                *   running CALNORO"
+        
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf
+            module load hdf5/1.10.2_gnu
+            module load netcdf/4.6.2_gnu
+        fi
+
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
                 if [ ! -f ${FUNCTION_PATH}/calnoro ]; then

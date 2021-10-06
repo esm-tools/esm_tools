@@ -82,6 +82,12 @@ atmosphere2pism() {
     . ${FUNCTION_PATH}/general_helpers.functions
     . ${FUNCTION_PATH}/coupling_general.functions
 
+    if [ "${MACHINE}" == "ollie" ]; then
+        module unload netcdf
+        module load hdf5/1.10.2_gnu
+        module load netcdf/4.6.2_gnu
+    fi
+
     echo -e "\t\t---> Preparing to couple generic atmosphere to specific ice sheet model PISM"
     ic_atm2pism_prepare
 
@@ -477,7 +483,9 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
         fi
         INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
         if ${cdo} -L -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
-                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
+                ${cdo} -s -selvar,usurf usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
                 ${cdo} -s -add \
@@ -1516,13 +1524,18 @@ ic_atm2debm_ablation_debm_run_execute_binary() {
                 fi
                 required_file_exit_code=$((required_file_exit_code + 1))
         done
-        #module unload netcdf
-        #module load netcdf/4.6.0_intel
+        
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf
+            module load netcdf/4.6.0_intel
+        fi
 
         ./$DEBM_BINARY > debm_stdout_stderr 2>&1 || cat debm_stdout_stderr
         
-        #module unload netcdf/4.6.0_intel
-        #module load netcdf/4.6.0_gnu
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf/4.6.0_intel
+            module load netcdf/4.6.0_gnu
+        fi
         cd -
 }
 

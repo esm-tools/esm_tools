@@ -3,8 +3,11 @@
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
-    #module unload nco
-    #module load nco/4.7.5-gcc64
+    
+    if [ ${MACHINE} == "ollie" ]; then
+        module unload nco
+        module load nco/4.7.5-gcc64
+    fi
 
     . ${FUNCTION_PATH}/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
@@ -287,8 +290,10 @@ function fesom_ice_select_relevant_variables {
 
 function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	# Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
-        module unload python3
-        module load anaconda3/bleeding_edge
+        if [ "${MACHINE}" == "mistral" ]; then
+            module unload python3
+            module load anaconda3/bleeding_edge
+        fi
         echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"
         echo ""; echo " *   using python version $(python --version)"
 
@@ -399,6 +404,12 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	#
 	# ==> related code is placed at the end of this file
 	#
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload python3
+            module load miniconda
+            module load proj/5.1.0
+        fi
+        
         variable=temp
         for file in ${fesom1x_file3D_T_list_for_ice} ; do
                 filename=$(basename $file) ; logfile=${filename}.${variable}.log

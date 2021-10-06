@@ -106,14 +106,15 @@ disturbance: "1.000001"
 lresume: false
 dataset: "r0007"
 
-choose_general.iterative_coupling:
-        True:
-                lgfw: True
-                choose_general.chunk_number:
-                        1:
-                                lgfw: False
-        False:
-                lgfw: False
+lgfw: False
+#choose_general.iterative_coupling:
+#        True:
+#                lgfw: True
+#                choose_general.chunk_number:
+#                        1:
+#                                lgfw: False
+#        False:
+#                lgfw: False
 
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030

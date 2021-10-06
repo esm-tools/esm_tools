@@ -32,8 +32,6 @@ config_sources:
 no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "" #"_dynveg"
 
-lgfw: ${echam.lgfw}
-
 choose_version:
         "3.20p1":
                 dataset: r0010
@@ -358,6 +356,7 @@ restart_out_in_work:
 namelists:
         - "namelist.jsbach"
 
+lgfw: ${echam.lgfw}
 namelist_changes:
         namelist.jsbach:
                 hydrology_ctl:

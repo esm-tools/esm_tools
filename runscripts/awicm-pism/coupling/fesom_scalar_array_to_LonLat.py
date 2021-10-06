@@ -60,8 +60,6 @@ import os
 # Some information
 #
 
-print("* pyfesom path = ", pf.__file__)
-
 print('* Start at '+time.ctime(time.time()))
 
 # ----------------------------------------------------------------
@@ -257,7 +255,7 @@ temp_var.description = "" #FID.variables[args.FESOM_VARIABLE[0]].description
 #
 print('*     Write the small fields')
 # -- axis variables
-time_var[:] = time_out
+#time_var[:] = time_out
 level_var[:] = np.arange(0, sizeVert, dtype=np.int32)
 hori_var[:] = np.arange(0, sizeHori, dtype=np.int32)
 

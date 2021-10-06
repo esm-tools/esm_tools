@@ -685,7 +685,7 @@ ic_atm2pism_regrid_downscale_temperature() {
         DOWNSCALE_TEMP=${DOWNSCALE_TEMP:-1}
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature"
-                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.007"}
+                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"} #old value = -0.007
                 if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
                         echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
                         echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
@@ -1367,7 +1367,7 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
 
         #number_of_x_points=$(grep 'xsize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
         #number_of_y_points=$(grep 'ysize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
-        obliquity_value=${MY_VALUE:-"23.17"}
+        obliquity_value=${MY_OBLIQUITY:-"23.17"}
 
         echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 
 

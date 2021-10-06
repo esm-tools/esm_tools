@@ -2,7 +2,7 @@ def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
     environment_dict = {
             "PISM_TO_OCEAN": 0,
-            "OCEAN_TO_PISM": 1,
+            "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "VERSION_pism": config["pism"]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config["pism"]["pool_dir"],
@@ -19,6 +19,7 @@ def prepare_environment(config):
             "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            "MACHINE": config["computer"]["name"],
             "DOMAIN_pism": config["pism"]["domain"],
             "RES_pism": config["pism"]["resolution"],
             "EXE_pism": config["pism"]["executable"],

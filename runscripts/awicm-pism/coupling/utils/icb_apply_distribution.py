@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
 import random
+import math
 import numpy as np
 import numexpr as ne
 import xarray as xr
@@ -7,29 +10,58 @@ import sys
 import os
 from tqdm import tqdm
 from datetime import datetime
+import powerlaw
 
-RES_pism = 5
-rho_ice = 910
-height_icb = 250
+# resolution of PISM grid [km]
+RES_PISM = 16
 
-N_min = 0
-N_max = 10000
+# density of ice [kg m-3]
+RHO_ICE = 920
 
-#Nlength = np.array([5000, 500, 100, 50, 20, 10, 5, 2, 1]) #icb_scaled20
-Nlength = np.array([5000, 500, 100, 50, 20, 10, 1, 1, 1]) #icb_scaled21
-#Nlength = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
-#sdepth = np.array([40, 67, 133, 175, 250, 250, 250, 250, 250]) * 7/8
-sdepth = np.array([height_icb]*9)
-print("sdepth = ", sdepth)
-slength_bins = np.array([0, 100, 200, 350, 500, 700, 900, 1200, 1600, 2200])
-svol_bins = np.multiply(slength_bins, slength_bins) * height_icb
-print("svol_bins = ", svol_bins)
+# mean iceberg height [km]
+HEIGHT_ICB = 0.25
+
+N_min = 1
+N_max = 100000
+
+bins = [0.01, 0.1, 1, 10, 100, 1000]
+#WEIGHTS_A = [0.009, 0.025, 0.074, 0.222, 0.671]
+WEIGHTS_A = [0.0005, 0.0005, 0.008, 0.025, 0.074, 0.893]
+#WEIGHTS_N = [0.75, 0.175, 0.05, 0.02, 0.005]
+WEIGHTS_N = [0.4, 0.2, 0.15, 0.175, 0.05, 0.025]
+
+# mean iceberg surface area for smalles class [km2]
+SMEAN = [0.001, 0.01, 0.1, 1, 10, 100]
+#SMEAN = 10
+
+# minimum iceberg surface area [km2]
+SMIN = 0
+
+# maximum iceberg surface area [km2]
+SMAX = 2000
+
+#Nlength = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) #icb_scaled21
+#Nlength = np.array([2000, 200, 50, 20, 10, 5, 2, 1, 1, 1, 1, 1])
+#vlength = np.array([0, 60, 100, 200, 350, 500, 700, 900, 1200, 1600, 2200, 10000]) #gladstone et al., 2001
+#vthick = np.array([0, 40, 67, 133, 175, 250, 250, 250, 250, 250, 250, 250])
+
+#Nlength = np.array([1000, 100, 10, 1, 1])
+Nlength = np.array([1, 1, 1, 1, 1, 1])
+vlength = np.array(bins)
+vthick = np.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
+sdepth = vthick #* 7/8
+varea = np.array(bins) #np.multiply(vlength, vlength)
+vvol = np.multiply(varea, vthick)
+
+slength_bins = vlength
+SVOL_BINS = vvol# / 1e9
 
 mu_length = 250
 trunc_length=0
 
-vol_trunc=10e6 #trunc_length**3*16/21
-pism_trunc_fkt=-vol_trunc/(RES_pism*RES_pism*10e6/rho_ice)
+vol_trunc=1e9 #trunc_length**3*16/21
+area_trunc=1e6
+pism_trunc_fkt=-area_trunc * HEIGHT_ICB * 1e3 * RHO_ICE / (RES_PISM**2 * 1e6)
 
 xs = []
 ys = []
@@ -40,15 +72,34 @@ random.seed()
 ifile = sys.argv[1]
 mesh_path = sys.argv[2]
 icb_path = sys.argv[3]
+basin_path = sys.argv[4]
 
 nod2d_file = os.path.join(mesh_path, "nod2d.out")
 elem2d_file = os.path.join(mesh_path, "elem2d.out")
+
+def read_basins_file(ifile):
+    fl = xr.open_dataset(ifile).squeeze()
+    return fl.basin
+
+
+def get_nearest_lon_lat(ds, lon, lat):
+    #https://stackoverflow.com/questions/58758480/xarray-select-nearest-lat-lon-with-multi-dimension-coordinates
+    abslat = np.abs(ds.lat-lat)
+    abslon = np.abs(ds.lon-lon)
+    c = np.maximum(abslon, abslat)
+
+    ([xloc], [yloc]) = np.where(c == np.min(c))
+
+    # Now I can use that index location to get the values at the x/y diminsion
+    point_ds = ds.isel(x=xloc, y=yloc)
+    return point_ds
+    
 
 #read PISM file
 def read_pism_file(ifile):
     fl = xr.open_dataset(ifile).squeeze()
 
-    data = fl.tendency_of_ice_amount_due_to_discharge.where(fl.tendency_of_ice_amount_due_to_discharge < pism_trunc_fkt*N_min)
+    data = fl.tendency_of_ice_amount_due_to_discharge.where(fl.tendency_of_ice_amount_due_to_discharge < pism_trunc_fkt*N_min, drop=True)
     data.to_netcdf(os.path.join(icb_path, "icb_mask.nc"))
     #data = fl.discharge_flux_cumulative.where(fl.discharge_flux_cumulative < 0, drop=True)
     data = np.array(data).reshape(1, len(data.x)*len(data.y))
@@ -98,85 +149,293 @@ def PointInTriangle(pt, v1, v2, v3):
 
     return not (has_neg and has_pos)
 
+def create_icebergs_within_basin(df):
+######################################
+# input:    data frame for one basin: discharge and FESOM cell corners (p1, p2, p3)
+# output:   iceberg volume array
+######################################
+    # mu and sigma for lognormal distribution after Tournadre et al. (2011)
+    mu, sigma = 12.3, 1.55**0.5
+
+    # alpha for powerlaw after Tournadre et al. (2015)
+    a, xmin = 1.52, 0.1
+
+    # get values within basin
+    vals = df.disch.values
+
+    # remove nan's of values
+    vals[np.isnan(vals)] = 0
+
+    # get total discharge within basin in [km3 year-1]
+    disch_tot = abs(sum(vals)) * RES_PISM**2 / RHO_ICE / 1e3
+
+    # get total iceberg area within basin in [km2 year-1]
+    # assuming constant iceberg height
+    area_tot = disch_tot / HEIGHT_ICB
+
+    # create iceberg areas according to Tournadre et al. (2015)
+    # divide icebergs into classes of different area sizes (0.1-1, 1-10, 10-100, ... [km2])
+    # and draw from powerlaw distribution with alpha=1.52 except for the icebergs from
+    # smallest class. Get total number of icebergs with share of smallest class (WEIGHTS_N)
+    # and mean size within smalles class (SMEAN_1). Get number of icebergs of each other class
+    # with corresponding share. 
+   
+    if area_tot > SMAX:
+        vrs = np.random.uniform(bins[-1], SMAX)
+        area_tot_new = area_tot - vrs
+    else:
+        area_tot_new = area_tot
+
+    for i, (wa, wn) in enumerate(zip(WEIGHTS_A, WEIGHTS_N)):
+        if i==0:
+            # get amount of icebergs of smalles class
+            N = abs(int(area_tot_new * wa / SMEAN[i]))
+            # get total amount of icebergs
+            N_tot = int(N/wn)
+            xmin = bins[i]
+            xmax = bins[i+1]
+            # draw area sizes from lognormal distribution for smalles iceberg class
+            tmp = np.random.lognormal(mu, sigma, N)
+            # get scaling factor to sum iceberg areas up to actual share of discharge (wa * area_tot)
+            if N == N_tot:
+                f = area_tot_new / sum(tmp)
+            else:
+                f = wa * area_tot_new / sum(tmp)
+            vrs = tmp * f
+        elif i==len(bins)-1:
+            # get amount of icebergs of class
+            #N = int(N_tot * wn)
+            N = abs(int(area_tot_new * wa / SMEAN[i]))
+            if N == 0:
+                break
+            xmin = bins[0]
+            xmax = bins[-1]
+            # draw area sizes from power-law distribution
+            #tmp = powerlaw.Power_Law(xmin=xmin, xmax=xmax, parameters=[a]).generate_random(N, estimate_discrete=True)
+            tmp = np.random.lognormal(mu, sigma, N)
+            f = wa * area_tot / sum(tmp)
+            vrs = np.concatenate((vrs, tmp*f), axis=0)
+        else:
+            # get amount of icebergs of class
+            #N = int(N_tot * wn)
+            N = abs(int(area_tot_new * wa / SMEAN[i]))
+            if N == 0:
+                break
+            xmin = bins[i]
+            xmax = bins[i+1]
+            # draw area sizes from power-law distribution
+            #tmp = powerlaw.Power_Law(xmin=xmin, xmax=xmax, parameters=[a]).generate_random(N, estimate_discrete=True)
+            tmp = np.random.lognormal(mu, sigma, N)
+            f = wa * area_tot / sum(tmp)
+            vrs = np.concatenate((vrs, tmp*f), axis=0)
+
+    # break down all iceberg with surface area greater than SMAX [km2] into smaller icebergs
+    while len(vrs[vrs>SMAX] > 0):
+        tmp = np.where(vrs>SMAX)
+        vrs[tmp] = vrs[tmp]/2
+        vrs = np.append(vrs, vrs[tmp])
+
+    # create data frame with iceberg elements: area, volume, bin
+    ib_elems = pd.DataFrame({"area": vrs, 
+                            "volume": vrs*HEIGHT_ICB,
+                            "bin": np.digitize(vrs*HEIGHT_ICB, SVOL_BINS, right=True)})
+   
+    ib_elems_ = ib_elems #.where(ib_elems.area>=SMIN).dropna()
+        
+    #sns.histplot(vrs, log_scale=True, stat="probability", bins=25)
+    #plt.xscale("log")
+    #plt.show()
+
+    print("*** Check for validity:")
+    print("***      assumed iceberg height [km]:         ", HEIGHT_ICB)
+    print("***      total discharge [km3 year-1]:        ", disch_tot)
+    print("***      summed iceberg volume [km3]:         ", sum(ib_elems.volume))
+    print("***      summed iceberg volume [km3]:         ", sum(ib_elems_.volume))
+    print("***      total iceberg area [km2 year-1]:     ", area_tot)
+    print("***      summed area (of generated ib) [km2]: ", sum(ib_elems.area)) 
+    print("***      summed area (of generated ib) [km2]: ", sum(ib_elems_.area)) 
+    print("***      total number of icebergs:            ", len(ib_elems))
+    print("***      total number of icebergs:            ", len(ib_elems_))
+    print(ib_elems_)
+    return ib_elems_
+
+
+
+def scale_icebergs(df):
+######################################
+# input:    data frame: area, volume, bin
+# output:   data frame: length, scaling, depth
+######################################
+    # loop over all bins
+    with tqdm(total=len(Nlength), file=sys.stdout, desc='go through all bins') as pbar:
+        for i, (s, d) in enumerate(zip(Nlength, sdepth)):
+            
+            # get icb elements of particular size class
+            ib_bin = df.where(df.bin==i).dropna()
+   
+            if not ib_bin.empty:
+                # split iceberg array of size class into chunks with length s
+                chunks = np.array_split(ib_bin, math.ceil(len(ib_bin)/s))
+                #chunks = [ib_bin[k:k + s] for k in range(0, len(ib_bin), s)]
+                # get mean of each chunk
+                chunks_mean_area = np.array([chunk.area.mean(axis=0) for chunk in chunks])
+                #print("*** chunks_mean_area = ", chunks_mean_area)
+
+                # check if arrays are initialized
+                if not 'length' in locals():
+                    # get mean length of icebergs for each chunk
+                    length = ne.evaluate('chunks_mean_area**(1/2)')
+                    #print("*** length = \n", length)
+                    # get scaling factor (length of each chunk)
+                    scaling = np.array([len(chunk) for chunk in chunks])
+                    # get depth
+                    depth = np.array([d] * len(chunks))
+
+                else:
+                    # get mean length of icebergs for each chunk
+                    length = np.append(length, ne.evaluate('chunks_mean_area**(1/2)'))
+                    #print("*** length = \n", length)
+                    # get scaling factor (length of each chunk)
+                    scaling = np.append(scaling, np.array([len(chunk) for chunk in chunks]))
+                    # get depth
+                    depth = np.append(depth, np.array([d] * len(chunks)))
+                pbar.update(1)
+            else:
+                print("*** bin is empty")
+                pbar.update(1)
+    
+    # create data frame with scaled iceberg elements: length, scaling, depth
+    df_out = pd.DataFrame({"length": length,
+                            "scaling": scaling,
+                            "depth": depth})
+    
+    print("*** Check for validity:")
+    print("***      BEFORE SCALING:")
+    print("***      total iceberg area [km2]:   ", df.sum(axis=0).area)
+    print("***      total iceberg volume [km3]: ", df.sum(axis=0).volume)
+    print("***      total amount of icebergs:   ", len(df))
+    print("***      AFTER SCALING:")
+    print("***      total iceberg area [km2]:   ", np.sum(df_out.length * df_out.length * df_out.scaling))
+    print("***      total iceberg volume [km2]: ", np.sum(df_out.length * df_out.length * df_out.scaling * df_out.depth))
+    print("***      total amount of icebergs:   ", np.sum(df_out.scaling))
+    print("***      total am. of sim. icebergs: ", len(df_out))
+    return df_out
+    
+
+
+def create_iceberg_coordinates(df1, df2):
+    pass 
+
+
+
+
 
 
 
 #generate icebergs
-def icb_generator(vals, ps1, ps2, ps3, icb_path, rho_ice=910, res_pism=5):
-    #mu, sigma = mu_length**3*16/21/10e6, 1.2
-    mu, sigma = mu_length**2*height_icb/10e6, 1.2
+def icb_generator(df, icb_path, rho_ice=920, res_pism=16):
+    ###############################
+    # bisher verwendet!
+    #mu, sigma = mu_length**2*height_icb/(10e6), 1.2
+    mu, sigma = 12.3, 1.55**0.5     #Tournadre et al. 2011
+    a = 1.52
+
+    ib_elems_scaled = pd.DataFrame()
+    ib_elems_loc = pd.DataFrame()
 
     points = []
     #depth=length/1.5
     height = [] #height=depth*8/7=length*8/7*2/3=length*16/21
     scaling_tmp = 1
 
-    with tqdm(total=len(vals), file=sys.stdout, desc='create icebergs') as pbar:
-        for val, p1, p2, p3 in zip(vals, ps1, ps2, ps3):
-            disch_cum = val*res_pism*res_pism*10e6/rho_ice
-            #N = max(int(np.absolute(disch_cum)/(10e6)/10), 1)
-            N = int(np.absolute(disch_cum)/(10e6))
-            if N < N_min:
-                N = 0
-            elif N > N_max:
-                scaling_tmp = N/N_max
-                N = N_max
+    df.sort_values("basin", inplace=True)
+    ubasins = df.basin.unique()
+    #ubasins = [1]
+    with tqdm(total=len(ubasins), file=sys.stdout, desc='go through basins') as pbar:
+        for b in ubasins:
+            print("*****************************")
+            print("*** BASIN = ", b)
+            # create icebergs for basin [m3]
+            ib_elems = create_icebergs_within_basin(df.where(df.basin==b).dropna())
+            ib_elems.sort_values("bin", inplace=True)
 
-            s = np.random.lognormal(mu, sigma, N)*10e6
+            # loop over FESOM cells within this basin
+            #with tqdm(total=len(ubasins), file=sys.stdout, desc='go through FESOM cells') as pbar:
+            #    for row in ib_elems.groupby(["p1", "p2", "p3"]).size().reset_index().rename(columns={0: "count"}).iterrows():
+            #        ib_elems_FESOM_cell = ib_elems.where(ib_elems.p1==row[1]["p1"]).where(ib_elems.p2==row[1]["p2"]).where(ib_elems.p3==row[1]["p3"]).dropna()
 
-            f_scale = sum(s)/np.absolute(disch_cum)
-            s_ = s / f_scale / scaling_tmp
+            # scale iceberg elements
+            if not ib_elems_scaled.empty:
+                ib_elems_scaled = pd.concat([ib_elems_scaled, scale_icebergs(ib_elems)])
+            else:
+                ib_elems_scaled = scale_icebergs(ib_elems)
+
+            ib_elems_grouped = df.where(df.basin==b).groupby(["x1", "y1", "x2", "y2", "x3", "y3"]).size().reset_index().rename(columns={0: "count"})
             
-            length_tmp = ne.evaluate('(s_/height_icb)**(1/2)')
+            with tqdm(total=len(ib_elems_grouped), file=sys.stdout, desc='go through FESOM cells') as pbar:
+                for row in ib_elems_grouped.iterrows():
+                    #ib_elems_FESOM_cell = df.where(df.p1==row[1]["p1"]).where(df.p2==row[1]["p2"]).where(df.p3==row[1]["p3"]).dropna()
+                    ib_elems_FESOM_cell = df.loc[(df["x1"]==row[1]["x1"]) & (df["y1"]==row[1]["y1"]) & \
+                                                (df["x2"]==row[1]["x2"]) & (df["y2"]==row[1]["y2"]) & \
+                                                (df["x3"]==row[1]["x3"]) & (df["y3"]==row[1]["y3"])]
+                    
+                    tmp = ib_elems_FESOM_cell.disch.sum(axis=0)
+                    disch_FESOM_cell_tot = tmp * RES_PISM**2 / RHO_ICE / 1e3
 
-            #ll = np.digitize(length_tmp, slength_bins)
-            ll = np.digitize(s_, svol_bins)
-            for i, (s, d) in enumerate(zip(Nlength, sdepth)):
-                sbin = np.where(ll==i+1)[0]
-                if list(sbin):
-                    if len(sbin) <= s:
-                        chunk = [sbin]
-                    else:
-                        chunk = [sbin[k:k + s] for k in range(0, len(sbin), s)]
-                    l = np.array([np.mean(s_[c]) for c in chunk])
-                    s = np.array([len(c) for c in chunk])
-                    if not 'length' in locals():
-                        length = ne.evaluate('(l/height_icb)**(1/2)')
-                        scaling = np.array([s])
-                        depth = np.array([d]*len(l))
-                    else:
-                        length = np.append(length, ne.evaluate('(l/height_icb)**(1/2)'))
-                        scaling = np.append(scaling, np.array([s]))
-                        depth = np.append(depth, np.array([d]*len(l)))
+                    disch_FESOM_cell = 0
+                    while abs(disch_FESOM_cell) < abs(disch_FESOM_cell_tot):
+                        if ib_elems_scaled.empty:
+                            break
 
-                    for i in range(len(l)):
+                        #print("*** len(ib_elems_scaled) = ", len(ib_elems_scaled))
+                        ib_elem = ib_elems_scaled.sample()
+                        #print("ib_elem = ", ib_elem)
+                        
+                        disch_FESOM_cell += ib_elem.length.values * ib_elem.length.values * ib_elem.depth.values * ib_elem.scaling.values
+
                         r1 = random.random()
                         r2 = random.random()
                         
-                        lower_bound = 0.1
-                        upper_bound = 0.9
+                        lower_bound = 0.25
+                        upper_bound = 0.75
 
                         r1 = r1 * (upper_bound - lower_bound) + lower_bound
                         r2 = r2 * (upper_bound - lower_bound) + lower_bound
                         #https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle
-                        tmp_x = (1-np.sqrt(r1))*p1.x + (np.sqrt(r1)*(1-r2))*p2.x + (r2*np.sqrt(r1))*p3.x
-                        tmp_y = (1-np.sqrt(r1))*p1.y + (np.sqrt(r1)*(1-r2))*p2.y + (r2*np.sqrt(r1))*p3.y
-                        points.append(point(tmp_x, tmp_y))
-                        #length_tmp = (np.absolute(s_[i])/height_icb)**(1/2)
-                        #length.append(length_tmp)
-                        ##length**2*length*16/21=s_--> length=(s_*21/16)**(1/3)
-                        #length.append(np.absolute(s_[i]*21/16)**(1/3))
-                        #height.append(height_icb)
-                        #height.append(length[-1]*16/21)
-                        #scaling.append(scaling_tmp)
+                        try:
+                            lon = (1-np.sqrt(r1))*ib_elems_FESOM_cell.iloc[0].x1 + (np.sqrt(r1)*(1-r2))*ib_elems_FESOM_cell.iloc[0].x2 + (r2*np.sqrt(r1))*ib_elems_FESOM_cell.iloc[0].x3
+                            lat = (1-np.sqrt(r1))*ib_elems_FESOM_cell.iloc[0].y1 + (np.sqrt(r1)*(1-r2))*ib_elems_FESOM_cell.iloc[0].y2 + (r2*np.sqrt(r1))*ib_elems_FESOM_cell.iloc[0].y3
+                            #points.append(point(tmp_x, tmp_y))
+                        except:
+                            break
+                       
+                        if ib_elems_loc.empty:
+                            print("*** HIER NUR EINMAL HIN!")
+                            ib_elems_loc = pd.DataFrame({"length": ib_elem.length, 
+                                                        "depth": ib_elem.depth,
+                                                        "scaling": ib_elem.scaling,
+                                                        "lon": lon, "lat": lat})
+                        else:
+                            ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": ib_elem.length, 
+                                                                                "depth": ib_elem.depth,
+                                                                                "scaling": ib_elem.scaling,
+                                                                                "lon": lon, "lat": lat})])
+                        ib_elems_scaled = ib_elems_scaled.drop(ib_elem.index.values)
+
+                    #print("*** disch_FESOM_cell = ", disch_FESOM_cell)
+                    #print("*** disch_FESOM_cell_tot = ", disch_FESOM_cell_tot)
+                    pbar.update(1)
             pbar.update(1)
 
-    points_ = pd.DataFrame.from_records([p.to_dict() for p in points])
-    np.savetxt(os.path.join(icb_path, "LON.dat"), points_.x.values)
-    np.savetxt(os.path.join(icb_path, "LAT.dat"), points_.y.values)
-    np.savetxt(os.path.join(icb_path, "LENGTH.dat"), length)
-    np.savetxt(os.path.join(icb_path, "HEIGHT.dat"), depth)
-    np.savetxt(os.path.join(icb_path, "SCALING.dat"), scaling)
+    #points_ = pd.DataFrame.from_records([p.to_dict() for p in points])
+    np.savetxt(os.path.join(icb_path, "LON.dat"), ib_elems_loc.lon.values)
+    np.savetxt(os.path.join(icb_path, "LAT.dat"), ib_elems_loc.lat.values)
+    #np.savetxt(os.path.join(icb_path, "LON.dat"), points_.x.values)
+    #np.savetxt(os.path.join(icb_path, "LAT.dat"), points_.y.values)
+    np.savetxt(os.path.join(icb_path, "LENGTH.dat"), ib_elems_loc.length.values * 1e3)
+    #np.savetxt(os.path.join(icb_path, "LENGTH.dat"), length)
+    np.savetxt(os.path.join(icb_path, "HEIGHT.dat"), ib_elems_loc.depth.values * 1e3)
+    np.savetxt(os.path.join(icb_path, "SCALING.dat"), ib_elems_loc.scaling.values)
     return [points, length]
 
 def PointTriangle_distance(lon0, lat0, lon1, lat1, lon2, lat2, lon3, lat3):
@@ -236,10 +495,47 @@ def find_FESOM_elem(nod2d_file, elem2d_file, lons, lats):
 
 
 data, lons, lats = read_pism_file(ifile)
-points = find_FESOM_elem(nod2d_file, elem2d_file, lons, lats)
 
+#print("max = ", min(data)*16*16*10e6/920)
+
+lons = [lon if lon<180 else lon-360 for lon in lons]
+
+basins = read_basins_file(basin_path)
+b_arr = []
+
+with tqdm(total=len(lons), file=sys.stdout, desc="find basins") as pbar:
+    for lon, lat in zip(lons, lats):
+        tmp = get_nearest_lon_lat(basins, lon, lat)
+        b_arr.append(tmp.squeeze().values)
+        pbar.update(1)
+
+#print("b_arr = ", b_arr)
+#print("lon = ", lons)
+#print("lat = ", lats)
+print("size(b_arr) = ", len(b_arr))
+print("size(data) = ", len(data))
+print("sum(data) = ", sum(data))
+print("sum(data) = ", sum(data)*RES_PISM**2/910/1e3)
+
+
+points = find_FESOM_elem(nod2d_file, elem2d_file, lons, lats)
 ps1, ps2, ps3 = np.transpose(points)
-icb_generator(data, ps1, ps2, ps3, icb_path)
+print("size(ps1) = ", len(ps1))
+
+array_sum = np.sum(data)
+print("data has nan = ", np.argwhere(np.isnan(data)))
+print("size = ", len(data))
+df = pd.DataFrame({"disch": data, 
+        "basin": np.array(b_arr),
+        "x1": [i.x[0] for i in ps1], "y1": [i.y[0] for i in ps1],
+        "x2": [i.x[0] for i in ps2], "y2": [i.y[0] for i in ps2],
+        "x3": [i.x[0] for i in ps3], "y3": [i.y[0] for i in ps3]})
+df.dropna(inplace=True)
+array_sum = np.sum(df.disch.values)
+#print("df = ", df)
+#print("data has nan = ", np.argwhere(np.isnan(df.disch.values)))
+##icb_generator(data, ps1, ps2, ps3, icb_path)
+icb_generator(df, icb_path)
 
 #pos = find_FESOM_elem(nod2d_file, elem2d_file, xs, ys)
 #

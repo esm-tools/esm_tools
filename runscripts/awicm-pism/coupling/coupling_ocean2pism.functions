@@ -3,7 +3,13 @@
 function ocean2pism {
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
-    module load defaults
+    if [ "$MACHINE" == "ollie" ]; then
+        module unload python3
+        module load anaconda3
+    elif [ "$MACHINE" == "mistral" ]; then
+        module load defaults
+    fi
+    echo $(module list)
     . ${FUNCTION_PATH}/coupling_general.functions
     . ${FUNCTION_PATH}/general_lists.functions
 

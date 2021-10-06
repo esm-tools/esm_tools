@@ -1,9 +1,13 @@
-#!/usr/bin/ksh
+#!/bin/ksh
 
 ## @fn ice2echam() 
 ice2echam() {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    ice2echam *** "; echo
+
+        if [ "$MACHINE" == "mistral" ]; then
+            module load defaults
+        fi
 
         . ${FUNCTION_PATH}/general_lists.functions
         . ${FUNCTION_PATH}/coupling_general.functions
@@ -137,17 +141,20 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-        module unload netcdf
-        module load netcdf/4.6.0_gnu
+        if [ "$MACHINE" == "ollie" ]; then
+            module unload netcdf
+            module load netcdf/4.6.0_gnu
+        fi
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
 	echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
         #rm sso_par_fil.srv topodata.nc
-        
-        module unload netcdf/4.6.0_gnu
-        module load netcdf/4.6.0_intel
+        if [ "$MACHINE" == "ollie" ]; then
+            module unload netcdf/4.6.0_gnu
+            module load netcdf/4.6.0_intel
+        fi
 }
 
 ## @fn update_orography_generate_target_orography_file() 
@@ -271,7 +278,10 @@ set_glacial_mask_echam_restart_file() {
         ncdump just_glac_new.nc | sed s/float/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
         ncks -A just_glac_new.nc echam_with_ice_mask.nc
 
-        mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        ncatted -h -a history,global,d,, echam_with_ice_mask.nc tmp
+        ncatted -h -a history_of_appended_files,global,d,, tmp ${ECHAM_RESTART_FILE}
+        rm tmp; rm echam_with_ice_mask.nc
         ncrename -v ice_mask,glac $ifile
 }
 
@@ -282,14 +292,14 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         # The echam restart file has already been modified with the "correct"
         # glacial mask", construct a dummy one from the restart
 	#CLEANUP cp ${BASE_DIR}/${EXP_ID}/awicm/input/echam/unit.24 dummy_jan_surf.nc
-	cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
+        cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
         cdo -s replace dummy_jan_surf.nc \
                 ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
                 tmp && mv tmp dummy_jan_surf.nc
         # Fix Albedo where there are glaciers:
         echam_albedo_on_glaciers=0.7
         cdo -s \
-                -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,-1,2 \
+                -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
                 input_if_mask_true.nc
         cdo -s \
@@ -316,8 +326,8 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 dummy_jan_surf_ALAKE.nc
         cdo -s replace \
                 dummy_jan_surf.nc \
-                -chname,${echam_glacial_mask_name},ALAKE dummy_jan_surf_ALAKE.nc \
-                tmp; mv tmp dummy_jan_surf.nc
+                dummy_jan_surf_ALAKE.nc tmp #-chname,${echam_glacial_mask_name},ALAKE dummy_jan_surf_ALAKE.nc \
+        mv tmp dummy_jan_surf.nc
 
         cdo -s \
                 -setmisstoc,1 -setrtomiss,-1,2 \
@@ -343,8 +353,8 @@ set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
         cp ${FUNCTION_PATH}/utils/_build/jsbach_init_file .
-        cp ${FUNCTION_PATH}/utils/_build//iterative_coupling/utils/_build/mo_kinds.mod .
-        cp ${FUNCTION_PATH}/utils/_build/iterative_coupling/utils/_build/mo_vegparams.mod .
+        cp ${FUNCTION_PATH}/utils/_build/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/utils/_build/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}
@@ -470,7 +480,8 @@ EOF
             cp ${pool_land}/${LUH_states}.gz .
             gunzip ${LUH_states}.gz
           fi
-          typeset -Z 4 yr=${year_cf}
+          #typeset -Z4 yr=${year_cf}
+          yr=${year_cf}
           while [[ ${yr} -le ${year_cf2} ]]; do
             cdo -s selyear,${yr} ${LUH_states} LUH_states_${yr}_${res_atm}.nc
             (( yr = yr + 1 ))
@@ -492,6 +503,13 @@ EOF
         mv jsbach_T63GENERIC_11tiles_5layers_1850_dynveg.nc \
                 ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc  
         echo :> ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
+        
+        ############################################################################
+        # LA UPDATE
+        ln -sf ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_jsbach_init_file.nc
+        #cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/jsbach.nc
+        ############################################################################
+        
         echo "LAND_BOUNDARY_CONDITIONS_jsbach=${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc" > ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
         add_to ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat jsbach_init_override.dat config jsbach
 }
@@ -508,7 +526,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         mkdir -p ${COUPLE_DIR}/update_land_cover_fractions; cd ${COUPLE_DIR}/update_land_cover_fractions
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
-        echo -e "\t\t-   Old JSBACH Init File: $(readlink ${FORCING_DIR_jsbach}/jsbach.nc)"
+        echo -e "\t\t-   Old JSBACH Init File: ${FORCING_DIR_jsbach}/jsbach.nc"
         cdo -s -selvar,glac -sub \
             ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
             ${FORCING_DIR_jsbach}/jsbach.nc \
@@ -528,24 +546,30 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
 
         newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
         # Make a backup copy
-        cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
+        #cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
+        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
                 if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/unpack .
+                        cp -v ${FUNCTION_PATH}/utils/_build/unpack ./
+                        cp -v ${FUNCTION_PATH}/utils/_build/unpack ${COUPLE_DIR}/
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
                 fi
         fi
+        
+        echo " *** unpack binary found here: $(pwd) " 2>&1 > ${COUPLE_DIR}/unpack_script_stdout_stderr
+        
         # Copy the files here:
-        cp ${newest_jsbach_restart_file} .
-        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
+        cp ${newest_jsbach_restart_file} ./
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
         echo -e "\t\t- Running unpack binary with arguments:"
         echo -e "\t\t- Script: ${FUNCTION_PATH}/utils/unpack_file.ksh"
         echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
         echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
+        echo "$(module list)"
         ${FUNCTION_PATH}/utils/unpack_file.ksh \
                 $(basename $newest_jsbach_restart_file) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
@@ -765,21 +789,20 @@ set_glacial_mask_jsbach_update_restart_veg() {
 
         newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
         # Make a backup copy
-        cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc) \
-                ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg_backup_$(date +%Y%m%d%H%M%S).nc
+        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg_backup_$(date +%Y%m%d%H%M%S).nc
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
                 if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/unpack .
+                        cp -v ${FUNCTION_PATH}/utils/_build/unpack ./
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
                 fi
         fi
         # Copy the files here:
-        cp ${newest_jsbach_restart_file} .
-        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
+        cp ${newest_jsbach_restart_file} ./
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
         echo -e "\t\t- Running unpack binary with arguments:"
         echo -e "\t\t- Script: ${FUNCTION_PATH}/utils/unpack_file.ksh"
         echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
@@ -787,7 +810,7 @@ set_glacial_mask_jsbach_update_restart_veg() {
         ${FUNCTION_PATH}/utils/unpack_file.ksh \
                 $(basename $newest_jsbach_restart_file) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
-                2>&1 > ${COUPLE_DIR}/unpack_script_stdout_stderr
+                2>&1 > ${COUPLE_DIR}/unpack_veg_script_stdout_stderr
 
         echo -e "\t\t- Listing files after program execution:"
         ls -ratl
@@ -968,6 +991,8 @@ update_land_runoff_prepare_for_oasis() {
         ncks -A ${FUNCTION_PATH}/utils/axis_366.nc $ifile
         ncpdq -a time,ny,nx $ifile tmp; mv tmp $ifile
         mv $ifile $ofile
+        cp ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/gfw_atmo.nc 
+        ln -sf ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_gfw_atmo.nc 
 } 
 
 ## @fn update_land_runoff_set_namcouple_override() 

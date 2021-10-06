@@ -1,6 +1,6 @@
 def prepare_environment(config):
     environment_dict = {
-            "ICE_TO_ECHAM": int(config["general"]["first_run_in_chunk"]),
+            "ICE_TO_ECHAM": 0, #int(config["general"]["first_run_in_chunk"]),
             "ECHAM_TO_ICE": int(config["general"]["last_run_in_chunk"]),
             "ECHAM_TO_ISM_multiyear_mean": 1,
             "ISM_TO_ECHAM_update_orography": 1, 
@@ -24,7 +24,8 @@ def prepare_environment(config):
             "RESTART_DIR_jsbach": config["jsbach"]["experiment_restart_out_dir"],
             "POOL_DIR_jsbach": "/pool/data/",
             "POOL_DIR_echam": "/pool/data/",
-            "MACHINE": config["computer"]["name"],
+            "ISM_TO_ECHAM_update_orography": 0,
+            "ISM_TO_ECHAM_update_glacial_mask": 0,
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

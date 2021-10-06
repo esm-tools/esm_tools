@@ -5,12 +5,12 @@ def prepare_environment(config):
             "PISM_TO_ATMOSPHERE": int(config["general"]["last_run_in_chunk"]),
             "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
             "iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
-            "MY_OBLIQUITY": "23.798", 
+            "MY_OBLIQUITY": "23.446", 
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "DOWNSCALE_TEMP": 1, 
-            "DOWNSCALING_LAPSE_RATE": -0.005,
+            "DOWNSCALING_LAPSE_RATE": -0.007,
             "DOWNSCALE_PRECIP": 1, 
             "VERSION_pism": config["pism"]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config["pism"]["pool_dir"],
@@ -46,7 +46,6 @@ def prepare_environment(config):
             "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling",
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
-            "MACHINE": config["computer"]["name"],
             }
     print (environment_dict)
     return environment_dict

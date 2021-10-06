@@ -34,13 +34,13 @@ set -e
 # If called from create_input_cosmos.ksh these variables are exported.
 #
 res_atm=T63                 # horizontal grid resopution
-res_oce=GR15                # ocean model grid (for a coupled setup)
+res_oce=CORE2                # ocean model grid (for a coupled setup)
 
 ntiles=11                   # number of jsbach tiles
 
 dynveg=true                 # setup for dynamic vegetation 
 c3c4crop=true               # differentiate between C3 and C4 crops
-cmip5_pasture=true          # use landuse maps for pastures and crops
+cmip5_pasture=false          # use landuse maps for pastures and crops
 
 year_ct=1850                # year the cover_types are derived from
 year_cf=1850                # year cover fractions are derived from

@@ -106,8 +106,8 @@ disturbance: "1.000001"
 lresume: false
 dataset: "r0007"
 
-lgfw: False
 #iterative_coupling: False
+lgfw: False
 choose_general.iterative_coupling:
         True:
                 choose_general.first_run_in_chunk:
@@ -751,8 +751,6 @@ choose_lgfw:
                         gfw_atmo: gfw_atmo
                 add_input_in_work:
                         gfw_atmo: "gfw_atmo.nc"
-
-
 
 # Configuration Files:
 config_sources:

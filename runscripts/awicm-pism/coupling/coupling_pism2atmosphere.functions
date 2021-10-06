@@ -58,15 +58,15 @@ function pism_atmosphere_get_newest_output {
         
         # PG: Modification to ensure that we only use SUMMER values (July for Northern Hemisphere):
         # LA: Not sure why. Now taking yearly mean.
-    
+
+        echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
+        echo; echo "                 *   file1 = ${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc "
         if [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
             latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+            ntime=$( cdo ntime ${latest_pism_ex_file} )
+            rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
             cdo -s timsum ${latest_pism_ex_file} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-            cdo -s divc,$( cdo ntime ${latest_pism_ex_file} ) ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_dir_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-        elif [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${START_MONTH_pism}${START_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
-            latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-            cdo -s timsum ${latest_pism_ex_file} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-            cdo -s divc,$( cdo ntime ${latest_pism_ex_file} ) ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_dir_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            cdo -s divc,${ntime} ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
         else
             echo "*** ${latest_pism_ex_file} not found ***"
             exit 42

@@ -379,17 +379,6 @@ coupling_fields:
         #        grid: feom
         #o16i_oce:
         #        grid: feom
-        #o16_feom:
-        #        grid: feom
-        #o18_feom:
-        #        grid: feom
-        #hdo_fesom:
-        #        grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:

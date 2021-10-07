@@ -260,8 +260,8 @@ choose_useMPI:
                         HDF5_C_INCLUDE_DIRECTORIES: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-intel14/include"
                         NETCDFFROOT: "/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
                         NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48"
-                        NETCDF_Fortran_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/include # ANIMAL!
-                        NETCDF_C_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-intel14/include # ANIMAL!
+                        #NETCDF_Fortran_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/include # REMOVE_THIS!
+                        #NETCDF_C_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-intel14/include # REMOVE THIS!
 
                 fc: mpif90
                 f77: mpif90

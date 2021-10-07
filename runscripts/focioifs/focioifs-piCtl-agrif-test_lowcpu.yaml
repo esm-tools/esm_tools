@@ -51,6 +51,9 @@ oifs:
 oasis3mct:
    norestart: F
    use_lucia: True
+   pool_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
+   ini_parent_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
+   oasis_date_stamp: ""
       
 nemo:
    resolution: "ORCA05"

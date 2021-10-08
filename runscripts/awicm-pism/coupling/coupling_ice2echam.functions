@@ -78,6 +78,9 @@ iterative_coupling_ice_echam6_update_land_runoff() {
         update_land_runoff_select_glacial_discharge
         regrid_to_echam ${COUPLE_DIR}/ice_discharge.nc
         update_land_runoff_fill_missing
+        if [ "x${HOSING_CORRECTION}" == "x1" ]; then
+            distribute_total_discharge_over_ocean
+        fi
         update_land_runoff_prepare_for_oasis
         update_land_runoff_set_namcouple_override
         update_land_runoff_set_namelist_modifications_next_echam_run
@@ -498,6 +501,11 @@ EOF
 
         ln -sf ${pool_land}/soil_parameters_${res_atm}.nc .
         echo "                -   Running jsbach_init_file (working dir: `pwd`)"
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf
+            module load hdf5/1.10.2_gnu
+            module load netcdf/4.6.2_gnu
+        fi
         chmod 755 jsbach_init_file
         ./jsbach_init_file > ${COUPLE_DIR}/jsbach_init_file_stdout_stderr 2>&1
         if [[ $? -eq 0 ]]; then
@@ -985,6 +993,27 @@ update_land_runoff_fill_missing() {
         # PG: Fix for way too much water:
         # Divide by minus 1000; oasis gives m/s to FESOM, not kg/m2/s.
         cdo -s mulc,-1 -divc,1000 -setmisstoc,0 $ifile $ofile
+}
+
+distribute_total_discharge_over_ocean() {
+#        echo; echo "                *   integrate discharge over echam grid"
+        ifile1=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.nc
+        ifile2=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.gridarea.nc
+#        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
+        cdo -s gridarea ${ifile1} ${ifile2}
+#        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
+        python ${FUNCTION_PATH}/utils/apply_hosing_correction.py $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS}
+#
+#        
+#        ifile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
+#        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.flux.nc
+#        echo; echo "                *   evenly spread discharge over ocean with total node area = ${TOTAL_NODE_AREA}"
+#        cdo -f divc,${TOTAL_NODE_AREA} ${ifile} ${ofile} 
+#        TOTAL_DISCHARGE=$( ncdump ${ofile} | awk '/total_ice_mass_loss_flux =/{getline; print}' | tr -d ";" | xargs )
+#        
+#        echo; echo "                *   write to ${HOSING_FILE_LANDICE_LOSS}"i
+#        echo 1 > ${HOSING_FILE_LANDICE_LOSS}
+#        echo ${TOTAL_DISCHARGE} >> ${HOSING_FILE_LANDICE_LOSS}
 }
 
 ## @fn update_land_runoff_prepare_for_oasis() 

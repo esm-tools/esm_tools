@@ -94,7 +94,7 @@ oifs:
         compiletime_environment_changes:
           choose_computer.name:
              blogin:
-                compiler_mpi: intel2019_ompi
+                compiler_mpi: intel2019_impi2019 #intel2019_ompi
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
@@ -113,7 +113,7 @@ oifs:
              #ECE_USE_CPLNG: "no"
           choose_computer.name:
              blogin:
-                compiler_mpi: intel2019_ompi
+                compiler_mpi: intel2019_impi2019 #intel2019_ompi
              glogin:
                 compiler_mpi: intel2019_ompi
              juwels:
@@ -295,7 +295,7 @@ oasis3mct:
         coupling_target_fields:
                 # Coupling ocean fields to atm
                 sstocean:
-                        #- 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
+                        - 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
                         - 'AIceFrac <--o2agauswgt-- OIceFrac'
                         - 'A_SSTSST <--o2agauswgt-- O_SSTSST'
                         - 'A_TepIce <--o2agauswgt-- O_TepIce'
@@ -325,11 +325,11 @@ oasis3mct:
                 
                 # Coupled atm stress to ocean (non-conserving)
                 atmtau:         
-                        #- 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
-                        - 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
-                        - 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
-                        - 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
-                        - 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
+                        - 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                        #- 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
+                        #- 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
+                        #- 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
+                        #- 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
                 
                 # Couple atm fluxes to ocean (conserving)
                 atmflx: 

@@ -1,4 +1,4 @@
-name: esm-tools no Docker
+name: esm-tools Ollie
 
 # Controls when the action will run. Triggers the workflow on push or pull request.
 
@@ -23,6 +23,8 @@ jobs:
 
       - name: install esm-tools
         run: |
+          module load git
+          module load python3
           ./install.sh
 
       - name: run esm_master first time

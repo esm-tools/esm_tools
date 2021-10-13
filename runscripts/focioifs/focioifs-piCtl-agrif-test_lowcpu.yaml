@@ -8,9 +8,9 @@ general:
    version: "agrif"
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:10:00"
+   compute_time: "00:30:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-02T00:00:00"         # Final date of the experiment
 
    nyear: 0
    nmonth: 0
@@ -24,7 +24,8 @@ general:
    base_dir: ${homedir}/esm/esm-experiments/
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-agrif
+   model_dir: ${general.homedir}/models_impi2021/focioifs-agrif
+   version: agrif
   
 oifs:
    version: "43r3"
@@ -45,22 +46,25 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   nproc: 31 
+   nproc: 287
    use_ocean_currents: 0
+   with_nest1: true
 
 oasis3mct:
-   norestart: F
-   use_lucia: True
-   pool_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
-   ini_parent_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
+   norestart: T
+   use_lucia: False
+   debug_level: 5
+   pool_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/"
+   ini_parent_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/"
    oasis_date_stamp: ""
       
 nemo:
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
-   jpni: 8
-   jpnj: 4
-   nproc: 32
+   jpni: 24
+   jpnj: 18
+   nproc: 432
+   nest1: viking10
    
 rnfmap:
    nproc: 1
@@ -68,4 +72,4 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
-   nproc: 16
+   nproc: 96

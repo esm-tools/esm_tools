@@ -8,6 +8,7 @@ execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
 with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
+with_nest1: false
 xml_dir: ''
 
 required_plugins:

@@ -8,9 +8,9 @@ namelist_dir: "${esm_namelist_dir}/fesom/"
 
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
-install_bins: mesh_part/build/fesom.x.ini
+install_bins: fesom_mesh_partitioning/build/fesom_ini
 comp_command: cd fesom_mesh_partitioning; mkdir build -p; cd build; cmake ..; make -j `nproc --all`
-clean_command: rm -rf bin/fesom.x.ini fesom_mesh_partitioning/build mesh_part/CMakeCache.txt
+clean_command: rm -rf bin/fesom_ini fesom_mesh_partitioning/build mesh_part/CMakeCache.txt
 
 
 
@@ -28,7 +28,7 @@ nproc: 8
 time_step: 1800
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-executable: fesom.x.ini
+executable: fesom_ini
 namelists:
     - "namelist.config"
 

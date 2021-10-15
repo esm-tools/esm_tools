@@ -84,12 +84,22 @@ choose_general.setup_name:
                         ifs_xml: ifs_xml
         focioifs: 
                 xml_dir: "${computer.pool_directories.focipool}"
-                add_config_files:
-                        context_ifs: context_ifs
-                        ifs_xml: ifs_xml
-                        domain_def: domain_def
-                        field_def: field_def
-                        file_def: file_def
+                choose_general.version:
+                        2.0:
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        domain_def: domain_def
+                                        field_def: field_def
+                                        file_def: file_def
+                        agrif:
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        domain_def: domain_def
+                                        field_def: field_def
+                                        file_def: file_def
+                                        file_def_agrif: file_def_agrif
         foci:
            choose_general.version:
               default: 

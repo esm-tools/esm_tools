@@ -10,21 +10,21 @@ general:
 
    compute_time: "00:30:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-02T00:00:00"         # Final date of the experiment
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
 
    nyear: 0
-   nmonth: 0
-   nday: 1
+   nmonth: 1
+   nday: 0
    restart_rate: 1
    restart_unit: days 
    hours: 0
   
    # machine specific setup 
-   account: shk00018
-   base_dir: ${homedir}/esm/esm-experiments/
+   account: hirace
+   base_dir: /p/project/hirace/kjellsson1/esm/esm-experiments/
 
 focioifs:
-   model_dir: ${general.homedir}/models_impi2021/focioifs-agrif
+   model_dir: /p/project/hirace/kjellsson1/esm/models/focioifs-agrif/
    version: agrif
   
 oifs:
@@ -52,10 +52,11 @@ oifs:
 
 oasis3mct:
    norestart: T
-   use_lucia: False
-   debug_level: 5
-   pool_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/"
-   ini_parent_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/"
+   use_lucia: True
+   debug_level: 2
+   export_mode: EXPORTED
+   pool_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/"
+   ini_parent_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/"
    oasis_date_stamp: ""
       
 nemo:
@@ -71,5 +72,5 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/output_for_test/"
    nproc: 96

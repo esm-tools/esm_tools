@@ -37,6 +37,8 @@ choose_partition:
                 cores_per_node: 24
         "compute2":
                 cores_per_node: 36
+        "compute,compute2":
+                cores_per_node: 72
 
 logical_cpus_per_core: 2
 

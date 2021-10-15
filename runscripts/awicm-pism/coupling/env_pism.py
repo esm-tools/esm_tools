@@ -20,6 +20,8 @@ def prepare_environment(config):
             "RUN_NUMBER_pism": config["general"]["run_number"],
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],
+            "CHUNK_START_YEAR_pism": config["general"]["chunk_start_date"].syear,
+            "CHUNK_END_YEAR_pism": config["general"]["chunk_end_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             #"ICEBERG_DIR": config["general"]["iceberg_dir"], 
             "OUTPUT_DIR_pism": config["pism"]["experiment_outdata_dir"],

@@ -63,9 +63,19 @@ function pism_atmosphere_get_newest_output {
         echo; echo "                 *   file1 = ${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc "
         if [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
             LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-            ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
+            rm ${OUTPUT_DIR_pism}/tmp.nc
+            #ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
             rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
-            cdo -s cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | head -${CHUNK_SIZE_pism_standalone} ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            #cdo -s cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | head -${CHUNK_SIZE_pism_standalone} ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            #cdo -s cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | head -${CHUNK_SIZE_pism_standalone} ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            unset PISM_OFILE_LIST
+            for i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}*.nc )"; done
+            #cdo cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | tail -$(( CHUNK_SIZE_pism_standalone/NYEAR)) ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
+            cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            ntime=$( cdo ntime ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc )
+            #ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
             #cdo -s timsum ${LATEST_PISM_FILE_SINGLE} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
             cdo -s timsum ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
             cdo -s divc,${ntime} ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm

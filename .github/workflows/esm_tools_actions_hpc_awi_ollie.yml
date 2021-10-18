@@ -12,6 +12,7 @@ jobs:
         LC_ALL: en_US.UTF-8
         LANG: en_US.UTF-8
 
+    steps:
       - name: add to the path
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH

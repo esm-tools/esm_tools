@@ -13,6 +13,9 @@ jobs:
         LANG: en_US.UTF-8
 
     steps:
+      - name: Download Code
+        uses: actions/checkout@v2
+
       - name: add to the path
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH

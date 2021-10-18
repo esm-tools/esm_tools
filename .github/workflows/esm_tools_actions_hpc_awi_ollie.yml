@@ -11,11 +11,6 @@ jobs:
     env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
-    name: Set up Python
-    steps:
-      - uses: actions/checkout@v2
-      - name: module load python3
-        run: "module load python3"
 
       - name: add to the path
         run: |

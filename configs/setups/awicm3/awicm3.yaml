@@ -61,6 +61,8 @@ general:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:
                         pool_dir: "/proj/awi/input"
+                blogin:
+                        pool_dir: "/scratch/usr/hbksloza/AWICM3_INPUT/input/input"
 
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}

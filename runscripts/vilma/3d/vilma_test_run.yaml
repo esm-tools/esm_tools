@@ -1,0 +1,22 @@
+general:
+        base_dir: /work/ollie/dbarbi/experiments/
+        initial_date: -120000-01-01
+        final_date: -119001-12-31
+        setup_name: vilma
+        compute_time: 00:40:00
+        nyear: 1000
+        use_venv: False
+        version: 3d
+        openmp: True
+        #submit_to_batch_system: False
+
+vilma:
+        model_dir: /work/ollie/dbarbi/modelcodes/vilma-3d/
+        pool_dir: ${model_dir}
+        visco_dir: /work/ollie/dbarbi/vilma_pool/visco/
+        lresume: False
+        scenario: small
+        version: 3d
+        nproc: 1
+        omp_num_threads: 24
+

@@ -25,9 +25,15 @@ choose_accounting:
 choose_mail_type:
         "*":
                 mail1:  "--mail-type=${mail_type}"
+choose_general.mail_type:
+        "*":
+                mail1:  "--mail-type=${general.mail_type}"
 choose_mail_user:
         "*":
                 mail2:  "--mail-user=${mail_user}"
+choose_general.mail_user:
+        "*":
+                mail2:  "--mail-user=${general.mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"

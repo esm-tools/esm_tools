@@ -63,20 +63,23 @@ pool_directories:
         pool: "/pool/data/not/available/on/juwels"
         focipool: "/p/project/hirace/foci_input2"
 
-# choose block
-choose_jobtype:
-        tidy_and_resubmit:
-                partition: batch
-        post:
-                partition: batch
-        compute:
-                partition: batch
+partition: batch
 
 choose_partition:
         batch:
-                cores_per_node: 48
+                partition_name: batch
+                partition_cpn: 48
         devel:
-                cores_per_node: 48
+                partition_name: devel
+                partition_cpn: 48
+
+partitions:
+        compute:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
 
 # basic modules and export vars needed
 # for all compiler and I/O settings

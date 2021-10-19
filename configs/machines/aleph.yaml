@@ -11,19 +11,23 @@ jobtype: compute
 sh_interpreter: "/bin/sh"
 
 
-choose_jobtype:
-        post:
-                partition: serial
+partition: iccp
+
+partitions:
         compute:
-                partition: iccp
-        tidy_and_resubmit:
-                partition: iccp
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: "serial"
+                cores_per_node: 1
 
 choose_partition:
         "iccp":
-                cores_per_node: 40
+                partition_name: "iccp"
+                partition_cpn: 40
         "serial":
-                cores_per_node: 1
+                partition_name: "serial"
+                partition_cpn: 1
 
 logical_cpus_per_core: 2
 

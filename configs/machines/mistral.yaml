@@ -23,22 +23,28 @@ accounting: true
 jobtype: compute
 sh_interpreter: "/bin/bash"
 
-choose_jobtype:
-        tidy_and_resubmit:
-                partition: compute
-        post:
-                partition: compute
-        compute:
-                partition: compute
 
+partition: compute
 
 choose_partition:
         "compute":
-                cores_per_node: 24
+                cname: "compute"
+                cpn: 24
         "compute2":
-                cores_per_node: 36
+                cname: "compute2"
+                cpn: 36
         "compute,compute2":
-                cores_per_node: 72
+                cname: "compute,compute2"
+                cpn: 72
+
+partitions:
+        compute:
+                name: ${computer.cname}
+                cores_per_node: ${computer.cpn}
+        pp:
+                name: ${computer.cname}
+                cores_per_node: ${computer.cpn}
+
 
 logical_cpus_per_core: 2
 

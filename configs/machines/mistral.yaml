@@ -72,11 +72,10 @@ pool_dir:  "/pool/data"
 useMPI: intelmpi
 module_actions:
         - "purge"
-        #- "source /pf/a/a270152/shell-intel+openmpi"
         - "unload netcdf_c"
         - "unload intel intelmpi"
         - "load python/3.5.2"
-        - "load cmake"
+        - "load cmake/3.13.3"
         - "load autoconf/2.69"
         - "load nco"
         - "load cdo"
@@ -103,8 +102,8 @@ export_vars:
         # MPI Settings
         #########################################################################
         #
-        #MPIROOT: "\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        #MPI_LIB: "\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        MPIROOT: "\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
         #########################################################################
         # HDF5 Defaults
@@ -185,16 +184,16 @@ export_vars:
         I_MPI_LARGE_SCALE_THRESHOLD: 8192
         I_MPI_DYNAMIC_CONNECTION: 1
 
-        #DAPL_NETWORK_NODES: $SLURM_NNODES
-        #DAPL_NETWORK_PPN: $SLURM_NTASKS_PER_NODE
-        #DAPL_WR_MAX: 500
+        DAPL_NETWORK_NODES: $SLURM_NNODES
+        DAPL_NETWORK_PPN: $SLURM_NTASKS_PER_NODE
+        DAPL_WR_MAX: 500
 
-        #OMPI_MCA_pml: cm
-        #OMPI_MCA_mtl: mxm
-        #OMPI_MCA_coll: ^ghc
-        #OMPI_MCA_mtl_mxm_np: 0
+        OMPI_MCA_pml: cm
+        OMPI_MCA_mtl: mxm
+        OMPI_MCA_coll: ^ghc
+        OMPI_MCA_mtl_mxm_np: 0
 
-        #MXM_RDMA_PORTS: mlx5_0:1
+        MXM_RDMA_PORTS: mlx5_0:1
         MXM_LOG_LEVEL: FATAL
         ################################################
 
@@ -240,18 +239,15 @@ choose_useMPI:
         openmpi:
                 add_module_actions:
                         - "load intel/18.0.4"
+                        - "unload cmake"
+                        - "load cmake"
                         - "load openmpi/2.0.2p2_hpcx-intel14"
                         - "unload netcdf"
                         - "load netcdf_c/4.3.2-gcc48"
                 add_export_vars:
                         I_MPI_SLURM_EXT: 0
 
-                        #OMPI_MCA_pml: cm          # sets the point-to-point management layer
-                        #OMPI_MCA_mtl: mxm         # sets the matching transport layer
-                        #MXM_RDMA_PORTS: mlx5_0:1
                         MXM_LOG_LEVEL: ERROR
-                        #MXM_HANDLE_ERRORS: bt
-                        #UCX_HANDLE_ERRORS: bt
                         I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY: 0
                         I_MPI_HARD_FINALIZE: 1
                         I_MPI_ADJUST_GATHER: 1 # do not use =3 (Shumilin's algorithm)
@@ -260,14 +256,13 @@ choose_useMPI:
                         HDF5_C_INCLUDE_DIRECTORIES: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-intel14/include"
                         NETCDFFROOT: "/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
                         NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48"
-                        #NETCDF_Fortran_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/include # REMOVE_THIS!
-                        #NETCDF_C_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-intel14/include # REMOVE THIS!
 
                 fc: mpif90
                 f77: mpif90
                 mpifc: mpif90
                 cc: mpicc
                 cxx: mpicxx
+                remove_computer.export_vars: [MPIROOT, MPI_LIB, DAPL_NETWORK_NODES, DAPL_NETWORK_PPN, DAPL_WR_MAX, OMPI_MCA_pml, OMPI_MCA_mtl, OMPI_MCA_coll, OMPI_MCA_mtl_mxm_np, MXM_RDMA_PORTS]
 
         bullxmpi:
                 add_module_actions:

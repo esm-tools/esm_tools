@@ -28,22 +28,22 @@ partition: compute
 
 choose_partition:
         "compute":
-                cname: "compute"
-                cpn: 24
+                partition_name: "compute"
+                partition_cpn: 24
         "compute2":
-                cname: "compute2"
-                cpn: 36
+                partition_name: "compute2"
+                partition_cpn: 36
         "compute,compute2":
-                cname: "compute,compute2"
-                cpn: 72
+                partition_name: "compute,compute2"
+                partition_cpn: 72
 
 partitions:
         compute:
-                name: ${computer.cname}
-                cores_per_node: ${computer.cpn}
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
         pp:
-                name: ${computer.cname}
-                cores_per_node: ${computer.cpn}
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
 
 
 logical_cpus_per_core: 2

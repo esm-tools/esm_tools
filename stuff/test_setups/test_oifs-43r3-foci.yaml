@@ -1,20 +1,20 @@
 general:
    setup_name: oifs
    compute_time: "00:30:00"
-   account: "bb0519"
    initial_date: "2008-01-01"
    final_date: "2008-01-03"
-   model_dir: "/pf/b/b350071/esm-tools-latest/models/oifs-43r3-foci/"
-   base_dir: "/pf/b/b350071/esm-tools-latest/esm-experiments/"
    nyear: 0
    nmonth: 0
    nday: 1
    restart_rate: 1
    restart_unit: days 
 
+   account: set_by_test_setup.sh 
+   base_dir: /will/be/set/by/test_setup.sh 
+   model_dir: /will/be/set/by/test_setup.sh 
+
 oifs:
    version: 43r3
-   #pool_dir: "/work/bb0519/b350090/foci_input_for_dirk/"
    input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
    rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
    vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/

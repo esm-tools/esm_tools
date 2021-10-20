@@ -1,0 +1,73 @@
+computer:
+    launcher: mpirun
+    launcher_flags: ''
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "00:10:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+
+   nyear: 0
+   nmonth: 0
+   nday: 1
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+  
+   # machine specific setup 
+   #account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/ompi/focioifs-2.0
+  
+oifs:
+   runtime_environment_changes:
+      choose_computer.name:
+         nesh:
+            compiler_mpi: intel2019_ompi
+
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   lresume: 0
+   nproc: 47 
+   use_ocean_currents: 0
+
+oasis3mct:
+   norestart: F
+   use_lucia: True
+      
+nemo:
+   resolution: "ORCA05"
+   jpni: 8 
+   jpnj: 4 
+   nproc: 32 
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   nproc: 16

@@ -24,3 +24,11 @@ glogin:
         login_nodes: 'glogin*'
         compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
         post_nodes: 'glogin*'
+
+nesh:
+        login_nodes: 'nesh*'
+        compute_nodes: 
+               - 'neshcl*'
+               - 'nesh-bigmem*'
+        post_nodes: 'neshcl*'
+

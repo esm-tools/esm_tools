@@ -1,44 +1,30 @@
-
+# example to use the a small number of nodes / CPUs that 
 general:
    use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:10:00"
+   compute_time: "01:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1850-01-06T00:00:00"         # Final date of the experiment
 
    nyear: 0
    nmonth: 0
-   nday: 1
+   nday: 5
    restart_rate: 1
    restart_unit: days 
    hours: 0
   
    # machine specific setup 
-   account: hirace 
-   base_dir: /p/project/hirace/wahl1/esm/esm-experiments/
-   # seb-wahl: this does not work and causes really strange
-   # behaviour upon restart!
-   #choose_computer.name:
-   #   blogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   glogin:
-   #      account: shk00018
-   #      my_work_env: /home/shkifmsw/esm/
-   #   juwels:
-   #      account: hirace 
-   #      my_work_env: /p/project/hirace/wahl1/esm/ 
-   #   mistral:
-   #      account: bb0519 
-   #      my_work_env: /pf/b/b350071/esm 
-   #model_dir: ${my_work_env}/models/focioifs-2.0/
-   #base_dir: ${my_work_env}/esm-experiments/
+   #account: shk00018
+   base_dir: ${homedir}/esm/esm-slask/
 
 focioifs:
-   model_dir: /p/project/hirace/wahl1/esm/models/focioifs-2.0
-   
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
+  
 oifs:
    version: "43r3"
    with_xios: True
@@ -58,26 +44,26 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   nproca: 287
-   nprocb: 1  
+   nproc: 31 
    use_ocean_currents: 0
 
 oasis3mct:
    norestart: F
-   use_lucia: True
-      
+   use_lucia: False
+   debug_level: 50
+   ini_parent_dir: "${oasis3mct.pool_dir}"
+
 nemo:
    resolution: "ORCA05"
-   jpni: 24
-   jpnj: 18
-   nproc: 432
+   jpni: 8 
+   jpnj: 4
+   nproc: 32
    
 rnfmap:
-   nproca: 1
-   nprocb: 1
+   nproc: 1
 
 xios: 
    with_model: focioifs 
-   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
-   nproca: 48
-   nprocb: 1
+   #xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   xml_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
+   nproc: 16

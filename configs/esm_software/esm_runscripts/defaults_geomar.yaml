@@ -1,0 +1,41 @@
+#per_model_defaults:
+#        file_movements:
+#                default:
+#                        all_directions: copy
+#                bin:
+#                        init_to_exp:    copy
+#                        exp_to_run:     copy
+#                        run_to_work:    copy
+#                        work_to_run:    copy
+#                        
+# GEOMAR defaults
+per_model_defaults:
+   file_movements:
+      default:
+         all_directions: copy
+      log:
+         all_directions: copy
+      bin:
+         init_to_exp: copy
+         exp_to_run: copy
+         run_to_work: copy
+         work_to_run: copy
+      forcing:
+         all_directions: link
+      input:
+         all_directions: link
+      restart_in:
+         # seb-wahl: need to copy restart files by default
+         # as oasis modifies the restart file !!!!
+         init_to_exp: copy 
+         exp_to_run: copy
+         run_to_work: copy
+         work_to_run: link
+      restart_out:
+         all_directions: copy
+      config:
+         init_to_exp: copy
+         exp_to_run: link
+         run_to_work: link
+         work_to_run: link
+

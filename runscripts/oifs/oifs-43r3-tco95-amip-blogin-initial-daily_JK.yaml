@@ -33,13 +33,11 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 1
-        nproca: 288
-        nprocb: 1
+        nproc: 288
         perturb: 0 
 
 xios:
         #xml_dir: /home/shkjocke/xmls_for_oifs/
         xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_3h+6hrLev/
         with_model: oifs
-        nproca: 96
-        nprocb: 1
+        nproc: 96

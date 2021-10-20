@@ -11,50 +11,21 @@ indir=$1
 icmcl_file=$2
 inexpid=$3
 outexpid=$4
-startdate=$5
-enddate=$6
-outdir=$7
-with_wam=$8
-perturb=$9
-nx=${10}
-ensemble_id=${11}
+inidate=$5
+startdate=$6
+enddate=$7
+outdir=$8
+with_wam=$9
+perturb=${10}
+nx=${11}
+ensemble_id=${12}
 
-style="jesus"
+style=${13:-"jesus"}
 
-if [[ "$(hostname -f)" =~ dkrz.de ]] ; then
-    export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
-    module purge
-    module load netcdf_c/4.3.2-gcc48
-    module load cdo
+envfile=${14:-"env.sh"}
 
-elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
-    #module load eccodes # eccodes only available on blogin :-(
-	 #module load cdo
-	 module load intel/19.0.5 impi/2019.5
-	 export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
-elif [[ "$(hostname -f)" =~ juwels ]] ; then
-	 
-    # new Intel 2019 settings 
-    # self compiled netcdf etc from Sebastian Wahl
-    module --force purge
-    module use $OTHERSTAGES
-    module load Stages/Devel-2019a
-    #module load Intel/2019.3.199-GCC-8.3.0
-    #module load IntelMPI/2019.6.154
-    module load Intel/2019.5.281-GCC-8.3.0
-    module load ParaStationMPI/5.4.4-1-mt    
-    module load Python/3.6.8
-    module load imkl/2019.3.199
-    #export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703/
-    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
-    export PATH=$IO_LIB_ROOT/bin:$PATH
-    export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-else
-   echo
-	echo $0 has not been adapted for $(hostname)
-	echo
-	exit 1
-fi 
+echo $envfile
+source $envfile
 
 echo " OpenIFS preprocessing "
 echo " ===================== "
@@ -69,11 +40,18 @@ echo " Output dir: $outdir "
 echo " Exp ID: $expid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
+echo " Perturb SKT: $perturb "
 
-ndate=$(date -u -d "${startdate}" +%Y%m%d)
+if [[ "x${style}" == "xjesus" ]] ; then
+   ndate=$(date -u -d "${inidate}" +%Y%m%d)
+else
+   ndate=$(date -u -d "${startdate}" +%Y%m%d)
+fi
+initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
 endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
+echo " Initial time: $initime "
 echo " Start time: $starttime "
 echo " End time: $endtime "
 echo " "
@@ -85,7 +63,7 @@ old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
 if [ -f $old ]; then                                                                                                                                                 
-    grib_set -s dataDate=$ndate $old $new                                                                                                                          
+    grib_set -s dataDate=$ndate $old $new 
     echo " Made new file: " $new " with date " $ndate                                                                                                                 
 else                                                                                                                                                                 
     echo " Could not find file " $old                                                                                                                                 
@@ -154,7 +132,7 @@ fi
 if [[ "x${with_wam}" == "x1" ]] ; then
     files="cdwavein sfcwindin specwavein uwavein"
     for file in $files ; do
-   
+
         ## old file
         old=${indir}/$file 
         
@@ -163,7 +141,7 @@ if [[ "x${with_wam}" == "x1" ]] ; then
    
         if [ -f $old ]; then
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new 
+            grib_set -s dataDate=$ndate $old $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old

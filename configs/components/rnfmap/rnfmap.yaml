@@ -62,6 +62,8 @@ choose_resolution:
 
 nproca: 1
 nprocb: 1
+
+runoff_method: "old"
                          
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
@@ -82,13 +84,28 @@ input_sources:
         runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}.nc
 
 runoff_fields_recv: [R_Runoff_atm] 
-runoff_fields_send: [R_Runoff_oce]
+#runoff_fields_send: [R_Runoff_oce, R_Calving_oce]
 
 coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
                 grid: rnfa
-        "[[runoff_fields_send-->FIELD]]":
-                grid: rnfo #opaf
+        #"[[runoff_fields_send-->FIELD]]":
+        #        grid: rnfm
+
+choose_general.runoff_method:
+        'new':
+                runoff_fields_send: [R_Runoff_oce]
+                calving_fields_send: [R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_fields_send-->FIELD]]":
+                                grid: rnfs
+        '*':
+                runoff_fields_send: [R_Runoff_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfo
 
 namelist_changes:
         namelist.runoffmapper:
@@ -118,6 +135,16 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 0
+                        rnfm:   
+                                name: rnfm
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
+                        rnfs:
+                                name: rnfs
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

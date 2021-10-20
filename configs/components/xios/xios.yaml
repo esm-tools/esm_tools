@@ -85,7 +85,7 @@ choose_general.setup_name:
         focioifs: 
                 xml_dir: "${computer.pool_directories.focipool}"
                 choose_general.version:
-                        2.0:
+                        "2.0":
                                 add_config_files:
                                         context_ifs: context_ifs
                                         ifs_xml: ifs_xml

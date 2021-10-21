@@ -1,7 +1,7 @@
 components:
 - oifs-43r3-awicm-3.0
-- amip
-- oasis3mct-4.0
+- amip-v1
+- oasis3mct-4.0-awicm-3.0
 coupling_changes:
 - sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3/src/ifs/module/yommcc.F90
 - sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-43r3/src/ifs/module/yommcc.F90

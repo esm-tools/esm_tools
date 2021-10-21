@@ -1,5 +1,5 @@
 #########################################################################################
-######################### AWICM3 YAML CONFIGURATION FILE  ###############################
+########################### AMIP YAML CONFIGURATION FILE  ###############################
 #########################################################################################
 general:
 
@@ -18,9 +18,9 @@ general:
         available_versions:
                 - 'cy43'
         choose_version:
-                cy43:
-                        couplings:
-                                - oifs-43r3-awicm-3.0+amip
+          cy43:
+            couplings:
+              - oifs-43r3-awicm-3.0+amip-v1
 
         version: "cy43"
         scenario: "piControl"
@@ -66,7 +66,6 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
-        ocean_resolution: "${fesom.resolution}"
 
         mip: "cmip6"
         scenario: "historical"
@@ -140,14 +139,14 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: "_${fesom.resolution}"
+        ICMGG_INIT_name: ""
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations
         remove_forcing_files:
                 - ICMCL_INIT
 
 
-rnfmap:
+amip:
         pool_dir: ${general.pool_dir}
 
         nproc: 1
@@ -155,17 +154,15 @@ rnfmap:
         time_step: 86400
 
         coupling_fields:
-                "[[oifsamip_fields_send-->FIELD]]":
+                "[[amip_fields_send-->FIELD]]":
                         grid: AMIP
 
         grids:
                 AMIP:
                         name: AMIP
-                        nx: 512
-                        ny: 256
+                        nx: 360
+                        ny: 180
                         oasis_grid_type: "LR"
-        input_files:
-                amip_forcing: amip_forcing
 
 
 #########################################################################################
@@ -239,7 +236,7 @@ oasis3mct:
                 grids: grids.nc
 
         input_sources:
-                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                rmp: ${input_dir}/rmp_*.nc
                 areas: ${input_dir}/areas.nc
                 masks: ${input_dir}/masks.nc
                 grids: ${input_dir}/grids.nc
@@ -267,15 +264,15 @@ oasis3mct:
                 true:
                         lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
-                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # it is not a branched off experiment add the / to the
                         # sources when the run_number is 1
                         load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
                                         add_restart_in_sources:
-                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/${fesom.nproc}/rstas.nc
-                                                rstos.nc: ${input_dir}/${fesom.nproc}/rstos.nc
+                                                rmp: ${input_dir}/rmp_*.nc
+                                                rstas.nc: ${input_dir}/rstas.nc
+                                                rstos.nc: ${input_dir}/rstos.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

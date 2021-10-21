@@ -203,6 +203,7 @@ oifs:
                                         grid: atml        
                                 "[[fociagrif_fields_n-->FIELD]]":
                                         grid: atml
+                        
 
         # settings for restarting from another run
         lresume: ${general.lresume}
@@ -232,12 +233,12 @@ nemo:
                                 ln_rnf_sal: .false.  
                         namsbc_cpl:
                                 sn_rcv_rnf: ['coupled', 'no', '', '', '']
-        #choose_version:
-        #        ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
-        #                add_namelist_changes:
-        #                        1_namelist_cfg:
-        #                                namsbc_cpl:
-        #                                        sn_rcv_rnf: ['coupled', 'no', '', '', '']
+        choose_version:
+                ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
+                        add_namelist_changes:
+                                1_namelist_cfg:
+                                        namsbc_cpl:
+                                                sn_rcv_rnf: ['coupled', 'no', '', '', '']
 
         resolution: ORCA05
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
@@ -371,6 +372,34 @@ oasis3mct:
         
         choose_general.version:
                 agrif:
+                        add_restart_in_files:
+                                rmp_a2agr_L1: rmp_a2agr_L1
+                                rmp_a2agr_A1: rmp_a2agr_A1
+                                rmp_agr2a_1L: rmp_agr2a_1L
+                                rmp_agr2a_2L: rmp_agr2a_2L
+                                rmp_r2agr_R1: rmp_r2agr_R1
+
+                                sstocean1: sstocean1
+                                flxatmos1: flxatmos1
+                                rnrunoff1: rnrunoff1
+                                atmtau1: atmtau1
+                                atmflx1: atmflx1
+                                agrifspg: agrifspg
+
+                        add_restart_out_files:
+                                rmp_a2agr_L1: rmp_a2agr_L1
+                                rmp_a2agr_A1: rmp_a2agr_A1
+                                rmp_agr2a_1L: rmp_agr2a_1L
+                                rmp_agr2a_2L: rmp_agr2a_2L
+                                rmp_r2agr_R1: rmp_r2agr_R1
+
+                                sstocean1: sstocean1
+                                flxatmos1: flxatmos1
+                                #rnrunoff1: rnrunoff1
+                                atmtau1: atmtau1
+                                atmflx1: atmflx1
+                                agrifspg: agrifspg
+                        
                         add_coupling_target_fields:
                                 sstocean_1:
                                         #- 'M01_AIceFrac <--agr2agauswgt-- 1_OIceFrac'
@@ -414,8 +443,8 @@ oasis3mct:
                                         - '1_OTotSnow <--a2agrdistwgt-- ATotSnow'
                                         - '1_OIceEvap <--a2agrdistwgt-- AIceEvap'
                                         - '1_O_dQnsdT <--a2agrdistwgt-- A_dQnsdT'
-                                #rnrunoff:
-                                #        - '1_O_Runoff <--r2agrbilinear-- R_Runoff_oce'
+                                rnrunoff_1:
+                                        - '1_O_Runoff <--r2agrbilinear-- R_Runoff_oce'
                                 agrifspg:
                                         #- 'M01_A_AgrSpg <--agr22agauswgt-- 1_O_AgrSpg'
                                         - 'M01_A_AgrSpg <--agr22adistwgt-- 1_O_AgrSpg'
@@ -627,9 +656,9 @@ oasis3mct:
                         remapping:
                                 - distwgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 25
+                                        nb_of_neighbours: 1
                                 - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT1_${nemo.resolution}.nc
                                         map_regrid_on: src
 
                 a2agrdistwgtcn:
@@ -637,9 +666,9 @@ oasis3mct:
                         remapping:
                                 - distwgt:
                                         search_bin: latitude 
-                                        nb_of_neighbours: 25
+                                        nb_of_neighbours: 1
                                 - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT1_${nemo.resolution}.nc
                                         map_regrid_on: src
 
                 agr2adistwgt:
@@ -672,17 +701,20 @@ oasis3mct:
                                         mapname: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                                         map_regrid_on: dst
         
-        add_input_files:
+        #add_input_files:
+        input_files:
                 areas: areas
                 masks: masks
                 grids: grids
         
-        add_input_in_work:
+        #add_input_in_work:
+        input_in_work:
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
         
-        add_input_sources: 
+        #add_input_sources:
+        input_sources:
                 #areas: ${pool_dir}/grids_areas_masks.nc
                 #masks: ${pool_dir}/grids_areas_masks.nc
                 #grids: ${pool_dir}/grids_areas_masks.nc
@@ -690,7 +722,8 @@ oasis3mct:
                 masks: ${pool_dir}/masks.nc
                 grids: ${pool_dir}/grids.nc
                 
-        add_restart_out_files:
+        #add_restart_out_files:
+        restart_out_files:
                 rmp_o2a_TL: rmp_o2a_TL
                 rmp_a2r_RR: rmp_a2r_RR
                 rmp_r2f_RF: rmp_r2f_RF
@@ -704,7 +737,8 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
                 
-        add_restart_out_in_work:
+        #add_restart_out_in_work:
+        restart_out_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
@@ -712,11 +746,11 @@ oasis3mct:
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 # These four are for AGRIF-OpenIFS remapping
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                rmp_r2agr_R1: rmp_rnfo_to_agr1_BILINEAR_${nemo.resolution}.nc 
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
+                rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc 
                                 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -724,19 +758,28 @@ oasis3mct:
                 rnrunoff: rnrunoff
                 atmtau: atmtau
                 atmflx: atmflx
-                
 
-        add_restart_out_sources:
+                sstocean1: sstocean_1
+                flxatmos1: flxatmos_1
+                atmtau1: atmtau_1
+                atmflx1: atmflx_1
+                rnrunoff1: rnrunoff_1
+                agrifspg: agrifspg
+
+        #add_restart_out_sources:
+        restart_out_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                                
+                
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc  
+                rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -744,8 +787,16 @@ oasis3mct:
                 rnrunoff: rnrunoff
                 atmtau: atmtau
                 atmflx: atmflx
+                
+                sstocean1: sstocean_1
+                flxatmos1: flxatmos_1
+                atmtau1: atmtau_1
+                atmflx1: atmflx_1
+                rnrunoff1: rnrunoff_1
+                agrifspg: agrifspg
 
-        add_restart_in_files:
+        #add_restart_in_files:
+        restart_in_files:
                 rmp_o2a_TL: rmp_o2a_TL
                 rmp_a2r_RR: rmp_a2r_RR
                 rmp_r2f_RF: rmp_r2f_RF
@@ -759,17 +810,20 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
 
-        add_restart_in_in_work:
+        #add_restart_in_in_work:
+        restart_in_in_work:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                                
+                
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc  
+                rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -777,18 +831,28 @@ oasis3mct:
                 rnrunoff: rnrunoff
                 atmtau: atmtau
                 atmflx: atmflx
+                
+                sstocean1: sstocean_1
+                flxatmos1: flxatmos_1
+                atmtau1: atmtau_1
+                atmflx1: atmflx_1
+                rnrunoff1: rnrunoff_1
+                agrifspg: agrifspg
 
-        add_restart_in_sources:
+        #add_restart_in_sources:
+        restart_in_sources:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc                
+                
+                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
+                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc                
+                rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 
                 sstocean: sstocean${this_oasis_date_stamp}
                 flxatmos: flxatmos${this_oasis_date_stamp}
@@ -796,7 +860,13 @@ oasis3mct:
                 rnrunoff: rnrunoff${this_oasis_date_stamp}
                 atmtau: atmtau${this_oasis_date_stamp}
                 atmflx: atmflx${this_oasis_date_stamp}
-
+                
+                sstocean1: sstocean_1${this_oasis_date_stamp}
+                flxatmos1: flxatmos_1${this_oasis_date_stamp}
+                atmtau1: atmtau_1${this_oasis_date_stamp}
+                atmflx1: atmflx_1${this_oasis_date_stamp}
+                rnrunoff1: rnrunoff_1${this_oasis_date_stamp}
+                agrifspg: agrifspg${this_oasis_date_stamp}
 
 # Set up CPU layout
 choose_cores_per_node:

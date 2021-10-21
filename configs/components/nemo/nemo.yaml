@@ -8,6 +8,8 @@ version: GYRE_XIOS
 include_models:
 - xios
 
+runoff_method: "old"
+
 available_versions:
 - ORCA05_LIM2_KCM_AOW
 - ORCA05_LIM2_FOCI_AGRIF_AOW
@@ -864,12 +866,10 @@ log_sources:
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
-opar_fields: [O_Runoff]
 
 agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 
                 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OIceEvap, 1_O_dQnsdT]
-agr1_r_fields: [1_O_Runoff]
 agr2_t_fields: [1_O_AgrSpg]
 
 coupling_fields:
@@ -877,8 +877,30 @@ coupling_fields:
                 grid: opat
         "[[opac_fields-->FIELD]]":
                 grid: opac
-        "[[opar_fields-->FIELD]]":
-                grid: rnfo
+
+choose_runoff_method:
+        "new":
+                ornf_fields: [O_Runoff]
+                ocal_fields: [OCalving]
+                agr1_r_fields: [1_O_Runoff]
+                agr1_c_fields: [1_OCalving]
+                add_coupling_fields:
+                        "[[ornf_fields-->FIELD]]":
+                                grid: opac
+                        "[[ocal_fields-->FIELD]]":
+                                grid: opaa
+                        "[[agr1_r_fields-->FIELD]]":
+                                grid: agr1r
+                        "[[agr1_c_fields-->FIELD]]":
+                                grid: agr1c
+        "*":
+                ornf_fields: [O_Runoff]
+                agr1_r_fields: [1_O_Runoff]
+                add_coupling_fields:
+                        "[[ornf_fields-->FIELD]]":
+                                grid: rnfo
+                        "[[agr1_r_fields-->FIELD]]":
+                                grid: agr1r
 
 grids:
         opat:
@@ -893,12 +915,18 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
                 number_of_overlapping_points: 2 # oasis P-value
-        opar:
-                name: opar
+        opaa:   
+                name: opaa
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
-                number_of_overlapping_points: 2 
+                number_of_overlapping_points: 0
+        #opar:
+        #        name: opar
+        #        nx: ${_nx}
+        #        ny: ${_ny}
+        #        oasis_grid_type: "LR"
+        #        number_of_overlapping_points: 2 
         rnfo:
                 name: rnfo
                 nx: ${_nx}

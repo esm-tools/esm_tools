@@ -178,7 +178,8 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
 #
 print('*   Create file "'+args.FESOM_OUTPUT[0]+'"')
 #OK: OCE_OUT = Dataset("".join(args.FESOM_OUTPUT), "w", format="NETCDF3_64BIT_OFFSET")
-OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF4") #format="NETCDF3_64BIT_OFFSET")
+#OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF4") #format="NETCDF3_64BIT_OFFSET")
+OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF3_64BIT_OFFSET") #format="NETCDF3_64BIT_OFFSET")
 
 print('*     Create dimensions and define variables')
 #
@@ -244,8 +245,8 @@ lon_var.units = "degrees east"
 lat_var.long_name = "latitude"
 lat_var.units = "degrees north"
 
-temp_var.long_name = "temperature"
-temp_var.units = "degree celcius" #FID.variables[args.FESOM_VARIABLE[0]].units
+temp_var.long_name = FID.get(args.FESOM_VARIABLE[0]).long_name
+temp_var.units = FID.get(args.FESOM_VARIABLE[0]).units
 temp_var.coordinates = "longitude latitude"
 temp_var.description = "" #FID.variables[args.FESOM_VARIABLE[0]].description
 #temp_var.missing_value = NAN_REPLACE

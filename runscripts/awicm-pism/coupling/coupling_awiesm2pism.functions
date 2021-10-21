@@ -5,12 +5,12 @@ awiesm2pism() {
     . ${FUNCTION_PATH}/pism_helpers.functions
     . ${FUNCTION_PATH}/general_lists.functions
 
-    if [ -f ${COUPLE_Dir}/latest_atmo_forcing_file.nc ]; then
-        rm ${COUPLE_Dir}/latest_atmo_forcing_file.nc
+    if [ -f ${COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_atmo_forcing_file.nc
     fi
     
-    if [ -f ${COUPLE_Dir}/latest_ocean_forcing_file.nc ]; then
-        rm ${COUPLE_Dir}/latest_ocean_forcing_file.nc
+    if [ -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_ocean_forcing_file.nc
     fi
     atmosphere2pism
     ocean2pism

@@ -94,7 +94,10 @@ iterative_coupling_ice_echam6_update_land_runoff() {
         regrid_to_echam ${COUPLE_DIR}/ice_discharge.nc
         update_land_runoff_fill_missing
         if [ "x${HOSING_CORRECTION}" == "x1" ]; then
+            echo; echo "            * Correcting freshwater input by hosing "
             distribute_total_discharge_over_ocean
+        else
+            echo; echo "            * NOT correcting freshwater input by hosing "
         fi
         update_land_runoff_prepare_for_oasis
         update_land_runoff_set_namcouple_override
@@ -1017,7 +1020,11 @@ distribute_total_discharge_over_ocean() {
 #        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
         cdo -s gridarea ${ifile1} ${ifile2}
 #        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
-        python ${FUNCTION_PATH}/utils/apply_hosing_correction.py $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS}
+        echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS} "
+        module load python3
+        python3 ${FUNCTION_PATH}/utils/apply_hosing_correction.py $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS}
+        module unload python3
+        echo; echo "            * Finished apply_hosing_correction.py "
 #
 #        
 #        ifile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc

@@ -628,7 +628,7 @@ choose_lresume:
 
         false:
                 add_outdata_sources:
-                        mesh_mask: mesh_mask*.nc
+                        mesh_mask: "*mesh_mask*.nc"
 
 
 # choices:
@@ -849,6 +849,8 @@ restart_out_sources:
 ############## output files:
 
 outdata_sources:
+         6h: "*${expid}_6h_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
+         1d: "*${expid}_1d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
          5d: "*${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
          1m: "*${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
 

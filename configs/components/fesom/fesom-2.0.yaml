@@ -47,7 +47,7 @@ choose_version:
     # fesom-2.0 master branch back and remove this part
     branch: recom-update
     git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    - https://github.com/FESOM/fesom2.git
 
 install_bins: bin/fesom.x
 git-repository:

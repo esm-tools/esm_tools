@@ -304,11 +304,16 @@ set_glacial_mask_echam_restart_file() {
         cdo -s -ifthenelse -setmisstoc,0 $dfile -chname,ice_mask,glac $ifile just_glac.nc just_glac_new.nc 2>> cdo_stderr_ice2echam
 
         ncdump just_glac_new.nc | sed s/float/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
-        ncks -A just_glac_new.nc echam_with_ice_mask.nc
+        # This multipliation transforms "float" into "double"
+        ncap=${ncap:-ncap2} 
+        $ncap -s "glac=glac*1.0000000000000;" \
+        just_glac_new.nc \
+        just_glac_new.tmp.nc
+        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc
 
         #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
-        ncatted -h -a history,global,d,, echam_with_ice_mask.nc tmp
-        ncatted -h -a history_of_appended_files,global,d,, tmp ${ECHAM_RESTART_FILE}
+        ncatted -A -h -a history,global,d,, echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        #ncatted -h -a history_of_appended_files,global,d,, tmp ${ECHAM_RESTART_FILE}
         rm tmp; rm echam_with_ice_mask.nc
         ncrename -v ice_mask,glac $ifile
 }

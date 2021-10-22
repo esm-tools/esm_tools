@@ -421,6 +421,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		    --FESOM_VARIABLE $variable \
 		    --FESOM_MESH ${MESH_DIR_fesom} \
 		    --FESOM_YEARS $start_year_couple $end_year_couple \
+                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
                     --FESOM_OUTPUT $output > $logfile
 		echo " : STILL alive"
 
@@ -439,6 +440,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		    --FESOM_VARIABLE $variable \
 		    --FESOM_MESH ${MESH_DIR_fesom} \
 		    --FESOM_YEARS $start_year_couple $end_year_couple \
+                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		    --FESOM_OUTPUT $output > $logfile
 		echo " : STILL alive"
 
@@ -474,6 +476,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		        --FESOM_OUTPUT $output > $logfile
 		    echo " : STILL alive"
 
@@ -506,6 +509,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		        --FESOM_OUTPUT $output > $logfile
 		    echo " : STILL alive"
 
@@ -564,7 +568,7 @@ function fesom_ice_concatenate_files {
 	${cdo} -s ensmean ${processed_fesom1x_file3D_T_list_for_ice} temp.tmp.nc
 	${cdo} -s ensmean ${processed_fesom1x_file3D_S_list_for_ice} salt.tmp.nc
         ${cdo} -s merge temp.tmp.nc salt.tmp.nc ocean_file_for_ice.nc
-	#${cdo} -s merge \
+        #${cdo} -s merge \
 	#    ${processed_fesom1x_file3D_T_list_for_ice} \
 	#    ${processed_fesom1x_file3D_S_list_for_ice} \
 	#    ${processed_fesom1x_file2D_list_for_ice} \
@@ -627,6 +631,7 @@ function fesom_ice_rename_level2depth_add_depth {
     #
     # Step 1 : rename dimension "level" into "depth"
     #
+    echo $(module list)
     ncrename -d level,depth -v level,depth ${_file_data}
     #ncrename -d level,depth ${_file_data}
     ncatted -a axis,depth,o,c,'Z' ${_file_data}

@@ -29,9 +29,10 @@ def parse_arguments():
     parser.add_argument("--FESOM_MESH", nargs="+")
     parser.add_argument("--FESOM_YEARS", nargs="+")
     parser.add_argument("--FESOM_OUTPUT", nargs="*", default='fesom_output.nc4')
-    parser.add_argument("--FESOM_MESH_ALPHA", type=int, default=50)
-    parser.add_argument("--FESOM_MESH_BETA",  type=int, default=15)
-    parser.add_argument("--FESOM_MESH_GAMMA", type=int, default=-90)
+    parser.add_argument("--FESOM_MESH_ROTATED", nargs="*", required=True)
+    #parser.add_argument("--FESOM_MESH_ALPHA", type=int, default=50)
+    #parser.add_argument("--FESOM_MESH_BETA",  type=int, default=15)
+    #parser.add_argument("--FESOM_MESH_GAMMA", type=int, default=-90)
     return parser.parse_args()
 
 args = parse_arguments()
@@ -69,7 +70,12 @@ print('* Start at '+time.ctime(time.time()))
 # mesh
 print('* Read the mesh MESHPATH=' + " ".join(args.FESOM_MESH))
 
-euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
+#euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
+if args.FESOM_MESH_ROTATED:
+    euler_angle = [50, 15, -90]
+else:
+    euler_angle = [0, 0, 0]
+print("* Using Euler angles ", euler_angle)
 
 mesh = pf.load_mesh(*args.FESOM_MESH, abg=euler_angle, usepickle=False)
 print("*** mesh.zlev = ", mesh.zlev)

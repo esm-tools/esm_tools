@@ -9,7 +9,6 @@ choose_job_type:
                         - "_read_date_file"
                         #- "setup_correct_chunk_config"
                         - "_update_run_in_chunk"
-                        - "assemble_workflow"  
                         - "check_model_lresume"
 
 # kh 01.12.20 this must be done before resolve_some_choose_blocks, because potentially also choosable
@@ -26,6 +25,7 @@ choose_job_type:
                         - "set_prev_date"
                         - "set_parent_info"
                         - "finalize_config"
+                        - "assemble_workflow"
                         - "restore_protected_last_minute_changes"
                         - "add_submission_info"
                         - "initialize_batch_system"

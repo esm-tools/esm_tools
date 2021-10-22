@@ -3,30 +3,23 @@
 #########################################################################################
 general:
 
-        compute_recipe:
-           - "venv_bootstrap"
-           - "_create_setup_folders"
-           - "_create_component_folders"
-           - "initialize_experiment_logfile"
-           - "copy_tools_to_thisrun"
+        prepcompute_recipe:
            - "compile_model"
-           - "_copy_preliminary_files_from_experiment_to_thisrun"
            - "_show_simulation_info"
            - "create_new_files"
+           - "create_empty_folders"
            - "prepare_coupler_files"
-           - "add_batch_hostfile"
            - "assemble"
            - "log_used_files"
            - "_write_finalized_config"
            - "copy_files_to_thisrun"
+           - "write_env"
            - "modify_namelists"
            - "modify_files"
            - "copy_files_to_work"
-           - "write_simple_runscript"
            - "preprocess"
            - "report_missing_files"
            - "database_entry"
-           - "submit"
 
         model: focioifs
         pool_dir: "${computer.pool_directories.focipool}"
@@ -283,7 +276,7 @@ xios:
         model_dir: ${general.model_dir}/xios-${nemo.version}
         setup_dir: ${general.model_dir}
         
-        nproc: ${computer.cores_per_node}
+        nproc: ${computer.partitions.compute.cores_per_node}
         
 
 rnfmap: 
@@ -969,7 +962,7 @@ oasis3mct:
                 agrifspg: agrifspg${this_oasis_date_stamp}
 
 # Set up CPU layout
-choose_cores_per_node:
+choose_partitions.compute.cores_per_node:
         24:
                 choose_resolution:
                         T159_ORCA05:

@@ -299,7 +299,7 @@ choose_resolution:
                 res_number_tl: "1279l_2"
                 truncation: "TL"
 
-choose_computer.cores_per_node:
+choose_computer.partitions.compute.cores_per_node:
         24:
                 nproc: 96
         36:

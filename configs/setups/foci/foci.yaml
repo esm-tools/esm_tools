@@ -323,7 +323,7 @@ nemo:
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
 
 xios:
-        nproc: ${computer.cores_per_node}
+        nproc: ${computer.partitions.compute.cores_per_node}
 
 #########################################################################################
 

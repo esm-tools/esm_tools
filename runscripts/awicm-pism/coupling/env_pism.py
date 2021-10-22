@@ -16,7 +16,7 @@ def prepare_environment(config):
             "END_DAY_pism": config["general"]["end_date"].sday,
             
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
-            
+            "EX_INT": config["pism"]["ex_interval"], 
             "RUN_NUMBER_pism": config["general"]["run_number"],
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],

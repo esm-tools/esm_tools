@@ -745,7 +745,7 @@ grids:
 choose_lgfw:
         True:
                 add_input_sources:
-                        gfw_atmo: "${thisrun_input_dir}/gfw_atmo.nc"
+                        gfw_atmo: "${general.couple_dir}/latest_gfw_atmo.nc"
                 add_input_files:
                         gfw_atmo: gfw_atmo
                 add_input_in_work:

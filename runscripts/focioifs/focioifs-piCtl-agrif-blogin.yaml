@@ -1,0 +1,81 @@
+# example to use the a small number of nodes / CPUs that 
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   version: "agrif"
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "00:30:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-06T00:00:00"         # Final date of the experiment
+
+   nyear: 0
+   nmonth: 0
+   nday: 5
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+  
+   # machine specific setup 
+   account: shk00018 #hirace
+   base_dir: ${general.homedir}/esm/esm-experiments/ 
+   #base_dir: /p/project/hirace/kjellsson1/esm/esm-experiments/
+
+focioifs:
+   #model_dir: /p/project/hirace/kjellsson1/esm/models/focioifs-agrif/
+   model_dir: ${general.homedir}/esm/models/focioifs-agrif/
+   version: agrif
+  
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   lresume: 0
+   nproc: 143
+   use_ocean_currents: 0
+   with_nest1: true
+
+oasis3mct:
+   norestart: F
+   use_lucia: False
+   debug_level: 5
+   export_mode: EXPOUT
+   #pool_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/"
+   #ini_parent_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/"
+   pool_dir: /scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/
+   ini_parent_dir: /scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/
+   oasis_date_stamp: ""
+      
+nemo:
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   jpni: 24
+   jpnj: 18
+   nproc: 432
+   nest1: viking10
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   #xml_dir: "/p/project/hirace/kjellsson1/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/output_for_test/"
+   xml_dir: /scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05_VIKING10/output_for_test/
+   nproc: 48

@@ -231,7 +231,7 @@ choose_version:
              nn_msh: ${nn_msh}
              rn_rdt: ${time_step_nest}
           namsbc:
-             nn_fsbc: 6
+             nn_fsbc: 3
              nn_ice: 2
              ln_echam: '.false.'
              ln_cpl: '.true.'

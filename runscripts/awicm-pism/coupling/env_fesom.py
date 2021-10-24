@@ -10,7 +10,7 @@ def prepare_environment(config):
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "CHUNK_START_DATE_fesom": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_fesom": config["general"]["chunk_end_date"],
-            "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling/",
+            "FUNCTION_PATH": config["fesom"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "PYFESOM_PATH": "/pf/a/a270124/pyfesom2/",
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",

@@ -31,7 +31,7 @@ setup(
     author_email="dirk.barbi@awi.de",
     python_requires=">=3.6",
     classifiers=[
-        "Development Status :: 3 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
@@ -46,7 +46,7 @@ setup(
     long_description=readme + "\n\n" + history,
     include_package_data=True,
     keywords="esm_tools",
-    name="esm_tools",
+    name="esm-tools",
     packages=["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
     package_dir={'esm_tools.configs': "configs", "esm_tools.namelists": "namelists", "esm_tools.runscripts": "runscripts"},
     package_data={'esm_tools.configs': ['../configs/*'], "esm_tools.namelists": ["../namelists/*"], "esm_tools.runscripts": ["../runscripts/*"]},

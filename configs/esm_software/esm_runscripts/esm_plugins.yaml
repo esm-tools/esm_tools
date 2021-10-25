@@ -80,6 +80,7 @@ core:
                 batch_system:
                         #- "calculate_requirements"
                         - "write_simple_runscript"
+                        - "write_env"
 
                 virtual_env_builder:
                         - "venv_bootstrap"

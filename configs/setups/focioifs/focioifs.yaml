@@ -71,6 +71,24 @@ general:
         
         runoff_method: "old"
 
+        file_movements:
+           forcing:
+              all_directions: link
+           input:
+              all_directions: link
+           restart_in:
+              # seb-wahl: need to copy restart files by default
+              # as oasis modifies the restart file !!!!
+              init_to_exp: copy
+              exp_to_run: copy
+              run_to_work: copy
+              work_to_run: link
+           #config:
+           #   init_to_exp: copy
+           #   exp_to_run: copy
+           #   run_to_work: link
+           #   work_to_run: link
+
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27
 #postprocess:

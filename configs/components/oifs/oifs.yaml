@@ -454,6 +454,25 @@ run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
 restart_rate: 1
 restart_unit: "months"
 
+file_movements:
+   forcing:
+      all_directions: link
+   input:
+      all_directions: link
+   restart_in:
+      # seb-wahl: need to copy restart files by default
+      # as oasis modifies the restart file !!!!
+      init_to_exp: copy
+      exp_to_run: copy
+      run_to_work: copy
+      work_to_run: link
+   #config:
+   #   init_to_exp: copy
+   #   exp_to_run: copy
+   #   run_to_work: link
+   #   work_to_run: link
+
+
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
@@ -1003,30 +1022,23 @@ postprocess:
                 method: "$(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
                 type: shell
 
-compute_recipe:
-   - "venv_bootstrap"
-   - "_create_setup_folders"
-   - "_create_component_folders"
-   - "initialize_experiment_logfile"
-   - "copy_tools_to_thisrun"
+prepcompute_recipe:
    - "compile_model"
-   - "_copy_preliminary_files_from_experiment_to_thisrun"
    - "_show_simulation_info"
    - "create_new_files"
+   - "create_empty_folders"
    - "prepare_coupler_files"
-   - "add_batch_hostfile"
    - "assemble"
    - "log_used_files"
    - "_write_finalized_config"
    - "copy_files_to_thisrun"
+   - "write_env"
    - "modify_namelists"
    - "modify_files"
    - "copy_files_to_work"
-   - "write_simple_runscript"
    - "preprocess"
    - "report_missing_files"
    - "database_entry"
-   - "submit"
 # this does not work as expected, solution is work in progress
 #   - "postprocess"
 

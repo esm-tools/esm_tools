@@ -35,8 +35,8 @@ def prepare_environment(config):
             "RES_pism": config["pism"]["resolution"],
             "EXE_pism": config["pism"]["executable"],
             "iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
-            "DEBM_EXE": "/pf/a/a270129/dEBM_esm_tools/dEBMmain",
-            "MY_OBLIQUITY": "23.798", 
+            "DEBM_EXE": config["pism"]["debm_path"],
+            "MY_OBLIQUITY": config["pism"]["debm_obl"], 
             "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 

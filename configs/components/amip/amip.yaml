@@ -78,7 +78,7 @@ namelist_changes:
                         RunLengthSec: ${runtime_seconds}
                         TimeStepSec: 84600
                         FixYear: 0
-                        StartYear: 
+                        StartYear: 0
                         FileListSST: sst_forcing
                         FileListSIC: sic_forcing
 

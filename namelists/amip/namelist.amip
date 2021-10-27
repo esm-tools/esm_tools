@@ -1,11 +1,11 @@
 &NAMAMIP
-    RunLengthSec = ${RUNTIME_amip}
-    TimeStepSec  = ${TIME_STEP_amip}
-    StartYear    = ${START_DATE_amip:0:4}
-    StartMonth   = ${START_DATE_amip:4:2}
-    StartDay     = ${START_DATE_amip:6:2}
-    FixYear      = ${CMIP_FIXYEAR_amip}
-    FileListSST  = ${flist_sst}
-    FileListSIC  = ${flist_sic}
+    RunLengthSec = 1
+    TimeStepSec  = 1
+    StartYear    = 1
+    StartMonth   = 1
+    StartDay     = 1
+    FixYear      = 1
+    FileListSST  = 1
+    FileListSIC  = 1
     LDebug       = false
     LInterpolate = true

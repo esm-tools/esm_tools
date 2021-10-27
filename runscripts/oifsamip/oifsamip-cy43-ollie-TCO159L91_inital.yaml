@@ -17,12 +17,10 @@ oifsamip:
     postprocessing: false
     model_dir: "/home/ollie/${user}/model_codes/${general.setup_name}-${general.version}/"
 
-amip:
-  
 oifs:
-    resolution: "TL159"
-    levels: "L60"
-    prepifs_expid: h6mv
+    resolution: "TCO159"
+    levels: "L91"
+    prepifs_expid: h9wu
     input_expid: awi3
     wam: true
     lresume: false

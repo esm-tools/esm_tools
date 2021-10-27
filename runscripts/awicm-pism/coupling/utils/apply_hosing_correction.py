@@ -44,11 +44,10 @@ if not os.path.isfile(os.path.join(hosing_dir, "landice_nodes_in_region_1.out"))
     n=df.iloc[:, 0]
     n.to_csv(os.path.join(hosing_dir, "landice_nodes_in_region_1.out"), header=[str(len(n.values))], index=False)
 
-if not os.path.isfile(os.path.join(hosing_dir, "landice_yearly_mass_loss.out")):
-    mass_loss = 0.0
-else:
-    mass_loss = discharge.squeeze().values
-
+#if not os.path.isfile(os.path.join(hosing_dir, "landice_yearly_mass_loss.out")):
+#    mass_loss = 0.0
+#else:
+mass_loss = discharge.squeeze().values
 with open(os.path.join(hosing_dir, "landice_yearly_mass_loss.out"), 'w') as f:
     f.write(str(1) + "\n" + str(mass_loss))
 

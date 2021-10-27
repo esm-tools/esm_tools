@@ -1,8 +1,8 @@
 #!/bin/bash
 
-oifs_outdata_dir=$1
+outdata_dir=$1
 folder_time_stamp=$2
-outoifs=$1/$2/
+outoifs=$1/oifs/$2/
 
 echo "============================"
 echo "AWICM3 POSTPROCESSING SCRIPT"

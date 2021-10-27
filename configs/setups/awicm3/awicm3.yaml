@@ -185,6 +185,7 @@ oifs:
 
         # Postprocessing
         workflow:
+                next_run_triggered_by: tidy
                 subjobs:
                         postprocessing:
                                 batch_or_shell: batch
@@ -193,7 +194,10 @@ oifs:
                                 run_after: tidy
                                 script_dir: ${general.esm_function_dir}/setups/awicm3
                                 submit_to_batch_system: True
-                                script: postprocessing.sh
+                                script: "
+                                    postprocessing.sh
+                                    ${oifs.experiment_outdata_dir}
+                                    ${oifs.out_date_folder}"
                                 nproc: 1
 
 

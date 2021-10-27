@@ -481,7 +481,8 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 echo "Oh no, help."
                 exit 5
         fi
-        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -L -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
                 echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 ${cdo} -s -selvar,usurf usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
@@ -632,13 +633,16 @@ ic_atm2pism_regrid_downscale_split_names() {
 ## Assumes that a variable `atmosphere_name_elevation` is present in the `atmosphere_file_for_ice.nc`
 ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         echo ""; echo "                *  calculating elevation difference"
+        echo "*** INPUT_FILE_pism = ${INPUT_FILE_pism} ***"
         if [ -z ${INPUT_FILE_pism} ]; then
                 echo "Oh no, help."
                 exit 5
         fi
-        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
-                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 ${INPUT_FILE_pism} usurf.tmp.nc
+                ${cdo} -s -selvar,usurf usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
                 ${cdo} -s -add \
@@ -660,7 +664,7 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
 	${cdo} -maxc,2000   ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_lo_2000.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism 
 	${cdo} -s -maxc,0 -sub ${COUPLE_DIR}/elev_hi_2000.nc ${COUPLE_DIR}/elev_lo_2000.nc ${COUPLE_DIR}/elev_hi_minus_lo_2000.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	
-	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc"
+	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc usurf.tmp.nc"
 }
 
 ## @fn ic_atm2pism_regrid_downscale_temperature()
@@ -1529,6 +1533,8 @@ ic_atm2debm_ablation_debm_run_execute_binary() {
         if [ "${MACHINE}" == "ollie" ]; then
             module unload netcdf
             module load netcdf/4.6.0_intel
+            module load intel.mpi
+            module load intel.compiler
         fi
 
         ./$DEBM_BINARY > debm_stdout_stderr 2>&1 || cat debm_stdout_stderr

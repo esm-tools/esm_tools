@@ -27,7 +27,7 @@ def prepare_environment(config):
             "MACHINE": config["computer"]["name"],
             "MESH_PATH_FESOM": config["fesom"]["mesh_dir"],
             "HOSING_FILE_LANDICE_LOSS": config["fesom"].get("fwf_path"),
-            "HOSING_CORRECTION": int(config["echam"]["hosing_correction"]),
+            #"HOSING_CORRECTION": int(config["echam"]["hosing_correction"]),
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

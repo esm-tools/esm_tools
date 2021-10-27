@@ -296,6 +296,23 @@ namelist_changes:
                         nm_runoff_file: "${forcing_data_dir}/runoff.nc"
                         nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
 
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${fwf_path}" 
+
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
 choose_currentday:

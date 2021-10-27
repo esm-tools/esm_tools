@@ -171,6 +171,7 @@ update_orography_run_calnoro() {
         change_lonlat topodata.nc OROMEA
         if [ "$MACHINE" == "ollie" ]; then
             module unload netcdf
+            module unload hdf5/1.10.2_gnu
             module load netcdf/4.6.0_gnu
         fi
 
@@ -531,6 +532,11 @@ EOF
         fi
         chmod 755 jsbach_init_file
         ./jsbach_init_file > ${COUPLE_DIR}/jsbach_init_file_stdout_stderr 2>&1
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf/4.6.2_gnu
+            module unload hdf5/1.10.2_gnu
+            module load netcdf
+        fi
         if [[ $? -eq 0 ]]; then
                 echo -e "\t\t -   ...finished with external program jsbach_init_file!"
         else
@@ -789,6 +795,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         ls -ratl
 
         mv 1d_$(basename $ofile) ${newest_jsbach_restart_file}
+        ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
         # Go back to the previous directory
         cd ${startdir}
 }
@@ -995,6 +1002,7 @@ set_glacial_mask_jsbach_update_restart_veg() {
         ls -ratl
 
         mv 1d_$(basename $ofile) ${newest_jsbach_restart_file}
+        ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
         # Go back to the previous directory
         cd ${startdir}
 }

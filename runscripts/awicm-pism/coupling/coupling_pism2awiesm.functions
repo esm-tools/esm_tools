@@ -19,6 +19,14 @@ pism2awiesm() {
         rm ${COUPLE_DIR}/latest_jsbach_init_file.nc
     fi
     
+    if [ -f ${COUPLE_DIR}/latest_jsbach_restart_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+    fi
+    
+    if [ -f ${COUPLE_DIR}/latest_veg_restart_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_veg_restart_file.nc
+    fi
+    
     . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
 

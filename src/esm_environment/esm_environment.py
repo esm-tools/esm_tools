@@ -49,7 +49,6 @@ class EnvironmentInfos:
         will loop through all the available keys in ``complete_config``.
     """
 
-
     def __init__(self, run_or_compile, complete_config=None, model=None):
         # Ensure local copy of complete config to avoid mutating it... (facepalm)
         complete_config = copy.deepcopy(complete_config)
@@ -92,7 +91,6 @@ class EnvironmentInfos:
         # Define the environment commands for the script
         self.commands = self.get_shell_commands()
 
-
     def add_esm_var(self):
         """
         Adds the ENVIRONMENT_SET_BY_ESMTOOLS=TRUE to the config, for later
@@ -104,7 +102,6 @@ class EnvironmentInfos:
         else:
             self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
-
     def apply_config_changes(self, run_or_compile, config, model):
         """
         Calls ``apply_model_changes`` with the selected configuration for the
@@ -113,8 +110,7 @@ class EnvironmentInfos:
 
         self.apply_model_changes(
             model, run_or_compile=run_or_compile, modelconfig=config[model]
-            )
-
+        )
 
     def apply_model_changes(self, model, run_or_compile="runtime", modelconfig=None):
         """
@@ -151,8 +147,13 @@ class EnvironmentInfos:
             # generic way, it can be refactored
             if "choose_version" in modelconfig[thesechanges]:
                 if "version" in modelconfig:
-                    if modelconfig["version"] in modelconfig[thesechanges]["choose_version"]:
-                        for k, v in modelconfig[thesechanges]["choose_version"][modelconfig["version"]].items():
+                    if (
+                        modelconfig["version"]
+                        in modelconfig[thesechanges]["choose_version"]
+                    ):
+                        for k, v in modelconfig[thesechanges]["choose_version"][
+                            modelconfig["version"]
+                        ].items():
                             # kh 16.09.20 move up one level and replace default
                             modelconfig[thesechanges][k] = v
                 del modelconfig[thesechanges]["choose_version"]
@@ -192,7 +193,6 @@ class EnvironmentInfos:
                 if entry in self.config:
                     del self.config[entry]
 
-
     def turn_add_export_vars_to_dict(self, modelconfig, entry):
         """
         Turns the given ``entry`` in ``modelconfig`` (normally ``add_export_vars``) into
@@ -214,8 +214,8 @@ class EnvironmentInfos:
         entry_paths = esm_parser.find_key(
             modelconfig["environment_changes"],
             entry,
-            paths2finds = [],
-            sep = path_sep,
+            paths2finds=[],
+            sep=path_sep,
         )
         # Loop through the variables
         for entry_path in entry_paths:
@@ -238,7 +238,6 @@ class EnvironmentInfos:
             # If export_vars is a list transform it into a dictionary
             if isinstance(export_vars, list):
                 self.env_list_to_dict(export_dict, path_to_var[-1])
-
 
     def env_list_to_dict(self, export_dict, key):
         """
@@ -284,8 +283,8 @@ class EnvironmentInfos:
         # Check if the value is a list TODO: logging
         if not isinstance(export_vars, list):
             print(
-                f"The only reason to use this function is if {key} is a list, and it " +
-                "is not in this case..."
+                f"The only reason to use this function is if {key} is a list, and it "
+                + "is not in this case..."
             )
             sys.exit(1)
 
@@ -307,7 +306,6 @@ class EnvironmentInfos:
 
         # Redefined the transformed dictionary
         export_dict[key] = new_export_vars
-
 
     def general_environment(self, complete_config, run_or_compile):
         """
@@ -333,9 +331,9 @@ class EnvironmentInfos:
             # Check if a general setup environment exists that will overwrite the
             # component setups
             if coupled_setup and (
-                "compiletime_environment_changes" in complete_config["general"] or
-                "runtime_environment_changes" in complete_config["general"] or
-                "environment_changes" in complete_config["general"]
+                "compiletime_environment_changes" in complete_config["general"]
+                or "runtime_environment_changes" in complete_config["general"]
+                or "environment_changes" in complete_config["general"]
             ):  # TODO: do this if the model include other models and the environment is
                 # labelled as priority over the other models environment (OIFS case)
                 general_env = True
@@ -346,7 +344,6 @@ class EnvironmentInfos:
         # that are explicitly defined in the setup file
         if general_env:
             self.load_component_env_changes_only_in_setup(complete_config)
-
 
     def load_component_env_changes_only_in_setup(self, complete_config):
         """
@@ -368,9 +365,9 @@ class EnvironmentInfos:
         # Check for errors TODO: logging
         if not models:
             print(
-                "Use the EnvironmentInfos.load_component_env_changes_only_in_setup " +
-                "method only if complete_config has a general chapter that includes " +
-                "a models list"
+                "Use the EnvironmentInfos.load_component_env_changes_only_in_setup "
+                + "method only if complete_config has a general chapter that includes "
+                + "a models list"
             )
             sys.exit(1)
 
@@ -443,7 +440,6 @@ class EnvironmentInfos:
                     # Actually redefine the variable
                     model_config[env_var] = setup_config[model][env_var]
 
-
     def replace_model_dir(self, model_dir):
         """
         Replaces any instances of ${model_dir} in the config section
@@ -461,7 +457,6 @@ class EnvironmentInfos:
                     newline = line.replace("${model_dir}", model_dir)
                     newlist.append(newline)
                 self.config[entry] = newlist
-
 
     def get_shell_commands(self):
         """
@@ -533,7 +528,6 @@ class EnvironmentInfos:
 
         return environment
 
-
     def write_dummy_script(self, include_set_e=True):
         """
         Writes a dummy script containing only the header information, module
@@ -552,7 +546,9 @@ class EnvironmentInfos:
             print('WARNING: "sh_interpreter" not defined in the machine yaml')
         with open("dummy_script.sh", "w") as script_file:
             # Write the file headings
-            script_file.write(f'#!{self.config.get("sh_interpreter", "/bin/bash")} -l\n')
+            script_file.write(
+                f'#!{self.config.get("sh_interpreter", "/bin/bash")} -l\n'
+            )
             script_file.write(
                 "# Dummy script generated by esm-tools, to be removed later: \n"
             )
@@ -563,7 +559,6 @@ class EnvironmentInfos:
             for command in self.commands:
                 script_file.write(f"{command}\n")
             script_file.write("\n")
-
 
     def remove_computer_from_choose(self, chapter):
         """
@@ -584,7 +579,6 @@ class EnvironmentInfos:
             if isinstance(chapter[key], dict):
                 self.remove_computer_from_choose(chapter[key])
 
-
     @staticmethod
     def cleanup_dummy_script():
         """
@@ -594,7 +588,6 @@ class EnvironmentInfos:
             os.remove("dummy_script.sh")
         except OSError:
             print("No file dummy_script.sh there; nothing to do...")
-
 
     @staticmethod
     def add_commands(commands, name):

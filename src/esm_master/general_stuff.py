@@ -129,13 +129,14 @@ def write_minimal_user_config(config):
 
 
 ######################################################################################
-############################## class "general_infos" #################################
+############################## class "GeneralInfos" ##################################
 ######################################################################################
 
 
 class GeneralInfos:
     def __init__(self, parsed_args):
 
+        # Parses the ``esm_master.yaml`` configuration file
         self.config = esm_parser.yaml_file_to_dict(CONFIG_YAML)
         self.emc = self.read_and_update_conf_files()
         self.meta_todos, self.meta_command_order = self.get_meta_command()
@@ -146,19 +147,42 @@ class GeneralInfos:
             self.output()
 
     def read_and_update_conf_files(self):
+        """
+        Reads and updates the `ESM-Tools` configuration files.
+
+        Loops through the configuration files ``OVERALL_CONF_FILE``
+        (i.e. ``~/.esmtoolsrc``) and includes the variables defined there into the
+        ``emc`` dictionary. If the ``basic_infos`` specified inside ``self.config``
+        (read from the ``CONFIG_YAML``, e.g. ``esm_master.yaml``) is not complete
+        it asks for the user input to complete the ``OVERALL_CONF_FILE``
+        (i.e. ``~/.esmtoolsrc``).
+
+        Returns
+        -------
+        emc : dict
+            A dictionary including the `ESM-Tools` configuration variables (i.e.
+            contained in ``~/.esmtoolsrc``).
+        """
         complete = True
         emc = {}
+        # Loop through the esm_tools configuration files (i.e. ``esmtoolsrc``)
         for conffile in [OVERALL_CONF_FILE]:
+            # Check if the file exists, and load the elements in ``emc``
             if os.path.isfile(conffile):
                 with open(conffile) as myfile:
                     for line in myfile:
                         # PG: Could be simpler: just line.split("=")
                         name, var = line.partition("=")[::2]
                         emc[name.strip()] = var.strip()
+        # If ``basic_infos`` exists inside the ``esm_master.yaml``
         if "basic_infos" in self.config.keys():
+            # Iterate through the ``basic_info`` keys (i.e. ``GITLAB_DKRZ_USER_NAME``)
             for basic_info in self.config["basic_infos"]:
+                # Store ``question`` and ``default``
                 question = self.config["basic_infos"][basic_info]["question"]
                 default = self.config["basic_infos"][basic_info]["default"]
+                # If the key was not provided by the ``esm_tools`` configuration file
+                # then ask for user input using the ``question`` and ``default`` answer
                 if not basic_info in emc.keys():
                     if complete:
                         print("The configuration files are incomplete or non-existent.")
@@ -168,9 +192,13 @@ class GeneralInfos:
                         print("(Hit enter to accept default values.)")
                         complete = False
                     user_input = input(question + " (default = " + default + "): ")
+                    # If the ``user_input`` is empty define it using the ``default``
                     if user_input.strip() == "":
                         user_input = default
+                    # Add ``basic_info`` to ``emc``
                     emc.update({basic_info.strip(): user_input.strip()})
+        # If the esm_tools configuration files were not complete rewrite them to include
+        # the information provided by the user as ``user_input``
         if not complete:
             with open(OVERALL_CONF_FILE, "w") as new_conf_file:
                 for oldentry in emc.keys():

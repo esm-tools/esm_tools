@@ -14,7 +14,11 @@ import esm_plugin_manager
 
 
 
-def install(package):
+# Yes, Type Hints. Python >= 3.5 supports them. Small steps towards stability,
+# until Paul goes crazy and redoes everything in Go. Or Rust. Or Brainfuck
+# (yes, that's not made up: https://en.wikipedia.org/wiki/Brainfuck)
+# Docs for typing: https://docs.python.org/3/library/typing.html
+def install(package: str) -> None:
     """
     Checks if a package is already installed in the system and if it's not, then it
     installs it.
@@ -22,14 +26,24 @@ def install(package):
     Parameters
     ----------
     package : str
-        Name of the package or get operation.
+        Name of the package or get operation. Can be a package name (e.g.
+        ``numpy``) or a full pip address (e.g.
+        ``git@https://github.com/esm-tools/esm_tools.git``)
+
+    Returns
+    -------
+    None
     """
     package_name = package.split("/")[-1]
     installed_packages = esm_plugin_manager.find_installed_plugins()
-    if not package_name in installed_packages:
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "--user", package]
         )
+    if not package_name in installed_packages:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        except OSError:  # PermissionDeniedError would be nicer...
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", package])
 
 ######################################################################################
 ################################# class "task" #######################################
@@ -48,7 +62,7 @@ class Task:
                 for todo in package.targets:
                     try:
                         print(todo + "-" + package.raw_name)
-                        newtask = Task(todo + "-" + package.raw_name, 
+                        newtask = Task(todo + "-" + package.raw_name,
                             setup_info, vcs, parsed_args)
                         newtask.output_steps()
                     except:
@@ -95,7 +109,7 @@ class Task:
         if not self.todo in setup_info.meta_todos:
             self.check_if_target(setup_info)
 
-        self.subtasks = self.get_subtasks(setup_info, vcs, general, 
+        self.subtasks = self.get_subtasks(setup_info, vcs, general,
             complete_config, parsed_args)
         self.only_subtask = self.validate_only_subtask()
         self.ordered_tasks = self.order_subtasks(setup_info, vcs, general)
@@ -109,7 +123,7 @@ class Task:
         if parsed_args.get('verbose', False):
             self.output()
 
-    def get_subtasks(self, setup_info, vcs, general, complete_config, 
+    def get_subtasks(self, setup_info, vcs, general, complete_config,
         parsed_args):
         subtasks = []
         if self.todo in setup_info.meta_todos:
@@ -465,15 +479,15 @@ class Task:
             elif '|' in command:
                 # if there is a pipe in the command, then separate these in to
                 # two parts. Eg. curl foo.tar.gz | tar zx
-                curl_command, pipe_command = command.split('|') 
-                curl_process = subprocess.Popen(curl_command.split(), 
+                curl_command, pipe_command = command.split('|')
+                curl_process = subprocess.Popen(curl_command.split(),
                     stdout=subprocess.PIPE)
-                output = subprocess.check_output(pipe_command.split(), 
+                output = subprocess.check_output(pipe_command.split(),
                     stdin=curl_process.stdout)
                 curl_process.wait()
             else:
                 # os.system(command)
-                # deniz: I personally did not like the iterator and the list 
+                # deniz: I personally did not like the iterator and the list
                 # having the same name. for com in command.split(';') would be
                 # better IMHO
                 for command in command.split(";"):

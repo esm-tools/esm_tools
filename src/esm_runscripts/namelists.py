@@ -72,9 +72,13 @@ class Namelist:
         for nml in nmls:
             if os.path.isfile(os.path.join(mconfig["thisrun_config_dir"], nml)):
                 logging.debug("Loading %s", nml)
-                mconfig["namelists"][nml] = f90nml.read(
-                    os.path.join(mconfig["thisrun_config_dir"], nml)
-                )
+                try:
+                    mconfig["namelists"][nml] = f90nml.read(
+                        os.path.join(mconfig["thisrun_config_dir"], nml)
+                    )
+                except StopIteration:
+                    print(f"Sorry, the namelist we were trying to load: {nml} may have a formatting issue!")
+                    sys.exit(1)
             else:
                 mconfig["namelists"][nml] = f90nml.namelist.Namelist()
             if mconfig.get("namelist_case") == "uppercase":

@@ -13,7 +13,6 @@ import esm_environment
 import esm_plugin_manager
 
 
-
 # Yes, Type Hints. Python >= 3.5 supports them. Small steps towards stability,
 # until Paul goes crazy and redoes everything in Go. Or Rust. Or Brainfuck
 # (yes, that's not made up: https://en.wikipedia.org/wiki/Brainfuck)
@@ -36,14 +35,14 @@ def install(package: str) -> None:
     """
     package_name = package.split("/")[-1]
     installed_packages = esm_plugin_manager.find_installed_plugins()
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--user", package]
-        )
     if not package_name in installed_packages:
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])
         except OSError:  # PermissionDeniedError would be nicer...
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", package])
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "--user", package]
+            )
+
 
 ######################################################################################
 ################################# class "task" #######################################
@@ -62,8 +61,9 @@ class Task:
                 for todo in package.targets:
                     try:
                         print(todo + "-" + package.raw_name)
-                        newtask = Task(todo + "-" + package.raw_name,
-                            setup_info, vcs, parsed_args)
+                        newtask = Task(
+                            todo + "-" + package.raw_name, setup_info, vcs, parsed_args
+                        )
                         newtask.output_steps()
                     except:
                         print("Problem found with target " + newtask.raw_name)
@@ -109,8 +109,9 @@ class Task:
         if not self.todo in setup_info.meta_todos:
             self.check_if_target(setup_info)
 
-        self.subtasks = self.get_subtasks(setup_info, vcs, general,
-            complete_config, parsed_args)
+        self.subtasks = self.get_subtasks(
+            setup_info, vcs, general, complete_config, parsed_args
+        )
         self.only_subtask = self.validate_only_subtask()
         self.ordered_tasks = self.order_subtasks(setup_info, vcs, general)
 
@@ -120,11 +121,10 @@ class Task:
         self.dir_list = self.list_required_dirs()
         self.command_list, self.shown_command_list = self.assemble_command_list()
 
-        if parsed_args.get('verbose', False):
+        if parsed_args.get("verbose", False):
             self.output()
 
-    def get_subtasks(self, setup_info, vcs, general, complete_config,
-        parsed_args):
+    def get_subtasks(self, setup_info, vcs, general, complete_config, parsed_args):
         subtasks = []
         if self.todo in setup_info.meta_todos:
             todos = setup_info.meta_command_order[self.todo]
@@ -146,7 +146,7 @@ class Task:
                             vcs,
                             general,
                             complete_config,
-                            parsed_args
+                            parsed_args,
                         )
                     )
         if subtasks == [] and self.todo in setup_info.meta_todos:
@@ -166,7 +166,7 @@ class Task:
                             vcs,
                             general,
                             complete_config,
-                            parsed_args
+                            parsed_args,
                         )
                     )
         return subtasks
@@ -403,8 +403,6 @@ class Task:
                                 + binfile.split("/", -1)[-1]
                             )
 
-
-
         if task.todo in ["comp"]:
             for component in self.required_plugins:
                 for plugin in self.required_plugins[component]:
@@ -457,7 +455,7 @@ class Task:
     def validate(self):
         self.check_requirements()
 
-    def execute(self, ignore_errors = False):
+    def execute(self, ignore_errors=False):
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
@@ -470,20 +468,22 @@ class Task:
         for command in self.command_list:
             if command.startswith("mkdir"):
                 # os.system(command)
-                subprocess.run(command.split(), check= not ignore_errors)
+                subprocess.run(command.split(), check=not ignore_errors)
             elif command.startswith("cp "):
-                subprocess.run(command.split(), check= not ignore_errors)
+                subprocess.run(command.split(), check=not ignore_errors)
             elif command.startswith("cd ") and ";" not in command:
                 os.chdir(command.replace("cd ", ""))
             # deniz: add pipe support
-            elif '|' in command:
+            elif "|" in command:
                 # if there is a pipe in the command, then separate these in to
                 # two parts. Eg. curl foo.tar.gz | tar zx
-                curl_command, pipe_command = command.split('|')
-                curl_process = subprocess.Popen(curl_command.split(),
-                    stdout=subprocess.PIPE)
-                output = subprocess.check_output(pipe_command.split(),
-                    stdin=curl_process.stdout)
+                curl_command, pipe_command = command.split("|")
+                curl_process = subprocess.Popen(
+                    curl_command.split(), stdout=subprocess.PIPE
+                )
+                output = subprocess.check_output(
+                    pipe_command.split(), stdin=curl_process.stdout
+                )
                 curl_process.wait()
             else:
                 # os.system(command)
@@ -503,7 +503,9 @@ class Task:
                         subprocess.run(
                             command_spl,
                             check=True,
-                            shell=(command.startswith("./") and command.endswith(".sh")),
+                            shell=(
+                                command.startswith("./") and command.endswith(".sh")
+                            ),
                         )
 
     def output(self):

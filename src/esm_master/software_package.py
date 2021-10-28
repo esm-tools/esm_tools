@@ -20,7 +20,6 @@ def replace_var(var, tag, value):
             sys.exit(1)
 
 
-
 class software_package:
     def __init__(
         self, raw, setup_info, vcs, general, no_infos=False
@@ -43,9 +42,9 @@ class software_package:
         self.tag = None
 
         # deniz: Linux pipe support: eg. curl foo.tar.gz | tar zx
-        # !!! if these lines are not here esm_master crashes on xios. 
+        # !!! if these lines are not here esm_master crashes on xios.
         self.pipe_options = None
-        
+
         # deniz: I don't like the following lines. This is not good OOP.
         # Constructor should initialize all variables and they should not be
         # defined in an else block
@@ -54,9 +53,9 @@ class software_package:
         else:
             self.targets = self.subpackages = None
 
-# kh 11.09.20 support git options like --recursive
+            # kh 11.09.20 support git options like --recursive
             self.repo_type = None
-            self.repo = None 
+            self.repo = None
             self.branch = None
             self.repo_options = None
             self.bin_type = None
@@ -74,8 +73,10 @@ class software_package:
         self.subpackages = self.get_subpackages(setup_info, vcs, general)
         self.complete_targets(setup_info)
 
-# kh 11.09.20 support git options like --recursive
-        self.repo_type, self.repo, self.branch, self.repo_options = self.get_repo_info(setup_info, vcs)
+        # kh 11.09.20 support git options like --recursive
+        self.repo_type, self.repo, self.branch, self.repo_options = self.get_repo_info(
+            setup_info, vcs
+        )
         self.destination = setup_info.get_config_entry(self, "destination")
         self.clone_destination = setup_info.get_config_entry(self, "clone_destination")
         if not self.destination:
@@ -84,14 +85,16 @@ class software_package:
         self.coupling_changes = self.get_coupling_changes(setup_info)
         self.repo = replace_var(self.repo, self.model + ".version", self.version)
         self.branch = replace_var(self.branch, self.model + ".version", self.version)
-        self.repo_options = replace_var(self.repo_options, self.model + ".version", self.version)
+        self.repo_options = replace_var(
+            self.repo_options, self.model + ".version", self.version
+        )
 
         # deniz: Linux pipe support
-        self.pipe_options = setup_info.get_config_entry(self, 'pipe_options')
+        self.pipe_options = setup_info.get_config_entry(self, "pipe_options")
 
         self.bin_type, self.bin_names = self.get_comp_type(setup_info)
         self.command_list = self.get_command_list(setup_info, vcs, general)
-        
+
     def get_targets(self, setup_info, vcs):
         config = setup_info.config
         targets = []
@@ -237,7 +240,7 @@ class software_package:
                 break
         branch = setup_info.get_config_entry(self, "branch")
 
-# kh 11.09.20 support git options like --recursive
+        # kh 11.09.20 support git options like --recursive
         repo_options = setup_info.get_config_entry(self, "repo_options")
 
         return repo_type, repo, branch, repo_options
@@ -282,8 +285,7 @@ class software_package:
                 self.repo,
                 ", branch: ",
                 self.branch,
-
-# kh 11.09.20 support git options like --recursive
+                # kh 11.09.20 support git options like --recursive
                 ", repo_options: ",
                 self.repo_options,
             )
@@ -297,6 +299,3 @@ class software_package:
             print("    Coupling Changes:")
             for todo in self.coupling_changes:
                 print("        ", todo)
-
-
-

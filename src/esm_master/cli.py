@@ -8,6 +8,7 @@ from . import __version__
 from esm_motd import check_all_esm_packages
 from .esm_master import main_flow
 
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -37,13 +38,13 @@ def main():
 
     parser.add_argument(
         "--modify-config",
-        "-m", 
+        "-m",
         dest="modify",
-        help="[m]odify configuration", 
-        default="", # kh 15.07.20 "usermods.yaml"
+        help="[m]odify configuration",
+        default="",  # kh 15.07.20 "usermods.yaml"
     )
 
-# kh 21.07.20
+    # kh 21.07.20
     parser.add_argument(
         "--ignore-errors",
         "-i",
@@ -66,9 +67,9 @@ def main():
 
     parser.add_argument(
         "--no-motd",
-        help = "supress the printing of MOTD",
-        default = False,
-        action = "store_true"
+        help="supress the printing of MOTD",
+        default=False,
+        action="store_true",
     )
 
     parsed_args = vars(parser.parse_args())
@@ -79,7 +80,6 @@ def main():
     modify_config_file = False
     no_motd = False
 
-
     if parsed_args:
         if "target" in parsed_args:
             target = parsed_args["target"]
@@ -89,9 +89,9 @@ def main():
             verbose = parsed_args["verbose"]
         if "keep" in parsed_args:
             keep = parsed_args["keep"]
-        if "modify" in parsed_args: 
+        if "modify" in parsed_args:
             modify_config_file = parsed_args["modify"]
-        if "no_motd" in parsed_args: 
+        if "no_motd" in parsed_args:
             no_motd = parsed_args["no_motd"]
 
     if not target:

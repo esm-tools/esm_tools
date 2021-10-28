@@ -9,17 +9,16 @@ import yaml
 from . import database_actions
 
 from .general_stuff import (
-        GeneralInfos,
-        version_control_infos,
-        tab_completion,
-        write_minimal_user_config,
-        ESM_MASTER_DIR
-        )
+    GeneralInfos,
+    version_control_infos,
+    tab_completion,
+    write_minimal_user_config,
+    ESM_MASTER_DIR,
+)
 
 from .compile_info import setup_and_model_infos
 
 from .task import Task
-
 
 
 def main_flow(parsed_args, target):
@@ -41,24 +40,25 @@ def main_flow(parsed_args, target):
     if parsed_args.get("verbose", False):
         user_config["general"]["verbose"] = True
 
-# kh 27.11.20
+    # kh 27.11.20
     if "modify" in parsed_args:
         if "general" in user_config:
             user_config["general"]["modify_config_file"] = parsed_args["modify"]
 
     if "ignore" in parsed_args:
-        ignore_errors  = parsed_args["ignore"]
+        ignore_errors = parsed_args["ignore"]
     else:
         ignore_errors = False
 
     from esm_runscripts.sim_objects import SimulationSetup
+
     complete_setup = SimulationSetup(user_config=user_config)
     complete_config = complete_setup.config
 
     setups2models.update_relevant_entries_with_config(complete_config)
 
     # This will be a problem later with GEOMAR
-    #setups2models.replace_last_vars(env)
+    # setups2models.replace_last_vars(env)
 
     # PG: multi-cluster
     # This is probably not the best name for this...
@@ -75,14 +75,16 @@ def main_flow(parsed_args, target):
         for realm in multi_cluster_job:
             os.makedirs(realm, exist_ok=True)
             os.chdir(realm)
-            subprocess.check_call(f"esm_master {original_task}-{multi_cluster_job[realm]}", shell=True)
+            subprocess.check_call(
+                f"esm_master {original_task}-{multi_cluster_job[realm]}", shell=True
+            )
             os.chdir("..")
         return 0
 
-
-    user_task = Task(target, setups2models, vcs, main_infos, complete_config,
-        parsed_args)
-    if parsed_args.get('verbose', False):
+    user_task = Task(
+        target, setups2models, vcs, main_infos, complete_config, parsed_args
+    )
+    if parsed_args.get("verbose", False):
         user_task.output()
 
     user_task.output_steps()
@@ -94,14 +96,14 @@ def main_flow(parsed_args, target):
             print()
             print("Contents of the complete_config:")
             print("--------------------------------")
-            print(yaml.dump(complete_config, default_flow_style=False, indent=4) )
+            print(yaml.dump(complete_config, default_flow_style=False, indent=4))
 
         print("esm_master: check mode is activated. Not executing the actions above")
         return 0
 
     user_task.validate()
 
-    user_task.execute(ignore_errors) #env)
+    user_task.execute(ignore_errors)  # env)
 
     database = database_actions.database_entry(
         user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR

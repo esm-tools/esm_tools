@@ -97,9 +97,9 @@ DEBUG_MODE = logger.level == logging.DEBUG
 FORMAT = (
     "[%(asctime)s,%(msecs)03d:%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 )
-#f_handler = logging.FileHandler("file.log")
-#f_handler.setFormatter(FORMAT)
-#logger.addHandler(f_handler)
+# f_handler = logging.FileHandler("file.log")
+# f_handler.setFormatter(FORMAT)
+# logger.addHandler(f_handler)
 
 
 # Module Constants:
@@ -175,20 +175,21 @@ def look_for_file(model, item, all_config=None):
     # look at the directory where yaml runscript is found. This is an absolute
     # path
     runscript_path = ""
-    if all_config and all_config['general'].get('runscript_abspath'):
-        runscript_path = os.path.dirname(all_config['general']['runscript_abspath'])
+    if all_config and all_config["general"].get("runscript_abspath"):
+        runscript_path = os.path.dirname(all_config["general"]["runscript_abspath"])
 
     # Loop through all possible path combinations
-    possible_paths = [ f"{SETUP_PATH}/{model}/{item}",
+    possible_paths = [
+        f"{SETUP_PATH}/{model}/{item}",
         f"{COMPONENT_PATH}/{model}/{item}",
         f"{FUNCTION_PATH}/esm_software/{model}/{item}",
         f"{FUNCTION_PATH}/other_software/{model}/{item}",
         f"{FUNCTION_PATH}/{model}/{item}",
         f"{runscript_path}/{item}",
-        f"{os.getcwd()}/{item}", # last resort: look at the CWD if others fail
+        f"{os.getcwd()}/{item}",  # last resort: look at the CWD if others fail
     ]
 
-    endings = [ "", ".yaml", ".yml", ".YAML", ".YML" ]
+    endings = ["", ".yaml", ".yml", ".YAML", ".YML"]
 
     for possible_path in possible_paths:
 
@@ -206,8 +207,8 @@ def look_for_file(model, item, all_config=None):
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
     # To solve that kind of problem the item's name is reduced to the last "-"
     # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    new_item = "-".join(item.split('-')[:-1])
-    if len(new_item)>0:
+    new_item = "-".join(item.split("-")[:-1])
+    if len(new_item) > 0:
         possible_path, needs_loading = look_for_file(model, new_item)
         if possible_path:
             return possible_path, needs_loading
@@ -238,12 +239,10 @@ def shell_file_to_dict(filepath):
     return config
 
 
-
 def initialize_from_shell_script(filepath):
     config = ShellscriptToUserConfig(filepath)
     config = complete_config(config)
     return config
-
 
 
 def initialize_from_yaml(filepath):
@@ -252,9 +251,9 @@ def initialize_from_yaml(filepath):
             user_config = yaml_file_to_dict(filepath)
 
             if not "general" in user_config:
-                user_config['general'] = {}
+                user_config["general"] = {}
             # full absolute path of the user runscript including the yaml file
-            user_config['general']['runscript_abspath'] = filepath
+            user_config["general"]["runscript_abspath"] = filepath
 
             user_config = complete_config(user_config)
     return user_config
@@ -270,21 +269,35 @@ def complete_config(user_config):
             if "further_reading" in user_config[model]:
                 if type(user_config[model]["further_reading"]) == list:
                     for additional_file in user_config[model]["further_reading"]:
-                        if not additional_file in user_config["general"]["additional_files"]:
-                            user_config["general"]["additional_files"].append(additional_file)
+                        if (
+                            not additional_file
+                            in user_config["general"]["additional_files"]
+                        ):
+                            user_config["general"]["additional_files"].append(
+                                additional_file
+                            )
                 elif type(user_config[model]["further_reading"]) == str:
                     additional_file = user_config[model]["further_reading"]
-                    if not additional_file in user_config["general"]["additional_files"]:
-                        user_config["general"]["additional_files"].append(additional_file)
+                    if (
+                        not additional_file
+                        in user_config["general"]["additional_files"]
+                    ):
+                        user_config["general"]["additional_files"].append(
+                            additional_file
+                        )
 
                 if model == "general":
-                    user_config["further_reading"] = user_config["general"]["further_reading"]
+                    user_config["further_reading"] = user_config["general"][
+                        "further_reading"
+                    ]
                     del user_config["general"]["further_reading"]
-                    attach_to_config_and_remove(user_config, "further_reading",
-                        all_config=user_config)
+                    attach_to_config_and_remove(
+                        user_config, "further_reading", all_config=user_config
+                    )
                 else:
-                    attach_to_config_and_remove(user_config[model], 
-                        "further_reading", all_config=user_config)
+                    attach_to_config_and_remove(
+                        user_config[model], "further_reading", all_config=user_config
+                    )
 
         found = False
         for model in user_config:
@@ -295,7 +308,6 @@ def complete_config(user_config):
             break
 
     return user_config
-
 
 
 def pprint_config(config):  # pragma: no cover
@@ -313,9 +325,9 @@ def pprint_config(config):  # pragma: no cover
     """
     # Delete the ``prev_run`` chapter: we don't need to print the info from the
     # previous run.
-    config_to_print = copy.deepcopy(config) #PrevRunInfo
-    if "prev_run" in config_to_print:       #PrevRunInfo
-        del config_to_print["prev_run"]     #PrevRunInfo
+    config_to_print = copy.deepcopy(config)  # PrevRunInfo
+    if "prev_run" in config_to_print:  # PrevRunInfo
+        del config_to_print["prev_run"]  # PrevRunInfo
     yaml.Dumper.ignore_aliases = lambda *args: True
     print(yaml.dump(config_to_print, default_flow_style=False))
 
@@ -401,18 +413,25 @@ def attach_to_config_and_reduce_keyword(
                     model, rest = (item.split("-")[0], "-".join(item.split("-")[1:]))
                 else:
                     if "." in item:
-                        model, model_part = (item.split(".")[0], ".".join(item.split(".")[1:]))
+                        model, model_part = (
+                            item.split(".")[0],
+                            ".".join(item.split(".")[1:]),
+                        )
                         logger.debug("Attaching: %s for %s", model_part, model)
                     else:
                         if item in config_to_read_from:
                             if "version" in config_to_read_from[item]:
-                                item = model + "-" + config_to_read_from[item]["version"]
+                                item = (
+                                    model + "-" + config_to_read_from[item]["version"]
+                                )
 
                 include_path, needs_load = look_for_file(model, item)
                 if not include_path:
                     include_path, needs_load = look_for_file(model, model)
                 if not include_path:
-                    print (f'attach_to_config_and_reduce: File {item} of model {model} could not be found. Sorry.')
+                    print(
+                        f"attach_to_config_and_reduce: File {item} of model {model} could not be found. Sorry."
+                    )
                     sys.exit(-1)
                 logger.debug("Reading %s", include_path)
                 if needs_load:
@@ -426,7 +445,9 @@ def attach_to_config_and_reduce_keyword(
                     logger.debug("Attaching: %s", attachment)
                     attach_to_config_and_remove(
                         config_to_write_to[tmp_config["model"]],
-                        attachment, all_config = None)
+                        attachment,
+                        all_config=None,
+                    )
 
         else:
             raise TypeError("The entries in %s must be a list!!" % full_keyword)
@@ -443,23 +464,20 @@ def attach_single_config(config, path, attach_value, all_config=None):
     all_config : dict
         main configuration
     """
-    include_path, needs_load = look_for_file(path, attach_value,
-        all_config=all_config)
+    include_path, needs_load = look_for_file(path, attach_value, all_config=all_config)
     if include_path:
         if needs_load:
             attachable_config = yaml_file_to_dict(include_path)
         else:
             attachable_config = include_path
     elif os.path.isfile(path + "/" + attach_value):
-        attachable_config = yaml_file_to_dict(
-            path + "/" + attach_value
-        )
+        attachable_config = yaml_file_to_dict(path + "/" + attach_value)
     else:
-        print ("Could not find ", path + "/" + attach_value)
+        print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    #DB this is a try:
+    # DB this is a try:
     dict_merge(config, attachable_config)
-    #config.update(attachable_config)
+    # config.update(attachable_config)
 
 
 def attach_to_config_and_remove(config, attach_key, all_config=None):
@@ -491,7 +509,9 @@ def attach_to_config_and_remove(config, attach_key, all_config=None):
                 attach_path, attach_value = attach_value.rsplit("/", 1)
             except ValueError:
                 attach_path = "."
-            attach_single_config(config, attach_path, attach_value, all_config=all_config)
+            attach_single_config(
+                config, attach_path, attach_value, all_config=all_config
+            )
 
 
 priority_marker = ">>THIS_ONE<<"
@@ -530,6 +550,7 @@ def priority_merge_dicts(first_config, second_config, priority="first"):
     dict_merge(merged_dictionary, to_merge)
     return merged_dictionary
 
+
 # NEW STUFF ALREADY, SHALL REPLACE OLD STUFF:
 
 
@@ -538,17 +559,17 @@ def resolve_remove_and_add(workdict):
         if "remove_" in chapter:
             remove_chapter = chapter.replace("remove_", "")
             remove_entries_from_chapter(workdict, remove_chapter, entries)
-            #del config[chapter]
+            # del config[chapter]
 
         elif "add_" in chapter:
             add_chapter = chapter.replace("add_", "")
             add_entries_from_chapter(workdict, add_chapter, entries)
-            #del config[chapter]
+            # del config[chapter]
     return workdict
 
 
 def new_dict_merge(dct, merge_dct, winner="to_be_included"):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
@@ -569,20 +590,23 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
                 dct[k] = merge_dct[k]
 
 
-def new_deep_update(receiving_dict, dict_to_be_included, winner = "receiving", blackdict = {}):
+def new_deep_update(
+    receiving_dict, dict_to_be_included, winner="receiving", blackdict={}
+):
     dict_to_be_included = resolve_remove_and_add(dict_to_be_included)
     for chapter in dict_to_be_included:
         if chapter not in blackdict:
-            new_dict_merge(receiving_dict, {chapter: dict_to_be_included[chapter]}, winner = winner)
+            new_dict_merge(
+                receiving_dict, {chapter: dict_to_be_included[chapter]}, winner=winner
+            )
     return receiving_dict
+
 
 # END NEW STUFF
 
 
-
-
 def dict_merge(dct, merge_dct, resolve_nested_adds=False):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
@@ -621,9 +645,13 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False):
             else:
                 if "debug_info" in dct:
                     if isinstance(dct["debug_info"]["loaded_from_file"], str):
-                        dct["debug_info"]["loaded_from_file"] = [dct["debug_info"]["loaded_from_file"]]
+                        dct["debug_info"]["loaded_from_file"] = [
+                            dct["debug_info"]["loaded_from_file"]
+                        ]
                     else:
-                        dct["debug_info"]["loaded_from_file"].append(merge_dct["debug_info"]["loaded_from_file"])
+                        dct["debug_info"]["loaded_from_file"].append(
+                            merge_dct["debug_info"]["loaded_from_file"]
+                        )
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.
@@ -642,11 +670,11 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False):
 
 
 def deep_update(chapter, entries, config, blackdict={}):
-     if "add_" in chapter:
+    if "add_" in chapter:
         add_chapter = chapter.replace("add_", "")
         add_entries_from_chapter(config, add_chapter, entries)
-        #del config[chapter]
-     else:
+        # del config[chapter]
+    else:
         if chapter not in blackdict:
             dict_merge(config, {chapter: entries})
 
@@ -658,25 +686,24 @@ def deep_update(chapter, entries, config, blackdict={}):
             empty_values = ["", None]  # some possible empty values to override
 
             # strip all whitespace. Eg. "  " -> "", if it is only space
-            if (isinstance(blackdict[chapter], str) and
-                blackdict[chapter].isspace()):
+            if isinstance(blackdict[chapter], str) and blackdict[chapter].isspace():
                 blackdict[chapter] = re.sub(r"\s+", "", blackdict[chapter])
 
             # The update_key (chapter) is already inside the blackdict however,
             # its value (entries) it not empty. So, update them
-            if (blackdict[chapter] in empty_values and entries not in
-                empty_values):
+            if blackdict[chapter] in empty_values and entries not in empty_values:
                 dict_merge(config, {chapter: entries})
 
             # Trying to update a dictionary from the same file (in blackdict)
             # an ``add_`` returns an error
             if isinstance(blackdict[chapter], dict):
                 user_error(
-                    "Missing 'add_'", (
+                    "Missing 'add_'",
+                    (
                         f"Not possible to update the '{config['model']}.{chapter}' "
                         + f"dictionary. Please, use 'add_{chapter}' inside the "
                         + f"'choose_' block, instead of just '{chapter}'."
-                    )
+                    ),
                 )
 
 
@@ -713,14 +740,14 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
         else:
             # len(key_path) is recursion_level. Only take up to the current
             # recursion level to prevent unnecessary appends
-            key_path = key_path[: recursion_level]
+            key_path = key_path[:recursion_level]
 
         key_path.append(key)
 
         if isinstance(receiver.get(key, None), dict):
             # check if there is "overwrite" key whose value is True
-            if sender[key].get('overwrite', False):
-                del sender[key]['overwrite']     # clean up
+            if sender[key].get("overwrite", False):
+                del sender[key]["overwrite"]  # clean up
                 value_before = copy.deepcopy(receiver[key])
 
                 # update (overwrite) the value in the receiving dictionary
@@ -729,32 +756,36 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
                 # print the changed section
                 if verbose:
                     space = "    "
-                    path_str = ' -> '.join(key_path)
+                    path_str = " -> ".join(key_path)
                     print(f"::: Overwriting the path:    [{path_str}]")
                     print("::: value before:")
                     before_str = f"{space}{yaml.dump(value_before, indent=4)}"
-                    before_str = before_str.replace('\n', f'\n{space}')
-                    before_str = re.sub(r'\n[ \t]*$', '', before_str)
+                    before_str = before_str.replace("\n", f"\n{space}")
+                    before_str = re.sub(r"\n[ \t]*$", "", before_str)
                     print(before_str)
                     print("---")
 
                     print("::: value after:")
                     after_str = f"{space}{yaml.dump(receiver[key], indent=4)}"
-                    after_str = after_str.replace('\n', f'\n{space}')
-                    after_str = re.sub(r'\n[ \t]*$', '', after_str)
+                    after_str = after_str.replace("\n", f"\n{space}")
+                    after_str = re.sub(r"\n[ \t]*$", "", after_str)
                     print(after_str)
                     print()
             else:
                 # enter into recursion using the current dictionary values. Keep
                 # track of the recursion path and depth
-                dict_overwrite(sender[key], receiver[key], key_path=key_path,
-                    recursion_level=recursion_level+1, verbose=verbose)
+                dict_overwrite(
+                    sender[key],
+                    receiver[key],
+                    key_path=key_path,
+                    recursion_level=recursion_level + 1,
+                    verbose=verbose,
+                )
 
     return receiver
 
 
-
-def find_remove_entries_in_config(mapping, model_name, models = []):
+def find_remove_entries_in_config(mapping, model_name, models=[]):
     all_removes = []
     mappings = [mapping]
     while mappings:
@@ -892,7 +923,9 @@ def remove_entries_from_chapter_in_config(
     config = model_config
     for model in valid_model_names:
         logging.debug(model)
-        all_removes_for_model = find_remove_entries_in_config(config[model], model, config.keys())
+        all_removes_for_model = find_remove_entries_in_config(
+            config[model], model, config.keys()
+        )
         for remove_chapter, remove_entries in all_removes_for_model:
             model_to_remove_from = remove_chapter.split(".")[0].replace("remove_", "")
             remove_entry_from_chapter(
@@ -933,13 +966,13 @@ def basic_find_add_entries_in_config(mapping):
     mappings = [mapping]
     while mappings:
         mapping = mappings.pop()
-        #try:
+        # try:
         #    items = six.iteritems(mapping)
-        #except AttributeError:
+        # except AttributeError:
         #    continue
         for key in list(mapping):
             value = mapping[key]
-        #for key, value in items:
+            # for key, value in items:
             if isinstance(key, str) and key.startswith("add_"):
                 all_adds.append((key, value))
             if isinstance(value, dict):
@@ -963,8 +996,8 @@ def find_add_entries_in_config(mapping, model_name):
                 if not "." in key:
                     key = "add_" + model_name + "." + key.split("add_")[-1]
                 all_adds.append((key, value))
-     #       if isinstance(value, dict):
-     #           mappings.append(value)
+    #       if isinstance(value, dict):
+    #           mappings.append(value)
     # all_adds = [(add_echam.forcing_files, [sst, sic,])]
     # NOTE: Not Allowed: all_adds = [(add_echam.forcing_files, sst)]
     return all_adds
@@ -1001,7 +1034,10 @@ def add_entry_to_chapter(
     # If the desired chapter doesn't exist yet, just put it there
     logging.debug(model_to_add_to)
     logging.debug(add_chapter)
-    if not add_chapter.split(".")[-1].replace("add_", "") in target_config[model_to_add_to]:
+    if (
+        not add_chapter.split(".")[-1].replace("add_", "")
+        in target_config[model_to_add_to]
+    ):
         target_config[model_to_add_to][
             add_chapter.split(".")[-1].replace("add_", "")
         ] = add_entries
@@ -1065,6 +1101,7 @@ def basic_add_entries_to_chapter_in_config(config):
     all_adds_for_model = basic_find_add_entries_in_config(config)
     for add_chapter, add_entries in all_adds_for_model:
         add_entries_from_chapter(config, add_chapter.replace("add_", ""), add_entries)
+
 
 def basic_remove_entries_from_chapter_in_config(config):
     all_removes_for_model = basic_find_remove_entries_in_config(config)
@@ -1408,9 +1445,9 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             )
             # print("BEEEEE CALM, resolved: " + choice)
         except:
-            #print("BEEEEE CAREFUL, did not resolve: " + choose_key)
-            #logging.warning("Variable %s as a choice, skipping...", choice)
-            #del config_to_replace_in[choose_key]
+            # print("BEEEEE CAREFUL, did not resolve: " + choose_key)
+            # logging.warning("Variable %s as a choice, skipping...", choice)
+            # del config_to_replace_in[choose_key]
             gray_list.append(re.compile(choose_key))
             return
     # Evaluates the mathematical expressions in the choose_ blocks
@@ -1432,8 +1469,8 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
         # Those two are too noisy
-        #logging.warning("Choice %s could not be resolved", choice)
-        #logging.warning("Key was key=%s", choose_key)
+        # logging.warning("Choice %s could not be resolved", choice)
+        # logging.warning("Key was key=%s", choose_key)
         pass
 
     del config_to_replace_in[choose_key]
@@ -1464,8 +1501,7 @@ def resolve_choose(model_with_choose, choose_key, config):
 
 
 def resolve_choose_with_var(
-    var, config, current_model=None,
-    user_config={}, model_config={}, setup_config={}
+    var, config, current_model=None, user_config={}, model_config={}, setup_config={}
 ):
     """
     Searches for a ``choose_`` block inside a model configuration ``config``, in which
@@ -1492,20 +1528,17 @@ def resolve_choose_with_var(
     sep = ","
     # Find the path to the variable ``var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_var = find_key(
-        config, var, exc_strings="add_", paths2finds=[], sep=sep
-    )
+    choose_with_var = find_key(config, var, exc_strings="add_", paths2finds=[], sep=sep)
     choose_with_var = [x for x in choose_with_var if "choose_" in x]
     # Find the path to the variable ``add_var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_add_var = find_key(
-        config, f"add_{var}", paths2finds=[], sep=sep
-    )
+    choose_with_add_var = find_key(config, f"add_{var}", paths2finds=[], sep=sep)
     choose_with_add_var = [x for x in choose_with_add_var if "choose_" in x]
 
     # Resolve first for ``<var>`` and then for ``add_<var>``
     for choose_with_var, lvar in [
-        (choose_with_var, var), (choose_with_add_var, f"add_{var}")
+        (choose_with_var, var),
+        (choose_with_add_var, f"add_{var}"),
     ]:
         # If the path is found
         if choose_with_var:
@@ -1515,8 +1548,7 @@ def resolve_choose_with_var(
                 choose = sep.join(case.split(sep)[:-2])
                 if choose not in chooses:
                     user_error(
-                        f'"{lvar}" in more than one choose_ block',
-                        choose_with_var
+                        f'"{lvar}" in more than one choose_ block', choose_with_var
                     )
                 chooses.append(choose)
             # Get the first part of the path to the ``lvar``
@@ -1541,7 +1573,9 @@ def resolve_choose_with_var(
                 # now. We want to update now ONLY the ``lvar``.
                 config_copy = copy.deepcopy(config)
                 # Resolve the case
-                resolve_basic_choose(config_to_search_into, config_copy, choose_with_var)
+                resolve_basic_choose(
+                    config_to_search_into, config_copy, choose_with_var
+                )
                 # If ``var`` was defined through the resolution of the ``choose_``, add
                 # the ``var`` value to the ``config``.
                 if config_copy.get(var):
@@ -1631,7 +1665,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
 
 
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
-    """ Recursively runs func on all nested dicts.
+    """Recursively runs func on all nested dicts.
 
     Tree is a list starting at the top of the config dictionary, where it will
     be labeled "top"
@@ -1670,11 +1704,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
 
     if len(tree) > 100:
         print("Maximum recursion depth exceeded.")
-        print (tree)
-        print (func)
-        print (right)
+        print(tree)
+        print(func)
+        print(right)
         sys.exit(-1)
-
 
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
@@ -1761,8 +1794,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run": #PrevRunInfo
-                continue          #PrevRunInfo
+            if key == "prev_run":  # PrevRunInfo
+                continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs
@@ -1870,7 +1903,6 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
                     rentry.append(str(getattr(entry, attr)))
                 var_result = "".join(rentry)
 
-
             # if var_result:
             # BUG/FIXME: Note that this means that we **always** will get
             # back a string if a variable is replaced!
@@ -1900,6 +1932,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
 class EsmParserError(Exception):
     """Raise this error when the parser has problems"""
 
+
 def actually_find_variable(tree, rhs, full_config):
     config_elements = rhs.split(".")
     valid_names = list(full_config)
@@ -1927,7 +1960,9 @@ def actually_find_variable(tree, rhs, full_config):
             var_result = recursive_get(full_config, config_elements)
             # return var_result
         except:
-            raise EsmParserError("Sorry, a variable was not resolved: %s not found" % (rhs))
+            raise EsmParserError(
+                "Sorry, a variable was not resolved: %s not found" % (rhs)
+            )
 
     return var_result, var_attr
 
@@ -1969,9 +2004,9 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                 actual_list, new_raw = rest.split(list_end, 1)
                 key_in_list, value_in_list = actual_list.split("-->", 1)
                 # PG: THIS NEEDS TO BE OFF!!!
-                #if isblacklist and not determine_regex_list_match(
+                # if isblacklist and not determine_regex_list_match(
                 #    key_in_list, ignore_list
-                #):
+                # ):
                 #    return {lhs: rhs}
                 key_elements = key_in_list.split(".")
                 entries_of_key, _ = actually_find_variable(
@@ -1995,7 +2030,9 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     for item in rhs:
                         if isinstance(item, str):
                             for key in entries_of_key:
-                                replaced_list.append(item.replace(value_in_list, str(key)))
+                                replaced_list.append(
+                                    item.replace(value_in_list, str(key))
+                                )
                         else:
                             replaced_list.append(item)
                     return_dict2 = {}
@@ -2022,25 +2059,39 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                     v = i[k]
                                     del i[k]
                                     if value_in_list in k:
-                                        new_k = k.replace(value_in_list, replacement_key) if isinstance(k, str) else k
+                                        new_k = (
+                                            k.replace(value_in_list, replacement_key)
+                                            if isinstance(k, str)
+                                            else k
+                                        )
                                     if value_in_list in v:
-                                        new_v = v.replace(value_in_list, replacement_key) if isinstance(v, str) else v
+                                        new_v = (
+                                            v.replace(value_in_list, replacement_key)
+                                            if isinstance(v, str)
+                                            else v
+                                        )
                                     i[new_k] = new_v
                             new_list.append(i)
                         return new_list
                     if isinstance(entry, dict):
                         new_entry = {}
-                        #pdb.set_trace()
+                        # pdb.set_trace()
                         for k in list(entry):
                             v = entry[k]
-                            #del entry[k]
+                            # del entry[k]
                             if value_in_list in k:
-                                new_k = k.replace(value_in_list, replacement_key) if isinstance(k, str) else k
+                                new_k = (
+                                    k.replace(value_in_list, replacement_key)
+                                    if isinstance(k, str)
+                                    else k
+                                )
                             else:
                                 new_k = k
-                            #pdb.set_trace()
-                            new_v = helper_dict_replacer(v, value_in_list, replacement_key)
-                            #pdb.set_trace()
+                            # pdb.set_trace()
+                            new_v = helper_dict_replacer(
+                                v, value_in_list, replacement_key
+                            )
+                            # pdb.set_trace()
                             new_entry[new_k] = new_v
                         return new_entry
 
@@ -2048,16 +2099,26 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     replacement_dict = {}
                     keys_of_rhs_dict = list(rhs)
                     for replacement_key in entries_of_key:
-                        inner_replacement_dict = replacement_dict[ok_part+replacement_key+new_raw] = {}
+                        inner_replacement_dict = replacement_dict[
+                            ok_part + replacement_key + new_raw
+                        ] = {}
                         for rhs_key in keys_of_rhs_dict:
                             entry = rhs[rhs_key]
                             # del rhs[rhs_key]
                             if isinstance(rhs_key, str):
-                                new_rhs_key = rhs_key.replace(value_in_list, replacement_key) if isinstance(rhs_key, str) else rhs_key
-                                new_entry = helper_dict_replacer(entry, value_in_list, replacement_key)
+                                new_rhs_key = (
+                                    rhs_key.replace(value_in_list, replacement_key)
+                                    if isinstance(rhs_key, str)
+                                    else rhs_key
+                                )
+                                new_entry = helper_dict_replacer(
+                                    entry, value_in_list, replacement_key
+                                )
                                 inner_replacement_dict[new_rhs_key] = new_entry
                             else:
-                                raise NotImplementedError("Nested multikey replacement for dicts is only implement for str keys right now!")
+                                raise NotImplementedError(
+                                    "Nested multikey replacement for dicts is only implement for str keys right now!"
+                                )
                     return_dict2 = replacement_dict
 
                 if list_fence in new_raw:
@@ -2076,14 +2137,13 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                 return return_dict
             return {lhs: rhs}
 
-
         if isinstance(rhs, str) and list_fence in rhs:
             rhs_list = []
             ok_part, rest = rhs.split(list_fence, 1)
             actual_list, new_raw = rest.split(list_end, 1)
             # seb-wahl: check if a [[ ...]] entry in the string parsed contains
             # '-->' to avoid a crash if a shell command such as 'if [[ ...]]; then' is parsed
-            if '-->' in actual_list:
+            if "-->" in actual_list:
                 key_in_list, value_in_list = actual_list.split("-->", 1)
                 key_elements = key_in_list.split(".")
                 entries_of_key, _ = actually_find_variable(
@@ -2097,9 +2157,9 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                             value_in_list, str(entry)
                         )
                     )
-                #if isinstance(entries_of_key, str):
+                # if isinstance(entries_of_key, str):
                 #    entries_of_key = [entries_of_key]
-                #for entry in entries_of_key:
+                # for entry in entries_of_key:
                 #    rhs_list.append(
                 #        rhs.replace("[[" + actual_list + "]]", str(entry)).replace(
                 #            value_in_list, str(entry)
@@ -2197,8 +2257,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + tupel
                 elif "minutes" in step:
-                    tupel = ( "(0, 0, 0, 0," +
-                        step.replace("minutes", "")
+                    tupel = (
+                        "(0, 0, 0, 0,"
+                        + step.replace("minutes", "")
                         .replace('"', "")
                         .replace("'", "")
                         .strip()
@@ -2206,8 +2267,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + tupel
                 elif "hours" in step:
-                    tupel = ( "(0, 0, 0," +
-                        step.replace("hours", "")
+                    tupel = (
+                        "(0, 0, 0,"
+                        + step.replace("hours", "")
                         .replace('"', "")
                         .replace("'", "")
                         .strip()
@@ -2215,8 +2277,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + tupel
                 elif "days" in step:
-                    tupel = ( "(0, 0," +
-                        step.replace("days", "")
+                    tupel = (
+                        "(0, 0,"
+                        + step.replace("days", "")
                         .replace('"', "")
                         .replace("'", "")
                         .strip()
@@ -2224,8 +2287,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + tupel
                 elif "months" in step:
-                    tupel = ( "(0," +
-                        step.replace("months", "")
+                    tupel = (
+                        "(0,"
+                        + step.replace("months", "")
                         .replace('"', "")
                         .replace("'", "")
                         .strip()
@@ -2233,8 +2297,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + tupel
                 elif "years" in step:
-                    tupel = ( "(" +
-                        step.replace("years", "")
+                    tupel = (
+                        "("
+                        + step.replace("years", "")
                         .replace('"', "")
                         .replace("'", "")
                         .strip()
@@ -2251,7 +2316,9 @@ def do_math_in_entry(tree, rhs, config):
                     index += 1
         result = eval(math)
         if type(result) == list:
-            result = result[-1] # should be extended in the future - here: if list (= if diff between dates) than result in seconds
+            result = result[
+                -1
+            ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
         result = str(result)
         entry = before_math + result + after_math
     # TODO MA: this is a provisional dirty fix for release. Get rid of this once a more
@@ -2299,7 +2366,7 @@ def marked_date_to_date_object(tree, rhs, config):
                     rentry.append(str(getattr(entry, attr)))
                 return "".join(rentry)
             else:
-                #return entry.output()
+                # return entry.output()
                 return entry
     return entry
 
@@ -2324,44 +2391,44 @@ def perform_actions(tree, rhs, config):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
-          left, newrhs = entry.split("<--")
-          action, source = newrhs.split("--")
-          if "${" in source:
-            source = find_variable(
-                        tree,
-                        source,
-                        config,
-                        [],
-                        True,
-                    )
+            left, newrhs = entry.split("<--")
+            action, source = newrhs.split("--")
+            if "${" in source:
+                source = find_variable(
+                    tree,
+                    source,
+                    config,
+                    [],
+                    True,
+                )
 
-          parameter = None
-          if "(" in action:
-              action = action.replace(")", "")
-              action, parameter = action.split("(")
-          if "format" in action:
-              if "d" in parameter or "f" in parameter:
-                  source = int(source)
-              if parameter:
-                  solved_rhs = parameter % source
-              else:
-                  solved_rhs = source
-              newrhs = solved_rhs
-              entry = left + newrhs
-          if "fseq" in action:
-              rest = source.replace("<--fseq-- ", "").strip()
-              try:
-                start, stop, step, precision = rest.split(" ")
-              except:
-                  precision = 4
-                  try:
-                    start, stop, step = rest.split(" ")
-                  except:
-                    start, stop = rest.split(" ")
-                    step = 1
+            parameter = None
+            if "(" in action:
+                action = action.replace(")", "")
+                action, parameter = action.split("(")
+            if "format" in action:
+                if "d" in parameter or "f" in parameter:
+                    source = int(source)
+                if parameter:
+                    solved_rhs = parameter % source
+                else:
+                    solved_rhs = source
+                newrhs = solved_rhs
+                entry = left + newrhs
+            if "fseq" in action:
+                rest = source.replace("<--fseq-- ", "").strip()
+                try:
+                    start, stop, step, precision = rest.split(" ")
+                except:
+                    precision = 4
+                    try:
+                        start, stop, step = rest.split(" ")
+                    except:
+                        start, stop = rest.split(" ")
+                        step = 1
 
-              numpyentry = list(numpy.arange(float(start), float(stop), float(step)))
-              entry = [round(float(number), precision) for number in numpyentry]
+                numpyentry = list(numpy.arange(float(start), float(stop), float(step)))
+                entry = [round(float(number), precision) for number in numpyentry]
     return entry
 
 
@@ -2377,6 +2444,7 @@ def purify_booleans(tree, rhs, config):
         entry = eval(entry.capitalize())
     return entry
 
+
 def to_boolean(value):
     if type(value) == bool:
         return value
@@ -2384,6 +2452,7 @@ def to_boolean(value):
         return True
     elif value in ["False", "false", ".false."]:
         return False
+
 
 def could_be_bool(value):
     if type(value) == bool:
@@ -2479,6 +2548,7 @@ def finish_priority_merge(config):
         # Recreate the test list
         all_keys_with_priority_marker = list_all_keys_with_priority_marker(config)
 
+
 def choose_blocks(config, blackdict={}, isblacklist=True):
     global gray_list
     all_set_variables = {}
@@ -2513,7 +2583,7 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
                 config,
                 config[model_with_choose],
                 choose_key,
-                blackdict[model_with_choose]
+                blackdict[model_with_choose],
             )
         else:
             resolve_basic_choose(config, config[model_with_choose], choose_key, {})
@@ -2525,7 +2595,7 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
     gray_list = gray_list_backup.copy()
 
 
-def find_key(d_search, k_search, exc_strings = "", level = "", paths2finds = [], sep = "."):
+def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="."):
     """
     Searches for a key inside a nested dictionary. It can search for an
     integer, or a piece of string. A list of strings can be given as an
@@ -2589,14 +2659,20 @@ def find_key(d_search, k_search, exc_strings = "", level = "", paths2finds = [],
             elif isinstance(key, float) and istr != key:
                 strings_in_key &= False
             # key is neither an integer or a string
-            elif not isinstance(key, str) and not isinstance(key, int) and not isinstance(key, float):
-                raise Warning("find_key only supports searches for keys that are string, integers," \
-                              "floats and booleans")
+            elif (
+                not isinstance(key, str)
+                and not isinstance(key, int)
+                and not isinstance(key, float)
+            ):
+                raise Warning(
+                    "find_key only supports searches for keys that are string, integers,"
+                    "floats and booleans"
+                )
                 strings_in_key &= False
         # Check if the key needs to be excluded
         for estr in exc_strings:
             # Nothing to exclude if the key is not a string or estr is empty
-            if isinstance(key, str) and estr in key and len(estr)>0:
+            if isinstance(key, str) and estr in key and len(estr) > 0:
                 strings_in_key &= False
 
         # If the key meets the criteria, add the path to the paths2finds
@@ -2605,8 +2681,14 @@ def find_key(d_search, k_search, exc_strings = "", level = "", paths2finds = [],
         # If the key does not meet the criteria, but its value is a dictionary
         # keep searching inside (recursion).
         elif not strings_in_key and isinstance(d_search[key], dict):
-            paths2finds = find_key(d_search[key], k_search, exc_strings, level + str(key) + sep,
-                                   paths2finds, sep)
+            paths2finds = find_key(
+                d_search[key],
+                k_search,
+                exc_strings,
+                level + str(key) + sep,
+                paths2finds,
+                sep,
+            )
 
     return paths2finds
 
@@ -2646,16 +2728,13 @@ def user_error(error_type, error_text, exit_code=1):
 
 
 class GeneralConfig(dict):  # pragma: no cover
-    """ All configs do this! """
+    """All configs do this!"""
 
     def __init__(self, model, version, user_config):
         super(dict, self).__init__()
 
-
-
-
-        if os.path.isfile(model+"-"+version):
-            config_path = model+"-"+version
+        if os.path.isfile(model + "-" + version):
+            config_path = model + "-" + version
         elif os.path.isfile(model):
             config_path = model
         else:
@@ -2686,7 +2765,7 @@ class GeneralConfig(dict):  # pragma: no cover
 
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
-    """ Config Class for Setups """
+    """Config Class for Setups"""
 
     def _config_init(self, user_config):
         # user_config should be ok already
@@ -2699,12 +2778,12 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         default_infos = {}
 
-        # get the files in the defaults directory and exclude general.yaml 
+        # get the files in the defaults directory and exclude general.yaml
         yaml_files = os.listdir(DEFAULTS_DIR)
-        if 'general.yaml' in yaml_files:
-            yaml_files.remove('general.yaml')
-            
-        for yaml_file in yaml_files: 
+        if "general.yaml" in yaml_files:
+            yaml_files.remove("general.yaml")
+
+        for yaml_file in yaml_files:
             file_contents = yaml_file_to_dict(DEFAULTS_DIR + "/" + yaml_file)
             default_infos.update(file_contents)
 
@@ -2713,23 +2792,23 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         computer_file = determine_computer_from_hostname()
         computer_config = yaml_file_to_dict(computer_file)
-        
-        if 'general.yaml' in os.listdir(DEFAULTS_DIR):
+
+        if "general.yaml" in os.listdir(DEFAULTS_DIR):
             general_config = yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
         else:
             general_config = {}
-        
+
         setup_config = {
             "computer": computer_config,
             "general": general_config,
         }
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-            attach_to_config_and_remove(setup_config["computer"], attachment,
-                all_config = None)
+            attach_to_config_and_remove(
+                setup_config["computer"], attachment, all_config=None
+            )
         # Add the fake "model" name to the computer:
         setup_config["computer"]["model"] = "computer"
         logger.info("setup config is being updated with setup_relevant_configs")
-
 
         # distribute self.config into setup_config
 
@@ -2754,7 +2833,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 )
                 del user_config[user_config["general"]["setup_name"]]
             dict_merge(setup_config, self.config)
-
 
             setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
                 setup_config
@@ -2782,18 +2860,20 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 setup_config
             )
             setup_config["general"]["valid_setup_names"].remove(self.config["model"])
-            setup_config["general"]["valid_model_names"] = valid_model_names = [self.config["model"]]
+            setup_config["general"]["valid_model_names"] = valid_model_names = [
+                self.config["model"]
+            ]
 
         del self.config
 
         setup_config["general"].update(
-            {"esm_function_dir": esm_function_dir,
-             "esm_namelist_dir": esm_namelist_dir,
-             "esm_runscript_dir": esm_runscript_dir,
-             "expid": "test"}
+            {
+                "esm_function_dir": esm_function_dir,
+                "esm_namelist_dir": esm_namelist_dir,
+                "esm_runscript_dir": esm_runscript_dir,
+                "expid": "test",
+            }
         )
-
-
 
         # setup_config should be ok now
         # model_config:
@@ -2805,9 +2885,17 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             if "models" in setup_config["general"]:
                 old_model_list += setup_config["general"]["models"].copy()
             for model in setup_config["general"]["include_models"]:
-                if not "-" in model and model in user_config and "version" in user_config[model]:
+                if (
+                    not "-" in model
+                    and model in user_config
+                    and "version" in user_config[model]
+                ):
                     new_model_list.append(model + "-" + user_config[model]["version"])
-                elif not "-" in model and model in setup_config and "version" in setup_config[model]:
+                elif (
+                    not "-" in model
+                    and model in setup_config
+                    and "version" in setup_config[model]
+                ):
                     new_model_list.append(model + "-" + setup_config[model]["version"])
                 else:
                     new_model_list.append(model)
@@ -2819,9 +2907,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
 
         if old_model_list:
-            #print (old_model_list)
+            # print (old_model_list)
             setup_config["general"]["models"] = old_model_list
-
 
         if "models" in setup_config["general"]:
             for model in setup_config["general"]["models"]:
@@ -2839,16 +2926,18 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     )
             for model in list(model_config):
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                    attach_to_config_and_remove(model_config[model], attachment,
-                        all_config = None)
+                    attach_to_config_and_remove(
+                        model_config[model], attachment, all_config=None
+                    )
 
         # Allows the ``general`` section to be able to handle attachable files (e.g.
         # ``further_reading``)
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-            attach_to_config_and_remove(setup_config["general"], attachment,
-                all_config = None)
+            attach_to_config_and_remove(
+                setup_config["general"], attachment, all_config=None
+            )
 
-        #if "models" in setup_config["general"]:
+        # if "models" in setup_config["general"]:
         #    new_model_list = []
         #    for model in setup_config["general"]["models"]:
         #        new_model_list.append(model.split("-")[0])
@@ -2856,7 +2945,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         for model in list(model_config):
             setup_config["general"]["valid_model_names"].append(model)
-            #valid_model_names.append(list(model_config)) happens automatically
+            # valid_model_names.append(list(model_config)) happens automatically
 
         # model_config should be ok now
         # merge everything
@@ -2872,24 +2961,25 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         if not "coupled_setup" in self.config["general"]:
             self._blackdict = blackdict = user_config
 
-
         # deniz: if the user-defined forcing_sources (inside the runscript) is
         # a dictionary with multiple levels then the users need to provide
         # 'overwrite' key at the level that they want to change. Otherwise,
         # the parser basically appends that to the forcing_sources and since
         # Python dictionaries are unordered noone can guarantee which source is
         # taken
-        self.config = dict_overwrite(sender=user_config, receiver=self.config, 
-            key_path=[], verbose=self.config['general'].get('verbose', False))
+        self.config = dict_overwrite(
+            sender=user_config,
+            receiver=self.config,
+            key_path=[],
+            verbose=self.config["general"].get("verbose", False),
+        )
 
-        #pprint_config(self.config)
-        #sys.exit(0)
-
+        # pprint_config(self.config)
+        # sys.exit(0)
 
     def finalize(self):
         self.run_recursive_functions(self)
         del self._blackdict
-
 
     def run_recursive_functions(self, config, isblacklist=True):
         logging.debug("Top of run recursive functions")

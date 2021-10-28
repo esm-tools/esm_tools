@@ -7,5 +7,3 @@ __version__ = "5.1.21"
 
 from .yaml_to_dict import yaml_file_to_dict
 from .esm_parser import *
-
-

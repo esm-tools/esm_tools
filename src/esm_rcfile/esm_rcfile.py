@@ -125,11 +125,11 @@ class EsmToolsDir(str):
         <esm_tools_folder_type_PATH> : str
             The path to the required folder.
         """
-        if self.path_type=="FUNCTION_PATH":
+        if self.path_type == "FUNCTION_PATH":
             return esm_tools.get_config_filepath(".") + "/"
-        elif self.path_type=="NAMELIST_PATH":
+        elif self.path_type == "NAMELIST_PATH":
             return esm_tools.get_namelist_filepath(".") + "/"
-        elif self.path_type=="RUNSCRIPT_PATH":
+        elif self.path_type == "RUNSCRIPT_PATH":
             return esm_tools.get_runscript_filepath(".") + "/"
         else:
             raise Exception("Incorrect path type!")

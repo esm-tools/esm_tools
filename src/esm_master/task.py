@@ -33,7 +33,7 @@ def install(package: str) -> None:
     -------
     None
     """
-    package_name = package.split("/")[-1]
+    package_name = package.split("/")[-1].replace(".git", "")
     installed_packages = esm_plugin_manager.find_installed_plugins()
     if not package_name in installed_packages:
         try:
@@ -387,27 +387,18 @@ class Task:
                     if task.package.bin_names:
                         for binfile in task.package.bin_names:
                             command_list.append(
-                                "rm -f "
-                                + toplevel
-                                + "/"
-                                + task.package.bin_type
-                                + "/"
-                                + binfile.split("/", -1)[-1]
+                                f"rm -f {toplevel}/{task.package.bin_type}/{binfile.split('/', -1)[-1]}"
                             )
                             real_command_list.append(
-                                "rm -f "
-                                + toplevel
-                                + "/"
-                                + task.package.bin_type
-                                + "/"
-                                + binfile.split("/", -1)[-1]
+                                f"rm -f {toplevel}/{task.package.bin_type}/{binfile.split('/', -1)[-1]}"
                             )
-
         if task.todo in ["comp"]:
             for component in self.required_plugins:
                 for plugin in self.required_plugins[component]:
                     # Install the plugin if is not already installed
                     if plugin not in self.already_installed_plugins:
+                        # Actually only works because Paul put the gfw_creator
+                        # required plugin for awiesm onto PyPI...
                         install(plugin)
                         self.already_installed_plugins.append(plugin)
 

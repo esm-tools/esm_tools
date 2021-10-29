@@ -16,7 +16,7 @@ from esm_motd import check_all_esm_packages
 
 
 def parse_shargs():
-    """ The arg parser for interactive use """
+    """The arg parser for interactive use"""
     parser = argparse.ArgumentParser()
     parser.add_argument("runscript", default=None)
 
@@ -31,15 +31,25 @@ def parse_shargs():
     )
 
     parser.add_argument(
-        "-v", "--verbose", help="Be verbose", action="store_true", default=False,
+        "-v",
+        "--verbose",
+        help="Be verbose",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
-        "--contained-run", help="Run in a virtual environment", action="store_true", default=None,
+        "--contained-run",
+        help="Run in a virtual environment",
+        action="store_true",
+        default=None,
     )
 
     parser.add_argument(
-        "--open-run", help="Run in default install (not in virtual environment)", action="store_true", default=None,
+        "--open-run",
+        help="Run in default install (not in virtual environment)",
+        action="store_true",
+        default=None,
     )
 
     parser.add_argument(
@@ -67,16 +77,16 @@ def parse_shargs():
         "-m",
         dest="modify",
         help="[m]odify configuration",
-        default="", # kh 15.07.20 "usermods.yaml"
+        default="",  # kh 15.07.20 "usermods.yaml"
     )
 
-    #parser.add_argument(
+    # parser.add_argument(
     #    "-j",
     #    "--last_jobtype",
     #    help="Write the jobtype this run was called from (esm-tools internal)",
     #    default="command_line",
-    #)
-#
+    # )
+    #
     parser.add_argument(
         "-t",
         "--task",
@@ -108,7 +118,10 @@ def parse_shargs():
     parser.add_argument("-x", "--exclude", help="e[x]clude this step", default=None)
     parser.add_argument("-o", "--only", help="[o]nly do this step", default=None)
     parser.add_argument(
-        "-r", "--run_number", help="run_number for this run, overwriting settings in date file", default=None
+        "-r",
+        "--run_number",
+        help="run_number for this run, overwriting settings in date file",
+        default=None,
     )
 
     # PG: Might not work anymore:
@@ -119,19 +132,18 @@ def parse_shargs():
         default=False,
         action="store_true",
     )
-    
+
     parser.add_argument(
         "--no-motd",
-        help = "supress the printing of MOTD",
-        default = False,
-        action = "store_true" 
+        help="supress the printing of MOTD",
+        default=False,
+        action="store_true",
     )
 
     return parser.parse_args()
 
 
 def main():
-
 
     ARGS = parse_shargs()
 
@@ -195,7 +207,7 @@ def main():
     command_line_config["current_date"] = start_date
     command_line_config["run_number"] = run_number
     command_line_config["jobtype"] = jobtype
-    #command_line_config["last_jobtype"] = ARGS.last_jobtype
+    # command_line_config["last_jobtype"] = ARGS.last_jobtype
     command_line_config["verbose"] = verbose
     command_line_config["inspect"] = inspect
     command_line_config["use_venv"] = use_venv
@@ -208,14 +220,14 @@ def main():
     # runscript_full_path = os.path.realpath(runscript_from_cmdline)
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
-    runscript_dir += '/'
-    
+    runscript_dir += "/"
+
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()
     command_line_config["started_from"] = runscript_dir
 
     # only the yaml file, without the path
-    command_line_config["scriptname"] = runscript  
+    command_line_config["scriptname"] = runscript
     # full path including the yaml file: runscript_dir + runscript
     command_line_config["runscript_abspath"] = runscript_full_path
 
@@ -232,9 +244,9 @@ def main():
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
-    
+
     Setup = SimulationSetup(command_line_config)
     # if not Setup.config['general']['submitted']:
-    if not Setup.config['general']['submitted'] and not no_motd:
+    if not Setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
     Setup()

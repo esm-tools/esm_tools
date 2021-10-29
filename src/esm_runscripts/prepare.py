@@ -28,9 +28,13 @@ def mini_resolve_variable_date_file(date_file, config):
                 answer = config.get("env", {}).get(variable)
                 if not answer:
                     try:
-                        assert (variable.startswith("env.") or variable.startswith("general."))
+                        assert variable.startswith("env.") or variable.startswith(
+                            "general."
+                        )
                     except AssertionError:
-                        print("The date file contains a variable which is not in the >>env<< or >>general<< section. This is not allowed!")
+                        print(
+                            "The date file contains a variable which is not in the >>env<< or >>general<< section. This is not allowed!"
+                        )
                         print(f"date_file = {date_file}")
                         sys.exit(1)
         date_file = pre + answer + post
@@ -41,9 +45,10 @@ def _read_date_file(config):
     import os
     import logging
 
-    date_file = \
-        f"{config['general']['experiment_dir']}/scripts"\
+    date_file = (
+        f"{config['general']['experiment_dir']}/scripts"
         f"/{config['general']['expid']}_{config['general']['setup_name']}.date"
+    )
 
     date_file = mini_resolve_variable_date_file(date_file, config)
 
@@ -64,8 +69,6 @@ def _read_date_file(config):
     logging.info("current_date = %s", date)
     logging.info("run_number = %s", run_number)
     return config
-
-
 
 
 def check_model_lresume(config):
@@ -111,7 +114,7 @@ def check_model_lresume(config):
 
 
 def resolve_some_choose_blocks(config):
-    #from esm_parser import choose_blocks
+    # from esm_parser import choose_blocks
 
     # Component-specific environment variables into ``computer``
     # before ``computer`` ``choose_`` blocks are resolved
@@ -120,8 +123,9 @@ def resolve_some_choose_blocks(config):
     esm_parser.choose_blocks(config, blackdict=config._blackdict)
     return config
 
+
 def model_env_into_computer(config):
-    '''
+    """
     This function allows to store in the ``computer`` dictionary, variables that were
     defined inside ``environment_changes`` or ``compile/runtime_environment_changes``
     in the components.
@@ -156,10 +160,10 @@ def model_env_into_computer(config):
     User Note/Error
         If the same variable is found in two or more different component environments.
         Asks the user how to proceed.
-    '''
+    """
 
-    #import logging
-    #from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
+    # import logging
+    # from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
 
     # Get which type of changes are to be applied to the environment
     run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
@@ -191,17 +195,18 @@ def model_env_into_computer(config):
         # need of the solving of later ``choose_`` blocks.
         for key, value in modelconfig["environment_changes"].items():
             if (
-                key not in [
-                    "export_vars", 
-                    "module_actions", 
-                    "add_export_vars", 
+                key
+                not in [
+                    "export_vars",
+                    "module_actions",
+                    "add_export_vars",
                     "add_module_actions",
                     "unset_vars",
                     "add_unset_vars",
-                    ]
+                ]
                 and "computer" in config
                 and not overwrite
-                #and run_or_compile=="runtime"
+                # and run_or_compile=="runtime"
             ):
                 # If the key is already included in ``env_vars``, the key variable has
                 # been already modified by a previous model and a warning needs to be
@@ -216,7 +221,7 @@ def model_env_into_computer(config):
                         logging.info("\nIn '" + model + "':")
                         pprint_config({key: value})
                         # Ask the user how to proceed if it is not a `tidy job
-                        if not config["general"]["jobtype"]=="tidy":
+                        if not config["general"]["jobtype"] == "tidy":
                             user_answer = input(
                                 f"Environment variable '{key}' defined in '{model0}' is "
                                 + "going to be overwritten by the one defined in "
@@ -352,20 +357,20 @@ def set_overall_calendar(config):
         config["general"]["calendar"] = Calendar(0)
     return config
 
-    
+
 def find_last_prepared_run(config):
 
     calendar = config["general"]["calendar"]
     current_date = Date(config["general"]["current_date"], calendar)
     initial_date = Date(config["general"]["initial_date"], calendar)
     delta_date = (
-            config["general"]["nyear"],
-            config["general"]["nmonth"],
-            config["general"]["nday"],
-            config["general"]["nhour"],
-            config["general"]["nminute"],
-            config["general"]["nsecond"],
-            )
+        config["general"]["nyear"],
+        config["general"]["nmonth"],
+        config["general"]["nday"],
+        config["general"]["nhour"],
+        config["general"]["nminute"],
+        config["general"]["nsecond"],
+    )
 
     while True:
         if current_date < initial_date:
@@ -373,15 +378,11 @@ def find_last_prepared_run(config):
 
         next_date = current_date.add(delta_date)
         end_date = next_date - (0, 0, 1, 0, 0, 0)
-        
-        datestamp = ( 
-            current_date.format(
-                form=9, givenph=False, givenpm=False, givenps=False
-            )
-            + "-" +
-            end_date.format(
-                form=9, givenph=False, givenpm=False, givenps=False
-            )
+
+        datestamp = (
+            current_date.format(form=9, givenph=False, givenpm=False, givenps=False)
+            + "-"
+            + end_date.format(form=9, givenph=False, givenpm=False, givenps=False)
         )
 
         # Solve base_dir with variables
@@ -389,7 +390,9 @@ def find_last_prepared_run(config):
             ["general", "base_dir"], config["general"]["base_dir"], config, [], True
         )
 
-        if os.path.isdir(base_dir + "/" + config["general"]["expid"] + "/run_" + datestamp):
+        if os.path.isdir(
+            base_dir + "/" + config["general"]["expid"] + "/run_" + datestamp
+        ):
             config["general"]["current_date"] = current_date
             return config
 
@@ -488,7 +491,9 @@ def _add_all_folders(config):
         "config",
         "restart_in",
     ]
-    config["general"]["reusable_filetypes"] = config["general"].get("reusable_filetypes", ["bin", "src"])
+    config["general"]["reusable_filetypes"] = config["general"].get(
+        "reusable_filetypes", ["bin", "src"]
+    )
 
     config["general"]["thisrun_dir"] = (
         config["general"]["experiment_dir"]
@@ -697,11 +702,12 @@ def initialize_coupler(config):
 
         for model in list(config):
             if model in coupler.known_couplers:
-                config["general"]["coupler_config_dir"] = \
-                    f"{config['general']['base_dir']}"\
-                    f"/{config['general']['expid']}"\
-                    f"/run_{config['general']['run_datestamp']}"\
+                config["general"]["coupler_config_dir"] = (
+                    f"{config['general']['base_dir']}"
+                    f"/{config['general']['expid']}"
+                    f"/run_{config['general']['run_datestamp']}"
                     f"/config/{model}/"
+                )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break
         config["general"]["coupler"].add_files(config)
@@ -709,11 +715,12 @@ def initialize_coupler(config):
 
 
 def set_logfile(config):
-    log_file_path = \
-        f"{config['general']['experiment_log_dir']}"\
-        f"/{config['general']['expid']}"\
-        f"_{config['general']['setup_name']}.log"\
-        
+    log_file_path = (
+        f"{config['general']['experiment_log_dir']}"
+        f"/{config['general']['expid']}"
+        f"_{config['general']['setup_name']}.log"
+    )
     config["general"]["experiment_log_file"] = config["general"].get(
-        "experiment_log_file", log_file_path)
+        "experiment_log_file", log_file_path
+    )
     return config

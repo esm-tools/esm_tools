@@ -1,11 +1,23 @@
 from . import helpers
 
+
 def run_job(config):
-    config["general"]["relevant_filetypes"] = ["log", "mon", "outdata", "restart_out","bin", "config", "forcing", "input", "restart_in", "ignore"]
+    config["general"]["relevant_filetypes"] = [
+        "log",
+        "mon",
+        "outdata",
+        "restart_out",
+        "bin",
+        "config",
+        "forcing",
+        "input",
+        "restart_in",
+        "ignore",
+    ]
     helpers.evaluate(config, "dataprocess", "data_recipe")
     return config
 
-    
+
 def _assemble_dataprocess_tasks(config):
     """
     Generates all tasks for data processing which will be written to the sad file.
@@ -27,12 +39,16 @@ def _assemble_dataprocess_tasks(config):
     # First find the correct subjob_cluster:
 
     this_cluster = config["general"]["job_type"]
-    config["general"]["this_cluster"] = copy.deepcopy(config["general"]["workflow"]["subjob_clusters"][this_cluster])
+    config["general"]["this_cluster"] = copy.deepcopy(
+        config["general"]["workflow"]["subjob_clusters"][this_cluster]
+    )
 
     # gather the information on the clusters to be submitted by this job.
     config["general"]["next_clusters"] = {}
     for cluster in config["general"]["this_cluster"]["next_submit"]:
-        config["general"]["next_clusters"].update(config["general"]["workflow"]["subjob_clusters"][cluster])
+        config["general"]["next_clusters"].update(
+            config["general"]["workflow"]["subjob_clusters"][cluster]
+        )
 
     for subcluster in config["general"]["next_clusters"]:
         data_task_list.append(tasks_of_one_cluster(config, subcluster))
@@ -42,14 +58,12 @@ def _assemble_dataprocess_tasks(config):
 
 def add_environment(env, config):
 
-    env_dict = env(config) # that wont work and needs correction! 
+    env_dict = env(config)  # that wont work and needs correction!
     return export_string(env_dict)
-
 
 
 def assemble_srun_command(scriptcall, config):
     ...
-
 
 
 def add_scriptcall(scriptcall, cluster, config):
@@ -66,26 +80,23 @@ def add_scriptcall(scriptcall, cluster, config):
     return scriptcall
 
 
-
 def tasks_of_one_subjob(config, cluster, subjob):
     task_list = []
     subjob_config = config["general"]["worksflow"]["subjobs"][subjob]
-
 
     env_preparation = subjob_config.get("env_preparation", False)
     scriptdir = subjob_config.get("script_dir", False)
     script = subjob_config.get(script, False)
 
     if env_preparation:
-        env_preparation = assemble_filename(env_preparation, scriptdir, config) 
+        env_preparation = assemble_filename(env_preparation, scriptdir, config)
         task_list.append(add_environment(env_preparation, config))
 
     if script:
-        script = assemble_filename(script, scriptdir, config) 
+        script = assemble_filename(script, scriptdir, config)
         task_list.append(add_scriptcall(script, cluster, config))
 
     return task_list
-
 
 
 def tasks_of_one_cluster(config, cluster):
@@ -95,25 +106,18 @@ def tasks_of_one_cluster(config, cluster):
         task_list.append(tasks_of_one_subjob(config, cluster, subjob))
 
     return task_list
-    
-
-        
-
-
-
-
-
-
 
     for component in config["general"]["valid_model_names"]:
-        post_file.write(40*"+ "+"\n")
+        post_file.write(40 * "+ " + "\n")
         post_file.write("Generating post-processing tasks for: %s \n" % component)
 
         post_task_list.append("\n#Postprocessing %s\n" % component)
-        post_task_list.append("cd "+ config[component]["experiment_outdata_dir"]+"\n")
+        post_task_list.append(
+            "cd " + config[component]["experiment_outdata_dir"] + "\n"
+        )
 
-        pconfig_tasks = config[component].get('postprocess_tasks', {})
-        pconfig_scripts = config[component].get('postprocessing_scripts', {})
+        pconfig_tasks = config[component].get("postprocess_tasks", {})
+        pconfig_scripts = config[component].get("postprocessing_scripts", {})
 
         post_file.write("Configuration for post processing: %s \n" % pconfig_tasks)
 
@@ -138,7 +142,6 @@ def tasks_of_one_cluster(config, cluster):
     return config
 
 
-
 def assemble_filename(filename, dirname, config):
     if filename.startswith("/"):
         return filename
@@ -149,9 +152,6 @@ def assemble_filename(filename, dirname, config):
     return os.path.join(["general"]["started_from"], filename)
 
 
-
-
-
 def export_string(environment_dict):
     export_string = []
     for entry in environment_dict:
@@ -159,8 +159,8 @@ def export_string(environment_dict):
         export_string.append([f"export {entry}={value}"])
     return export_string
 
-#?????
-#def write_simple_postscript(config):
+
+# ?????
+# def write_simple_postscript(config):
 #    batch_system.write_simple_runscript(config)
 #    return config
-

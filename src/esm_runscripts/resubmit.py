@@ -9,6 +9,7 @@ from . import chunky_parts
 from . import workflow
 import esm_parser
 
+
 def submit(config):
     if config["general"]["verbose"]:
         six.print_("\n", 40 * "+ ")
@@ -24,15 +25,16 @@ def submit(config):
     return config
 
 
-
-def resubmit_batch_or_shell(config, batch_or_shell, cluster = None):
-    config = config["general"]["batch"].write_simple_runscript(config, cluster, batch_or_shell)
+def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
+    config = config["general"]["batch"].write_simple_runscript(
+        config, cluster, batch_or_shell
+    )
     if not check_if_check(config):
         config = submit(config)
     return config
 
 
-def resubmit_SimulationSetup(config, cluster = None):
+def resubmit_SimulationSetup(config, cluster=None):
     monitor_file = logfiles.logfile_handle
     # Jobs that should be started directly from the compute job:
 
@@ -45,30 +47,34 @@ def resubmit_SimulationSetup(config, cluster = None):
     monitor_file.write(f"Initializing {cluster} object with:\n")
     monitor_file.write(str(command_line_config))
     # NOTE(PG) Non top level import to avoid circular dependency:
-    
+
     os.chdir(config["general"]["started_from"])
     from .sim_objects import SimulationSetup
+
     cluster_obj = SimulationSetup(command_line_config)
-    
+
     monitor_file.write(f"{cluster} object built....\n")
-    
+
     if f"{cluster}_update_{jobtype}_config_before_resubmit" in cluster_obj.config:
-        monitor_file.write(f"{cluster} object needs to update the calling job config:\n")
+        monitor_file.write(
+            f"{cluster} object needs to update the calling job config:\n"
+        )
         # FIXME(PG): This might need to be a deep update...?
-        config.update(cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"])
+        config.update(
+            cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]
+        )
 
     if not check_if_check(config):
 
         monitor_file.write(f"Calling {cluster} job:\n")
-        config["general"]["experiment_over"] = cluster_obj(kill_after_submit = False)
+        config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
 
     return config
 
 
-
 def get_submission_type(cluster, config):
     # Figure out if next job is resubmitted to batch system,
-    # just executed in shell or invoked as new SimulationSetup 
+    # just executed in shell or invoked as new SimulationSetup
     # object
 
     clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
@@ -83,7 +89,6 @@ def get_submission_type(cluster, config):
     return submission_type
 
 
-
 def end_of_experiment(config):
     if config["general"]["next_date"] >= config["general"]["final_date"]:
         monitor_file = logfiles.logfile_handle
@@ -94,16 +99,25 @@ def end_of_experiment(config):
     return False
 
 
-
 def end_of_experiment_all_models(config):
     index = 1
     expid = config["general"]["expid"]
     while "model" + str(index) in config["general"]["original_config"]:
-        if not config["model" + str(index)]["setup_name"] == config["general"]["setup_name"]:
+        if (
+            not config["model" + str(index)]["setup_name"]
+            == config["general"]["setup_name"]
+        ):
             experiment_done = False
             setup_name = config["model" + str(index)]["setup_name"]
             print(f"Testing if {setup_name} is already done...")
-            logfile = config["general"]["experiment_log_dir"] + "/" + expid + "_" + setup_name + ".log"
+            logfile = (
+                config["general"]["experiment_log_dir"]
+                + "/"
+                + expid
+                + "_"
+                + setup_name
+                + ".log"
+            )
             if os.path.isfile(logfile):
                 with open(logfile, "r") as open_logfile:
                     logfile_array = open_logfile.readlines()
@@ -131,15 +145,14 @@ def check_if_check(config):
         return False
 
 
-
 def maybe_resubmit(config):
 
     jobtype = config["general"]["jobtype"]
 
-    nextrun = resubmit_recursively(config, jobtype = jobtype)
+    nextrun = resubmit_recursively(config, jobtype=jobtype)
 
-    if nextrun: # submit list contains stuff from next run
-        
+    if nextrun:  # submit list contains stuff from next run
+
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 
@@ -148,25 +161,30 @@ def maybe_resubmit(config):
                 if end_of_experiment_all_models(config):
                     return config
             else:
-                #config = chunky_parts._update_chunk_date_file(config)
+                # config = chunky_parts._update_chunk_date_file(config)
                 return config
 
         cluster = config["general"]["workflow"]["first_task_in_queue"]
-        nextrun = resubmit_recursively(config, list_of_clusters = [cluster], nextrun_in = True)
+        nextrun = resubmit_recursively(
+            config, list_of_clusters=[cluster], nextrun_in=True
+        )
 
     return config
 
 
-
-
-def resubmit_recursively(config, jobtype = None, list_of_clusters= None, nextrun_in = False):
+def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in=False):
     nextrun = False
 
     if not list_of_clusters:
-        list_of_clusters = config["general"]["workflow"]["subjob_clusters"][jobtype].get("next_submit", [])
+        list_of_clusters = config["general"]["workflow"]["subjob_clusters"][
+            jobtype
+        ].get("next_submit", [])
 
     for cluster in list_of_clusters:
-        if cluster == config["general"]["workflow"]["first_task_in_queue"] and not nextrun_in:
+        if (
+            cluster == config["general"]["workflow"]["first_task_in_queue"]
+            and not nextrun_in
+        ):
             nextrun = True
         else:
             if not workflow.skip_cluster(cluster, config):
@@ -177,40 +195,39 @@ def resubmit_recursively(config, jobtype = None, list_of_clusters= None, nextrun
                     resubmit_batch_or_shell(config, submission_type, cluster)
             else:
                 print(f"Skipping {cluster}")
-                nextrun = resubmit_recursively(config, jobtype = cluster, nextrun_in = nextrun_in) or nextrun
+                nextrun = (
+                    resubmit_recursively(config, jobtype=cluster, nextrun_in=nextrun_in)
+                    or nextrun
+                )
     return nextrun
-
-
-
-
 
 
 def _increment_date_and_run_number(config):
     config["general"]["run_number"] += 1
     config["general"]["current_date"] += config["general"]["delta_date"]
 
-    config["general"]["command_line_config"]["current_date"] = (
-            config["general"]["current_date"].format(
-                form=9, givenph=False, givenpm=False, givenps=False
-                )
-            )
+    config["general"]["command_line_config"]["current_date"] = config["general"][
+        "current_date"
+    ].format(form=9, givenph=False, givenpm=False, givenps=False)
 
-    config["general"]["command_line_config"]["run_number"] = config["general"]["run_number"] 
+    config["general"]["command_line_config"]["run_number"] = config["general"][
+        "run_number"
+    ]
 
     config = chunky_parts.update_command_line_config(config)
-
 
     return config
 
 
 def _write_date_file(config):  # self, date_file=None):
-    #monitor_file = config["general"]["logfile"]
+    # monitor_file = config["general"]["logfile"]
     monitor_file = logfiles.logfile_handle
 
     # if not date_file:
-    date_file = \
-        f"{config['general']['experiment_scripts_dir']}"\
+    date_file = (
+        f"{config['general']['experiment_scripts_dir']}"
         f"/{config['general']['expid']}_{config['general']['setup_name']}.date"
+    )
 
     with open(date_file, "w") as date_file:
         date_file.write(

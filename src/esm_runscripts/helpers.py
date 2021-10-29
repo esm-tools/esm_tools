@@ -124,8 +124,9 @@ def assemble_log_message(
 
 ############################## SINK CLASS FOR LOGURU.LOGGER ###########################
 
-class SmartSink():
-    '''
+
+class SmartSink:
+    """
     A class for smart sinks that allow for logging (using ``logger`` from loguru), even
     if the file path of the log file is not yet defined. The actual sink is not the
     instanced object itself, but the method ``sink`` of the instance. The log record is
@@ -135,7 +136,7 @@ class SmartSink():
     dumped into the log file and from that moment, any time ``logger`` logs something it
     will also be written into the file. To specify the path the method ``def_path``
     needs to be used.
-    '''
+    """
 
     def __init__(self):
         # Initialise instance variables
@@ -143,7 +144,7 @@ class SmartSink():
         self.path = None
 
     def sink(self, message):
-        '''
+        """
         The actual sink for loguru's ``logger``. Once you define a logger level a sink
         needs to be provided. Standard sinks include file paths, methods, etc.
         Providing this method as a sink (``logger.add(<name_of_the_instance>.sink,
@@ -153,13 +154,13 @@ class SmartSink():
         ----------
         message : str
             String containing the logging message.
-        '''
+        """
         if self.path:
             self.write_log(message, "a")
         self.log_record.append(message)
 
     def write_log(self, message, wmode):
-        '''
+        """
         Method to write the logs into the disk.
 
         Parameters
@@ -169,7 +170,7 @@ class SmartSink():
             logging message, to be written in the file.
         wmode : str
             Writing mode to choose among ``"w"`` or ``"a"``.
-        '''
+        """
         if isinstance(message, str):
             message = [message]
         with open(self.path, wmode) as log:
@@ -177,7 +178,7 @@ class SmartSink():
                 log.write(line)
 
     def def_path(self, path):
-        '''
+        """
         Method to define the path of the file. Once the path is defined, the log record
         is written into the file.
 
@@ -185,6 +186,6 @@ class SmartSink():
         ----------
         path : str
             Path of the logging file.
-        '''
+        """
         self.path = path
         self.write_log(self.log_record, "w")

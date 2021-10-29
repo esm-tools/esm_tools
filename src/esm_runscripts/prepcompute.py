@@ -69,13 +69,16 @@ def all_files_to_copy_append(
             config[model][filetype + "_intermediate"] = {}
         config[model][filetype + "_intermediate"][categ] = file_interm
     if file_target:
-        if filetype in config["general"]["in_filetypes"] and filetype + "_in_work" in config[model]:
+        if (
+            filetype in config["general"]["in_filetypes"]
+            and filetype + "_in_work" in config[model]
+        ):
             config[model][filetype + "_in_work"][categ] = file_target
         else:
-            #print (filetype)
-            #print (file_target)
-            #print (categ)
-            #print (config["general"]["out_filetypes"])
+            # print (filetype)
+            # print (file_target)
+            # print (categ)
+            # print (config["general"]["out_filetypes"])
             if not filetype + "_targets" in config[model]:
                 config[model][filetype + "_targets"] = {}
             config[model][filetype + "_targets"][categ] = file_target
@@ -92,7 +95,7 @@ def prepare_coupler_files(config):
             config, config["general"]["coupler_config_dir"]
         )
         coupler_name = config["general"]["coupler"].name
-        if coupler_name == 'yac':
+        if coupler_name == "yac":
             couplingfile = "coupling.xml"
         else:
             couplingfile = "namcouple"
@@ -109,7 +112,6 @@ def prepare_coupler_files(config):
     return config
 
 
-
 def create_empty_folders(config):
     for model in list(config):
         if "create_folders" in config[model]:
@@ -122,7 +124,6 @@ def create_empty_folders(config):
     return config
 
 
-
 def create_new_files(config):
     for model in list(config):
         for filetype in config["general"]["all_filetypes"]:
@@ -131,13 +132,10 @@ def create_new_files(config):
 
                 for filename in filenames:
 
-
-                    full_filename = config[model]["thisrun_" + filetype + "_dir"] + "/" + filename
-                    if not os.path.isdir(
-                            os.path.dirname(
-                                full_filename
-                                )
-                            ):
+                    full_filename = (
+                        config[model]["thisrun_" + filetype + "_dir"] + "/" + filename
+                    )
+                    if not os.path.isdir(os.path.dirname(full_filename)):
                         os.mkdir(os.path.dirname(full_filename))
                     with open(
                         full_filename,
@@ -197,7 +195,6 @@ def modify_namelists(config):
     return config
 
 
-
 def copy_files_to_thisrun(config):
     if config["general"]["verbose"]:
         six.print_("PREPARING EXPERIMENT")
@@ -221,8 +218,6 @@ def copy_files_to_work(config):
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
     return config
-
-
 
 
 def _write_finalized_config(config):
@@ -255,44 +250,52 @@ def _write_finalized_config(config):
         pass
 
     # pyyaml does not support tuple and prints !!python/tuple
-    EsmConfigDumper.add_representer(tuple, yaml.representer.SafeRepresenter.represent_list)
+    EsmConfigDumper.add_representer(
+        tuple, yaml.representer.SafeRepresenter.represent_list
+    )
 
     # Determine how non-built-in types will be printed be the YAML dumper
     EsmConfigDumper.add_representer(esm_calendar.Date, date_representer)
 
-    EsmConfigDumper.add_representer(esm_calendar.esm_calendar.Calendar,
-        calendar_representer)
-        # yaml.representer.SafeRepresenter.represent_str)
+    EsmConfigDumper.add_representer(
+        esm_calendar.esm_calendar.Calendar, calendar_representer
+    )
+    # yaml.representer.SafeRepresenter.represent_str)
 
-    EsmConfigDumper.add_representer(esm_parser.esm_parser.ConfigSetup,
-        yaml.representer.SafeRepresenter.represent_dict)
+    EsmConfigDumper.add_representer(
+        esm_parser.esm_parser.ConfigSetup,
+        yaml.representer.SafeRepresenter.represent_dict,
+    )
 
     EsmConfigDumper.add_representer(batch_system, batch_system_representer)
 
     # format for the other ESM data structures
-    EsmConfigDumper.add_representer(esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str)
+    EsmConfigDumper.add_representer(
+        esm_rcfile.esm_rcfile.EsmToolsDir,
+        yaml.representer.SafeRepresenter.represent_str,
+    )
 
-    EsmConfigDumper.add_representer(esm_runscripts.coupler.coupler_class,
-        coupler_representer)
+    EsmConfigDumper.add_representer(
+        esm_runscripts.coupler.coupler_class, coupler_representer
+    )
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
-    config_file_path = \
-        f"{config['general']['thisrun_config_dir']}"\
+    config_file_path = (
+        f"{config['general']['thisrun_config_dir']}"
         f"/{config['general']['expid']}_finished_config.yaml"
+    )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
-        config_final = copy.deepcopy(config) #PrevRunInfo
-        del config_final["prev_run"]         #PrevRunInfo
+        config_final = copy.deepcopy(config)  # PrevRunInfo
+        del config_final["prev_run"]  # PrevRunInfo
 
-        out = yaml.dump(config_final, Dumper=EsmConfigDumper, width=10000,
-            indent=4)   #PrevRunInfo
+        out = yaml.dump(
+            config_final, Dumper=EsmConfigDumper, width=10000, indent=4
+        )  # PrevRunInfo
         config_file.write(out)
     return config
-
-
 
 
 def _show_simulation_info(config):
@@ -306,9 +309,7 @@ def _show_simulation_info(config):
         for model in config["general"]["valid_model_names"]:
             six.print_(f"- {model}")
     six.print_("Experiment is installed in:")
-    six.print_(
-        f"       {config['general']['base_dir']}/{config['general']['expid']}"
-    )
+    six.print_(f"       {config['general']['base_dir']}/{config['general']['expid']}")
     six.print_(80 * "=")
     six.print_()
     return config

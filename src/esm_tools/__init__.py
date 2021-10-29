@@ -60,6 +60,7 @@ def _get_config_filepath_standard_install(config):
 def _get_config_filepath_editable_install(config):
     return f"{_get_real_dir_from_pth_file('configs')}/{config}"
 
+
 def _get_runscript_filepath_standard_install(runscript):
     return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
 
@@ -266,7 +267,7 @@ def get_namelist_filepath(namelist):
 
 def get_config_filepath(config):
     if EDITABLE_INSTALL:
-        cpath =  _get_config_filepath_editable_install(config)
+        cpath = _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
     return cpath

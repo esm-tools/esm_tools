@@ -19,36 +19,46 @@ jobs:
       - name: Download Code
         uses: actions/checkout@v2
 
-      - name: add to the path
+      - name: Add to the path
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: install esm-tools
+      - name: Install esm-tools
         run: |
           module load git
           module load python3
           ./install.sh
 
-      - name: run esm_master first time
+      - name: Create esmtoolsrc file
         run: |
-          yes Y | esm_master
+            echo GITLAB_DKRZ_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+            echo SWREPO_AWI_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
 
-      - name: run esm_master second time
+      - name: Run esm_master
         run: |
           esm_master
 
-      - name: run esm_plugins
+      - name: Run esm_plugins
         run: |
           esm_plugins
 
-      - name: run get-fesom-2.0
+      - name: Run get-fesom-2.0
         run: |
           esm_master get-fesom-2.0
 
-      - name: run status-fesom-2.0
+      - name: Run status-fesom-2.0
         run: |
           esm_master status-fesom-2.0
 
-      - name: run clean-fesom-2.0
+      - name: Run comp-fesom-2.0
+        run: |
+            esm_master comp-fesom-2.0
+
+      - name: Run clean-fesom-2.0
         run: |
           esm_master clean-fesom-2.0
+
+      - name: Clean up
+        if: ${{ always() }}
+        run: |
+            rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools

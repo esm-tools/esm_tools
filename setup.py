@@ -46,7 +46,7 @@ setup(
     author_email="dirk.barbi@awi.de",
     python_requires=">=3.6",
     classifiers=[
-        "Development Status :: 3 - Beta",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",

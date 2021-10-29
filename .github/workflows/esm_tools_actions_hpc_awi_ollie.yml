@@ -4,6 +4,9 @@ name: esm-tools Ollie
 
 on: [push, pull_request]
 
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
 
 jobs:
   basic_tests:

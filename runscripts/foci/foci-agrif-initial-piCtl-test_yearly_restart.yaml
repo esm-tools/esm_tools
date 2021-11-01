@@ -7,7 +7,7 @@ general:
 
    compute_time: "06:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1855-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1853-01-01T00:00:00"         # Final date of the experiment
    postprocessing: 0
    nmonth: 12
    clean_runs: 2
@@ -28,6 +28,7 @@ echam:
    nprocb: 12
    
 nemo:
+   #nest: NPAC10 
    nest: VIKING10
    #nest: INALT10x
    resolution: "ORCA05"
@@ -39,5 +40,12 @@ nemo:
    nproc: 864
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
    #
+   # if an initial run does not work, or if you experience instabilities in NEMO or the NEST
+   # the following settings may help to get past those instabilities
+   #namelist_changes:
+   #  namelist_cfg:
+   #    namtra_ldf:
+   #      rn_aht_0: 599
+
 xios:
    nproc: 36

@@ -74,7 +74,8 @@ module_actions:
 export_vars:
    LC_ALL: en_US.UTF-8
    # Recommended by HLNR support when using an MPI binary and srun
-   SLURM_CPU_BIND: none
+   # removed by seb-wahl as it slows down ECHAM6 by 50% 
+   #SLURM_CPU_BIND: none
 
 choose_compiler_mpi:
 
@@ -82,17 +83,6 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/19.0.5"
          - "load impi/2019.5"
-      choose_general.setup_name:
-         # seb-wahl: FOCIOIFS still doesn't work with IntelMPI but I still add it for now
-         focioifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-         oifs:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
-         foci:
-            add_module_actions:
-               - "source /sw/comm/impi/compilers_and_libraries_2019.5.281/linux/mpi/intel64/bin/mpivars.sh release_mt"
       add_export_vars:
          FC: mpiifort
          F77: mpiifort
@@ -175,7 +165,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

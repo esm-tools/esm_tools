@@ -90,18 +90,37 @@ choose_general.setup_name:
                         ifs_xml: ifs_xml
         focioifs:
                 xml_dir: "${computer.pool_directories.focipool}"
-                add_config_files:
-                        context_ifs: context_ifs
-                        ifs_xml: ifs_xml
-                        domain_def: domain_def
-                        field_def: field_def
-                        file_def: file_def
+                choose_general.version:
+                        "2.0":
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        domain_def: domain_def
+                                        field_def: field_def
+                                        file_def: file_def
+                        agrif:
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        domain_def: domain_def
+                                        field_def: field_def
+                                        file_def: file_def
+                                        file_def_agrif: file_def_agrif
         foci:
-                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
-                add_config_files:
-                        domain_def: domain_def
-                        field_def: field_def
-                        file_def: file_def
+           choose_general.version:
+              default: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+              agrif: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+                    file_def_agrif: file_def_agrif
         awicm3:
                 xml_dir: "${general.pool_dir}"
                 add_config_files:
@@ -118,6 +137,7 @@ config_sources:
         domain_def: ${xml_dir}/domain_def.xml
         field_def: ${xml_dir}/field_def.xml
         file_def: ${xml_dir}/file_def.xml
+        file_def_agrif: ${xml_dir}/file_def_agrif.xml
         io_def: ${xml_dir}/iodef.xml
         axis_def: ${xml_dir}/axis_def.xml
         grid_def: ${xml_dir}/grid_def.xml
@@ -128,6 +148,7 @@ config_in_work:
         domain_def: domain_def.xml
         field_def: field_def.xml
         file_def: file_def.xml
+        file_def_agrif: file_def_agrif.xml
         io_def: iodef.xml
         axis_def: axis_def.xml
         grid_def: grid_def.xml

@@ -8,6 +8,7 @@ execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
 with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
+with_nest1: false
 xml_dir: ''
 
 required_plugins:
@@ -37,7 +38,7 @@ bin_dir: ${setup_dir}/bin
 # seb-wahl: make focipool default until all OIFS data is available
 # in the "general" pool directory
 # JS: can use just use ${computer.pool_directories.pool} by now?
-pool_dir: "${computer.pool_directories.pool}"
+pool_dir: "${computer.pool_directories.focipool}"
 input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
@@ -339,7 +340,7 @@ choose_computer.partitions.compute.cores_per_node:
 #======================================================================================
 
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
-sclct_switch: 2 # @JOAKIM which one as default?
+sclct_switch: 0
 
 # Namelist modifications for truncation types
 nlon: "$(( ${nlat}*2 ))"
@@ -395,6 +396,12 @@ restart_rate: 1
 restart_unit: "months"
 
 file_movements:
+        forcing:
+            all_directions: link
+        # GEOMAR------------------|
+#        input:                   #|
+#            all_directions: link #| # TODO: CHECK that this is not a problem for AWICM3
+        #-------------------------|
         restart_in:
             all_directions: link
         restart_out:
@@ -404,11 +411,9 @@ file_movements:
         waminfo_in:
             all_directions: copy
 
-# @JOAKIM: we need to discuss the values, you used to have:
-# massfixer: 2
-# nfrmasscon: 1
-massfixer: 1
-nfrmasscon: 12
+# TODO: expand comment
+massfixer: 2
+nfrmasscon: 1
 
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
@@ -499,8 +504,6 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-# @JOAKIM: You deleted this once, can we get rid of it?
-#                        ICMCL_INIT: ICMCL_INIT
                 choose_mip:
                         "cmip5":
                                 cmip5_data_dir_nml: ./cmip5_data/
@@ -517,7 +520,6 @@ choose_copy_forcing:
                                         CMIP6DATA: CMIP6DATA
         false:
                 forcing_files: {}
-#                        ICMCL_INIT: ICMCL_INIT
 
 
 #======================================================================================
@@ -843,15 +845,11 @@ choose_version:
                                 - 'ECE_USE_CPLNG="no"'
 
         43r3:
-                add_namelist_changes:
+                add_namelist_changes: #TODO: check
                         fort.4:
                                 NAMRES:
-                                        # @JOAKIM: check if it's working
-                                        #NFRRES: ${timestep_per_run} #${oifs.next_step}
                                         NFRRES: ${nfrres}
-                                        NRESTS:
-                                                - -1
-                                                - $(( -${simulation_length_seconds} / 3600 ))
+                                        NRESTS: ${nfrests}
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
                                 NAMARG:
@@ -863,6 +861,19 @@ choose_version:
 
                 add_outdata_files:
                         ICMUA: ICMUA
+
+choose_restart_type:
+        eternal:
+                nfrres: 1
+                nfrests:
+                        - -1
+                        - $(( -${simulation_length_seconds} / 3600 ))
+        ifs_default:
+                nfrres: ${next_step}
+                nfrests:
+                        - -${next_step}
+
+restart_type: "ifs_default"
 
 
 ##
@@ -1099,6 +1110,8 @@ choose_eternal_run_number:
                         0:
                                 branchoff: true
 
+# TODO: add slice_icml_file preprocessing for standalone oifs
+
 preprocess:
         preprocess_shell:
                 method: "${preprocess_method}"
@@ -1127,7 +1140,6 @@ prepcompute_recipe:
    - "create_new_files"
    - "create_empty_folders"
    - "prepare_coupler_files"
-   #- "add_batch_hostfile"
    - "assemble"
    - "log_used_files"
    - "_write_finalized_config"
@@ -1137,10 +1149,8 @@ prepcompute_recipe:
    - "modify_namelists"
    - "modify_files"
    - "copy_files_to_work"
-   #- "write_simple_runscript"
    - "report_missing_files"
    - "database_entry"
-   #- "submit"
 # this does not work as expected, solution is work in progress
 #   - "postprocess"
 

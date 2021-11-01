@@ -60,6 +60,10 @@ install_libs:
 - build/lib/psmile/scrip/libscrip.a
 
 
+# for handling restarts
+# this could be _19900101-19901231 for example
+oasis_date_stamp: ""
+
 log_files:
         nout: nout
         debug_r1: debug_r1

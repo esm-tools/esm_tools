@@ -147,9 +147,14 @@ oifs:
         # Microphysics switch: 0 for off, 1 for light version and 2 for full
         sclct_switch: 2
 
+        restart_type: "eternal"
+
         resolution: TCO159
         levels: L91
 
+        environment_changes: # MA: Only used for JUWELS right now
+                OpenMP_flag: "-qopenmp"
+                OpenMP_CCDEFS: "_OPENMP"
 
         runtime_environment_changes:
                 add_export_vars:
@@ -309,6 +314,12 @@ rnfmap:
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
         time_step: ${oasis3mct.coupling_time_step}
+
+        choose_general.version:
+                "deck":
+                        runoff_method: awicm3-deck
+                "*":
+                        runoff_method: awicm3-default
 
         coupling_fields:
                 "[[runoff_fields_send-->FIELD]]":
@@ -550,3 +561,7 @@ oasis3mct:
 
 computer:
         heterogeneous_parallelization: false
+        choose_computer.name:
+                juwels:
+                        compiler_mpi: intel_2019a_psmpi2019
+                        iolibraries: awi_libs

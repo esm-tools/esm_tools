@@ -1,0 +1,47 @@
+general:
+   use_venv: False
+   verbose: True 
+   setup_name: "foci"
+   version: "default"
+   homedir: !ENV ${HOME}
+
+   compute_time: "01:15:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1862-01-01T00:00:00"         # Final date of the experiment
+   postprocessing: 0
+   nmonth: 12
+   clean_runs: 2
+   
+   # machine specific setup 
+   account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-default/
+
+echam:
+   # all ssp* scenarios use historical forcing before 2015, i.e. the setting
+   # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
+   # until year 2014
+   # available scenarios: 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
+   # technically tested: cmip6hist, ssp370 and ssp585
+   # seb-wahl, 2021-08-11
+   scenario: "ssp585"
+   resolution: "T63"
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   nproca: 24
+   nprocb: 24
+   
+nemo:
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW"
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   jpni: 24
+   jpnj: 20
+   nproc: 480 
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   #
+xios:
+   nproc: 12 

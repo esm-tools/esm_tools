@@ -70,6 +70,8 @@ choose_resolution:
 
 nproca: 1
 nprocb: 1
+
+runoff_method: "old"
                          
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
@@ -95,6 +97,29 @@ coupling_fields:
         "[[runoff_fields_send-->FIELD]]":
                 grid: opaf
 
+choose_runoff_method:
+        'new':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                calving_fields_send: [R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_fields_send-->FIELD]]":
+                                grid: rnfs
+        '*':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfo
+        'awicm3-deck':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+        'awicm3-default':
+                runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
+                runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
+
 namelist_changes:
         namelist.runoffmapper:
                 NAMRNFMAP:
@@ -110,8 +135,6 @@ grids:
 
 choose_general.setup_name:
         focioifs:
-                runoff_fields_recv: [R_Runoff_atm] 
-                runoff_fields_send: [R_Runoff_oce]
                 add_grids:
                         opaf:
                                 name: opaf
@@ -119,14 +142,22 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 2
-        awicm3:
-                choose_general.version:
-                        'deck':
-                                runoff_fields_recv: [R_Runoff_atm] 
-                                runoff_fields_send: [R_Runoff_oce]
-                        '*':
-                                runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
-                                runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
+                        rnfo:
+                                name: rnfo
+                                nx: "${nemo._nx}"
+                                ny: "${nemo._ny}"
+                                oasis_grid_type: "LR"
+                                number_of_overlapping_points: 0
+                        rnfm:   
+                                name: rnfm
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
+                        rnfs:
+                                name: rnfs
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

@@ -1,0 +1,7 @@
+components:
+- oasis3mct-4.0
+- echam-6.3.05p2-foci_oasismct4
+- xios-2.0_r982
+- nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4 
+coupling_changes:
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-foci_oasismct4/CMakeLists.txt

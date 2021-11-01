@@ -39,6 +39,7 @@ general:
         available_versions:
         - default
         - agrif 
+        - agrif_oasismct4 
         choose_version:
           default:
             couplings:
@@ -46,6 +47,11 @@ general:
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
+          agrif_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+echam-6.3.05p2-foci_oasismct4
+            #add_include_models:
+            #- xios
         
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -85,7 +91,13 @@ echam:
                 add_module_actions:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
 
-        version: "6.3.05p2-foci"
+        choose_general.version:
+                default:
+                        version: "6.3.05p2-foci"
+                agrif:
+                        version: "6.3.05p2-foci"
+                agrif_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
         greenhouse_dir: "${pool_dir}/input"
@@ -239,6 +251,12 @@ echam:
                      message: "high wind speed was found during your run..."
                      file: "${general.work_dir}/atmout"
                      frequency: 90
+        
+        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+        coupling_fields:
+            "[[foci_fields-->FIELD]]":
+                grid: atmo
 
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
@@ -309,6 +327,8 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AOW"
                 agrif:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
+                agrif_oasismct4:
+                        version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -328,7 +348,7 @@ xios:
 #########################################################################################
 
 oasis3mct:
-        #version: "oasis3mct-4.0"
+        
         model_dir: ${general.model_dir}/oasis
         input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
@@ -355,34 +375,106 @@ oasis3mct:
         #export_mode_a2o: EXPORTED
         choose_general.version:
                 default:
+                        version: "foci"
                         export_mode_a2o: EXPORTED     
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap' 
+
                 agrif:
+                        version: "foci"
                         export_mode_a2o: EXPNEST     
-          
-        coupling_target_fields:
-                sstocean:
-                        - 'AIceFrac <--conserv-- OIceFrac'
-                        - 'A_SSTSST <--conserv-- O_SSTSST'
-                        - 'A_TepIce <--conserv-- O_TepIce'
-                        - 'A_IceTck <--conserv-- O_IceTck'
-                        - 'A_SnwTck <--conserv-- O_SnwTck'
-                        - 'A_OCurx1 <--conserv-- O_OCurx1'
-                        - 'A_OCury1 <--conserv-- O_OCury1'
 
-                flxatmos:
-                        - 'O_OTaux1 <--bicubic-- A_OTaux1'
-                        - 'O_OTauy1 <--bicubic-- A_OTauy1'
-                        - 'O_ITaux1 <--bicubic-- A_ITaux1'
-                        - 'O_ITauy1 <--bicubic-- A_ITauy1'
-                        - 'O_QsrIce <--conserv2-- A_QsrIce'
-                        - 'O_QsrMix <--conserv3-- A_QsrMix'
-                        - 'O_QnsIce <--conserv2-- A_QnsIce'
-                        - 'O_QnsMix <--conserv3-- A_QnsMix'
-                        - 'OTotRain <--conserv4-- ATotRain'
-                        - 'OTotSnow <--conserv2-- ATotSnow'
-                        - 'OIceEvap <--conserv2-- AIceEvap'
-                        - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap' 
 
+                agrif_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0"
+                        
+                        export_mode_a2o: EXPORTED     
+                         
+                        add_restart_in_files:
+                           flxatmos1: flxatmos1
+                        add_restart_out_files:
+                           flxatmos1: flxatmos1
+
+                        coupling_target_fields:
+        
+                           sstocean:
+                              - 'AIceFrac <--bilinear_average-- OIceFrac'
+                              - 'A_SSTSST <--bilinear_average-- O_SSTSST'
+                              - 'A_TepIce <--bilinear_average-- O_TepIce'
+                              - 'A_IceTck <--bilinear_average-- O_IceTck'
+                              - 'A_SnwTck <--bilinear_average-- O_SnwTck'
+                              - 'A_OCurx1 <--bilinear_average-- O_OCurx1'
+                              - 'A_OCury1 <--bilinear_average-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bilinear-- A_OTaux1'
+                              - 'O_OTauy1 <--bilinear-- A_OTauy1'
+                              - 'O_ITaux1 <--bilinear-- A_ITaux1'
+                              - 'O_ITauy1 <--bilinear-- A_ITauy1'
+                              - 'O_QsrIce <--bilinear-- A_QsrIce'
+                              - 'O_QsrMix <--bilinear_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--bilinear-- A_QnsIce'
+                              - 'O_QnsMix <--bilinear_glbpos-- A_QnsMix'
+                              - 'OTotRain <--bilinear_global-- ATotRain'
+                              - 'OTotSnow <--bilinear-- ATotSnow'
+                              - 'OIceEvap <--bilinear-- AIceEvap'
+                              - 'O_dQnsdT <--bilinear-- A_dQnsdT'
+                           flxatmos_1:
+                              - '1_O_OTaux1 <--bilinear-- A_OTaux1'
+                              - '1_O_OTauy1 <--bilinear-- A_OTauy1'
+                              - '1_O_ITaux1 <--bilinear-- A_ITaux1'
+                              - '1_O_ITauy1 <--bilinear-- A_ITauy1'
+                              - '1_O_QsrIce <--bilinear-- A_QsrIce'
+                              - '1_O_QsrMix <--bilinear-- A_QsrMix'
+                              - '1_O_QnsIce <--bilinear-- A_QnsIce'
+                              - '1_O_QnsMix <--bilinear-- A_QnsMix'
+                              - '1_OTotRain <--bilinear-- ATotRain'
+                              - '1_OTotSnow <--bilinear-- ATotSnow'
+                              - '1_OIceEvap <--bilinear-- AIceEvap'
+                              - '1_O_dQnsdT <--bilinear-- A_dQnsdT'
 
         coupling_directions:
                 'opat->atmo':
@@ -393,6 +485,10 @@ oasis3mct:
                         seq: ${a2o_seq}
                         export_mode: ${export_mode_a2o}
                 'atmo->opac':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                        export_mode: ${export_mode_a2o}
+                'atmo->agr1':
                         lag: ${a2o_lag}
                         seq: ${a2o_seq}
                         export_mode: ${export_mode_a2o}
@@ -457,6 +553,36 @@ oasis3mct:
                                 - mapping:
                                         mapname: rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
                                         map_regrid_on: src
+                bilinear_average:
+                        time_transformation: average
+                        remapping:
+                                - bilinear:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1 
+                bilinear:
+                        time_transformation: instant
+                        remapping:
+                                - bilinear:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1 
+                bilinear_glbpos:
+                        time_transformation: instant
+                        remapping:
+                                - bilinear:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1 
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                bilinear_global:
+                        time_transformation: instant
+                        remapping:
+                                - bilinear:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1 
+                        postprocessing:
+                                conserv:
+                                        method: global
 
         input_files:
                 rmp_a2n_B: rmp_a2n_B
@@ -492,12 +618,14 @@ oasis3mct:
                   restart_in_sources:
                      sstocean: sstocean_${parent_expid}_${echam.parent_date!syear!smonth!sday}
                      flxatmos: flxatmos_${parent_expid}_${echam.parent_date!syear!smonth!sday}
+                     flxatmos1: flxatmos_1_${parent_expid}_${echam.parent_date!syear!smonth!sday}
 
                 false:
                    ini_parent_dir: "${input_dir}/"
                    restart_in_sources:
                        sstocean: sstocean_FOCI1.4.1-KJH001_18501231
                        flxatmos: flxatmos_FOCI1.4.1-KJH001_18501231
+                       flxatmos1: flxatmos_1
 
         remove_restart_in_files:
           - grids
@@ -516,18 +644,22 @@ oasis3mct:
         restart_out_in_work:
                 sstocean: sstocean
                 flxatmos: flxatmos
+                flxatmos1: flxatmos_1
 
         restart_out_sources:
                 sstocean: sstocean
                 flxatmos: flxatmos
+                flxatmos1: flxatmos_1
 
         restart_out_targets:
                 sstocean: sstocean_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
                 flxatmos: flxatmos_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
+                flxatmos1: flxatmos_1_${expid}_${echam.pseudo_end_date!syear!smonth!sday}
 
         restart_in_in_work:
                 sstocean: sstocean
                 flxatmos: flxatmos
+                flxatmos1: flxatmos_1
 
         restart_in_files:
                 sstocean: sstocean

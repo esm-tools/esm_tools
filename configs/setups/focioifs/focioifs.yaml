@@ -173,7 +173,7 @@ oifs:
         foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
                         A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow,
                         AIceEvap, A_dQnsdT]
-        foci_fields_r: [A_Runoff]
+        foci_fields_r: [A_Runoff] #, A_Calving]
                 
         coupling_fields:              
                 "[[foci_fields_a-->FIELD]]":
@@ -251,6 +251,14 @@ nemo:
 
         resolution: ORCA05
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
+        
+        # number of neighbours for runoff remapping (if runoff_method = new)
+        # 1 is ok for ORCA1, so 4 should be ok for ORCA05
+        # Small number means lots of runoff in each few grid cells which could be unstable
+        # Large number means low runoff in many grid cells which is stable, but less accurate
+        # Needs tuning for each NEMO resolution
+        loccunif_nb: 4
+        
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
 
@@ -264,7 +272,7 @@ nemo:
         choose_general.version:
                 default:
                         version: "3.6foci"
-
+        
         ##
         ## coupling
         ##
@@ -348,7 +356,8 @@ oasis3mct:
                 # Couple HTESSEL runoff to river routing
                 rnfatm:
                         - 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
-
+                        #- 'R_Calving_atm <--a2rgauswgt-- A_Calving'
+                
                 # Coupled river routing to ocean runoff mask
                 #rnrunoff:
                 #        #- 'O_Runoff <--r2ogauswgt-- R_Runoff_oce'
@@ -637,7 +646,7 @@ oasis3mct:
                         remapping: 
                                 - loccunif:
                                         search_bin: latitude
-                                        nb_of_neighbours: 1
+                                        nb_of_neighbours: ${nemo.loccunif_nb}
                                 - mapping:
                                         mapname: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc 
                                         map_regrid_on: dst
@@ -875,7 +884,7 @@ oasis3mct:
                 rmp_o2a_TL: rmp_opat_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc                
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
-                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc
+                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
@@ -906,7 +915,7 @@ oasis3mct:
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
-                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc
+                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
                 rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
@@ -957,7 +966,7 @@ oasis3mct:
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
-                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc
+                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
                 rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
@@ -991,7 +1000,7 @@ oasis3mct:
                 rmp_a2r_RR: rmp_${oifs.oasis_grid_name_r}_to_rnfa_GAUSWGT.nc
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
-                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc
+                rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
                 rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc

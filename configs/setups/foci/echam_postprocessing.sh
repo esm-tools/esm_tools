@@ -409,8 +409,9 @@ do
         while (( $(jobs -pr | wc -l) >=  max_jobs )); do sleep $sleep_time; done
         (
             trap 'echo $? > $post_dir/status' ERR
-				# netcdf conversion for mean files
-				[[ "$fileext" == ".grb" ]] && cdo -t echam6 -f nc4c -z zip_1 copy $output $(basename $output .grb).nc
+				# netcdf conversion for mean files, set axis units in days, otherwise
+				# python does not recognize the axis properly.
+				[[ "$fileext" == ".grb" ]] && cdo -t echam6 -r -f nc4c -z zip_1 -settunits,days -settaxis,${year}-01-15,00:00:00,1months $output $(basename $output .grb).nc
         ) &
 		  [[ "$fileext" == ".grb" ]] && remove_list="$remove_list $output" 
     done

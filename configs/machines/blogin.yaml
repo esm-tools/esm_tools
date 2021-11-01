@@ -33,6 +33,8 @@ choose_jobtype:
 choose_partition:
         standard96:
                 cores_per_node: 96
+        "standard96:test":
+                cores_per_node: 96
 
 logical_cpus_per_core: 2
 

@@ -39,5 +39,12 @@ nemo:
    nproc: 216
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
    #
+   # if an initial run does not work, or if you experience instabilities in NEMO or the NEST
+   # the following settings may help to get past those instabilities
+   #namelist_changes:
+   #  namelist_cfg:
+   #    namtra_ldf:
+   #      rn_aht_0: 599
+
 xios:
    nproc: 16

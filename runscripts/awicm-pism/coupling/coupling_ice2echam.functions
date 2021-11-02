@@ -1036,6 +1036,10 @@ distribute_total_discharge_over_ocean() {
 #        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
         echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS} "
         module load python3
+        if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
+            rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
+        fi
+
         python3 ${FUNCTION_PATH}/utils/apply_hosing_correction.py $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS}
         module unload python3
         echo; echo "            * Finished apply_hosing_correction.py "

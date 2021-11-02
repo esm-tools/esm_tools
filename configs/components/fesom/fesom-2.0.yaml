@@ -23,7 +23,7 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-4
+    branch: awicm3-frontiers-freeze-candidate-5
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -198,8 +198,10 @@ file_movements:
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
 choose_branchoff:
         true:
+                daynew: ${startday}
                 yearnew: "$(( ${initial_date!syear} - 1 ))"
         false:
+                daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
                 add_restart_in_files:
                         fesom_raw_restart_info: fesom_raw_restart_info
@@ -210,6 +212,7 @@ choose_branchoff:
 namelist_changes:
         namelist.config:
                 clockinit:
+                        daynew: "${daynew}"
                         yearnew: "${yearnew}"
                 calendar:
                         include_fleapyear: "${leapyear}"

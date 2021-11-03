@@ -17,56 +17,56 @@ defaults:
     shell: bash -leo pipefail {0}
 
 jobs:
-  basic_comp_test_${{ inputs.model_version }}:
-    runs-on: hpc_awi_ollie
-    env:
-        LC_ALL: en_US.UTF-8
-        LANG: en_US.UTF-8
+    basic_compile_test:
+        runs-on: hpc_awi_ollie
+        env:
+            LC_ALL: en_US.UTF-8
+            LANG: en_US.UTF-8
 
-    steps:
-      - name: Download Code
-        uses: actions/checkout@v2
+        steps:
+          - name: Download Code
+            uses: actions/checkout@v2
 
-      - name: Add to the path
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          - name: Add to the path
+            run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install esm-tools
-        run: |
-          module load git
-          module load python3
-          ./install.sh
+          - name: Install esm-tools
+            run: |
+              module load git
+              module load python3
+              ./install.sh
 
-      - name: Create esmtoolsrc file
-        run: |
-            echo GITLAB_DKRZ_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
-            echo SWREPO_AWI_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+          - name: Create esmtoolsrc file
+            run: |
+                echo GITLAB_DKRZ_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+                echo SWREPO_AWI_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
 
-      - name: Run esm_master
-        run: |
-          esm_master
+          - name: Run esm_master
+            run: |
+              esm_master
 
-      - name: Run esm_plugins
-        run: |
-          esm_plugins
+          - name: Run esm_plugins
+            run: |
+              esm_plugins
 
-      - name: Run get-${{ inputs.model_name }}-${{ inputs.model_version }}
-        run: |
-          esm_master get-${{ inputs.model_name }}-${{ inputs.model_version }}
+          - name: Run get-${{ inputs.model_name }}-${{ inputs.model_version }}
+            run: |
+              esm_master get-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run status-${{ inputs.model_name }}-${{ inputs.model_version }}
-        run: |
-          esm_master status-${{ inputs.model_name }}-${{ inputs.model_version }}
+          - name: Run status-${{ inputs.model_name }}-${{ inputs.model_version }}
+            run: |
+              esm_master status-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run comp-${{ inputs.model_name }}-${{ inputs.model_version }}
-        run: |
-            esm_master comp-${{ inputs.model_name }}-${{ inputs.model_version }}
+          - name: Run comp-${{ inputs.model_name }}-${{ inputs.model_version }}
+            run: |
+                esm_master comp-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run clean-${{ inputs.model_name }}-${{ inputs.model_version }}
-        run: |
-          esm_master clean-${{ inputs.model_name }}-${{ inputs.model_version }}
+          - name: Run clean-${{ inputs.model_name }}-${{ inputs.model_version }}
+            run: |
+              esm_master clean-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Clean up
-        if: ${{ always() }}
-        run: |
-            rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools
+          - name: Clean up
+            if: ${{ always() }}
+            run: |
+                rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools

@@ -45,11 +45,13 @@ class SimulationSetup(object):
         # sys.exit(0)
 
     def __call__(self, kill_after_submit=True):
+        # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
             # esm_parser.pprint_config(self.config)
             self.inspect()
             helpers.end_it_all(self.config)
 
+        # Run the preexp recipe
         self.config = prepexp.run_job(self.config)
 
         # self.pseudocall(kill_after_submit)

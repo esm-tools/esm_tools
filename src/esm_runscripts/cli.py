@@ -2,6 +2,9 @@
 """
 A small wrapper that combines the shell interface and the Python interface
 """
+from . import event_handlers
+
+event_handlers.signal_listener()
 
 # Import from Python Standard Library
 import argparse

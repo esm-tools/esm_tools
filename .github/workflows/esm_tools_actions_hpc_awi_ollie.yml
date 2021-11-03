@@ -1,15 +1,23 @@
 name: esm-tools Ollie
 
-# Controls when the action will run. Triggers the workflow on push or pull request.
+# Reusuable part
+on:
+    workflow_call:
+        inputs:
+            model_name:
+                required: True
+                type: string
+            model_version:
+                required: True
+                type: string
 
-on: [push, pull_request]
 
 defaults:
   run:
     shell: bash -leo pipefail {0}
 
 jobs:
-  basic_tests:
+  basic_comp_test_${{ inputs.model_version }}:
     runs-on: hpc_awi_ollie
     env:
         LC_ALL: en_US.UTF-8
@@ -42,21 +50,21 @@ jobs:
         run: |
           esm_plugins
 
-      - name: Run get-fesom-2.0
+      - name: Run get-${{ inputs.model_name }}-${{ inputs.model_version }}
         run: |
-          esm_master get-fesom-2.0
+          esm_master get-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run status-fesom-2.0
+      - name: Run status-${{ inputs.model_name }}-${{ inputs.model_version }}
         run: |
-          esm_master status-fesom-2.0
+          esm_master status-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run comp-fesom-2.0
+      - name: Run comp-${{ inputs.model_name }}-${{ inputs.model_version }}
         run: |
-            esm_master comp-fesom-2.0
+            esm_master comp-${{ inputs.model_name }}-${{ inputs.model_version }}
 
-      - name: Run clean-fesom-2.0
+      - name: Run clean-${{ inputs.model_name }}-${{ inputs.model_version }}
         run: |
-          esm_master clean-fesom-2.0
+          esm_master clean-${{ inputs.model_name }}-${{ inputs.model_version }}
 
       - name: Clean up
         if: ${{ always() }}

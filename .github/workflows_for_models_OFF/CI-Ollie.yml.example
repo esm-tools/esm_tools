@@ -1,61 +1,24 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI-Ollie
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+name: CI-Ollie-{{ MODEL NAME }}
 on:
   push:
     branches: [ release, CI-Ollie ]
   pull_request:
     branches: [ release, CI-Ollie ]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "install as user"
   install_models:
-    # The type of runner that the job will run on
-    # To activate this sort of job for both ollie and mistral, we can do:
-    # run-on ${{ matrix.supercomputers }}
-    # strategy:
-    #   matrix:
-    #     supercomputers: ["ollie", "mistral"]
+    runs-on: [self-hosted, ollie]
     strategy:
-      # Try to compile ALL models, even if one fails:
-      fail-fast: false
       matrix:
           model:
-              - awicmcr-1.0
-              - awicmcr-2.0
-              - awiesm-1.1
-              - awiesm-2.1
-              - pism-github1.2
-              - fesom-2.0
-              - scope-dev
-              - mpiesm-1.2.01
-    runs-on: [self-hosted, ollie]
-    # Steps represent a sequence of tasks that will be executed as part of the job
+              - {{ EXPAND ME }}
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
     - name: Compile Model
       run: |
-        module purge
-        module load git
-        module load python3/3.7.7_intel2020
-        git --version
-        which git
-        python --version
-        which python
-        pwd
-        ls -ratl
-        rm -rf env
-        python -m venv env
-        source env/bin/activate
-        which python
-        which pip
-        python --version
-        pip --version
+        {{ ASSUMED_USER_SETUP(MACHINE) }}
+        {{ BASIC_VERSION_CHECKS }}
+        {{ BASIC_INFO }}
+        {{ INSTALL PYVENV }}
         pip install .
         which esm_master
         which esm_runscripts

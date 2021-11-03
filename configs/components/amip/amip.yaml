@@ -24,7 +24,7 @@ install_bins: bin/amip
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
 pool_dir: "${computer.pool_directories.pool}"
-input_dir: "${pool_dir}/amip-forcing"
+input_dir: "${pool_dir}/amip-forcing/"
 namelist_dir: ${general.esm_namelist_dir}/amip/
 
 parent_expid: "test" 
@@ -58,15 +58,17 @@ bin_sources:
 config_sources:
         namelist.amip: "${namelist_dir}/namelist.amip"
 
-input_files: {}
-
 input_in_work:
-        sst_forcing: comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc
-        sic_forcing: comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc
+        sst_forcing: "comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
+        sic_forcing: "comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
+
+input_files:
+        sst_forcing: sst_forcing
+        sic_forcing: sic_forcing
 
 input_sources:
-        sst_forcing: ${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc
-        sic_forcing: ${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc
+        sst_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
+        sic_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
 
 coupling_fields:
         "[[amip_fields_send-->FIELD]]":
@@ -75,12 +77,12 @@ coupling_fields:
 namelist_changes:
         namelist.amip:
                 NAMAMIP:
-                        RunLengthSec: ${runtime_seconds}
-                        TimeStepSec: 84600
-                        FixYear: 0
-                        StartYear: 0
-                        FileListSST: sst_forcing
-                        FileListSIC: sic_forcing
+                        RunLengthSec: "${runtime_seconds}"
+                        TimeStepSec: "84600"
+                        FixYear: "0"
+                        StartYear: "1850"
+                        FileListSST: ${input_in_work.sst_forcing}
+                        FileListSIC: ${input_in_work.sic_forcing}
 
 grids:
         AMIP:

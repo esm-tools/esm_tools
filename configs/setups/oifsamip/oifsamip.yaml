@@ -80,6 +80,14 @@ oifs:
                 "cy43":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
 
+        add_namelist_changes:
+                fort.4:
+                        NAMECECFG:
+                                ECE_CPL_NEMO_LIM: ".false."
+                                ECE_CPL_FESOM_FESIM: ".false."
+                        NAMAWICFG:
+                                ECE_AWI_CPL_FESOM: ".false."
+
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 

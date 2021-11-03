@@ -1,0 +1,3 @@
+module purge
+module load git
+module load python3

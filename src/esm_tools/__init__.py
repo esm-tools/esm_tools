@@ -6,8 +6,8 @@ ESM Tools (Package Documentation)
 This package contains almost no code, but instead is where most of the YAML
 configurations files are distributed. Default namelists are included as well as
 example runscripts. This section **only** documents the code contained in the
-module, please refer to the handbook for user documentation as well as API
-documentation for the various sub-modules of the project.
+``esm_tools`` module, please refer to the handbook for user documentation as
+well as API documentation for the various sub-modules of the project.
 
 Accessing Configuration
 -----------------------
@@ -147,7 +147,7 @@ def _get_namelist_filepath_standard_install(namelist):
 
 
 def _get_namelist_filepath_editable_install(namelist):
-    return f"{_get_real_dir_from_pth_file('namelists')}/{namelist}"
+    return f"{_get_real_dir_from_pth_file('esm-tools')}/{namelist}"
 
 
 def _get_config_filepath_standard_install(config):
@@ -155,7 +155,7 @@ def _get_config_filepath_standard_install(config):
 
 
 def _get_config_filepath_editable_install(config):
-    return f"{_get_real_dir_from_pth_file('configs')}/{config}"
+    return f"{_get_real_dir_from_pth_file('esm-tools')}/{config}"
 
 
 def _get_runscript_filepath_standard_install(runscript):
@@ -163,7 +163,7 @@ def _get_runscript_filepath_standard_install(runscript):
 
 
 def _get_runscript_filepath_editable_install(runscript):
-    return f"{_get_real_dir_from_pth_file('runscripts')}/{runscript}"
+    return f"{_get_real_dir_from_pth_file('esm-tools')}/{runscript}"
 
 
 def get_config_as_str(config):
@@ -175,7 +175,7 @@ def _list_config_dir_standard_install(dir_path):
 
 
 def _list_config_dir_editable_install(dir_path):
-    return os.listdir(f"{_get_real_dir_from_pth_file('configs')}/{dir_path}")
+    return os.listdir(f"{_get_real_dir_from_pth_file('esm-tools')}/{dir_path}")
 
 
 # For more information on how this works, see here:

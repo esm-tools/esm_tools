@@ -49,11 +49,11 @@ API Documentation
 import os
 import esm_tools
 
-rcfile = os.path.expanduser("~") + "/.esmtoolsrc"
+RCFILE = os.path.expanduser("~") + "/.esmtoolsrc"
 
 
 class EsmRcfileError(Exception):
-    pass
+    """Raise this error when there is a problem with ``.esmtoolsrc``."""
 
 
 class EsmToolsDir(str):
@@ -126,13 +126,24 @@ class EsmToolsDir(str):
             The path to the required folder.
         """
         if self.path_type == "FUNCTION_PATH":
-            return esm_tools.get_config_filepath(".") + "/"
-        elif self.path_type == "NAMELIST_PATH":
-            return esm_tools.get_namelist_filepath(".") + "/"
-        elif self.path_type == "RUNSCRIPT_PATH":
-            return esm_tools.get_runscript_filepath(".") + "/"
-        else:
-            raise Exception("Incorrect path type!")
+            cpath = esm_tools.get_config_filepath(".")
+            if cpath:
+                return f"{cpath}/"
+            else:
+                return "/dev/null"
+        if self.path_type == "NAMELIST_PATH":
+            npath = esm_tools.get_namelist_filepath(".")
+            if npath:
+                return f"{npath}/"
+            else:
+                return "/dev/null"
+        if self.path_type == "RUNSCRIPT_PATH":
+            rpath = esm_tools.get_runscript_filepath(".")
+            if rpath:
+                return f"{rpath}/"
+            else:
+                return "/dev/null"
+        raise Exception("Incorrect path type!")
 
 
 def set_rc_entry(key, value):
@@ -151,15 +162,15 @@ def set_rc_entry(key, value):
     """
     all_lines = [key + "=" + value]
 
-    if os.path.isfile(rcfile):
-        with open(rcfile) as rc:
+    if os.path.isfile(RCFILE):
+        with open(RCFILE) as rc:
             for line in rc.readlines():
                 line = line.strip()
                 if not key == line.split("=", 1)[0]:
                     all_lines.append(line)
-        os.remove(rcfile)
+        os.remove(RCFILE)
 
-    with open(rcfile, "w") as rc:
+    with open(RCFILE, "w") as rc:
         for line in all_lines:
             rc.write(line + "\n")
 
@@ -186,8 +197,8 @@ def get_rc_entry(key, default=None):
         * Raised if the esmtoolsrc file cannot be found and no default is
           provided.
     """
-    if os.path.isfile(rcfile):
-        with open(rcfile) as rc:
+    if os.path.isfile(RCFILE):
+        with open(RCFILE) as rc:
             for line in rc.readlines():
                 line = line.strip()
                 if line.split("=", 1)[0] == key.upper():
@@ -211,9 +222,9 @@ def import_rc_file():
     dict
         A dictionary representation of the rcfile
     """
-    if os.path.isfile(rcfile):
+    if os.path.isfile(RCFILE):
         rcdict = {}
-        with open(rcfile) as rc:
+        with open(RCFILE) as rc:
             for line in rc.readlines():
                 line = line.strip()
                 rcdict[line.split("=", 1)[0]] = line.split("=", 1)[1]
@@ -225,7 +236,7 @@ def import_rc_file():
 # MA: The following lines are most likely never reached since the work
 # from PG in implementing the venv. It is probably wise to remove them
 # in the next cleanup.
-if os.path.isfile(rcfile):
+if os.path.isfile(RCFILE):
     FUNCTION_PATH = get_rc_entry("FUNCTION_PATH", "NONE_YET")
 else:
     FUNCTION_PATH = "NONE_YET"

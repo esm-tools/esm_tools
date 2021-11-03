@@ -16,6 +16,7 @@ def ask_which_package():
         user_confirms = questionary.confirm(
             f"You have: {package_to_update}@{package_branch}. Are you sure?",
             default=False,
+            auto_enter=False,
         ).ask()
     return package_to_update, package_branch
 
@@ -23,7 +24,9 @@ def ask_which_package():
 def clone_package(package_to_update, package_branch):
     logger.info(f"Cloning {package_to_update}@{package_branch} to temporary directory!")
     # NOTE(PG): There are very probably better ways of doing this...
-    os.system(f"git clone -b {package_branch} {package_to_update} /tmp/{package_to_update}")
+    os.system(
+        f"git clone -b {package_branch} {package_to_update} /tmp/{package_to_update}"
+    )
 
 
 def determine_package_differences(package_to_update):

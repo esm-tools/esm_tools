@@ -21,18 +21,22 @@ batch_system: "slurm"
 jobtype: compute
 sh_interpreter: "/bin/bash"
 
-choose_jobtype:
-        tidy_and_resubmit:
-                partition: standard96
-        post:
-                partition: standard96
-        compute:
-                partition: standard96
 
+partition: standard96
 
 choose_partition:
         standard96:
-                cores_per_node: 96
+                partition_name: standard96
+                partition_cpn: 96
+
+partitions:
+        compute:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+
 
 logical_cpus_per_core: 2
 

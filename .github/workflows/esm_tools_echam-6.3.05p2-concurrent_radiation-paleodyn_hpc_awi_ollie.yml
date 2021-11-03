@@ -1,4 +1,4 @@
-name: Compile Test for {{MODEL_NAME}}-{{MODEL_VERSION}}
+name: Compile Test for echam-6.3.05p2-concurrent_radiation-paleodyn
 
 on:
     push:
@@ -8,11 +8,11 @@ on:
             - 'src/**'
             - 'tests/**'
             - 'configs/machines/ollie.yaml'
-            - 'configs/components/{{MODEL_NAME}}/*.yaml'
+            - 'configs/components/echam/*.yaml'
 
 jobs:
     call-workflow:
         uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
         with:
-            model_name: {{MODEL_NAME}}
-            model_version: {{MODEL_VERSION}}
+            model_name: echam
+            model_version: 6.3.05p2-concurrent_radiation-paleodyn

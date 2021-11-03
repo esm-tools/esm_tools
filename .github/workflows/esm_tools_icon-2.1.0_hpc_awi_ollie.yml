@@ -1,4 +1,4 @@
-name: Compile Test for {{MODEL_NAME}}-{{MODEL_VERSION}}
+name: Compile Test for icon-2.1.0
 
 on:
     push:
@@ -8,11 +8,11 @@ on:
             - 'src/**'
             - 'tests/**'
             - 'configs/machines/ollie.yaml'
-            - 'configs/components/{{MODEL_NAME}}/*.yaml'
+            - 'configs/components/icon/*.yaml'
 
 jobs:
     call-workflow:
         uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
         with:
-            model_name: {{MODEL_NAME}}
-            model_version: {{MODEL_VERSION}}
+            model_name: icon
+            model_version: 2.1.0

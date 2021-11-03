@@ -85,12 +85,7 @@ def _transform(nested_list):
     return regular_list
 
 
-@caller_wrapper
-def _get_real_dir_from_pth_file(subfolder):
-    logger.debug(f"Trying to resolve: {subfolder}")
-    if subfolder.startswith("/"):
-        logger.warning("Subfolder is strange!")
-        logger.warning(subfolder)
+def _get_real_dir_from_pth_file(package):
     site_packages_dirs = functools.reduce(
         operator.iconcat,
         _transform([site.getusersitepackages(), site.getsitepackages()]),
@@ -98,6 +93,7 @@ def _get_real_dir_from_pth_file(subfolder):
     )
     logger.debug(site_packages_dirs)
     for site_package_dir in site_packages_dirs:
+        logger.debug(f"Working on {site_package_dir}")
         # Read the pth file:
         if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:

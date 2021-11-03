@@ -2,8 +2,10 @@
 import os
 import sys
 
-from esm_parser import yaml_file_to_dict
+import dpath.util
 import jinja2
+
+from esm_parser import yaml_file_to_dict
 
 
 def main():
@@ -29,12 +31,14 @@ def main():
                 ):  # Filter out stuff like datasets from e.g. further reading
                     component_configs.append(config)
     for config in component_configs:
-        print(config["model"])
-        import dpath.util
-
-        print(dpath.util.values(config, "**/available_versions"))
-        # print(config["model"]["available_versions"])
-
+        available_versions = [values for values in dpath.util.values(config, "**/available_versions") if values]
+        for ver_list in available_versions:
+            if ver_list:
+                for ver in ver_list:
+                    mod_name = config['model']
+                    ci_script = template.render(MODEL_NAME=mod_name, MODEL_VERSION=ver)
+                    with open(f"../.github/workflows/esm_tools_{mod_name}-{ver}_hpc_awi_ollie.yml", "w") as ci_file:
+                        ci_file.write(ci_script)
 
 if __name__ == "__main__":
     main()

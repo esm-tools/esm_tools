@@ -14,6 +14,7 @@ Accessing Configuration
 
 To access a particular configuration, you can use::
 
+    >>> from esm_tools import read_config_file
     >>> ollie_config = read_config_file("machines/ollie")
 
 Important note here is that the configuration file **has not yet been parsed**,
@@ -24,25 +25,46 @@ __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
 __version__ = "5.1.24"
 
+import functools
+import operator
 import os
 import pathlib
 import shutil
 import site
 import sys
 
+from loguru import logger
 import pkg_resources
 import yaml
 
 
-def _get_real_dir_from_pth_file(package):
-    site_packages_dirs = [site.getusersitepackages(), site.getsitepackages()]
-    for site_package_dir in site_packages_dirs:
+
+def _transform(nested_list):
+    """Transform irregular 2D list into a regular one."""
+    regular_list = []
+    for ele in nested_list:
+        if type(ele) is list:
+            regular_list.append(ele)
+        else:
+            regular_list.append([ele])
+    return regular_list
+
+
+
+def _get_real_dir_from_pth_file(subfolder):
+    site_packages_dirs = functools.reduce(operator.iconcat, _transform([site.getusersitepackages(), site.getsitepackages()]), [])
+    logger.debug(site_packages_dirs)
+    for subfolder in site_packages_dirs:
         # Read the pth file:
         if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
-            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{package}/")
+            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{subfolder}/")
+            logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
             return actual_package_data_dir.resolve()
+    raise FileNotFoundError(
+        f"Would not determine where {subfolder}'s path is inside the esm-tools install! These were searched for info: {site_packages_dirs}"
+    )
 
 
 def _get_namelist_filepath_standard_install(namelist):

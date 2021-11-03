@@ -1,71 +1,40 @@
 #!/usr/bin/env python
-import jinja2
-import yaml
 import os
 import sys
+
+from esm_parser import yaml_file_to_dict
+import jinja2
+
 
 def main():
     loader = jinja2.FileSystemLoader("../")
     env = jinja2.Environment(loader=loader)
-    template = env.get_template(".github/workflows/esm_tools_MODEL_TEMPLATE_hpc_awi_ollie.yml")
-    print(template.render(MODEL="fesom", MODEL_NAME="fesom", MODEL_VERSION="2.0"))
+    template = env.get_template(
+        ".github/workflows/esm_tools_COMPONENT_TEMPLATE_hpc_awi_ollie.yml"
+    )
+    print(
+        "This script will generate CI Yamls for >> COMPONENTS << in the following form:"
+    )
+    print(template.render(MODEL_NAME="fesom", MODEL_VERSION="2.0"))
 
-    for component_folder in os.listdir("../configs/components"):
-        for component_config in os.listdir(f"../configs/components/{component_folder}"):
-            component
-
-
-
-
-    for setup_yaml in os.listdir("../configs/esm_master/setups/"):
-        setup_name = setup_yaml.replace(".yaml", "")
-        setup = yaml_file_to_dict("../configs/esm_master/setups/" + setup_name)
-        try:
-            versions = setup["available_versions"]
-        except KeyError:
-            print("Setup {setup_name} has no avaiable versions defined!")
-            sys.exit(1)
-
-        for version in setup.get("available_versions", []):
-
-            workflow["name"] = "CI-Ollie-install-" + setup_name + "-" + version
-            for event_type in ["push", "pull_request"]:
-                all_components = []
-                for coupling in setup["choose_version"][version]["couplings"]:
-                    components = coupling.split("+")
-                    components = [item.split("-")[0] for item in components]
-                    all_components += components
-                components = list(set(all_components))
-                workflow["on"][event_type]["branches"] = [
-                    "release",
-                    "develop",
-                    "*prep-release*",
-                ]
-                workflow["on"][event_type]["paths"] = (
-                    ["configs/esm_master/setups/" + setup_name + ".yaml"]
-                    + [
-                        "configs/esm_master/components/" + component + ".yaml"
-                        for component in components
-                    ]
-                    + [
-                        "configs/esm_master/couplings/" + coupling + ".yaml"
-                        for coupling in setup["choose_version"][version]["couplings"]
-                    ]
+    component_configs = []
+    for component_name in os.listdir("../configs/components/"):
+        for component_config in os.listdir(f"../configs/components/{component_name}"):
+            if component_config.endswith(".yaml"):
+                config = yaml_file_to_dict(
+                    f"../configs/components/{component_name}/{component_config}"
                 )
-            workflow["jobs"]["install_models"]["strategy"]["matrix"]["model"] = [
-                setup_name + "-" + version
-            ]
-            with open(
-                "../.github/workflows/"
-                + "CI-Ollie-install-"
-                + setup_name
-                + "-"
-                + version
-                + ".yml",
-                "w",
-            ) as yml:
-                yaml.dump(workflow, yml)
+                if (
+                    "model" in config
+                ):  # Filter out stuff like datasets from e.g. further reading
+                    component_configs.append(config)
+    for config in component_configs:
+        print(config["model"])
+        import dpath.util
+
+        print(dpath.util.values(config, "**/available_versions"))
+        # print(config["model"]["available_versions"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -539,3 +539,8 @@ oasis3mct:
 
 computer:
         heterogeneous_parallelization: false
+        choose_computer.name:
+                blogin:
+                        compiler_mpi: intel2019_ompi
+                glogin:
+                        compiler_mpi: intel2019_ompi

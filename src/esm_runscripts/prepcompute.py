@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import subprocess
 import copy
@@ -185,6 +186,8 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
+        if model == "fesom":
+            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]
@@ -202,6 +205,24 @@ def copy_files_to_thisrun(config):
         six.print_("\n" "- File lists populated, proceeding with copy...")
         six.print_("- Note that you can see your file lists in the config folder")
         six.print_("- You will be informed about missing files")
+
+    counter = 0
+    count_max = 30
+    if (
+        config["general"].get("iterative_coupling")
+        and config["general"]["chunk_number"] > 1
+    ):
+        if "files_to_wait_for" in config["general"]:
+            for file in config["general"].get("files_to_wait_for"):
+                while counter < count_max:
+                    counter = counter + 1
+                    if os.path.isfile(file):
+                        six.print_("File found: ", file)
+                        break
+                    else:
+                        six.print_("Waiting for file: ", file)
+                        six.print_("Sleep for 10 seconds...")
+                        time.sleep(10)
 
     log_used_files(config)
 

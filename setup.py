@@ -46,7 +46,7 @@ setup(
     author_email="dirk.barbi@awi.de",
     python_requires=">=3.6",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
@@ -74,9 +74,9 @@ setup(
     long_description=readme + "\n\n" + history,
     include_package_data=True,
     keywords="esm_tools",
-    name="esm_tools",
+    name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",
@@ -92,6 +92,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm_tools/esm_tools",
-    version="5.1.23",
+    version="5.1.24",
     zip_safe=False,
 )

@@ -19,6 +19,8 @@ from .helpers import end_it_all, evaluate, write_to_log
 from .namelists import Namelist
 from loguru import logger
 
+from colorama import Fore
+
 
 def run_job(config):
     evaluate(config, "prepexp", "prepexp_recipe")

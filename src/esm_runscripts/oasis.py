@@ -205,13 +205,14 @@ class oasis:
                 "bilinear",
                 "gauswgt",
                 "conserv",
+                "loccunif",
             ]:
                 trafo_line += " SCRIPR"
                 srcgridtype = str(rgrid["oasis_grid_type"]).upper()
                 search_bin = transform.get("search_bin", None)
                 if not search_bin:
                     print(
-                        "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC",
+                        "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
                         flush=True,
                     )
                     sys.exit(2)
@@ -225,11 +226,11 @@ class oasis:
                     + " "
                     + str(bins)
                 )
-                if trans.lower() in ["distwgt", "gauswgt"]:
+                if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
                     nb_of_neighbours = transform.get("nb_of_neighbours", None)
                     if not nb_of_neighbours:
                         print(
-                            "nb_of_neighbours needs to be defined for transformations DISTWGT and GAUSWGT",
+                            "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
                             flush=True,
                         )
                         sys.exit(2)

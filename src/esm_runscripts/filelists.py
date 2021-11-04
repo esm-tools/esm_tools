@@ -1022,6 +1022,7 @@ def get_method(movement):
 def complete_all_file_movements(config):
 
     mconfig = config["general"]
+    general_file_movements = copy.deepcopy(mconfig.get("file_movements", {}))
     if "defaults.yaml" in mconfig:
         if "per_model_defaults" in mconfig["defaults.yaml"]:
             if "file_movements" in mconfig["defaults.yaml"]["per_model_defaults"]:
@@ -1029,6 +1030,10 @@ def complete_all_file_movements(config):
                     mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
                 )
                 del mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
+    if not "file_movements" in mconfig:
+        mconfig["file_movements"] = {}
+    # General ``file_movements`` win over default ones
+    esm_parser.dict_merge(mconfig["file_movements"], general_file_movements)
 
     config = create_missing_file_movement_entries(config)
 
@@ -1054,6 +1059,14 @@ def complete_all_file_movements(config):
                                 config, model, filetype, movement, movement_type
                             )
                         del mconfig["file_movements"][filetype]["all_directions"]
+
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        mconfig = config[model]
+        if "file_movements" in mconfig:
+            # Complete movements with general
+            esm_parser.new_deep_update(
+                mconfig["file_movements"], config["general"].get("file_movements", {})
+            )
 
             # Complete file specific movements with ``all_directions``
             for file_in_fm in mconfig["file_movements"]:

@@ -26,6 +26,8 @@ def init_monitor_file(config):
         config["general"]["experiment_log_dir"]
         + config["general"]["expid"]
         + "_"
+        + config["general"]["setup_name"]
+        + "_"
         + called_from
         + "_"
         + config["general"]["run_datestamp"]
@@ -37,6 +39,8 @@ def init_monitor_file(config):
     log_in_run = (
         config["general"]["thisrun_log_dir"]
         + config["general"]["expid"]
+        + "_"
+        + config["general"]["setup_name"]
         + "_"
         + called_from
         +
@@ -99,8 +103,10 @@ def assemble_error_list(config):
         gconfig["thisrun_log_dir"]
         + "/"
         + gconfig["expid"]
-        + "_compute_"
-        + gconfig["run_datestamp"]
+        + "_"
+        + config["general"]["setup_name"]
+        + "_"
+        + called_from
         # + "_"
         # + gconfig["jobid"]
         + ".log"
@@ -174,14 +180,14 @@ def check_for_errors(config):
                                 monitor_file.write("WARNING: " + message + "\n")
                                 break
                             elif method == "kill":
-                                harakiri = "scancel " + config["general"]["jobid"]
+                                cancel_job = f"scancel {config['general']['jobid']}"
                                 monitor_file.write("ERROR: " + message + "\n")
                                 monitor_file.write("Will kill the run now..." + "\n")
                                 monitor_file.flush()
                                 print("ERROR: " + message)
                                 print("Will kill the run now...", flush=True)
                                 database_actions.database_entry_crashed(config)
-                                os.system(harakiri)
+                                os.system(cancel_job)
                                 sys.exit(42)
             next_check += frequency
         if warned == 0:

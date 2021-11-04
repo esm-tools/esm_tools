@@ -30,6 +30,20 @@ def evaluate(config, job_type, recipe_name):
         sys.exit(1)
 
     FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
+
+    ###########################################################################################
+    # LA: hotfix for non-matching python paths
+    if (
+        "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+        in sys.path
+    ):
+        sys.path.remove(
+            "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+        )
+    if "/global/AWIsoft/tkleiner/lib/python2.7/site-packages" in sys.path:
+        sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
+    ###########################################################################################
+
     recipe = FUNCTION_PATH + "esm_software/esm_runscripts/esm_runscripts.yaml"
     need_to_parse_recipe = True
     plugins_bare = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_plugins.yaml"

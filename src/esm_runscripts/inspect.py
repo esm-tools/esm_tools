@@ -83,7 +83,9 @@ def inspect_file(config):
     knownfiles = {}
     search_dir = config["general"]["thisrun_dir"]
     if config["general"]["inspect"] == "lastlog":
-        maybe_file = config["computer"]["thisrun_logfile"].replace("%j", "*")
+        maybe_file = config["computer"]["thisrun_logfile"].replace(
+            "@jobtype@", "compute"
+        )
     elif config["general"]["inspect"] == "explog":
         maybe_file = (
             f"{config['general']['expid']}_{config['general']['setup_name']}.log"

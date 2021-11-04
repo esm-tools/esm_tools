@@ -18,6 +18,11 @@ class coupler_class:
                 self.nb_of_couplings += len(
                     list(full_config[self.name]["coupling_target_fields"][restart_file])
                 )
+        if "coupling_input_fields" in full_config[self.name]:
+            for restart_file in list(full_config[self.name]["coupling_input_fields"]):
+                self.nb_of_couplings += len(
+                    list(full_config[self.name]["coupling_input_fields"])
+                )
         if name == "oasis3mct":
             from . import oasis
 

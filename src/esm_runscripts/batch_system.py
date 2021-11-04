@@ -130,7 +130,7 @@ class batch_system:
             "overcommit_flag",
         ]
         # ??? Do we need the exclusive flag?
-        if config["general"]["jobtype"] in ["compute", "tidy"]:
+        if config["general"]["jobtype"] in ["prepcompute", "tidy"]:
             conditional_flags.append("exclusive_flag")
         for flag in conditional_flags:
             if flag in this_batch_system:
@@ -187,7 +187,13 @@ class batch_system:
             for model in config["general"]["valid_model_names"]:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
-                if "nproca" in config[model] and "nprocb" in config[model]:
+                if "nproc" in config[model]:
+                    print(f"nproc: {config[model]['nproc']}")
+                    config[model]["tasks"] = config[model]["nproc"]
+
+                    # cores_per_node = config['computer']['cores_per_node']
+
+                elif "nproca" in config[model] and "nprocb" in config[model]:
                     config[model]["tasks"] = (
                         config[model]["nproca"] * config[model]["nprocb"]
                     )
@@ -203,11 +209,6 @@ class batch_system:
                             config[model]["nprocar"] * config[model]["nprocbr"]
                         )
 
-                elif "nproc" in config[model]:
-                    print(f"nproc: {config[model]['nproc']}")
-                    config[model]["tasks"] = config[model]["nproc"]
-
-                    # cores_per_node = config['computer']['cores_per_node']
                 else:
                     continue
 

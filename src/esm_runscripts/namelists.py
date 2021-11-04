@@ -120,6 +120,7 @@ class Namelist:
         mconfig : dict
             The modified configuration.
         """
+
         namelist_changes = mconfig.get("namelist_changes", {})
         namelist_removes = []
         for namelist in list(namelist_changes):
@@ -166,7 +167,7 @@ class Namelist:
         for remove in namelist_removes:
             namelist, change_chapter, key = remove
             logging.debug("Removing from %s: %s, %s", namelist, change_chapter, key)
-            if key in mconfig["namelists"][namelist][change_chapter]:
+            if key in mconfig["namelists"][namelist].get(change_chapter, {}):
                 del mconfig["namelists"][namelist][change_chapter][key]
         return mconfig
 
@@ -259,7 +260,7 @@ class Namelist:
                 import pandas as pd
 
                 try:
-                    forcing_table = pd.open_csv(
+                    forcing_table = pd.read_csv(
                         config["echam"]["transient_forcing_table"]
                     )
                     co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[
@@ -448,6 +449,43 @@ class Namelist:
         )
         for model in config["general"]["valid_model_names"]:
             config[model] = nmls_output(config[model], config["general"]["verbose"])
+        return config
+
+    @staticmethod
+    def apply_iceberg_calving(config):
+        """
+        Calculates new number of icebergs when icesheet coupling is turned on
+
+        Relevant configuration entries:
+        """
+        if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
+            "use_icebergs"
+        ):
+            # Get the fesom config namelist:
+            nml = config["fesom"]["namelists"]["namelist.config"]
+            # Get the current icebergs chapter or make a new empty one:
+            icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
+            # Determine if icesheet coupling is enabled:
+            if icebergs.get("use_icesheet_coupling"):
+                if os.path.isfile(
+                    config["general"]["couple_dir"] + "/num_non_melted_icb_file"
+                ):
+                    with open(
+                        config["general"]["couple_dir"] + "/num_non_melted_icb_file"
+                    ) as f:
+                        ib_num_old = [
+                            int(line.strip()) for line in f.readlines() if line.strip()
+                        ][0]
+                        print("ib_num_old = ", ib_num_old)
+
+                    ib_num_new = sum(
+                        1
+                        for line in open(
+                            config["fesom"].get("iceberg_dir") + "/LON.dat"
+                        )
+                    )
+                icebergs["ib_num"] = ib_num_old + ib_num_new
+                nml["icebergs"] = icebergs
         return config
 
 

@@ -85,12 +85,12 @@ def set_chunk_calendar(config):
     number_of_chunks_done = this_chunk_number // number_of_models
 
     passed_time = (
-        number_of_chunks_done * delta_date[0],
-        number_of_chunks_done * delta_date[1],
-        number_of_chunks_done * delta_date[2],
-        number_of_chunks_done * delta_date[3],
-        number_of_chunks_done * delta_date[4],
-        number_of_chunks_done * delta_date[5],
+        number_of_chunks_done * chunk_delta_date[0],
+        number_of_chunks_done * chunk_delta_date[1],
+        number_of_chunks_done * chunk_delta_date[2],
+        number_of_chunks_done * chunk_delta_date[3],
+        number_of_chunks_done * chunk_delta_date[4],
+        number_of_chunks_done * chunk_delta_date[5],
     )
 
     chunk_start_date = initial_date + passed_time

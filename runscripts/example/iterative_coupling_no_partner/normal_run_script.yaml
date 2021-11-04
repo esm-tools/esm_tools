@@ -1,0 +1,24 @@
+# START NORMAL RUNSCRIPT
+general:
+        ... 
+echam:
+        ...
+fesom:  
+        ...
+...
+awiesm:
+        ...
+# END NORMAL RUNSCRIPT
+        workflow:
+                subjobs:
+                        unique_name:
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script_dir: /path/to/dir/with/script/and/env.py
+                                script: couplescript.sh
+                                env_preparation: env.py
+                                nproc: 1
+                                run_only: last_run_in_chunk
+
+
+

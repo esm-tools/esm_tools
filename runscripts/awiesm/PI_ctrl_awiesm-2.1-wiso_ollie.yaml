@@ -1,0 +1,68 @@
+general:
+    setup_name: "awiesm"
+    version: "2.1"
+    compute_time: "00:30:00"
+    initial_date: "2001-01-01"
+    final_date: "2201-12-31"
+    base_dir: "/work/ollie/xshi/AWIESM_2_1_LR_concurrent_rad/"
+    nmonth: 0
+    nyear: 1
+    use_venv: False
+
+echam:
+    restart_rate: 1
+    restart_unit: "years"
+    nproca: 24
+    nprocb:  24 
+    nprocar: 0 
+    nprocbr: 0 
+    namelist_changes:
+            namelist.echam:
+                    parctl:
+                            nproca: 24 
+                            nprocb: 24
+                            nprocar: 0 
+                            nprocbr: 0 
+                    runctl:
+                            default_output: True
+                    radctl:
+                            lrad_async: False 
+                    wisoctl:
+                            lwiso_rerun: False 
+                            lwiso: False
+                            nwiso: 0
+
+awiesm:
+    version: "2.1"
+    postprocessing: true
+    scenario: "PALEO"
+    # NOTE: In a future version, model code will become part of the experiment
+    # tree and will be compiled for you...
+    model_dir: "/home/ollie/xshi/esm_tools/awiesm-2.1-wiso/"
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/home/ollie/xshi/work/input/"
+    # NOTE: This will be incorporated into the pool at a later stage
+    mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+    namelist_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/work_RC12_nowiso/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    namelist_changes:
+        namelist.config:
+            paths:
+                # NOTE: This will be incorporated into the pool at a later stage
+                ClimateDataPath: "/home/ollie/xshi/work/input/hydrography/"
+                ForcingDataPath: remove_from_namelist
+                OpbndPath: remove_from_namelist
+                TideForcingPath: remove_from_namelist
+            run_config:
+                lwiso: False
+
+jsbach:
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+        jsbach_1850: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+

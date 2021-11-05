@@ -17,6 +17,8 @@ compile_infos:
         - 6.3.04p1-recom-awicm
         - 6.3.05p2-concurrent_radiation-paleodyn
         - 6.3.04p1
+        - 6.3.05p2-wiso
+
         branch: ${echam.version}
         choose_version:
           6.3.02p4:
@@ -64,10 +66,11 @@ compile_infos:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-wiso:
-            branch: wiso
-            clean_command: make clean
-            comp_command: make; make install
-            conf_command: ./configure
+            branch: "wiso"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
+            destination: echam-6.3.05p2-wiso
         clean_command: ${defaults.clean_command}
         comp_command: ${defaults.comp_command}
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
@@ -143,6 +146,10 @@ choose_switch:
                 value: "echam switch"
 # choice
 #
+
+lwiso_rerun: False
+lwiso: False
+nwiso: 0
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -232,6 +239,54 @@ choose_version:
                                 radctl:
                                         lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
+
+        6.3.05p2-wiso:
+                choose_computer.name:
+                    mistral:
+                        add_compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        add_runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+                                        nproca: "${nproca}"
+                                        nprocb: "${nprocb}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                runctl:
+                                        default_output: True
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                                wisoctl:
+                                        lwiso_rerun: "${lwiso_rerun}"
+                                        lwiso: "${lwiso}"
+                                        nwiso: "${nwiso}"
+                add_streams:
+                        - wiso
+                        - accw_wiso
+                        - sf_wiso
+                        - rad
+                add_forcing_files:
+                        ozonea: piozonea
+                        ozoneb: piozoneb
+                        ozonec: piozonec
+                add_forcing_in_work:
+                        ozonea: "ozon1988"
+                        ozoneb: "ozon1989"
+                        ozonec: "ozon1990"
+                restart_in_sources:
+                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+                restart_out_sources:
+                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+                add_coupling_fields:
+                        "[[wiso_fields-->FIELD]]":
+                                grid: atmo
+
 
         6.3.05p2-concurrent_radiation:
                 repo_tag: not_applicable
@@ -628,6 +683,8 @@ namelist_changes:
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
+wiso_fields: [o18w_atm, hdow_atm, o16w_atm, o18i_atm, hdoi_atm, o16i_atm, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm]
+
 coupling_fields:
         sst_atmo:
                 grid: atmo
@@ -637,11 +694,6 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_atm:
                 grid: atmo
         tauy_atm:

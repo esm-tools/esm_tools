@@ -1,0 +1,7 @@
+components:
+- echam-6.3.05p2-wiso
+- fesom-2.1-wiso
+- oasis3mct-2.8
+coupling_changes:
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-wiso/config/mh-linux
+- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2-wiso/configure.ac

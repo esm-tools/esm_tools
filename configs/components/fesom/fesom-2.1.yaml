@@ -9,12 +9,36 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
+use_icebergs: False
+
 choose_version:
   2.1-unstable:
     branch: master
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-wiso:
+    branch: wiso
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
+  2.1-recom:
+    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -81,38 +105,74 @@ namelists:
 choose_resolution:
         CORE2:
                 nx: 126858
-                mesh_dir: "${mesh_base_dir}/core2/"
+                mesh_dir: "${fesom.mesh_base_dir}/core2/"
                 nproc: 288
         pi:
                 nx: 3140
-                mesh_dir: "${mesh_base_dir}/pi/"
+                mesh_dir: "${fesom.mesh_base_dir}/pi/"
                 nproc: 4
 
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
+        icb_restart: icb_restart
 
 restart_in_in_workdir:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
+        icb_restart: icb_restart
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
         fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+
+choose_use_icebergs:
+        True:
+            ib_num_old: 0
+            ib_num_new: 0
+
+            input_in_work:
+                    longitude: "icb_longitude.dat"
+                    latitude: "icb_latitude.dat"
+                    length: "icb_length.dat"
+                    height: "icb_height.dat"
+                    scaling: "icb_scaling.dat"
+
+            input_sources:
+                    longitude: "${iceberg_dir}/LON.dat"
+                    latitude: "${iceberg_dir}/LAT.dat"
+                    length: "${iceberg_dir}/LENGTH.dat"
+                    height: "${iceberg_dir}/HEIGHT.dat"
+                    scaling: "${iceberg_dir}/SCALING.dat"
+
+            input_files:
+                    longitude: "longitude"
+                    latitude: "latitude"
+                    length: "length"
+                    height: "height"
+                    scaling: "scaling"
 
 log_files:
         clock: clock
@@ -133,7 +193,7 @@ choose_branchoff:
         # Makes sure the <units>new in the namelist make an earlier date than that of
         # of the clock to avoid cold starts for branching off experiments
         true:
-                daynew: ${startday}
+                daynew: "${startday}"
                 yearnew: "$(( ${initial_date!syear} - 1 ))"
         false:
                 daynew: "${initial_date!sdoy}"
@@ -306,11 +366,6 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:
@@ -335,6 +390,21 @@ coupling_fields:
                 grid: feom
         hydr_oce:
                 grid: feom
+
+
+wiso_fields:
+        - o18w_oce
+        - hdow_oce
+        - o16w_oce
+        - o18i_oce
+        - hdoi_oce
+        - o16i_oce
+        - w1_oce
+        - w2_oce
+        - w3_oce
+        - i1_oce
+        - i2_oce
+        - i3_oce
 
 grids:
         feom:

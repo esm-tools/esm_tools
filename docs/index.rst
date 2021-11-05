@@ -21,6 +21,7 @@ Welcome to ESM Tools's documentation!
    motd
    cookbook
    faq
+   ssh_example
    packages
    API
    contributing

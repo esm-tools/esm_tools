@@ -104,7 +104,7 @@ environment variables can be nested inside ``choose_`` blocks:
    This changes are model-specific for compilation, meaning that **the changes will
    only occur for the compilation script of the model containing those changes**.
    For runtime, all the environments of the components will be added together into
-   the same ``.sad`` script. Please, refer to
+   the same ``.run`` script. Please, refer to
    `Coupled setup environment control` for an explanation on how to control
    environments for a whole setup.
 

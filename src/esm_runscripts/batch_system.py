@@ -47,8 +47,8 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, sadfile):
-        return self.bs.add_pre_launcher_lines(config, sadfile)
+    def add_pre_launcher_lines(self, config, runfile):
+        return self.bs.add_pre_launcher_lines(config, runfile)
 
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
@@ -64,15 +64,15 @@ class batch_system:
         return config
 
     @staticmethod
-    def get_sad_filename(config, cluster):
+    def get_run_filename(config, cluster):
         folder = config["general"]["thisrun_scripts_dir"]
         expid = config["general"]["expid"]
         startdate = config["general"]["current_date"]
         enddate = config["general"]["end_date"]
-        sad_filename = (
-            f"{folder}/{expid}_{cluster}" f"_{config['general']['run_datestamp']}.sad"
+        run_filename = (
+            f"{folder}/{expid}_{cluster}" f"_{config['general']['run_datestamp']}.run"
         )
-        return sad_filename
+        return run_filename
 
     @staticmethod
     def get_shell_header(config, cluster):
@@ -382,11 +382,11 @@ class batch_system:
         return commands
 
     @staticmethod
-    def get_submit_command(config, batch_or_shell, sadfilename):
+    def get_submit_command(config, batch_or_shell, runfilename):
         # in case of slurm e.g. returns:
-        # cd SCRIPTDIR; sbatch sadfile
+        # cd SCRIPTDIR; sbatch runfile
         # in case if shell:
-        # cd SCRIPTDIR; ./sadfile
+        # cd SCRIPTDIR; ./runfile
 
         commands = []
         if batch_or_shell == "batch":
@@ -402,7 +402,7 @@ class batch_system:
                 + config["general"]["thisrun_scripts_dir"]
                 + "; "
                 + call
-                + os.path.basename(sadfilename)
+                + os.path.basename(runfilename)
             )
 
         return commands
@@ -427,14 +427,14 @@ class batch_system:
             sys.exit(-1)
 
         self = config["general"]["batch"]
-        sadfilename = batch_system.get_sad_filename(config, cluster)
+        runfilename = batch_system.get_run_filename(config, cluster)
 
         if config["general"]["verbose"]:
             print("still alive")
             print("jobtype: ", config["general"]["jobtype"])
-            print("writing sad file for:", cluster)
+            print("writing run file for:", cluster)
 
-        with open(sadfilename, "w") as sadfile:
+        with open(runfilename, "w") as runfile:
 
             # batch header (if any)
             if batch_or_shell == "batch":
@@ -446,43 +446,43 @@ class batch_system:
                 config = add_batch_hostfile(config)
 
                 for line in header:
-                    sadfile.write(line + "\n")
-                sadfile.write("\n")
+                    runfile.write(line + "\n")
+                runfile.write("\n")
 
             else:
                 header = batch_system.get_shell_header(config, cluster)
                 for line in header:
-                    sadfile.write(line + "\n")
-                sadfile.write("\n")
+                    runfile.write(line + "\n")
+                runfile.write("\n")
 
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
 
                     # environment for each subjob of a cluster
                     environment = batch_system.get_environment(config, subjob)
-                    batch_system.write_env(config, environment, sadfilename)
+                    batch_system.write_env(config, environment, runfilename)
                     for line in environment:
-                        sadfile.write(line + "\n")
+                        runfile.write(line + "\n")
 
                     # extra entries for each subjob
                     extra = batch_system.get_extra(config)
                     for line in extra:
-                        sadfile.write(line + "\n")
+                        runfile.write(line + "\n")
 
                     # Add actual commands
                     commands = batch_system.get_run_commands(config, subjob)
                     # commands = clusterconf.get("data_task_list", [])
-                    sadfile.write("\n")
-                    sadfile.write(self.append_start_statement(config, subjob) + "\n")
-                    sadfile.write("\n")
-                    sadfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
+                    runfile.write("\n")
+                    runfile.write(self.append_start_statement(config, subjob) + "\n")
+                    runfile.write("\n")
+                    runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
                     if cluster in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, sadfile
+                            config, runfile
                         )
 
                     for line in commands:
-                        sadfile.write(line + "\n")
+                        runfile.write(line + "\n")
 
             # elif multisrun_stuff: # pauls stuff maybe here? or matching to clusterconf possible?
             #    dummy = 0
@@ -535,35 +535,35 @@ class batch_system:
                     cluster
                 ]["next_submit"]
 
-                sadfile.write("\n")
-                sadfile.write("# Call to esm_runscript to start subjobs:\n")
-                sadfile.write("# " + str(subjobs_to_launch) + "\n")
-                sadfile.write("process=$! \n")
-                sadfile.write(
+                runfile.write("\n")
+                runfile.write("# Call to esm_runscript to start subjobs:\n")
+                runfile.write("# " + str(subjobs_to_launch) + "\n")
+                runfile.write("process=$! \n")
+                runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )
-                sadfile.write(
+                runfile.write(
                     "cd " + config["general"]["experiment_scripts_dir"] + "\n"
                 )
-                sadfile.write(observe_call + "\n")
-                sadfile.write("\n")
-                sadfile.write(self.append_done_statement(config, subjob) + "\n")
+                runfile.write(observe_call + "\n")
+                runfile.write("\n")
+                runfile.write(self.append_done_statement(config, subjob) + "\n")
 
-            sadfile.write("\n")
-            sadfile.write("wait\n")
+            runfile.write("\n")
+            runfile.write("wait\n")
 
         config["general"]["submit_command"] = batch_system.get_submit_command(
-            config, batch_or_shell, sadfilename
+            config, batch_or_shell, runfilename
         )
 
         if batch_or_shell == "shell":
-            sadfilestats = os.stat(sadfilename)
-            os.chmod(sadfilename, sadfilestats.st_mode | stat.S_IEXEC)
+            runfilestats = os.stat(runfilename)
+            os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
         if config["general"]["verbose"]:
             six.print_("\n", 40 * "+ ")
-            six.print_("Contents of ", sadfilename, ":")
-            with open(sadfilename, "r") as fin:
+            six.print_("Contents of ", runfilename, ":")
+            with open(runfilename, "r") as fin:
                 print(fin.read())
             if os.path.isfile(self.bs.filename):
                 six.print_("\n", 40 * "+ ")
@@ -574,25 +574,25 @@ class batch_system:
         return config
 
     @staticmethod
-    def write_env(config, environment=[], sadfilename=""):
+    def write_env(config, environment=[], runfilename=""):
         # Ensures that the config is not modified in this method
         local_config = copy.deepcopy(config)
         # Allows to run it from a recipe (i.e. before a preprocessing job)
-        if len(environment) == 0 or len(sadfilename) == 0:
-            sadfilename = batch_system.get_sad_filename(local_config, "prepcompute")
+        if len(environment) == 0 or len(runfilename) == 0:
+            runfilename = batch_system.get_run_filename(local_config, "prepcompute")
             environment = batch_system.get_environment(
                 local_config, "prepcompute_general"
             )
 
         folder = local_config["general"]["thisrun_scripts_dir"]
         this_batch_system = local_config["computer"]
-        sadfilename_short = sadfilename.split("/")[-1]
+        runfilename_short = runfilename.split("/")[-1]
         envfilename = folder + "/env.sh"
 
         with open(envfilename, "w") as envfile:
             if "sh_interpreter" in this_batch_system:
                 envfile.write("#!" + this_batch_system["sh_interpreter"] + "\n")
-            envfile.write(f"# ENVIRONMENT used in {sadfilename_short}\n")
+            envfile.write(f"# ENVIRONMENT used in {runfilename_short}\n")
             envfile.write("# Use this file to source the environment in your\n")
             envfile.write("# preprocessing or postprocessing scripts\n\n")
             for line in environment:

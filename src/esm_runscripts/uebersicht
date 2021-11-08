@@ -3,7 +3,7 @@
 
 
 
-prepare -> compute (auf frontend) -> sadfile:
+prepare -> compute (auf frontend) -> runfile:
 					- batch header
 					- environment
 					- extra

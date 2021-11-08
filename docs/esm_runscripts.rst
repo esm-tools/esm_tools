@@ -192,9 +192,9 @@ scripts                 * ``esm_tools`` folder  Contains all the scripts needed 
                           containing:           subfolder ``esm_tools`` includes all the config files
                             * all namelists     and namelists of ``ESM-Tools`` (a copy of the ``configs``
                             * all functions     and ``namelists`` folders in the ``esm_tools``
-                        * <experiment_ID>_      installation folder). It also contains the ``.sad`` files
+                        * <experiment_ID>_      installation folder). It also contains the ``.run`` files
                           compute_YYYYMMDD-     to be submitted to `slurm`.
-                          YYYYMMDD.sad>         The file
+                          YYYYMMDD.run>         The file
                         * <experiment_ID>_      ``<experiment_ID>_compute_YYYYMMDD_YYYYMMDD_<JobID>.log``
                           compute_YYYYMMDD-     is the log file for the experiment run. The
                           YYYYMMDD_<JobID>.log  ``<experiment_ID>_<setup_name>.date`` indicates the

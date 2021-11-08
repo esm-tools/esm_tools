@@ -122,21 +122,21 @@ class Slurm:
 
     ############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
 
-    def add_pre_launcher_lines(self, config, sadfile):
+    def add_pre_launcher_lines(self, config, runfile):
         """
-        Adds pre-launcher lines to the ``sadfile``.
+        Adds pre-launcher lines to the ``runfile``.
 
         Parameters
         ----------
         config : dict
             Configuration dictionary containing information about the experiment and
             experiment directory.
-        sadfile : io.TextIOWrapper
+        runfile : io.TextIOWrapper
             File wrapper object for writing of the lines
-            (``sadfile.write("<your_line_here>")``).
+            (``runfile.write("<your_line_here>")``).
         """
         if config["computer"].get("heterogeneous_parallelization", False):
-            self.add_hostlist_file_gen_lines(config, sadfile)
+            self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
     def write_het_par_wrappers(config):
@@ -199,31 +199,31 @@ class Slurm:
         return config
 
     @staticmethod
-    def add_hostlist_file_gen_lines(config, sadfile):
+    def add_hostlist_file_gen_lines(config, runfile):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
-        sadfile.write(
+        runfile.write(
             "\n"
             + "#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job"
             + "\n"
         )
-        sadfile.write("rm -f ./hostlist" + "\n")
-        sadfile.write(
+        runfile.write("rm -f ./hostlist" + "\n")
+        runfile.write(
             f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist\n"
         )
-        sadfile.write("IFS=$'\\n'; set -f" + "\n")
-        sadfile.write(
+        runfile.write("IFS=$'\\n'; set -f" + "\n")
+        runfile.write(
             "listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))" + "\n"
         )
-        sadfile.write("unset IFS; set +f" + "\n")
-        sadfile.write("rank=0" + "\n")
-        sadfile.write("current_core=0" + "\n")
-        sadfile.write("current_core_mpi=0" + "\n")
+        runfile.write("unset IFS; set +f" + "\n")
+        runfile.write("rank=0" + "\n")
+        runfile.write("current_core=0" + "\n")
+        runfile.write("current_core_mpi=0" + "\n")
         for model in config["general"]["valid_model_names"]:
             if model != "oasis3mct":
-                sadfile.write(
+                runfile.write(
                     "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
                 )
-                sadfile.write(
+                runfile.write(
                     "omp_threads_"
                     + model
                     + "="
@@ -233,7 +233,7 @@ class Slurm:
         import pdb
 
         # pdb.set_trace()
-        sadfile.write(
+        runfile.write(
             "for model in "
             + str(config["general"]["valid_model_names"])[1:-1]
             .replace(",", "")
@@ -241,25 +241,25 @@ class Slurm:
             + " ;do"
             + "\n"
         )
-        sadfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
-        sadfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
-        sadfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
-        sadfile.write(
+        runfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
+        runfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
+        runfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
+        runfile.write(
             "        (( index_host = current_core / "
             + str(cores_per_node)
             + " ))"
             + "\n"
         )
-        sadfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
-        sadfile.write(
+        runfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
+        runfile.write(
             "        (( slot =  current_core % " + str(cores_per_node) + " ))" + "\n"
         )
-        sadfile.write("        echo $host_value >> hostlist" + "\n")
-        sadfile.write(
+        runfile.write("        echo $host_value >> hostlist" + "\n")
+        runfile.write(
             "        (( current_core = current_core + omp_threads_${model} ))" + "\n"
         )
-        sadfile.write("    done" + "\n")
-        sadfile.write("done" + "\n\n")
+        runfile.write("    done" + "\n")
+        runfile.write("done" + "\n\n")
 
     ############# MULTI SRUN STUFF ##############
 
@@ -313,7 +313,7 @@ def get_run_commands_multisrun(config, commands):
     # Since I am already confused, I need to write comments.
     #
     # The next part is actually a shell script fragment, which will be injected
-    # into the "sad" file. sad = Sys Admin Dump. It's sad :-(
+    # into the "run" file, the shell script to be run by the job scheduler.
     #
     # In this part, we figure out what compute nodes we are using so we can
     # specify nodes for each srun command. That means, ECHAM+FESOM will use one

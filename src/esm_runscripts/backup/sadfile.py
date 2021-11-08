@@ -1,6 +1,6 @@
-class sadfile:
+class runfile:
     def __init__(self, config, commands):
-        self.name = self.get_sad_filename()
+        self.name = self.get_run_filename()
         self.header = self.get_batch_header()
         self.environment = self.get_environment()
         self.commands = commands or self.get_run_commands()
@@ -16,28 +16,28 @@ class sadfile:
 
     @staticmethod
     def write_simple_runscript(self, write_tidy_call=True):
-        with open(self.sadfilename, "w") as sadfile:
+        with open(self.runfilename, "w") as runfile:
             for line in self.header:
-                sadfile.write(line + "\n")
-            sadfile.write("\n")
+                runfile.write(line + "\n")
+            runfile.write("\n")
             for line in self.environment:
-                sadfile.write(line + "\n")
-            sadfile.write("\n")
-            sadfile.write("cd " + self.config["general"]["thisrun_work_dir"] + "\n")
+                runfile.write(line + "\n")
+            runfile.write("\n")
+            runfile.write("cd " + self.config["general"]["thisrun_work_dir"] + "\n")
             for line in commands:
-                sadfile.write(line + "\n")
-            sadfile.write("process=$! \n")
-            sadfile.write(
+                runfile.write(line + "\n")
+            runfile.write("process=$! \n")
+            runfile.write(
                 "cd " + self.config["general"]["experiment_scripts_dir"] + "\n"
             )
             if write_tidy_call:
-                sadfile.write(tidy_call + "\n")
+                runfile.write(tidy_call + "\n")
 
-        self.submit_command = self.get_submit_command(sadfilename)
+        self.submit_command = self.get_submit_command(runfilename)
 
         six.print_("\n", 40 * "+ ")
-        six.print_("Contents of ", sadfilename, ":")
-        with open(sadfilename, "r") as fin:
+        six.print_("Contents of ", runfilename, ":")
+        with open(runfilename, "r") as fin:
             print(fin.read())
         if os.path.isfile(self.batch.bs.filename):
             six.print_("\n", 40 * "+ ")

@@ -163,7 +163,7 @@ class Pbs:
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
         ``computer.execution_command``, that would later be used in the writing of the
-        ``.sad`` file, in ``batch_system.py``.
+        ``.run`` file, in ``batch_system.py``.
 
         .. Note: PBS does not support yet multi_apruns
 
@@ -206,23 +206,23 @@ class Pbs:
         ].replace("@components@", components)
 
     @staticmethod
-    def add_pre_launcher_lines(config, sadfile):
+    def add_pre_launcher_lines(config, runfile):
         """
-        Adds pre-launcher lines to the ``sadfile``.
+        Adds pre-launcher lines to the ``runfile``.
 
         Parameters
         ----------
         config : dict
             Configuration dictionary containing information about the experiment and
             experiment directory.
-        sadfile : io.TextIOWrapper
+        runfile : io.TextIOWrapper
             File wrapper object for writing of the lines
-            (``sadfile.write("<your_line_here>")``).
+            (``runfile.write("<your_line_here>")``).
         """
         # This changes the name of the output stream to include the $PBS_JOBID. This
         # cannot be done in the header because PBS does not support its own variables
         # to be used there (at least in the ALEPH's version).
-        sadfile.write(f'qalter $PBS_JOBID -o {config["computer"]["thisrun_logfile"]}\n')
+        runfile.write(f'qalter $PBS_JOBID -o {config["computer"]["thisrun_logfile"]}\n')
 
     @staticmethod
     def get_job_state(jobid):

@@ -118,7 +118,7 @@ class RuntimeLogger(_io.TextIOWrapper):
     Logger object that takes care of both, writing the stdout and stderr to the
     'mini-log' file corresponding to the different elements of the workflow (observe,
     tidy, ...), and writing to the system stdout/stderr so that it is catched by SLURM
-    (or I guess PBS) and put into the ``*compute*.log`` specified in the ``.sad`` file.
+    (or I guess PBS) and put into the ``*compute*.log`` specified in the ``.run`` file.
     The ``*compute*.log`` file is then used to catch errors by ``observe``.
 
     .. Note: This is a fast and minimal solution for release 6.0, but all this could be done
@@ -170,7 +170,7 @@ class RuntimeLogger(_io.TextIOWrapper):
         # Write into the mini-log file
         self.file_obj.write(*args, **kwargs)
         # Write into the system's stdout (so that it makes it to *compute*.log defined
-        # in the .sad file)
+        # in the .run file)
         self.stdout.write(args[0])
 
     def flush(self):

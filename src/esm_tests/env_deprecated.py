@@ -168,14 +168,14 @@ def run_specific(element, version):
     # File copying and cleanup
     os.mkdir(f"{element}{vname}")
     test_path = "/work/ollie/mandresm/esm_yaml_test/env_testing"
-    sad_path = (
+    run_path = (
         test_path
-        + "/run_20000101-20001231/scripts/env_testing_compute_20000101-20001231.sad"
+        + "/run_20000101-20001231/scripts/env_testing_compute_20000101-20001231.run"
     )
-    if not os.path.isfile(sad_path):
-        logger.error(f"{element}{vname} sad file was not generated properly")
+    if not os.path.isfile(run_path):
+        logger.error(f"{element}{vname} run file was not generated properly")
     else:
-        shutil.copy(sad_path, f"{element}{vname}/run-{element}{vname}")
+        shutil.copy(run_path, f"{element}{vname}/run-{element}{vname}")
     shutil.rmtree(test_path)
 
 

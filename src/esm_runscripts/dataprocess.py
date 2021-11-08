@@ -87,7 +87,7 @@ def export_string(environment_dict):
 #
 # def _assemble_dataprocess_tasks(config):
 ##    """
-#    Generates all tasks for data processing which will be written to the sad file.
+#    Generates all tasks for data processing which will be written to the run file.
 #
 #    Parameters
 #    ----------
@@ -98,7 +98,7 @@ def export_string(environment_dict):
 #    -------
 #    data_task_list : list
 ##        The list of post commands which will be executed. These are written
-#        to the sad file.
+#        to the run file.
 #    """
 #    datafile = config["general"]["post_file"]
 #    data_task_list = []

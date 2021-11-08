@@ -20,7 +20,7 @@ def run_job(config):
 
 def _assemble_postprocess_tasks(config):
     """
-    Generates all tasks for post processing which will be written to the sad file.
+    Generates all tasks for post processing which will be written to the run file.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def _assemble_postprocess_tasks(config):
     -------
     post_task_list : list
         The list of post commands which will be executed. These are written
-        to the sad file.
+        to the run file.
     """
     postfile = config["general"]["post_file"]
 

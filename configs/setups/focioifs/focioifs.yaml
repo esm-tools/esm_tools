@@ -132,7 +132,7 @@ oifs:
              glogin:
                 compiler_mpi: intel2019_impi2019
              juwels:
-                compiler_mpi: intel2020_parastation 
+                compiler_mpi: intel2020_psmpi2020
              nesh:
                 compiler_mpi: intel2020_impi2020
                 add_module_actions:

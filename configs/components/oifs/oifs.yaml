@@ -398,10 +398,6 @@ restart_unit: "months"
 file_movements:
         forcing:
             all_directions: link
-        # GEOMAR------------------|
-#        input:                   #|
-#            all_directions: link #| # TODO: CHECK that this is not a problem for AWICM3
-        #-------------------------|
         restart_in:
             all_directions: link
         restart_out:

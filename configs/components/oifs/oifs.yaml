@@ -627,7 +627,7 @@ outdata_in_work:
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
         MPP: MPP*
-#        # XIOS output
+        # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
 
 outdata_sources:

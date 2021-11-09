@@ -14,10 +14,10 @@ general:
            - "_write_finalized_config"
            - "copy_files_to_thisrun"
            - "write_env"
+           - "preprocess"
            - "modify_namelists"
            - "modify_files"
            - "copy_files_to_work"
-           - "preprocess"
            - "report_missing_files"
            - "database_entry"
 

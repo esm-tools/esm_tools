@@ -76,9 +76,10 @@ echam:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019 
+                compiler_mpi: intel2019_impi2019
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
@@ -87,9 +88,10 @@ echam:
                 compiler_mpi: intel2019_impi2019
 
         runtime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019 
+                compiler_mpi: intel2019_impi2019
                 add_module_actions:
                    - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
              blogin:

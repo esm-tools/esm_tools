@@ -480,9 +480,9 @@ bin_sources:
 #======================================================================================
 
 input_files:
-        #ICMGG_INIT: ICMGG_INIT
-        #ICMGG_INIUA: ICMGG_INIUA
-        #ICMSH_INIT: ICMSH_INIT
+        ICMGG_INIT: ICMGG_INIT
+        ICMGG_INIUA: ICMGG_INIUA
+        ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
         #rtables: rtables
         #vtables: vtables
@@ -845,11 +845,11 @@ choose_version:
                                 - 'ECE_USE_CPLNG="no"'
 
         43r3:
-                add_namelist_changes: #TODO: check
+                add_namelist_changes:
                         fort.4:
                                 NAMRES:
                                         NFRRES: ${nfrres}
-                                        NRESTS: ${nfrests}
+                                        NRESTS${nrest_ind}: ${nfrests}
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
                                 NAMARG:
@@ -868,10 +868,11 @@ choose_restart_type:
                 nfrests:
                         - -1
                         - $(( -${simulation_length_seconds} / 3600 ))
+                nrest_ind: ""
         ifs_default:
                 nfrres: ${next_step}
-                nfrests:
-                        - -${next_step}
+                nfrests: ["-${next_step}"]
+                nrest_ind: "(1)"
 
 restart_type: "ifs_default"
 
@@ -1077,11 +1078,13 @@ choose_eternal_run_number:
                         ${oifs.perturb}
                         ${oifs.nx}
                         ${oifs.ensemble_id};
+                    ${slice_icml};
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
+                    ${slice_icml};
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
                 pseudo_initial_date: "${prev_run.general.start_date}"
@@ -1104,13 +1107,25 @@ choose_eternal_run_number:
                         ${oifs.seconds_since_initial}
                         ${oifs.start_ndays}
                         ${oifs.wam};
+                    ${slice_icml};
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
                 choose_eternal_run_number:
                         0:
                                 branchoff: true
 
-# TODO: add slice_icml_file preprocessing for standalone oifs
+choose_general.standalone:
+        True:
+                slice_icml: "
+                    ${general.esm_function_dir}/components/oifs/slice_icmcl_file.sh
+                        ${thisrun_input_dir}/
+                        ${icmcl_dir}/${icmcl_file}
+                        ${oifs.input_expid}
+                        ${start_date!syear!smonth!sday}
+                        ${icmcl_end_date_formatted}
+                        ${work_dir}"
+        False:
+                slice_icml: ""
 
 preprocess:
         preprocess_shell:

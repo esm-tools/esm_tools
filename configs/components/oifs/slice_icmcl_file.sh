@@ -22,7 +22,7 @@ echo " "
 echo " Machine: $(hostname) "
 echo " grib_set: $(which grib_set) "
 echo " cdo -V: "
-cdo -V 
+cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "

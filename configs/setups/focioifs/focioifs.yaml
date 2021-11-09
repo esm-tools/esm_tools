@@ -105,17 +105,19 @@ oifs:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
                 compiler_mpi: intel2019_impi2019
              juwels:
-                compiler_mpi: intel2020_parastation 
+                compiler_mpi: intel2020_psmpi2020
              nesh:
                 compiler_mpi: intel2020_impi2020
 
         runtime_environment_changes:
+          iolibraries: geomar_libs
           add_export_vars:
              # Turn on FOCI coupling        
              - 'FOCI_USE_CPLNG="active"'

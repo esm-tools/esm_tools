@@ -8,7 +8,7 @@ basedir=~/esm/esm-experiments/  # change via -p
 EXP_ID="test_experiment"        # change via -r
 envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
 ncpus=24
-use_singularity=false
+use_singularity=true
 #
 #------- DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING ------#
 #
@@ -91,10 +91,6 @@ lock_file=${MONITORING_PATH}/monitoring_lock_${EXP_ID}.lock
 lock_time_stamp=`date -Ins`
 echo ${lock_time_stamp} > ${lock_file}
 
-if [[ ! -d Monitoring ]]; then
-   git clone -b develop-swahl git@git.geomar.de:TM/Monitoring.git Monitoring
-fi
-
 # setup directories (in interactive mode this is done by Monitoring/scripts/monitoring_basic_setup.py
 for d in model_data derived_data plots galleries tmp ; do
 	mkdir -p ${d}/${EXP_ID}
@@ -109,6 +105,7 @@ if [[ "$(hostname)" =~ "nesh" ]] ; then
    # soft link can't be resolved in the container
    sw_bind="--bind /gxfs_home/sw:/gxfs_work1/gxfs_home_interim/sw"
 	foci_input2="/gxfs_work1/geomar/smomw235/foci_input2"
+	# only used if use_singularity=false
 	MINICONDA_HOME=~smomw235/miniconda3 
 elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] ; then
    echo "`date` NOTE: This code runs on $(hostname)"
@@ -145,16 +142,21 @@ if $use_singularity ; then
 	if [[ ! -f mkexp-monitoring.sif ]] ; then
    	print "mkexp-monitoring.sif not available in $(pwd)"
 	   print "Need to fetch singularity image from https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif"
+   	print "This only needs to be done once per simulation"
    	curl -O https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif
 	fi
 
 	SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
+	SINGULARITYENV_PYTHONPATH=/usr/local/Monitoring \
 		singularity exec --bind $WORK:$WORK --bind $HOME:$HOME \
 		$sw_bind --bind ${IO_LIB_ROOT}/bin:/usr/local/bin \
 		mkexp-monitoring.sif python \
-		${MONITORING_PATH}/Monitoring/scripts/monitoring_parallel.py \
+		/usr/local/Monitoring/scripts/monitoring_parallel.py \
 		${MONITORING_PATH}/ini/monitoring_${EXP_ID}.ini
 else
+	if [[ ! -d Monitoring ]]; then
+		git clone -b develop-swahl git@git.geomar.de:TM/Monitoring.git Monitoring
+	fi
 	# activate the python environment
 	source ${MINICONDA_HOME}/bin/activate monitoring
 	python \

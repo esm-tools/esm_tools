@@ -1,0 +1,2820 @@
+computer:
+    account: None
+    accounting: true
+    accounting_flag: --account=hbk00083
+    actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
+    additional_flags: ''
+    batch_system: slurm
+    cc: $CC
+    check_error:
+        'slurmstepd: error: execve():':
+            file: stdout
+            frequency: 600
+            message: 'SLURM ERROR: slurm probably didn''t find executable'
+            method: kill
+        'srun: error:':
+            file: stdout
+            frequency: 30
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            method: kill
+    choose_heterogeneous_parallelization: *id001
+    compiler_mpi: intel2019_impi2019
+    config_files:
+        hostfile: hostfile_srun
+    cpu_bind: cores
+    cxx: $CXX
+    debug_info:
+        loaded_from_file:
+        - /home/hbkmandr/esm_tools/configs//machines/blogin.yaml
+    debugger: None
+    debugger_flags_prelauncher: ''
+    exclusive_flag: --exclusive
+    execution_command: srun --mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL --multi-prog hostfile_srun
+    export_vars:
+        CC: mpiicc
+        CXX: mpiicpc
+        ECCODESROOT: $IO_LIB_ROOT
+        F77: mpiifort
+        FC: mpiifort
+        FCFLAGS: -free
+        HDF5ROOT: $IO_LIB_ROOT
+        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+        HDF5_ROOT: $HDF5ROOT
+        IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+        LC_ALL: en_US.UTF-8
+        LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+        MPIFC: mpiifort
+        MPIROOT: '"$(mpiifort -show | perl -lne ''m{ -I(.*?)/include } and print $1'')"'
+        MPI_LIB: '"$(mpiifort -show |sed -e ''s/^[^ ]*//'' -e ''s/-[I][^ ]*//g'')"'
+        NETCDFFROOT: $IO_LIB_ROOT
+        NETCDFROOT: $IO_LIB_ROOT
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+        PATH: $IO_LIB_ROOT/bin:$PATH
+        SZIPROOT: $IO_LIB_ROOT
+    fc: $FC
+    header_start: '#SBATCH'
+    heterogeneous_parallelization: false
+    hostname_list: DUMMY_HOST1 DUMMY_HOST2
+    hyperthreading_flag: --ntasks-per-core=1
+    iolibraries: geomar_libs
+    jobtype: unknown
+    launcher: srun
+    launcher_flags: --mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL
+    logical_cpus_per_core: 2
+    mail1: --mail-type=NONE
+    mail2: ''
+    mail_type: NONE
+    model: computer
+    module_actions:
+    - purge
+    - load slurm
+    - load HLRNenv
+    - load sw.skl
+    - load cmake
+    - load cdo nco
+    - load intel/19.0.5
+    - load impi/2019.5
+    mpicc: $MPICC
+    mpifc: $MPIFC
+    name: blogin
+    name_flag: --job-name=foci-initial-piCtl-test_daily_restart_lowcpu
+    nodes_flag: --nodes=@nodes@
+    notification_flag: --mail-type=NONE
+    output_flags: --output=/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_@jobtype@_18500101-18500101.log --error=/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_@jobtype@_18500101-18500101.log
+    output_path: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/
+    overcommit_flag: ''
+    overcommit_nodes: None
+    overcommit_rule: ''
+    partition: standard96
+    partition_cpn: 96
+    partition_flag: --partition=@partition@
+    partition_name: standard96
+    partitions:
+        compute:
+            cores_per_node: 96
+            name: standard96
+        pp:
+            cores_per_node: 96
+            name: standard96
+    pool_dir: /scratch/usr/hbkawi
+    pool_directories:
+        focipool: /scratch/usr/shkifmsw/foci_input2
+        pool: /scratch/usr/hbkawi
+    runtime_environment_changes:
+        add_export_vars:
+            ACCOUNT: hbk00083
+            ESM_TESTING_DIR: /scratch/usr/hbkmandr/testing//run/foci/
+            MODEL_DIR: /scratch/usr/hbkmandr/testing//comp/foci/foci-default
+    script_name: <--methods.scriptname--
+    sh_interpreter: /bin/bash
+    single_proc_submit_flag: --ntasks-per-node=1
+    submit: sbatch
+    submitted: false
+    tasks_flag: --ntasks=@tasks@
+    thisrun_logfile: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_@jobtype@_18500101-18500101.log
+    threads_per_core: 1
+    time_flag: --time=00:15:00
+    use_hyperthreading: false
+debug_info:
+    loaded_from_file:
+    - /home/hbkmandr/esm_tools/configs//setups/foci/foci.yaml
+defaults:
+    clean_command: rm -rf build CMakeCache.txt
+    comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+    debug_info:
+        loaded_from_file: /home/hbkmandr/esm_tools/configs//defaults/download_and_compile.yaml
+echam:
+    _nx: 192
+    _ny: 96
+    adj_input_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    bin_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin
+    bin_intermediate:
+        echam_bin: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/echam/echam6
+    bin_sources:
+        echam_bin: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin/echam6
+    bin_targets:
+        echam_bin: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/echam6
+    check_error:
+        mo_exception.f90:
+            file: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//atmout
+            frequency: 90
+            message: Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry.
+            method: kill
+        wind speed:
+            file: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//atmout
+            frequency: 90
+            message: high wind speed was found during your run...
+            method: warn
+    compile_infos:
+        available_versions:
+        - 6.3.05p2
+        - 6.3.05p2-foci
+        - 6.3.02p4
+        - 6.3.04p1-esm_interface
+        - 6.3.05p2-concurrent_radiation
+        - 6.3.04p1-paleodyn
+        - 6.3.04p1-recom-awicm
+        - 6.3.05p2-concurrent_radiation-paleodyn
+        - 6.3.04p1
+        branch: 6.3.05p2-foci
+        choose_version:
+            6.3.02p4:
+                install_bins: src/bin/echam6
+            6.3.04p1-esm_interface:
+                branch: using_esm_interfaces_yac
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.04p1-paleodyn:
+                branch: paleodyn
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.04p1-recom-awicm:
+                branch: co2_coupling
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.05p2:
+                branch: 6.3.05p2
+                destination: echam-6.3.05p2
+            6.3.05p2-concurrent_radiation:
+                branch: concurrent_radiation
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+                comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                conf_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'
+                git-repository: https://gitlab.dkrz.de/PalMod/echam6-PalMod.git
+            6.3.05p2-concurrent_radiation-paleodyn:
+                branch: ice
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+                comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            6.3.05p2-concurrent_radiation-paleodyn-hammoz:
+                branch: hammoz
+                clean_command: rm -rf src/echam/bin; make clean
+                comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel FCFLAGS="-cpp -DHAMMOZ" INSTALL='/usr/bin/install -p'
+                git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            6.3.05p2-foci:
+                branch: esm-tools
+                git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-wiso:
+                branch: wiso
+                clean_command: make clean
+                comp_command: make; make install
+                conf_command: ./configure
+        clean_command: rm -rf build CMakeCache.txt
+        comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+        git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+        install_bins: src/echam/bin/echam6
+    compiletime_environment_changes:
+        choose_computer.name:
+            blogin:
+                compiler_mpi: intel2019_impi2019
+            glogin:
+                compiler_mpi: intel2019_impi2019
+            juwels:
+                compiler_mpi: intel2019_impi2019
+            nesh:
+                compiler_mpi: intel2019_impi2019
+        iolibraries: geomar_libs
+    config_intermediate:
+        namelist.echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/echam/namelist.echam
+    config_sources:
+        namelist.echam: /home/hbkmandr/esm_tools/namelists//echam/6.3.05p2-foci/PI-CTRL/namelist.echam
+    config_targets:
+        namelist.echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist.echam
+    coupling_fields:
+        AIceEvap:
+            grid: atmo
+        AIceFrac:
+            grid: atmo
+        ATotRain:
+            grid: atmo
+        ATotSnow:
+            grid: atmo
+        A_ITaux1:
+            grid: atmo
+        A_ITauy1:
+            grid: atmo
+        A_IceTck:
+            grid: atmo
+        A_OCurx1:
+            grid: atmo
+        A_OCury1:
+            grid: atmo
+        A_OTaux1:
+            grid: atmo
+        A_OTauy1:
+            grid: atmo
+        A_QnsIce:
+            grid: atmo
+        A_QnsMix:
+            grid: atmo
+        A_QsrIce:
+            grid: atmo
+        A_QsrMix:
+            grid: atmo
+        A_SSTSST:
+            grid: atmo
+        A_SnwTck:
+            grid: atmo
+        A_TepIce:
+            grid: atmo
+        A_dQnsdT:
+            grid: atmo
+        evap_atm:
+            grid: atmo
+        heat_atm:
+            grid: atmo
+        heat_ica:
+            grid: atmo
+        heat_swa:
+            grid: atmo
+        hydr_atm:
+            grid: atmo
+        prec_atm:
+            grid: atmo
+        sie_atmo:
+            grid: atmo
+        sit_atmo:
+            grid: atmo
+        snow_atm:
+            grid: atmo
+        snt_atmo:
+            grid: atmo
+        sst_atmo:
+            grid: atmo
+        subl_atm:
+            grid: atmo
+        taux_atm:
+            grid: atmo
+        taux_ica:
+            grid: atmo
+        tauy_atm:
+            grid: atmo
+        tauy_ica:
+            grid: atmo
+    dataset: r0008
+    debug_info:
+        loaded_from_file:
+        - /home/hbkmandr/esm_tools/configs//components/echam/echam.yaml
+        - /home/hbkmandr/esm_tools/configs//components/echam/echam.postprocessing.yaml
+    disturbance: 1.000001
+    executable: echam6
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/echam/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/echam/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/echam/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/echam/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/echam/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/echam/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/echam/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/echam/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/echam/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    foci_fields:
+    - AIceFrac
+    - A_SSTSST
+    - A_TepIce
+    - A_IceTck
+    - A_SnwTck
+    - A_OCurx1
+    - A_OCury1
+    - A_OTaux1
+    - A_OTauy1
+    - A_ITaux1
+    - A_ITauy1
+    - A_QsrIce
+    - A_QsrMix
+    - A_QnsIce
+    - A_QnsMix
+    - ATotRain
+    - ATotSnow
+    - AIceEvap
+    - A_dQnsdT
+    forcing_additional_information:
+        aerocoarse:
+        - need_year_before
+        - need_year_after
+        aerofarir:
+        - need_year_before
+        - need_year_after
+        aerofin:
+        - need_year_before
+        - need_year_after
+        ozone:
+        - need_year_before
+        - need_year_after
+        swflux:
+        - need_year_before
+        - need_year_after
+        volcir:
+        - need_year_before
+        - need_year_after
+        volcsw:
+        - need_year_before
+        - need_year_after
+    forcing_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63
+    forcing_intermediate:
+        aerocoarse_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_coarse_1849.nc
+        aerocoarse_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_coarse_1850.nc
+        aerocoarse_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_coarse_1851.nc
+        aerofarir_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_farir_1849.nc
+        aerofarir_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_farir_1850.nc
+        aerofarir_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_farir_1851.nc
+        aerofin_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_fine_1849.nc
+        aerofin_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_fine_1850.nc
+        aerofin_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/aero_fine_1851.nc
+        ozone_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/ozon1849
+        ozone_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/ozon1850
+        ozone_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/ozon1851
+    forcing_sources:
+        aerocoarse_year_1849: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_1850: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_1851: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerofarir_year_1849: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_1850: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_1851: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofin_year_1849: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_1850: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_1851: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        ozone_year_1849: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_1850: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_1851: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/ozone/T63_ozone_picontrol.nc
+    forcing_targets:
+        aerocoarse_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_coarse_1849.nc
+        aerocoarse_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_coarse_1850.nc
+        aerocoarse_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_coarse_1851.nc
+        aerofarir_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_farir_1849.nc
+        aerofarir_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_farir_1850.nc
+        aerofarir_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_farir_1851.nc
+        aerofin_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_fine_1849.nc
+        aerofin_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_fine_1850.nc
+        aerofin_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/aero_fine_1851.nc
+        ozone_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/ozon1849
+        ozone_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/ozon1850
+        ozone_year_1851: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/ozon1851
+    greenhouse_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input
+    grids:
+        atmo:
+            name: atmo
+            number_of_overlapping_points: 0
+            nx: 192
+            ny: 96
+            oasis_grid_type: D
+    ignore_intermediate:
+        accw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw
+        accw_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw.codes
+        accw_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_accw.nc
+        co2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2
+        co2_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2.codes
+        co2_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_co2.nc
+        echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam
+        echam_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam.codes
+        echam_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam.nc
+    ignore_sources:
+        accw: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw
+        accw_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw.codes
+        accw_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_accw.nc
+        co2: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2
+        co2_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2.codes
+        co2_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_co2.nc
+        echam: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam
+        echam_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam.codes
+        echam_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam.nc
+    ignore_targets:
+        accw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw
+        accw_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_accw.codes
+        accw_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_accw.nc
+        co2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2
+        co2_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_co2.codes
+        co2_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_co2.nc
+        echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam
+        echam_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam.codes
+        echam_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam.nc
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/FOCI_RESTART/unset//echam6/
+    ini_parent_exp_id: unset
+    input_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008
+    input_intermediate:
+        cldoptprops: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/ECHAM6_CldOptProps.nc
+        janspec: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/unit.23
+        jansurf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/unit.24
+        rrtmglw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/rrtmg_lw.nc
+        rrtmgsw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/rrtmg_sw.nc
+        tslclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/unit.92
+        vgratclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/unit.91
+        vltclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/unit.90
+    input_sources:
+        cldoptprops: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/ECHAM6_CldOptProps.nc
+        janspec: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/T63L95_jan_spec.nc
+        jansurf: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/T63ORCA05_jan_surf.nc
+        rrtmglw: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/rrtmg_lw.nc
+        rrtmgsw: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/rrtmg_sw.nc
+        tslclim: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/T63_TSLCLIM.nc
+        vgratclim: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/T63ORCA05_VGRATCLIM.nc
+        vltclim: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/T63/T63ORCA05_VLTCLIM.nc
+    input_targets:
+        cldoptprops: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/ECHAM6_CldOptProps.nc
+        janspec: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/unit.23
+        jansurf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/unit.24
+        rrtmglw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rrtmg_lw.nc
+        rrtmgsw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rrtmg_sw.nc
+        tslclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/unit.92
+        vgratclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/unit.91
+        vltclim: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/unit.90
+    last_parent_date: '1849-12-31T23:45:00'
+    leapyear: true
+    levels: L95
+    log_intermediate:
+        atmout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/echam/atmout
+        stderr: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/echam/echam.stderr
+        stdout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/echam/echam.stdout
+    log_sources:
+        atmout: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//atmout
+        stderr: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//echam.stderr
+        stdout: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//echam.stdout
+    log_targets:
+        atmout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/echam/atmout
+        stderr: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/echam/echam.stderr
+        stdout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/echam/echam.stdout
+    lrad_async: remove_from_namelist
+    lrestart_from_old: false
+    lresume: false
+    metadata:
+        Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
+        Description: The ECHAM atmosphere model, major version 6
+        Institute: MPI-Met
+        License: Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail. To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
+        Publications: 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
+    model: echam
+    model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/echam-6.3.05p2-foci
+    models:
+    - jsbach
+    - hdmodel
+    namelist_changes:
+        namelist.echam:
+            parctl:
+                nproca: 8
+                nprocb: 4
+            runctl:
+                delta_time: 450
+                dt_resume: remove_from_namelist
+                dt_start:
+                - 1849
+                - 12
+                - 31
+                - 23
+                - 52
+                - 30
+                dt_stop:
+                - 1850
+                - 1
+                - 3
+                - 23
+                - 52
+                - 30
+                lcouple: true
+                lresume: false
+                out_datapath: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+                out_expname: foci-initial-piCtl-test_daily_restart_lowcpu
+                putrerun:
+                - 1
+                - days
+                - last
+                - 0
+    namelist_dir: /home/hbkmandr/esm_tools/namelists//echam/6.3.05p2-foci/PI-CTRL
+    namelists:
+    - namelist.echam
+    nproca: 8
+    nprocar: 0
+    nprocb: 4
+    nprocbr: 0
+    nprocrad: remove_from_namelist
+    npromar: 0
+    ocean_resolution: ORCA05
+    other_date: '1850-01-01T23:52:30'
+    outdata_intermediate:
+        aclcim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_aclcim.nc
+        g3b1hi_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3b1hi.nc
+        g3bday_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bday.nc
+        g3bid_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bid.nc
+        g3bim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bim.nc
+        glday_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glday.nc
+        glim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glim.nc
+        jsbid_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_jsbid.nc
+        sp6h_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_sp6h.nc
+        spim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_spim.nc
+    outdata_sources:
+        aclcim_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_aclcim.nc
+        g3b1hi_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3b1hi.nc
+        g3bday_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bday.nc
+        g3bid_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bid.nc
+        g3bim_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bim.nc
+        glday_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glday.nc
+        glim_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glim.nc
+        jsbid_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_jsbid.nc
+        sp6h_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_sp6h.nc
+        spim_nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_spim.nc
+    outdata_sources_wild_card:
+        accw: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_accw
+        accw_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_accw.codes
+        co2: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_co2
+        co2_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_co2.codes
+        echam: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_echam
+        echam_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_echam.codes
+    outdata_targets:
+        aclcim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_aclcim.nc
+        g3b1hi_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3b1hi.nc
+        g3bday_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bday.nc
+        g3bid_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bid.nc
+        g3bim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_g3bim.nc
+        glday_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glday.nc
+        glim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_glim.nc
+        jsbid_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_jsbid.nc
+        sp6h_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_sp6h.nc
+        spim_nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_spim.nc
+    parent_date: '1849-12-31T23:52:30'
+    parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    parent_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/
+    pool_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6
+    postprocess_method_definitions:
+        cdo:
+            call_order:
+            - program
+            - flags
+            - operator
+            - infile
+            - outfile
+            possible_args:
+            - stdin
+            - stdout
+            - outfile
+            possible_flags:
+            - f nc
+            - f grb1
+            - f grb2
+            - f nc1
+            - f nc2
+            - f nc4
+            - f nc4c
+            - f nc5
+            - f srv
+            - f ext
+            - f ieg
+            - t echam6
+            required_args:
+            - operator
+            - infile
+        cdo_chain:
+        - something...
+    postprocess_task_definitions:
+        BOT: null
+        flags:
+        - f nc2
+        method: cdo
+        mm:
+            args:
+                operator: monmean
+            flags:
+            - f nc
+            method: cdo
+        operator: after
+        stdin: namelist.BOT
+    postprocess_tasks:
+        foci-initial-piCtl-test_daily_restart_lowcpu_echam_accw_18500101-18500102_mm.nc:
+            args:
+                infile: foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_accw
+            flags:
+            - t echam6
+            post_process: mm
+        foci-initial-piCtl-test_daily_restart_lowcpu_echam_co2_18500101-18500102_mm.nc:
+            args:
+                infile: foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_co2
+            flags:
+            - t echam6
+            post_process: mm
+        foci-initial-piCtl-test_daily_restart_lowcpu_echam_echam_18500101-18500102_mm.nc:
+            args:
+                infile: foci-initial-piCtl-test_daily_restart_lowcpu_185001.01_echam
+            flags:
+            - t echam6
+            post_process: mm
+    postprocessing_stream: BOT ATM LOG
+    prev_date: '1849-12-31T23:52:30'
+    pseudo_end_date: '1850-01-01T23:45:00'
+    pseudo_final_date: '1850-01-03T23:52:30'
+    pseudo_resume_date: '1850-01-01T00:00:00'
+    pseudo_start_date: '1849-12-31T23:52:30'
+    pseudo_start_date2: '1848-12-31T23:52:30'
+    repo_tag: not_set
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    resolution: T63
+    restart_firstlast: last
+    restart_in_modifications:
+        accw:
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+        co2:
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+        echam:
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+        - vdate <--set_global_attr-- 18500101
+    restart_out_intermediate:
+        accw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_accw_18500101.nc
+        co2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_co2_18500101.nc
+        echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam_18500101.nc
+    restart_out_sources:
+        accw: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_accw.nc
+        co2: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_co2.nc
+        echam: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_echam.nc
+    restart_out_targets:
+        accw: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_accw_18500101.nc
+        co2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_co2_18500101.nc
+        echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam_18500101.nc
+    restart_rate: 1
+    restart_unit: days
+    restartstreams:
+    - echam
+    - accw
+    - co2
+    runtime_environment_changes:
+        choose_computer.name:
+            blogin:
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2019_impi2019
+            glogin:
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2019_impi2019
+            juwels:
+                add_module_actions:
+                - source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt
+                compiler_mpi: intel2019_impi2019
+            nesh:
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2019_impi2019
+        iolibraries: geomar_libs
+    scenario: PI-CTRL
+    scenario_type: PI-CTRL
+    setup_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default
+    standalone_model: true
+    streams:
+    - echam
+    - accw
+    - co2
+    streamsnc:
+    - aclcim
+    - g3b1hi
+    - g3bday
+    - g3bid
+    - g3bim
+    - glday
+    - glim
+    - jsbid
+    - sp6h
+    - spim
+    switch: 1
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/echam/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/echam/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/echam/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/echam/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/echam/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/echam/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/echam/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/echam/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/echam/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/echam/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/echam/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/echam/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/echam/
+    time_step: 450
+    transient_advance_forcing: false
+    type: atmosphere
+    value: echam switch
+    version: 6.3.05p2-foci
+    yr_perp_off: false
+general:
+    account: hbk00083
+    additional_files: []
+    all_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - work
+    all_model_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    available_versions:
+    - default
+    - agrif
+    base_dir: /scratch/usr/hbkmandr/testing//run/foci/
+    batch: slurm
+    calendar: esm_calendar object with allowed leap years
+    check: false
+    chunk_number: 1
+    command_line_config:
+        check: false
+        current_date: null
+        expid: foci-initial-piCtl-test_daily_restart_lowcpu
+        inspect: null
+        jobtype: prepcompute
+        launcher_pid: -666
+        no_motd: true
+        original_command: foci-initial-piCtl-test_daily_restart_lowcpu.yaml -e foci-initial-piCtl-test_daily_restart_lowcpu --open-run --no-motd
+        profile: false
+        run_number: null
+        runscript_abspath: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/scripts/foci-initial-piCtl-test_daily_restart_lowcpu.yaml
+        scriptname: foci-initial-piCtl-test_daily_restart_lowcpu.yaml
+        started_from: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
+        update: false
+        use_venv: false
+        verbose: false
+    compute_time: 00:15:00
+    coupled_setup: true
+    coupler: oasis3mct
+    coupler_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/oasis3mct/
+    couplings:
+    - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+    current_date: '1850-01-01T00:00:00'
+    debug_info:
+        loaded_from_file: /home/hbkmandr/esm_tools/configs//defaults/general.yaml
+    defaults.yaml:
+        debug_info:
+            loaded_from_file: /home/hbkmandr/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+        per_model_defaults: {}
+    delta_date:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    end_date: '1850-01-01T00:00:00'
+    esm_function_dir: FUNCTION_PATH
+    esm_namelist_dir: NAMELIST_PATH
+    esm_runscript_dir: RUNSCRIPT_PATH
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/
+    experiment_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/
+    experiment_log_file: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/
+    experiment_scripts_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
+    experiment_src_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/src/
+    experiment_unknown_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/unknown/
+    expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    final_date: '1850-01-04T00:00:00'
+    first_run_in_chunk: true
+    in_filetypes:
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
+    ini_nemo_restart_steps: 26297472
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset/
+    ini_parent_exp_id: unset
+    ini_string_parent_date: '1850-01-01'
+    initial_date: '1850-01-01T00:00:00'
+    inspect: null
+    jobid: 138329
+    jobtype: prepcompute
+    last_run_datestamp: 18491231-18491231
+    last_run_in_chunk: false
+    last_start_date: '1849-12-31T00:00:00'
+    launcher_pid: -666
+    leapyear: true
+    logfile_path: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci_prepcompute_18500101-18500101.log
+    logfile_path_in_run: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci_prepcompute_18500101-18500101.log
+    lresume: false
+    model: foci
+    model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default
+    models:
+    - echam
+    - nemo
+    - xios
+    - oasis3mct
+    nday: 1
+    next_date: '1850-01-02T00:00:00'
+    nhour: 0
+    nminute: 0
+    nmonth: 0
+    no_motd: true
+    nsecond: 0
+    nyear: 0
+    original_command: foci-initial-piCtl-test_daily_restart_lowcpu.yaml -e foci-initial-piCtl-test_daily_restart_lowcpu --open-run --no-motd
+    out_filetypes:
+    - analysis
+    - log
+    - mon
+    - scripts
+    - ignore
+    - unknown
+    - outdata
+    - restart_out
+    pool_dir: /scratch/usr/shkifmsw/foci_input2
+    post_time: 00:05:00
+    postprocessing: 0
+    prev_date: '1849-12-31T00:00:00'
+    profile: false
+    relevant_filetypes:
+    - bin
+    - config
+    - forcing
+    - input
+    - restart_in
+    reset_calendar_to_last: false
+    resolution: T63_ORCA05
+    reusable_filetypes:
+    - bin
+    - src
+    run_datestamp: 18500101-18500101
+    run_number: 1
+    runscript_abspath: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/scripts/foci-initial-piCtl-test_daily_restart_lowcpu.yaml
+    runtime:
+    - 0
+    - 0
+    - 1
+    - 24
+    - 1440
+    - 86400
+    scenario: PI-CTRL
+    scriptname: foci-initial-piCtl-test_daily_restart_lowcpu.yaml
+    setup_name: foci
+    standalone: false
+    start_date: '1850-01-01T00:00:00'
+    started_from: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
+    submitted: false
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/
+    thisrun_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/
+    thisrun_scripts_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/scripts/
+    thisrun_src_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/src/
+    thisrun_unknown_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/unknown/
+    thisrun_work_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+    total_runtime:
+    - 0
+    - 0
+    - 1
+    - 24
+    - 1440
+    - 86400
+    update: false
+    use_database: false
+    use_venv: false
+    valid_model_names:
+    - echam
+    - nemo
+    - xios
+    - oasis3mct
+    - jsbach
+    - hdmodel
+    valid_setup_names:
+    - computer
+    - general
+    - echam
+    - hdmodel
+    - jsbach
+    - nemo
+    - xios
+    - oasis3mct
+    - debug_info
+    verbose: false
+    version: default
+    work_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+    workflow:
+        first_task_in_queue: prepcompute
+        last_task_in_queue: tidy
+        next_run_triggered_by: tidy
+        subjob_clusters:
+            compute:
+                batch_or_shell: batch
+                called_from: prepcompute
+                next_submit:
+                - tidy
+                nproc: 64
+                order_in_cluster: sequential
+                run_before: tidy
+                run_on_queue: standard96
+                subjobs:
+                - compute_general
+                submit_to_batch_system: true
+            prepcompute:
+                batch_or_shell: SimulationSetup
+                called_from: tidy
+                next_submit:
+                - compute
+                nproc: 1
+                order_in_cluster: sequential
+                run_before: compute
+                subjobs:
+                - prepcompute_general
+                submit_to_batch_system: false
+            tidy:
+                batch_or_shell: SimulationSetup
+                called_from: compute
+                next_submit:
+                - prepcompute
+                nproc: 1
+                order_in_cluster: sequential
+                run_after: compute
+                subjobs:
+                - tidy_general
+                submit_to_batch_system: false
+        subjobs:
+            compute_general:
+                nproc: 64
+                run_before: tidy
+                run_on_queue: standard96
+                subjob_cluster: compute
+                submit_to_batch_system: true
+            prepcompute_general:
+                nproc: 1
+                run_before: compute
+                subjob_cluster: prepcompute
+            tidy_general:
+                nproc: 1
+                run_after: compute
+                subjob_cluster: tidy
+hdmodel:
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    debug_info:
+        loaded_from_file:
+        - /home/hbkmandr/esm_tools/configs//components/hdmodel/hdmodel.yaml
+    description: 'The Hagemann/Duemenil hydrology model,
+
+        (someone from Hamburg)
+
+        paper citation'
+    domain: hydrology
+    executable: NONE
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/hdmodel/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/hdmodel/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/hdmodel/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/hdmodel/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/hdmodel/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/hdmodel/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/hdmodel/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/hdmodel/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/hdmodel/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/hdmodel/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/hdmodel/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/hdmodel/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/hdmodel/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../hdmodel/
+    ini_parent_exp_id: foci-initial-piCtl-test_daily_restart_lowcpu
+    ini_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../hdmodel/
+    input_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/HD
+    input_intermediate:
+        hdpara: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/hdmodel/hdpara.nc
+        hdstart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/hdmodel/hdstart.nc
+        rmp_hd: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/hdmodel/rmp_hd.nc
+    input_sources:
+        hdpara: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/HD/hdpara.nc
+        hdstart: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/HD/hdstart.nc
+        rmp_hd: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/HD/rmp_T63_to_hd.nc
+    input_targets:
+        hdpara: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/hdpara.nc
+        hdstart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/hdstart.nc
+        rmp_hd: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rmp_hd.nc
+    last_parent_date: '1849-12-31T23:45:00'
+    leapyear: true
+    license_text: 'Please make sure you have a licence to use echam. In case you are
+
+        unsure, please contact redmine....'
+    lresume: false
+    model: hdmodel
+    other_date: '1850-01-01T23:52:30'
+    parent_date: '1849-12-31T23:52:30'
+    parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    parent_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/hdmodel/
+    pool_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/HD
+    prev_date: '1849-12-31T23:52:30'
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    restart_out_intermediate:
+        hdrestart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/hdmodel/restart_foci-initial-piCtl-test_daily_restart_lowcpu_hd_18500101.nc
+    restart_out_sources:
+        hdrestart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//hdrestart.nc
+    restart_out_targets:
+        hdrestart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/hdmodel/restart_foci-initial-piCtl-test_daily_restart_lowcpu_hd_18500101.nc
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/hdmodel/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/hdmodel/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/hdmodel/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/hdmodel/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/hdmodel/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/hdmodel/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/hdmodel/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/hdmodel/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/hdmodel/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/hdmodel/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/hdmodel/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/hdmodel/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/hdmodel/
+    time_step: 450
+jsbach:
+    adj_input_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    config_intermediate:
+        namelist.jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/jsbach/namelist.jsbach
+    config_sources:
+        namelist.jsbach: /home/hbkmandr/esm_tools/namelists//jsbach/3.20p1/PI-CTRL/dynveg/namelist.jsbach
+    config_targets:
+        namelist.jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist.jsbach
+    cover_fract_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/land_use_maps/
+    dataset: r0010
+    debug_info:
+        loaded_from_file:
+        - /home/hbkmandr/esm_tools/configs//components/jsbach/jsbach.yaml
+        - /home/hbkmandr/esm_tools/configs//components/jsbach/jsbach.datasets.yaml
+    description: 'The JSBACH vegetation model, major version 3
+
+        (someone from Hamburg)
+
+        paper citation'
+    domain: vegetation
+    dynamic_vegetations: true
+    dynveg: _dynveg
+    dynveg_file_ending: _dynveg
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/jsbach/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/jsbach/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/jsbach/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/jsbach/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/jsbach/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/jsbach/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/jsbach/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/jsbach/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/jsbach/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/jsbach/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    forcing_additional_information:
+        LU:
+        - need_timestep_before
+        - need_timestep_after
+        LU_trans:
+        - need_timestep_before
+        - need_timestep_after
+        Ndepo:
+        - need_timestep_before
+        - need_timestep_after
+    forcing_intermediate:
+        LU_trans_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/landuseTransitions.1849.nc
+        LU_trans_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/landuseTransitions.1850.nc
+        LU_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/landuseHarvest.1849.nc
+        LU_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/landuseHarvest.1850.nc
+        Ndepo_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/Ndepo.1849.nc
+        Ndepo_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/Ndepo.1850.nc
+        a_nd_file: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/a_nd_file.nc
+        lightning: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/lightning.nc
+        popdens: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/population_density.nc
+    forcing_modifications:
+        Ndepo: <--setyear-- @YEAR@
+    forcing_sources:
+        LU_trans_year_1849: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/New_Hampshire_LCC/no_LUH_transitions_T63.nc
+        LU_trans_year_1850: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/New_Hampshire_LCC/no_LUH_transitions_T63.nc
+        LU_year_1849: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/New_Hampshire_LCC/hist_harvest/LUH_harvest_T63_1850.nc
+        LU_year_1850: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/New_Hampshire_LCC/hist_harvest/LUH_harvest_T63_1850.nc
+        Ndepo_year_1849: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/T63_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc
+        Ndepo_year_1850: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/T63_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc
+        a_nd_file: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/spitfire/a_nd_T63.nc
+        lightning: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/spitfire/LISOTD_HRMC_V2.2_T63.nc
+        popdens: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/spitfire/population_density_HYDE_T63.nc
+    forcing_targets:
+        LU_trans_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/landuseTransitions.1849.nc
+        LU_trans_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/landuseTransitions.1850.nc
+        LU_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/landuseHarvest.1849.nc
+        LU_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/landuseHarvest.1850.nc
+        Ndepo_year_1849: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Ndepo.1849.nc
+        Ndepo_year_1850: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Ndepo.1850.nc
+        a_nd_file: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/a_nd_file.nc
+        lightning: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/lightning.nc
+        popdens: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/population_density.nc
+    ignore_intermediate:
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach
+        jsbach_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach.codes
+        jsbach_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_jsbach.nc
+        land: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land
+        land_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land.codes
+        land_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_land.nc
+        nitro: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro
+        nitro_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro.codes
+        nitro_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_nitro.nc
+        surf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf
+        surf_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf.codes
+        surf_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_surf.nc
+        veg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg
+        veg_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg.codes
+        veg_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_veg.nc
+        yasso: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso
+        yasso_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso.codes
+        yasso_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso.nc
+    ignore_sources:
+        jsbach: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach
+        jsbach_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach.codes
+        jsbach_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_jsbach.nc
+        land: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land
+        land_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land.codes
+        land_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_land.nc
+        nitro: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro
+        nitro_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro.codes
+        nitro_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_nitro.nc
+        surf: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf
+        surf_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf.codes
+        surf_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_surf.nc
+        veg: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg
+        veg_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg.codes
+        veg_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_veg.nc
+        yasso: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso
+        yasso_codes: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso.codes
+        yasso_restart: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso.nc
+    ignore_targets:
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach
+        jsbach_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_jsbach.codes
+        jsbach_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_jsbach.nc
+        land: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land
+        land_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_land.codes
+        land_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_land.nc
+        nitro: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro
+        nitro_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_nitro.codes
+        nitro_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_nitro.nc
+        surf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf
+        surf_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_surf.codes
+        surf_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_surf.nc
+        veg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg
+        veg_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_veg.codes
+        veg_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_veg.nc
+        yasso: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso
+        yasso_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso.codes
+        yasso_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso.nc
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/FOCI_RESTART/unset//jsbach/
+    ini_parent_exp_id: unset
+    ini_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../jsbach/
+    input_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010
+    input_intermediate:
+        cpools_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/Cpools.nc
+        fpc_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/fpc.nc
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/jsbach.nc
+        lctlib: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/lctlib.def
+        npools_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/Ndepo.nc
+    input_sources:
+        cpools_foci: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/cpools_T63ORCA05_pdv0002_51251231.nc
+        fpc_foci: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/cpools_T63ORCA05_pdv0002_51251231.nc
+        jsbach: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/jsbach_T63ORCA05_11tiles_5layers_1850_dynveg.nc
+        lctlib: /scratch/usr/shkifmsw/foci_input2/ECHAM6_GENERAL/JSBACH/input/lctlib_nlct21.def
+        npools_foci: /scratch/usr/shkifmsw/foci_input2/JSBACH/input/r0010/T63/cpools_T63ORCA05_pdv0002_51251231.nc
+    input_targets:
+        cpools_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Cpools.nc
+        fpc_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/fpc.nc
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/jsbach.nc
+        lctlib: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/lctlib.def
+        npools_foci: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Ndepo.nc
+    jsbachnc_file_ending: _dynveg
+    last_parent_date: '1849-12-31T23:45:00'
+    leapyear: true
+    license_text: 'Please make sure you have a licence to use echam.In case you are
+
+        unsure, please contact redmine....'
+    lresume: false
+    model: jsbach
+    model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/echam-6.3.05p2-foci
+    namelist_dir: /home/hbkmandr/esm_tools/namelists//jsbach/3.20p1/PI-CTRL/dynveg
+    namelists:
+    - namelist.jsbach
+    no_dynveg_file_ending: _no-dynveg
+    other_date: '1850-01-01T23:52:30'
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        jsbach: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_jsbach
+        jsbach_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_jsbach.codes
+        land: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_land
+        land_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_land.codes
+        nitro: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_nitro
+        nitro_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_nitro.codes
+        surf: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_surf
+        surf_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_surf.codes
+        veg: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_veg
+        veg_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_veg.codes
+        yasso: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_yasso
+        yasso_codes: foci-initial-piCtl-test_daily_restart_lowcpu_1850*.01_yasso.codes
+    outdata_targets: {}
+    parent_date: '1849-12-31T23:52:30'
+    parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    parent_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/
+    pool_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH
+    prev_date: '1849-12-31T23:52:30'
+    pseudo_end_date: '1850-01-01T23:45:00'
+    pseudo_start_date: '1849-12-31T23:52:30'
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    resolution: T63
+    restart_out_intermediate:
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_jsbach_18500101.nc
+        land: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_land_18500101.nc
+        nitro: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_nitro_18500101.nc
+        surf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_surf_18500101.nc
+        veg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_veg_18500101.nc
+        yasso: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso_18500101.nc
+    restart_out_sources:
+        jsbach: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_jsbach.nc
+        land: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_land.nc
+        nitro: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_nitro.nc
+        surf: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_surf.nc
+        veg: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_veg.nc
+        yasso: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//restart_foci-initial-piCtl-test_daily_restart_lowcpu_18500101234500_yasso.nc
+    restart_out_targets:
+        jsbach: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_jsbach_18500101.nc
+        land: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_land_18500101.nc
+        nitro: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_nitro_18500101.nc
+        surf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_surf_18500101.nc
+        veg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_veg_18500101.nc
+        yasso: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso_18500101.nc
+    scenario: PI-CTRL
+    scenario_type: PI-CTRL
+    streams:
+    - jsbach
+    - nitro
+    - veg
+    - yasso
+    - surf
+    - land
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/jsbach/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/jsbach/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/jsbach/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/jsbach/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/jsbach/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/jsbach/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/jsbach/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/jsbach/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/jsbach/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/jsbach/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/jsbach/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/jsbach/
+    time_step: 450
+    version: 3.20p1
+nemo:
+    _nx: 722
+    _nx_nest1: 0
+    _ny: 511
+    _ny_nest1: 0
+    agr1_c_fields:
+    - 1_O_QsrIce
+    - 1_O_QsrMix
+    - 1_O_QnsIce
+    - 1_O_QnsMix
+    - 1_OTotRain
+    - 1_OTotSnow
+    - 1_OIceEvap
+    - 1_O_dQnsdT
+    agr1_r_fields:
+    - 1_O_Runoff
+    agr1_t_fields:
+    - 1_OIceFrac
+    - 1_O_SSTSST
+    - 1_O_TepIce
+    - 1_O_IceTck
+    - 1_O_SnwTck
+    - 1_O_OCurx1
+    - 1_O_OCury1
+    - 1_O_OTaux1
+    - 1_O_OTauy1
+    - 1_O_ITaux1
+    - 1_O_ITauy1
+    agr2_t_fields:
+    - 1_O_AgrSpg
+    agrif_dir: /scratch/usr/shkifmsw/foci_input2/AGRIF/agrif_VIKING10
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    available_versions:
+    - ORCA05_LIM2_KCM_AOW
+    - ORCA05_LIM2_FOCI_AGRIF_AOW
+    - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+    - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    - ORCA05_LIM2_NEMO_JRA55_test
+    - GYRE_XIOS
+    bin_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin
+    bin_intermediate:
+        nemo: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/nemo/oceanx
+    bin_sources:
+        nemo: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin/oceanx
+    bin_targets:
+        nemo: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/oceanx
+    branch: master
+    clean_command: echo Cleaning is handled by nemobasemodel.yaml; cd ../../
+    comp_command: echo Compilation is handled by nemobasemodel.yaml
+    config_intermediate:
+        namelist_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/nemo/namelist_cfg
+        namelist_ice_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/nemo/namelist_ice_cfg
+        namelist_top_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/nemo/namelist_top_cfg
+    config_sources:
+        namelist_cfg: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/namelist_cfg
+        namelist_ice_cfg: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/namelist_ice_cfg
+        namelist_top_cfg: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/namelist_top_cfg
+    config_targets:
+        namelist_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_cfg
+        namelist_ice_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_ice_cfg
+        namelist_top_cfg: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_top_cfg
+    correct_neg_tracer_conc: true
+    coupling_fields:
+        1_O_Runoff:
+            grid: agr1r
+        OIceEvap:
+            grid: opac
+        OIceFrac:
+            grid: opat
+        OTotRain:
+            grid: opac
+        OTotSnow:
+            grid: opac
+        O_ITaux1:
+            grid: opat
+        O_ITauy1:
+            grid: opat
+        O_IceTck:
+            grid: opat
+        O_OCurx1:
+            grid: opat
+        O_OCury1:
+            grid: opat
+        O_OTaux1:
+            grid: opat
+        O_OTauy1:
+            grid: opat
+        O_QnsIce:
+            grid: opac
+        O_QnsMix:
+            grid: opac
+        O_QsrIce:
+            grid: opac
+        O_QsrMix:
+            grid: opac
+        O_Runoff:
+            grid: rnfo
+        O_SSTSST:
+            grid: opat
+        O_SnwTck:
+            grid: opat
+        O_TepIce:
+            grid: opat
+        O_dQnsdT:
+            grid: opac
+    coupling_freq_in_steps: 6
+    debug_info:
+        loaded_from_file: /home/hbkmandr/esm_tools/configs//components/nemo/nemo.yaml
+    destination: nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW
+    end_date_m1: '1850-01-01T23:30:00'
+    executable: oceanx
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/nemo/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/nemo/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/nemo/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/nemo/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/nemo/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/nemo/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/nemo/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/nemo/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/nemo/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/nemo/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/nemo/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/nemo/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    free_surface: linear
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
+    global_tag: ''
+    grids:
+        agr1:
+            name: agr1
+            number_of_overlapping_points: 0
+            nx: 0
+            ny: 0
+            oasis_grid_type: LR
+        agr1r:
+            name: agr1r
+            number_of_overlapping_points: 0
+            nx: 0
+            ny: 0
+            oasis_grid_type: LR
+        agr2:
+            name: agr2
+            number_of_overlapping_points: 0
+            nx: 0
+            ny: 0
+            oasis_grid_type: LR
+        opaa:
+            name: opaa
+            number_of_overlapping_points: 0
+            nx: 722
+            ny: 511
+            oasis_grid_type: LR
+        opac:
+            name: opac
+            number_of_overlapping_points: 2
+            nx: 722
+            ny: 511
+            oasis_grid_type: LR
+        opat:
+            name: opat
+            number_of_overlapping_points: 2
+            nx: 722
+            ny: 511
+            oasis_grid_type: LR
+        rnfo:
+            name: rnfo
+            number_of_overlapping_points: 0
+            nx: 722
+            ny: 511
+            oasis_grid_type: LR
+    hosing: false
+    ini_parent_date: '1849-12-31T23:30:00'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset//nemo/
+    ini_parent_exp_id: unset
+    ini_restart_steps: 26297472
+    ini_restart_steps_nest: 78892416
+    input_dir: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05
+    input_intermediate:
+        cn_batmeter: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/bathy_meter.nc
+        coef-G70: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/orca05_bfr_coef-G70.nc
+        coordinates: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/coordinates.nc
+        ice_init: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/Ice_initialization.nc
+        namelist_ice_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/namelist_ice_ref
+        namelist_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/namelist_ref
+        namelist_top_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/namelist_top_ref
+        sn_sal: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        sn_tem: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        subbasins: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/orca05_subbasins_3.6.nc
+    input_sources:
+        cn_batmeter: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/bathy_meter.nc
+        coef-G70: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/orca05_bfr_coef-G70.nc
+        coordinates: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/coordinates.nc
+        ice_init: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/Ice_initialization_KKG36F13H-R.nc
+        namelist_ice_ref: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/SHARED/namelist_ice_lim2_ref
+        namelist_ref: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/SHARED/namelist_ref
+        namelist_top_ref: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/SHARED/namelist_top_ref
+        sn_sal: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        sn_tem: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        subbasins: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/orca05_subbasins_3.6.nc
+    input_targets:
+        cn_batmeter: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/bathy_meter.nc
+        coef-G70: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/orca05_bfr_coef-G70.nc
+        coordinates: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/coordinates.nc
+        ice_init: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Ice_initialization.nc
+        namelist_ice_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_ice_ref
+        namelist_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_ref
+        namelist_top_ref: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist_top_ref
+        sn_sal: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        sn_tem: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        subbasins: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/orca05_subbasins_3.6.nc
+    jpni: 0
+    jpnj: 0
+    jra55_forcing_dir: /scratch/usr/shkifmsw/foci_input2/NEMO_JRA55-do_drowned_test
+    jra55_runoff_dir: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05_JRA_runoff_forcing
+    last_parent_date: '1849-12-31T23:00:00'
+    leapyear: true
+    ln_limini: true
+    ln_limini_agrif: false
+    ln_rsttr: false
+    ln_trcdta: true
+    ln_tsd_init: true
+    ln_tsd_tradmp: false
+    log_intermediate:
+        tracer: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/tracer.stat
+    log_sources:
+        tracer: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//tracer.stat
+    log_sources_wild_card:
+        ocean: '*ocean.output'
+    log_targets:
+        tracer: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/tracer.stat
+    lresume: false
+    metadata:
+        Authors: Gurvan Madec and NEMO System Team (nemo_st@locean-ipsl.umpc.fr)
+        Description: NEMO standing for Nucleus for European Modelling of the Ocean is a state-of-the-art modelling framework for research activities and forecasting services in ocean and climate sciences, developed in a sustainable way by a European consortium.
+        Institute: IPSL
+        License: Please make sure you have a license to use NEMO. In case you are unsure, please contact redmine...
+        Organization: Nucleus for European Modelling of the Ocean
+        Publications: NEMO ocean engine <http://doi.org/10.5281/zenodo.1464816>
+    model: nemo
+    model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW
+    models:
+    - xios
+    namelist_changes:
+        namelist_cfg:
+            namdom:
+                nn_closea: 1
+                nn_msh: 1
+                rn_rdt: 1800
+            namdyn_hpg:
+                ln_dynhpg_imp: true
+                ln_hpg_sco: false
+                ln_hpg_zps: true
+            nammpp:
+                jpni: 0
+                jpnij: 24
+                jpnj: 0
+            namrun:
+                cn_exp: foci-initial-piCtl-test_daily_restart_lowcpu
+                cn_ocerst_in: foci-initial-piCtl-test_daily_restart_lowcpu_00000000_restart_18491231
+                cn_ocerst_indir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//
+                cn_ocerst_out: restart_18500101
+                cn_ocerst_outdir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//
+                ln_rstart: false
+                nn_date0: 18500101
+                nn_it000: 1
+                nn_itend: 48
+                nn_leapy: 1
+                nn_rstctl: 2
+                nn_stock: 48
+            namsbc:
+                nn_fsbc: 6
+            namtsd:
+                ln_tsd_init: true
+                ln_tsd_tradmp: false
+        namelist_ice_cfg:
+            namiceini:
+                ln_limini: true
+            namicerun:
+                cn_icerst_in: foci-initial-piCtl-test_daily_restart_lowcpu_00000000_restart_ice_18491231
+                cn_icerst_indir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+                cn_icerst_out: restart_ice_18500101
+                cn_icerst_outdir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+        namelist_top_cfg:
+            namtrc:
+                ln_trcdta: true
+            namtrc_rad:
+                ln_trcrad: true
+            namtrc_run:
+                cn_trcrst_in: foci-initial-piCtl-test_daily_restart_lowcpu_00000000_restart_trc_18491231
+                cn_trcrst_indir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+                cn_trcrst_out: restart_trc_18500101
+                cn_trcrst_outdir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+                ln_rsttr: false
+                nn_rsttr: 2
+    namelist_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00
+    namelists:
+    - namelist_cfg
+    - namelist_top_cfg
+    - namelist_ice_cfg
+    - 1_namelist_cfg
+    - 1_namelist_top_cfg
+    - 1_namelist_ice_cfg
+    nest: VIKING10
+    nest1: false
+    newstep: 48
+    newstep_formatted: 48
+    newstep_formatted_nest: 144
+    newstep_nest: 144
+    nn_leapy: 1
+    nn_msh: 1
+    nn_rstctl: 2
+    nn_rsttr: 2
+    nproc: 24
+    opac_fields:
+    - O_QsrIce
+    - O_QsrMix
+    - O_QnsIce
+    - O_QnsMix
+    - OTotRain
+    - OTotSnow
+    - OIceEvap
+    - O_dQnsdT
+    opat_fields:
+    - OIceFrac
+    - O_SSTSST
+    - O_TepIce
+    - O_IceTck
+    - O_SnwTck
+    - O_OCurx1
+    - O_OCury1
+    - O_OTaux1
+    - O_OTauy1
+    - O_ITaux1
+    - O_ITauy1
+    ornf_fields:
+    - O_Runoff
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        1d: '*foci-initial-piCtl-test_daily_restart_lowcpu_1d_18500101_18500101_*.nc'
+        1m: '*foci-initial-piCtl-test_daily_restart_lowcpu_1m_18500101_18500101_*.nc'
+        5d: '*foci-initial-piCtl-test_daily_restart_lowcpu_5d_18500101_18500101_*.nc'
+        6h: '*foci-initial-piCtl-test_daily_restart_lowcpu_6h_18500101_18500101_*.nc'
+        mesh_mask: '*mesh_mask*.nc'
+    outdata_targets: {}
+    parent_date: '1849-12-31T23:30:00'
+    parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    parent_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/nemo/
+    pool_dir: /scratch/usr/shkifmsw/foci_input2
+    prev_date: '1849-12-31T23:30:00'
+    prevstep: 0
+    prevstep_formatted: 0
+    prevstep_formatted_nest: 0
+    prevstep_nest: 0
+    requires:
+    - xios-2.0_r982
+    - nemobasemodel-3.6foci
+    resolution: ORCA05
+    restart_out_intermediate: {}
+    restart_out_sources: {}
+    restart_out_sources_wild_card:
+        restart_out: foci-initial-piCtl-test_daily_restart_lowcpu_00000048_restart*_18500101_*.nc
+    restart_out_targets: {}
+    restart_rate: 1
+    restart_unit: days
+    runoff_method: old
+    runtime: 86400
+    seconds_since_initial: 0
+    setup_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default
+    steps_since_initial: 0
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/nemo/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/nemo/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/nemo/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/nemo/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/nemo/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/nemo/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/nemo/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/nemo/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/nemo/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/nemo/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/nemo/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/nemo/
+    thisstep: 1
+    thisstep_formatted: 1
+    thisstep_formatted_nest: 1
+    thisstep_nest: 1
+    time_step: 1800
+    time_step_nest: 600
+    timestep_per_run: 48
+    timesteps_per_run_nest: 144
+    use_lim2: true
+    use_lim2_agrif: false
+    use_tracer: true
+    use_tracer_agrif: false
+    version: ORCA05_LIM2_KCM_AOW
+oasis3mct:
+    a2o_lag: 450
+    a2o_seq: 3
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    available_versions:
+    - foci
+    - fociagrif
+    - ec-earth
+    - 2.8
+    - 3
+    - 4
+    - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
+    branch: '2.8'
+    cf_name_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/oasis
+    clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
+    comp_command: mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include
+    config_intermediate:
+        cf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/oasis3mct/cf_name_table.txt
+        namcouple: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/oasis3mct/namcouple
+    config_sources:
+        cf: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/oasis/cf_name_table.txt
+        namcouple: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/oasis3mct//namcouple
+    config_targets:
+        cf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/cf_name_table.txt
+        namcouple: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namcouple
+    coupling_directions:
+        atmo->opac:
+            export_mode: EXPORTED
+            lag: 450
+            seq: 3
+        atmo->opat:
+            export_mode: EXPORTED
+            lag: 450
+            seq: 3
+        opat->atmo:
+            lag: 1800
+            seq: 3
+    coupling_methods:
+        bicubic:
+            remapping:
+            -   bicubic:
+                    nb_of_search_bins: 40
+                    search_bin: latitude
+            -   mapping:
+                    map_regrid_on: src
+                    mapname: rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
+            time_transformation: instant
+        conserv:
+            remapping:
+            -   conserv:
+                    nb_of_search_bins: 40
+                    normalization: fracnnei
+                    order: first
+                    search_bin: latitude
+            -   mapping:
+                    map_regrid_on: dst
+                    mapname: rmp_opat_to_atmo_CONSERV_FRACNNEI_T63_ORCA05.nc
+            time_transformation: average
+        conserv2:
+            remapping:
+            -   conserv:
+                    nb_of_search_bins: 40
+                    normalization: fracnnei
+                    order: first
+                    search_bin: latitude
+            -   mapping:
+                    map_regrid_on: src
+                    mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+            time_transformation: instant
+        conserv3:
+            postprocessing:
+                conserv:
+                    method: glbpos
+            remapping:
+            -   conserv:
+                    nb_of_search_bins: 40
+                    normalization: fracnnei
+                    order: first
+                    search_bin: latitude
+            -   mapping:
+                    map_regrid_on: src
+                    mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+            time_transformation: instant
+        conserv4:
+            postprocessing:
+                conserv:
+                    method: global
+            remapping:
+            -   conserv:
+                    nb_of_search_bins: 40
+                    normalization: fracnnei
+                    order: first
+                    search_bin: latitude
+            -   mapping:
+                    map_regrid_on: src
+                    mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+            time_transformation: instant
+    coupling_target_fields:
+        flxatmos:
+        - O_OTaux1 <--bicubic-- A_OTaux1
+        - O_OTauy1 <--bicubic-- A_OTauy1
+        - O_ITaux1 <--bicubic-- A_ITaux1
+        - O_ITauy1 <--bicubic-- A_ITauy1
+        - O_QsrIce <--conserv2-- A_QsrIce
+        - O_QsrMix <--conserv3-- A_QsrMix
+        - O_QnsIce <--conserv2-- A_QnsIce
+        - O_QnsMix <--conserv3-- A_QnsMix
+        - OTotRain <--conserv4-- ATotRain
+        - OTotSnow <--conserv2-- ATotSnow
+        - OIceEvap <--conserv2-- AIceEvap
+        - O_dQnsdT <--conserv2-- A_dQnsdT
+        sstocean:
+        - AIceFrac <--conserv-- OIceFrac
+        - A_SSTSST <--conserv-- O_SSTSST
+        - A_TepIce <--conserv-- O_TepIce
+        - A_IceTck <--conserv-- O_IceTck
+        - A_SnwTck <--conserv-- O_SnwTck
+        - A_OCurx1 <--conserv-- O_OCurx1
+        - A_OCury1 <--conserv-- O_OCury1
+    coupling_time_step: 10800
+    debug_info:
+        loaded_from_file: /home/hbkmandr/esm_tools/configs//components/oasis3mct/oasis3mct.yaml
+    destination: oasis
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/oasis3mct/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/oasis3mct/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/oasis3mct/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/oasis3mct/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/oasis3mct/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/oasis3mct/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/oasis3mct/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/oasis3mct/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/oasis3mct/
+    export_mode_a2o: EXPORTED
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    ignore_intermediate:
+        nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/oasis3mct/nout.000000
+    ignore_sources:
+        nout: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//nout.000000
+    ignore_sources_wild_card:
+        debug.notroot: debug.notroot*
+        debug.root: debug.root*
+        lucia: lucia.*
+    ignore_targets:
+        nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/oasis3mct/nout.000000
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//
+    ini_parent_exp_id: unset
+    input_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05/
+    input_intermediate:
+        areas: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/areas.nc
+        grids: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/grids.nc
+        masks: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/masks.nc
+        rmp_a2n_B: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
+        rmp_a2n_C: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+        rmp_n2a_C: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/rmp_opat_to_atmo_CONSERV_FRACNNEI_T63_ORCA05.nc
+    input_sources:
+        areas: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//areas_T63_ORCA05_frac.nc
+        grids: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//grids_T63_ORCA05_frac.nc
+        masks: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//masks_T63_ORCA05_frac.nc
+        rmp_a2n_B: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
+        rmp_a2n_C: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+        rmp_n2a_C: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//rmp_opat_to_atmo_CONSERV_FRACNNEI_T63_ORCA05.nc
+    input_targets:
+        areas: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/areas.nc
+        grids: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/grids.nc
+        masks: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/masks.nc
+        rmp_a2n_B: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
+        rmp_a2n_C: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+        rmp_n2a_C: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/rmp_opat_to_atmo_CONSERV_FRACNNEI_T63_ORCA05.nc
+    install_libs:
+    - build/lib/psmile/libpsmile.a
+    - build/lib/psmile/mct/libmct.a
+    - build/lib/psmile/mct/mpeu/libmpeu.a
+    - build/lib/psmile/scrip/libscrip.a
+    last_parent_date: '1849-12-31T23:30:00'
+    leapyear: true
+    log_intermediate:
+        debug_nr1: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/debug_notroot.01
+        debug_nr2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/debug_notroot.02
+        debug_r1: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/debug.root.01
+        debug_r2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/debug.root.02
+        nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/nout.000000
+    log_sources:
+        debug_nr1: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//debug_notroot.01
+        debug_nr2: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//debug_notroot.02
+        debug_r1: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//debug.root.01
+        debug_r2: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//debug.root.02
+        nout: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//nout.000000
+    log_targets:
+        debug_nr1: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/debug_notroot.01
+        debug_nr2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/debug_notroot.02
+        debug_r1: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/debug.root.01
+        debug_r2: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/debug.root.02
+        nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/oasis3mct/nout.000000
+    lresume: true
+    mct_version: 2.8
+    model: oasis3mct
+    model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/oasis
+    norestart: F
+    o2a_lag: 1800
+    oasis_date_stamp: ''
+    outdata_intermediate:
+        AIceEvap_echam6_18.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/AIceEvap_echam6_18.nc
+        AIceFrac_echam6_01.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/AIceFrac_echam6_01.nc
+        ATotRain_echam6_16.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/ATotRain_echam6_16.nc
+        ATotSnow_echam6_17.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/ATotSnow_echam6_17.nc
+        A_ITaux1_echam6_10.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_ITaux1_echam6_10.nc
+        A_ITauy1_echam6_11.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_ITauy1_echam6_11.nc
+        A_IceTck_echam6_04.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_IceTck_echam6_04.nc
+        A_OCurx1_echam6_06.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_OCurx1_echam6_06.nc
+        A_OCury1_echam6_07.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_OCury1_echam6_07.nc
+        A_OTaux1_echam6_08.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_OTaux1_echam6_08.nc
+        A_OTauy1_echam6_09.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_OTauy1_echam6_09.nc
+        A_QnsIce_echam6_14.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_QnsIce_echam6_14.nc
+        A_QnsMix_echam6_15.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_QnsMix_echam6_15.nc
+        A_QsrIce_echam6_12.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_QsrIce_echam6_12.nc
+        A_QsrMix_echam6_13.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_QsrMix_echam6_13.nc
+        A_SSTSST_echam6_02.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_SSTSST_echam6_02.nc
+        A_SnwTck_echam6_05.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_SnwTck_echam6_05.nc
+        A_TepIce_echam6_03.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_TepIce_echam6_03.nc
+        A_dQnsdT_echam6_19.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/A_dQnsdT_echam6_19.nc
+        OIceEvap_oceanx_18.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/OIceEvap_oceanx_18.nc
+        OIceFrac_oceanx_01.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/OIceFrac_oceanx_01.nc
+        OTotRain_oceanx_16.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/OTotRain_oceanx_16.nc
+        OTotSnow_oceanx_17.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/OTotSnow_oceanx_17.nc
+        O_ITaux1_oceanx_10.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_ITaux1_oceanx_10.nc
+        O_ITauy1_oceanx_11.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_ITauy1_oceanx_11.nc
+        O_IceTck_oceanx_04.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_IceTck_oceanx_04.nc
+        O_OCurx1_oceanx_06.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_OCurx1_oceanx_06.nc
+        O_OCury1_oceanx_07.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_OCury1_oceanx_07.nc
+        O_OTaux1_oceanx_08.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_OTaux1_oceanx_08.nc
+        O_OTauy1_oceanx_09.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_OTauy1_oceanx_09.nc
+        O_QnsIce_oceanx_14.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_QnsIce_oceanx_14.nc
+        O_QnsMix_oceanx_15.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_QnsMix_oceanx_15.nc
+        O_QsrIce_oceanx_12.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_QsrIce_oceanx_12.nc
+        O_QsrMix_oceanx_13.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_QsrMix_oceanx_13.nc
+        O_SSTSST_oceanx_02.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_SSTSST_oceanx_02.nc
+        O_SnwTck_oceanx_05.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_SnwTck_oceanx_05.nc
+        O_TepIce_oceanx_03.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_TepIce_oceanx_03.nc
+        O_dQnsdT_oceanx_19.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/O_dQnsdT_oceanx_19.nc
+    outdata_sources:
+        AIceEvap_echam6_18.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//AIceEvap_echam6_18.nc
+        AIceFrac_echam6_01.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//AIceFrac_echam6_01.nc
+        ATotRain_echam6_16.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//ATotRain_echam6_16.nc
+        ATotSnow_echam6_17.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//ATotSnow_echam6_17.nc
+        A_ITaux1_echam6_10.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_ITaux1_echam6_10.nc
+        A_ITauy1_echam6_11.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_ITauy1_echam6_11.nc
+        A_IceTck_echam6_04.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_IceTck_echam6_04.nc
+        A_OCurx1_echam6_06.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_OCurx1_echam6_06.nc
+        A_OCury1_echam6_07.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_OCury1_echam6_07.nc
+        A_OTaux1_echam6_08.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_OTaux1_echam6_08.nc
+        A_OTauy1_echam6_09.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_OTauy1_echam6_09.nc
+        A_QnsIce_echam6_14.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_QnsIce_echam6_14.nc
+        A_QnsMix_echam6_15.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_QnsMix_echam6_15.nc
+        A_QsrIce_echam6_12.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_QsrIce_echam6_12.nc
+        A_QsrMix_echam6_13.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_QsrMix_echam6_13.nc
+        A_SSTSST_echam6_02.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_SSTSST_echam6_02.nc
+        A_SnwTck_echam6_05.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_SnwTck_echam6_05.nc
+        A_TepIce_echam6_03.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_TepIce_echam6_03.nc
+        A_dQnsdT_echam6_19.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//A_dQnsdT_echam6_19.nc
+        OIceEvap_oceanx_18.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//OIceEvap_oceanx_18.nc
+        OIceFrac_oceanx_01.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//OIceFrac_oceanx_01.nc
+        OTotRain_oceanx_16.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//OTotRain_oceanx_16.nc
+        OTotSnow_oceanx_17.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//OTotSnow_oceanx_17.nc
+        O_ITaux1_oceanx_10.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_ITaux1_oceanx_10.nc
+        O_ITauy1_oceanx_11.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_ITauy1_oceanx_11.nc
+        O_IceTck_oceanx_04.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_IceTck_oceanx_04.nc
+        O_OCurx1_oceanx_06.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_OCurx1_oceanx_06.nc
+        O_OCury1_oceanx_07.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_OCury1_oceanx_07.nc
+        O_OTaux1_oceanx_08.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_OTaux1_oceanx_08.nc
+        O_OTauy1_oceanx_09.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_OTauy1_oceanx_09.nc
+        O_QnsIce_oceanx_14.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_QnsIce_oceanx_14.nc
+        O_QnsMix_oceanx_15.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_QnsMix_oceanx_15.nc
+        O_QsrIce_oceanx_12.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_QsrIce_oceanx_12.nc
+        O_QsrMix_oceanx_13.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_QsrMix_oceanx_13.nc
+        O_SSTSST_oceanx_02.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_SSTSST_oceanx_02.nc
+        O_SnwTck_oceanx_05.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_SnwTck_oceanx_05.nc
+        O_TepIce_oceanx_03.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_TepIce_oceanx_03.nc
+        O_dQnsdT_oceanx_19.nc: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//O_dQnsdT_oceanx_19.nc
+    outdata_targets:
+        AIceEvap_echam6_18.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/AIceEvap_echam6_18.nc
+        AIceFrac_echam6_01.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/AIceFrac_echam6_01.nc
+        ATotRain_echam6_16.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/ATotRain_echam6_16.nc
+        ATotSnow_echam6_17.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/ATotSnow_echam6_17.nc
+        A_ITaux1_echam6_10.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_ITaux1_echam6_10.nc
+        A_ITauy1_echam6_11.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_ITauy1_echam6_11.nc
+        A_IceTck_echam6_04.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_IceTck_echam6_04.nc
+        A_OCurx1_echam6_06.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_OCurx1_echam6_06.nc
+        A_OCury1_echam6_07.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_OCury1_echam6_07.nc
+        A_OTaux1_echam6_08.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_OTaux1_echam6_08.nc
+        A_OTauy1_echam6_09.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_OTauy1_echam6_09.nc
+        A_QnsIce_echam6_14.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_QnsIce_echam6_14.nc
+        A_QnsMix_echam6_15.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_QnsMix_echam6_15.nc
+        A_QsrIce_echam6_12.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_QsrIce_echam6_12.nc
+        A_QsrMix_echam6_13.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_QsrMix_echam6_13.nc
+        A_SSTSST_echam6_02.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_SSTSST_echam6_02.nc
+        A_SnwTck_echam6_05.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_SnwTck_echam6_05.nc
+        A_TepIce_echam6_03.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_TepIce_echam6_03.nc
+        A_dQnsdT_echam6_19.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/A_dQnsdT_echam6_19.nc
+        OIceEvap_oceanx_18.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/OIceEvap_oceanx_18.nc
+        OIceFrac_oceanx_01.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/OIceFrac_oceanx_01.nc
+        OTotRain_oceanx_16.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/OTotRain_oceanx_16.nc
+        OTotSnow_oceanx_17.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/OTotSnow_oceanx_17.nc
+        O_ITaux1_oceanx_10.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_ITaux1_oceanx_10.nc
+        O_ITauy1_oceanx_11.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_ITauy1_oceanx_11.nc
+        O_IceTck_oceanx_04.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_IceTck_oceanx_04.nc
+        O_OCurx1_oceanx_06.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_OCurx1_oceanx_06.nc
+        O_OCury1_oceanx_07.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_OCury1_oceanx_07.nc
+        O_OTaux1_oceanx_08.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_OTaux1_oceanx_08.nc
+        O_OTauy1_oceanx_09.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_OTauy1_oceanx_09.nc
+        O_QnsIce_oceanx_14.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_QnsIce_oceanx_14.nc
+        O_QnsMix_oceanx_15.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_QnsMix_oceanx_15.nc
+        O_QsrIce_oceanx_12.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_QsrIce_oceanx_12.nc
+        O_QsrMix_oceanx_13.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_QsrMix_oceanx_13.nc
+        O_SSTSST_oceanx_02.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_SSTSST_oceanx_02.nc
+        O_SnwTck_oceanx_05.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_SnwTck_oceanx_05.nc
+        O_TepIce_oceanx_03.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_TepIce_oceanx_03.nc
+        O_dQnsdT_oceanx_19.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_dQnsdT_oceanx_19.nc
+    parent_date: '1849-12-31T23:52:30'
+    parent_expid: unset
+    parent_restart_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//
+    prev_date: '1849-12-31T23:45:00'
+    process_ordering:
+    - nemo
+    - echam
+    - xios
+    restart_in_intermediate:
+        flxatmos: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/flxatmos
+        sstocean: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/sstocean
+    restart_in_sources:
+        flxatmos: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//flxatmos_FOCI1.4.1-KJH001_18501231
+        sstocean: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//sstocean_FOCI1.4.1-KJH001_18501231
+    restart_in_targets:
+        flxatmos: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/flxatmos
+        sstocean: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/sstocean
+    restart_out_intermediate:
+        areas: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/areas.nc
+        flxatmos: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/flxatmos_foci-initial-piCtl-test_daily_restart_lowcpu_18500101
+        flxatmos_recv: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/flxatmos_recv
+        grids: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/grids.nc
+        masks: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/masks.nc
+        sstocean: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/sstocean_foci-initial-piCtl-test_daily_restart_lowcpu_18500101
+        sstocean_recv: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/sstocean_recv
+    restart_out_sources:
+        areas: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//areas.nc
+        flxatmos: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//flxatmos
+        flxatmos_recv: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//flxatmos_recv
+        grids: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//grids.nc
+        masks: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//masks.nc
+        sstocean: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//sstocean
+        sstocean_recv: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//sstocean_recv
+    restart_out_targets:
+        areas: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/areas.nc
+        flxatmos: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/flxatmos_foci-initial-piCtl-test_daily_restart_lowcpu_18500101
+        flxatmos_recv: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/flxatmos_recv
+        grids: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/grids.nc
+        masks: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/masks.nc
+        sstocean: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/sstocean_foci-initial-piCtl-test_daily_restart_lowcpu_18500101
+        sstocean_recv: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/restart/oasis3mct/sstocean_recv
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/oasis3mct/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/oasis3mct/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/oasis3mct/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/oasis3mct/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/oasis3mct/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/oasis3mct/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/oasis3mct/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/oasis3mct/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/oasis3mct/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/oasis3mct/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/oasis3mct/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/oasis3mct/
+    time_step: 900
+    use_lucia: false
+    version: 2.8
+xios:
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    archfile: ESMTOOLS_generic_intel
+    available_versions:
+    - 2.0_r982_ogcm
+    - 2.0_r982
+    - 2.5
+    - 2.5_r1910
+    - 2.5_r1910_oifs
+    - 2.5_r1910_ogcm
+    bin_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin
+    bin_intermediate:
+        server: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/xios/xios.x
+    bin_sources:
+        server: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/bin/xios.x
+    bin_targets:
+        server: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/xios.x
+    branch: esm-tools
+    clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
+    comp_command: export XIOS_TOPLEVEL=/scratch/usr/hbkmandr/testing//comp/foci/foci-default; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par --full  --job 24; cp bin/xios_server.exe bin/xios.x
+    config_intermediate:
+        domain_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/domain_def.xml
+        field_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/field_def.xml
+        file_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/file_def.xml
+        io_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/iodef.xml
+    config_sources:
+        domain_def: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/domain_def.xml
+        field_def: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/field_def.xml
+        file_def: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/file_def.xml
+        io_def: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00/iodef.xml
+    config_targets:
+        domain_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/domain_def.xml
+        field_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/field_def.xml
+        file_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/file_def.xml
+        io_def: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/iodef.xml
+    debug_info:
+        loaded_from_file:
+        - /home/hbkmandr/esm_tools/configs//components/xios/xios.yaml
+    destination: xios
+    environment_changes:
+        choose_computer.name:
+            ollie:
+                add_module_actions:
+                - unload netcdf
+                - load netcdf/4.4.1.1_intel_mpi
+    executable: xios.x
+    experiment_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/xios/
+    experiment_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/xios/
+    experiment_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/config/xios/
+    experiment_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/couple/xios/
+    experiment_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/forcing/xios/
+    experiment_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/ignore/xios/
+    experiment_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/input/xios/
+    experiment_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/xios/
+    experiment_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/mon/xios/
+    experiment_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/outdata/xios/
+    experiment_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/xios/
+    experiment_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/xios/
+    experiment_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/viz/xios/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    git-repository: https://git.geomar.de/foci/src/xios.git
+    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset//xios
+    ini_parent_exp_id: unset
+    install_bins: bin/xios.x
+    leapyear: true
+    lresume: false
+    metadata:
+        Authors: Yann Meurdesoif (yann.meurdesoif@cea.fr)
+        Description: A library dedicated to I/O management in climate codes.
+        Institute: IPSL and CEA
+        License: Please make sure you have a licence to use XIOS. In case you are unsure, please contact redmine...
+        Website: https://portal.enes.org/models/software-tools/xios
+    model: xios
+    nproc: 8
+    parent_date: '1850-01-01T00:00:00'
+    parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
+    parent_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/xios/
+    prev_date: '1850-01-01T00:00:00'
+    setup_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default
+    thisrun_analysis_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/analysis/xios/
+    thisrun_bin_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/bin/xios/
+    thisrun_config_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/
+    thisrun_couple_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/couple/xios/
+    thisrun_forcing_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/forcing/xios/
+    thisrun_ignore_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/xios/
+    thisrun_input_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/input/xios/
+    thisrun_log_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/xios/
+    thisrun_mon_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/mon/xios/
+    thisrun_outdata_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/outdata/xios/
+    thisrun_restart_in_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/xios/
+    thisrun_restart_out_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/restart/xios/
+    thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/xios/
+    use_oasis: ''
+    version: 2.0r982
+    xml_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00

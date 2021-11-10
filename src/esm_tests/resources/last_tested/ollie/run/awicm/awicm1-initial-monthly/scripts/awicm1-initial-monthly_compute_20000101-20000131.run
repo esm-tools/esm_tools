@@ -1,0 +1,71 @@
+#!/usr/bin/bash
+#SBATCH --partition=mpp
+#SBATCH --time=00:15:00
+#SBATCH --ntasks=864
+#SBATCH --output=/work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/awicm1-initial-monthly_awicm_compute_20000101-20000131.log --error=/work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/awicm1-initial-monthly_awicm_compute_20000101-20000131.log
+#SBATCH --job-name=awicm1-initial-monthly
+#SBATCH --mail-type=NONE
+
+module purge
+module load cmake
+module load udunits
+module load gribapi/1.28.0
+module unload intel.compiler
+module load intel.compiler
+module unload netcdf
+module load hdf5
+module load centoslibs cdo nco netcdf/4.6.2_intel
+module load automake
+module load python3/3.7.7_intel2020u2
+module load git
+module list
+module unload intel.mpi
+module load intel.mpi
+
+export LC_ALL=en_US.UTF-8
+export FC="mpiifort -mkl"
+export F77="mpiifort -mkl"
+export MPIFC=mpiifort
+export MPICC=mpiicc
+export CC=mpiicc
+export CXX=mpiicpc
+export HDF5ROOT=$HDF5_ROOT
+export NETCDFFROOT=$NETCDF_DIR
+export NETCDFROOT=$NETCDF_DIR
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib
+export PERL5LIB=/usr/lib64/perl5
+export LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"
+export LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+export XML2ROOT=/usr
+export ZLIBROOT=/usr
+export MPIROOT=${I_MPI_ROOT}/intel64
+export MPI_LIB=$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
+export PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH
+export AWI_FESOM_YAML='{'output_schedules': [{'vars': ['restart'], 'unit': 'm', 'first': 1, 'rate': 1}, {'vars': ['evs', 'fsitherm', 'hfds', 'opottemptend', 'pbo', 'prlq', 'prsn', 'rsdo', 'siarean', 'siareas', 'sidmassevapsubl', 'sidmasssi', 'sidmassth', 'sidmasstranx', 'sidmasstrany', 'siextentn', 'siextents', 'sifllatstop', 'sisnconc', 'sisnmass', 'sisnthick', 'sispeed', 'sivol', 'sivoln', 'sivols', 'soga', 'thetaoga', 'u2o', 'uo', 'uso', 'uto', 'v2o', 'vo', 'volo', 'vso', 'vto', 'w2o', 'wfo', 'wo', 'wso', 'wto', 'zossq', 'rho', 'uhice', 'uhsnow', 'urho', 'uv', 'vhice', 'vhsnow', 'virtual_salt', 'vrho'], 'unit': 'm', 'rate': 1}, {'vars': ['mlotst', 'omldamax', 'sic', 'sistrxdtop', 'sistrxubot', 'sistrydtop', 'sistryubot', 'sithick', 'sitimefrac', 'siu', 'siv', 'so', 'sos', 'tauuo', 'tauvo', 'thetao', 'tos', 'zos', 'flice', 'wnet', 'evap', 'runoff', 'thdgr', 'thdgrsn'], 'unit': 'd', 'rate': 1}, {'vars': ['tso'], 'unit': 's', 'rate': 12}, {'vars': ['lwrd', 'olat', 'olwout', 'osen', 'relax_salt', 'shum', 'tair', 'uwind', 'vwind'], 'unit': 'y', 'first': 1000, 'rate': 1}]}'
+export ACCOUNT=None
+export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/awicm/
+export MODEL_DIR=/work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 182796 - start >> /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log//awicm1-initial-monthly_awicm.log
+
+cd /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work/
+time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
+
+# Call to esm_runscript to start subjobs:
+# ['tidy']
+process=$! 
+# Comment the following line if you don't want esm_runscripts to restart:
+cd /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/scripts/
+esm_runscripts awicm1-initial-monthly.yaml -e awicm1-initial-monthly -t observe_compute -p ${process} -s 20000101 -r 1 -v  --open-run
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 182796 - done >> /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log//awicm1-initial-monthly_awicm.log
+
+wait

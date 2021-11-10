@@ -1,0 +1,115 @@
+general:
+    account: !ENV ${ACCOUNT}
+    setup_name: "awiesm"
+    version: "2.1-wiso"
+    compute_time: "01:00:00"
+    initial_date: "2001-01-01"
+    final_date: "2001-04-01"
+    base_dir: !ENV ${ESM_TESTING_DIR}
+    nmonth: 1
+    nyear: 0
+    use_venv: False
+
+    choose_computer.name:
+        mistral:
+            fesom_mesh: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/"
+            CDP: "/pf/a/a270064/work/AWIESM2.1-EXP/hydrography/"
+            jP: "/work/ba1066/a270061/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+            fnml: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/work_RC12_wiso/"
+            fpool: "/pool/data/AWICM/FESOM2"
+        ollie:
+            fesom_mesh: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+            CDP: "/home/ollie/mwerner/model_input/FESOM2/present-day/hydrography/"
+            jP: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+            fnml: "/home/ollie/mwerner/work/AWIESM_2_1_LR_concurrent_rad/work_RC12_wiso/"
+            fpool: "/home/ollie/xshi/work/input/"
+
+echam:
+    restart_rate: 1
+    restart_unit: "months"
+    nproca: 6
+    nprocb:  6
+    nprocar: 6
+    nprocbr: 6
+    lresume: 0
+    lwiso: True
+    lwiso_rerun: ${lresume}
+    nwiso: 3
+    lrad_async: True
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+    # ini_parent_exp_id: piw_zstar_swon
+    # ini_parent_date: "26811231"
+    # ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/echam/"
+
+awiesm:
+    postprocessing: true
+    scenario: "PALEO"
+    # NOTE: In a future version, model code will become part of the experiment
+    # tree and will be compiled for you...
+    version: "2.1-wiso"
+    model_dir: !ENV ${MODEL_DIR}
+
+fesom:
+    res: "CORE2"
+    pool_dir: ${general.fpool}
+    # NOTE: This will be incorporated into the pool at a later stage
+    mesh_dir: ${general.fesom_mesh}
+    namelist_dir: ${general.fnml}
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: 0
+    # ini_parent_exp_id: piw_zstar_swon
+    # ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/fesom/"
+    # ini_parent_date: "2681-12-31"
+    file_movements:
+            #forcing:
+            #all_directions: "link"
+        input:
+            all_directions: "link"
+    namelist_changes:
+        namelist.config:
+            paths:
+                # NOTE: This will be incorporated into the pool at a later stage
+                ClimateDataPath: ${general.CDP}
+                ForcingDataPath: remove_from_namelist
+                OpbndPath: remove_from_namelist
+                TideForcingPath: remove_from_namelist
+            restart_log:
+                restart_length_unit: "m"
+            run_config:
+                lwiso: True
+            inout:
+                restartflag: 'last'
+                output_length: 1
+                output_length_unit: 'm'
+                restart_length: "${restart_rate}"
+                restart_length_unit: "${restart_unit}"
+
+jsbach:
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+        jsbach_1850: ${general.jP}
+
+oasis3mct:
+    lresume: 0
+    # ini_parent_exp_id: "piw_zstar_swon"
+    # ini_parent_date: "26811231"
+    # ini_parent_dir: "/home/ollie/xshi/work/AWIESM_2_1_LR_concurrent_rad/piw_zstar_swon/restart/oasis3mct/"
+
+hdmodel:
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+            

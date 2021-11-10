@@ -1,24 +1,21 @@
+from dataclasses import dataclass
+import collections.abc
+import copy
+import difflib
+import glob
 import os
-import sys
-import subprocess
-import argparse
-import math
-import yaml
+import pathlib
 import re
 import shutil
+import subprocess
 import time
-import glob
-import difflib
-import copy
 import colorama
-import regex as re
-import collections.abc
-
+import yaml
+from esm_parser import determine_computer_from_hostname
+from esm_runscripts import color_diff
 from loguru import logger
 
-from esm_runscripts import color_diff
-from esm_parser import determine_computer_from_hostname
-
+from .read_shipped_data import *
 
 # Bold strings
 bs = "\033[1m"
@@ -27,55 +24,141 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
 
+
 #######################################################################################
 # INITIALIZATION
 #######################################################################################
+
+
+class Comparison:
+    """Compares two ESM Tools files"""
+
+    def __init__(self, test_file, truth_file):
+        """
+        Parameters
+        ----------
+        test_file : str
+            str representation (already opened and read in) of the file (e.g.
+            run file, compilatoin script, namelist) which you want to check
+        truth_file : str
+            str representation of the file which is known to be a valid truth.
+        """
+        self.test_file = test_file
+        self.truth_file = truth_file
+
+    @classmethod
+    def from_filepaths(cls, test_file, truth_file):
+        with open(test_file, "r") as f1:
+            test_file = f1.read()
+        with open(test_file, "r") as f2:
+            truth_file = f2.read()
+        return cls(test_file, truth_file)
+
+    @classmethod
+    def from_test_filepath_and_pkg(cls, test_file, truth_file):
+        """
+        Given a test filepath, and a relative truth path, return a new Comparison.
+
+        For the relative truth path, we are reading from the package. So,
+        assuming you want to use the following as your truth:
+
+        >>> truth_file = "ollie/run/awicm/awicm2-initial-monthly/scripts/awicm2-initial-monthly_compute_20000101 -20000131.run"
+
+        This would check the run file for a run of awicm using a awicm2
+        initialization with monthly restarts which is run on the ollie HPC.
+        """
+        # get last tested (Truth)
+        with open(test_file, "r") as f:
+            test_file = f1.read()
+        truth_file = read_shipped_data.get_last_tested(truth_file)
+        return cls(test_file, truth_file)
+
+
+class CompileFileComparison(Comparison):
+    pass
+
+
+class SadFileComparison(Comparison):
+    pass
+
+
+class FinishedESMConfigComparison(Comparison):
+    pass
+
+
+def NamelistsComparison(Comparison):
+    pass
+
+
 def user_config(info):
     # Check for user configuration file
     user_config = f"{info['script_dir']}/user_config.yaml"
-    print()
+    logger.info("")
     if not os.path.isfile(user_config):
         # Make the user configuration file
         answers = {}
-        print(
-            "{bs}Welcome to ESM-Tests! Automatic testing for ESM-Tools devs\n"
-            + "**********************************************************{be}\n"
+        logger.info(
+            f"{bs}Welcome to ESM-Tests! Automatic testing for ESM-Tools devs\n"
+            + f"**********************************************************{be}\n"
             + "Please answer the following questions. If you ever need to change the "
             + "configuration, you can do that in the the esm_tests/user_config.yaml\n"
         )
-        answers["account"] = input(
-            "What account will you be using for testing? (default: None) "
-        )
+        try:
+            answers["account"] = input(
+                "What account will you be using for testing? (default: None) "
+            )
+        except EOFError:
+            if os.environ.get("CI"):
+                logger.info(
+                    "This is probably running on the CI System. We will default to None"
+                )
+                answers["account"] = None
+            else:
+                raise
         if not answers["account"] or answers["account"] == "None":
             answers["account"] = None
-        answers["test_dir"] = input(
-            "In which directory would you like to run the tests? "
-        )
+        try:
+            answers["test_dir"] = input(
+                "In which directory would you like to run the tests? "
+            )
+        except EOFError:
+            if os.environ.get("CI"):
+                logger.info(
+                    f"This is probably running on the CI System. We will default to {os.getcwd()}"
+                )
+                answers["test_dir"] = os.getcwd()
+            else:
+                raise
         with open(user_config, "w") as uc:
+            logger.debug("Writing file")
             out = yaml.dump(answers)
             uc.write(out)
+            logger.debug(f"Done: {uc}")
 
     # Load the user info
     with open(user_config, "r") as uc:
         user_info = yaml.load(uc, Loader=yaml.FullLoader)
-    print(f"{bs}Running tests with the following configuration:{be}")
-    print(f"{bs}-----------------------------------------------{be}")
+    logger.info(f"{bs}Running tests with the following configuration:{be}")
+    logger.info(f"{bs}-----------------------------------------------{be}")
     yprint(user_info)
 
     return user_info
 
 
 def get_scripts(info):
-    runscripts_dir = f"{info['script_dir']}/runscripts/"
+    for key, value in info.items():
+        logger.debug(f"key {key}: value {value}")
+    runscripts_dir = get_runscripts_dir()
     scripts_info = {}
     ns = 0
     # Load test info
-    test_config = f"{info['script_dir']}/test_config.yaml"
+    test_config = f"{info.get('script_dir', os.getcwd())}/test_config.yaml"
     if os.path.isfile(test_config):
         with open(test_config, "r") as t:
             test_info = yaml.load(t, Loader=yaml.FullLoader)
     else:
         test_info = {}
+    logger.debug(test_info)
     if len(test_info) > 0:
         test_all = False
     else:
@@ -119,7 +202,10 @@ def read_info_from_rs(scripts_info):
         for script, v in scripts.items():
             with open(v["path"], "r") as rs:
                 runscript = yaml.load(rs, Loader=yaml.SafeLoader)
-            v["version"] = runscript[model]["version"]
+            v["version"] = runscript["general"].get(
+                "comp_version", runscript[model]["version"]
+            )
+            v["comp_command"] = runscript["general"].get("comp_command", None)
 
     return scripts_info
 
@@ -149,7 +235,7 @@ def del_prev_tests(info, scripts_info):
 # FUNCTIONALITIES
 #######################################################################################
 def yprint(pdict):
-    print(yaml.dump(pdict, default_flow_style=False))
+    logger.info(yaml.dump(pdict, default_flow_style=False))
 
 
 def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
@@ -209,16 +295,22 @@ def combine_folders(source_dir, target_dir):
 def comp_test(scripts_info, info):
     cd_format = re.compile("         cd (.*)")
     user_info = info["user"]
+    this_computer = info["this_computer"]
 
     c = 0
     for model, scripts in scripts_info.items():
         if model == "general":
             continue
         for script, v in scripts.items():
+            if info["hold"] and c != 0:
+                input("Press ENTER to continue...")
             c += 1
             progress = round(c / scripts_info["general"]["num_scripts"] * 100, 1)
             version = v["version"]
-            comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
+            if v["comp_command"]:
+                comp_command = f"{v['comp_command']} --no-motd -k"
+            else:
+                comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
             logger.info(f"\tCOMPILING ({progress}%) {model}-{version}:")
@@ -234,11 +326,35 @@ def comp_test(scripts_info, info):
             else:
                 # Gets the source code if actual compilation is required
                 if info["actually_compile"]:
-                    get_command = f"esm_master get-{model}-{version} --no-motd"
-                    logger.info("\t\tDownloading")
-                    out = sh(get_command)
-                    if "Traceback (most recent call last):" in out:
-                        logger.error(f"\t\t\tProblem downloading!\n\n{out}")
+                    # Downloading or copying
+                    with open(f"{os.path.dirname(v['path'])}/config.yaml", "r") as cf:
+                        config_test = yaml.load(cf, Loader=yaml.FullLoader)
+                    copying = (
+                        config_test["comp"]
+                        .get("cp_instead_of_download", {})
+                        .get(this_computer, {})
+                        .get(f"{model}-{version}")
+                    )
+                    if copying:
+                        logger.info("\t\tCopying")
+                        out = ""
+                        if os.path.isdir(copying):
+                            shutil.copytree(copying, general_model_dir)
+                        else:
+                            shutil.copy2(copying, general_model_dir)
+                        if copying.endswith("tar.gz"):
+                            logger.info("\t\tUntaring")
+                            file2untar = (
+                                f"{general_model_dir}/{os.path.basename(copying)}"
+                            )
+                            out += sh(f"tar -xvf {file2untar}")
+                            os.remove(file2untar)
+                    else:
+                        get_command = f"esm_master get-{model}-{version} --no-motd"
+                        logger.info("\t\tDownloading")
+                        out = sh(get_command)
+                        if "Traceback (most recent call last):" in out:
+                            logger.error(f"\t\t\tProblem downloading!\n\n{out}")
                 # For no compilation trick esm_master into thinking that the source code has been downloaded
                 else:
                     # Evaluate and create folders to trick esm_master
@@ -311,6 +427,8 @@ def run_test(scripts_info, info):
         if model == "general":
             continue
         for script, v in scripts.items():
+            if info["hold"] and c != 0:
+                input("Press ENTER to continue...")
             c += 1
             progress = round(c / scripts_info["general"]["num_scripts"] * 100, 1)
             version = v["version"]
@@ -379,13 +497,10 @@ def run_test(scripts_info, info):
             exp_dir = f"{user_info['test_dir']}/run/{model}/{script}/"
             exp_dir_log = f"{exp_dir}/log/"
             for f in os.listdir(exp_dir_log):
-                if "_tidy_" in f and ".log" in f:
+                if "_compute_" in f and ".log" in f:
                     with open(f"{exp_dir_log}/{f}") as m:
-                        monitoring_out = m.read()
-                        if (
-                            "Reached the end of the simulation, quitting"
-                            in monitoring_out
-                        ):
+                        observe_out = m.read()
+                        if "Reached the end of the simulation, quitting" in observe_out:
                             logger.info(
                                 f"\tRUN FINISHED ({progress}%) {model}/{script}"
                             )
@@ -402,7 +517,7 @@ def run_test(scripts_info, info):
                                 script,
                                 v,
                             )
-                        elif "ERROR:" in monitoring_out:
+                        elif "ERROR:" in observe_out:
                             logger.info(
                                 f"\tRUN FINISHED ({progress}%) {model}/{script}"
                             )
@@ -664,7 +779,10 @@ def extract_namelists(s_config_yaml):
 
     namelists = []
     for component in config.keys():
-        namelists.extend(config[component].get("namelists", []))
+        namelists_component = config[component].get("namelists", [])
+        for nml in namelists_component:
+            if nml in config[component].get("config_sources", {}):
+                namelists.append(nml)
 
     return namelists
 
@@ -719,7 +837,7 @@ def save_files(scripts_info, info, user_choice):
     actually_run = info["actually_run"]
     user_info = info["user"]
     last_tested_dir = info["last_tested_dir"]
-    runscripts_dir = f"{info['script_dir']}/runscripts/"
+    runscripts_dir = get_runscripts_dir()
     this_computer = info["this_computer"]
     if not user_choice:
         not_answered = True
@@ -801,30 +919,35 @@ def save_files(scripts_info, info, user_choice):
                             f"{last_tested_dir}/{this_computer}/{sp_t}",
                         )
     # Load current state
-    with open(f"{info['script_dir']}/state.yaml", "r") as st:
+    with open(get_state_yaml_path(), "r") as st:
         current_state = yaml.load(st, Loader=yaml.FullLoader)
     # Update with this results
     results = format_results(info, scripts_info)
     current_state = deep_update(current_state, results)
     current_state = sort_dict(current_state)
-    with open(f"{info['script_dir']}/state.yaml", "w") as st:
+    with open(get_state_yaml_path(), "w") as st:
         state = yaml.dump(current_state)
         st.write(state)
 
 
-def print_results(results):
+def print_results(results, info):
     colorama.init(autoreset=True)
 
-    print()
-    print()
-    print(f"{bs}RESULTS{be}")
-    print()
+    if info.get("bulletpoints", False):
+        bp = "- "
+    else:
+        bp = ""
+
+    logger.info("")
+    logger.info("")
+    logger.info(f"{bs}RESULTS{be}")
+    logger.info("")
     for model, versions in results.items():
-        print(f"{colorama.Fore.CYAN}{model}:")
+        logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
         for version, scripts in versions.items():
-            print(f"    {colorama.Fore.MAGENTA}{version}:")
+            logger.info(f"    {bp}{colorama.Fore.MAGENTA}{version}:")
             for script, computers in scripts.items():
-                print(f"        {colorama.Fore.WHITE}{script}:")
+                logger.info(f"        {bp}{colorama.Fore.WHITE}{script}:")
                 for computer, data in computers.items():
                     if data["compilation"]:
                         compilation = f"{colorama.Fore.GREEN}compiles"
@@ -834,11 +957,11 @@ def print_results(results):
                         run = f"{colorama.Fore.GREEN}runs"
                     else:
                         run = f"{colorama.Fore.RED}run failed"
-                    print(
-                        f"            {colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
+                    logger.info(
+                        f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
                     )
-    print()
-    print()
+    logger.info(f"{colorama.Fore.WHITE}")
+    logger.info("")
 
 
 def format_results(info, scripts_info):

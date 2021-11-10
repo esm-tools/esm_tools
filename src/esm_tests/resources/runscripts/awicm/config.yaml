@@ -1,0 +1,19 @@
+comp:
+        actual:
+                files:
+                    - "bin/fesom*"
+                    - "bin/echam6"
+        check: {}
+run:
+        actual:
+                errors:
+                    - "MISSING FILES"
+                files:
+                    - "restart/echam/restart*.nc*"
+                    - "restart/fesom/fesom.*.oce.restart.nc*"
+                    - "restart/fesom/fesom.*.ice.restart.nc*"
+                    - "outdata/echam/*"
+                    - "outdata/fesom/*.fesom.*.nc"
+        check: {}
+computer:
+        - ollie

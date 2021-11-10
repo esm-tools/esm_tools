@@ -1,0 +1,58 @@
+awicm:
+  '2.0':
+    awicm2-initial-monthly:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+awiesm:
+  2.1-recom:
+    all_awiesm-2.1-recom:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+  2.1-wiso:
+    PI_ctrl_awiesm-2.1-wiso:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+echam:
+  6.3.04p1:
+    echam6.3.04p1-initial-monthly:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+fesom:
+  2.0:
+    fesom2.0-initial-monthly:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+  2.1:
+    fesom2.1-initial-monthly:
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+fesom-recom:
+  1.4:
+    fesom-recom1.4-initial-daily:
+      ollie:
+        compilation: true
+        run: true

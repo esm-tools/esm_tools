@@ -1,0 +1,38 @@
+general:
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "default"
+
+   compute_time: "00:15:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   postprocessing: 0
+   nday: 1
+
+   # machine specific setup
+   account: !ENV ${ACCOUNT}
+   base_dir: !ENV ${ESM_TESTING_DIR}
+
+foci:
+   model_dir: !ENV ${MODEL_DIR}
+   version: "default"
+
+echam:
+   scenario: "PI-CTRL"
+   resolution: "T63"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproca: 8
+   nprocb: 4
+
+nemo:
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproc: 24
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   #
+xios:
+   nproc: 8

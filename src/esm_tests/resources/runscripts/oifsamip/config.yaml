@@ -1,0 +1,26 @@
+comp:
+        actual:
+                files:
+                    - "bin/oifs"
+                    - "bin/amip"
+        check: {}
+run:
+        actual:
+                errors:
+                    - "MISSING FILES"
+                files:
+                    - "restart/oasis3mct/rmp_*"
+                    - "restart/oasis3mct/rstos.nc*"
+                    - "restart/oifs/*/BLS*"
+                    - "restart/oifs/*/LAW*"
+                    - "restart/oifs/*/rcf"
+                    - "restart/oifs/*/srf*"
+                    - "restart/oifs/*/waminfo*"
+                    - "outdata/oifs/*/ICMGG*"
+                    - "outdata/oifs/*/ICMSH*"
+                    - "outdata/oifs/*/ICMUA*"
+        check: {}
+computer:
+        - ollie
+        - mistral
+        - juwels

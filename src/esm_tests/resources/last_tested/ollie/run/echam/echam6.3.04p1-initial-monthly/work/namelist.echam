@@ -1,0 +1,143 @@
+&runctl
+    dt_start = 2000, 1, 1
+    dt_stop = 2000, 2, 1
+    putrerun = 1, 'months', 'first', 0
+    lfractional_mask = .false.
+    lresume = .false.
+    out_datapath = '/work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work/'
+    out_expname = 'echam6.3.04p1-initial-monthly'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'months', 'last', 0
+    nproma = 8
+    lcouple = .false.
+    getocean = 1, 'days', 'last', 0
+    putocean = 1, 'days', 'last', 0
+    lcouple_co2 = .true.
+    default_output = .false.
+    dt_resume = 2000, 1, 1
+/
+
+&parctl
+    nproca = 24
+    nprocb = 24
+/
+
+&submodelctl
+    lmethox = .true.
+/
+
+&submdiagctl
+    vphysc_lpost = .false.
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'spim'
+    source = 'sp'
+    variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'glim'
+    source = 'gl'
+    variables = 'xl:mean', 'xi:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'aclcim'
+    source = 'g3b'
+    variables = 'aclc:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'g3bim'
+    source = 'g3b'
+    variables = 't2min:min', 't2max:max', 'topmax:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'glday'
+    source = 'gl'
+    variables = 'q:mean'
+/
+
+&mvstreamctl
+    target = 'g3bday'
+    interval = 1, 'days', 'last', 0
+    source = 'g3b'
+    meannam = 'tslm1', 'tsi'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'g3bid'
+    source = 'g3b'
+    variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 'albedo:mean',
+                'dew2:mean', 'ws:mean', 'sn:mean', 'wimax:max', 't2min:min',
+                't2max:max'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'jsbid'
+    source = 'jsbach'
+    variables = 'layer_moisture:mean'
+/
+
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'sp6h'
+    source = 'sp'
+    variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'hours', 'last', 0
+    target = 'g3b1hi'
+    source = 'g3b'
+    variables = 'u10:inst', 'v10:inst', 'wimax:max'
+/
+
+&set_stream_element
+    stream = 'aclcim'
+    name = 'aclc'
+    code = 162
+    lpost = 1
+/
+
+&set_stream
+    stream = 'jsbach'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'land'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'veg'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'yasso'
+    lpost = 0
+/
+
+&radctl
+    iaero = 3
+    io3 = 4
+    isolrad = 6
+    ich4 = 3
+    in2o = 3
+    co2vmr = 0.000284316986084
+    ch4vmr = 8.082490234375e-07
+    n2ovmr = 2.730210571289e-07
+    yr_perp = 1850
+/

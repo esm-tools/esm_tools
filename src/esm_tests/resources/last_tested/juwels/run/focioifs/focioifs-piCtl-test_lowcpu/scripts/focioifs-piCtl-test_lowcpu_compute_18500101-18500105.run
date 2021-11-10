@@ -1,0 +1,75 @@
+#!/usr/bin/bash
+#SBATCH --partition=devel
+#SBATCH --time=01:00:00
+#SBATCH --ntasks=80
+#SBATCH --output=/p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log/focioifs-piCtl-test_lowcpu_focioifs_compute_18500101-18500105.log --error=/p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log/focioifs-piCtl-test_lowcpu_focioifs_compute_18500101-18500105.log
+#SBATCH --job-name=focioifs-piCtl-test_lowcpu
+#SBATCH --account=hhb19
+#SBATCH --mail-type=NONE
+#SBATCH --ntasks-per-core=1
+#SBATCH --exclusive
+
+module --force purge
+module use $OTHERSTAGES
+module load Stages/2020
+module load Intel/2020.2.254-GCC-9.3.0
+module load ParaStationMPI/5.4.7-1
+module load CMake
+module load Python/3.8.5
+module load imkl/2020.2.254
+
+export LC_ALL=en_US.UTF-8
+export PROJECT=/p/project/hirace
+export FC=mpifort
+export F77=mpifort
+export MPIFC=mpifort
+export FCFLAGS=-free
+export CC=mpicc
+export CXX=mpic++
+export MPIROOT="$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+export MPI_LIB="$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+export IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+export PATH=$IO_LIB_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5ROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+export OIFS_FFIXED=""
+export GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+export DR_HOOK_IGNORE_SIGNALS=-1
+export FOCI_USE_CPLNG="active"
+export FESOM_USE_CPLNG="no"
+export ECE_USE_CPLNG="no"
+export ACCOUNT=hhb19
+export ESM_TESTING_DIR=/p/scratch/chhb19/mandresm/testing//run/focioifs/
+export MODEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 23600 - start >> /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
+
+cd /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/
+time srun -l  --multi-prog hostfile_srun 2>&1 &
+
+# Call to esm_runscript to start subjobs:
+# ['tidy']
+process=$! 
+# Comment the following line if you don't want esm_runscripts to restart:
+cd /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/scripts/
+esm_runscripts focioifs-piCtl-test_lowcpu.yaml -e focioifs-piCtl-test_lowcpu -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 23600 - done >> /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
+
+wait

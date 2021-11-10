@@ -1,0 +1,72 @@
+#!/usr/bin/bash
+#SBATCH --partition=devel
+#SBATCH --time=00:30:00
+#SBATCH --ntasks=64
+#SBATCH --output=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_compute_19790101-19790101.log --error=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_compute_19790101-19790101.log
+#SBATCH --job-name=oifs-43r3-tco95-amip-test_lowcpu
+#SBATCH --account=hhb19
+#SBATCH --mail-type=NONE
+#SBATCH --ntasks-per-core=1
+#SBATCH --exclusive
+
+module --force purge
+module use $OTHERSTAGES
+module load Stages/2020
+module load Intel/2020.2.254-GCC-9.3.0
+module load ParaStationMPI/5.4.7-1
+module load CMake
+module load Python/3.8.5
+module load imkl/2020.2.254
+
+export LC_ALL=en_US.UTF-8
+export PROJECT=/p/project/hirace
+export FC=mpifort
+export F77=mpifort
+export MPIFC=mpifort
+export FCFLAGS=-free
+export CC=mpicc
+export CXX=mpic++
+export MPIROOT="$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+export MPI_LIB="$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+export IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+export PATH=$IO_LIB_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5ROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+export ACCOUNT=hhb19
+export MODEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+export ESM_TESTING_DIR=/p/scratch/chhb19/mandresm/testing//run/oifs/
+export OIFS_FFIXED=""
+export GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+export DR_HOOK_IGNORE_SIGNALS=-1
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 23944 - start >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+
+cd /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
+time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
+
+# Call to esm_runscript to start subjobs:
+# ['tidy']
+process=$! 
+# Comment the following line if you don't want esm_runscripts to restart:
+cd /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/scripts/
+esm_runscripts oifs-43r3-tco95-amip-test_lowcpu.yaml -e oifs-43r3-tco95-amip-test_lowcpu -t observe_compute -p ${process} -s 19790101 -r 1 -v  --open-run
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 23944 - done >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+
+wait

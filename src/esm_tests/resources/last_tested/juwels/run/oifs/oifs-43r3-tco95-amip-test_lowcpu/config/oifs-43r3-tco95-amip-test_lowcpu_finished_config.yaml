@@ -1,0 +1,1606 @@
+computer:
+    account: None
+    accounting: true
+    accounting_flag: --account=hhb19
+    actual_script_dir: <--methods.script_dir--
+    additional_flags: ''
+    batch_system: slurm
+    cc: $CC
+    check_error:
+        'slurmstepd: error: execve():':
+            file: stdout
+            frequency: 600
+            message: 'SLURM ERROR: slurm probably didn''t find executable'
+            method: kill
+        'srun: error:':
+            file: stdout
+            frequency: 30
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            method: kill
+    compiler_mpi: intel2020_parastation
+    config_files:
+        hostfile: hostfile_srun
+    cpu_bind: cores
+    cxx: $CXX
+    debug_info:
+        loaded_from_file:
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//machines/juwels.yaml
+    debugger: None
+    debugger_flags_prelauncher: ''
+    exclusive_flag: --exclusive
+    execution_command: srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun
+    export_vars:
+        CC: mpicc
+        CXX: mpic++
+        ECCODESROOT: $IO_LIB_ROOT
+        F77: mpifort
+        FC: mpifort
+        FCFLAGS: -free
+        HDF5ROOT: $IO_LIB_ROOT
+        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+        HDF5_ROOT: $HDF5ROOT
+        IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+        LC_ALL: en_US.UTF-8
+        LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+        MPIFC: mpifort
+        MPIROOT: '"$(mpifort -show | perl -lne ''m{ -I(.*?)/include } and print $1'')"'
+        MPI_LIB: '"$(mpifort -show |sed -e ''s/^[^ ]*//'' -e ''s/-[I][^ ]*//g'')"'
+        NETCDFFROOT: $IO_LIB_ROOT
+        NETCDFROOT: $IO_LIB_ROOT
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+        PATH: $IO_LIB_ROOT/bin:$PATH
+        PROJECT: /p/project/hirace
+        SZIPROOT: $IO_LIB_ROOT
+    fc: $FC
+    header_start: '#SBATCH'
+    heterogeneous_parallelization: false
+    hostname_list: DUMMY_HOST1 DUMMY_HOST2
+    hyperthreading_flag: --ntasks-per-core=1
+    iolibraries: geomar_libs
+    jobtype: unknown
+    launcher: srun
+    launcher_flags: -l --kill-on-bad-exit=1 --cpu_bind=cores
+    logical_cpus_per_core: 2
+    mail1: --mail-type=NONE
+    mail2: ''
+    mail_type: NONE
+    model: computer
+    module_actions:
+    - --force purge
+    - use $OTHERSTAGES
+    - load Stages/2020
+    - load Intel/2020.2.254-GCC-9.3.0
+    - load ParaStationMPI/5.4.7-1
+    - load CMake
+    - load Python/3.8.5
+    - load imkl/2020.2.254
+    mpicc: $MPICC
+    mpifc: $MPIFC
+    name: juwels
+    name_flag: --job-name=oifs-43r3-tco95-amip-test_lowcpu
+    nodes_flag: --nodes=@nodes@
+    notification_flag: --mail-type=NONE
+    output_flags: --output=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_@jobtype@_19790101-19790101.log --error=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_@jobtype@_19790101-19790101.log
+    output_path: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/
+    overcommit_flag: ''
+    overcommit_nodes: None
+    overcommit_rule: ''
+    partition: devel
+    partition_cpn: 48
+    partition_flag: --partition=@partition@
+    partition_name: devel
+    partitions:
+        compute:
+            cores_per_node: 48
+            name: devel
+        pp:
+            cores_per_node: 48
+            name: devel
+    pool_dir: /pool/data/not/available/on/juwels
+    pool_directories:
+        focipool: /p/project/hirace/foci_input2
+        pool: /pool/data/not/available/on/juwels
+    runtime_environment_changes:
+        add_export_vars:
+            ACCOUNT: hhb19
+            ESM_TESTING_DIR: /p/scratch/chhb19/mandresm/testing//run/oifs/
+            MODEL_DIR: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+    script_name: <--methods.scriptname--
+    sh_interpreter: /usr/bin/bash
+    single_proc_submit_flag: --ntasks-per-node=1
+    submit: sbatch
+    submitted: false
+    tasks_flag: --ntasks=@tasks@
+    thisrun_logfile: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_@jobtype@_19790101-19790101.log
+    threads_per_core: 1
+    time_flag: --time=00:30:00
+    use_hyperthreading: false
+debug_info:
+    loaded_from_file: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/scripts/oifs-43r3-tco95-amip-test_lowcpu.yaml
+defaults:
+    clean_command: rm -rf build CMakeCache.txt
+    comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+    debug_info:
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/download_and_compile.yaml
+general:
+    account: hhb19
+    additional_files: []
+    all_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - work
+    all_model_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    base_dir: /p/scratch/chhb19/mandresm/testing//run/oifs/
+    batch: slurm
+    calendar: esm_calendar object with allowed leap years
+    check: false
+    chunk_number: 1
+    command_line_config:
+        check: false
+        current_date: null
+        expid: oifs-43r3-tco95-amip-test_lowcpu
+        inspect: null
+        jobtype: prepcompute
+        launcher_pid: -666
+        no_motd: true
+        original_command: oifs-43r3-tco95-amip-test_lowcpu.yaml -e oifs-43r3-tco95-amip-test_lowcpu --open-run --no-motd
+        profile: false
+        run_number: null
+        runscript_abspath: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/scripts/oifs-43r3-tco95-amip-test_lowcpu.yaml
+        scriptname: oifs-43r3-tco95-amip-test_lowcpu.yaml
+        started_from: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/scripts/
+        update: false
+        use_venv: false
+        verbose: false
+    comp_command: esm_master comp-oifs-43r3-v1
+    comp_version: 43r3-v1
+    compute_time: 00:30:00
+    current_date: '1979-01-01T00:00:00'
+    debug_info:
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/general.yaml
+    defaults.yaml:
+        debug_info:
+            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+        per_model_defaults: {}
+    delta_date:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    end_date: '1979-01-01T00:00:00'
+    esm_function_dir: FUNCTION_PATH
+    esm_namelist_dir: NAMELIST_PATH
+    esm_runscript_dir: RUNSCRIPT_PATH
+    experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/analysis/
+    experiment_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/config/
+    experiment_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/couple/
+    experiment_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu
+    experiment_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/ignore/
+    experiment_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/
+    experiment_log_file: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+    experiment_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/mon/
+    experiment_scripts_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/scripts/
+    experiment_src_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/src/
+    experiment_unknown_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/unknown/
+    expid: oifs-43r3-tco95-amip-test_lowcpu
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    final_date: '1979-01-03T00:00:00'
+    first_run_in_chunk: true
+    in_filetypes:
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
+    initial_date: '1979-01-01T00:00:00'
+    inspect: null
+    jobid: 23944
+    jobtype: prepcompute
+    last_run_datestamp: 19781231-19781231
+    last_run_in_chunk: false
+    last_start_date: '1978-12-31T00:00:00'
+    launcher_pid: -666
+    leapyear: true
+    logfile_path: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs_prepcompute_19790101-19790101.log
+    logfile_path_in_run: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log//oifs-43r3-tco95-amip-test_lowcpu_oifs_prepcompute_19790101-19790101.log
+    model_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+    models:
+    - xios
+    - oifs
+    nday: 1
+    next_date: '1979-01-02T00:00:00'
+    nhour: 0
+    nminute: 0
+    nmonth: 0
+    no_motd: true
+    nsecond: 0
+    nyear: 0
+    original_command: oifs-43r3-tco95-amip-test_lowcpu.yaml -e oifs-43r3-tco95-amip-test_lowcpu --open-run --no-motd
+    out_filetypes:
+    - analysis
+    - log
+    - mon
+    - scripts
+    - ignore
+    - unknown
+    - outdata
+    - restart_out
+    prev_date: '1978-12-31T00:00:00'
+    profile: false
+    relevant_filetypes:
+    - bin
+    - config
+    - forcing
+    - input
+    - restart_in
+    reset_calendar_to_last: false
+    restart_rate: 1
+    restart_unit: days
+    reusable_filetypes:
+    - bin
+    - src
+    run_datestamp: 19790101-19790101
+    run_number: 1
+    runscript_abspath: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/scripts/oifs-43r3-tco95-amip-test_lowcpu.yaml
+    runtime:
+    - 0
+    - 0
+    - 1
+    - 24
+    - 1440
+    - 86400
+    scriptname: oifs-43r3-tco95-amip-test_lowcpu.yaml
+    setup_name: oifs
+    standalone: true
+    start_date: '1979-01-01T00:00:00'
+    started_from: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/scripts/
+    submitted: false
+    thisrun_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/analysis/
+    thisrun_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/
+    thisrun_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/couple/
+    thisrun_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101
+    thisrun_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/ignore/
+    thisrun_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log/
+    thisrun_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/mon/
+    thisrun_scripts_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/scripts/
+    thisrun_src_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/src/
+    thisrun_unknown_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/unknown/
+    thisrun_work_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
+    total_runtime:
+    - 0
+    - 0
+    - 1
+    - 24
+    - 1440
+    - 86400
+    update: false
+    use_database: false
+    use_venv: false
+    valid_model_names:
+    - oifs
+    - xios
+    valid_setup_names:
+    - computer
+    - general
+    verbose: false
+    work_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
+    workflow:
+        first_task_in_queue: prepcompute
+        last_task_in_queue: tidy
+        next_run_triggered_by: tidy
+        subjob_clusters:
+            compute:
+                batch_or_shell: batch
+                called_from: prepcompute
+                next_submit:
+                - tidy
+                nproc: 64
+                order_in_cluster: sequential
+                run_before: tidy
+                run_on_queue: devel
+                subjobs:
+                - compute_general
+                submit_to_batch_system: true
+            prepcompute:
+                batch_or_shell: SimulationSetup
+                called_from: tidy
+                next_submit:
+                - compute
+                nproc: 1
+                order_in_cluster: sequential
+                run_before: compute
+                subjobs:
+                - prepcompute_general
+                submit_to_batch_system: false
+            tidy:
+                batch_or_shell: SimulationSetup
+                called_from: compute
+                next_submit:
+                - prepcompute
+                nproc: 1
+                order_in_cluster: sequential
+                run_after: compute
+                subjobs:
+                - tidy_general
+                submit_to_batch_system: false
+        subjobs:
+            compute_general:
+                nproc: 64
+                run_before: tidy
+                run_on_queue: devel
+                subjob_cluster: compute
+                submit_to_batch_system: true
+            prepcompute_general:
+                nproc: 1
+                run_before: compute
+                subjob_cluster: prepcompute
+            tidy_general:
+                nproc: 1
+                run_after: compute
+                subjob_cluster: tidy
+oifs:
+    ICMGG_INIT_name: ''
+    ICMSH_INIT_name: ''
+    a4xco2: false
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    bin_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/bin
+    bin_intermediate:
+        bin: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/bin/oifs/oifs
+    bin_sources:
+        bin: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/bin/oifs
+    bin_targets:
+        bin: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/oifs
+    clim_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/95_4/
+    cmip5_data_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//../cmip5_data
+    cmip5_data_dir_nml: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//../cmip5_data
+    cmip6_data_dir: /p/project/hirace/foci_input2/OPENIFS43R3_GENERAL/cmip6-data/
+    cmip6_data_dir_nml: /p/project/hirace/foci_input2/OPENIFS43R3_GENERAL/cmip6-data/
+    cmip_fix_year: 0
+    compile_infos:
+        available_versions:
+        - 40r1
+        - 43r3-awi
+        - 43r3-awi-e1
+        - 43r3
+        - 40r1-foci
+        - 43r3-foci
+        - 40r1-agcm
+        - 43r3-v1
+        choose_version:
+            40r1:
+                branch: foci_conserv
+            40r1-agcm:
+                compile_command: export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f oifs-agcm.cfg
+            40r1-foci:
+                branch: foci_conserv
+                comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
+                destination: 40r1
+            43r3:
+                branch: oifs-deck
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                with_xios: false
+            43r3-awi:
+                branch: awicm-3-deck
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                destination: oifs-43r3
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0-oifsdeck
+            43r3-awi-e1:
+                branch: fix-mkl
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                destination: oifs-43r3
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0-oifsdeck
+                - xios-2.5
+            43r3-foci:
+                branch: master
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0
+                - xios-2.5_r1910
+            43r3-v1:
+                branch: master
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0
+                - xios-2.5_r1910_oifs
+        clean_command: rm -rf make/esm
+        comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
+        git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
+        install_bins: make/esm/oifs/bin/master.exe
+        requires:
+        - oasis3mct-4.0
+    compiletime_environment_changes:
+        choose_computer.name:
+            blogin:
+                add_export_vars:
+                - LAPACK_LIB='-mkl=sequential'
+                - LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'
+                - OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'
+                - OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+            glogin:
+                add_export_vars:
+                - LAPACK_LIB='-mkl=sequential'
+                - LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'
+                - OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'
+                - OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+            juwels:
+                add_export_vars:
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                compiler_mpi: intel2020_parastation
+            mistral:
+                add_export_vars:
+                - MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/
+                - ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/
+                - GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/
+                - UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64
+                - FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
+                - PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
+                - PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
+                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib
+                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
+                - PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/
+                - OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"
+                - OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                - OIFS_FFTW_DIR="$FFTW_ROOT"
+                - OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"
+                - OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"
+            nesh:
+                add_export_vars:
+                - LAPACK_LIB='-mkl=sequential'
+                - LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'
+                - OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'
+                - OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                compiler_mpi: intel2020_impi2020
+            ollie:
+                add_export_vars:
+                - LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
+                - LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"$GRIBAPIROOT/lib"
+                - GRIB_SAMPLES_PATH=$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2
+                - OIFS_GRIB_API_INCLUDE=-I$GRIBAPIROOT/include
+                - OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
+                - OIFS_GRIB_INCLUDE=-I$GRIBAPIROOT/include
+                - OIFS_GRIB_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
+                - OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"
+                - OIFS_GRIB_BIN="$GRIBAPIROOT/bin"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include
+                - OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include
+                - OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                add_module_actions:
+                - unload gribapi
+    config_intermediate:
+        fort.4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/oifs/fort.4
+    config_sources:
+        fort.4: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3//fort.4
+    config_targets:
+        fort.4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/fort.4
+    copy_forcing: false
+    custop: t24
+    days_minus1_string: -1
+    days_since_initial: 0
+    days_since_initial_minus1: -1
+    days_string: 0
+    debug_info:
+        loaded_from_file:
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs.yaml
+    description: 'The OpenIFS atmosphere model based on ECMWF IFS
+
+        Carver et al., in prep.'
+    dr_hook_ignore_signals: -1
+    end_filebase_wam: '19790101000000_'
+    ensemble: 0
+    ensemble_id: 1
+    executable: oifs
+    execution_command: oifs -e ECE3
+    experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/analysis/oifs/
+    experiment_bin_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/bin/oifs/
+    experiment_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/config/oifs/
+    experiment_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/couple/oifs/
+    experiment_forcing_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/forcing/oifs/
+    experiment_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/ignore/oifs/
+    experiment_input_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/input/oifs/
+    experiment_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs/
+    experiment_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/mon/oifs/
+    experiment_outdata_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/outdata/oifs/
+    experiment_restart_in_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/oifs/
+    experiment_restart_out_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/oifs/
+    experiment_viz_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/viz/oifs/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: link
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    forcing_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//../43r3/ifsdata/
+    forcing_intermediate: {}
+    forcing_sources: {}
+    forcing_targets: {}
+    generate_namelist: 1
+    grids:
+        atma:
+            name: A096
+            nx: 40320
+            ny: 1
+            oasis_grid_type: D
+        atml:
+            name: L096
+            nx: 40320
+            ny: 1
+            oasis_grid_type: D
+        atmr:
+            name: R096
+            nx: 40320
+            ny: 1
+            oasis_grid_type: D
+    hours: 0
+    icmcl_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP/
+    icmcl_end_date: '1979-01-03T00:00:00'
+    icmcl_end_date_formatted: 19790103
+    icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231
+    ifsdata_dir: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/
+    ignore_intermediate: {}
+    ignore_sources: {}
+    ignore_sources_wild_card:
+        ICMCL: ICMCL*
+        drhook: drhook*
+    ignore_targets: {}
+    in_date_folder: 19781231
+    include_models:
+    - xios
+    initial_date_cold: '1979-01-01T00:00:00'
+    input_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/
+    input_expid: ECE3
+    input_intermediate:
+        ifsdata_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2040
+        ifsdata_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/slingo_droplet_scattering_rrtm.nc
+        ifsdata_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/mcica_gamma.nc
+        ifsdata_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2050
+        ifsdata_glob_12: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_tegen.nc
+        ifsdata_glob_13: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_43R1a.nc
+        ifsdata_glob_14: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/N2OCLIM
+        ifsdata_glob_15: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/MCH4CLIM
+        ifsdata_glob_16: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2060
+        ifsdata_glob_17: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_43R3.nc
+        ifsdata_glob_18: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/baran_ice_scattering_rrtm.nc
+        ifsdata_glob_19: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2090
+        ifsdata_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/CH4CLIM
+        ifsdata_glob_20: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/C12CLIM
+        ifsdata_glob_21: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm.nc
+        ifsdata_glob_22: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2030
+        ifsdata_glob_23: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1960
+        ifsdata_glob_24: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2070
+        ifsdata_glob_25: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/socrates_droplet_scattering_rrtm.nc
+        ifsdata_glob_26: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/OZOCLIM
+        ifsdata_glob_27: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/mcica_lognormal.nc
+        ifsdata_glob_28: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2100
+        ifsdata_glob_29: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_AB.nc
+        ifsdata_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_cams_climatology_43R3.nc
+        ifsdata_glob_30: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/MCICA
+        ifsdata_glob_31: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/C22CLIM
+        ifsdata_glob_32: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1980
+        ifsdata_glob_33: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_cams_climatology_43R3a.nc
+        ifsdata_glob_34: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2080
+        ifsdata_glob_35: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/GCH4CLIM
+        ifsdata_glob_36: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/C11CLIM
+        ifsdata_glob_37: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/RADRRTM
+        ifsdata_glob_38: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/ECOZC
+        ifsdata_glob_39: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/GCO2CLIM
+        ifsdata_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/CO2CLIM
+        ifsdata_glob_40: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2020
+        ifsdata_glob_41: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2000
+        ifsdata_glob_42: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_42R1.nc
+        ifsdata_glob_43: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1930
+        ifsdata_glob_44: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/GOZOCLIM
+        ifsdata_glob_45: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/es_droplet_scattering_rrtm.nc
+        ifsdata_glob_46: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/aerosol_ifs_rrtm_43R1.nc
+        ifsdata_glob_47: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1920
+        ifsdata_glob_48: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1970
+        ifsdata_glob_49: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/CCL4CLIM
+        ifsdata_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1940
+        ifsdata_glob_50: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/MCO2CLIM
+        ifsdata_glob_51: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1950
+        ifsdata_glob_52: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/fu_ice_scattering_rrtm.nc
+        ifsdata_glob_53: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_OBS1990
+        ifsdata_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/NO2CLIM
+        ifsdata_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/MOZOCLIM
+        ifsdata_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/RADSRTM
+        ifsdata_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/ifsdata/SO4_A1B2010
+        o3_data_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM10_V2.9
+        o3_data_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM03_V2.9
+        o3_data_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM08_V2.9
+        o3_data_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM11_V2.9
+        o3_data_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM06_V2.9
+        o3_data_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM12_V2.9
+        o3_data_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM01_V2.9
+        o3_data_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM04_V2.9
+        o3_data_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM02_V2.9
+        o3_data_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM09_V2.9
+        o3_data_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM05_V2.9
+        o3_data_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/o3chem_l91/O3CHEM07_V2.9
+        tl_data_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/lsmoro
+        tl_data_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_aluvv
+        tl_data_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/cicecap
+        tl_data_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_aluvp
+        tl_data_glob_12: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alnig
+        tl_data_glob_13: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/slt
+        tl_data_glob_14: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_aluvg
+        tl_data_glob_15: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/sdfor
+        tl_data_glob_16: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/sporog
+        tl_data_glob_17: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_laih
+        tl_data_glob_18: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_lail
+        tl_data_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alb
+        tl_data_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/sfc
+        tl_data_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_aluvd
+        tl_data_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_aluvi
+        tl_data_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alniv
+        tl_data_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alnii
+        tl_data_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alnip
+        tl_data_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/95_4/month_alnid
+    input_sources:
+        ifsdata_glob_0: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2040
+        ifsdata_glob_1: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/slingo_droplet_scattering_rrtm.nc
+        ifsdata_glob_10: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/mcica_gamma.nc
+        ifsdata_glob_11: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2050
+        ifsdata_glob_12: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_tegen.nc
+        ifsdata_glob_13: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_43R1a.nc
+        ifsdata_glob_14: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/N2OCLIM
+        ifsdata_glob_15: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/MCH4CLIM
+        ifsdata_glob_16: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2060
+        ifsdata_glob_17: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_43R3.nc
+        ifsdata_glob_18: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/baran_ice_scattering_rrtm.nc
+        ifsdata_glob_19: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2090
+        ifsdata_glob_2: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/CH4CLIM
+        ifsdata_glob_20: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/C12CLIM
+        ifsdata_glob_21: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm.nc
+        ifsdata_glob_22: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2030
+        ifsdata_glob_23: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1960
+        ifsdata_glob_24: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2070
+        ifsdata_glob_25: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/socrates_droplet_scattering_rrtm.nc
+        ifsdata_glob_26: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/OZOCLIM
+        ifsdata_glob_27: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/mcica_lognormal.nc
+        ifsdata_glob_28: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2100
+        ifsdata_glob_29: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_AB.nc
+        ifsdata_glob_3: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_cams_climatology_43R3.nc
+        ifsdata_glob_30: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/MCICA
+        ifsdata_glob_31: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/C22CLIM
+        ifsdata_glob_32: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1980
+        ifsdata_glob_33: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_cams_climatology_43R3a.nc
+        ifsdata_glob_34: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2080
+        ifsdata_glob_35: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/GCH4CLIM
+        ifsdata_glob_36: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/C11CLIM
+        ifsdata_glob_37: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/RADRRTM
+        ifsdata_glob_38: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/ECOZC
+        ifsdata_glob_39: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/GCO2CLIM
+        ifsdata_glob_4: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/CO2CLIM
+        ifsdata_glob_40: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2020
+        ifsdata_glob_41: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2000
+        ifsdata_glob_42: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_42R1.nc
+        ifsdata_glob_43: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1930
+        ifsdata_glob_44: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/GOZOCLIM
+        ifsdata_glob_45: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/es_droplet_scattering_rrtm.nc
+        ifsdata_glob_46: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/aerosol_ifs_rrtm_43R1.nc
+        ifsdata_glob_47: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1920
+        ifsdata_glob_48: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1970
+        ifsdata_glob_49: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/CCL4CLIM
+        ifsdata_glob_5: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1940
+        ifsdata_glob_50: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/MCO2CLIM
+        ifsdata_glob_51: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1950
+        ifsdata_glob_52: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/fu_ice_scattering_rrtm.nc
+        ifsdata_glob_53: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_OBS1990
+        ifsdata_glob_6: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/NO2CLIM
+        ifsdata_glob_7: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/MOZOCLIM
+        ifsdata_glob_8: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/RADSRTM
+        ifsdata_glob_9: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2010
+        o3_data_glob_0: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM10_V2.9
+        o3_data_glob_1: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM03_V2.9
+        o3_data_glob_10: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM08_V2.9
+        o3_data_glob_11: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM11_V2.9
+        o3_data_glob_2: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM06_V2.9
+        o3_data_glob_3: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM12_V2.9
+        o3_data_glob_4: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM01_V2.9
+        o3_data_glob_5: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM04_V2.9
+        o3_data_glob_6: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM02_V2.9
+        o3_data_glob_7: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM09_V2.9
+        o3_data_glob_8: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM05_V2.9
+        o3_data_glob_9: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/o3chem_l91/O3CHEM07_V2.9
+        tl_data_glob_0: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/lsmoro
+        tl_data_glob_1: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_aluvv
+        tl_data_glob_10: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/cicecap
+        tl_data_glob_11: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_aluvp
+        tl_data_glob_12: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alnig
+        tl_data_glob_13: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/slt
+        tl_data_glob_14: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_aluvg
+        tl_data_glob_15: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/sdfor
+        tl_data_glob_16: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/sporog
+        tl_data_glob_17: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_laih
+        tl_data_glob_18: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_lail
+        tl_data_glob_2: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alb
+        tl_data_glob_3: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/sfc
+        tl_data_glob_4: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_aluvd
+        tl_data_glob_5: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_aluvi
+        tl_data_glob_6: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alniv
+        tl_data_glob_7: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alnii
+        tl_data_glob_8: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alnip
+        tl_data_glob_9: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//95_4/month_alnid
+    input_sources_wild_card:
+        ifsdata: '*'
+        o3_data: '*'
+        tl_data: '*'
+    input_targets:
+        ifsdata_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2040
+        ifsdata_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/slingo_droplet_scattering_rrtm.nc
+        ifsdata_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/mcica_gamma.nc
+        ifsdata_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2050
+        ifsdata_glob_12: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_tegen.nc
+        ifsdata_glob_13: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_43R1a.nc
+        ifsdata_glob_14: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/N2OCLIM
+        ifsdata_glob_15: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/MCH4CLIM
+        ifsdata_glob_16: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2060
+        ifsdata_glob_17: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_43R3.nc
+        ifsdata_glob_18: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/baran_ice_scattering_rrtm.nc
+        ifsdata_glob_19: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2090
+        ifsdata_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/CH4CLIM
+        ifsdata_glob_20: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/C12CLIM
+        ifsdata_glob_21: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm.nc
+        ifsdata_glob_22: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2030
+        ifsdata_glob_23: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1960
+        ifsdata_glob_24: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2070
+        ifsdata_glob_25: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/socrates_droplet_scattering_rrtm.nc
+        ifsdata_glob_26: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/OZOCLIM
+        ifsdata_glob_27: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/mcica_lognormal.nc
+        ifsdata_glob_28: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2100
+        ifsdata_glob_29: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_AB.nc
+        ifsdata_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_cams_climatology_43R3.nc
+        ifsdata_glob_30: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/MCICA
+        ifsdata_glob_31: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/C22CLIM
+        ifsdata_glob_32: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1980
+        ifsdata_glob_33: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_cams_climatology_43R3a.nc
+        ifsdata_glob_34: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2080
+        ifsdata_glob_35: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/GCH4CLIM
+        ifsdata_glob_36: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/C11CLIM
+        ifsdata_glob_37: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/RADRRTM
+        ifsdata_glob_38: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/ECOZC
+        ifsdata_glob_39: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/GCO2CLIM
+        ifsdata_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/CO2CLIM
+        ifsdata_glob_40: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2020
+        ifsdata_glob_41: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2000
+        ifsdata_glob_42: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_42R1.nc
+        ifsdata_glob_43: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1930
+        ifsdata_glob_44: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/GOZOCLIM
+        ifsdata_glob_45: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/es_droplet_scattering_rrtm.nc
+        ifsdata_glob_46: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/aerosol_ifs_rrtm_43R1.nc
+        ifsdata_glob_47: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1920
+        ifsdata_glob_48: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1970
+        ifsdata_glob_49: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/CCL4CLIM
+        ifsdata_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1940
+        ifsdata_glob_50: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/MCO2CLIM
+        ifsdata_glob_51: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1950
+        ifsdata_glob_52: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/fu_ice_scattering_rrtm.nc
+        ifsdata_glob_53: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_OBS1990
+        ifsdata_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/NO2CLIM
+        ifsdata_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/MOZOCLIM
+        ifsdata_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/RADSRTM
+        ifsdata_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifsdata/SO4_A1B2010
+        o3_data_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM10_V2.9
+        o3_data_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM03_V2.9
+        o3_data_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM08_V2.9
+        o3_data_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM11_V2.9
+        o3_data_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM06_V2.9
+        o3_data_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM12_V2.9
+        o3_data_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM01_V2.9
+        o3_data_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM04_V2.9
+        o3_data_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM02_V2.9
+        o3_data_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM09_V2.9
+        o3_data_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM05_V2.9
+        o3_data_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/o3chem_l91/O3CHEM07_V2.9
+        tl_data_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/lsmoro
+        tl_data_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_aluvv
+        tl_data_glob_10: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/cicecap
+        tl_data_glob_11: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_aluvp
+        tl_data_glob_12: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alnig
+        tl_data_glob_13: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/slt
+        tl_data_glob_14: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_aluvg
+        tl_data_glob_15: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/sdfor
+        tl_data_glob_16: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/sporog
+        tl_data_glob_17: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_laih
+        tl_data_glob_18: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_lail
+        tl_data_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alb
+        tl_data_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/sfc
+        tl_data_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_aluvd
+        tl_data_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_aluvi
+        tl_data_glob_6: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alniv
+        tl_data_glob_7: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alnii
+        tl_data_glob_8: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alnip
+        tl_data_glob_9: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/95_4/month_alnid
+    lassi: false
+    last_parent_date: '1978-12-31T22:00:00'
+    leapyear: true
+    lecompgrid: true
+    levels: L91
+    levels_number: 91
+    lfdbop: false
+    lgradsp: false
+    lhvolca: false
+    license_text: ECMWF license. AWI and GEOMAR have licenses.
+    log_intermediate:
+        NODE: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log/oifs/NODE.001_01
+        ifsstat: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log/oifs/ifs.stat
+    log_sources:
+        NODE: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work//NODE.001_01
+        ifsstat: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work//ifs.stat
+    log_targets:
+        NODE: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/log/oifs/NODE.001_01
+        ifsstat: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/log/oifs/ifs.stat
+    lresume: false
+    lsmssig: false
+    massfixer: 1
+    metadata:
+        Authors: Glenn Carver (openifs-support@ecmwf.int)
+        Description: OpenIFS provides research institutions with an easy-to-use version of the ECMWF IFS (Integrated Forecasting System).
+        Institute: ECMWF
+        License: Please make sure you have a licence to use OpenIFS. In case you are unsure, please contact redmine...
+        Name: OpenIFS
+        Website: https://www.ecmwf.int/en/research/projects/openifs
+    mip: cmip6
+    model: oifs
+    model_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+    models:
+    - xios
+    namelist_case: uppercase
+    namelist_changes:
+        fort.4:
+            NAEPHY:
+                LECURR: false
+                LWCOU: false
+                LWCOU2W: false
+            NAERAD:
+                CMIP6DATADIR: /p/project/hirace/foci_input2/OPENIFS43R3_GENERAL/cmip6-data/
+                CRTABLEDIR: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/rtables/
+                LCMIP6: true
+                LECOMPGRID: true
+            NAMARG:
+                CNMEXP: ECE3
+                CUSTOP: t24
+                UTSTEP: 3600
+            NAMCLDP:
+                SCLCT_SWITCH: 0
+            NAMCT0:
+                LFDBOP: false
+                LSMSSIG: false
+                LXIOS: true
+                NFRHIS: 6
+                NFRMASSCON: 3
+                NFRPOS: 6
+            NAMDYN:
+                LMASCOR: true
+                LMASDRY: false
+            NAMDYNA:
+                LGRADSP: false
+            NAMFPD:
+                NLAT: 192
+                NLON: 384
+            NAMFPG:
+                NFPLEV: 91
+                NFPMAX: 95
+            NAMNMI:
+                LASSI: false
+            NAMORB:
+                LCORBMD: false
+                ORBIY: 1979
+                ORBMODE: variable_year
+            NAMPAR0:
+                NPROC: 48
+                NSPECRESMIN: 96
+            NAMPPC:
+                LRSACC: true
+            NAMRES:
+                NFRRES: 24
+                NRESTS(1): -24
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3/
+    namelists:
+    - fort.4
+    - wam_namelist
+    ndays_per_run: 1
+    ndays_per_run_string: 1
+    next_ndays: 1
+    next_ndays_minus1: 0
+    next_ndays_minus1_string: 0
+    next_ndays_string: 1
+    next_seconds: 86400
+    next_step: 24
+    nfrmasscon: 3
+    nfrres: 24
+    nlat: 192
+    nlev: 91
+    nlon: 384
+    nproc: 48
+    nspecresmin: 96
+    nx: 40320
+    ny: 1
+    oasis_grid_name: 96
+    oasis_grid_name_a: A096
+    oasis_grid_name_l: L096
+    oasis_grid_name_r: R096
+    onepctco2: false
+    orb_iyear: 1979
+    orb_mode: variable_year
+    orb_switch: false
+    out_date_folder: 19790101
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        ICMUA: ICMUAECE3+*
+        oifsnc: ECE3_*_19790101_*.nc
+    outdata_targets: {}
+    output: default
+    parent_date: '1978-12-31T23:00:00'
+    parent_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/restart/oifs-43r3-tco95-amip-test_lowcpu
+    parent_expid: oifs-43r3-tco95-amip-test_lowcpu
+    parent_restart_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/oifs/
+    perturb: 0
+    pextra: 0
+    pool_dir: /p/project/hirace/foci_input2
+    post_processing: 0
+    postprocess:
+        postprocess_shell:
+            method: $(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ ECE3 19790101 19790101
+            type: shell
+    prepcompute_recipe:
+    - compile_model
+    - _show_simulation_info
+    - create_new_files
+    - create_empty_folders
+    - prepare_coupler_files
+    - assemble
+    - log_used_files
+    - _write_finalized_config
+    - copy_files_to_thisrun
+    - write_env
+    - modify_namelists
+    - modify_files
+    - copy_files_to_work
+    - preprocess
+    - report_missing_files
+    - database_entry
+    prepifs_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100/
+    prepifs_expid: hagw
+    prepifs_startdate: '20080101'
+    preprocess:
+        preprocess_shell:
+            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs-43r3-preprocess.sh /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100/ /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 hagw ECE3 19790101 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ 0 0 40320 1 jesus /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/scripts//env.sh
+            type: shell
+    prev_date: '1978-12-31T23:00:00'
+    prev_wam: -1230000
+    read_icmcl: 0
+    required_plugins:
+    - git+https://github.com/esm-tools-plugins/postprocess
+    - git+https://github.com/esm-tools-plugins/preprocess
+    res_number: 95
+    res_number_tl: '95_4'
+    resolution: TCO95
+    restart: 1
+    restart_dir: ''
+    restart_out_intermediate:
+        rcf: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/restart/oifs/19790101/rcf
+    restart_out_sources:
+        rcf: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work//rcf
+    restart_out_sources_wild_card:
+        srf: srf000000010000.*
+    restart_out_targets:
+        rcf: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/restart/oifs/19790101/rcf
+    restart_rate: 1
+    restart_unit: months
+    reusable_filetypes:
+    - input
+    - bin
+    - src
+    rtables_dir: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/rtables/
+    run_number_minus1: 0
+    run_number_minus1_string: 0
+    run_number_string: 1
+    runtime_environment_changes:
+        choose_computer.name:
+            blogin:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+            glogin:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+            juwels:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                compiler_mpi: intel2020_parastation
+            mistral:
+                add_export_vars:
+                - GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/
+                - UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64
+                - FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
+                - PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
+                - PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
+                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+            nesh:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2020_impi2020
+            ollie:
+                add_export_vars:
+                - GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
+                - LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - unload gribapi
+    runtime_seconds: 86400
+    scenario: amip-prepifs
+    sclct_switch: 0
+    seconds_since_initial: 0
+    seconds_since_initial_end: 0
+    setup_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+    simulation_length_seconds: 86400
+    start_filebase_wam: '19790101000000_'
+    start_ndays: 0
+    start_ndays_string: 0
+    start_seconds: 0
+    steps_per_day: 24
+    steps_since_initial: 0
+    supercooled_liquid_could_fix: 0
+    this_bls: BLS19790101000000_000000230000
+    this_law: LAW19790101000000_000000230000
+    this_wam: 230000
+    thisrun_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/analysis/oifs/
+    thisrun_bin_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/bin/oifs/
+    thisrun_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/oifs/
+    thisrun_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/couple/oifs/
+    thisrun_forcing_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/forcing/oifs/
+    thisrun_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/ignore/oifs/
+    thisrun_input_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs/
+    thisrun_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log/oifs/
+    thisrun_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/mon/oifs/
+    thisrun_outdata_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/outdata/oifs/
+    thisrun_restart_in_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/restart/oifs/
+    thisrun_restart_out_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/restart/oifs/
+    thisrun_viz_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/viz/oifs/
+    threads: 1
+    time_step: 3600
+    timestep_per_run: 24
+    tl_o3_data_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/
+    truncation: TCO
+    type: atmosphere
+    use_ocean_currents: 0
+    version: 43r3
+    vtables_dir: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/vtables/
+    wam: false
+    wam_2w: true
+    wam_number: 0
+    wam_start_date: '19790101000000'
+    wam_step: 1
+    with_nest1: false
+    with_xios: true
+    xml_dir: ''
+xios:
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    archfile: ESMTOOLS_generic_intel
+    available_versions:
+    - 2.0_r982_ogcm
+    - 2.0_r982
+    - 2.5
+    - 2.5_r1910
+    - 2.5_r1910_oifs
+    - 2.5_r1910_ogcm
+    bin_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/bin
+    bin_intermediate:
+        server: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/bin/xios/xios.x
+    bin_sources:
+        server: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1/bin/xios.x
+    bin_targets:
+        server: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/xios.x
+    branch: esm-tools
+    clean_command: rm -rf bin lib obj ppsrc
+    comp_command: export XIOS_TOPLEVEL=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par --full  --job 24; cp bin/xios_server.exe bin/xios.x
+    config_intermediate:
+        context_ifs: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/context_ifs.xml
+        ifs_xml_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/grid_def_ifs.xml
+        ifs_xml_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/file_def_ifs.xml~
+        ifs_xml_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/axis_def_ifs.xml
+        ifs_xml_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/domain_def_ifs.xml
+        ifs_xml_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/field_def_ifs.xml
+        ifs_xml_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/file_def_ifs.xml
+        io_def: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/iodef.xml
+    config_sources:
+        context_ifs: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/context_ifs.xml
+        ifs_xml_glob_0: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/grid_def_ifs.xml
+        ifs_xml_glob_1: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/file_def_ifs.xml~
+        ifs_xml_glob_2: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/axis_def_ifs.xml
+        ifs_xml_glob_3: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/domain_def_ifs.xml
+        ifs_xml_glob_4: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/field_def_ifs.xml
+        ifs_xml_glob_5: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/ifs_xml/file_def_ifs.xml
+        io_def: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon/iodef.xml
+    config_sources_wild_card:
+        ifs_xml: '*'
+    config_targets:
+        context_ifs: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/context_ifs.xml
+        ifs_xml_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/grid_def_ifs.xml
+        ifs_xml_glob_1: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/file_def_ifs.xml~
+        ifs_xml_glob_2: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/axis_def_ifs.xml
+        ifs_xml_glob_3: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/domain_def_ifs.xml
+        ifs_xml_glob_4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/field_def_ifs.xml
+        ifs_xml_glob_5: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ifs_xml/file_def_ifs.xml
+        io_def: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/iodef.xml
+    debug_info:
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+    destination: xios
+    executable: xios.x
+    experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/analysis/xios/
+    experiment_bin_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/bin/xios/
+    experiment_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/config/xios/
+    experiment_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/couple/xios/
+    experiment_forcing_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/forcing/xios/
+    experiment_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/ignore/xios/
+    experiment_input_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/input/xios/
+    experiment_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/xios/
+    experiment_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/mon/xios/
+    experiment_outdata_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/outdata/xios/
+    experiment_restart_in_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/xios/
+    experiment_restart_out_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/xios/
+    experiment_viz_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/viz/xios/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    git-repository: https://git.geomar.de/foci/src/xios.git
+    install_bins: bin/xios.x
+    leapyear: true
+    lresume: false
+    metadata:
+        Authors: Yann Meurdesoif (yann.meurdesoif@cea.fr)
+        Description: A library dedicated to I/O management in climate codes.
+        Institute: IPSL and CEA
+        License: Please make sure you have a licence to use XIOS. In case you are unsure, please contact redmine...
+        Website: https://portal.enes.org/models/software-tools/xios
+    model: xios
+    nproc: 16
+    parent_date: '1979-01-01T00:00:00'
+    parent_expid: oifs-43r3-tco95-amip-test_lowcpu
+    parent_restart_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/restart/xios/
+    prev_date: '1979-01-01T00:00:00'
+    setup_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
+    thisrun_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/analysis/xios/
+    thisrun_bin_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/bin/xios/
+    thisrun_config_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/
+    thisrun_couple_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/couple/xios/
+    thisrun_forcing_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/forcing/xios/
+    thisrun_ignore_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/ignore/xios/
+    thisrun_input_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/xios/
+    thisrun_log_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/log/xios/
+    thisrun_mon_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/mon/xios/
+    thisrun_outdata_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/outdata/xios/
+    thisrun_restart_in_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/restart/xios/
+    thisrun_restart_out_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/restart/xios/
+    thisrun_viz_dir: /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/viz/xios/
+    use_oasis: ''
+    version: 2.0r982
+    xml_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon

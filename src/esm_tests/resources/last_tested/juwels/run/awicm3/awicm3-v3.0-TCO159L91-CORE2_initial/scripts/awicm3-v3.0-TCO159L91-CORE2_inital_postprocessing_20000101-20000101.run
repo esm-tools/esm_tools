@@ -1,0 +1,76 @@
+#!/usr/bin/bash
+#SBATCH --partition=batch
+#SBATCH --time=00:20:00
+#SBATCH --nodes=1
+#SBATCH --output=/p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log/awicm3-v3.0-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log --error=/p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log/awicm3-v3.0-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log
+#SBATCH --job-name=awicm3-v3.0-TCO159L91-CORE2_initial
+#SBATCH --account=hhb19
+#SBATCH --mail-type=NONE
+#SBATCH --exclusive
+
+module --force purge
+module use /gpfs/software/juwels/otherstages
+module load Stages/2019a
+module load Intel/2019.5.281-GCC-8.3.0
+module load ParaStationMPI/5.4.4-1-mt
+module load CMake
+module load Python/3.6.8
+module load imkl/2019.3.199
+module load Perl/5.28.1
+module unload netCDF-Fortran
+module unload netCDF
+module unload grib_api
+
+export LC_ALL=en_US.UTF-8
+export TMPDIR=/tmp
+export FC=mpifort
+export F77=mpifort
+export MPIFC=mpifort
+export FCFLAGS=-free
+export CC=mpicc
+export CXX=mpic++
+export MPIROOT="$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+export MPI_LIB="$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+export IO_LIB_ROOT=/p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5ROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+export PATH=$IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+export OIFS_FFIXED=""
+export GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+export DR_HOOK_IGNORE_SIGNALS=-1
+export OMP_SCHEDULE=STATIC
+export OMP_STACKSIZE=128M
+export ACCOUNT=hhb19
+export ESM_TESTING_DIR=/p/scratch/chhb19/mandresm/testing//run/awicm3/
+export MODEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/awicm3/awicm3-v3.0
+export FESOM_USE_CPLNG="active"
+export ECE_CPL_NEMO_LIM="false"
+export ECE_CPL_FESOM_FESIM="true"
+export ECE_AWI_CPL_FESOM="true"
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+unset SLURM_DISTRIBUTION
+unset SLURM_NTASKS
+unset SLURM_NPROCS
+unset SLURM_ARBITRARY_NODELIST
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 4503882 - start >> /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+
+cd /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/work/
+time srun -l /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//setups/awicm3/postprocessing.sh 2>&1 &
+
+wait

@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+#SBATCH --partition=devel
+#SBATCH --time=00:15:00
+#SBATCH --ntasks=64
+#SBATCH --output=/p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_compute_18500101-18500101.log --error=/p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_compute_18500101-18500101.log
+#SBATCH --job-name=foci-initial-piCtl-test_daily_restart_lowcpu
+#SBATCH --account=hhb19
+#SBATCH --mail-type=NONE
+#SBATCH --ntasks-per-core=1
+#SBATCH --exclusive
+
+module --force purge
+module use $OTHERSTAGES
+module load Stages/2019a
+module load Intel/2019.5.281-GCC-8.3.0
+module load IntelMPI/2019.6.154
+module load CMake
+module load Python/3.6.8
+module load imkl/2019.3.199
+source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt
+
+export LC_ALL=en_US.UTF-8
+export PROJECT=/p/project/hirace
+export FC=mpiifort
+export F77=mpiifort
+export MPIFC=mpiifort
+export FCFLAGS=-free
+export CC=mpiicc
+export CXX=mpiicpc
+export MPIROOT="$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+export MPI_LIB="$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+export IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
+export PATH=$IO_LIB_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5ROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+export ACCOUNT=hhb19
+export ESM_TESTING_DIR=/p/scratch/chhb19/mandresm/testing//run/foci/
+export MODEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/foci/foci-default
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 3365 - start >> /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+
+cd /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+time srun -l  --multi-prog hostfile_srun 2>&1 &
+
+# Call to esm_runscript to start subjobs:
+# ['tidy']
+process=$! 
+# Comment the following line if you don't want esm_runscripts to restart:
+cd /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
+esm_runscripts foci-initial-piCtl-test_daily_restart_lowcpu.yaml -e foci-initial-piCtl-test_daily_restart_lowcpu -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 3365 - done >> /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+
+wait

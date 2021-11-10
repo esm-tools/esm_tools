@@ -1,0 +1,42 @@
+general:
+    account: !ENV ${ACCOUNT}
+    setup_name: "awicm3"
+    version: "v3.0"
+    compute_time: "00:20:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-04"
+    base_dir: !ENV ${ESM_TESTING_DIR}
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    heterogeneous_parallelization: true
+
+oifsamip:
+    postprocessing: false
+    model_dir: !ENV ${MODEL_DIR}
+    choose_computer.name:
+        juwels:
+            pool_dir: "/p/project/chhb19/jstreffi/input/"
+
+oifs:
+    resolution: "TCO159"
+    levels: "L91"
+    prepifs_expid: h9wu
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    choose_computer.name:
+        ollie:
+            rnproc: 18
+        juwels:
+            rnproc: 32
+    nproc: ${rnproc}
+    omp_num_threads: 2
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 7200
+    use_lucia: true

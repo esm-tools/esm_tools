@@ -107,6 +107,7 @@ if [[ "$(hostname)" =~ "nesh" ]] ; then
 	foci_input2="/gxfs_work1/geomar/smomw235/foci_input2"
 	# only used if use_singularity=false
 	MINICONDA_HOME=~smomw235/miniconda3 
+	module load nco
 elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] ; then
    echo "`date` NOTE: This code runs on $(hostname)"
    sw_bind="--bind /sw:/sw"

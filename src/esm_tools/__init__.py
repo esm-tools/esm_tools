@@ -59,11 +59,21 @@ def _get_real_dir_from_pth_file(subfolder):
         if pathlib.Path(f"{subfolder}/esm-tools.egg-link").exists():
             with open(f"{subfolder}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
-            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{subfolder}/")
+            # NOTE(PG): a pathlib.Path has a method resolve, which removes
+            # things like "foo/baz/../bar" in the path to "foo/bar"
+            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{subfolder}/").resolve()
+            try:
+                assert actual_package_data_dir.exists()
+            except AssertionError as e:  # NOTE(PG): there is probably a better way of doing that than with assert.
+                print("Assumed path did not exist! We tried:")
+                print(f"{paths[0]}")
+                print(f"{paths[1]}")
+                # BUG(PG): Needs something like "startswith('/')" to move around absolute paths.
+                raise e
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
-            return actual_package_data_dir.resolve()
+            return actual_package_data_dir
     raise FileNotFoundError(
-        f"Would not determine where {subfolder}'s path is inside the esm-tools install! These were searched for info: {site_packages_dirs}"
+        f"Could not determine where {subfolder}'s path is inside the esm-tools installation! These were searched for info: {site_packages_dirs}"
     )
 
 

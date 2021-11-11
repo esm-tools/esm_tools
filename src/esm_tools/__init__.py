@@ -56,8 +56,8 @@ def _get_real_dir_from_pth_file(subfolder):
     logger.debug(site_packages_dirs)
     for subfolder in site_packages_dirs:
         # Read the pth file:
-        if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
-            with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
+        if pathlib.Path(f"{subfolder}/esm-tools.egg-link").exists():
+            with open(f"{subfolder}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
             actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{subfolder}/")
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")

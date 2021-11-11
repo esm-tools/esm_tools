@@ -16,8 +16,8 @@ general:
    restart_rate: 1
    restart_unit: days 
    hours: 0
-   account: set_by_test_setup.sh 
-   base_dir: /will/be/set/by/test_setup.sh 
+   account: shkifmsw
+   base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
    ini_parent_exp_id: "test_focioifs-2.0"
@@ -29,7 +29,7 @@ general:
    prev_run_config_file: "${ini_parent_dir}/../config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
 focioifs:
-   model_dir: /will/be/set/by/test_setup.sh 
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
    
 oifs:
    lresume: ${general.lresume}

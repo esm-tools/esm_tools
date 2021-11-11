@@ -16,6 +16,7 @@ available_versions:
 - '2.0'
 - '2.0-r' # OG: temporarily here
 - '2.0-jio'
+- '2.1'
 choose_version:
   '1.4-recom-awicm':
     destination: fesom-1.4
@@ -131,9 +132,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${parent_date!syear}.oce.diag.nc
+        oce_restart: fesom.${parent_date!syear}.oce.nc
+        ice_restart: fesom.${parent_date!syear}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -146,9 +147,9 @@ restart_out_in_work:
         ice_restart: fesom.${end_date!syear}.ice.nc
 
 restart_out_sources:
-        oce_diag: fesom.${end_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${end_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${end_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${end_date!syear}.oce.diag.nc
+        oce_restart: fesom.${end_date!syear}.oce.nc
+        ice_restart: fesom.${end_date!syear}.ice.nc
 
 
 
@@ -168,7 +169,8 @@ log_sources:
 namelist_changes:
         namelist.config:
                 clockinit:
-                        yearnew: "${initial_date!syear}"
+                        daynew: "${daynew}"
+                        yearnew: "${yearnew}"
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
@@ -224,15 +226,19 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
-                choose_general.run_number:
-                        # MAM: If it is a restart triggered from a runscript
-                        # it is necessary to specify the year of the initial
-                        # date of the experiment that is to be continued
-                        1:
-                                add_namelist_changes:
-                                        namelist.config:
-                                                clockinit:
-                                                        yearnew: "${first_initial_year}"
+# Is it a branchoff experiment?
+branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
+choose_branchoff:
+        # Makes sure the <units>new in the namelist make an earlier date than that of
+        # of the clock to avoid cold starts for branching off experiment
+        true:
+                daynew: ${startday}
+                yearnew: "$(( ${initial_date!syear} - 1 ))"
+        false:
+                daynew: "${initial_date!sdoy}"
+                yearnew: "${initial_date!syear}"
+
+
 
 
 
@@ -259,10 +265,9 @@ yearly_outputs: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]
 
 monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]
 
-# daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
-daily_outputs: []
+daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
 
-24_second24_secondts: [tso]
+12_step_outputs: [tso]
 
 ignore_files:
         gf: gf
@@ -330,10 +335,6 @@ runtime_environment_changes:
                                         vars: ${12_step_outputs}
                                         unit: s
                                         rate: 12
-                                -
-                                        vars: ${1_step_outputs}
-                                        unit: s
-                                        rate: 1
                                 -
                                         vars: ${yearly_outputs}
                                         unit: y

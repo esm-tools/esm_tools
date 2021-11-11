@@ -1,0 +1,61 @@
+&jsbach_ctl
+    standalone = .false.
+    ntiles = 11
+    with_yasso = .true.
+    use_bethy = .true.
+    use_phenology = .true.
+    use_albedo = .true.
+    with_hd = .true.
+    use_roughness_lai = .true.
+    use_roughness_oro = .false.
+    veg_at_1200 = .false.
+    use_dynveg = .true.
+    use_disturbance = .true.
+    with_nitrogen = .true.
+    lcc_forcing_type = 'transitions'
+    lcc_scheme = 2
+    test_cconservation = .true.
+    test_nconservation = .true.
+/
+
+&hydrology_ctl
+    gethd = 24, 'steps', 'exact', 0
+    puthd = 24, 'steps', 'exact', -450
+    ldebughd = .false.
+    diag_water_budget = .true.
+/
+
+&soil_ctl
+    nsoil = 5
+/
+
+&dynveg_ctl
+    dynveg_feedback = .true.
+    read_fpc = .true.
+/
+
+&cbalance_ctl
+    read_ndepo = .true.
+    init_npools = .true.
+    read_npools = .false.
+    read_cpools = .true.
+/
+
+&disturbance_ctl
+    fire_name = 'thonicke'
+    fuel_name = 'thonicke'
+    lburn_pasture = .true.
+/
+
+&input_ctl
+    var_name = 'lightning_frq'
+    var_file_name = 'HRMC_COM_FR'
+    file_name = 'lightning.nc'
+    action_cycle = 'all'
+/
+
+&input_ctl
+    var_name = 'population_density'
+    dt_update = 0
+    init_rec = 1
+/

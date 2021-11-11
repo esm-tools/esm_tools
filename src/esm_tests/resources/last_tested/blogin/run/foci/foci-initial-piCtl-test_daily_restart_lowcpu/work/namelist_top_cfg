@@ -1,0 +1,36 @@
+&namtrc_run
+    nn_writetrc = 1216
+    ln_rsttr = .false.
+    nn_rsttr = 2
+    cn_trcrst_in = 'foci-initial-piCtl-test_daily_restart_lowcpu_00000000_restart_trc_18491231'
+    cn_trcrst_indir = '/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/'
+    cn_trcrst_out = 'restart_trc_18500101'
+    cn_trcrst_outdir = '/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/'
+/
+
+&namtrc
+    sn_tracer(1) = 'AGE'
+    ln_trcdta = .true.
+/
+
+&namtrc_ldf
+    rn_ahtrc_0 = 600.0
+/
+
+&namtrc_rad
+    ln_trcrad = .true.
+/
+
+&namtrc_dmp
+    cn_resto_tr = ''
+/
+
+&namtrc_trd
+    nn_trd_trc = 1216
+    ln_trdtrc = .false.
+/
+
+&namtrc_dia
+    ln_diabio = .false.
+    nn_writedia = 1216
+/

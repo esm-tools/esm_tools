@@ -121,3 +121,7 @@ ENV/
 configs/esm_software/esm_master/esm_master.pkl
 
 .DS_Store # ignore metadata from macOS file systems
+
+# ESM-Test local files
+src/esm_tests/test_config.yaml
+src/esm_tests/user_config.yaml

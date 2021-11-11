@@ -1,0 +1,4 @@
+&namrnfmap
+    runlengthsec = 432000
+    timestepsec = 10800
+/

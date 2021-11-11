@@ -3,6 +3,11 @@ computer:
     accounting: true
     accounting_flag: --account=hhb19
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
     cc: $CC
@@ -17,6 +22,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     compiler_mpi: intel2019_impi2019
     config_files:
         hostfile: hostfile_srun
@@ -39,7 +45,7 @@ computer:
         HDF5ROOT: $IO_LIB_ROOT
         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
         HDF5_ROOT: $HDF5ROOT
-        IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
+        IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
         LC_ALL: en_US.UTF-8
         LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
         MPIFC: mpiifort
@@ -52,8 +58,8 @@ computer:
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
         PATH: $IO_LIB_ROOT/bin:$PATH
-        PROJECT: /p/project/hirace
         SZIPROOT: $IO_LIB_ROOT
+        TMPDIR: /tmp
     fc: $FC
     header_start: '#SBATCH'
     heterogeneous_parallelization: false
@@ -88,17 +94,17 @@ computer:
     overcommit_flag: ''
     overcommit_nodes: None
     overcommit_rule: ''
-    partition: devel
+    partition: batch
     partition_cpn: 48
     partition_flag: --partition=@partition@
-    partition_name: devel
+    partition_name: batch
     partitions:
         compute:
             cores_per_node: 48
-            name: devel
+            name: batch
         pp:
             cores_per_node: 48
-            name: devel
+            name: batch
     pool_dir: /pool/data/not/available/on/juwels
     pool_directories:
         focipool: /p/project/hirace/foci_input2
@@ -231,6 +237,7 @@ echam:
                 compiler_mpi: intel2019_impi2019
             nesh:
                 compiler_mpi: intel2019_impi2019
+        iolibraries: geomar_libs
     config_intermediate:
         namelist.echam: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/echam/namelist.echam
     config_sources:
@@ -792,6 +799,7 @@ echam:
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
                 compiler_mpi: intel2019_impi2019
+        iolibraries: geomar_libs
     scenario: PI-CTRL
     scenario_type: PI-CTRL
     setup_dir: /p/scratch/chhb19/mandresm/testing//comp/foci/foci-default
@@ -1012,7 +1020,7 @@ general:
     ini_string_parent_date: '1850-01-01'
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 3365
+    jobid: 12033
     jobtype: prepcompute
     last_run_datestamp: 18491231-18491231
     last_run_in_chunk: false
@@ -1134,7 +1142,7 @@ general:
                 nproc: 64
                 order_in_cluster: sequential
                 run_before: tidy
-                run_on_queue: devel
+                run_on_queue: batch
                 subjobs:
                 - compute_general
                 submit_to_batch_system: true
@@ -1164,7 +1172,7 @@ general:
             compute_general:
                 nproc: 64
                 run_before: tidy
-                run_on_queue: devel
+                run_on_queue: batch
                 subjob_cluster: compute
                 submit_to_batch_system: true
             prepcompute_general:
@@ -2182,6 +2190,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /p/scratch/chhb19/mandresm/testing//comp/foci/foci-default/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -2656,7 +2666,7 @@ xios:
     bin_targets:
         server: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/xios.x
     branch: esm-tools
-    clean_command: rm -rf bin lib obj ppsrc
+    clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
     comp_command: export XIOS_TOPLEVEL=/p/scratch/chhb19/mandresm/testing//comp/foci/foci-default; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par --full  --job 24; cp bin/xios_server.exe bin/xios.x
     config_intermediate:
         domain_def: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/xios/domain_def.xml
@@ -2674,8 +2684,15 @@ xios:
         file_def: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/file_def.xml
         io_def: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/iodef.xml
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+        loaded_from_file:
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
     destination: xios
+    environment_changes:
+        choose_computer.name:
+            ollie:
+                add_module_actions:
+                - unload netcdf
+                - load netcdf/4.4.1.1_intel_mpi
     executable: xios.x
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/xios/
     experiment_bin_dir: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/xios/

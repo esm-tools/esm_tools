@@ -1,13 +1,10 @@
 from dataclasses import dataclass
-import collections.abc
 import copy
 import difflib
 import glob
 import os
-import pathlib
 import re
 import shutil
-import subprocess
 import time
 import colorama
 import yaml
@@ -16,6 +13,7 @@ from esm_runscripts import color_diff
 from loguru import logger
 
 from .read_shipped_data import *
+from .test_utilities import *
 
 # Bold strings
 bs = "\033[1m"
@@ -23,11 +21,6 @@ be = "\033[0m"
 
 # Define default files for comparisson
 compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
-
-
-#######################################################################################
-# INITIALIZATION
-#######################################################################################
 
 
 class Comparison:
@@ -90,209 +83,11 @@ def NamelistsComparison(Comparison):
     pass
 
 
-def user_config(info):
-    # Check for user configuration file
-    user_config = f"{info['script_dir']}/user_config.yaml"
-    logger.info("")
-    if not os.path.isfile(user_config):
-        # Make the user configuration file
-        answers = {}
-        logger.info(
-            f"{bs}Welcome to ESM-Tests! Automatic testing for ESM-Tools devs\n"
-            + f"**********************************************************{be}\n"
-            + "Please answer the following questions. If you ever need to change the "
-            + "configuration, you can do that in the the esm_tests/user_config.yaml\n"
-        )
-        try:
-            answers["account"] = input(
-                "What account will you be using for testing? (default: None) "
-            )
-        except EOFError:
-            if os.environ.get("CI"):
-                logger.info(
-                    "This is probably running on the CI System. We will default to None"
-                )
-                answers["account"] = None
-            else:
-                raise
-        if not answers["account"] or answers["account"] == "None":
-            answers["account"] = None
-        try:
-            answers["test_dir"] = input(
-                "In which directory would you like to run the tests? "
-            )
-        except EOFError:
-            if os.environ.get("CI"):
-                logger.info(
-                    f"This is probably running on the CI System. We will default to {os.getcwd()}"
-                )
-                answers["test_dir"] = os.getcwd()
-            else:
-                raise
-        with open(user_config, "w") as uc:
-            logger.debug("Writing file")
-            out = yaml.dump(answers)
-            uc.write(out)
-            logger.debug(f"Done: {uc}")
-
-    # Load the user info
-    with open(user_config, "r") as uc:
-        user_info = yaml.load(uc, Loader=yaml.FullLoader)
-    logger.info(f"{bs}Running tests with the following configuration:{be}")
-    logger.info(f"{bs}-----------------------------------------------{be}")
-    yprint(user_info)
-
-    return user_info
-
-
-def get_scripts(info):
-    for key, value in info.items():
-        logger.debug(f"key {key}: value {value}")
-    runscripts_dir = get_runscripts_dir()
-    scripts_info = {}
-    ns = 0
-    # Load test info
-    test_config = f"{info.get('script_dir', os.getcwd())}/test_config.yaml"
-    if os.path.isfile(test_config):
-        with open(test_config, "r") as t:
-            test_info = yaml.load(t, Loader=yaml.FullLoader)
-    else:
-        test_info = {}
-    logger.debug(test_info)
-    if len(test_info) > 0:
-        test_all = False
-    else:
-        test_all = True
-    for model in os.listdir(runscripts_dir):
-        if test_all or test_info.get(model, False):
-            # Check computer
-            model_config = f"{runscripts_dir}/{model}/config.yaml"
-            if not os.path.isfile(model_config):
-                logger.error(f"'{model_config}' not found!")
-            with open(model_config, "r") as c:
-                config_test = yaml.load(c, Loader=yaml.FullLoader)
-            computers = config_test.get("computers", False)
-            if computers:
-                if info["this_computer"] not in computers:
-                    continue
-
-            scripts_info[model] = {}
-            for script in os.listdir(f"{runscripts_dir}/{model}"):
-                if (
-                    test_all
-                    or isinstance(test_info.get(model), str)
-                    or script in test_info.get(model, [])
-                ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
-                    if script != "config.yaml" and ".swp" not in script:
-                        scripts_info[model][script.replace(".yaml", "")] = {}
-                        scripts_info[model][script.replace(".yaml", "")][
-                            "path"
-                        ] = f"{runscripts_dir}/{model}/{script}"
-                        scripts_info[model][script.replace(".yaml", "")]["state"] = {}
-                        ns += 1
-    scripts_info["general"] = {"num_scripts": ns}
-    return scripts_info
-
-
-def read_info_from_rs(scripts_info):
-    new_loader = create_env_loader()
-    for model, scripts in scripts_info.items():
-        if model == "general":
-            continue
-        for script, v in scripts.items():
-            with open(v["path"], "r") as rs:
-                runscript = yaml.load(rs, Loader=yaml.SafeLoader)
-            v["version"] = runscript["general"].get(
-                "comp_version", runscript[model]["version"]
-            )
-            v["comp_command"] = runscript["general"].get("comp_command", None)
-
-    return scripts_info
-
-
-def del_prev_tests(info, scripts_info):
-    user_info = info["user"]
-    logger.debug("Deleting previous tests")
-    for model, scripts in scripts_info.items():
-        if model == "general":
-            continue
-        for script, v in scripts.items():
-            if os.path.isdir(
-                f"{user_info['test_dir']}/comp/{model}/{model}-{v['version']}"
-            ):
-                shutil.rmtree(
-                    f"{user_info['test_dir']}/comp/{model}/{model}-{v['version']}"
-                )
-                if len(os.listdir(f"{user_info['test_dir']}/comp/{model}")) == 0:
-                    shutil.rmtree(f"{user_info['test_dir']}/comp/{model}")
-            if os.path.isdir(f"{user_info['test_dir']}/run/{model}/{script}"):
-                shutil.rmtree(f"{user_info['test_dir']}/run/{model}/{script}")
-                if len(os.listdir(f"{user_info['test_dir']}/run/{model}")) == 0:
-                    shutil.rmtree(f"{user_info['test_dir']}/run/{model}")
-
-
-#######################################################################################
-# FUNCTIONALITIES
-#######################################################################################
-def yprint(pdict):
-    logger.info(yaml.dump(pdict, default_flow_style=False))
-
-
-def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
-    # Necessary to ignore !ENV variables
-    def constructor_env_variables(loader, node):
-        return ""
-
-    loader.add_constructor(tag, constructor_env_variables)
-    return loader
-
-
-def sh(inp_str, env_vars=[]):
-    ev = ""
-    for v in env_vars:
-        ev += f"export {v}; "
-    inp_str = f"{ev}{inp_str}"
-    p = subprocess.Popen(
-        inp_str, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
-    )
-    out = p.communicate()[0].decode("utf-8")
-    return out
-
-
-def deep_update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = deep_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-
-    return d
-
-
-def copy_comp_files4check_runs(script, script_info, target_dir):
-    files4check_dir = (
-        f"{os.path.dirname(script_info['path'])}/comp_files4check_runs/{script}"
-    )
-    if os.path.isdir(files4check_dir):
-        source_dir = f"{files4check_dir}/{os.listdir(files4check_dir)[0]}"
-        combine_folders(source_dir, target_dir)
-
-
-def combine_folders(source_dir, target_dir):
-    if not os.path.isfile(target_dir):
-        if os.path.isdir(source_dir):
-            if not os.path.isdir(target_dir):
-                os.mkdir(target_dir)
-            for folder in os.listdir(source_dir):
-                combine_folders(f"{source_dir}/{folder}", f"{target_dir}/{folder}")
-        if os.path.isfile(source_dir):
-            shutil.copy2(source_dir, target_dir)
-
-
 #######################################################################################
 # TESTS
 #######################################################################################
-def comp_test(scripts_info, info):
+def comp_test(info):
+    scripts_info = info["scripts"]
     cd_format = re.compile("         cd (.*)")
     user_info = info["user"]
     this_computer = info["this_computer"]
@@ -383,7 +178,7 @@ def comp_test(scripts_info, info):
 
                     # Get files from the esm_test/runscripts/<model>/comp_files4check_runs
                     # (i.e. namelists that are hosted in another repository could be
-                    # place there so that checks can run successfully without having to
+                    # placed there so that checks can run successfully without having to
                     # download the code).
                     copy_comp_files4check_runs(
                         script, v, f"{general_model_dir}/{prim_f}"
@@ -417,7 +212,8 @@ def comp_test(scripts_info, info):
     return scripts_info
 
 
-def run_test(scripts_info, info):
+def run_test(info):
+    scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
     c = 0
@@ -833,7 +629,8 @@ def print_diff(sscript, tscript, name, ignore_lines):
     return identical, differences
 
 
-def save_files(scripts_info, info, user_choice):
+def save_files(info, user_choice):
+    scripts_info = info["scripts"]
     actually_run = info["actually_run"]
     user_info = info["user"]
     last_tested_dir = info["last_tested_dir"]
@@ -964,7 +761,8 @@ def print_results(results, info):
     logger.info("")
 
 
-def format_results(info, scripts_info):
+def format_results(info):
+    scripts_info = info["scripts"]
     results = {}
     for model, scripts in scripts_info.items():
         if model == "general":
@@ -1003,6 +801,3 @@ def sort_dict(dict_to_sort):
     return dict_to_sort
 
 
-#######################################################################################
-# SCRIPT
-#######################################################################################i

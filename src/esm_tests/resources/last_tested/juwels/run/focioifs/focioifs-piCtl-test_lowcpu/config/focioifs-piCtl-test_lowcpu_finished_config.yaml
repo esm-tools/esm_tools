@@ -21,12 +21,23 @@ choose_partitions.compute.cores_per_node:
             xios:
                 nproc: 40
 computer:
+    GribApiLib: none
+    GribApiRoot: none
+    GribSamples: none
+    OpenMP_CCDEFS: ''
+    OpenMP_flag: ''
     account: None
     accounting: true
     accounting_flag: --account=hhb19
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
+    c++_lib: none
     cc: $CC
     check_error:
         'slurmstepd: error: execve():':
@@ -39,7 +50,8 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
-    compiler_mpi: intel2020_parastation
+    choose_heterogeneous_parallelization: *id001
+    compiler_mpi: intel2020_psmpi2020
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -61,7 +73,7 @@ computer:
         HDF5ROOT: $IO_LIB_ROOT
         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
         HDF5_ROOT: $HDF5ROOT
-        IO_LIB_ROOT: $PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+        IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
         LC_ALL: en_US.UTF-8
         LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
         MPIFC: mpifort
@@ -74,8 +86,8 @@ computer:
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
         PATH: $IO_LIB_ROOT/bin:$PATH
-        PROJECT: /p/project/hirace
         SZIPROOT: $IO_LIB_ROOT
+        TMPDIR: /tmp
     fc: $FC
     header_start: '#SBATCH'
     heterogeneous_parallelization: false
@@ -110,17 +122,17 @@ computer:
     overcommit_flag: ''
     overcommit_nodes: None
     overcommit_rule: ''
-    partition: devel
+    partition: batch
     partition_cpn: 48
     partition_flag: --partition=@partition@
-    partition_name: devel
+    partition_name: batch
     partitions:
         compute:
             cores_per_node: 48
-            name: devel
+            name: batch
         pp:
             cores_per_node: 48
-            name: devel
+            name: batch
     pool_dir: /pool/data/not/available/on/juwels
     pool_directories:
         focipool: /p/project/hirace/foci_input2
@@ -330,7 +342,7 @@ general:
     ini_string_parent_date: '1850-01-01'
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 23600
+    jobid: 12176
     jobtype: prepcompute
     last_run_datestamp: 18491227-18491231
     last_run_in_chunk: false
@@ -381,10 +393,10 @@ general:
     - _write_finalized_config
     - copy_files_to_thisrun
     - write_env
+    - preprocess
     - modify_namelists
     - modify_files
     - copy_files_to_work
-    - preprocess
     - report_missing_files
     - database_entry
     prev_date: '1849-12-31T00:00:00'
@@ -475,7 +487,7 @@ general:
                 nproc: 80
                 order_in_cluster: sequential
                 run_before: tidy
-                run_on_queue: devel
+                run_on_queue: batch
                 subjobs:
                 - compute_general
                 submit_to_batch_system: true
@@ -505,7 +517,7 @@ general:
             compute_general:
                 nproc: 80
                 run_before: tidy
-                run_on_queue: devel
+                run_on_queue: batch
                 subjob_cluster: compute
                 submit_to_batch_system: true
             prepcompute_general:
@@ -1041,6 +1053,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -1804,6 +1818,7 @@ oifs:
         bin: /p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/bin/oifs
     bin_targets:
         bin: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/oifs
+    branchoff: false
     clim_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/95_4/
     cmip5_data_dir: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/cmip5_ghg/
     cmip5_data_dir_nml: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/cmip5_ghg/
@@ -1813,8 +1828,11 @@ oifs:
     compile_infos:
         available_versions:
         - 40r1
-        - 43r3-awi
-        - 43r3-awi-e1
+        - 43r3-master
+        - 43r3-awicm-3.0
+        - 43r3-awicm-frontiers
+        - 43r3-awicm-frontiers-xios
+        - 43r3-awicm-deck
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -1831,38 +1849,65 @@ oifs:
                 destination: 40r1
             43r3:
                 branch: oifs-deck
-                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
                 git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
                 install_bins: make/esm/oifs/bin/oifs
                 with_xios: false
-            43r3-awi:
-                branch: awicm-3-deck
-                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            43r3-awicm-3.0:
+                branch: awicm3-frontiers-freeze-candidate-1
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                destination: oifs-43r3
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0-awicm-3.0
+                with_xios: false
+            43r3-awicm-deck:
+                branch: awicm-3-deck-hotfix-1
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
                 destination: oifs-43r3
                 git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
                 install_bins: make/esm/oifs/bin/oifs
                 requires:
                 - oasis3mct-4.0-oifsdeck
-            43r3-awi-e1:
-                branch: fix-mkl
-                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            43r3-awicm-frontiers:
+                branch: awicm-3-frontiers
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
                 destination: oifs-43r3
                 git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
                 install_bins: make/esm/oifs/bin/oifs
                 requires:
-                - oasis3mct-4.0-oifsdeck
-                - xios-2.5
+                - oasis3mct-4.0-awicm-frontiers
+                with_xios: false
+            43r3-awicm-frontiers-xios:
+                branch: awicm-3-frontiers-xios
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                destination: oifs-43r3
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0-awicm-frontiers
+                with_xios: true
             43r3-foci:
                 branch: master
-                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
                 git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
                 install_bins: make/esm/oifs/bin/oifs
                 requires:
                 - oasis3mct-4.0
                 - xios-2.5_r1910
+            43r3-master:
+                branch: master
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                destination: oifs-43r3
+                git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+                install_bins: make/esm/oifs/bin/oifs
+                requires:
+                - oasis3mct-4.0-awicm-frontiers
+                with_xios: false
             43r3-v1:
                 branch: master
-                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+                comp_command: export OIFS_TOPLEVEL_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios ; export OIFS_XIOS_INCLUDE=-I//p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/oifs-43r3/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
                 git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
                 install_bins: make/esm/oifs/bin/oifs
                 requires:
@@ -1876,6 +1921,33 @@ oifs:
         - oasis3mct-4.0
     compiletime_environment_changes:
         choose_computer.name:
+            aleph:
+                add_export_vars:
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
+                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
+                - OIFS_FFTW_INCLUDE='-I$FFTW_INC'
+                - OIFS_FFTW_LIB='-L$FFTW_DIR -ldfftw -ldrfftw'
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include
+                - OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include
+                - OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-O2 -emf -hthread1 -hflex_mp=conservative -hfp1 -hadd_paren -hbyteswapio -J./ -hcpu=x86-skylake -U_CRAYFTN"
+                - OIFS_FFIXED="-s real64"
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS="-dynamic -hbyteswapio"
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-emf -O2 -hcpu=x86-skylake"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                - OIFS_XIOS_LIB_NAME=none
             blogin:
                 add_export_vars:
                 - LAPACK_LIB='-mkl=sequential'
@@ -1956,51 +2028,53 @@ oifs:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1  -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
-                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_LFLAGS="$OIFS_MPI_LIB "
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
-                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
-                compiler_mpi: intel2020_parastation
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 "
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS "
+                compiler_mpi: intel2020_psmpi2020
             mistral:
                 add_export_vars:
-                - MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/
-                - LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
-                - ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/
-                - ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/
-                - GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/
-                - UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64
-                - FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
-                - PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
-                - PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
-                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib
-                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
-                - PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/
-                - OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"
-                - OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
-                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
-                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
-                - OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"
-                - OIFS_OASIS_BASE=$(pwd)/oasis
-                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
-                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
-                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
-                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
-                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
-                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
-                - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
-                - OIFS_FFIXED=""
-                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
-                - OIFS_LFLAGS=$OIFS_MPI_LIB
-                - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
-                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
-                - OIFS_FFTW_DIR="$FFTW_ROOT"
-                - OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"
-                - OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"
+                    DR_HOOK_IGNORE_SIGNALS: -1
+                    ESM_NETCDF_C_DIR: $NETCDFROOT
+                    ESM_NETCDF_F_DIR: $NETCDFFROOT
+                    FFTW_ROOT: /sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
+                    GRIBAPIROOT: none
+                    GRIBROOT: none
+                    GRIB_SAMPLES_PATH: '"$GRIBAPIROOT/share/none/ifs_samples/grib1_mlgrib2/"'
+                    LAPACK_LIB_DEFAULT[(1)]: '"-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+                    LD_LIBRARY_PATH[(2)]: $LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib:$SZIPROOT/lib
+                    MKLROOT: /sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/
+                    OIFS_CC: $CC
+                    OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+                    OIFS_CFLAGS: '"-fp-model precise -O3 -qopenmp -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+                    OIFS_FC: $FC
+                    OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
+                    OIFS_FFIXED: '""'
+                    OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+                    OIFS_FFTW_DIR: '"$FFTW_ROOT"'
+                    OIFS_FFTW_INCLUDE: '"-I$OIFS_FFTW_DIR/include/"'
+                    OIFS_FFTW_LIB: '"-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
+                    OIFS_GRIB_API_BIN: '"$GRIBAPIROOT/bin"'
+                    OIFS_GRIB_API_INCLUDE: '"-I$GRIBAPIROOT/include"'
+                    OIFS_GRIB_API_LIB: '"none"'
+                    OIFS_GRIB_INCLUDE: '"$OIFS_GRIB_API_INCLUDE"'
+                    OIFS_GRIB_LIB: '"$OIFS_GRIB_API_LIB"'
+                    OIFS_LFLAGS: '"$OIFS_MPI_LIB -qopenmp"'
+                    OIFS_NETCDFF_INCLUDE: '"-I$NETCDFFROOT/include"'
+                    OIFS_NETCDFF_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    OIFS_NETCDF_INCLUDE: '"-I$NETCDFROOT/include"'
+                    OIFS_NETCDF_LIB: '"-L$NETCDFROOT/lib -lnetcdf"'
+                    OIFS_OASIS_BASE: $(pwd)/oasis
+                    OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                    OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+                    PATH[(2)]: /sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
+                    PATH[(3)]: $PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/
+                    PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
+                    UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
             nesh:
                 add_export_vars:
                 - LAPACK_LIB='-mkl=sequential'
@@ -2055,12 +2129,13 @@ oifs:
                 - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
-                - OIFS_LFLAGS=
+                - OIFS_LFLAGS=-qopenmp
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"
+                - OIFS_CFLAGS="-fp-model precise -O3 -qopenmp -xCORE_AVX2 -g -traceback -qopt-report=0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
                 add_module_actions:
                 - unload gribapi
+        iolibraries: geomar_libs
     config_intermediate:
         fort.4: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/config/oifs/fort.4
     config_sources:
@@ -2109,11 +2184,6 @@ oifs:
             grid: atml
         A_dQnsdT:
             grid: atml
-    custop: t120
-    days_minus1_string: -1
-    days_since_initial: 0
-    days_since_initial_minus1: -1
-    days_string: 0
     debug_info:
         loaded_from_file:
         - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs.yaml
@@ -2121,9 +2191,40 @@ oifs:
 
         Carver et al., in prep.'
     dr_hook_ignore_signals: -1
-    end_filebase_wam: '18500101000000_'
     ensemble: 0
     ensemble_id: 1
+    environment_changes:
+        GribApiLib: none
+        GribApiRoot: none
+        GribSamples: none
+        OpenMP_CCDEFS: ''
+        OpenMP_flag: ''
+        c++_lib: none
+        choose_computer.useMPI:
+            '*':
+                c++_lib: none
+            cray_mpich:
+                c++_lib: cray-c++-rts
+            intelmpi:
+                c++_lib: stdc++
+                choose_computer.name:
+                    mistral:
+                        GribApiLib: -L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api
+                        GribApiRoot: /sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14
+                        GribSamples: grib_api
+            openmpi:
+                choose_computer.name:
+                    mistral:
+                        GribApiLib: -L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api
+                        GribApiRoot: /pf/a/a270092/ecmwf/grib_api_intel_modulegcc
+                        GribSamples: grib_api
+                        add_export_vars:
+                            DR_HOOK: 1
+                            DR_HOOK_OPT: prof
+                            DR_HOOK_PROFILE_LIMIT: 0.5
+                            HDF5_DISABLE_VERSION_CHECK: 1
+                            OIFS_DUMMY_ACTION: ABORT
+    eternal_run_number: 1
     executable: oifs
     execution_command: oifs -e ECE3
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/analysis/oifs/
@@ -2190,16 +2291,21 @@ oifs:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-        restart_in:
-            exp_to_run: copy
-            init_to_exp: copy
-            run_to_work: copy
-            work_to_run: link
-        restart_out:
+        rcf_in:
             exp_to_run: copy
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
+        restart_in:
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
+        restart_out:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
         scripts:
             exp_to_run: copy
             init_to_exp: copy
@@ -2215,6 +2321,13 @@ oifs:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
+        waminfo_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    filebase_wam_source: '{''NONE_YET'': {}}'
+    filebase_wam_work: '18500101000000_'
     foci_fields_a:
     - A_QsrMix
     - A_QnsMix
@@ -2277,10 +2390,12 @@ oifs:
     ini_parent_date: '1849-12-31T23:00:00'
     ini_parent_dir: /path/to/restart/data//restart/oifs/
     ini_parent_exp_id: unset
-    initial_date_cold: '1850-01-01T00:00:00'
     input_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/
     input_expid: ECE3
     input_intermediate:
+        ICMGG_INIT: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ICMGGECE3INIT
+        ICMGG_INIUA: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ICMGGECE3INIUA
+        ICMSH_INIT: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ICMSHECE3INIT
         ifsdata_glob_0: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ifsdata/SO4_A1B2040
         ifsdata_glob_1: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ifsdata/slingo_droplet_scattering_rrtm.nc
         ifsdata_glob_10: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/ifsdata/mcica_gamma.nc
@@ -2367,6 +2482,9 @@ oifs:
         tl_data_glob_8: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/95_4/month_alnip
         tl_data_glob_9: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs/95_4/month_alnid
     input_sources:
+        ICMGG_INIT: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100//ICMGGhagwINIT
+        ICMGG_INIUA: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100//ICMGGhagwINIUA
+        ICMSH_INIT: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100//ICMSHhagwINIT
         ifsdata_glob_0: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/SO4_A1B2040
         ifsdata_glob_1: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/slingo_droplet_scattering_rrtm.nc
         ifsdata_glob_10: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/ifsdata/mcica_gamma.nc
@@ -2457,6 +2575,9 @@ oifs:
         o3_data: '*'
         tl_data: '*'
     input_targets:
+        ICMGG_INIT: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ICMGGECE3INIT
+        ICMGG_INIUA: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ICMGGECE3INIUA
+        ICMSH_INIT: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ICMSHECE3INIT
         ifsdata_glob_0: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ifsdata/SO4_A1B2040
         ifsdata_glob_1: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ifsdata/slingo_droplet_scattering_rrtm.nc
         ifsdata_glob_10: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ifsdata/mcica_gamma.nc
@@ -2635,25 +2756,30 @@ oifs:
                 LRSACC: true
             NAMRES:
                 NFRRES: 120
-                NRESTS(1): -120
+                NRESTS(1):
+                - -120
     namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3/
     namelists:
     - fort.4
     - wam_namelist
+    ndays_out: 5
     ndays_per_run: 5
     ndays_per_run_string: 5
+    ndays_source_in: 0
+    ndays_work_in: 0
+    next_days_string: 4
     next_ndays: 5
-    next_ndays_minus1: 4
-    next_ndays_minus1_string: 4
-    next_ndays_string: 5
-    next_seconds: 432000
+    next_ndays_wam: 4
     next_step: 120
+    nfrests:
+    - -120
     nfrmasscon: 1
     nfrres: 120
     nlat: 192
     nlev: 91
     nlon: 384
     nproc: 31
+    nrest_ind: !!python/complex '1.0'
     nspecresmin: 96
     nx: 40320
     ny: 1
@@ -2683,7 +2809,7 @@ oifs:
     post_processing: 0
     postprocess:
         postprocess_shell:
-            method: $(esm_versions get esm_tools file_path)/configs/components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ ECE3 18500101 18500105
+            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ ECE3 18500101 18500105
             type: shell
     prepcompute_recipe:
     - compile_model
@@ -2696,10 +2822,10 @@ oifs:
     - _write_finalized_config
     - copy_files_to_thisrun
     - write_env
+    - preprocess
     - modify_namelists
     - modify_files
     - copy_files_to_work
-    - preprocess
     - report_missing_files
     - database_entry
     prepifs_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100/
@@ -2707,10 +2833,11 @@ oifs:
     prepifs_startdate: '20080101'
     preprocess:
         preprocess_shell:
-            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs-43r3-preprocess.sh /p/project/hirace/foci_input2/OPENIFS43R3-TCO95//2008010100/ /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/2008010100//ICMCLhagwINIT hagw ECE3 18500101 18500101 18500107 /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ 0 1 40320 1 jesus /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/scripts//env.sh
+            method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
             type: shell
+    preprocess_method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
     prev_date: '1849-12-31T23:00:00'
-    prev_wam: -1230000
+    pseudo_initial_date: '1850-01-01T00:00:00'
     read_icmcl: 0
     required_plugins:
     - git+https://github.com/esm-tools-plugins/postprocess
@@ -2730,26 +2857,32 @@ oifs:
     restart_out_targets:
         rcf: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/restart/oifs/18500105/rcf
     restart_rate: 1
+    restart_type: ifs_default
     restart_unit: months
     reusable_filetypes:
     - input
     - bin
     - src
     rtables_dir: /p/project/hirace/foci_input2/OPENIFS_CY43_GENERAL/rtables/
-    run_number_minus1: 0
-    run_number_minus1_string: 0
-    run_number_string: 1
     runtime_environment_changes:
         add_export_vars:
         - FOCI_USE_CPLNG="active"
         - FESOM_USE_CPLNG="no"
         - ECE_USE_CPLNG="no"
         choose_computer.name:
+            aleph:
+                add_export_vars:
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
+                - PATH=$ECCODESROOT/bin:${PATH}
             blogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
                 - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
                 - DR_HOOK_IGNORE_SIGNALS=-1
+                - OMP_SCHEDULE=STATIC
+                - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
                 compiler_mpi: intel2019_impi2019
@@ -2758,6 +2891,8 @@ oifs:
                 - OIFS_FFIXED=""
                 - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
                 - DR_HOOK_IGNORE_SIGNALS=-1
+                - OMP_SCHEDULE=STATIC
+                - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
                 compiler_mpi: intel2019_impi2019
@@ -2766,18 +2901,24 @@ oifs:
                 - OIFS_FFIXED=""
                 - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
                 - DR_HOOK_IGNORE_SIGNALS=-1
-                compiler_mpi: intel2020_parastation
+                - OMP_SCHEDULE=STATIC
+                - OMP_STACKSIZE=128M
+                compiler_mpi: intel2020_psmpi2020
             mistral:
                 add_export_vars:
-                - GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/
-                - UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64
-                - FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
-                - PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
-                - PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
-                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib
-                - OIFS_FFIXED=""
-                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
-                - DR_HOOK_IGNORE_SIGNALS=-1
+                    DR_HOOK_IGNORE_SIGNALS: -1
+                    FFTW_ROOT: /sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64
+                    GRIBAPIROOT: none
+                    GRIB_SAMPLES_PATH: '"$GRIBAPIROOT/share/none/ifs_samples/grib1_mlgrib2/"'
+                    LD_LIBRARY_PATH[(2)]: $LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib
+                    MPI_BUFS_PER_PROC: 256
+                    OIFS_FFIXED: '""'
+                    OMP_SCHEDULE: STATIC
+                    OMP_STACKSIZE: 128M
+                    PATH[(2)]: $GRIBAPIROOT/bin:${PATH}
+                    PATH[(3)]: /sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
+                    PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
+                    UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
             nesh:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2788,30 +2929,33 @@ oifs:
                 compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
-                - GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
-                - LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"
-                - OIFS_FFIXED=""
-                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"
-                - DR_HOOK_IGNORE_SIGNALS=-1
+                    DR_HOOK_IGNORE_SIGNALS: -1
+                    GRIBAPIROOT: /home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
+                    GRIB_SAMPLES_PATH: '"$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"'
+                    LD_LIBRARY_PATH: '"$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"'
+                    OIFS_FFIXED: '""'
+                    OMP_SCHEDULE: STATIC
+                    OMP_STACKSIZE: 128M
+                    PATH[(1)]: $GRIBAPIROOT/bin:$PATH
                 add_module_actions:
                 - unload gribapi
+        iolibraries: geomar_libs
     runtime_seconds: 432000
     scenario: piControl
     sclct_switch: 0
     seconds_since_initial: 0
-    seconds_since_initial_end: 345600
     setup_dir: /p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0
     simulation_length_seconds: 432000
-    start_filebase_wam: '18500101000000_'
+    slice_icml: ''
+    source_days_string: -1
+    source_ndays_wam: -1
+    start_days_string: -1
     start_ndays: 0
-    start_ndays_string: 0
-    start_seconds: 0
+    start_ndays_source: 0
+    start_ndays_wam: -1
     steps_per_day: 24
     steps_since_initial: 0
     supercooled_liquid_could_fix: 0
-    this_bls: BLS18500101000000_000004230000
-    this_law: LAW18500101000000_000004230000
-    this_wam: 4230000
     thisrun_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/analysis/oifs/
     thisrun_bin_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/bin/oifs/
     thisrun_config_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/config/oifs/
@@ -2837,8 +2981,11 @@ oifs:
     wam: false
     wam_2w: true
     wam_number: 0
+    wam_out: 4230000
+    wam_source_in: -1230000
     wam_start_date: '18500101000000'
     wam_step: 1
+    wam_work_in: -1230000
     with_nest1: false
     with_xios: true
     xml_dir: ''
@@ -2859,6 +3006,8 @@ rnfmap:
     - ignore
     available_versions:
     - ec-earth
+    - awicm-3.0
+    - awicm-frontiers
     - focioifs
     - focioifs1
     bin_dir: /p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/rnfmap-focioifs1/bin
@@ -2869,7 +3018,7 @@ rnfmap:
     bin_targets:
         bin: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/rnfma
     branch: esm-tools-focioifs
-    clean_command: rm -rf bin; cd src; make clean
+    clean_command: rm -rf bin; cd src; make clean; cd ..
     comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
     compiletime_environment_changes:
         add_export_vars:
@@ -3116,7 +3265,7 @@ xios:
     bin_targets:
         server: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/xios.x
     branch: esm-tools
-    clean_command: rm -rf bin lib obj ppsrc
+    clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
     comp_command: export XIOS_TOPLEVEL=/p/scratch/chhb19/mandresm/testing//comp/focioifs/focioifs-2.0/xios-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par --full  --job 24; cp bin/xios_server.exe bin/xios.x
     config_intermediate:
         context_ifs: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/config/xios/context_ifs.xml
@@ -3154,8 +3303,15 @@ xios:
         ifs_xml_glob_4: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ifs_xml/file_def_ifs.xml
         io_def: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/iodef.xml
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+        loaded_from_file:
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
     destination: xios
+    environment_changes:
+        choose_computer.name:
+            ollie:
+                add_module_actions:
+                - unload netcdf
+                - load netcdf/4.4.1.1_intel_mpi
     executable: xios.x
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/analysis/xios/
     experiment_bin_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/bin/xios/

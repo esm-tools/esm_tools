@@ -7,7 +7,9 @@ A small wrapper that combines the shell interface and the Python interface
 import argparse
 from loguru import logger
 
+from .initialization import *
 from .tests import *
+from .test_utilities import *
 from .read_shipped_data import *
 
 import os
@@ -80,24 +82,26 @@ def main():
         action="store_true",
     )
 
-    info = {}
-
     args = vars(parser.parse_args())
-    ignore_user_info = args["no_user"]
-    info["actually_compile"] = not args["check"]
-    info["actually_run"] = not args["check"]
-    delete_tests = args["delete"]
-    info["keep_run_folders"] = args["keep"]
+
     save_flag = args["save"]
     print_state = args["state"]
+    delete_tests = args["delete"]
+
+    info = {}
+
+    info["ignore_user_info"] = args["no_user"]
+    info["actually_compile"] = not args["check"]
+    info["actually_run"] = not args["check"]
+    info["keep_run_folders"] = args["keep"]
     info["hold"] = args["hold"]
+    info["bulletpoints"] = args["bulletpoints"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
     info["last_tested_dir"] = get_last_tested_dir()
     info["this_computer"] = (
         determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
     )
-    info["bulletpoints"] = args["bulletpoints"]
 
     # Predefined for later
     user_scripts = dict(comp={}, run={})
@@ -109,10 +113,7 @@ def main():
         sys.exit(1)
 
     # Get user info for testing
-    if not ignore_user_info:
-        info["user"] = user_config(info)
-    else:
-        info["user"] = None
+    info = user_config(info)
 
     # Define lines to be ignored during comparison
     try:
@@ -130,28 +131,28 @@ def main():
     logger.debug(f"Actually run: {info.get('actually_run')}")
 
     # Gather scripts
-    scripts_info = get_scripts(info)
+    info = get_scripts(info)
 
     # Complete scripts_info
-    scripts_info = read_info_from_rs(scripts_info)
+    info = read_info_from_rs(info)
 
     # Delete previous test
     if delete_tests:
-        del_prev_tests(info, scripts_info)
+        del_prev_tests(info)
 
     # Compile
-    comp_test(scripts_info, info)
+    comp_test(info)
 
     # Run
-    run_test(scripts_info, info)
+    run_test(info)
 
     # Print results
-    print_results(format_results(info, scripts_info), info)
+    print_results(format_results(info), info)
 
     # Save files
     if save_flag == "Not defined":
-        save_files(scripts_info, info, False)
+        save_files(info, False)
     elif save_flag == "true" or save_flag == "True":
-        save_files(scripts_info, info, True)
+        save_files(info, True)
 
-    # yprint(scripts_info)
+    # yprint(info["scripts"])

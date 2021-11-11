@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-#SBATCH --partition=devel
+#SBATCH --partition=batch
 #SBATCH --time=00:30:00
 #SBATCH --ntasks=64
 #SBATCH --output=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_compute_19790101-19790101.log --error=/p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log/oifs-43r3-tco95-amip-test_lowcpu_oifs_compute_19790101-19790101.log
@@ -19,7 +19,7 @@ module load Python/3.8.5
 module load imkl/2020.2.254
 
 export LC_ALL=en_US.UTF-8
-export PROJECT=/p/project/hirace
+export TMPDIR=/tmp
 export FC=mpifort
 export F77=mpifort
 export MPIFC=mpifort
@@ -28,7 +28,7 @@ export CC=mpicc
 export CXX=mpic++
 export MPIROOT="$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
 export MPI_LIB="$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
-export IO_LIB_ROOT=$PROJECT/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
 export PATH=$IO_LIB_ROOT/bin:$PATH
 export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 export SZIPROOT=$IO_LIB_ROOT
@@ -48,6 +48,8 @@ export ESM_TESTING_DIR=/p/scratch/chhb19/mandresm/testing//run/oifs/
 export OIFS_FFIXED=""
 export GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
 export DR_HOOK_IGNORE_SIGNALS=-1
+export OMP_SCHEDULE=STATIC
+export OMP_STACKSIZE=128M
 export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 
 
@@ -55,7 +57,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 23944 - start >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 17586 - start >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
 
 cd /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -67,6 +69,6 @@ process=$!
 cd /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/scripts/
 esm_runscripts oifs-43r3-tco95-amip-test_lowcpu.yaml -e oifs-43r3-tco95-amip-test_lowcpu -t observe_compute -p ${process} -s 19790101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 23944 - done >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 17586 - done >> /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
 
 wait

@@ -2,6 +2,8 @@ computer:
     GribApiLib: none
     GribApiRoot: none
     GribSamples: none
+    OpenMP_CCDEFS: _OPENMP
+    OpenMP_flag: -qopenmp
     account: None
     accounting: true
     accounting_flag: --account=hhb19
@@ -80,7 +82,7 @@ computer:
     model: computer
     module_actions:
     - --force purge
-    - use /gpfs/software/juwels/otherstages
+    - use $OTHERSTAGES
     - load Stages/2019a
     - load Intel/2019.5.281-GCC-8.3.0
     - load ParaStationMPI/5.4.4-1-mt
@@ -136,7 +138,6 @@ computer:
     - SLURM_NTASKS
     - SLURM_NPROCS
     - SLURM_ARBITRARY_NODELIST
-    useMPI: parastationmpi
     use_hyperthreading: false
 debug_info:
     loaded_from_file:
@@ -437,7 +438,7 @@ fesom:
     - namelist.ice
     - namelist.io
     - namelist.cvmix
-    nproc: 72
+    nproc: 144
     nx: 126858
     old_mesh_format: false
     omp_num_threads: 1
@@ -471,6 +472,7 @@ fesom:
         oce_restart: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/restart/fesom/fesom.2000.oce.restart.nc
     restart_rate: 1
     restart_unit: d
+    rnproc: 144
     runtime_environment_changes:
         add_export_vars:
             taken2from: fesom2_ru
@@ -609,12 +611,12 @@ general:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS=$OIFS_MPI_LIB
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
             glogin:
                 add_export_vars:
@@ -639,12 +641,12 @@ general:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS=$OIFS_MPI_LIB
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
             juwels:
                 add_export_vars:
@@ -664,12 +666,12 @@ general:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS="$OIFS_MPI_LIB -qopenmp"
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 -qopenmp"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 -qopenmp"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS _OPENMP"
             mistral:
                 add_export_vars:
@@ -710,6 +712,37 @@ general:
                     PATH[(3)]: $PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/
                     PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
                     UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
+            nesh:
+                add_export_vars:
+                - LAPACK_LIB='-mkl=sequential'
+                - LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'
+                - OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'
+                - OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
                 - LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
@@ -767,6 +800,8 @@ general:
         GribApiLib: none
         GribApiRoot: none
         GribSamples: none
+        OpenMP_CCDEFS: ''
+        OpenMP_flag: ''
         c++_lib: none
         choose_computer.fc:
             ftn:
@@ -899,7 +934,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 16544
+    jobid: 10398
     jobtype: prepcompute
     last_run_datestamp: 19991231-19991231
     last_run_in_chunk: false
@@ -993,6 +1028,8 @@ general:
                 - DR_HOOK_IGNORE_SIGNALS=-1
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
             glogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -1000,6 +1037,8 @@ general:
                 - DR_HOOK_IGNORE_SIGNALS=-1
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
             juwels:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -1022,6 +1061,14 @@ general:
                     PATH[(3)]: /sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
                     PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
                     UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
+            nesh:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -1089,7 +1136,7 @@ general:
                 called_from: prepcompute
                 next_submit:
                 - tidy
-                nproc: 109
+                nproc: 177
                 order_in_cluster: sequential
                 run_before: tidy
                 run_on_queue: batch
@@ -1132,7 +1179,7 @@ general:
                 submit_to_batch_system: false
         subjobs:
             compute_general:
-                nproc: 109
+                nproc: 177
                 run_before: tidy
                 run_on_queue: batch
                 subjob_cluster: compute
@@ -1143,7 +1190,7 @@ general:
                 order_in_cluster: concurrent
                 run_after: tidy
                 run_on_queue: batch
-                script: postprocessing.sh
+                script: postprocessing.sh /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_inital/outdata/oifs/ 20000101
                 script_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//setups/awicm3
                 subjob_cluster: postprocessing
                 submit_to_batch_system: true
@@ -1400,11 +1447,11 @@ oasis3mct:
         areas: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//areas.nc
         grids: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//grids.nc
         masks: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//masks.nc
-        rmp_glob_0: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//72/rmp_RnfO_to_feom_GAUSWGT.nc
-        rmp_glob_1: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//72/rmp_A160_to_feom_BICUBIC.nc
-        rmp_glob_2: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//72/rmp_A160_to_feom_GAUSWGT.nc
-        rmp_glob_3: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//72/rmp_R160_to_RnfA_GAUSWGT.nc
-        rmp_glob_4: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//72/rmp_feom_to_A160_GAUSWGT.nc
+        rmp_glob_0: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//144/rmp_RnfO_to_feom_GAUSWGT.nc
+        rmp_glob_1: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//144/rmp_A160_to_feom_BICUBIC.nc
+        rmp_glob_2: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//144/rmp_A160_to_feom_GAUSWGT.nc
+        rmp_glob_3: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//144/rmp_R160_to_RnfA_GAUSWGT.nc
+        rmp_glob_4: /p/project/chhb19/jstreffi/input//oasis_experimental//cy43r3/TCO159-CORE2//144/rmp_feom_to_A160_GAUSWGT.nc
     input_sources_wild_card:
         rmp: rmp_*.nc
     input_targets:
@@ -1451,6 +1498,7 @@ oasis3mct:
     o2a_seq: 2
     o2r_lag: 0
     o2r_seq: 1
+    oasis_date_stamp: ''
     outdata_intermediate:
         A_Calving_oifs_05.nc: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/outdata/oasis3mct/A_Calving_oifs_05.nc
         A_Evap_oifs_02.nc: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/outdata/oasis3mct/A_Evap_oifs_02.nc
@@ -1828,12 +1876,12 @@ oifs:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS=$OIFS_MPI_LIB
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
             glogin:
                 add_export_vars:
@@ -1858,12 +1906,12 @@ oifs:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS=$OIFS_MPI_LIB
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
             juwels:
                 add_export_vars:
@@ -1883,13 +1931,14 @@ oifs:
                 - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
                 - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
                 - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
                 - OIFS_FFIXED=""
                 - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
                 - OIFS_LFLAGS="$OIFS_MPI_LIB -qopenmp"
                 - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 -qopenmp"
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 -qopenmp"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS _OPENMP"
+                compiler_mpi: intel_2019a_psmpi2019
             mistral:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -1929,6 +1978,37 @@ oifs:
                     PATH[(3)]: $PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/
                     PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
                     UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
+            nesh:
+                add_export_vars:
+                - LAPACK_LIB='-mkl=sequential'
+                - LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'
+                - OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'
+                - OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+                - ESM_NETCDF_C_DIR=$NETCDFROOT
+                - ESM_NETCDF_F_DIR=$NETCDFFROOT
+                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
+                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
+                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
+                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
+                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
+                - LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+                - OIFS_OASIS_BASE=$(pwd)/oasis
+                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
+                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
+                - OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"
+                - OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"
+                - OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"
+                - OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+                - OIFS_FC=$FC
+                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O1 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
+                - OIFS_FFIXED=""
+                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
+                - OIFS_LFLAGS=$OIFS_MPI_LIB
+                - OIFS_CC=$CC
+                - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
+                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
                 - LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
@@ -1958,6 +2038,7 @@ oifs:
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
                 add_module_actions:
                 - unload gribapi
+        iolibraries: awi_libs
     compute_recipe:
     - oasis_rmp_rst_to_input
     config_intermediate:
@@ -2020,6 +2101,8 @@ oifs:
         GribApiLib: none
         GribApiRoot: none
         GribSamples: none
+        OpenMP_CCDEFS: _OPENMP
+        OpenMP_flag: -qopenmp
         c++_lib: none
         choose_computer.useMPI:
             '*':
@@ -2083,10 +2166,10 @@ oifs:
             run_to_work: copy
             work_to_run: copy
         forcing:
-            exp_to_run: copy
-            init_to_exp: copy
-            run_to_work: copy
-            work_to_run: copy
+            exp_to_run: link
+            init_to_exp: link
+            run_to_work: link
+            work_to_run: link
         ignore:
             exp_to_run: copy
             init_to_exp: copy
@@ -2573,7 +2656,7 @@ oifs:
         ifsstat: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/log/oifs/ifs.stat
     lresume: false
     lsmssig: false
-    massfixer: 1
+    massfixer: 2
     metadata:
         Authors: Glenn Carver (openifs-support@ecmwf.int)
         Description: OpenIFS provides research institutions with an easy-to-use version of the ECMWF IFS (Integrated Forecasting System).
@@ -2606,7 +2689,7 @@ oifs:
                 LFDBOP: false
                 LSMSSIG: false
                 NFRHIS: 6
-                NFRMASSCON: 12
+                NFRMASSCON: 1
                 NFRPOS: 6
             NAMDYN:
                 LMASCOR: true
@@ -2619,6 +2702,13 @@ oifs:
             NAMFPG:
                 NFPLEV: 91
                 NFPMAX: 159
+            NAMGFL:
+                LTRCMFMG: true
+                YI_NL%LMASSFIX: true
+                YL_NL%LMASSFIX: true
+                YQ_NL%LMASSFIX: true
+                YR_NL%LMASSFIX: true
+                YS_NL%LMASSFIX: true
             NAMNMI:
                 LASSI: false
             NAMORB:
@@ -2626,7 +2716,7 @@ oifs:
                 ORBIY: 2000
                 ORBMODE: variable_year
             NAMPAR0:
-                NPROC: 36
+                NPROC: 32
                 NSPECRESMIN: 160
             NAMPPC:
                 LRSACC: true
@@ -2653,12 +2743,16 @@ oifs:
     next_ndays: 1
     next_ndays_wam: 0
     next_step: 24
-    nfrmasscon: 12
+    nfrests:
+    - -1
+    - -24
+    nfrmasscon: 1
     nfrres: 1
     nlat: 320
     nlev: 91
     nlon: 640
-    nproc: 36
+    nproc: 32
+    nrest_ind: ''
     nspecresmin: 160
     nx: 108160
     ny: 1
@@ -2746,11 +2840,13 @@ oifs:
         rcf: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/restart/oifs/20000101/rcf
         waminfo: /p/scratch/chhb19/mandresm/testing/run/awicm3/awicm3-v3.0-TCO159L91-CORE2_initial/restart/oifs/20000101/waminfo00000001
     restart_rate: 12
+    restart_type: eternal
     restart_unit: months
     reusable_filetypes:
     - input
     - bin
     - src
+    rnproc: 32
     rtables_dir: /p/project/chhb19/jstreffi/input//oifs-43r3/rtables/
     runtime_environment_changes:
         add_export_vars:
@@ -2772,6 +2868,8 @@ oifs:
                 - DR_HOOK_IGNORE_SIGNALS=-1
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
             glogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2779,6 +2877,8 @@ oifs:
                 - DR_HOOK_IGNORE_SIGNALS=-1
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
             juwels:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2786,6 +2886,7 @@ oifs:
                 - DR_HOOK_IGNORE_SIGNALS=-1
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
+                compiler_mpi: intel_2019a_psmpi2019
             mistral:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -2801,6 +2902,14 @@ oifs:
                     PATH[(3)]: /sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}
                     PROJ4_ROOT: /sw/rhel6-x64/graphics/proj4-4.9.3-gcc48
                     UDUNITS2_ROOT: /sw/rhel6-x64/util/udunits-2.2.26-gcc64
+            nesh:
+                add_export_vars:
+                - OIFS_FFIXED=""
+                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
+                - DR_HOOK_IGNORE_SIGNALS=-1
+                add_module_actions:
+                - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -2813,12 +2922,14 @@ oifs:
                     PATH[(1)]: $GRIBAPIROOT/bin:$PATH
                 add_module_actions:
                 - unload gribapi
+        iolibraries: awi_libs
     runtime_seconds: 86400
     scenario: historical
     sclct_switch: 2
     seconds_since_initial: 0
     setup_dir: /p/scratch/chhb19/mandresm/testing//comp/awicm3/awicm3-v3.0
     simulation_length_seconds: 86400
+    slice_icml: ''
     source_days_string: -1
     source_ndays_wam: -1
     start_days_string: -1
@@ -2858,8 +2969,10 @@ oifs:
     wam_start_date: '20000101000000'
     wam_step: 1
     wam_work_in: -1230000
+    with_nest1: false
     with_xios: false
     workflow:
+        next_run_triggered_by: tidy
         subjobs:
             postprocessing:
                 batch_or_shell: batch
@@ -2867,7 +2980,7 @@ oifs:
                 order_in_cluster: concurrent
                 run_after: tidy
                 run_on_queue: batch
-                script: postprocessing.sh
+                script: postprocessing.sh /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_inital/outdata/oifs/ 20000101
                 script_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//setups/awicm3
                 submit_to_batch_system: true
     xml_dir: ''
@@ -3087,6 +3200,7 @@ rnfmap:
     - R_Runoff_oce
     - R_Calving_oce
     runoff_maps_name: _CORE2
+    runoff_method: awicm3-default
     runtime_seconds: 86400
     thisrun_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/analysis/rnfmap/
     thisrun_bin_dir: /p/scratch/chhb19/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/bin/rnfmap/

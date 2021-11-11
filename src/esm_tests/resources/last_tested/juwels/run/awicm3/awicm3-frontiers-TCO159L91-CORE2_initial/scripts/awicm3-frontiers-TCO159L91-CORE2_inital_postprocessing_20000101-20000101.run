@@ -9,7 +9,7 @@
 #SBATCH --exclusive
 
 module --force purge
-module use /gpfs/software/juwels/otherstages
+module use $OTHERSTAGES
 module load Stages/2019a
 module load Intel/2019.5.281-GCC-8.3.0
 module load ParaStationMPI/5.4.4-1-mt

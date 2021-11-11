@@ -187,6 +187,17 @@ compile_infos:
 further_reading:
         - oifs/oifs.env.yaml
 
+compiletime_environment_changes:
+        iolibraries: geomar_libs
+        choose_computer.name:
+                juwels:
+                        compiler_mpi: intel2020_psmpi2020
+runtime_environment_changes:
+        iolibraries: geomar_libs
+        choose_computer.name:
+                juwels:
+                        compiler_mpi: intel2020_psmpi2020
+
 input_expid: ECE3
 resolution: TL159
 levels: L91

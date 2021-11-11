@@ -1,0 +1,69 @@
+#!/bin/bash
+#SBATCH --partition=standard96
+#SBATCH --time=00:15:00
+#SBATCH --ntasks=64
+#SBATCH --output=/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_compute_18500101-18500101.log --error=/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log/foci-initial-piCtl-test_daily_restart_lowcpu_foci_compute_18500101-18500101.log
+#SBATCH --job-name=foci-initial-piCtl-test_daily_restart_lowcpu
+#SBATCH --account=hbk00083
+#SBATCH --mail-type=NONE
+#SBATCH --ntasks-per-core=1
+#SBATCH --exclusive
+
+module purge
+module load slurm
+module load HLRNenv
+module load sw.skl
+module load cmake
+module load cdo nco
+module load intel/19.0.5
+module load impi/2019.5
+source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+
+export LC_ALL=en_US.UTF-8
+export FC=mpiifort
+export F77=mpiifort
+export MPIFC=mpiifort
+export FCFLAGS=-free
+export CC=mpiicc
+export CXX=mpiicpc
+export MPIROOT="$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+export MPI_LIB="$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+export IO_LIB_ROOT=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+export PATH=$IO_LIB_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5ROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
+export ACCOUNT=hbk00083
+export ESM_TESTING_DIR=/scratch/usr/hbkmandr/testing//run/foci/
+export MODEL_DIR=/scratch/usr/hbkmandr/testing//comp/foci/foci-default
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 138329 - start >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+
+cd /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
+time srun --mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL --multi-prog hostfile_srun 2>&1 &
+
+# Call to esm_runscript to start subjobs:
+# ['tidy']
+process=$! 
+# Comment the following line if you don't want esm_runscripts to restart:
+cd /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
+esm_runscripts foci-initial-piCtl-test_daily_restart_lowcpu.yaml -e foci-initial-piCtl-test_daily_restart_lowcpu -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
+
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 138329 - done >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+
+wait

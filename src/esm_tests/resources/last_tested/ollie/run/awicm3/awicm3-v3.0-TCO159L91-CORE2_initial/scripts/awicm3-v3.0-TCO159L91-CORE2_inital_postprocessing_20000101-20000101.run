@@ -1,0 +1,82 @@
+#!/usr/bin/bash
+#SBATCH --partition=smp
+#SBATCH --time=00:20:00
+#SBATCH --nodes=1
+#SBATCH --output=/work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log/awicm3-v3.0-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log --error=/work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log/awicm3-v3.0-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log
+#SBATCH --job-name=awicm3-v3.0-TCO159L91-CORE2_initial
+#SBATCH --mail-type=NONE
+#SBATCH --exclusive
+
+module purge
+module load cmake
+module load udunits
+module load gribapi/1.28.0
+module unload intel.compiler
+module load intel.compiler
+module unload netcdf
+module load hdf5
+module load centoslibs cdo nco netcdf/4.6.2_intel
+module load automake
+module load python3/3.7.7_intel2020u2
+module load git
+module list
+module unload intel.mpi
+module load intel.mpi
+module unload gribapi
+module unload gribapi
+
+export LC_ALL=en_US.UTF-8
+export FC="mpiifort -mkl"
+export F77="mpiifort -mkl"
+export MPIFC=mpiifort
+export MPICC=mpiicc
+export CC=mpiicc
+export CXX=mpiicpc
+export HDF5ROOT=$HDF5_ROOT
+export NETCDFFROOT=$NETCDF_DIR
+export NETCDFROOT=$NETCDF_DIR
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib
+export PERL5LIB=/usr/lib64/perl5
+export LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"
+export LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+export XML2ROOT=/usr
+export ZLIBROOT=/usr
+export MPIROOT=${I_MPI_ROOT}/intel64
+export MPI_LIB=$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
+export PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH
+export GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"
+export OIFS_FFIXED=""
+export GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"
+export DR_HOOK_IGNORE_SIGNALS=-1
+export PATH=$GRIBAPIROOT/bin:$PATH
+export OMP_SCHEDULE=STATIC
+export OMP_STACKSIZE=128M
+export ACCOUNT=None
+export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/awicm3/
+export MODEL_DIR=/work/ollie/mandresm/testing//comp/awicm3/awicm3-v3.0
+export FESOM_USE_CPLNG="active"
+export ECE_CPL_NEMO_LIM="false"
+export ECE_CPL_FESOM_FESIM="true"
+export ECE_AWI_CPL_FESOM="true"
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+unset SLURM_MEM_PER_NODE
+unset SLURM_MEM_PER_CPU
+unset SLURM_DISTRIBUTION
+unset SLURM_NTASKS
+unset SLURM_NPROCS
+unset SLURM_ARBITRARY_NODELIST
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 12520094 - start >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+
+cd /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/work/
+time srun -l --kill-on-bad-exit=1 --cpu_bind=none /home/ollie/mandresm/esm_tools/configs//setups/awicm3/postprocessing.sh /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/outdata/oifs/ 20000101 2>&1 &
+
+wait

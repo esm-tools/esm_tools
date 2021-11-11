@@ -1,0 +1,230 @@
+&pavariables
+    use_recom = .true.
+    recom_restart = .false.
+    bgc_num = 31
+    bgc_base_num = 22
+    diags3d_num = 2
+    vdet = 20.0
+    vphy = 0.0
+    vdia = 0.0
+    allow_var_sinking = .true.
+    biostep = 1
+    recom_geider_limiter = .false.
+    recom_grazing_variable_preference = .false.
+    recom_second_zoo = .false.
+    diags = .true.
+    constant_co2 = .true.
+    usefedust = .true.
+    usedustclim = .true.
+    usedustclimalbani = .true.
+    use_fe2n = .true.
+    use_photodamage = .true.
+    hetrespflux_plus = .true.
+    recomdatapath = '/work/ollie/mbutzin/fesom2/input/dust/pi-mesh/'
+    restore_alkalinity = .true.
+    nitrogenss = .false.
+    useaeoliann = .false.
+    firstyearoffesomcycle = 1984
+    lastyearoffesomcycle = 1985
+    numofco2cycles = 1
+    currentco2cycle = 1
+    dic_pi = .false.
+    nmocsy = 1
+    recom_debug = .false.
+    ciso = .true.
+    benthos_num = 8
+    use_medusa = .true.
+    sedflx_num = 0
+    bottflx_num = 8
+    use_atbox = .true.
+/
+
+&pasinking
+    vdet_a = 0.0288
+/
+
+&painitialization_n
+    cphyn = 0.2
+    chetn = 0.2
+    czoo2n = 0.2
+/
+
+&paarrhenius
+    recom_tref = 288.15
+    c2k = 273.15
+    ae = 4500.0
+    reminsi = 0.02
+/
+
+&palimiter_function
+    nminslope = 50.0
+    siminslope = 1000.0
+    ncmin = 0.04
+    ncmin_d = 0.04
+    sicmin = 0.04
+    k_fe = 0.04
+    k_fe_d = 0.12
+    k_si = 4.0
+    p_cm = 3.0
+    p_cm_d = 3.5
+/
+
+&palight_calculations
+    k_w = 0.04
+    a_chl = 0.03
+/
+
+&paphotosynthesis
+    alfa = 0.14
+    alfa_d = 0.19
+    parfrac = 0.43
+/
+
+&paassimilation
+    v_cm_fact = 0.7
+    v_cm_fact_d = 0.7
+    nmaxslope = 1000.0
+    simaxslope = 1000.0
+    ncmax = 0.2
+    ncmax_d = 0.2
+    sicmax = 0.8
+    ncuptakeratio = 0.2
+    ncuptakeratio_d = 0.2
+    sicuptakeratio = 0.2
+    k_din = 0.55
+    k_din_d = 1.0
+    chl2n_max = 3.15
+    chl2n_max_d = 4.2
+    res_phy = 0.01
+    res_phy_d = 0.01
+    biosynth = 2.33
+    biosynthsi = 0.0
+/
+
+&pairon_chem
+    totalligand = 1.0
+    ligandstabconst = 100.0
+/
+
+&pazooplankton
+    graz_max = 2.4
+    epsilonr = 0.35
+    res_het = 0.01
+    redfield = 6.625
+    loss_het = 0.05
+    pzdia = 0.5
+    sdiansq = 0.0
+    pzphy = 1.0
+    sphynsq = 0.0
+    tiny_het = 1e-05
+/
+
+&pasecondzooplankton
+    graz_max2 = 0.1
+    epsilon2 = 0.0144
+    res_zoo2 = 0.0107
+    loss_zoo2 = 0.003
+    pzdia2 = 1.0
+    sdiansq2 = 0.0
+    pzphy2 = 0.5
+    sphynsq2 = 0.0
+    pzhet = 0.8
+    shetnsq = 0.0
+    t1_zoo2 = 28145.0
+    t2_zoo2 = 272.5
+    t3_zoo2 = 105234.0
+    t4_zoo2 = 274.15
+/
+
+&paaggregation
+    agg_pd = 0.165
+    agg_pp = 0.015
+/
+
+&padin_rho_n
+    rho_n = 0.11
+/
+
+&padic_rho_c1
+    rho_c1 = 0.1
+/
+
+&paphytoplankton_n
+    lossn = 0.05
+    lossn_d = 0.05
+/
+
+&paphytoplankton_c
+    lossc = 0.1
+    lossc_d = 0.1
+/
+
+&paphytoplankton_chla
+    deg_chl = 0.25
+    deg_chl_d = 0.15
+/
+
+&padetritus_n
+    grazeff = 0.4
+    grazeff2 = 0.8
+    reminn = 0.165
+/
+
+&padetritus_c
+    reminc = 0.15
+    rho_c2 = 0.1
+/
+
+&paheterotrophs
+    lossn_z = 0.15
+    lossc_z = 0.15
+/
+
+&paseczooloss
+    lossn_z2 = 0.02
+    lossc_z2 = 0.02
+/
+
+&pairon
+    fe2n = 0.033
+    fe2n_benthos = 0.15
+    fe2c = 0.005
+    fe2c_benthos = 0.02125
+    kscavfe = 0.07
+    dust_sol = 0.02
+/
+
+&pacalc
+    calc_prod_ratio = 0.02
+    calc_diss_guts = 0.0
+    calc_diss_rate = 0.005714
+/
+
+&pabenthos_decay_rate
+    decayratebenn = 0.005
+    decayratebenc = 0.005
+    decayratebensi = 0.005
+    q_nc_denit = 0.86
+/
+
+&paco2_flux_param
+    permil = 9.76e-07
+    permeg = 1e-06
+    xacc = 1e-12
+    co2_for_spinup = 284.3
+/
+
+&paalkalinity_restoring
+    surf_relax_alk = 3.2e-07
+/
+
+&paciso
+    ciso_init = .true.
+    ciso_14 = .true.
+    ciso_organic_14 = .false.
+    ciso_warp = .false.
+    warp_file = 'warptracers.nc'
+    lambda_14 = 3.8561e-12
+    co2_for_spinup_13 = 282.4
+    co2_for_spinup_14 = 284.3
+/

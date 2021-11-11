@@ -1,0 +1,31 @@
+general:
+    setup_name: 'awicm'
+    #machine_name: "mistral"
+    account: !ENV ${ACCOUNT}
+    compute_time: "00:15:00"
+    initial_date: "1871-01-01"   # date change due to AMIP data: /pool/data/ECHAM6/input/r0007/T63/amip/
+    final_date: "1871-02-28"
+    base_dir: !ENV ${ESM_TESTING_DIR}
+    nyear: 0
+    nmonth: 1
+
+awicm:
+    version: "CMIP6"
+    scenario: "HIST"
+    post_processing: 0
+    model_dir: !ENV ${MODEL_DIR}
+
+fesom:
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+
+echam:
+    version: "6.3.04p1"
+    scenario: HIST
+    resolution: T63
+    post_processing: False
+    lresume: False
+    nproca: 4
+    nprocb: 4
+    time_step: 200

@@ -1,0 +1,2847 @@
+computer:
+    account: None
+    accounting: false
+    actual_script_dir: <--methods.script_dir--
+    additional_flags: ''
+    batch_system: slurm
+    cc: mpiicc
+    check_error:
+        'slurmstepd: error: execve():':
+            file: stdout
+            frequency: 600
+            message: 'SLURM ERROR: slurm probably didn''t find executable'
+            method: kill
+        'srun: error:':
+            file: stdout
+            frequency: 30
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            method: kill
+    config_files:
+        hostfile: hostfile_srun
+    cpu_bind: cores
+    cxx: mpiicpc
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//machines/ollie.yaml
+    debugger: None
+    debugger_flags_prelauncher: ''
+    exclusive_flag: --exclusive
+    execution_command: srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun
+    export_vars:
+        CC: mpiicc
+        CXX: mpiicpc
+        F77: '"mpiifort -mkl"'
+        FC: '"mpiifort -mkl"'
+        HDF5ROOT: $HDF5_ROOT
+        LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        LC_ALL: en_US.UTF-8
+        MPICC: mpiicc
+        MPIFC: mpiifort
+        MPIROOT: ${I_MPI_ROOT}/intel64
+        MPI_LIB: $(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
+        NETCDFFROOT: $NETCDF_DIR
+        NETCDFROOT: $NETCDF_DIR
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        PATH: /work/ollie/jhegewal/sw/cmake/bin:$PATH
+        PERL5LIB: /usr/lib64/perl5
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
+    f77: '"mpiifort -mkl"'
+    fc: '"mpiifort -mkl"'
+    header_start: '#SBATCH'
+    heterogeneous_parallelization: false
+    hostname_list: DUMMY_HOST1 DUMMY_HOST2
+    hyper_flag: ''
+    jobtype: unknown
+    launcher: srun
+    launcher_flags: -l --kill-on-bad-exit=1 --cpu_bind=cores
+    logical_cpus_per_core: 2
+    mail1: --mail-type=NONE
+    mail2: ''
+    mail_type: NONE
+    model: computer
+    module_actions:
+    - purge
+    - load cmake
+    - load udunits
+    - load gribapi/1.28.0
+    - unload intel.compiler
+    - load intel.compiler
+    - unload netcdf
+    - load hdf5
+    - load centoslibs cdo nco netcdf/4.6.2_intel
+    - load automake
+    - load python3/3.7.7_intel2020u2
+    - load git
+    - list
+    - unload intel.mpi
+    - load intel.mpi
+    mpicc: mpiicc
+    mpifc: mpiifort
+    name: ollie
+    name_flag: --job-name=awicm1-initial-monthly
+    nodes_flag: --nodes=@nodes@
+    nothing: much
+    notification_flag: --mail-type=NONE
+    operating_system: linux-centos
+    output_flags: --output=/work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/awicm1-initial-monthly_awicm_@jobtype@_20000101-20000131.log --error=/work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/awicm1-initial-monthly_awicm_@jobtype@_20000101-20000131.log
+    output_path: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/
+    overcommit_flag: ''
+    overcommit_nodes: None
+    overcommit_rule: ''
+    partition_flag: --partition=@partition@
+    partitions:
+        compute:
+            cores_per_node: 36
+            name: mpp
+        pp:
+            cores_per_node: 1
+            name: smp
+    pool_dir: /work/ollie/pool
+    pool_directories:
+        focipool: /dev/null
+        pool: /work/ollie/pool
+        projects: /work/ollie/projects
+    runtime_environment_changes:
+        add_export_vars:
+            ACCOUNT: None
+            ESM_TESTING_DIR: /work/ollie/mandresm/testing//run/awicm/
+            MODEL_DIR: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
+    script_name: <--methods.scriptname--
+    sh_interpreter: /usr/bin/bash
+    single_proc_submit_flag: --ntasks-per-node=1
+    submit: sbatch
+    submitted: false
+    tasks_flag: --ntasks=@tasks@
+    thisrun_logfile: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/awicm1-initial-monthly_awicm_@jobtype@_20000101-20000131.log
+    threads_per_core: 1
+    time_flag: --time=00:15:00
+    useMPI: intelmpi
+debug_info:
+    loaded_from_file:
+    - /home/ollie/mandresm/esm_tools/configs//setups/awicm/awicm.yaml
+defaults:
+    clean_command: rm -rf build CMakeCache.txt
+    comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//defaults/download_and_compile.yaml
+echam:
+    _nx: 192
+    _ny: 96
+    adj_input_dir: /work/ollie/pool/ECHAM6/meshes_default/core//tarfilesT63/input/echam6
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    bin_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/bin
+    bin_intermediate:
+        echam_bin: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/bin/echam/echam6
+    bin_sources:
+        echam_bin: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/bin/echam6
+    bin_targets:
+        echam_bin: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/echam6
+    check_error:
+        mo_exception.f90:
+            file: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//atmout
+            frequency: 90
+            message: Problem with echam >> mo_exception.f90 << has occured. Killing your job, sorry.
+            method: kill
+    compile_infos:
+        available_versions:
+        - 6.3.05p2
+        - 6.3.05p2-foci
+        - 6.3.02p4
+        - 6.3.04p1-esm_interface
+        - 6.3.05p2-concurrent_radiation
+        - 6.3.04p1-paleodyn
+        - 6.3.04p1-recom-awicm
+        - 6.3.05p2-concurrent_radiation-paleodyn
+        - 6.3.04p1
+        branch: 6.3.04p1
+        choose_version:
+            6.3.02p4:
+                install_bins: src/bin/echam6
+            6.3.04p1-esm_interface:
+                branch: using_esm_interfaces_yac
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.04p1-paleodyn:
+                branch: paleodyn
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.04p1-recom-awicm:
+                branch: co2_coupling
+                destination: echam-6.3.04p1
+                git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+            6.3.05p2:
+                branch: 6.3.05p2
+                destination: echam-6.3.05p2
+            6.3.05p2-concurrent_radiation:
+                branch: concurrent_radiation
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+                comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                conf_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-fortran=intel INSTALL='/usr/bin/install -p'
+                git-repository: https://gitlab.dkrz.de/PalMod/echam6-PalMod.git
+            6.3.05p2-concurrent_radiation-paleodyn:
+                branch: ice
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+                comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            6.3.05p2-concurrent_radiation-paleodyn-hammoz:
+                branch: hammoz
+                clean_command: rm -rf src/echam/bin; make clean
+                comp_command: make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                conf_command: export OASIS3MCT_FC_LIB=$(pwd)/../lib/; export OASIS3MCTROOT=$(pwd)/../oasis/; ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel FCFLAGS="-cpp -DHAMMOZ" INSTALL='/usr/bin/install -p'
+                git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            6.3.05p2-foci:
+                branch: esm-tools
+                git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-wiso:
+                branch: wiso
+                clean_command: make clean
+                comp_command: make; make install
+                conf_command: ./configure
+        clean_command: rm -rf build CMakeCache.txt
+        comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+        git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
+        install_bins: src/echam/bin/echam6
+    config_intermediate:
+        namelist.echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/echam/namelist.echam
+    config_sources:
+        namelist.echam: /home/ollie/mandresm/esm_tools/namelists//echam/6.3.04p1/PI-CTRL/namelist.echam
+    config_targets:
+        namelist.echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.echam
+    coupling_fields:
+        AIceEvap:
+            grid: atmo
+        AIceFrac:
+            grid: atmo
+        ATotRain:
+            grid: atmo
+        ATotSnow:
+            grid: atmo
+        A_ITaux1:
+            grid: atmo
+        A_ITauy1:
+            grid: atmo
+        A_IceTck:
+            grid: atmo
+        A_OCurx1:
+            grid: atmo
+        A_OCury1:
+            grid: atmo
+        A_OTaux1:
+            grid: atmo
+        A_OTauy1:
+            grid: atmo
+        A_QnsIce:
+            grid: atmo
+        A_QnsMix:
+            grid: atmo
+        A_QsrIce:
+            grid: atmo
+        A_QsrMix:
+            grid: atmo
+        A_SSTSST:
+            grid: atmo
+        A_SnwTck:
+            grid: atmo
+        A_TepIce:
+            grid: atmo
+        A_dQnsdT:
+            grid: atmo
+        evap_atm:
+            grid: atmo
+        heat_atm:
+            grid: atmo
+        heat_ica:
+            grid: atmo
+        heat_swa:
+            grid: atmo
+        hydr_atm:
+            grid: atmo
+        prec_atm:
+            grid: atmo
+        sie_atmo:
+            grid: atmo
+        sit_atmo:
+            grid: atmo
+        snow_atm:
+            grid: atmo
+        snt_atmo:
+            grid: atmo
+        sst_atmo:
+            grid: atmo
+        subl_atm:
+            grid: atmo
+        taux_atm:
+            grid: atmo
+        taux_ica:
+            grid: atmo
+        tauy_atm:
+            grid: atmo
+        tauy_ica:
+            grid: atmo
+    dataset: r0007
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//components/echam/echam.yaml
+        - /home/ollie/mandresm/esm_tools/configs//components/echam/echam.postprocessing.yaml
+    disturbance: 1.000001
+    executable: echam6
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/echam/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/bin/echam/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/echam/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/echam/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/forcing/echam/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/echam/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/input/echam/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/echam/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/echam/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/outdata/echam/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/viz/echam/
+    file_movements: &id001
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    foci_fields:
+    - AIceFrac
+    - A_SSTSST
+    - A_TepIce
+    - A_IceTck
+    - A_SnwTck
+    - A_OCurx1
+    - A_OCury1
+    - A_OTaux1
+    - A_OTauy1
+    - A_ITaux1
+    - A_ITauy1
+    - A_QsrIce
+    - A_QsrMix
+    - A_QnsIce
+    - A_QnsMix
+    - ATotRain
+    - ATotSnow
+    - AIceEvap
+    - A_dQnsdT
+    forcing_additional_information:
+        aerocoarse:
+        - need_year_before
+        - need_year_after
+        aerofarir:
+        - need_year_before
+        - need_year_after
+        aerofin:
+        - need_year_before
+        - need_year_after
+        ozone:
+        - need_year_before
+        - need_year_after
+    forcing_dir: /work/ollie/pool/ECHAM6/input/r0007/T63
+    forcing_intermediate:
+        aerocoarse_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_coarse_1999.nc
+        aerocoarse_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_coarse_2000.nc
+        aerocoarse_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_coarse_2001.nc
+        aerofarir_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_farir_1999.nc
+        aerofarir_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_farir_2000.nc
+        aerofarir_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_farir_2001.nc
+        aerofin_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_fine_1999.nc
+        aerofin_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_fine_2000.nc
+        aerofin_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/aero_fine_2001.nc
+        ozone_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/ozon1999
+        ozone_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/ozon2000
+        ozone_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/echam/ozon2001
+    forcing_sources:
+        aerocoarse_year_1999: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerofarir_year_1999: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofin_year_1999: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        ozone_year_1999: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
+    forcing_targets:
+        aerocoarse_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_coarse_1999.nc
+        aerocoarse_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_coarse_2000.nc
+        aerocoarse_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_coarse_2001.nc
+        aerofarir_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_farir_1999.nc
+        aerofarir_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_farir_2000.nc
+        aerofarir_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_farir_2001.nc
+        aerofin_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_fine_1999.nc
+        aerofin_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_fine_2000.nc
+        aerofin_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/aero_fine_2001.nc
+        ozone_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/ozon1999
+        ozone_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/ozon2000
+        ozone_year_2001: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/ozon2001
+    greenhouse_dir: /work/ollie/pool/ECHAM6
+    grids:
+        atmo:
+            name: atmo
+            number_of_overlapping_points: 0
+            nx: 192
+            ny: 96
+            oasis_grid_type: D
+    ignore_intermediate:
+        accw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_accw
+        accw_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_accw.codes
+        accw_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_accw.nc
+        aclcim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_aclcim
+        aclcim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_aclcim.codes
+        aclcim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_aclcim.nc
+        co2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_co2
+        co2_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_co2.codes
+        co2_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_co2.nc
+        echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_echam
+        echam_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_echam.codes
+        echam_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_echam.nc
+        g3b1hi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3b1hi
+        g3b1hi_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3b1hi.codes
+        g3b1hi_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_g3b1hi.nc
+        g3bday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bday
+        g3bday_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bday.codes
+        g3bday_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_g3bday.nc
+        g3bid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bid
+        g3bid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bid.codes
+        g3bid_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_g3bid.nc
+        g3bim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bim
+        g3bim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_g3bim.codes
+        g3bim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_g3bim.nc
+        glday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_glday
+        glday_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_glday.codes
+        glday_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_glday.nc
+        glim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_glim
+        glim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_glim.codes
+        glim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_glim.nc
+        sp6h: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_sp6h
+        sp6h_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_sp6h.codes
+        sp6h_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_sp6h.nc
+        spim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_spim
+        spim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/awicm1-initial-monthly_200002.01_spim.codes
+        spim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/echam/restart_awicm1-initial-monthly_spim.nc
+    ignore_sources:
+        accw: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_accw
+        accw_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_accw.codes
+        accw_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_accw.nc
+        aclcim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_aclcim
+        aclcim_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_aclcim.codes
+        aclcim_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_aclcim.nc
+        co2: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_co2
+        co2_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_co2.codes
+        co2_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_co2.nc
+        echam: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_echam
+        echam_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_echam.codes
+        echam_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_echam.nc
+        g3b1hi: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3b1hi
+        g3b1hi_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3b1hi.codes
+        g3b1hi_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_g3b1hi.nc
+        g3bday: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bday
+        g3bday_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bday.codes
+        g3bday_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_g3bday.nc
+        g3bid: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bid
+        g3bid_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bid.codes
+        g3bid_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_g3bid.nc
+        g3bim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bim
+        g3bim_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_g3bim.codes
+        g3bim_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_g3bim.nc
+        glday: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_glday
+        glday_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_glday.codes
+        glday_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_glday.nc
+        glim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_glim
+        glim_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_glim.codes
+        glim_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_glim.nc
+        sp6h: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_sp6h
+        sp6h_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_sp6h.codes
+        sp6h_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_sp6h.nc
+        spim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_spim
+        spim_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_spim.codes
+        spim_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_spim.nc
+    ignore_targets:
+        accw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_accw
+        accw_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_accw.codes
+        accw_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_accw.nc
+        aclcim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_aclcim
+        aclcim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_aclcim.codes
+        aclcim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_aclcim.nc
+        co2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_co2
+        co2_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_co2.codes
+        co2_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_co2.nc
+        echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_echam
+        echam_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_echam.codes
+        echam_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_echam.nc
+        g3b1hi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3b1hi
+        g3b1hi_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3b1hi.codes
+        g3b1hi_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_g3b1hi.nc
+        g3bday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bday
+        g3bday_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bday.codes
+        g3bday_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_g3bday.nc
+        g3bid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bid
+        g3bid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bid.codes
+        g3bid_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_g3bid.nc
+        g3bim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bim
+        g3bim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_g3bim.codes
+        g3bim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_g3bim.nc
+        glday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_glday
+        glday_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_glday.codes
+        glday_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_glday.nc
+        glim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_glim
+        glim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_glim.codes
+        glim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_glim.nc
+        sp6h: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_sp6h
+        sp6h_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_sp6h.codes
+        sp6h_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_sp6h.nc
+        spim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_spim
+        spim_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/awicm1-initial-monthly_200002.01_spim.codes
+        spim_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/echam/restart_awicm1-initial-monthly_spim.nc
+    ini_parent_date: '22941231'
+    ini_parent_dir: /work/ollie/pool/ECHAM6/MPIESM/restart/dev/awicm1-initial-monthly/restart/echam6
+    ini_parent_exp_id: khw0030
+    input_dir: /work/ollie/pool/ECHAM6/input/r0007
+    input_intermediate:
+        cldoptprops: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/ECHAM6_CldOptProps.nc
+        janspec: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/unit.23
+        jansurf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/unit.24
+        rrtmglw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/rrtmg_lw.nc
+        rrtmgsw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/rrtmg_sw.nc
+        tslclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/unit.92
+        vgratclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/unit.91
+        vltclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/echam/unit.90
+    input_sources:
+        cldoptprops: /work/ollie/pool/ECHAM6/input/r0007/ECHAM6_CldOptProps.nc
+        janspec: /work/ollie/pool/ECHAM6/input/r0007/T63/T63L47_jan_spec.nc
+        jansurf: /work/ollie/pool/ECHAM6/meshes_default/core//tarfilesT63/input/echam6/T63CORE2_jan_surf.nc
+        rrtmglw: /work/ollie/pool/ECHAM6/input/r0007/rrtmg_lw.nc
+        rrtmgsw: /work/ollie/pool/ECHAM6/input/r0007/rrtmg_sw.nc
+        tslclim: /work/ollie/pool/ECHAM6/input/r0007/T63/T63_TSLCLIM.nc
+        vgratclim: /work/ollie/pool/ECHAM6/meshes_default/core//tarfilesT63/input/echam6/T63CORE2_VGRATCLIM.nc
+        vltclim: /work/ollie/pool/ECHAM6/meshes_default/core//tarfilesT63/input/echam6/T63CORE2_VLTCLIM.nc
+    input_targets:
+        cldoptprops: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/ECHAM6_CldOptProps.nc
+        janspec: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/unit.23
+        jansurf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/unit.24
+        rrtmglw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/rrtmg_lw.nc
+        rrtmgsw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/rrtmg_sw.nc
+        tslclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/unit.92
+        vgratclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/unit.91
+        vltclim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/unit.90
+    last_parent_date: '1999-12-31T23:45:00'
+    leapyear: true
+    levels: L47
+    log_intermediate:
+        atmout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/echam/atmout
+        stderr: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/echam/echam.stderr
+        stdout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/echam/echam.stdout
+    log_sources:
+        atmout: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//atmout
+        stderr: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//echam.stderr
+        stdout: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//echam.stdout
+    log_targets:
+        atmout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/echam/atmout
+        stderr: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/echam/echam.stderr
+        stdout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/echam/echam.stdout
+    lrad_async: false
+    lrestart_from_old: false
+    lresume: false
+    metadata:
+        Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
+        Description: The ECHAM atmosphere model, major version 6
+        Institute: MPI-Met
+        License: Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail. To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
+        Publications: 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
+    model: echam
+    model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/echam-6.3.04p1
+    models:
+    - jsbach
+    - hdmodel
+    namelist_changes:
+        namelist.echam:
+            parctl:
+                nproca: 24
+                nprocb: 24
+            runctl:
+                delta_time: 450
+                dt_resume:
+                - 2000
+                - 1
+                - 1
+                dt_start:
+                - 2000
+                - 1
+                - 1
+                dt_stop:
+                - 2000
+                - 2
+                - 1
+                lcouple: true
+                lresume: false
+                out_datapath: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work/
+                out_expname: awicm1-initial-monthly
+                putrerun:
+                - 1
+                - months
+                - first
+                - 0
+    namelist_dir: /home/ollie/mandresm/esm_tools/namelists//echam/6.3.04p1/PI-CTRL
+    namelists:
+    - namelist.echam
+    nproca: 24
+    nprocar: 0
+    nprocb: 24
+    nprocbr: 0
+    npromar: 0
+    ocean_resolution: CORE2
+    other_date: '2000-01-31T23:52:30'
+    outdata_intermediate:
+        aclcim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_aclcim.nc
+        g3b1hi_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_g3b1hi.nc
+        g3bday_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_g3bday.nc
+        g3bid_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_g3bid.nc
+        g3bim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_g3bim.nc
+        glday_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_glday.nc
+        glim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_glim.nc
+        jsbid_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_jsbid.nc
+        sp6h_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_sp6h.nc
+        spim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/echam/awicm1-initial-monthly_200001.01_spim.nc
+    outdata_sources:
+        aclcim_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_aclcim.nc
+        g3b1hi_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_g3b1hi.nc
+        g3bday_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_g3bday.nc
+        g3bid_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_g3bid.nc
+        g3bim_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_g3bim.nc
+        glday_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_glday.nc
+        glim_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_glim.nc
+        jsbid_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_jsbid.nc
+        sp6h_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_sp6h.nc
+        spim_nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_spim.nc
+    outdata_sources_wild_card:
+        accw: awicm1-initial-monthly_2000*.01_accw
+        accw_codes: awicm1-initial-monthly_2000*.01_accw.codes
+        aclcim: awicm1-initial-monthly_2000*.01_aclcim
+        aclcim_codes: awicm1-initial-monthly_2000*.01_aclcim.codes
+        co2: awicm1-initial-monthly_2000*.01_co2
+        co2_codes: awicm1-initial-monthly_2000*.01_co2.codes
+        echam: awicm1-initial-monthly_2000*.01_echam
+        echam_codes: awicm1-initial-monthly_2000*.01_echam.codes
+        g3b1hi: awicm1-initial-monthly_2000*.01_g3b1hi
+        g3b1hi_codes: awicm1-initial-monthly_2000*.01_g3b1hi.codes
+        g3bday: awicm1-initial-monthly_2000*.01_g3bday
+        g3bday_codes: awicm1-initial-monthly_2000*.01_g3bday.codes
+        g3bid: awicm1-initial-monthly_2000*.01_g3bid
+        g3bid_codes: awicm1-initial-monthly_2000*.01_g3bid.codes
+        g3bim: awicm1-initial-monthly_2000*.01_g3bim
+        g3bim_codes: awicm1-initial-monthly_2000*.01_g3bim.codes
+        glday: awicm1-initial-monthly_2000*.01_glday
+        glday_codes: awicm1-initial-monthly_2000*.01_glday.codes
+        glim: awicm1-initial-monthly_2000*.01_glim
+        glim_codes: awicm1-initial-monthly_2000*.01_glim.codes
+        sp6h: awicm1-initial-monthly_2000*.01_sp6h
+        sp6h_codes: awicm1-initial-monthly_2000*.01_sp6h.codes
+        spim: awicm1-initial-monthly_2000*.01_spim
+        spim_codes: awicm1-initial-monthly_2000*.01_spim.codes
+    outdata_targets:
+        aclcim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_aclcim.nc
+        g3b1hi_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_g3b1hi.nc
+        g3bday_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_g3bday.nc
+        g3bid_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_g3bid.nc
+        g3bim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_g3bim.nc
+        glday_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_glday.nc
+        glim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_glim.nc
+        jsbid_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_jsbid.nc
+        sp6h_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_sp6h.nc
+        spim_nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/echam/awicm1-initial-monthly_200001.01_spim.nc
+    parent_date: '1999-12-31T23:52:30'
+    parent_expid: awicm1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam/
+    pool_dir: /work/ollie/pool/ECHAM6
+    postprocess_method_definitions:
+        cdo:
+            call_order:
+            - program
+            - flags
+            - operator
+            - infile
+            - outfile
+            possible_args:
+            - stdin
+            - stdout
+            - outfile
+            possible_flags:
+            - f nc
+            - f grb1
+            - f grb2
+            - f nc1
+            - f nc2
+            - f nc4
+            - f nc4c
+            - f nc5
+            - f srv
+            - f ext
+            - f ieg
+            - t echam6
+            required_args:
+            - operator
+            - infile
+        cdo_chain:
+        - something...
+    postprocess_task_definitions:
+        BOT: null
+        flags:
+        - f nc2
+        method: cdo
+        mm:
+            args:
+                operator: monmean
+            flags:
+            - f nc
+            method: cdo
+        operator: after
+        stdin: namelist.BOT
+    postprocess_tasks:
+        awicm1-initial-monthly_echam_accw_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_accw
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_aclcim_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_aclcim
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_co2_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_co2
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_echam_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_echam
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_g3b1hi_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_g3b1hi
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_g3bday_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_g3bday
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_g3bid_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_g3bid
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_g3bim_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_g3bim
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_glday_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_glday
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_glim_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_glim
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_sp6h_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_sp6h
+            flags:
+            - t echam6
+            post_process: mm
+        awicm1-initial-monthly_echam_spim_20000101-20000201_mm.nc:
+            args:
+                infile: awicm1-initial-monthly_200001.01_spim
+            flags:
+            - t echam6
+            post_process: mm
+    postprocessing_stream: BOT ATM LOG
+    prev_date: '1999-12-31T23:52:30'
+    pseudo_end_date: '2000-02-01T00:00:00'
+    pseudo_resume_date: '2000-01-01T00:00:00'
+    pseudo_start_date: '2000-01-01T00:00:00'
+    repo_tag: 6.3.04p1
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    resolution: T63
+    restart_firstlast: first
+    restart_in_modifications:
+        accw:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        aclcim:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        co2:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        echam:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        g3b1hi:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        g3bday:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        g3bid:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        g3bim:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        glday:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        glim:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        sp6h:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        spim:
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+        - vdate <--set_global_attr-- 20000101
+    restart_out_intermediate:
+        accw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_accw_20000131.nc
+        aclcim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_aclcim_20000131.nc
+        co2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_co2_20000131.nc
+        echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_echam_20000131.nc
+        g3b1hi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_g3b1hi_20000131.nc
+        g3bday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_g3bday_20000131.nc
+        g3bid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_g3bid_20000131.nc
+        g3bim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_g3bim_20000131.nc
+        glday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_glday_20000131.nc
+        glim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_glim_20000131.nc
+        sp6h: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_sp6h_20000131.nc
+        spim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/echam/restart_awicm1-initial-monthly_spim_20000131.nc
+    restart_out_sources:
+        accw: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_accw.nc
+        aclcim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_aclcim.nc
+        co2: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_co2.nc
+        echam: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_echam.nc
+        g3b1hi: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_g3b1hi.nc
+        g3bday: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_g3bday.nc
+        g3bid: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_g3bid.nc
+        g3bim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_g3bim.nc
+        glday: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_glday.nc
+        glim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_glim.nc
+        sp6h: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_sp6h.nc
+        spim: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_spim.nc
+    restart_out_targets:
+        accw: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_accw_20000131.nc
+        aclcim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_aclcim_20000131.nc
+        co2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_co2_20000131.nc
+        echam: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_echam_20000131.nc
+        g3b1hi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_g3b1hi_20000131.nc
+        g3bday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_g3bday_20000131.nc
+        g3bid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_g3bid_20000131.nc
+        g3bim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_g3bim_20000131.nc
+        glday: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_glday_20000131.nc
+        glim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_glim_20000131.nc
+        sp6h: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_sp6h_20000131.nc
+        spim: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/echam/restart_awicm1-initial-monthly_spim_20000131.nc
+    restart_rate: 1
+    restart_unit: months
+    scenario: PI-CTRL
+    setup_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
+    standalone_model: true
+    streams:
+    - echam
+    - accw
+    - co2
+    - g3bid
+    - g3bim
+    - g3bday
+    - g3b1hi
+    - glday
+    - aclcim
+    - sp6h
+    - glim
+    - spim
+    streamsnc:
+    - aclcim
+    - g3b1hi
+    - g3bday
+    - g3bid
+    - g3bim
+    - glday
+    - glim
+    - jsbid
+    - sp6h
+    - spim
+    switch: 1
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/echam/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/bin/echam/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/echam/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/echam/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/forcing/echam/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/echam/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/input/echam/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/echam/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/echam/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/outdata/echam/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/echam/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/echam/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/viz/echam/
+    time_step: 450
+    transient_advance_forcing: false
+    type: atmosphere
+    value: echam switch
+    version: 6.3.04p1
+    yr_perp_off: false
+fesom:
+    12_step_outputs:
+    - tso
+    add_namelist_changes:
+        namelist.oce:
+            boundary:
+                restore_s_surf: 0
+            oce_tra: &id002
+                surf_relax_s: 0
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    asforcing: ECHAM5
+    available_versions:
+    - 2.0-o
+    - 1.4-esm_interface
+    - 1.4
+    - 1.4-recom-mocsy-slp
+    - 2.0-paleodyn
+    - 1.4-recom-awicm
+    - 2
+    - 2.0-r
+    - 2.0-jio
+    - 2.1
+    bin_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/bin
+    bin_intermediate:
+        fesom: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/bin/fesom/fesom
+    bin_sources:
+        fesom: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/bin/fesom
+    bin_targets:
+        fesom: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/fesom
+    branch: master
+    branchoff: false
+    clean_command: rm -rf build CMakeCache.txt
+    climate_data_dir: /work/ollie/pool/FESOM//hydrography/
+    comp_command: mkdir -p build; cd build; cmake ..;   make install
+    compiletime_environment_changes:
+        add_export_vars:
+            takenfrom: fesom1
+    config_intermediate:
+        config: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/namelist.config
+        diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/namelist.diag
+        fesom.clock: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/fesom.clock
+        forcing: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/namelist.forcing
+        ice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/namelist.ice
+        oce: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/fesom/namelist.oce
+    config_sources:
+        config: /home/ollie/mandresm/esm_tools/namelists//fesom/namelist.config
+        diag: /home/ollie/mandresm/esm_tools/namelists//fesom/namelist.diag
+        fesom.clock: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/fesom//fesom.clock
+        forcing: /home/ollie/mandresm/esm_tools/namelists//fesom/namelist.forcing
+        ice: /home/ollie/mandresm/esm_tools/namelists//fesom/namelist.ice
+        oce: /home/ollie/mandresm/esm_tools/namelists//fesom/namelist.oce
+    config_targets:
+        config: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.config
+        diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.diag
+        fesom.clock: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/fesom.clock
+        forcing: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.forcing
+        ice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.ice
+        oce: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.oce
+    coupling_fields:
+        evap_oce:
+            grid: feom
+        heat_ico:
+            grid: feom
+        heat_oce:
+            grid: feom
+        heat_swo:
+            grid: feom
+        hydr_oce:
+            grid: feom
+        prec_oce:
+            grid: feom
+        sie_feom:
+            grid: feom
+        sit_feom:
+            grid: feom
+        snow_oce:
+            grid: feom
+        snt_feom:
+            grid: feom
+        sst_feom:
+            grid: feom
+        subl_oce:
+            grid: feom
+        taux_ico:
+            grid: feom
+        taux_oce:
+            grid: feom
+        tauy_ico:
+            grid: feom
+        tauy_oce:
+            grid: feom
+    create_config:
+        fesom.clock:
+        - <--append-- 0.0000000000000 1 2000
+        - <--append-- 0.0000000000000 1 2000
+    currentday: 1
+    daily_outputs:
+    - mlotst
+    - omldamax
+    - sic
+    - sistrxdtop
+    - sistrxubot
+    - sistrydtop
+    - sistryubot
+    - sithick
+    - sitimefrac
+    - siu
+    - siv
+    - so
+    - sos
+    - tauuo
+    - tauvo
+    - thetao
+    - tos
+    - zos
+    - flice
+    - wnet
+    - evap
+    - runoff
+    - thdgr
+    - thdgrsn
+    daynew: 1
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//components/fesom/fesom.yaml
+    executable: fesom
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/fesom/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/bin/fesom/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/fesom/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/fesom/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/forcing/fesom/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/fesom/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/input/fesom/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/fesom/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/fesom/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/outdata/fesom/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/fesom/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/fesom/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/viz/fesom/
+    file_movements: *id001
+    forcing_data_dir: ''
+    git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
+    grids:
+        feom:
+            name: feom
+            number_of_overlapping_points: 0
+            nx: 126859
+            ny: 1
+            oasis_grid_type: U
+    ignore_intermediate:
+        chloro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/fesom/Chl_Sweeney.dat
+        gf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/fesom/goodfile
+    ignore_sources:
+        chloro: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//Chl_Sweeney.dat
+        gf: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//goodfile
+    ignore_targets:
+        chloro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/fesom/Chl_Sweeney.dat
+        gf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/fesom/goodfile
+    ini_data_dir: /work/ollie/pool/FESOM//pool-data/
+    install_bins: bin/fesom
+    last_parent_date: '1999-12-31T23:00:00'
+    lasttime: 84600
+    leapyear: true
+    log_intermediate:
+        clock: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/fesom/fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/fesom/fesom.initial.mesh.diag.nc
+    log_sources:
+        clock: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fesom.initial.mesh.diag.nc
+    log_targets:
+        clock: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/fesom/fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/fesom/fesom.initial.mesh.diag.nc
+    lresume: false
+    mesh_dir: /work/ollie/pool/FESOM//meshes_default/core/
+    mesh_rotated: false
+    metadata:
+        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
+        Description: Multiresolution sea ice-ocean model that solves the equations of motion on unestructured meshes
+        Institute: Alfred Wegener Institute
+        License: Please make sure you have a licence to use FESOM. In case you are unsure, please contact redmine...
+        Publications:
+        - The Finite-volumE Sea ice-Ocean Model (FESOM2) <https://doi.org/10.5194/gmd-10-765-2017>
+        - Scalability and some optimization of the Finite-volumE Sea ice-Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>
+    model: fesom
+    model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/fesom-1.4
+    monthly_outputs:
+    - evs
+    - fsitherm
+    - hfds
+    - opottemptend
+    - pbo
+    - prlq
+    - prsn
+    - rsdo
+    - siarean
+    - siareas
+    - sidmassevapsubl
+    - sidmasssi
+    - sidmassth
+    - sidmasstranx
+    - sidmasstrany
+    - siextentn
+    - siextents
+    - sifllatstop
+    - sisnconc
+    - sisnmass
+    - sisnthick
+    - sispeed
+    - sivol
+    - sivoln
+    - sivols
+    - soga
+    - thetaoga
+    - u2o
+    - uo
+    - uso
+    - uto
+    - v2o
+    - vo
+    - volo
+    - vso
+    - vto
+    - w2o
+    - wfo
+    - wo
+    - wso
+    - wto
+    - zossq
+    - rho
+    - uhice
+    - uhsnow
+    - urho
+    - uv
+    - vhice
+    - vhsnow
+    - virtual_salt
+    - vrho
+    namelist_changes:
+        namelist.config:
+            calendar:
+                include_fleapyear: true
+            clockinit:
+                daynew: 1
+                yearnew: 2000
+            inout:
+                output_length: 1
+                output_length_unit: m
+                restart_length: remove_from_namelist
+                restart_length_unit: remove_from_namelist
+                restartflag: last
+            mesh_def:
+                part_format: remove_from_namelist
+            paths:
+                ClimateDataPath: /work/ollie/pool/FESOM//hydrography/
+                ForcingDataPath: ''
+                MeshPath: /work/ollie/pool/FESOM//meshes_default/core/
+                OpbndPath: ''
+                ResultPath: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work/
+                TideForcingPath: ''
+            timestep:
+                run_length: 1
+                run_length_unit: m
+                step_per_day: 48
+        namelist.forcing:
+            forcing_source:
+                precip_data_source: ECHAM5
+                rad_data_source: ECHAM5
+                runoff_data_source: ECHAM5
+                sss_data_source: ECHAM5
+                wind_data_source: ECHAM5
+        namelist.oce:
+            boundary:
+                restore_s_surf: 0
+            oce_tra: *id002
+    namelist_dir: /home/ollie/mandresm/esm_tools/namelists//fesom
+    namelists:
+    - namelist.config
+    - namelist.forcing
+    - namelist.oce
+    - namelist.ice
+    - namelist.diag
+    nproc: 288
+    nx: 126859
+    old_mesh_format: false
+    opbnd_dir: ''
+    outdata_intermediate:
+        evap: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/evap_fesom_20000101.nc
+        evs: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/evs_fesom_20000101.nc
+        flice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/flice_fesom_20000101.nc
+        fsitherm: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/fsitherm_fesom_20000101.nc
+        hfds: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/hfds_fesom_20000101.nc
+        lwrd: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/lwrd_fesom_20000101.nc
+        mlotst: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/mlotst_fesom_20000101.nc
+        olat: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/olat_fesom_20000101.nc
+        olwout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/olwout_fesom_20000101.nc
+        omldamax: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/omldamax_fesom_20000101.nc
+        opottemptend: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/opottemptend_fesom_20000101.nc
+        osen: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/osen_fesom_20000101.nc
+        pbo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/pbo_fesom_20000101.nc
+        prlq: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/prlq_fesom_20000101.nc
+        prsn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/prsn_fesom_20000101.nc
+        relax_salt: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/relax_salt_fesom_20000101.nc
+        rho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/rho_fesom_20000101.nc
+        rsdo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/rsdo_fesom_20000101.nc
+        runoff: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/runoff_fesom_20000101.nc
+        shum: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/shum_fesom_20000101.nc
+        siarean: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siarean_fesom_20000101.nc
+        siareas: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siareas_fesom_20000101.nc
+        sic: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sic_fesom_20000101.nc
+        sidmassevapsubl: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sidmassevapsubl_fesom_20000101.nc
+        sidmasssi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sidmasssi_fesom_20000101.nc
+        sidmassth: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sidmassth_fesom_20000101.nc
+        sidmasstranx: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sidmasstranx_fesom_20000101.nc
+        sidmasstrany: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sidmasstrany_fesom_20000101.nc
+        siextentn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siextentn_fesom_20000101.nc
+        siextents: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siextents_fesom_20000101.nc
+        sifllatstop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sifllatstop_fesom_20000101.nc
+        sisnconc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sisnconc_fesom_20000101.nc
+        sisnmass: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sisnmass_fesom_20000101.nc
+        sisnthick: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sisnthick_fesom_20000101.nc
+        sispeed: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sispeed_fesom_20000101.nc
+        sistrxdtop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sistrxdtop_fesom_20000101.nc
+        sistrxubot: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sistrxubot_fesom_20000101.nc
+        sistrydtop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sistrydtop_fesom_20000101.nc
+        sistryubot: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sistryubot_fesom_20000101.nc
+        sithick: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sithick_fesom_20000101.nc
+        sitimefrac: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sitimefrac_fesom_20000101.nc
+        siu: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siu_fesom_20000101.nc
+        siv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/siv_fesom_20000101.nc
+        sivol: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sivol_fesom_20000101.nc
+        sivoln: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sivoln_fesom_20000101.nc
+        sivols: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sivols_fesom_20000101.nc
+        so: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/so_fesom_20000101.nc
+        soga: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/soga_fesom_20000101.nc
+        sos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/sos_fesom_20000101.nc
+        tair: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/tair_fesom_20000101.nc
+        tauuo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/tauuo_fesom_20000101.nc
+        tauvo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/tauvo_fesom_20000101.nc
+        thdgr: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/thdgr_fesom_20000101.nc
+        thdgrsn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/thdgrsn_fesom_20000101.nc
+        thetao: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/thetao_fesom_20000101.nc
+        thetaoga: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/thetaoga_fesom_20000101.nc
+        tos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/tos_fesom_20000101.nc
+        u2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/u2o_fesom_20000101.nc
+        uhice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uhice_fesom_20000101.nc
+        uhsnow: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uhsnow_fesom_20000101.nc
+        uo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uo_fesom_20000101.nc
+        urho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/urho_fesom_20000101.nc
+        uso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uso_fesom_20000101.nc
+        uto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uto_fesom_20000101.nc
+        uv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uv_fesom_20000101.nc
+        uwind: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/uwind_fesom_20000101.nc
+        v2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/v2o_fesom_20000101.nc
+        vhice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vhice_fesom_20000101.nc
+        vhsnow: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vhsnow_fesom_20000101.nc
+        virtual_salt: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/virtual_salt_fesom_20000101.nc
+        vo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vo_fesom_20000101.nc
+        volo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/volo_fesom_20000101.nc
+        vrho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vrho_fesom_20000101.nc
+        vso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vso_fesom_20000101.nc
+        vto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vto_fesom_20000101.nc
+        vwind: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/vwind_fesom_20000101.nc
+        w2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/w2o_fesom_20000101.nc
+        wfo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/wfo_fesom_20000101.nc
+        wnet: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/wnet_fesom_20000101.nc
+        wo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/wo_fesom_20000101.nc
+        wso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/wso_fesom_20000101.nc
+        wto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/wto_fesom_20000101.nc
+        zos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/zos_fesom_20000101.nc
+        zossq: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/zossq_fesom_20000101.nc
+    outdata_sources:
+        evap: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//evap_fesom_20000101.nc
+        evs: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//evs_fesom_20000101.nc
+        flice: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//flice_fesom_20000101.nc
+        fsitherm: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fsitherm_fesom_20000101.nc
+        hfds: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//hfds_fesom_20000101.nc
+        lwrd: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//lwrd_fesom_20000101.nc
+        mlotst: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//mlotst_fesom_20000101.nc
+        olat: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//olat_fesom_20000101.nc
+        olwout: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//olwout_fesom_20000101.nc
+        omldamax: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//omldamax_fesom_20000101.nc
+        opottemptend: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//opottemptend_fesom_20000101.nc
+        osen: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//osen_fesom_20000101.nc
+        pbo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//pbo_fesom_20000101.nc
+        prlq: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//prlq_fesom_20000101.nc
+        prsn: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//prsn_fesom_20000101.nc
+        relax_salt: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//relax_salt_fesom_20000101.nc
+        rho: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//rho_fesom_20000101.nc
+        rsdo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//rsdo_fesom_20000101.nc
+        runoff: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//runoff_fesom_20000101.nc
+        shum: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//shum_fesom_20000101.nc
+        siarean: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siarean_fesom_20000101.nc
+        siareas: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siareas_fesom_20000101.nc
+        sic: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sic_fesom_20000101.nc
+        sidmassevapsubl: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sidmassevapsubl_fesom_20000101.nc
+        sidmasssi: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sidmasssi_fesom_20000101.nc
+        sidmassth: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sidmassth_fesom_20000101.nc
+        sidmasstranx: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sidmasstranx_fesom_20000101.nc
+        sidmasstrany: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sidmasstrany_fesom_20000101.nc
+        siextentn: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siextentn_fesom_20000101.nc
+        siextents: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siextents_fesom_20000101.nc
+        sifllatstop: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sifllatstop_fesom_20000101.nc
+        sisnconc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sisnconc_fesom_20000101.nc
+        sisnmass: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sisnmass_fesom_20000101.nc
+        sisnthick: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sisnthick_fesom_20000101.nc
+        sispeed: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sispeed_fesom_20000101.nc
+        sistrxdtop: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sistrxdtop_fesom_20000101.nc
+        sistrxubot: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sistrxubot_fesom_20000101.nc
+        sistrydtop: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sistrydtop_fesom_20000101.nc
+        sistryubot: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sistryubot_fesom_20000101.nc
+        sithick: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sithick_fesom_20000101.nc
+        sitimefrac: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sitimefrac_fesom_20000101.nc
+        siu: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siu_fesom_20000101.nc
+        siv: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//siv_fesom_20000101.nc
+        sivol: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sivol_fesom_20000101.nc
+        sivoln: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sivoln_fesom_20000101.nc
+        sivols: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sivols_fesom_20000101.nc
+        so: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//so_fesom_20000101.nc
+        soga: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//soga_fesom_20000101.nc
+        sos: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sos_fesom_20000101.nc
+        tair: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tair_fesom_20000101.nc
+        tauuo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauuo_fesom_20000101.nc
+        tauvo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauvo_fesom_20000101.nc
+        thdgr: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//thdgr_fesom_20000101.nc
+        thdgrsn: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//thdgrsn_fesom_20000101.nc
+        thetao: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//thetao_fesom_20000101.nc
+        thetaoga: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//thetaoga_fesom_20000101.nc
+        tos: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tos_fesom_20000101.nc
+        u2o: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//u2o_fesom_20000101.nc
+        uhice: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uhice_fesom_20000101.nc
+        uhsnow: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uhsnow_fesom_20000101.nc
+        uo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uo_fesom_20000101.nc
+        urho: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//urho_fesom_20000101.nc
+        uso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uso_fesom_20000101.nc
+        uto: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uto_fesom_20000101.nc
+        uv: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uv_fesom_20000101.nc
+        uwind: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//uwind_fesom_20000101.nc
+        v2o: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//v2o_fesom_20000101.nc
+        vhice: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vhice_fesom_20000101.nc
+        vhsnow: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vhsnow_fesom_20000101.nc
+        virtual_salt: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//virtual_salt_fesom_20000101.nc
+        vo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vo_fesom_20000101.nc
+        volo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//volo_fesom_20000101.nc
+        vrho: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vrho_fesom_20000101.nc
+        vso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vso_fesom_20000101.nc
+        vto: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vto_fesom_20000101.nc
+        vwind: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//vwind_fesom_20000101.nc
+        w2o: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//w2o_fesom_20000101.nc
+        wfo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//wfo_fesom_20000101.nc
+        wnet: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//wnet_fesom_20000101.nc
+        wo: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//wo_fesom_20000101.nc
+        wso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//wso_fesom_20000101.nc
+        wto: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//wto_fesom_20000101.nc
+        zos: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//zos_fesom_20000101.nc
+        zossq: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//zossq_fesom_20000101.nc
+    outdata_targets:
+        evap: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/evap_fesom_20000101.nc
+        evs: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/evs_fesom_20000101.nc
+        flice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/flice_fesom_20000101.nc
+        fsitherm: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/fsitherm_fesom_20000101.nc
+        hfds: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/hfds_fesom_20000101.nc
+        lwrd: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/lwrd_fesom_20000101.nc
+        mlotst: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/mlotst_fesom_20000101.nc
+        olat: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/olat_fesom_20000101.nc
+        olwout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/olwout_fesom_20000101.nc
+        omldamax: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/omldamax_fesom_20000101.nc
+        opottemptend: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/opottemptend_fesom_20000101.nc
+        osen: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/osen_fesom_20000101.nc
+        pbo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/pbo_fesom_20000101.nc
+        prlq: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/prlq_fesom_20000101.nc
+        prsn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/prsn_fesom_20000101.nc
+        relax_salt: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/relax_salt_fesom_20000101.nc
+        rho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/rho_fesom_20000101.nc
+        rsdo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/rsdo_fesom_20000101.nc
+        runoff: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/runoff_fesom_20000101.nc
+        shum: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/shum_fesom_20000101.nc
+        siarean: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siarean_fesom_20000101.nc
+        siareas: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siareas_fesom_20000101.nc
+        sic: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sic_fesom_20000101.nc
+        sidmassevapsubl: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sidmassevapsubl_fesom_20000101.nc
+        sidmasssi: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sidmasssi_fesom_20000101.nc
+        sidmassth: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sidmassth_fesom_20000101.nc
+        sidmasstranx: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sidmasstranx_fesom_20000101.nc
+        sidmasstrany: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sidmasstrany_fesom_20000101.nc
+        siextentn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siextentn_fesom_20000101.nc
+        siextents: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siextents_fesom_20000101.nc
+        sifllatstop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sifllatstop_fesom_20000101.nc
+        sisnconc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sisnconc_fesom_20000101.nc
+        sisnmass: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sisnmass_fesom_20000101.nc
+        sisnthick: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sisnthick_fesom_20000101.nc
+        sispeed: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sispeed_fesom_20000101.nc
+        sistrxdtop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sistrxdtop_fesom_20000101.nc
+        sistrxubot: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sistrxubot_fesom_20000101.nc
+        sistrydtop: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sistrydtop_fesom_20000101.nc
+        sistryubot: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sistryubot_fesom_20000101.nc
+        sithick: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sithick_fesom_20000101.nc
+        sitimefrac: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sitimefrac_fesom_20000101.nc
+        siu: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siu_fesom_20000101.nc
+        siv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/siv_fesom_20000101.nc
+        sivol: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sivol_fesom_20000101.nc
+        sivoln: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sivoln_fesom_20000101.nc
+        sivols: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sivols_fesom_20000101.nc
+        so: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/so_fesom_20000101.nc
+        soga: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/soga_fesom_20000101.nc
+        sos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/sos_fesom_20000101.nc
+        tair: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/tair_fesom_20000101.nc
+        tauuo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/tauuo_fesom_20000101.nc
+        tauvo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/tauvo_fesom_20000101.nc
+        thdgr: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/thdgr_fesom_20000101.nc
+        thdgrsn: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/thdgrsn_fesom_20000101.nc
+        thetao: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/thetao_fesom_20000101.nc
+        thetaoga: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/thetaoga_fesom_20000101.nc
+        tos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/tos_fesom_20000101.nc
+        u2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/u2o_fesom_20000101.nc
+        uhice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uhice_fesom_20000101.nc
+        uhsnow: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uhsnow_fesom_20000101.nc
+        uo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uo_fesom_20000101.nc
+        urho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/urho_fesom_20000101.nc
+        uso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uso_fesom_20000101.nc
+        uto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uto_fesom_20000101.nc
+        uv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uv_fesom_20000101.nc
+        uwind: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/uwind_fesom_20000101.nc
+        v2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/v2o_fesom_20000101.nc
+        vhice: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vhice_fesom_20000101.nc
+        vhsnow: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vhsnow_fesom_20000101.nc
+        virtual_salt: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/virtual_salt_fesom_20000101.nc
+        vo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vo_fesom_20000101.nc
+        volo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/volo_fesom_20000101.nc
+        vrho: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vrho_fesom_20000101.nc
+        vso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vso_fesom_20000101.nc
+        vto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vto_fesom_20000101.nc
+        vwind: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/vwind_fesom_20000101.nc
+        w2o: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/w2o_fesom_20000101.nc
+        wfo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/wfo_fesom_20000101.nc
+        wnet: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/wnet_fesom_20000101.nc
+        wo: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/wo_fesom_20000101.nc
+        wso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/wso_fesom_20000101.nc
+        wto: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/wto_fesom_20000101.nc
+        zos: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/zos_fesom_20000101.nc
+        zossq: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/fesom/zossq_fesom_20000101.nc
+    parent_date: '1999-12-31T23:30:00'
+    parent_expid: awicm1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/fesom/
+    pool_dir: /work/ollie/pool/FESOM/
+    prev_date: '1999-12-31T23:30:00'
+    resolution: CORE2
+    restart_first: 1
+    restart_flag: last
+    restart_out_intermediate:
+        ice_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/fesom/fesom.2000.ice.nc
+        oce_diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/fesom/fesom.2000.oce.diag.nc
+        oce_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/fesom/fesom.2000.oce.nc
+    restart_out_sources:
+        ice_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fesom.2000.ice.nc
+        oce_diag: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fesom.2000.oce.diag.nc
+        oce_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//fesom.2000.oce.nc
+    restart_out_targets:
+        ice_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/fesom/fesom.2000.ice.nc
+        oce_diag: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/fesom/fesom.2000.oce.diag.nc
+        oce_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/fesom/fesom.2000.oce.nc
+    restart_rate: 1
+    restart_unit: m
+    runtime_environment_changes:
+        add_export_vars:
+            AWI_FESOM_YAML:
+                output_schedules:
+                -   first: 1
+                    rate: 1
+                    unit: m
+                    vars:
+                    - restart
+                -   rate: 1
+                    unit: m
+                    vars:
+                    - evs
+                    - fsitherm
+                    - hfds
+                    - opottemptend
+                    - pbo
+                    - prlq
+                    - prsn
+                    - rsdo
+                    - siarean
+                    - siareas
+                    - sidmassevapsubl
+                    - sidmasssi
+                    - sidmassth
+                    - sidmasstranx
+                    - sidmasstrany
+                    - siextentn
+                    - siextents
+                    - sifllatstop
+                    - sisnconc
+                    - sisnmass
+                    - sisnthick
+                    - sispeed
+                    - sivol
+                    - sivoln
+                    - sivols
+                    - soga
+                    - thetaoga
+                    - u2o
+                    - uo
+                    - uso
+                    - uto
+                    - v2o
+                    - vo
+                    - volo
+                    - vso
+                    - vto
+                    - w2o
+                    - wfo
+                    - wo
+                    - wso
+                    - wto
+                    - zossq
+                    - rho
+                    - uhice
+                    - uhsnow
+                    - urho
+                    - uv
+                    - vhice
+                    - vhsnow
+                    - virtual_salt
+                    - vrho
+                -   rate: 1
+                    unit: d
+                    vars:
+                    - mlotst
+                    - omldamax
+                    - sic
+                    - sistrxdtop
+                    - sistrxubot
+                    - sistrydtop
+                    - sistryubot
+                    - sithick
+                    - sitimefrac
+                    - siu
+                    - siv
+                    - so
+                    - sos
+                    - tauuo
+                    - tauvo
+                    - thetao
+                    - tos
+                    - zos
+                    - flice
+                    - wnet
+                    - evap
+                    - runoff
+                    - thdgr
+                    - thdgrsn
+                -   rate: 12
+                    unit: s
+                    vars:
+                    - tso
+                -   first: 1000
+                    rate: 1
+                    unit: y
+                    vars:
+                    - lwrd
+                    - olat
+                    - olwout
+                    - osen
+                    - relax_salt
+                    - shum
+                    - tair
+                    - uwind
+                    - vwind
+    setup_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
+    startday: 1
+    starttime: 0
+    steps_per_day: 48
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/fesom/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/bin/fesom/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/fesom/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/fesom/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/forcing/fesom/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/fesom/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/input/fesom/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/fesom/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/fesom/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/outdata/fesom/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/fesom/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/fesom/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/viz/fesom/
+    tide_forcing_dir: ''
+    time_dimension: time
+    time_step: 1800
+    type: ocean
+    version: 1.4
+    with_part_format: false
+    yearly_outputs:
+    - lwrd
+    - olat
+    - olwout
+    - osen
+    - relax_salt
+    - shum
+    - tair
+    - uwind
+    - vwind
+    yearnew: 2000
+general:
+    account: None
+    additional_files: []
+    all_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - work
+    all_model_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    available_versions:
+    - 1
+    - 1.0-recom
+    - CMIP6
+    base_dir: /work/ollie/mandresm/testing//run/awicm/
+    batch: slurm
+    calendar: esm_calendar object with allowed leap years
+    check: false
+    chunk_number: 1
+    command_line_config:
+        check: false
+        current_date: null
+        expid: awicm1-initial-monthly
+        inspect: null
+        jobtype: prepcompute
+        launcher_pid: -666
+        no_motd: true
+        original_command: awicm1-initial-monthly.yaml -e awicm1-initial-monthly --open-run --no-motd
+        profile: false
+        run_number: null
+        runscript_abspath: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/scripts/awicm1-initial-monthly.yaml
+        scriptname: awicm1-initial-monthly.yaml
+        started_from: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/scripts/
+        update: false
+        use_venv: false
+        verbose: false
+    compute_time: 00:15:00
+    coupled_setup: true
+    coupler: oasis3mct
+    coupler_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/oasis3mct/
+    couplings:
+    - fesom-1.4+echam-6.3.04p1
+    current_date: '2000-01-01T00:00:00'
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//defaults/general.yaml
+    defaults.yaml:
+        debug_info:
+            loaded_from_file: /home/ollie/mandresm/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+        per_model_defaults: {}
+    delta_date:
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    end_date: '2000-01-31T00:00:00'
+    esm_function_dir: FUNCTION_PATH
+    esm_namelist_dir: NAMELIST_PATH
+    esm_runscript_dir: RUNSCRIPT_PATH
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/
+    experiment_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/
+    experiment_log_file: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log//awicm1-initial-monthly_awicm.log
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/
+    experiment_scripts_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/scripts/
+    experiment_src_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/src/
+    experiment_unknown_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/unknown/
+    expid: awicm1-initial-monthly
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    final_date: '2000-03-01T00:00:00'
+    first_run_in_chunk: true
+    in_filetypes:
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
+    initial_date: '2000-01-01T00:00:00'
+    inspect: null
+    jobid: 182796
+    jobtype: prepcompute
+    last_run_datestamp: 19991201-19991231
+    last_run_in_chunk: false
+    last_start_date: '1999-12-01T00:00:00'
+    launcher_pid: -666
+    leapyear: true
+    logfile_path: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log//awicm1-initial-monthly_awicm_prepcompute_20000101-20000131.log
+    logfile_path_in_run: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log//awicm1-initial-monthly_awicm_prepcompute_20000101-20000131.log
+    model: awicm
+    model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
+    models:
+    - echam
+    - fesom
+    - oasis3mct
+    nday: 0
+    next_date: '2000-02-01T00:00:00'
+    nhour: 0
+    nminute: 0
+    nmonth: 1
+    no_motd: true
+    nsecond: 0
+    nyear: 0
+    original_command: awicm1-initial-monthly.yaml -e awicm1-initial-monthly --open-run --no-motd
+    out_filetypes:
+    - analysis
+    - log
+    - mon
+    - scripts
+    - ignore
+    - unknown
+    - outdata
+    - restart_out
+    post_time: 00:05:00
+    postprocessing: false
+    prev_date: '1999-12-31T00:00:00'
+    profile: false
+    relevant_filetypes:
+    - bin
+    - config
+    - forcing
+    - input
+    - restart_in
+    reset_calendar_to_last: false
+    resolution: T63_CORE2
+    reusable_filetypes:
+    - bin
+    - src
+    run_datestamp: 20000101-20000131
+    run_number: 1
+    runscript_abspath: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/scripts/awicm1-initial-monthly.yaml
+    runtime:
+    - 0
+    - 1
+    - 31
+    - 744
+    - 44640
+    - 2678400
+    scenario: PI-CTRL
+    scriptname: awicm1-initial-monthly.yaml
+    setup_name: awicm
+    standalone: false
+    start_date: '2000-01-01T00:00:00'
+    started_from: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/scripts/
+    submitted: false
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/
+    thisrun_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/
+    thisrun_scripts_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/scripts/
+    thisrun_src_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/src/
+    thisrun_unknown_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/unknown/
+    thisrun_work_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work/
+    total_runtime:
+    - 0
+    - 1
+    - 31
+    - 744
+    - 44640
+    - 2678400
+    update: false
+    use_database: false
+    use_venv: false
+    valid_model_names:
+    - echam
+    - fesom
+    - oasis3mct
+    - jsbach
+    - hdmodel
+    valid_setup_names:
+    - computer
+    - general
+    - echam
+    - jsbach
+    - fesom
+    - oasis3mct
+    - debug_info
+    verbose: false
+    version: CMIP6
+    work_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work/
+    workflow:
+        first_task_in_queue: prepcompute
+        last_task_in_queue: tidy
+        next_run_triggered_by: tidy
+        subjob_clusters:
+            compute:
+                batch_or_shell: batch
+                called_from: prepcompute
+                next_submit:
+                - tidy
+                nproc: 576
+                order_in_cluster: sequential
+                run_before: tidy
+                run_on_queue: mpp
+                subjobs:
+                - compute_general
+                submit_to_batch_system: true
+            prepcompute:
+                batch_or_shell: SimulationSetup
+                called_from: tidy
+                next_submit:
+                - compute
+                nproc: 1
+                order_in_cluster: sequential
+                run_before: compute
+                subjobs:
+                - prepcompute_general
+                submit_to_batch_system: false
+            tidy:
+                batch_or_shell: SimulationSetup
+                called_from: compute
+                next_submit:
+                - prepcompute
+                nproc: 1
+                order_in_cluster: sequential
+                run_after: compute
+                subjobs:
+                - tidy_general
+                submit_to_batch_system: false
+        subjobs:
+            compute_general:
+                nproc: 576
+                run_before: tidy
+                run_on_queue: mpp
+                subjob_cluster: compute
+                submit_to_batch_system: true
+            prepcompute_general:
+                nproc: 1
+                run_before: compute
+                subjob_cluster: prepcompute
+            tidy_general:
+                nproc: 1
+                run_after: compute
+                subjob_cluster: tidy
+hdmodel:
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//components/hdmodel/hdmodel.yaml
+    description: 'The Hagemann/Duemenil hydrology model,
+
+        (someone from Hamburg)
+
+        paper citation'
+    domain: hydrology
+    executable: NONE
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/hdmodel/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/bin/hdmodel/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/hdmodel/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/hdmodel/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/forcing/hdmodel/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/hdmodel/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/input/hdmodel/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/hdmodel/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/hdmodel/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/outdata/hdmodel/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/hdmodel/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/hdmodel/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/viz/hdmodel/
+    file_movements: *id001
+    ini_parent_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam//../hdmodel/
+    ini_parent_exp_id: awicm1-initial-monthly
+    ini_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam//../hdmodel/
+    input_dir: /work/ollie/pool/JSBACH/input/r0010/HD
+    input_intermediate:
+        hdpara: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/hdmodel/hdpara.nc
+        hdstart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/hdmodel/hdstart.nc
+        rmp_hd: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/hdmodel/rmp_hd.nc
+    input_sources:
+        hdpara: /work/ollie/pool/JSBACH/input/r0010/HD/hdpara.nc
+        hdstart: /work/ollie/pool/JSBACH/input/r0010/HD/hdstart.nc
+        rmp_hd: /work/ollie/pool/JSBACH/input/r0010/HD/rmp_T63_to_hd.nc
+    input_targets:
+        hdpara: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/hdpara.nc
+        hdstart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/hdstart.nc
+        rmp_hd: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/rmp_hd.nc
+    last_parent_date: '1999-12-31T23:45:00'
+    leapyear: true
+    license_text: 'Please make sure you have a licence to use echam. In case you are
+
+        unsure, please contact redmine....'
+    lresume: false
+    model: hdmodel
+    other_date: '2000-01-31T23:52:30'
+    parent_date: '1999-12-31T23:52:30'
+    parent_expid: awicm1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/hdmodel/
+    pool_dir: /work/ollie/pool/JSBACH/input/r0010/HD
+    prev_date: '1999-12-31T23:52:30'
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    restart_out_intermediate:
+        hdrestart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/hdmodel/restart_awicm1-initial-monthly_20000131_hdrestart.nc
+    restart_out_sources:
+        hdrestart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//hdrestart.nc
+    restart_out_targets:
+        hdrestart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/hdmodel/restart_awicm1-initial-monthly_20000131_hdrestart.nc
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/hdmodel/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/bin/hdmodel/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/hdmodel/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/hdmodel/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/forcing/hdmodel/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/hdmodel/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/input/hdmodel/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/hdmodel/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/hdmodel/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/outdata/hdmodel/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/hdmodel/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/hdmodel/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/viz/hdmodel/
+    time_step: 450
+jsbach:
+    adj_input_dir: /work/ollie/pool/FESOM//meshes_default/core//tarfilesT63/input/jsbach
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    config_intermediate:
+        namelist.jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/jsbach/namelist.jsbach
+    config_sources:
+        namelist.jsbach: /home/ollie/mandresm/esm_tools/namelists//jsbach/3.20/PI-CTRL/no_dynveg/namelist.jsbach
+    config_targets:
+        namelist.jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namelist.jsbach
+    cover_fract_dir: /work/ollie/pool/JSBACH/input/r0010/T63/land_use_maps/
+    dataset: r0010
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//components/jsbach/jsbach.yaml
+        - /home/ollie/mandresm/esm_tools/configs//components/jsbach/jsbach.datasets.yaml
+    description: 'The JSBACH vegetation model, major version 3
+
+        (someone from Hamburg)
+
+        paper citation'
+    domain: vegetation
+    dynamic_vegetations: false
+    dynveg: _no_dynveg
+    dynveg_file_ending: ''
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/jsbach/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/bin/jsbach/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/jsbach/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/jsbach/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/forcing/jsbach/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/jsbach/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/input/jsbach/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/jsbach/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/jsbach/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/outdata/jsbach/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/jsbach/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/jsbach/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/viz/jsbach/
+    file_movements: *id001
+    forcing_additional_information:
+        LU:
+        - need_timestep_before
+        - need_timestep_after
+        LU_trans:
+        - need_timestep_before
+        - need_timestep_after
+        Ndepo:
+        - need_timestep_before
+        - need_timestep_after
+    forcing_intermediate:
+        LU_trans_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/landuseTransitions.1999.nc
+        LU_trans_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/landuseTransitions.2000.nc
+        LU_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/landuse_harvest.1999.nc
+        LU_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/landuse_harvest.2000.nc
+        Ndepo_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/Ndepo.1999.nc
+        Ndepo_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/Ndepo.2000.nc
+        a_nd_file: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/a_nd_file.nc
+        lightning: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/lightning.nc
+        popdens: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/population_density.nc
+    forcing_modifications:
+        Ndepo: <--setyear-- @YEAR@
+    forcing_sources:
+        LU_trans_year_1999: /work/ollie/pool/JSBACH/input/r0010/T63/New_Hampshire_LCC/no_LUH_transitions_T63.nc
+        LU_trans_year_2000: /work/ollie/pool/JSBACH/input/r0010/T63/New_Hampshire_LCC/no_LUH_transitions_T63.nc
+        LU_year_1999: /work/ollie/pool/JSBACH/input/r0010/T63/New_Hampshire_LCC/hist_harvest/LUH_harvest_T63_1850.nc
+        LU_year_2000: /work/ollie/pool/JSBACH/input/r0010/T63/New_Hampshire_LCC/hist_harvest/LUH_harvest_T63_1850.nc
+        Ndepo_year_1999: /work/ollie/pool/JSBACH/input/r0010/T63/T63_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc
+        Ndepo_year_2000: /work/ollie/pool/JSBACH/input/r0010/T63/T63_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc
+        a_nd_file: /work/ollie/pool/JSBACH/input/r0010/T63/spitfire/a_nd_T63.nc
+        lightning: /work/ollie/pool/JSBACH/input/r0010/T63/spitfire/LISOTD_HRMC_V2.2_T63.nc
+        popdens: /work/ollie/pool/JSBACH/input/r0010/T63/spitfire/population_density_HYDE_T63.nc
+    forcing_targets:
+        LU_trans_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/landuseTransitions.1999.nc
+        LU_trans_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/landuseTransitions.2000.nc
+        LU_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/landuse_harvest.1999.nc
+        LU_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/landuse_harvest.2000.nc
+        Ndepo_year_1999: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/Ndepo.1999.nc
+        Ndepo_year_2000: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/Ndepo.2000.nc
+        a_nd_file: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/a_nd_file.nc
+        lightning: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/lightning.nc
+        popdens: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/population_density.nc
+    hist_fold: hist_harvest
+    ignore_intermediate:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbach.codes
+        jsbach_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_jsbach.nc
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbid.codes
+        jsbid_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_jsbid.nc
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_land
+        land_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_land.codes
+        land_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_land.nc
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_nitro.codes
+        nitro_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_nitro.nc
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_surf
+        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_surf.codes
+        surf_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_surf.nc
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_veg
+        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_veg.codes
+        veg_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_veg.nc
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm1-initial-monthly_200002.01_yasso.codes
+        yasso_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/restart_awicm1-initial-monthly_yasso.nc
+    ignore_sources:
+        jsbach: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_jsbach.codes
+        jsbach_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_jsbach.nc
+        jsbid: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_jsbid.codes
+        jsbid_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_jsbid.nc
+        land: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_land
+        land_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_land.codes
+        land_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_land.nc
+        nitro: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_nitro.codes
+        nitro_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_nitro.nc
+        surf: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_surf
+        surf_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_surf.codes
+        surf_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_surf.nc
+        veg: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_veg
+        veg_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_veg.codes
+        veg_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_veg.nc
+        yasso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200002.01_yasso.codes
+        yasso_restart: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_yasso.nc
+    ignore_targets:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbach.codes
+        jsbach_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_jsbach.nc
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_jsbid.codes
+        jsbid_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_jsbid.nc
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_land
+        land_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_land.codes
+        land_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_land.nc
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_nitro.codes
+        nitro_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_nitro.nc
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_surf
+        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_surf.codes
+        surf_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_surf.nc
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_veg
+        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_veg.codes
+        veg_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_veg.nc
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/awicm1-initial-monthly_200002.01_yasso.codes
+        yasso_restart: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/ignore/jsbach/restart_awicm1-initial-monthly_yasso.nc
+    ini_parent_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam//../jsbach/
+    ini_parent_exp_id: awicm1-initial-monthly
+    ini_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/echam//../jsbach/
+    input_dir: /work/ollie/pool/JSBACH/input/r0010
+    input_intermediate:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/jsbach/jsbach.nc
+        lctlib: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/input/jsbach/lctlib.def
+    input_sources:
+        jsbach: /work/ollie/pool/FESOM//meshes_default/core//tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
+        lctlib: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/echam-6.3.04p1/lctlib_nlct21.def
+    input_targets:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/jsbach.nc
+        lctlib: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/lctlib.def
+    jsbachnc_file_ending: ''
+    last_parent_date: '1999-12-31T23:45:00'
+    leapyear: true
+    license_text: 'Please make sure you have a licence to use echam.In case you are
+
+        unsure, please contact redmine....'
+    lresume: false
+    model: jsbach
+    model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/echam-6.3.04p1
+    namelist_changes:
+        namelist.jsbach:
+            hydrology_ctl:
+                gethd: remove_from_namelist
+                puthd: remove_from_namelist
+    namelist_dir: /home/ollie/mandresm/esm_tools/namelists//jsbach/3.20/PI-CTRL/no_dynveg
+    namelists:
+    - namelist.jsbach
+    no_dynveg_file_ending: ''
+    other_date: '2000-01-31T23:52:30'
+    outdata_intermediate:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbach.codes
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbid.codes
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_land
+        land_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_land.codes
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_nitro.codes
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_surf
+        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_surf.codes
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_veg
+        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_veg.codes
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm1-initial-monthly_200001.01_yasso.codes
+    outdata_sources:
+        jsbach: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_jsbach.codes
+        jsbid: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_jsbid.codes
+        land: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_land
+        land_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_land.codes
+        nitro: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_nitro.codes
+        surf: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_surf
+        surf_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_surf.codes
+        veg: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_veg
+        veg_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_veg.codes
+        yasso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//awicm1-initial-monthly_200001.01_yasso.codes
+    outdata_targets:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbach
+        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbach.codes
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbid
+        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_jsbid.codes
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_land
+        land_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_land.codes
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_nitro
+        nitro_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_nitro.codes
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_surf
+        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_surf.codes
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_veg
+        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_veg.codes
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_yasso
+        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/jsbach/awicm1-initial-monthly_200001.01_yasso.codes
+    parent_date: '1999-12-31T23:52:30'
+    parent_expid: awicm1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/jsbach/
+    pool_dir: /work/ollie/pool/JSBACH
+    prev_date: '1999-12-31T23:52:30'
+    repository: https://gitlab.dkrz.de/modular_esm/echam6
+    resolution: T63
+    restart_out_intermediate:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_jsbach_20000131.nc
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_jsbid_20000131.nc
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_land_20000131.nc
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_nitro_20000131.nc
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_surf_20000131.nc
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_veg_20000131.nc
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/restart_awicm1-initial-monthly_yasso_20000131.nc
+    restart_out_sources:
+        jsbach: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_jsbach.nc
+        jsbid: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_jsbid.nc
+        land: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_land.nc
+        nitro: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_nitro.nc
+        surf: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_surf.nc
+        veg: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_veg.nc
+        yasso: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//restart_awicm1-initial-monthly_20000131235230_yasso.nc
+    restart_out_targets:
+        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_jsbach_20000131.nc
+        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_jsbid_20000131.nc
+        land: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_land_20000131.nc
+        nitro: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_nitro_20000131.nc
+        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_surf_20000131.nc
+        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_veg_20000131.nc
+        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/jsbach/restart_awicm1-initial-monthly_yasso_20000131.nc
+    scenario: PI-CTRL
+    streams:
+    - jsbach
+    - jsbid
+    - yasso
+    - surf
+    - nitro
+    - veg
+    - land
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/jsbach/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/bin/jsbach/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/jsbach/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/jsbach/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/forcing/jsbach/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/jsbach/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/input/jsbach/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/jsbach/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/jsbach/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/outdata/jsbach/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/jsbach/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/viz/jsbach/
+    time_step: 450
+    version: 3.2
+oasis3mct:
+    a2o_lag: 450
+    a2o_seq: 2
+    add_restart_in_files:
+        rmp_a2f_B: rmp_a2f_B
+        rmp_a2f_D: rmp_a2f_D
+        rmp_f2a_D: rmp_f2a_D
+    add_restart_in_in_work:
+        rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+    add_restart_in_sources:
+        rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+    add_restart_out_files:
+        rmp_a2f_B: rmp_a2f_B
+        rmp_a2f_D: rmp_a2f_D
+        rmp_f2a_D: rmp_f2a_D
+    add_restart_out_in_work:
+        rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+    add_restart_out_sources:
+        rmp_a2f_B: rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - forcing
+    - input
+    - couple
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    available_versions:
+    - foci
+    - fociagrif
+    - ec-earth
+    - 2.8
+    - 3
+    - 4
+    - 4.0-oifsdeck
+    branch: 2.8
+    cf_name_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/oasis
+    clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
+    comp_command: mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include
+    config_intermediate:
+        cf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/oasis3mct/cf_name_table.txt
+        namcouple: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/config/oasis3mct/namcouple
+    config_sources:
+        cf: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/oasis/cf_name_table.txt
+        namcouple: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/oasis3mct//namcouple
+    config_targets:
+        cf: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/cf_name_table.txt
+        namcouple: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/work/namcouple
+    coupling_directions:
+        atmo->feom:
+            lag: 450
+            seq: 2
+        feom->atmo:
+            lag: 1800
+            seq: 2
+    coupling_methods:
+        bicubic:
+            remapping:
+                bicubic:
+                    nb_of_search_bins: 15
+                    search_bin: latitude
+            time_transformation: instant
+        distwgt:
+            remapping:
+                distwgt:
+                    nb_of_neighbours: 6
+                    nb_of_search_bins: 15
+                    search_bin: latitude
+            time_transformation: instant
+    coupling_target_fields:
+        a2o_flux:
+        - taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- taux_atm:tauy_atm:taux_ica:tauy_ica
+        - prec_oce <--distwgt-- prec_atm
+        - snow_oce <--distwgt-- snow_atm
+        - evap_oce <--distwgt-- evap_atm
+        - subl_oce <--distwgt-- subl_atm
+        - heat_oce <--distwgt-- heat_atm
+        - heat_ico <--distwgt-- heat_ica
+        - heat_swo <--distwgt-- heat_swa
+        - hydr_oce <--distwgt-- hydr_atm
+        o2a_flux:
+        - sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom
+        - snt_atmo <--distwgt-- snt_feom
+    coupling_time_step: 3600
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//components/oasis3mct/oasis3mct.yaml
+    destination: oasis
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/analysis/oasis3mct/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/bin/oasis3mct/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/config/oasis3mct/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/couple/oasis3mct/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/forcing/oasis3mct/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/ignore/oasis3mct/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/input/oasis3mct/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/log/oasis3mct/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/mon/oasis3mct/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/outdata/oasis3mct/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/oasis3mct/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/oasis3mct/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/viz/oasis3mct/
+    file_movements: *id001
+    git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    install_libs:
+    - build/lib/psmile/libpsmile.a
+    - build/lib/psmile/mct/libmct.a
+    - build/lib/psmile/mct/mpeu/libmpeu.a
+    - build/lib/psmile/scrip/libscrip.a
+    last_parent_date: '1999-12-31T23:30:00'
+    leapyear: true
+    log_intermediate:
+        debug_nr1: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/debug_notroot.01
+        debug_nr2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/debug_notroot.02
+        debug_r1: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/debug.root.01
+        debug_r2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/debug.root.02
+        nout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/nout.000000
+    log_sources:
+        debug_nr1: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//debug_notroot.01
+        debug_nr2: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//debug_notroot.02
+        debug_r1: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//debug.root.01
+        debug_r2: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//debug.root.02
+        nout: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//nout.000000
+    log_targets:
+        debug_nr1: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/oasis3mct/debug_notroot.01
+        debug_nr2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/oasis3mct/debug_notroot.02
+        debug_r1: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/oasis3mct/debug.root.01
+        debug_r2: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/oasis3mct/debug.root.02
+        nout: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/log/oasis3mct/nout.000000
+    lresume: false
+    mct_version: 2.8
+    model: oasis3mct
+    model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/oasis
+    norestart: F
+    o2a_lag: 1800
+    outdata_intermediate:
+        evap_atm_echam6_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/evap_atm_echam6_06.nc
+        evap_oce_fesom_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/evap_oce_fesom_06.nc
+        heat_atm_echam6_08.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_atm_echam6_08.nc
+        heat_ica_echam6_09.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_ica_echam6_09.nc
+        heat_ico_fesom_09.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_ico_fesom_09.nc
+        heat_oce_fesom_08.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_oce_fesom_08.nc
+        heat_swa_echam6_10.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_swa_echam6_10.nc
+        heat_swo_fesom_10.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/heat_swo_fesom_10.nc
+        hydr_atm_echam6_11.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/hydr_atm_echam6_11.nc
+        hydr_oce_fesom_11.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/hydr_oce_fesom_11.nc
+        prec_atm_echam6_04.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/prec_atm_echam6_04.nc
+        prec_oce_fesom_04.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/prec_oce_fesom_04.nc
+        sie_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sie_atmo_echam6_01.nc
+        sie_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sie_feom_fesom_01.nc
+        sit_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sit_atmo_echam6_01.nc
+        sit_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sit_feom_fesom_01.nc
+        snow_atm_echam6_05.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/snow_atm_echam6_05.nc
+        snow_oce_fesom_05.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/snow_oce_fesom_05.nc
+        snt_atmo_echam6_02.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/snt_atmo_echam6_02.nc
+        snt_feom_fesom_02.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/snt_feom_fesom_02.nc
+        sst_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sst_atmo_echam6_01.nc
+        sst_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/sst_feom_fesom_01.nc
+        subl_atm_echam6_07.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/subl_atm_echam6_07.nc
+        subl_oce_fesom_07.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/subl_oce_fesom_07.nc
+        taux_atm_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/taux_atm_echam6_03.nc
+        taux_ica_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/taux_ica_echam6_03.nc
+        taux_ico_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/taux_ico_fesom_03.nc
+        taux_oce_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/taux_oce_fesom_03.nc
+        tauy_atm_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/tauy_atm_echam6_03.nc
+        tauy_ica_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/tauy_ica_echam6_03.nc
+        tauy_ico_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/tauy_ico_fesom_03.nc
+        tauy_oce_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/tauy_oce_fesom_03.nc
+    outdata_sources:
+        evap_atm_echam6_06.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//evap_atm_echam6_06.nc
+        evap_oce_fesom_06.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//evap_oce_fesom_06.nc
+        heat_atm_echam6_08.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_atm_echam6_08.nc
+        heat_ica_echam6_09.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_ica_echam6_09.nc
+        heat_ico_fesom_09.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_ico_fesom_09.nc
+        heat_oce_fesom_08.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_oce_fesom_08.nc
+        heat_swa_echam6_10.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_swa_echam6_10.nc
+        heat_swo_fesom_10.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//heat_swo_fesom_10.nc
+        hydr_atm_echam6_11.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//hydr_atm_echam6_11.nc
+        hydr_oce_fesom_11.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//hydr_oce_fesom_11.nc
+        prec_atm_echam6_04.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//prec_atm_echam6_04.nc
+        prec_oce_fesom_04.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//prec_oce_fesom_04.nc
+        sie_atmo_echam6_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sie_atmo_echam6_01.nc
+        sie_feom_fesom_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sie_feom_fesom_01.nc
+        sit_atmo_echam6_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sit_atmo_echam6_01.nc
+        sit_feom_fesom_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sit_feom_fesom_01.nc
+        snow_atm_echam6_05.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//snow_atm_echam6_05.nc
+        snow_oce_fesom_05.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//snow_oce_fesom_05.nc
+        snt_atmo_echam6_02.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//snt_atmo_echam6_02.nc
+        snt_feom_fesom_02.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//snt_feom_fesom_02.nc
+        sst_atmo_echam6_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sst_atmo_echam6_01.nc
+        sst_feom_fesom_01.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//sst_feom_fesom_01.nc
+        subl_atm_echam6_07.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//subl_atm_echam6_07.nc
+        subl_oce_fesom_07.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//subl_oce_fesom_07.nc
+        taux_atm_echam6_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//taux_atm_echam6_03.nc
+        taux_ica_echam6_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//taux_ica_echam6_03.nc
+        taux_ico_fesom_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//taux_ico_fesom_03.nc
+        taux_oce_fesom_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//taux_oce_fesom_03.nc
+        tauy_atm_echam6_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauy_atm_echam6_03.nc
+        tauy_ica_echam6_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauy_ica_echam6_03.nc
+        tauy_ico_fesom_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauy_ico_fesom_03.nc
+        tauy_oce_fesom_03.nc: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//tauy_oce_fesom_03.nc
+    outdata_targets:
+        evap_atm_echam6_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/evap_atm_echam6_06.nc
+        evap_oce_fesom_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/evap_oce_fesom_06.nc
+        heat_atm_echam6_08.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_atm_echam6_08.nc
+        heat_ica_echam6_09.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_ica_echam6_09.nc
+        heat_ico_fesom_09.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_ico_fesom_09.nc
+        heat_oce_fesom_08.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_oce_fesom_08.nc
+        heat_swa_echam6_10.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_swa_echam6_10.nc
+        heat_swo_fesom_10.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/heat_swo_fesom_10.nc
+        hydr_atm_echam6_11.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/hydr_atm_echam6_11.nc
+        hydr_oce_fesom_11.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/hydr_oce_fesom_11.nc
+        prec_atm_echam6_04.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/prec_atm_echam6_04.nc
+        prec_oce_fesom_04.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/prec_oce_fesom_04.nc
+        sie_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sie_atmo_echam6_01.nc
+        sie_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sie_feom_fesom_01.nc
+        sit_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sit_atmo_echam6_01.nc
+        sit_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sit_feom_fesom_01.nc
+        snow_atm_echam6_05.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/snow_atm_echam6_05.nc
+        snow_oce_fesom_05.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/snow_oce_fesom_05.nc
+        snt_atmo_echam6_02.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/snt_atmo_echam6_02.nc
+        snt_feom_fesom_02.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/snt_feom_fesom_02.nc
+        sst_atmo_echam6_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sst_atmo_echam6_01.nc
+        sst_feom_fesom_01.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/sst_feom_fesom_01.nc
+        subl_atm_echam6_07.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/subl_atm_echam6_07.nc
+        subl_oce_fesom_07.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/subl_oce_fesom_07.nc
+        taux_atm_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/taux_atm_echam6_03.nc
+        taux_ica_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/taux_ica_echam6_03.nc
+        taux_ico_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/taux_ico_fesom_03.nc
+        taux_oce_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/taux_oce_fesom_03.nc
+        tauy_atm_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/tauy_atm_echam6_03.nc
+        tauy_ica_echam6_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/tauy_ica_echam6_03.nc
+        tauy_ico_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/tauy_ico_fesom_03.nc
+        tauy_oce_fesom_03.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/outdata/oasis3mct/tauy_oce_fesom_03.nc
+    parent_date: '1999-12-31T23:45:00'
+    parent_expid: awicm1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/restart/oasis3mct/
+    prev_date: '1999-12-31T23:45:00'
+    process_ordering:
+    - fesom
+    - echam
+    restart_out_intermediate:
+        a2o_flux: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/a2o_flux
+        a2o_flux_recv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/a2o_flux_recv
+        areas: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/areas.nc
+        grids: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/grids.nc
+        masks: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/masks.nc
+        o2a_flux: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/o2a_flux
+        o2a_flux_recv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/o2a_flux_recv
+        rmp_a2f_B: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/rmp_feom_to_atmo_DISTWGT.nc
+    restart_out_sources:
+        a2o_flux: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//a2o_flux
+        a2o_flux_recv: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//a2o_flux_recv
+        areas: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//areas.nc
+        grids: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//grids.nc
+        masks: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//masks.nc
+        o2a_flux: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//o2a_flux
+        o2a_flux_recv: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//o2a_flux_recv
+        rmp_a2f_B: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/work//rmp_feom_to_atmo_DISTWGT.nc
+    restart_out_targets:
+        a2o_flux: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/a2o_flux
+        a2o_flux_recv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/a2o_flux_recv
+        areas: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/areas.nc
+        grids: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/grids.nc
+        masks: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/masks.nc
+        o2a_flux: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/o2a_flux
+        o2a_flux_recv: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/o2a_flux_recv
+        rmp_a2f_B: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/rmp_atmo_to_feom_BICUBIC.nc
+        rmp_a2f_D: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/rmp_atmo_to_feom_DISTWGT.nc
+        rmp_f2a_D: /work/ollie/mandresm/testing/run/awicm/awicm1-initial-monthly/restart/oasis3mct/rmp_feom_to_atmo_DISTWGT.nc
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/analysis/oasis3mct/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/bin/oasis3mct/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/config/oasis3mct/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/couple/oasis3mct/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/forcing/oasis3mct/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/ignore/oasis3mct/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/input/oasis3mct/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/log/oasis3mct/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/mon/oasis3mct/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/outdata/oasis3mct/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/restart/oasis3mct/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-initial-monthly/run_20000101-20000131/viz/oasis3mct/
+    time_step: 900
+    use_lucia: false
+    version: 2.8

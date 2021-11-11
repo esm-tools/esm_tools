@@ -1,0 +1,43 @@
+general:
+        account: !ENV ${ACCOUNT}
+        setup_name: fesom-recom
+        compute_time: "00:10:00"
+        initial_date: "1958-01-01"
+        final_date: "1958-01-03"
+        base_dir: !ENV ${ESM_TESTING_DIR}
+        nyear: 0
+        nmonth: 0
+        nday: 1
+        lresume: 0
+
+fesom-recom:
+        version: 1.4
+        model_dir: !ENV ${MODEL_DIR}
+
+fesom:
+        version: "1.4-recom-mocsy-slp"
+        choose_computer.name:
+            ollie:
+                pool_dir: "/work/ollie/pool/FESOM/"
+                mesh_dir: "/work/ollie/ogurses/meshes/core_new_432/"
+                forcing_data_dir: /work/ollie/projects/MarESys/forcing_clim61/
+        res: CORE2
+        lresume: "${general.lresume}"
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: "d"
+        post_processing: 0
+
+        daily_outputs: [evs,fsitherm,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uso,uto,v2o,volo,vso,vto,w2o,wfo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn,mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
+        yearly_outputs: []
+        monthly_outputs: []
+
+recom:
+        choose_computer.name:
+            ollie:
+                data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
+        lresume: "${general.lresume}"
+        scenario: "preindustrial"
+        daily_outputs: [diags3d01,diags3d02,slp]
+        monthly_outputs: [FPzoo2_2d,Mortzoo2_3d,MortHet3d,TotGraz2_3d,NPPphy3d,NPPdia3d,GPPphy3d,GPPdia3d,TotGraz3d,AGGphy3d,AGGdia3d,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPPd,GPPn,GPPd,NNAn,NNAd,GNAn,GNAd,benCalc,benSi,benC,benN,denb,aN,aFe,Hp,CO2f,dpCO2s,pCO2s,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,bgc23,bgc24,bgc25,bgc26,bgc27,bgc28,age01,Kw,alphaCO2,O2f]
+        yearly_outputs: [RESphy3d,RESdia3d,RESzoo3d,calcdiss,calcif3d,NNAsphy3d,NNAsdia3d,GNAsphy3d,GNAsdia3d,EXChet3d,EXCphy3d,EXCdia3d,GRAZ2phy3d,GRAZ2dia3d,GRAZ2het3d,RESzoo2_3d,EXCzoo2_3d,GRAZphy3d,GRAZdia3d,GRAZdet3d,GRAZ2det3d,GRAZdet2_3d,GRAZ2det2_3d]

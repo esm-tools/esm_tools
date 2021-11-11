@@ -65,7 +65,7 @@ def _get_real_dir_from_pth_file(subfolder):
             try:
                 assert actual_package_data_dir.exists()
             except AssertionError as e:  # NOTE(PG): there is probably a better way of doing that than with assert.
-                print("Assumed path did not exist! We tried:")
+                print(f"Assumed path {actual_package_data_dir} did not exist! We tried:")
                 print(f"{paths[0]}")
                 print(f"{paths[1]}")
                 # BUG(PG): Needs something like "startswith('/')" to move around absolute paths.

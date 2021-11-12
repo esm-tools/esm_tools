@@ -156,6 +156,11 @@ config_in_work:
         ifs_xml: ifs_xml/*
         context_ifs: context_ifs.xml
 
+ignore_sources:
+        xios_out: xios*.out
+        xios_err: xios*.err
+        xios_int: xios_interpolation_weights*
+
 bin_sources:
         server: ${bin_dir}/xios.x
 

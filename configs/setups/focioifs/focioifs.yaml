@@ -144,6 +144,14 @@ oifs:
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
+
+        file_movements:
+                ICMGG_INIT:
+                        all_directions: copy
+                ICMSH_INIT:
+                        all_directions: copy
+                ICMGG_INIUA:
+                        all_directions: copy
         
         # nproc must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -229,6 +237,10 @@ oifs:
 nemo:
         
         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+        
+        #file_movements:
+        #        input:
+        #                all_directions: link
         
         choose_general.resolution:
                 TCO95_ORCA05:

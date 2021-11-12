@@ -861,6 +861,10 @@ outdata_sources:
 log_sources:
         tracer:  tracer.stat
         ocean:  '*ocean.output'
+        namout: output.namelist.*
+        solver_stat: solver.stat
+        time_step: time.step
+        layout: layout.dat
 
 ##########################  coupling stuff
 

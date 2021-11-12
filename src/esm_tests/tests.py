@@ -719,7 +719,7 @@ def save_files(info, user_choice):
     with open(get_state_yaml_path(), "r") as st:
         current_state = yaml.load(st, Loader=yaml.FullLoader)
     # Update with this results
-    results = format_results(info, scripts_info)
+    results = format_results(info)
     current_state = deep_update(current_state, results)
     current_state = sort_dict(current_state)
     with open(get_state_yaml_path(), "w") as st:

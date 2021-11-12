@@ -17,5 +17,3 @@ run:
         check: {}
 computers:
         - ollie
-        - mistral
-        - blogin

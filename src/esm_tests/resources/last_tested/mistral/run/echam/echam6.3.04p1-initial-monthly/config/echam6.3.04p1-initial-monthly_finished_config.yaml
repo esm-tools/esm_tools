@@ -145,7 +145,7 @@ defaults:
 echam:
     _nx: 192
     _ny: 96
-    adj_input_dir: /pool/data/ECHAM6/input/r0007/T63
+    adj_input_dir: /pool/data/ECHAM6//input/r0007/T63
     all_filetypes:
     - analysis
     - bin
@@ -431,16 +431,34 @@ echam:
         aerocoarse:
         - need_year_before
         - need_year_after
+        aerocoarse_kinne_1850:
+        - need_year_before
+        - need_year_after
         aerofarir:
+        - need_year_before
+        - need_year_after
+        aerofarir_kinne_1850:
         - need_year_before
         - need_year_after
         aerofin:
         - need_year_before
         - need_year_after
+        aerofin_kinne_1850:
+        - need_year_before
+        - need_year_after
         ozone:
         - need_year_before
         - need_year_after
-    forcing_dir: /pool/data/ECHAM6/input/r0007/T63
+        swflux:
+        - need_year_before
+        - need_year_after
+        volcanir:
+        - need_year_before
+        - need_year_after
+        volcsw:
+        - need_year_before
+        - need_year_after
+    forcing_dir: /pool/data/ECHAM6//input/r0007/T63
     forcing_intermediate:
         aerocoarse_year_1999: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/forcing/echam/aero_coarse_1999.nc
         aerocoarse_year_2000: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/forcing/echam/aero_coarse_2000.nc
@@ -457,20 +475,20 @@ echam:
         sic: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/forcing/echam/unit.96
         sst: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/forcing/echam/unit.20
     forcing_sources:
-        aerocoarse_year_1999: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerocoarse_year_2000: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerocoarse_year_2001: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerofarir_year_1999: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofarir_year_2000: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofarir_year_2001: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofin_year_1999: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        aerofin_year_2000: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        aerofin_year_2001: /pool/data/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        ozone_year_1999: /pool/data/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozone_year_2000: /pool/data/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozone_year_2001: /pool/data/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        sic: /pool/data/ECHAM6/input/r0007/T63/T63GR15_piControl-LR_sic_1880-2379.nc
-        sst: /pool/data/ECHAM6/input/r0007/T63/T63GR15_piControl-LR_sst_1880-2379.nc
+        aerocoarse_year_1999: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2000: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2001: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerofarir_year_1999: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2000: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2001: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofin_year_1999: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2000: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2001: /pool/data/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        ozone_year_1999: /pool/data/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2000: /pool/data/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2001: /pool/data/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        sic: /pool/data/ECHAM6//input/r0007/T63/T63GR15_piControl-LR_sic_1880-2379.nc
+        sst: /pool/data/ECHAM6//input/r0007/T63/T63GR15_piControl-LR_sst_1880-2379.nc
     forcing_targets:
         aerocoarse_year_1999: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/aero_coarse_1999.nc
         aerocoarse_year_2000: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/aero_coarse_2000.nc
@@ -486,7 +504,7 @@ echam:
         ozone_year_2001: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/ozon2001
         sic: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/unit.96
         sst: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/unit.20
-    greenhouse_dir: /pool/data/ECHAM6
+    greenhouse_dir: /pool/data/ECHAM6/
     grids:
         atmo:
             name: atmo
@@ -606,9 +624,9 @@ echam:
         spim_codes: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/ignore/echam/echam6.3.04p1-initial-monthly_200002.01_spim.codes
         spim_restart: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/ignore/echam/restart_echam6.3.04p1-initial-monthly_spim.nc
     ini_parent_date: '22941231'
-    ini_parent_dir: /pool/data/ECHAM6/MPIESM/restart/dev/echam6.3.04p1-initial-monthly/restart/echam6
+    ini_parent_dir: /pool/data/ECHAM6//MPIESM/restart/dev/echam6.3.04p1-initial-monthly/restart/echam6
     ini_parent_exp_id: khw0030
-    input_dir: /pool/data/ECHAM6/input/r0007
+    input_dir: /pool/data/ECHAM6//input/r0007
     input_intermediate:
         cldoptprops: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/input/echam/ECHAM6_CldOptProps.nc
         janspec: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/input/echam/unit.23
@@ -619,14 +637,14 @@ echam:
         vgratclim: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/input/echam/unit.91
         vltclim: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/input/echam/unit.90
     input_sources:
-        cldoptprops: /pool/data/ECHAM6/input/r0007/ECHAM6_CldOptProps.nc
-        janspec: /pool/data/ECHAM6/input/r0007/T63/T63L47_jan_spec.nc
-        jansurf: /pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc
-        rrtmglw: /pool/data/ECHAM6/input/r0007/rrtmg_lw.nc
-        rrtmgsw: /pool/data/ECHAM6/input/r0007/rrtmg_sw.nc
-        tslclim: /pool/data/ECHAM6/input/r0007/T63/T63_TSLCLIM.nc
-        vgratclim: /pool/data/ECHAM6/input/r0007/T63/T63GR15_VGRATCLIM.nc
-        vltclim: /pool/data/ECHAM6/input/r0007/T63/T63GR15_VLTCLIM.nc
+        cldoptprops: /pool/data/ECHAM6//input/r0007/ECHAM6_CldOptProps.nc
+        janspec: /pool/data/ECHAM6//input/r0007/T63/T63L47_jan_spec.nc
+        jansurf: /pool/data/ECHAM6//input/r0007/T63/T63GR15_jan_surf.nc
+        rrtmglw: /pool/data/ECHAM6//input/r0007/rrtmg_lw.nc
+        rrtmgsw: /pool/data/ECHAM6//input/r0007/rrtmg_sw.nc
+        tslclim: /pool/data/ECHAM6//input/r0007/T63/T63_TSLCLIM.nc
+        vgratclim: /pool/data/ECHAM6//input/r0007/T63/T63GR15_VGRATCLIM.nc
+        vltclim: /pool/data/ECHAM6//input/r0007/T63/T63GR15_VLTCLIM.nc
     input_targets:
         cldoptprops: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/ECHAM6_CldOptProps.nc
         janspec: /work/ab0995/a270152/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/unit.23
@@ -767,7 +785,7 @@ echam:
     parent_date: '1999-12-31T23:52:30'
     parent_expid: echam6.3.04p1-initial-monthly
     parent_restart_dir: /work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/restart/echam/
-    pool_dir: /pool/data/ECHAM6
+    pool_dir: /pool/data/ECHAM6/
     post_processing: 0
     postprocess_method_definitions:
         cdo:
@@ -1322,7 +1340,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 36865
+    jobid: 30868
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false

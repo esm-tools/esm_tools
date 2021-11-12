@@ -27,6 +27,9 @@ fesom:
         mistral:
             rpool_dir: /work/bm0944/input/
             rmesh_dir: /pool/data/AWICM/FESOM1/MESHES/core/
+        ollie:
+            rpool_dir: "${computer.pool_directories.pool}/FESOM/"
+            rmesh_dir: "${computer.pool_directories.pool}/FESOM/meshes_default/core/"
     pool_dir: ${fesom.rpool_dir}
     mesh_dir: ${fesom.rmesh_dir}
     resolution: CORE2

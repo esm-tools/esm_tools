@@ -92,6 +92,8 @@ choose_asforcing:
                 leapyear: true
         JRA55:
                 leapyear: true
+        ECHAM6:
+                leapyear: true
 
 executable: fesom
 choose_resolution:
@@ -102,6 +104,9 @@ choose_resolution:
         GLOB:
                 nx: 830305
                 mesh_dir: "${pool_dir}/meshes_default/glob/"
+        GLOB_rmstep:
+                nx: 830305
+                mesh_dir: "/work/ba1150/a270147/meshes/"
         REF87K:
                 nx: 86803
                 mesh_dir: "${pool_dir}/meshes/mesh_ref87k/"

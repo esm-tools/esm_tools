@@ -445,16 +445,34 @@ echam:
         aerocoarse:
         - need_year_before
         - need_year_after
+        aerocoarse_kinne_1850:
+        - need_year_before
+        - need_year_after
         aerofarir:
+        - need_year_before
+        - need_year_after
+        aerofarir_kinne_1850:
         - need_year_before
         - need_year_after
         aerofin:
         - need_year_before
         - need_year_after
+        aerofin_kinne_1850:
+        - need_year_before
+        - need_year_after
         ozone:
         - need_year_before
         - need_year_after
-    forcing_dir: /work/ollie/pool/ECHAM6/input/r0007/T63
+        swflux:
+        - need_year_before
+        - need_year_after
+        volcanir:
+        - need_year_before
+        - need_year_after
+        volcsw:
+        - need_year_before
+        - need_year_after
+    forcing_dir: /work/ollie/pool/ECHAM6//input/r0007/T63
     forcing_intermediate:
         aerocoarse_year_2000: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/forcing/echam/aero_coarse_2000.nc
         aerocoarse_year_2001: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/forcing/echam/aero_coarse_2001.nc
@@ -472,21 +490,21 @@ echam:
         ozoneb: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/forcing/echam/ozon1989
         ozonec: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/forcing/echam/ozon1990
     forcing_sources:
-        aerocoarse_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerocoarse_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerocoarse_year_2002: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
-        aerofarir_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofarir_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofarir_year_2002: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
-        aerofin_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        aerofin_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        aerofin_year_2002: /work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
-        ozone_year_2000: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozone_year_2001: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozone_year_2002: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozonea: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozoneb: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
-        ozonec: /work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        aerocoarse_year_2000: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2001: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerocoarse_year_2002: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc
+        aerofarir_year_2000: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2001: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofarir_year_2002: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc
+        aerofin_year_2000: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2001: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        aerofin_year_2002: /work/ollie/pool/ECHAM6//input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc
+        ozone_year_2000: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2001: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozone_year_2002: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozonea: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozoneb: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
+        ozonec: /work/ollie/pool/ECHAM6//input/r0007/T63/ozone/T63_ozone_picontrol.nc
     forcing_targets:
         aerocoarse_year_2000: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/aero_coarse_2000.nc
         aerocoarse_year_2001: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/aero_coarse_2001.nc
@@ -503,7 +521,7 @@ echam:
         ozonea: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/ozon1988
         ozoneb: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/ozon1989
         ozonec: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/ozon1990
-    greenhouse_dir: /work/ollie/pool/ECHAM6
+    greenhouse_dir: /work/ollie/pool/ECHAM6/
     grids:
         atmo:
             name: atmo
@@ -661,7 +679,7 @@ echam:
     ini_parent_date: '20021231'
     ini_parent_dir: /work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/echam/
     ini_parent_exp_id: piw_zstar_swon_atbox
-    input_dir: /work/ollie/pool/ECHAM6/input/r0007
+    input_dir: /work/ollie/pool/ECHAM6//input/r0007
     input_intermediate:
         cldoptprops: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/input/echam/ECHAM6_CldOptProps.nc
         janspec: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/input/echam/unit.23
@@ -672,12 +690,12 @@ echam:
         vgratclim: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/input/echam/unit.91
         vltclim: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/input/echam/unit.90
     input_sources:
-        cldoptprops: /work/ollie/pool/ECHAM6/input/r0007/ECHAM6_CldOptProps.nc
-        janspec: /work/ollie/pool/ECHAM6/input/r0007/T63/T63L47_jan_spec.nc
+        cldoptprops: /work/ollie/pool/ECHAM6//input/r0007/ECHAM6_CldOptProps.nc
+        janspec: /work/ollie/pool/ECHAM6//input/r0007/T63/T63L47_jan_spec.nc
         jansurf: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean//tarfilesT63/input/echam6/T63CORE2_jan_surf.nc
-        rrtmglw: /work/ollie/pool/ECHAM6/input/r0007/rrtmg_lw.nc
-        rrtmgsw: /work/ollie/pool/ECHAM6/input/r0007/rrtmg_sw.nc
-        tslclim: /work/ollie/pool/ECHAM6/input/r0007/T63/T63_TSLCLIM.nc
+        rrtmglw: /work/ollie/pool/ECHAM6//input/r0007/rrtmg_lw.nc
+        rrtmgsw: /work/ollie/pool/ECHAM6//input/r0007/rrtmg_sw.nc
+        tslclim: /work/ollie/pool/ECHAM6//input/r0007/T63/T63_TSLCLIM.nc
         vgratclim: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean//tarfilesT63/input/echam6/T63CORE2_VGRATCLIM.nc
         vltclim: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean//tarfilesT63/input/echam6/T63CORE2_VLTCLIM.nc
     input_targets:
@@ -837,7 +855,7 @@ echam:
     parent_date: '2000-12-31T23:52:30'
     parent_expid: all_awiesm-2.1-recom
     parent_restart_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/restart/echam/
-    pool_dir: /work/ollie/pool/ECHAM6
+    pool_dir: /work/ollie/pool/ECHAM6/
     postprocess_method_definitions:
         cdo:
             call_order:
@@ -1948,7 +1966,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 56083
+    jobid: 67609
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false

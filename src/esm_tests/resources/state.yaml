@@ -12,6 +12,9 @@ awicm:
       mistral:
         compilation: true
         run: true
+      ollie:
+        compilation: true
+        run: true
 awiesm:
   2.1-recom:
     all_awiesm-2.1-recom:

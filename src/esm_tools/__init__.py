@@ -110,9 +110,6 @@ def _get_real_dir_from_pth_file(subfolder):
                         logger.error("Could not determine path!")
                         break  # Break out of the for loop
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
-            import pdb
-
-            pdb.set_trace()
             return actual_package_data_dir
     raise FileNotFoundError(
         f"Could not determine where {subfolder}'s path is inside the esm-tools installation! These were searched for info: {site_packages_dirs}"

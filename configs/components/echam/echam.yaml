@@ -292,13 +292,30 @@ choose_scenario:
                         aerofin: piaerofin
                         aerofarir: piaerofarir
                         ozone: 1850ozone
-        1950:
+        "1950":
                 forcing_files:
+
+                        #with iaero = 8 (MAC-SP) use the following
+                        #MAC-SP: MAC-SP_1950 # not yet implemented
+                        #aerocoarse_1849: piaerocoarse
+                        #aerocoarse_1850: piaerocoarse
+                        #aerocoarse_1851: piaerocoarse
+                        #aerofarir_1849: piaerofarir
+                        #aerofarir_1850: piaerofarir
+                        #aerofarir_1851: piaerofarir
+                        #aerofin_1849: piaerofin
+                        #aerofin_1850: piaerofin
+                        #aerofin_1851: piaerofin
+                        #
+                        # with iaero = 3 use te following
                         aerocoarse: piaerocoarse
-                        aerofin: piaerofin
                         aerofarir: piaerofarir
+                        aerofin: piaerofin
+                        #
                         ozone: 1950ozone
-                        MAC-SP: MAC-SP
+                        swflux: 1950swflux
+                        volcir: 1950volcir
+                        volcsw: 1950volcsw
         # old hist settings --> need to discuss with deniz whether this is
         # still needed
         HIST:

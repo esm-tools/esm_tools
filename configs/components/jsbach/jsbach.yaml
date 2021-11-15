@@ -63,6 +63,16 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+                        "1950":
+                                add_input_files:
+                                        jsbach: jsbach_1976
+                                forcing_files:
+                                        LU: LU_1950
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1950
+                                        a_nd_file: a_nd_file
+                                        #lightning: lightning
+                                        #popdens: popdens
                         1percCO2:
                                 add_input_files:
                                         jsbach: jsbach_1850

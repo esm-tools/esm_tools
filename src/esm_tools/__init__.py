@@ -38,7 +38,6 @@ import pkg_resources
 import yaml
 
 
-
 def _transform(nested_list):
     """Transform irregular 2D list into a regular one."""
     regular_list = []
@@ -50,9 +49,12 @@ def _transform(nested_list):
     return regular_list
 
 
-
 def _get_real_dir_from_pth_file(subfolder):
-    site_packages_dirs = functools.reduce(operator.iconcat, _transform([site.getusersitepackages(), site.getsitepackages()]), [])
+    site_packages_dirs = functools.reduce(
+        operator.iconcat,
+        _transform([site.getusersitepackages(), site.getsitepackages()]),
+        [],
+    )
     logger.debug(site_packages_dirs)
     for subfolder in site_packages_dirs:
         # Read the pth file:
@@ -61,15 +63,30 @@ def _get_real_dir_from_pth_file(subfolder):
                 paths = [p.strip() for p in f.readlines()]
             # NOTE(PG): a pathlib.Path has a method resolve, which removes
             # things like "foo/baz/../bar" in the path to "foo/bar"
-            actual_package_data_dir = pathlib.Path(f"{paths[0]}/{paths[1]}/{subfolder}/").resolve()
+            actual_package_data_dir = pathlib.Path(
+                f"{paths[0]}/{paths[1]}/{subfolder}/"
+            ).resolve()
             try:
                 assert actual_package_data_dir.exists()
-            except AssertionError as e:  # NOTE(PG): there is probably a better way of doing that than with assert.
-                print(f"Assumed path {actual_package_data_dir} did not exist! We tried:")
-                print(f"{paths[0]}")
-                print(f"{paths[1]}")
-                # BUG(PG): Needs something like "startswith('/')" to move around absolute paths.
-                raise e
+            # NOTE(PG): there is probably a better way of doing that than with assert.
+            except AssertionError as e:
+                logger.debug(
+                    f"Assumed path {actual_package_data_dir} did not exist! We tried:"
+                )
+                logger.debug(f"paths[0]={paths[0]}")
+                logger.debug(f"paths[1]={paths[1]}")
+                if paths[1].startswith("/"):
+                    logger.debug(
+                        f"{paths[1]} starts with a slash, assuming absolute path!"
+                    )
+                    actual_package_data_dir = pathlib.Path(
+                        f"{paths[1]}/{subfolder}/"
+                    ).resolve()
+                    try:
+                        assert actual_package_data_dir.exists()
+                    except AssertionError as e:
+                        logger.error("Could not determine path!")
+                        break  # Break out of the for loop
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
             return actual_package_data_dir
     raise FileNotFoundError(

@@ -16,16 +16,6 @@ jobs:
         strategy:
             matrix:
                 version:
-                    - 1.4-esm_interface_hpc_awi_ollie
-                    - 1.4-recom-awicm_hpc_awi_ollie
-                    - 1.4-recom-mocsy-slp_hpc_awi_ollie
-                    - 1.4_hpc_awi_ollie
-                    - 2.0-jio_hpc_awi_ollie
-                    - 2.0-o_hpc_awi_ollie
-                    - 2.0-paleodyn_hpc_awi_ollie
-                    - 2.0-r_hpc_awi_ollie
-                    - 2.0_hpc_awi_ollie
-                    - 2.1_hpc_awi_ollie
         name: Compile Test fesom-${{ matrix.version }}
         uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
         secrets:
@@ -33,4 +23,4 @@ jobs:
           awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
         with:
           model_name: fesom
-          model_version: ${{ matrix.version }}
+          model_version: "1.4-esm_interface_hpc_awi_ollie, 1.4-recom-awicm_hpc_awi_ollie, 1.4-recom-mocsy-slp_hpc_awi_ollie, 1.4_hpc_awi_ollie, 2.0-jio_hpc_awi_ollie, 2.0-o_hpc_awi_ollie, 2.0-paleodyn_hpc_awi_ollie, 2.0-r_hpc_awi_ollie, 2.0_hpc_awi_ollie, 2.1_hpc_awi_ollie"

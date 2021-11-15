@@ -19,9 +19,18 @@ import sys
 def main():
     # Logger
     logger.remove()
-    logger.add(sys.stderr, format="<level>{message}</level>")
+    logger.add(
+        sys.stderr,
+        filter={"": "WARNING", "esm_tests": "DEBUG"},
+        format="<level>{message}</level>",
+    )
     if os.environ.get("CI", False):
-        logger.add("out.log", backtrace=True, diagnose=True)
+        logger.add(
+            "out.log",
+            filter={"": "WARNING", "esm_tests": "DEBUG"},
+            backtrace=True,
+            diagnose=True,
+        )
 
     # Parsing
     parser = argparse.ArgumentParser(description="Automatic testing for ESM-Tools devs")

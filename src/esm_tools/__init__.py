@@ -39,10 +39,36 @@ import pkg_resources
 import yaml
 
 
+# Setup Loguru for the following cases:
+# A) If user sets
+if os.environ.get("DEBUG_ESM_TOOLS"):
+    logger.add(sys.stderr, filter={"": "WARNING", "esm_tools": "DEBUG"})
+elif os.environ.get("CI"):
+    logger.remove()
+    logger.add(sys.stderr, filter={"": "WARNING"})
+    logger.add(
+        "out.log",
+        filter={"": "WARNING", "esm_tools": "DEBUG"},
+        backtracke=True,
+        diagnose=True,
+    )
+elif os.environ.get("CI_VERBOSE"):
+    logger.remove()
+    logger.add(sys.stderr, filter={"": "WARNING", "esm_tools": "DEBUG"})
+    logger.add(
+        "out.log",
+        filter={"": "WARNING", "esm_tools": "DEBUG"},
+        backtracke=True,
+        diagnose=True,
+    )
+else:
+    logger.remove()
+
+
 def caller_wrapper(func):
     @functools.wraps(func)
     def wrapped_func(*args, **kwargs):
-        logger.debug(f"{inspect.stack()[1]} --> {func.__name__}")
+        logger.debug(f"{inspect.stack()[1].function} --> {func.__name__}")
         return func(*args, **kwargs)
 
     return wrapped_func

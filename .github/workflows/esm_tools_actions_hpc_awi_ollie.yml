@@ -10,6 +10,11 @@ on:
             model_version:
                 required: True
                 type: string
+        secrets:
+            GITLAB_DKRZ_TOKEN:
+                required: True
+            GITLAB_AWI_TOKEN:
+                required: True
 
 
 defaults:
@@ -39,8 +44,8 @@ jobs:
 
           - name: Create esmtoolsrc file
             run: |
-                echo GITLAB_DKRZ_USER_NAME=${GITLAB_DKRZ_TOKEN} >> ${HOME}/.esmtoolsrc
-                echo SWREPO_AWI_USER_NAME=${GITLAB_AWI_TOKEN} >> ${HOME}/.esmtoolsrc
+                echo GITLAB_DKRZ_USER_NAME=${{ secrets.GITLAB_DKRZ_TOKEN }} >> ${HOME}/.esmtoolsrc
+                echo SWREPO_AWI_USER_NAME=${{ secrets.GITLAB_AWI_TOKEN }} >> ${HOME}/.esmtoolsrc
 
           - name: Run esm_master
             run: |

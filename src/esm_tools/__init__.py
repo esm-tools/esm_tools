@@ -49,7 +49,7 @@ elif os.environ.get("CI"):
     logger.add(
         "out.log",
         filter={"": "WARNING", "esm_tools": "DEBUG"},
-        backtrack=True,
+        backtrace=True,
         diagnose=True,
     )
 elif os.environ.get("CI_VERBOSE"):
@@ -58,7 +58,7 @@ elif os.environ.get("CI_VERBOSE"):
     logger.add(
         "out.log",
         filter={"": "WARNING", "esm_tools": "DEBUG"},
-        backtrack=True,
+        backtrace=True,
         diagnose=True,
     )
 else:

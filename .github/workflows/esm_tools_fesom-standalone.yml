@@ -26,12 +26,11 @@ jobs:
                     - 2.0-r_hpc_awi_ollie
                     - 2.0_hpc_awi_ollie
                     - 2.1_hpc_awi_ollie
-        steps:
-            - name: Compile Test fesom-${{ matrix.version }}
-              uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
-              secrets:
-                dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
-                awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
-              with:
-                model_name: fesom
-                model_version: ${{ matrix.version }}
+        name: Compile Test fesom-${{ matrix.version }}
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        secrets:
+          dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
+          awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
+        with:
+          model_name: fesom
+          model_version: ${{ matrix.version }}

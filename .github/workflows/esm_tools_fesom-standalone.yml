@@ -9,6 +9,7 @@ on:
             - 'tests/**'
             - 'configs/machines/ollie.yaml'
             - 'configs/components/fesom/*.yaml'
+            - '.github/workflows/esm_tools_fesom-standalone.yml'
 
 jobs:
     call-workflow:

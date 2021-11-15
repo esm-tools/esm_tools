@@ -49,7 +49,8 @@ API Documentation
 import os
 import esm_tools
 
-RCFILE = os.path.expanduser("~") + "/.esmtoolsrc"
+# FIXME(PG): Deprecate this soon. Globals should be in all-caps.
+rcfile = RCFILE = os.path.expanduser("~") + "/.esmtoolsrc"
 
 
 class EsmRcfileError(Exception):

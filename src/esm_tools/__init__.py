@@ -26,6 +26,7 @@ __email__ = "dirk.barbi@awi.de"
 __version__ = "5.1.24"
 
 import functools
+import inspect
 import operator
 import os
 import pathlib
@@ -36,6 +37,15 @@ import sys
 from loguru import logger
 import pkg_resources
 import yaml
+
+
+def caller_wrapper(func):
+    @functools.wraps(func)
+    def wrapped_func(*args, **kwargs):
+        logger.debug(f"{inspect.stack()[1]} --> {func.__name__}")
+        return func(*args, **kwargs)
+
+    return wrapped_func
 
 
 def _transform(nested_list):
@@ -49,23 +59,35 @@ def _transform(nested_list):
     return regular_list
 
 
+@caller_wrapper
 def _get_real_dir_from_pth_file(subfolder):
+    logger.debug(f"Trying to resolve: {subfolder}")
+    if subfolder.startswith("/"):
+        logger.warning("Subfolder is strange!")
+        logger.warning(subfolder)
     site_packages_dirs = functools.reduce(
         operator.iconcat,
         _transform([site.getusersitepackages(), site.getsitepackages()]),
         [],
     )
     logger.debug(site_packages_dirs)
-    for subfolder in site_packages_dirs:
+    for site_package_dir in site_packages_dirs:
         # Read the pth file:
-        if pathlib.Path(f"{subfolder}/esm-tools.egg-link").exists():
-            with open(f"{subfolder}/esm-tools.egg-link", "r") as f:
+        if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
+            with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
                 paths = [p.strip() for p in f.readlines()]
             # NOTE(PG): a pathlib.Path has a method resolve, which removes
             # things like "foo/baz/../bar" in the path to "foo/bar"
+            logger.debug(f"paths={paths}")
+            logger.debug(f"subfolder={subfolder}")
             actual_package_data_dir = pathlib.Path(
                 f"{paths[0]}/{paths[1]}/{subfolder}/"
-            ).resolve()
+            )
+            logger.debug("Before resolve:")
+            logger.debug(actual_package_data_dir)
+            logger.debug("After resolve:")
+            actual_package_data_dir = actual_package_data_dir.resolve()
+            logger.debug(actual_package_data_dir)
             try:
                 assert actual_package_data_dir.exists()
             # NOTE(PG): there is probably a better way of doing that than with assert.
@@ -88,6 +110,9 @@ def _get_real_dir_from_pth_file(subfolder):
                         logger.error("Could not determine path!")
                         break  # Break out of the for loop
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
+            import pdb
+
+            pdb.set_trace()
             return actual_package_data_dir
     raise FileNotFoundError(
         f"Could not determine where {subfolder}'s path is inside the esm-tools installation! These were searched for info: {site_packages_dirs}"
@@ -261,6 +286,7 @@ bool : Shows if the installation is installed in editable mode or not.
 
 # Create a function that "does the right thing", depending on how this module
 # is installed
+@caller_wrapper
 def read_config_file(config):
     """
     Reads a configuration file, which should be seperated by "/". For example,
@@ -284,36 +310,42 @@ def read_config_file(config):
     return _read_config_standard_install(config)
 
 
+@caller_wrapper
 def list_config_dir(dirpath):
     if EDITABLE_INSTALL:
         return _list_config_dir_editable_install(dirpath)
     return _list_config_dir_standard_install(dirpath)
 
 
+@caller_wrapper
 def copy_config_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_config_folder_editable_install(dest_path)
     return _copy_config_folder_standard_install(dest_path)
 
 
+@caller_wrapper
 def copy_namelist_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_namelist_folder_editable_install(dest_path)
     return _copy_namelist_folder_standard_install(dest_path)
 
 
+@caller_wrapper
 def copy_runscript_folder(dest_path):
     if EDITABLE_INSTALL:
         return _copy_runscript_folder_editable_install(dest_path)
     return _copy_runscript_folder_standard_install(dest_path)
 
 
+@caller_wrapper
 def get_namelist_filepath(namelist):
     if EDITABLE_INSTALL:
         return _get_namelist_filepath_editable_install(namelist)
     return _get_namelist_filepath_standard_install(namelist)
 
 
+@caller_wrapper
 def get_config_filepath(config):
     if EDITABLE_INSTALL:
         cpath = _get_config_filepath_editable_install(config)
@@ -322,12 +354,14 @@ def get_config_filepath(config):
     return cpath
 
 
+@caller_wrapper
 def get_runscript_filepath(runscript):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)
 
 
+@caller_wrapper
 def read_namelist_file(nml):
     """Reads a namelist file from a path, seperated by "/". Similar to ``read_config_file``
 

@@ -56,13 +56,13 @@ def main():
         help="Delete previous tests",
         action="store_true",
     )
-    parser.add_argument(
-        "-k",
-        "--keep",
-        default=False,
-        help="Keep run_, outdata and restart folders for runs",
-        action="store_true",
-    )
+    #parser.add_argument(
+    #    "-k",
+    #    "--keep",
+    #    default=False,
+    #    help="Keep run_, outdata and restart folders for runs",
+    #    action="store_true",
+    #)
     parser.add_argument(
         "-s",
         "--save",
@@ -102,7 +102,7 @@ def main():
     info["ignore_user_info"] = args["no_user"]
     info["actually_compile"] = not args["check"]
     info["actually_run"] = not args["check"]
-    info["keep_run_folders"] = args["keep"]
+    #info["keep_run_folders"] = args["keep"]
     info["hold"] = args["hold"]
     info["bulletpoints"] = args["bulletpoints"]
 

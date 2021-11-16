@@ -106,15 +106,16 @@ disturbance: "1.000001"
 lresume: false
 dataset: "r0007"
 
-#lgfw: False
+lgfw: False
 choose_general.iterative_coupling:
         True:
                 lgfw: True
                 choose_general.chunk_number:
                         1:
                                 lgfw: False
-        False:
-                lgfw: False
+                hosing_correction: True
+        '*':
+                hosing_correction: False
 
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
@@ -662,7 +663,7 @@ namelist_changes:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
                 submodelctl:
-                        lgfw: ${lgfw}
+                        lgfw: "${lgfw}"
 
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]

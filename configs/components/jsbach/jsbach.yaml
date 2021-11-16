@@ -356,21 +356,11 @@ restart_out_in_work:
 namelists:
         - "namelist.jsbach"
 
-lgfw: ${echam.lgfw}
 namelist_changes:
         namelist.jsbach:
                 hydrology_ctl:
-                        lgfw: "${lgfw}"
+                        lgfw: "${echam.lgfw}"
 
-#choose_lgfw:
-#        True:
-#                add_input_sources:
-#                        jsbach: "${general.couple_dir}/latest_jsbach_init_file.nc"
-#                add_input_files:
-#                        jsbach: jsbach
-#                add_input_in_work:
-#                        jsbach: "jsbach.nc"
-                
 
 further_reading:
         - jsbach/jsbach.inherit.yaml

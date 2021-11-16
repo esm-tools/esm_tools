@@ -210,7 +210,33 @@ choose_use_icebergs:
         True:
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+
+            choose_use_icesheet_coupling:
+                    true: 
+                            choose_general.chunk_number:
+                                    1:
+                                            iceberg_dir: "${ini_iceberg_dir}"
+                                    "*":
+                                            iceberg_dir: "${general.experiment_couple_dir}"
             
+                            input_sources:
+                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
+            
+                            input_files:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                            input_in_work:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                    false: 
+                            iceberg_dir: "${ini_iceberg_dir}"
+            
+            add_namelist_changes:
+                    namelist.config:
+                            icebergs:
+                                    use_icesheet_coupling: "${use_icesheet_coupling}"
+
+
             input_in_work:
                     longitude: "icb_longitude.dat"
                     latitude: "icb_latitude.dat"
@@ -304,14 +330,17 @@ choose_general.iterative_coupling:
                                 use_landice_water: False
                         "*":
                                 use_landice_water: True
-
-                add_namelist_changes:
-                            namelist.forcing:
-                                    land_ice:
-                                            use_landice_water: "${use_landice_water}"
-                                            landice_start_mon: 1
-                                            landice_end_mon: 12
-                                            fwf_path: "${fwf_path}" 
+                
+                choose_echam.hosing_correction:
+                            add_namelist_changes:
+                                        namelist.forcing:
+                                                land_ice:
+                                                        use_landice_water: "${use_landice_water}"
+                                                        landice_start_mon: 1
+                                                        landice_end_mon: 12
+                                                        fwf_path: "${fwf_path}" 
+        '*':
+                use_landice_water: False
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

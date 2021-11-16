@@ -29,7 +29,7 @@ general:
 
    lresume: True
    ini_parent_exp_id: "FOCI_NJK001"
-   ini_string_parent_date: "1920-01-01"
+   ini_parent_date: "19191231"
    ini_nemo_restart_steps: 1227168
    ini_parent_dir: "${homedir}/esm/esm-slask/${ini_parent_exp_id}/"
    oasis_date_stamp: "_19100101-19191231"

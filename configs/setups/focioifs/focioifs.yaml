@@ -32,20 +32,17 @@ general:
         pool_dir: "${computer.pool_directories.focipool}"
         model_dir: ${esm_master_dir}/focioifs-${version}
 
-        #
         # settings for restarting from another run
-        #
-        lresume: False
         # settings are only used if lresume = true
         # the following will be set in the general section of the runscript
         # in case a restart from another run shall be performed
+        lresume: False
         ini_parent_exp_id: "unset"
-        ini_string_parent_date: "1850-01-01"
-        ini_nemo_restart_steps: 0
         ini_parent_dir: "/path/to/restart/data/"
-        oasis_date_stamp: "18500101"
-        # don't change unless you know what you are doing
-        ini_parent_date: "$(( ${ini_string_parent_date} - ${oifs.time_step}seconds ))"       
+        ini_parent_date: "18500101"
+        ini_nemo_restart_steps: 0
+        oasis_date_stamp: "_18500101-1850101"
+        # 
         
         coupled_setup: True
 
@@ -210,7 +207,7 @@ oifs:
         # settings for restarting from another run
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
 
 nemo:
@@ -265,7 +262,7 @@ nemo:
         # settings for restarting from another run
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${nemo.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/restart/nemo/"
         ini_restart_steps: ${general.ini_nemo_restart_steps}
         
@@ -317,9 +314,10 @@ oasis3mct:
                 - xios
         
         # settings for restarting from another run
-        lresume: true
+        # for oasis we always do a (fake) restart
+        lresume: true 
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${oifs.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
 
         this_oasis_date_stamp: "" 

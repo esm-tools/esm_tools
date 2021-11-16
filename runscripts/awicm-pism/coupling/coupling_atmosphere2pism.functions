@@ -1380,6 +1380,9 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
 
         #number_of_x_points=$(grep 'xsize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
         #number_of_y_points=$(grep 'ysize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
+        TMP=$( grep cobld $( ls -t ${COUPLE_DIR}/../run_*/work/namelist.echam | head -1 ) | sed 's/^[ \t]*//' )
+        prefix="cobld = "
+        MY_OBLIQUITY=${TMP#"$prefix"}
         obliquity_value=${MY_OBLIQUITY:-"23.17"}
 
         echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 

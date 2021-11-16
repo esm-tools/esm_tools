@@ -1,6 +1,6 @@
 def prepare_environment(config):
     environment_dict = {
-            "ICE_TO_FESOM": 0,
+            "ICE_TO_FESOM": config["fesom"]["use_icebergs"],
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
@@ -17,8 +17,7 @@ def prepare_environment(config):
             "fesom_use_icebergs": config["fesom"]["use_icebergs"],
             "BASIN_FILE": "/work/ba1066/a270124/pool_pism/basins/nhem.10km.nc",
             "MACHINE": config["computer"]["name"],
-            #"ICEBERG_DIR": config["fesom"]["iceberg_dir"],
-            #"COUPLE_DIR": config["general"]["couple_dir"],
+            "ICEBERG_DIR": config["fesom"]["iceberg_dir"],
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

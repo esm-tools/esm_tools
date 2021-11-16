@@ -36,6 +36,7 @@ def prepare_environment(config):
             
             "PISM_TO_OCEAN": 0,
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
+            "fesom_use_iceberg": config["pism"]["iceberg_coupling"], 
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],

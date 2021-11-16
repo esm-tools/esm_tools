@@ -71,7 +71,7 @@ print('* Start at '+time.ctime(time.time()))
 print('* Read the mesh MESHPATH=' + " ".join(args.FESOM_MESH))
 
 #euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
-if args.FESOM_MESH_ROTATED:
+if not args.FESOM_MESH_ROTATED:
     euler_angle = [50, 15, -90]
 else:
     euler_angle = [0, 0, 0]

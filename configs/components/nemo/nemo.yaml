@@ -621,8 +621,6 @@ choose_lresume:
                                 global_tag: "_global" 
                                 prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
                                 prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
-                                restart_in_sources:
-                                        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
 
         false:
                 add_outdata_sources:

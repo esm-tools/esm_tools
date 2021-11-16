@@ -1386,7 +1386,7 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
         obliquity_value=${MY_OBLIQUITY:-"23.17"}
 
         echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 
-        echo -e "\t\t- Obliquity = ${MY_OBLIQUITY}"
+        echo -e "\t\t- Obliquity = ${obliquity_value}"
 
         # Plus ten points for Shan: variable names are actually variable. Sortof...
         # UKK Paul, sometimes I don't understand you

@@ -17,6 +17,8 @@ envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
 module load nco || module load NCO
 
 OCEAN_CHECK_NETCDF4=false
+# set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
+OCEAN_CONVERT_NETCDF4=true 
 OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T"
 
 # Other settings
@@ -205,62 +207,62 @@ steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EX
 tchunk=1; zchunk=1; ychunk=100; xchunk=100
 
 echo 0 > $post_dir/status
-
-for ((year=startyear; year<=endyear; ++year))
-do
-	for filetag in $filetags
+if ${OCEAN_CONVERT_NETCDF4} ; then
+	for ((year=startyear; year<=endyear; ++year))
 	do
-   	for s in $steps
-      do
-			input=${s}_${year}0101_${year}1231_${filetag}.nc3
-	    	output=${s}_${year}0101_${year}1231_${filetag}.nc
-			# !!! output files will have the same name as the old input file !!! 
-        	if [[ -f $output ]] ; then
-				mv $output $input
+		for filetag in $filetags
+		do
+   		for s in $steps
+      	do
+				input=${s}_${year}0101_${year}1231_${filetag}.nc3
+		    	output=${s}_${year}0101_${year}1231_${filetag}.nc
+				# !!! output files will have the same name as the old input file !!! 
+      	  	if [[ -f $output ]] ; then
+					mv $output $input
                
-				# If too many jobs run at the same time, wait
-				while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
-				(
-					trap 'echo $? > $post_dir/status' ERR
-					print "converting " $input " to " $output
-					if [[ ! -f $output ]]; then
-						ncks -7 $sortoption -L 1 \
-							--cnk_dmn time,${tchunk} --cnk_dmn time_counter,${tchunk} \
-							--cnk_dmn z,${zchunk} --cnk_dmn depthu,${zchunk} --cnk_dmn depthv,${zchunk} --cnk_dmn depthw,${zchunk} --cnk_dmn deptht,${zchunk} \
-							--cnk_dmn x,${xchunk} --cnk_dmn y,${ychunk} \
-						$input $output 
-						if [[ $? -eq 0 ]]; then
-							print "Conversion of $input to $output OK, now checking file with cdo diff"
-							${OCEAN_CHECK_NETCDF4} && cdo -s diff $input $output > ${output}.check
-							if ${OCEAN_CHECK_NETCDF4} && [[ $? -eq 0 ]] && [[ $(wc -l ${output}.check | awk '{print$1}') -eq 0 ]]; then
-								print "cdo diff $input $output OK"
-								rm -f ${output}.check
-								mv -v $input nc3/
-								rm nc3/$input
-							else
-								if ${OCEAN_CHECK_NETCDF4} ; then
-									echo "ERROR: $input and $output differ"
-									mv -v $input nc3/                    
-								else
-									echo "cdo diff check switched off (OCEAN_CHECK_NETCDF4 = ${OCEAN_CHECK_NETCDF4})"
+					# If too many jobs run at the same time, wait
+					while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+					(
+						trap 'echo $? > $post_dir/status' ERR
+						print "converting " $input " to " $output
+						if [[ ! -f $output ]]; then
+							ncks -7 $sortoption -L 1 \
+								--cnk_dmn time,${tchunk} --cnk_dmn time_counter,${tchunk} \
+								--cnk_dmn z,${zchunk} --cnk_dmn depthu,${zchunk} --cnk_dmn depthv,${zchunk} --cnk_dmn depthw,${zchunk} --cnk_dmn deptht,${zchunk} \
+								--cnk_dmn x,${xchunk} --cnk_dmn y,${ychunk} \
+							$input $output 
+							if [[ $? -eq 0 ]]; then
+								print "Conversion of $input to $output OK, now checking file with cdo diff"
+								${OCEAN_CHECK_NETCDF4} && cdo -s diff $input $output > ${output}.check
+								if ${OCEAN_CHECK_NETCDF4} && [[ $? -eq 0 ]] && [[ $(wc -l ${output}.check | awk '{print$1}') -eq 0 ]]; then
+									print "cdo diff $input $output OK"
+									rm -f ${output}.check
 									mv -v $input nc3/
 									rm nc3/$input
+								else
+									if ${OCEAN_CHECK_NETCDF4} ; then
+										echo "ERROR: $input and $output differ"
+										mv -v $input nc3/                    
+									else
+										echo "cdo diff check switched off (OCEAN_CHECK_NETCDF4 = ${OCEAN_CHECK_NETCDF4})"
+										mv -v $input nc3/
+										rm nc3/$input
+									fi
 								fi
+							else
+								echo "ERROR during conversion of $input to $output"
+								mv -v $input nc3/                    
 							fi
 						else
-							echo "ERROR during conversion of $input to $output"
+							echo "ERROR: $output exists. This should not happen."
 							mv -v $input nc3/                    
 						fi
-					else
-						echo "ERROR: $output exists. This should not happen."
-						mv -v $input nc3/                    
-					fi
-				) &
-			fi
-		done #steps
-	done #filetags
-done #years
-
+					) &
+				fi
+			done #steps
+		done #filetags
+	done #years
+fi 
 wait
 [[ $(<$post_dir/status) -eq 0 ]]
 

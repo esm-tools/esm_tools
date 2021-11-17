@@ -18,10 +18,6 @@ available_versions:
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 
-nest1: no
-_nx_nest1: 0
-_ny_nest1: 0
-
 choose_version:
   GYRE_XIOS:
     requires:
@@ -108,25 +104,25 @@ choose_version:
              nn_msh: ${nn_msh} 
              rn_rdt: ${time_step_nest}
           namsbc:
-             nn_fsbc: 3 
+             nn_fsbc: ${nest_refinement} 
              ln_echam: '.true.'
           nammpp:
              jpni: ${jpni}
              jpnj: ${jpnj}
              jpnij: ${nproc}
           namsbc_echam:
-             sn_owndi: ['A_OTaux1_echam6_08', 3, 'A_OTaux1', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', 'Uwnd', ' ']
-             sn_owndj: ['A_OTauy1_echam6_09', 3, 'A_OTauy1', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', 'Vwnd', ' ']
-             sn_iwndi: ['A_ITaux1_echam6_10', 3, 'A_ITaux1', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', 'Uwnd', ' ']
-             sn_iwndj: ['A_ITauy1_echam6_11', 3, 'A_ITauy1', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', 'Vwnd', ' ']
-             sn_iqsr: ['A_QsrIce_echam6_12', 3, 'A_QsrIce', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
-             sn_qsr: ['A_QsrMix_echam6_13', 3, 'A_QsrMix', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
-             sn_iqns: ['A_QnsIce_echam6_14', 3, 'A_QnsIce', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', '', ' ']
-             sn_qns: ['A_QnsMix_echam6_15', 3, 'A_QnsMix', .false., .false., 'instant', 'reshape_T63invert_${nest}_bicub.nc', '', ' ']
-             sn_prec: ['ATotRain_echam6_16', 3, 'ATotRain', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
-             sn_snow: ['ATotSnow_echam6_17', 3, 'ATotSnow', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
-             sn_ievp: ['AIceEvap_echam6_18', 3, 'AIceEvap', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
-             sn_dqns: ['A_dQnsdT_echam6_19', 3, 'A_dQnsdT', .false., .false., 'instant', 'reshape_T63invert_${nest}_bilin.nc', '', ' ']
+             sn_owndi: ['A_OTaux1_echam6_08', 3, 'A_OTaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_owndj: ['A_OTauy1_echam6_09', 3, 'A_OTauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iwndi: ['A_ITaux1_echam6_10', 3, 'A_ITaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_iwndj: ['A_ITauy1_echam6_11', 3, 'A_ITauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iqsr: ['A_QsrIce_echam6_12', 3, 'A_QsrIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_qsr: ['A_QsrMix_echam6_13', 3, 'A_QsrMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_iqns: ['A_QnsIce_echam6_14', 3, 'A_QnsIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_qns: ['A_QnsMix_echam6_15', 3, 'A_QnsMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_prec: ['ATotRain_echam6_16', 3, 'ATotRain', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_snow: ['ATotSnow_echam6_17', 3, 'ATotSnow', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_ievp: ['AIceEvap_echam6_18', 3, 'AIceEvap', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_dqns: ['A_dQnsdT_echam6_19', 3, 'A_dQnsdT', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
          
           # with AGRIF always use linear free surface
           # always set free_surface: linear with AGRIF 
@@ -480,7 +476,7 @@ correct_neg_tracer_conc: true
 ln_tsd_tradmp: false 
 
 # Nest settings
-nest:           VIKING10 
+nest1: no
 use_tracer_agrif:   false
 use_lim2_agrif:     false
 
@@ -505,17 +501,17 @@ ln_trcdta: true
 # default directories
 pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
-# AGRIF
-agrif_dir: ${pool_dir}/AGRIF/agrif_${nest}
-# forcing for uncoupled setups
-jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
-jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
-# TODO
-#ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
 namelist_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
 model_dir: ${general.model_dir}/nemo-${nemo.version}
 setup_dir: ${general.model_dir}
 bin_dir: ${setup_dir}/bin
+
+# AGRIF
+agrif_dir: ${pool_dir}/AGRIF/agrif_${nest1}
+
+# forcing for uncoupled setups
+jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
+jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
 
 # start_date_m1: $((${start_date} - ${time_step}seconds))
 end_date_m1: $((${next_date} - ${time_step}seconds))
@@ -533,10 +529,10 @@ prevstep_formatted: "<--format(%08d)-- ${prevstep}"
 thisstep_formatted: "<--format(%08d)-- ${thisstep}"
 newstep_formatted: "<--format(%08d)-- ${newstep}"
 
-time_step_nest: $(( ${time_step} / 3 ))
-prevstep_nest: $(( ${steps_since_initial} * 3 ))
+time_step_nest: $(( ${time_step} / ${nest_refinement} ))
+prevstep_nest: $(( ${steps_since_initial} * ${nest_refinement} ))
 thisstep_nest: $(( ${prevstep_nest} + 1 ))
-timesteps_per_run_nest: $(( ${timestep_per_run} * 3 ))
+timesteps_per_run_nest: $(( ${timestep_per_run} * ${nest_refinement} ))
 newstep_nest: $(( ${prevstep_nest} + ${timesteps_per_run_nest} ))
 
 prevstep_formatted_nest: "<--format(%08d)-- ${prevstep_nest}"
@@ -545,7 +541,7 @@ newstep_formatted_nest: "<--format(%08d)-- ${newstep_nest}"
 
 # generate settings for a restart from a different run
 ini_restart_steps: 0 # this value will be/needs to be set in the runscript
-ini_restart_steps_nest: $(( ${ini_restart_steps} * 3 ))
+ini_restart_steps_nest: $(( ${ini_restart_steps} * ${nest_refinement} ))
 global_tag: ""
    
 coupling_freq_in_steps: 6
@@ -625,8 +621,6 @@ choose_lresume:
                                 global_tag: "_global" 
                                 prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
                                 prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
-                                restart_in_sources:
-                                        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}${global_tag}.nc
 
         false:
                 add_outdata_sources:
@@ -678,10 +672,33 @@ choose_resolution:
                 config_in_work:        
                         namelist_cfg: namelist_cfg
 
+_nx_nest1: 0
+_ny_nest1: 0
+nest_refinement: 3
 choose_nest1:
+        # nest_refinement MUST (!!!) match the last value
+        # in AGRIF_FixedGrids.in
+        # for backward compatibility with Joakims settings
         viking10:
                 _nx_nest1: 884
                 _ny_nest1: 869
+                nest_refinement: 3
+        VIKING10:
+                _nx_nest1: 884
+                _ny_nest1: 869
+                nest_refinement: 3
+        INALT10X:
+                _nx_nest1: 1404
+                _ny_nest1: 924
+                nest_refinement: 3
+        NPAC10:
+                _nx_nest1: 1569
+                _ny_nest1: 664
+                nest_refinement: 3
+        WG10:
+                _nx_nest1: 1414
+                _ny_nest1: 944
+                nest_refinement: 5
 
 choose_use_lim2:
    true:
@@ -796,12 +813,10 @@ input_sources:
         1_sn_sal_levitus: ${agrif_dir}/1_Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
         1_ice_init: ${agrif_dir}/1_Ice_initialization.nc
 
-        # reshape files for nest
+        # reshape files for nest, only required with file based coupling
         # TODO: replace T63 with proper variable
-        1_reshape_bicub: ${agrif_dir}/1_reshape_T63invert_${nest}_bicub.nc 
-        1_reshape_bilin: ${agrif_dir}/1_reshape_T63invert_${nest}_bilin.nc 
-        #ln -sfv $agrif_dir/1_reshape_${ATM_RES}invert_${OCE_NEST}_bicub.nc .
-        #ln -sfv $agrif_dir/1_reshape_${ATM_RES}invert_${OCE_NEST}_bilin.nc .
+        1_reshape_bicub: ${agrif_dir}/1_reshape_T63invert_${nest1}_bicub.nc 
+        1_reshape_bilin: ${agrif_dir}/1_reshape_T63invert_${nest1}_bilin.nc 
 
         # add namelist_ref as input source to avoid removal of comments which
         # makes namelist unreadable

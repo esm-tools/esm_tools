@@ -53,6 +53,10 @@ forcing_sources:
                         to: 2024
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2024.nc":
                         from: 2025
+        "1950volcir":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1950.nc"
+        "1950volcsw":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
         # greenhouse
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "greenhouse_hist_scenario":
@@ -68,6 +72,7 @@ forcing_sources:
                         to: 1850
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
+        "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
         # ozone
         "histozone":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
@@ -97,16 +102,3 @@ forcing_sources:
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
 
-choose_dataset:
-        r0004:
-                forcing_sources:
-# ozone
-                        "histozone":
-                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc":
-                                        to: 1850
-                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_@YEAR@.nc":
-                                        from: 1851
-                                        to: 2008
-                        "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc"
-                        "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1950.nc"
-                        "piozone": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"

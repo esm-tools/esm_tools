@@ -158,7 +158,7 @@ amip:
         pool_dir: ${general.pool_dir}
 
         nproc: 1
-        omp_num_threads: ${computer.cores_per_node}
+        omp_num_threads: ${computer.partitions.compute.cores_per_node}
         time_step: 86400
 
         coupling_fields:

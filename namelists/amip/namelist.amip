@@ -1,0 +1,12 @@
+&namamip
+    runlengthsec = 86400
+    timestepsec = 84600
+    startyear = 1850
+    startmonth = 1
+    startday = 1
+    fixyear = 1850
+    filelistsst = 'comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc'
+    filelistsic = 'comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc'
+    ldebug = .true.
+    linterpolate = .true.
+/

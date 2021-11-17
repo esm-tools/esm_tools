@@ -131,7 +131,7 @@
 /
 &NAMDYN
   LMASCOR          = TRUE,
-  LMASDRY          = TRUE,
+  LMASDRY          = FALSE,
   NITMP            = 5,
 /
 &NAMCLDP
@@ -153,7 +153,7 @@
   NFRSDI           = 1,
   NFRHIS           = 6,
   NFRPOS           = 6,
-  NFRMASSCON       = 12,
+  NFRMASSCON       = 1,
   NFPOS            = 2,
   NPOSTS           = 0,
   NHISTS           = 0,
@@ -177,12 +177,13 @@
 /
 &NAMGFL
   NERA40           = 14,
-  YQ_NL%LGP        = TRUE,
-  YQ_NL%LSP 	   = FALSE,
-  YL_NL%LGP        = TRUE,
-  YI_NL%LGP        = TRUE,
-  YA_NL%LGP        = TRUE,
-  YO3_NL%LGP       = TRUE,
+  YS_NL%LMASSFIX = TRUE,
+  YR_NL%LMASSFIX = TRUE,
+  YI_NL%LMASSFIX = TRUE,
+  YL_NL%LMASSFIX = TRUE,
+  YQ_NL%LMASSFIX = TRUE,
+  LTRCMFMG       = TRUE,
+  YO3_NL%LGP     = TRUE,
 /
 &NAMFPC
   CFPFMT = 'MODEL'

@@ -22,5 +22,4 @@ run:
         check: {}
 computer:
         - ollie
-        - mistral
         - juwels

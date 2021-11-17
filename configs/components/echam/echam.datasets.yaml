@@ -102,16 +102,3 @@ forcing_sources:
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
 
-choose_dataset:
-        r0004:
-                forcing_sources:
-# ozone
-                        "histozone":
-                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc":
-                                        to: 1850
-                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_@YEAR@.nc":
-                                        from: 1851
-                                        to: 2008
-                        "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc"
-                        "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1950.nc"
-                        "piozone": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"

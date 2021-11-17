@@ -1,0 +1,103 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "00:25:00"
+   initial_date: "1850-01-03T00:00:00"       # Initial exp. date
+   final_date: "1850-01-04T00:00:00"         # Final date of the experiment
+   
+   nyear: 0
+   nmonth: 0
+   nday: 1
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+
+   # machine specific setup 
+   account: shkifmsw
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   #lresume: false
+   ini_parent_exp_id: "focioifs-initial-3day"
+   ini_parent_dir: "${base_dir}/${ini_parent_exp_id}/"
+   ini_parent_date: "${prev_date}" # prev_date resolves to initial_date - 1 day
+   ini_nemo_restart_steps: 96
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
+  
+oifs:
+   # initial run for OIFS, restarts for OASIS3MCT and NEMO
+   lresume: false
+   #if lresume: false make sure initial_date_cold is commented
+   #initial_date_cold: "1850-01-01"
+   # Set the value below to the number of CPUs that you want to use for the real run
+   nproc: 47
+
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   use_ocean_currents: 0
+
+oasis3mct:
+   lresume: true
+   norestart: F
+   use_lucia: False
+   # in FOCIOIFS all oasis input files are treated as restarts.
+   # in FOCI all remapping files are handled as inputs. Both approaches work.
+   #ini_parent_dir: "${oasis3mct.pool_dir}"
+   ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
+   oasis_date_stamp: "_18500102-18500102"
+   
+nemo:
+   lresume: true
+   # if NEMO's CPU layout is the same in the run you restart from and the current run 
+   # you can restart from the processor files without having to run nocscombine
+   # Normally, when restarting from another run, ESM-Tools expect global files that end on _global.nc
+   # to override this, set the global_tag to ""
+   # because of the nested choose statement in nemo.yaml, we have to do it the complicated way
+   # for a variable within a simple choose statement, 
+   # global_tag: ""
+   # would have worked. A bug report will be filed.
+   # Uncomment the block below if you would like to restart from processor files instead
+   # of global restart file
+   #choose_lresume:
+   #  true:
+   #    choose_general.run_number:
+   #       1:
+   #          global_tag: ""
+
+   resolution: "ORCA05"
+   jpni: 8 
+   jpnj: 4
+   nproc: 32
+   add_namelist_changes:
+       namelist_cfg:
+           namtra_ldf:
+               rn_aht_0: 599
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   nproc: 16

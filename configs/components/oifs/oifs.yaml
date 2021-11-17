@@ -1,17 +1,19 @@
 #
-#OIFS standalone (=AMIP?) YAML FILE
+#OIFS standalone YAML FILE
 #
-
-# TODO:
-# 1 use with_xios to include or not xios (it is not working now probably due to a bug in esm_tools - esm_tools resolving include models before resolving the chooses)
 
 model: oifs
 executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
-with_xios: False
+with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
+with_nest1: false
 xml_dir: ''
+
+required_plugins:
+        - "git+https://github.com/esm-tools-plugins/postprocess"
+        - "git+https://github.com/esm-tools-plugins/preprocess"
 
 description: |
         The OpenIFS atmosphere model based on ECMWF IFS
@@ -23,6 +25,8 @@ license_text: |
 # Force namelist fort.4 to be written in uppercase
 namelist_case: "uppercase"
 
+reusable_filetypes: [input, bin, src]
+
 ##
 ## Directories
 ##
@@ -33,21 +37,24 @@ bin_dir: ${setup_dir}/bin
 #bin_dir: ${model_dir}/bin
 # seb-wahl: make focipool default until all OIFS data is available
 # in the "general" pool directory
+# JS: can use just use ${computer.pool_directories.pool} by now?
 pool_dir: "${computer.pool_directories.focipool}"
 input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
 icmcl_dir: ${input_dir}
-icmcl_file: ICMCLgu5aINIT
+icmcl_file: ICMCL${prepifs_expid}INIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
 ifsdata_dir: ${input_dir}/../${version}/ifsdata/
 namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
 cmip6_data_dir: ${input_dir}/../cmip6_data
 cmip5_data_dir: ${input_dir}/../cmip5_data
-cmip6_data_dir_nml: ./cmip6_data/
-cmip5_data_dir_nml: ./cmip5_data/
+cmip6_data_dir_nml: ${cmip6_data_dir}
+cmip5_data_dir_nml: ${cmip5_data_dir}
 restart_dir: ""
+in_date_folder: "${parent_date!syear!smonth!sday}"
+out_date_folder: "${end_date!syear!smonth!sday}"
 
 parent_expid: "test"
 parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
@@ -81,8 +88,11 @@ compile_infos:
         - oasis3mct-4.0
         available_versions:
         - 40r1
-        - 43r3-awi
-        - 43r3-awi-e1
+        - 43r3-master
+        - 43r3-awicm-3.0
+        - 43r3-awicm-frontiers
+        - 43r3-awicm-frontiers-xios
+        - 43r3-awicm-deck
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -98,292 +108,95 @@ compile_infos:
             branch: foci_conserv
             comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
             destination: 40r1
+          43r3-master:
+            requires:
+            - oasis3mct-4.0-awicm-frontiers
+            branch: master
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
+          43r3-awicm-3.0:
+            requires:
+            - oasis3mct-4.0-awicm-3.0
+            branch: awicm3-frontiers-freeze-candidate-1
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
+          43r3-awicm-frontiers:
+            requires:
+            - oasis3mct-4.0-awicm-frontiers
+            branch: awicm-3-frontiers
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: false # for now, later the default will be with_xios: true
+          43r3-awicm-frontiers-xios:
+            requires:
+            - oasis3mct-4.0-awicm-frontiers
+            branch: awicm-3-frontiers-xios
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: true
+          43r3-awicm-deck:
+            requires:
+            - oasis3mct-4.0-oifsdeck
+            branch: awicm-3-deck-hotfix-1
+            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
+              -v -j8 -f oifs.cfg; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
+              -v -j8 -f oifs.cfg ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             install_bins: make/esm/oifs/bin/oifs
-          43r3-awi:
-            requires:
-            - oasis3mct-4.0-oifsdeck
-            branch: awicm-3-deck
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
-            destination: oifs-43r3
-          43r3-awi-e1:
-            requires:
-            - oasis3mct-4.0-oifsdeck
-            - xios-2.5
-            branch: fix-mkl
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
-            destination: oifs-43r3
-          #43r3-foci:
-          #  requires:
-          #  - oasis3mct-fociagrif
-          #  branch: oifs-foci
-          #  comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-          #    -v -j8 -f oifs.cfg ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs
-          #  git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-          #  install_bins: make/esm/oifs/bin/oifs
+            with_xios: false
           43r3-foci:
-            branch: oifs-geomar
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910
           43r3-v1:
-            branch: oifs-geomar 
+            branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; cp -p esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
-            - xios-2.5_r1910_oifs   
+            - xios-2.5_r1910_oifs
         clean_command: rm -rf make/esm
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
-#
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-#
-#
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-runtime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"' 
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
 
-    glogin:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-    juwels:
-      add_export_vars:
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
-    mistral:
-      add_export_vars:
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-        # ENV vars used in OIFS's source code during runtime
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-
-    ollie:
-      add_module_actions:
-        - "unload gribapi"
-        - "unload hdf5"
-      add_export_vars:
-        - 'LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT:$HDF5ROOT:/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
-        - 'OIFS_FFIXED=""'
-        - 'GRIB_SAMPLES_PATH="/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2"'
-        - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-
+further_reading:
+        - oifs/oifs.env.yaml
 
 compiletime_environment_changes:
-  choose_computer.name:
-    blogin:
-      add_export_vars:
-        - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # FFTW is included in MKL so we link to that
-        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
-        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
-        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    glogin:
-      add_export_vars:
-
-        - "LAPACK_LIB='-mkl=sequential'"
-        - "LAPACK_LIB_DEFAULT='-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # FFTW is included in MKL so we link to that
-        - "OIFS_FFTW_DIR='-L$MKLROOT/lib/intel64'"
-        - "OIFS_FFTW_INCLUDE='-I$OIFS_FFTW_DIR/include/'"
-        - "OIFS_FFTW_LIB='-L$OIFS_FFTW_DIR/lib/ -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf -lnetcdff"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    juwels:
-      add_export_vars:
-        # TODO: figure out whether those two are still needed
-        - "ESM_NETCDF_C_DIR=$NETCDFROOT"
-        - "ESM_NETCDF_F_DIR=$NETCDFFROOT"
-        # grib api / eccodes
-        - 'OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$ECCODESROOT/bin"'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        # oasis
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        # netcdf
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        # compilers and compile switches
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-    mistral:
-      add_export_vars:
-        - 'MKLROOT=/sw/rhel6-x64/intel/intel-18.0.4/compilers_and_libraries_2018/linux/mkl/lib/intel64/'
-        - 'LAPACK_LIB_DEFAULT="-L$MKLROOT -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - "ESM_NETCDF_C_DIR=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
-        - "ESM_NETCDF_F_DIR=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-impi-intel14/"
-        - "GRIBAPIROOT=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/"
-        - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-        - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-        - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-        #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
-        - "PATH=/sw/rhel6-x64/gcc/binutils-2.24-gccsys/bin:${PATH}"
-        - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GRIBAPIROOT/lib:$PROJ4_ROOT/lib:$FFTW_ROOT/lib"
-
-        - 'GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
-        - 'PATH=$PATH:/mnt/lustre01/sw/rhel6-x64/devtools/fcm-2017.10.0/bin/'
-
-        - 'OIFS_GRIB_API_INCLUDE="-I$GRIBAPIROOT/include"'
-        - 'OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"'
-        # OIFS_GRIB_API_LIB is used by OpenIFS CY40, OIFS_GRIB_LIB is used by CY43
-        - 'OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"'
-        - 'OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"'
-        - 'OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"'
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-        - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-        - 'OIFS_FC=$FC'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-        - 'OIFS_CC=$CC'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-        # Build OpenIFS with FFTW. Use Intel MKL interfaces
-        # WARNING: FFTW does not work yet. Wait for patch from ECMWF
-        # - 'OIFS_FFTW="enable"'
-        - 'OIFS_FFTW_DIR="$FFTW_ROOT"'
-        - 'OIFS_FFTW_INCLUDE="-I$OIFS_FFTW_DIR/include/"'
-        - 'OIFS_FFTW_LIB="-L$OIFS_FFTW_DIR/lib/ -lfftw3f"'
-
-    ollie:
-      add_module_actions:
-        - "unload gribapi"
-        - "unload hdf5"
-      add_export_vars:
-        - 'LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
-        - 'LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"/home/ollie/jstreffi/ecmwf/grib_api_intel/lib"'
-
-        - 'GRIB_SAMPLES_PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel/share/grib_api/ifs_samples/grib1_mlgrib2'
-
-        - 'OIFS_GRIB_API_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_API_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_INCLUDE=-I/home/ollie/jstreffi/ecmwf/grib_api_intel/include'
-        - 'OIFS_GRIB_LIB="-L/home/ollie/jstreffi/ecmwf/grib_api_intel/lib -lgrib_api_f90 -lgrib_api"'
-        - 'OIFS_GRIB_API_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
-        - 'OIFS_GRIB_BIN="/home/ollie/jstreffi/ecmwf/grib_api_intel/bin"'
-        - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-        - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-        - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-        - 'OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"'
-        - 'OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include'
-        - 'OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"'
-        - 'OIFS_FC=${computer.fc}'
-        - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
-        - 'OIFS_FFIXED=""'
-        - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-        - 'OIFS_LFLAGS='
-        - 'OIFS_CC=${computer.cc}'
-        - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0"'
-        - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+        iolibraries: geomar_libs
+        choose_computer.name:
+                juwels:
+                        compiler_mpi: intel2020_psmpi2020
+runtime_environment_changes:
+        iolibraries: geomar_libs
+        choose_computer.name:
+                juwels:
+                        compiler_mpi: intel2020_psmpi2020
 
 input_expid: ECE3
 resolution: TL159
@@ -403,6 +216,8 @@ generate_namelist: 1
 ensemble: 0
 post_processing: 0
 use_ocean_currents: 0
+pextra: 0
+dr_hook_ignore_signals: -1
 
 #cmip6: True
 #cmip5: False
@@ -418,13 +233,13 @@ supercooled_liquid_could_fix: 0
 # If perturb = 1, then we perturb the initial SKT in ICMGGECE3INIT
 # with random numbers generated using CDO
 # We use ensemble_id as seed, so this number must be unique for each member
-# i.e. ensemble_id = N for r1iNp1 
-perturb: 1 
-ensemble_id: 1 
+# i.e. ensemble_id = N for r1iNp1
+perturb: 1
+ensemble_id: 1
 
 orb_switch: False
 orb_mode: "variable_year"
-orb_iyear: ${initial_date!syear} # ??? original : $(date -u -d "${run_start_date}" +%Y)
+orb_iyear: ${start_date!syear}
 
 restart: 1
 
@@ -440,8 +255,8 @@ namelists:
 choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.
-        TCO95: 
-                nx: 40320 
+        TCO95:
+                nx: 40320
                 ny: 1
                 time_step: 3600
                 oasis_grid_name: "096"
@@ -457,10 +272,10 @@ choose_resolution:
                 res_number_tl: "159l_2"
                 truncation: "TL"
         TCO159:
-                nx: 35718
+                nx: 108160
                 ny: 1
                 time_step: 3600
-                oasis_grid_name: "080"
+                oasis_grid_name: "160"
                 res_number: 159
                 res_number_tl: "159_4"
                 truncation: "TCO"
@@ -521,97 +336,95 @@ choose_resolution:
                 res_number_tl: "1279l_2"
                 truncation: "TL"
 
-choose_computer.cores_per_node:
+choose_computer.partitions.compute.cores_per_node:
         24:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
         36:
-                nproca: 108
-                nprocb: 1
+                nproc: 108
         48:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
         96:
-                nproca: 96
-                nprocb: 1
+                nproc: 96
 
-# Where does end_date and start_date come from
-# Why is it set to 364 days even when I ask for a 5-day run
-#runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
-# For a one year run, start_date = 1999-01-01T00:00:00 and next_date = 2000-01-01T00:00:00
-runtime_seconds: "$(( ${next_date} - ${start_date} ))"
-timestep_per_run: $((${runtime_seconds} / ${time_step}))
-ndays_per_run: "$(( ${runtime_seconds} / 86400 ))" 
-ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
+#======================================================================================
+# MAIN CHANGES TO fort.4 NAMELIST
+#======================================================================================
 
-seconds_since_initial: $((${start_date} - ${initial_date}))
-steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+# Microphysics switch: 0 for off, 1 for light version and 2 for full
+sclct_switch: 0
 
-next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
-steps_per_day: "$(( 86400 / ${time_step} ))"
-custop: "t${oifs.next_step}"
+# Namelist modifications for truncation types
+nlon: "$(( ${nlat}*2 ))"
+nspecresmin: "$(( ${res_number}+1 ))"
+choose_truncation:
+        TCO:
+                nlat: "$(( (${res_number}+1)*2 ))"
+                lecompgrid: true
+                lgradsp: false
+                lassi: false
+                lfdbop: false
+                lsmssig: false
+        TL:
+                nlat: "$(( ${res_number}+1 ))"
+                lecompgrid: false
+                lgradsp: true
+                lassi: true
+                lfdbop: true
+                lsmssig: true
+
+# Apply truncation and other general options to the namelist
+namelist_changes:
+        fort.4:
+                NAERAD:
+                        CRTABLEDIR: "${rtables_dir}"
+                        LECOMPGRID: "${lecompgrid}"
+                NAMCLDP:
+                        SCLCT_SWITCH: "${sclct_switch}"
+                NAMFPG:
+                        NFPLEV: "${nlev}"
+                        NFPMAX: "${res_number}"
+                NAMFPD:
+                        NLAT: "${nlat}"
+                        NLON: "${nlon}"
+                NAMPAR0:
+                        NSPECRESMIN: "${nspecresmin}"
+                NAMDYNA:
+                        LGRADSP: "${lgradsp}"
+                NAMNMI:
+                        LASSI: "${lassi}"
+                NAMCT0:
+                        LFDBOP: "${lfdbop}"
+                        LSMSSIG: "${lsmssig}"
+                # For this changes to have an effect use a version of OpenIFS that
+                # contains yomorb.F90
+                NAMORB:
+                        LCORBMD:  "${orb_switch}"
+                        ORBMODE: "${orb_mode}"
+                        ORBIY: "${orb_iyear}"
+
 lresume: false
-
-start_seconds: "$((${start_date} - ${initial_date}))"
-#start_ndays: "$(( ${start_seconds} / 86400 - 1 ))"
-start_ndays: "$(( ${start_seconds} / 86400 ))"
-start_ndays_string: "<--format(%08d)-- ${start_ndays}"
-#end_seconds: "$(( $((${end_date} + 1days)) - ${initial_date}))"
-next_seconds: "$((${next_date} - ${initial_date}))"
-next_ndays: "$(( ${next_seconds} / 86400 ))"
-next_ndays_string: "<--format(%08d)-- ${next_ndays}"
-
-# WAMstartdate
-wam_start_date: "${initial_date!syear!smonth!sday}000000"
-
-# ICMCL start and end
-icmcl_end_date: $(( ${next_date} + 1days ))
-icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
-
-# WAM restart files are named with the number of
-# days, hours, minutes, seconds since the last run
-# with one time step subtracted.
-# So restarting after 8 days with 30 min time step has
-# time stamp 000007233000
-# Here we calculate this
-#
-# how do we subtract one time step
-#start_seconds_wam: "$(( ${start_seconds} - ${time_step} ))"
-#start_ndays_wam: "$(( ${start_seconds_wam} / 86400 ))"
-#start_nhours_wam: "$(( $(( ${start_seconds_wam} - $(( ${start_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-#start_remaining_seconds: "$(( ${start_seconds_wam} - $(( ${start_nhours_wam} * 3600 )) - $(( ${start_ndays_wam} * 86400 )) ))"
-#start_nmins_wam: "$(( ${start_remaining_seconds} / 60 ))"
-#start_ndays_string_wam: "<--format(%06d)-- ${start_ndays_wam}"
-#start_nhour_string_wam: "<--format(%02d)-- ${start_nhours_wam}"
-#start_nmins_string_wam: "<--format(%02d)-- ${start_nmins_wam}"
-#start_timestamp_wam: "${start_ndays_string_wam}${start_nhour_string_wam}${start_nmins_wam}"
-#start_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-start_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
-
-#end_seconds_wam: "$(( ${end_date} - ${initial_date} - ${time_step} ))"
-#end_ndays_wam: "$(( ${end_seconds_wam} / 86400 ))"
-#end_nhours_wam: "$(( $(( ${end_seconds_wam} - $(( ${end_seconds_wam} / 86400 )) * 86400 )) / 3600 ))"
-#end_remaining_seconds: "$(( ${end_seconds_wam} - $(( ${end_nhours_wam} * 3600 )) - $(( ${end_ndays_wam} * 86400 )) ))"
-#end_nmins_wam: "$(( ${end_remaining_seconds} / 60 ))"
-#end_ndays_string_wam: "<--format(%06d)-- ${end_ndays_wam}"
-#end_nhour_string_wam: "<--format(%02d)-- ${end_nhours_wam}"
-#end_nmins_string_wam: "<--format(%02d)-- ${end_nmins_wam}"
-#end_timestamp_wam: "${end_ndays_string_wam}${end_nhour_string_wam}${end_nmins_wam}"
-#end_filebase_wam: "${initial_date!syear!smonth!sday!shour!sminute!ssecond}_${start_timestamp_wam}"
-end_filebase_wam: "${initial_date!syear!smonth!sday}000000_0000000000"
-
-run_number_minus1: "$(( ${run_number} - 1 ))"
-run_number_string: "<--format(%05d)-- ${run_number}"
-run_number_minus1_string: "<--format(%05d)-- ${run_number_minus1}"
-
-
 restart_rate: 1
 restart_unit: "months"
+
+file_movements:
+        forcing:
+            all_directions: link
+        restart_in:
+            all_directions: link
+        restart_out:
+            all_directions: move
+        rcf_in:
+            all_directions: copy
+        waminfo_in:
+            all_directions: copy
+
+# TODO: expand comment
+massfixer: 2
+nfrmasscon: 1
 
 oasis_grid_name_a: "A${oasis_grid_name}"
 oasis_grid_name_r: "R${oasis_grid_name}"
 oasis_grid_name_l: "L${oasis_grid_name}"
-
 
 choose_levels:
         L60:
@@ -623,31 +436,102 @@ choose_levels:
         L137:
                 levels_number: 137
 
+
+#======================================================================================
+# TIME VARIABLES
+#======================================================================================
+# Time variables are needed for correctly copying srf and WAM files, but also for being
+# able to use Jan Streffing's strategy to avoid OIFS from crashing during very long
+# runs, associated to the well known memory issue documented here:
+#     https://confluence.ecmwf.int/pages/viewpage.action?pageId=192905300
+
+# Simulaton length for the fort.4 namelist and wam_namelist
+simulation_length_seconds: "$(( ${next_date} - ${pseudo_initial_date} ))"
+seconds_since_initial: "$(( ${start_date} - ${pseudo_initial_date} ))"
+wam_start_date: "${pseudo_initial_date!syear!smonth!sday}000000"
+
+# ICMCL start and end
+icmcl_end_date: "$(( ${next_date} + 1days ))"
+icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
+
+# Time steps in this run
+runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+timestep_per_run: $((${runtime_seconds} / ${time_step}))
+
+# Number of days in this run
+ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
+
+# Number of steps since the beginning of the simulation or the "pseudo-beginning"
+steps_since_initial: $((${seconds_since_initial} / ${time_step}))
+
+# Number of total steps at the end of the run
+next_step: "$(( ${steps_since_initial} + ${timestep_per_run} ))"
+
+# Number of steps per day in this run
+steps_per_day: "$(( 86400 / ${time_step} ))"
+
+# By default we output one restart per run
+nfrres: 1
+
+
+#======================================================================================
+# BINARY FILES
+#======================================================================================
 bin_sources:
         bin: ${bin_dir}/${executable}
 
-##
-## input files
-##
+
+#======================================================================================
+# INPUT FILES
+#======================================================================================
 
 input_files:
-        #ICMGG_INIT: ICMGG_INIT
-        #ICMGG_INIUA: ICMGG_INIUA
-        #ICMSH_INIT: ICMSH_INIT
+        ICMGG_INIT: ICMGG_INIT
+        ICMGG_INIUA: ICMGG_INIUA
+        ICMSH_INIT: ICMSH_INIT
         ifsdata: ifsdata
-        rtables: rtables
-        vtables: vtables
+        #rtables: rtables
+        #vtables: vtables
         tl_data: tl_data
         o3_data: o3_data
         # also missing: modify_init for ensemble stuff
 
-##
-## forcing files
-##
 
-##
-## log files
-##
+#======================================================================================
+# FORCING FILES
+#======================================================================================
+
+# Switch to copy the forcing files into the experiment input folder. If false, the
+# forcing files are accessed directly from the pool
+copy_forcing: false
+choose_copy_forcing:
+        true:
+                forcing_files:
+                        O3PI: O3PI
+                        O3HIST: O3HIST
+                        O3SCEN: O3SCEN
+                choose_mip:
+                        "cmip5":
+                                cmip5_data_dir_nml: ./cmip5_data/
+                                add_forcing_files:
+                                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                        "cmip6":
+                                cmip6_data_dir_nml: ./cmip6_data/
+                                add_forcing_files:
+                                        # Add CO2 etc for all scenarios and years
+                                        CMIP6DATA: CMIP6DATA
+        false:
+                forcing_files: {}
+
+
+#======================================================================================
+# LOG FILES
+#======================================================================================
 
 log_files:
         NODE: NODE
@@ -661,51 +545,91 @@ log_in_work:
         NODE: NODE.001_01
         ifsstat: ifs.stat
 
-# 
-# Restart file - input
-# 
+
+#======================================================================================
+# RESTART FILES
+#======================================================================================
+
+# NDAYS variables for SRF and WAMINFO files
+# -----------------------------------------
+# ndays_source_in
+ndays_source_in: "<--format(%08d)-- ${start_ndays_source}"
+# ndays_work_in
+start_ndays: "$(( ${seconds_since_initial} / 86400 ))"
+ndays_work_in: "<--format(%08d)-- ${start_ndays}"
+# ndays_out
+next_ndays: "$(( ${simulation_length_seconds} / 86400 ))"
+ndays_out: "<--format(%08d)-- ${next_ndays}"
+
+# WAM variables
+# -------------
+# filebase
+filebase_wam_source: "${prev_run.oifs.filebase_wam_work}"
+filebase_wam_work: "${pseudo_initial_date!syear!smonth!sday}000000_"
+# wam_source_in
+source_ndays_wam: "$(( ${start_ndays_source} - 1 ))"
+source_days_string: "<--format(%06d)-- ${source_ndays_wam}"
+wam_source_in: "${source_days_string}${parent_date!shour!sminute!ssecond}"
+# wam_work_in
+start_ndays_wam: "$(( ${start_ndays} - 1 ))"
+start_days_string: "<--format(%06d)-- ${start_ndays_wam}"
+wam_work_in: "${start_days_string}${parent_date!shour!sminute!ssecond}"
+# wam_out
+next_ndays_wam: "$(( ${next_ndays} - 1 ))"
+next_days_string: "<--format(%06d)-- ${next_ndays_wam}"
+wam_out: "${next_days_string}${parent_date!shour!sminute!ssecond}"
+
+# BEFORE RUN: copy from RESTART to WORK
+# ----------
 restart_in_files:
         srf: srf
         rcf: rcf
 
+# RESTART (restart files from prev. leg in the general exp dir):
+restart_in_sources:
+        srf: ${in_date_folder}/srf${ndays_source_in}0000.*
+        rcf: ${in_date_folder}/rcf
+        waminfo: ${in_date_folder}/waminfo${ndays_source_in}
+        BLS: ${in_date_folder}/BLS${filebase_wam_source}${wam_source_in}.*
+        LAW: ${in_date_folder}/LAW${filebase_wam_source}${wam_source_in}.*
+
+# WORK (current leg directory):
 restart_in_in_work:
         rcf: rcf
+        waminfo: waminfo
+        srf: srf${ndays_work_in}0000.*
+        BLS: BLS${filebase_wam_work}${wam_work_in}.*
+        LAW: LAW${filebase_wam_work}${wam_work_in}.*
 
-restart_in_sources:
-        srf: srf${start_ndays_string}0000.*
-        rcf: rcf${start_ndays_string}
-        BLS: BLS${start_filebase_wam}.*
-        LAW: LAW${start_filebase_wam}.*
 
-# 
-# Restart file - output
-# 
+# AFTER RUN: copy from WORK to RESTART
+# ---------
 restart_out_files:
         srf: srf
         rcf: rcf
 
+# WORK (restart files generated during this leg, to be copied to the exp dir):
 restart_out_sources:
-        srf: srf${next_ndays_string}0000.*
+        srf: srf${ndays_out}0000.*
         rcf: rcf
-        BLS: BLS${end_filebase_wam}.*
-        LAW: LAW${end_filebase_wam}.*
+        waminfo: waminfo
+        BLS: BLS${filebase_wam_work}${wam_out}.*
+        LAW: LAW${filebase_wam_work}${wam_out}.*
 
+# RESTART (restart files from this leg in the general exp dir, for the next leg restart)
 restart_out_targets:
-        rcf: rcf${next_ndays_string}
-##
-## output
-##
+        srf: ${out_date_folder}/srf${ndays_out}0000.*
+        rcf: ${out_date_folder}/rcf
+        waminfo: ${out_date_folder}/waminfo${ndays_out}
+        BLS: ${out_date_folder}/BLS${filebase_wam_work}${wam_out}.*
+        LAW: ${out_date_folder}/LAW${filebase_wam_work}${wam_out}.*
+
+
+#======================================================================================
+# OUTPUT FILES
+#======================================================================================
 
 outdata_in_work:
-        ICMGG: ICMGG${oifs.input_expid}+*
-        ICMSH: ICMSH${oifs.input_expid}+*
-        ICMUA: ICMUA${oifs.input_expid}+*
-        MPP: MPP*
-#        # XIOS output
-        oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-
-outdata_sources:
-        # old grib based output
         ICMGG: ICMGG${oifs.input_expid}+*
         ICMSH: ICMSH${oifs.input_expid}+*
         ICMUA: ICMUA${oifs.input_expid}+*
@@ -713,28 +637,76 @@ outdata_sources:
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
 
-## Using XIOS?
+outdata_sources:
+        # old grib based output
+        ICMGG: ${out_date_folder}/ICMGG${oifs.input_expid}+*
+        ICMSH: ${out_date_folder}/ICMSH${oifs.input_expid}+*
+        ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
+        MPP: ${out_date_folder}/MPP*
+        # XIOS output
+        oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+
+
+#======================================================================================
+# IGNORE FILES
+#======================================================================================
+
+ignore_files:
+        drhook: drhook
+        ICMCL: ICMCL
+ignore_in_work:
+        drhook: drhook*
+        ICMCL: ICMCL*
+ignore_sources:
+        drhook: drhook*
+        ICMCL: ICMCL*
+
+
+#======================================================================================
+# XIOS (Parallel output via XML IO server)
+#======================================================================================
+
+# Using XIOS?
 choose_with_xios:
         1:
                 include_models:
                         - xios
-                add_namelist_changes: 
+                add_namelist_changes:
                         fort.4:
                                 NAMCT0:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-        0:               
+        0:
                 outdata_files:
                         ICMGG: ICMGG
                         ICMSH: ICMSH
 
 
+#======================================================================================
+# PEXTRA (Output of additional fields that are not part of standard OpenIFS output)
+#======================================================================================
 
-##
-## would that we with or without ECWAM, sir?
-##
+choose_pextra:
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAEPHY:
+                                        LBUD23: ".true."
+                                NAMDPHY:
+                                        NVEXTR: 25
+                                NAMPHYDS:
+                                        NVEXTRAGB: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
+                                NAMFPC:
+                                        NFP3DFS: 25
+                                        MFP3DFS: [91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115]
 
+
+#======================================================================================
+# WAVE MODEL (WAM)
+#======================================================================================
+
+# Turns on/off the wave model WAM inside OpenIFS
 choose_wam:
         1:
                 wam_number: "1"
@@ -744,10 +716,10 @@ choose_wam:
                         wam_subgrid_0: wam_subgrid_0
                         wam_subgrid_1: wam_subgrid_1
                         wam_subgrid_2: wam_subgrid_2
-                        #uwavein: uwavein
-                        #specwavein: specwavein
-                        #sfcwindin: sfcwindin
-                        #cdwavein: cdwavein
+                        uwavein: uwavein
+                        specwavein: specwavein
+                        sfcwindin: sfcwindin
+                        cdwavein: cdwavein
 
                 add_namelist_changes:
                         fort.4:
@@ -756,14 +728,18 @@ choose_wam:
                                         LWCOU2W: ".true."
                         wam_namelist:
                                 NALINE:
+                                        CBPLTDT: "${wam_start_date}"
+                                        CDATECURA: "${wam_start_date}"
                                         CDATEF: "${wam_start_date}"
 
                 add_restart_in_files:
                         BLS: BLS
                         LAW: LAW
+                        waminfo: waminfo
                 add_restart_out_files:
                         BLS: BLS
                         LAW: LAW
+                        waminfo: waminfo
 
                 add_outdata_files:
                         MPP: MPP
@@ -780,18 +756,64 @@ choose_wam:
                                         LWCOU: ".false."
                                         LWCOU2W: ".false."
 
-# For coupled setups we can use ocean currents 
+
+#======================================================================================
+# OTHER CONFIGS AND SWITCHES
+#======================================================================================
+
+# For coupled setups we can use ocean currents
 choose_use_ocean_currents:
-        1: 
+        1:
                 add_namelist_changes:
                         fort.4:
-                                NAEPHY: 
+                                NAEPHY:
                                         LECURR: ".true."
         0:
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LECURR: ".false."
+
+##
+## mass conservation / mass fixer
+## 0 - no mass fixer
+## 1 - mass fixer for dry mass
+## 2 - mass fixer for dry mass and cloud variables
+##
+## LMASCOR turns it on/off
+## NFRMASSCON is correction frequency in time steps
+## (once per day might be ok)
+##
+choose_massfixer:
+        0:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".false."
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".false."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+        2:
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".false."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+                                NAMGFL:
+                                        #LTRCMFIX_PS: ".true."
+                                        LTRCMFMG: ".true."
+                                        YS_NL%LMASSFIX: ".true."
+                                        YR_NL%LMASSFIX: ".true."
+                                        YI_NL%LMASSFIX: ".true."
+                                        YL_NL%LMASSFIX: ".true."
+                                        YQ_NL%LMASSFIX: ".true."
 
 ##
 ## specifics for 40r1 and 43r3
@@ -807,7 +829,7 @@ choose_version:
                                         NRESTS: "-1, -${oifs.next_step}"
 
                                 NAMPAR0:
-                                        NPROC: ${oifs.nproca}
+                                        NPROC: ${oifs.nproc}
 
                                 NAMDYN:
                                         TSTEP: ${oifs.time_step}
@@ -833,23 +855,33 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        #NFRRES: ${timestep_per_run} #${oifs.next_step}
-                                        NFRRES: ${oifs.next_step} 
-                                        #NRESTS(1): -1
-                                        #NRESTS(2): -${oifs.next_step} #-${timestep_per_run}
-
+                                        NFRRES: ${nfrres}
+                                        NRESTS${nrest_ind}: ${nfrests}
                                 NAMPAR0:
-                                        NPROC: ${oifs.nproca}
-
+                                        NPROC: ${oifs.nproc}
                                 NAMARG:
                                         UTSTEP: ${oifs.time_step}
                                         CNMEXP: "${oifs.input_expid}"
-                                        CUSTOP: "${custop}"
+                                        CUSTOP: "t${oifs.next_step}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
                 add_outdata_files:
                         ICMUA: ICMUA
+
+choose_restart_type:
+        eternal:
+                nfrres: 1
+                nfrests:
+                        - -1
+                        - $(( -${simulation_length_seconds} / 3600 ))
+                nrest_ind: ""
+        ifs_default:
+                nfrres: ${next_step}
+                nfrests: ["-${next_step}"]
+                nrest_ind: "(1)"
+
+restart_type: "ifs_default"
 
 
 ##
@@ -864,24 +896,18 @@ choose_version:
 
 choose_mip:
         "cmip5":
-                add_forcing_files:
-                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
-                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
-                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
-                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
         "cmip6":
-                add_forcing_files:
-                        # Add CO2 etc for all scenarios and years
-                        CMIP6DATA: CMIP6DATA
-                        
                 add_namelist_changes:
                         fort.4:
                                 NAERAD:
                                         LCMIP6: ".true."
                                         CMIP6DATADIR: "${cmip6_data_dir_nml}"
                 choose_scenario:
-                        "piControl":                                
+                        "piControl":
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
@@ -891,7 +917,7 @@ choose_mip:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
-                                
+
 
 #choose_o3_scheme:
 #        "prescribed":
@@ -912,27 +938,32 @@ choose_mip:
 #                                                        O3SCEN: O3SCEN
 
 
-##
-## sources
-##
+#======================================================================================
+# INPUT AND FORCING FILES
+#======================================================================================
+
+prepifs_dir: ${input_dir}/${prepifs_startdate}${hours}/
+tl_o3_data_dir: ${input_dir}
+ICMGG_INIT_name: ""
+ICMSH_INIT_name: ""
 
 input_sources:
-        ICMGG_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIT
-        ICMGG_INIUA: ${input_dir}/${prepifs_startdate}${hours}/ICMGG${prepifs_expid}INIUA
-        ICMSH_INIT: ${input_dir}/${prepifs_startdate}${hours}/ICMSH${prepifs_expid}INIT
-        wam_grid_tables: ${input_dir}/${prepifs_startdate}${hours}/wam_grid_tables
-        wam_subgrid_0: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_0
-        wam_subgrid_1: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_1
-        wam_subgrid_2: ${input_dir}/${prepifs_startdate}${hours}/wam_subgrid_2
-        uwavein: ${input_dir}/${prepifs_startdate}${hours}/uwavein
-        specwavein: ${input_dir}/${prepifs_startdate}${hours}/specwavein
-        sfcwindin: ${input_dir}/${prepifs_startdate}${hours}/sfcwindin
-        cdwavein: ${input_dir}/${prepifs_startdate}${hours}/cdwavein
+        ICMGG_INIT: ${prepifs_dir}/ICMGG${prepifs_expid}INIT${ICMGG_INIT_name}
+        ICMGG_INIUA: ${prepifs_dir}/ICMGG${prepifs_expid}INIUA
+        ICMSH_INIT: ${prepifs_dir}/ICMSH${prepifs_expid}INIT${ICMSH_INIT_name}
+        wam_grid_tables: ${prepifs_dir}/wam_grid_tables
+        wam_subgrid_0: ${prepifs_dir}/wam_subgrid_0
+        wam_subgrid_1: ${prepifs_dir}/wam_subgrid_1
+        wam_subgrid_2: ${prepifs_dir}/wam_subgrid_2
+        uwavein: ${prepifs_dir}/uwavein
+        specwavein: ${prepifs_dir}/specwavein
+        sfcwindin: ${prepifs_dir}/sfcwindin
+        cdwavein: ${prepifs_dir}/cdwavein
         rtables: ${rtables_dir}/*
         vtables: ${vtables_dir}/*
         ifsdata: ${ifsdata_dir}/*
-        tl_data: ${input_dir}/${res_number_tl}/*
-        o3_data: ${input_dir}/${res_number_tl}/o3chem_l${nlev}/*
+        tl_data: ${tl_o3_data_dir}/${res_number_tl}/*
+        o3_data: ${tl_o3_data_dir}/${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_sources:
         # GHG data
@@ -950,9 +981,8 @@ forcing_sources:
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
 
 
-
 config_sources:
-        "fort.4": "${namelist_dir}/pictl/fort.4"
+        "fort.4": "${namelist_dir}/fort.4"
 
 input_in_work:
         ICMGG_INIT: ICMGG${oifs.input_expid}INIT
@@ -974,30 +1004,15 @@ forcing_in_work:
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
         RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
         RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-        CMIP6DATA: cmip6_data/* 
-        O3PI: cmip6_data/o3_pi/* 
-        O3HIST: cmip6_data/o3_histo/* 
+        CMIP6DATA: cmip6_data/*
+        O3PI: cmip6_data/o3_pi/*
+        O3HIST: cmip6_data/o3_histo/*
         O3SCEN: cmip6_data/o3_scenarios/*
-        
-##
-## coupling
-##
 
-# split fields to A, R and L grid
-# A grid is wet points except lakes
-# L grid is wet points including lakes
-# R grid is dry points 
-foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain] 
-foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow, AIceEvap, A_dQnsdT]
-foci_fields_r: [A_Runoff]
 
-coupling_fields:
-        "[[foci_fields_a-->FIELD]]":
-                grid: atma
-        "[[foci_fields_l-->FIELD]]":
-                grid: atml
-        "[[foci_fields_r-->FIELD]]":
-                grid: atmr
+#======================================================================================
+# GRIDS
+#======================================================================================
 
 # A grid at N80 resolution is A080 etc.
 grids:
@@ -1015,8 +1030,13 @@ grids:
                 name: ${oasis_grid_name_r}
                 nx: "${nx}"
                 ny: "${ny}"
-                oasis_grid_type: "D"     
-   
+                oasis_grid_type: "D"
+
+
+#======================================================================================
+# OUTPUT CONFIG
+#======================================================================================
+
 choose_output:
         "default":
                 add_namelist_changes:
@@ -1031,40 +1051,128 @@ choose_output:
                                 NAMCT0:
                                         NFRPOS: 12
                                         NFRHIS: 12
+#======================================================================================
+# PREPROCESS: eternal runs
+#======================================================================================
+# @JOAKIM: please compare your preprocessing scripts with the new ones
 
+# Determine the eternal_run_number variable. Normally this variable would be the same
+# as general.run_number, but for branchoff experiments should be 0 so that the 3rd
+# preprocessing option is used, instead of the options 1 or 2.
+branchoff: false
+eternal_run_number: "$((
+        0 if (${lresume} and ${general.run_number} == 1)
+            or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
+        else ${general.run_number}
+    ))"
+
+# The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
+# OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
+# memory issues mentioned before. This is done by declaring the pseudo_initial_date
+# as the last start date.
+choose_eternal_run_number:
+        1:
+                pseudo_initial_date: "${initial_date}"
+                start_ndays_source: "${start_ndays}"
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${initial_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id};
+                    ${slice_icml}
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
+        2:
+                pseudo_initial_date: "${prev_run.general.start_date}"
+                start_ndays_source: "${start_ndays}"
+                preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
+                    ${slice_icml}
+                    echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
+        "*":
+                pseudo_initial_date: "${prev_run.general.start_date}"
+                start_ndays_source: "${prev_run.oifs.next_ndays}"
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id};
+                    ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${thisrun_restart_in_dir}/
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${oifs.time_step}
+                        ${oifs.seconds_since_initial}
+                        ${oifs.start_ndays}
+                        ${oifs.wam};
+                    ${slice_icml}
+                    echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
+                # If this is run 1 or 2 of an experiment, lable it as branchoff
+                choose_eternal_run_number:
+                        0:
+                                branchoff: true
+
+choose_general.standalone:
+        True:
+                slice_icml: "
+                    ${general.esm_function_dir}/components/oifs/slice_icmcl_file.sh
+                        ${thisrun_input_dir}/
+                        ${icmcl_dir}/${icmcl_file}
+                        ${oifs.input_expid}
+                        ${start_date!syear!smonth!sday}
+                        ${icmcl_end_date_formatted}
+                        ${work_dir};"
+        False:
+                slice_icml: ""
 
 preprocess:
         preprocess_shell:
-                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-preprocess.sh ${input_dir}/${prepifs_startdate}${hours}/ ${icmcl_dir}/${icmcl_file} ${prepifs_expid} ${input_expid} ${start_date!syear!smonth!sday} ${icmcl_end_date_formatted} ${work_dir} ${wam_number} ${perturb} ${nx} ${ensemble_id}"
+                method: "${preprocess_method}"
                 type: shell
-# postprocessing is not supported, and causes a crash in release 5 if not commented
-# seb-wahl 2020-11-27
-#postprocess:
-#        postprocess_shell:
-#                method: "${general.esm_namelist_dir}/../configs/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-#                type: shell
-compute_recipe:
-   - "venv_bootstrap"
-   - "_create_setup_folders"
-   - "_create_component_folders"
-   - "initialize_experiment_logfile"
-   - "copy_tools_to_thisrun"
+
+
+#======================================================================================
+# POSTPROCESS
+#======================================================================================
+# the postprocessing is at the moment essentially the same as the preprocessing plugin
+# it just executes a shell script
+# not working as expected as there is no "wait" after submit in the compute recipe below
+postprocess:
+        postprocess_shell:
+                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+                type: shell
+
+
+#======================================================================================
+# RECIPE
+#======================================================================================
+
+prepcompute_recipe:
    - "compile_model"
-   - "_copy_preliminary_files_from_experiment_to_thisrun"
    - "_show_simulation_info"
    - "create_new_files"
+   - "create_empty_folders"
    - "prepare_coupler_files"
-   - "add_batch_hostfile"
    - "assemble"
    - "log_used_files"
    - "_write_finalized_config"
    - "copy_files_to_thisrun"
+   - "write_env"
    - "preprocess"
    - "modify_namelists"
    - "modify_files"
    - "copy_files_to_work"
-   - "write_simple_runscript"
    - "report_missing_files"
    - "database_entry"
-   - "submit"
+# this does not work as expected, solution is work in progress
+#   - "postprocess"
 

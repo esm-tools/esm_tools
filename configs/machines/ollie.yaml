@@ -41,6 +41,17 @@ choose_submitted:
 
 submitted: false
 hyper_flag: "" # No hyperthreading on ollie
+choose_heterogeneous_parallelization:
+        True:
+                add_unset_vars:
+                        - "SLURM_DISTRIBUTION"
+                        - "SLURM_NTASKS"
+                        - "SLURM_NPROCS"
+                        - "SLURM_ARBITRARY_NODELIST"
+
+unset_vars:
+        - "SLURM_MEM_PER_NODE"
+        - "SLURM_MEM_PER_CPU"
 
 # standard environment setup
 #

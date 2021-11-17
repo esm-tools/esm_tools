@@ -1,0 +1,7 @@
+Note:
+This is the very first version of AWICM3 that ran with esm_tools. 
+This version contains severe bugs in the model coupling / physics. 
+Unless you are specifacally interesting in studying these bugs,
+you should probably use a newer version like v3.0 or frontiers.
+
+These scripts are no longer maintained.

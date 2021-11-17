@@ -1,0 +1,231 @@
+# NESH YAML CONFIGURATION FILES
+
+name: nesh
+account: None
+
+# set default for hyperthreading_flag
+use_hyperthreading: False
+choose_use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
+        "0":
+                hyperthreading_flag: "--ntasks-per-core=1"
+        False:
+                hyperthreading_flag: "--ntasks-per-core=1"
+
+accounting: false
+
+batch_system: "slurm"
+
+jobtype: compute
+sh_interpreter: "/usr/bin/bash"
+
+choose_jobtype:
+        tidy_and_resubmit:
+                partition: cluster 
+        post:
+                partition: cluster 
+        compute:
+                partition: cluster 
+
+
+choose_partition:
+        cluster:
+                cores_per_node: 32
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+
+pool_directories:
+        pool: "/gxfs_work1/geomar/smomw235/foci_input2/"
+        focipool: "/gxfs_work1/geomar/smomw235/foci_input2/"
+
+pool_dir: "/not/available/on/nesh/" 
+
+# TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
+compiler_mpi: intel2019_impi2019
+iolibraries: geomar_libs
+
+# basic modules and export vars needed
+# for all compiler and I/O settings
+module_actions:
+   - "load cmake"
+
+export_vars:
+   LC_ALL: en_US.UTF-8
+
+additional_flags: 
+      - --mem=72000
+      - --constraint="cascade"
+
+choose_compiler_mpi:
+
+   intel2020_impi2020:
+      add_module_actions:
+         - "load intel/20.0.4"
+         - "load intelmpi/20.0.4"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         I_MPI_PMI_LIBRARY: libpmi.so
+         I_MPI_FABRICS: shm:ofi
+         I_MPI_LARGE_SCALE_THRESHOLD: 8192
+         I_MPI_DYNAMIC_CONNECTION: 1
+         
+   intel2019_impi2019:
+      add_module_actions:
+         - "load intel/19.0.4"
+         - "load intelmpi/19.0.4"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         I_MPI_PMI_LIBRARY: libpmi.so
+         I_MPI_FABRICS: shm:ofi
+         #FI_PROVIDER: verbs
+         #FI_VERBS_IFACE: ib
+         I_MPI_LARGE_SCALE_THRESHOLD: 8192
+         I_MPI_DYNAMIC_CONNECTION: 1
+         #I_MPI_SLURM_EXT: 0
+
+   intel2019_ompi:
+      add_module_actions:
+         - "load intel/19.0.4"
+         - "load openmpi-intel19/3.1.6"
+      add_export_vars:  
+         FC: mpifort
+         F77: mpifort
+         MPIFC: mpifort
+         FCFLAGS: -free
+         CC: mpicc
+         CXX: mpic++
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+
+   intel2020_ompi:
+      add_module_actions:
+         - "load intel/20.0.4"
+         - "load openmpi-intel20/3.1.6"
+      add_export_vars:  
+         FC: mpifort
+         F77: mpifort
+         MPIFC: mpifort
+         FCFLAGS: -free
+         CC: mpicc
+         CXX: mpic++
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+
+choose_iolibraries:
+
+    system_libs:
+       # TODO: find the correct libraries and dependencies
+       add_module_actions:
+         - "load netcdf"
+       # TODO: find the correct libraries and dependencies
+       add_export_vars:
+         NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+         LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+
+    geomar_libs:
+       choose_compiler_mpi:
+          intel2020_impi2020:
+             add_export_vars:
+                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2020.0.4_impi2020.0.4_20210122
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+          intel2019_impi2019:
+             add_export_vars:
+                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2019.0.4_impi2019.0.4_20210122
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2019_ompi:
+             add_export_vars:
+                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2019.0.4_ompi3.1.6_20210322
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+          intel2020_ompi:
+             add_export_vars:
+                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2020.0.4_ompi3.1.6_20210322
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "$FC"
+cc: "$CC"
+mpifc: "$MPIFC" 
+mpicc: "$MPICC"
+cxx: "$CXX" 
+
+launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
+
+further_reading:
+        - batch_system/slurm.yaml

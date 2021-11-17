@@ -24,6 +24,7 @@ dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
+scenario_type: ${echam.scenario} 
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -33,18 +34,22 @@ no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "_dynveg"
 
 choose_version:
+        # 3.20p1 is used within FOCI, currently only configured to run WITH
+        # dynamic vegetation, without dynamic vegetation other input files
+        # e.g. cover_fract must be set which is not yet configured as we
+        # don't have this use case in FOCI at the moment.
         "3.20p1":
                 dataset: r0010
                 forcing_in_work:
-                       "LU" : "landuseHarvest.@YEAR@.nc"
+                       LU : "landuseHarvest.@YEAR@.nc"
 
                 choose_dynamic_vegetations:
                         true:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg"
                                 dynveg: "_dynveg"
                                 jsbachnc_file_ending: "${dynveg_file_ending}"
                         false:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
                                 dynveg: "_no_dynveg"
                 choose_echam.scenario:
@@ -58,6 +63,39 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+                        "1950":
+                                add_input_files:
+                                        jsbach: jsbach_1976
+                                forcing_files:
+                                        LU: LU_1950
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1950
+                                        a_nd_file: a_nd_file
+                                        #lightning: lightning
+                                        #popdens: popdens
+                        1percCO2:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_1850
+                                        LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+                        ssp585:
+                                scenario_type: cmip6
+                        ssp370:
+                                scenario_type: cmip6
+                        ssp126:
+                                scenario_type: cmip6
+                        ssp245:
+                                scenario_type: cmip6
+                        ssp534os:
+                                scenario_type: cmip6
+                        cmip6hist:
+                                scenario_type: cmip6                
+
         "3.20":
                 dataset: r0010
                 choose_dynamic_vegetations:
@@ -121,27 +159,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
-                        RCP26:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP26
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP45:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP45
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP85:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP85
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
+
                         HIST:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -217,27 +235,6 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
-                        RCP26:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP26
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP45:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP45
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP85:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP85
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
                         HIST:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -251,6 +248,18 @@ choose_version:
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
+
+choose_scenario_type:
+        cmip6:
+                add_input_files:
+                        jsbach: jsbach_1850
+                forcing_files:
+                        LU: LU_hist_scenario
+                        LU_trans: LU_trans_hist_scenario
+                        Ndepo: Ndepo_hist_scenario
+                        a_nd_file: a_nd_file
+                        lightning: lightning
+                        popdens: popdens
 
 
 choose_echam.version:
@@ -334,12 +343,8 @@ outdata_files:
         "[[streams-->STREAM]]_codes": STREAM_codes
 
 outdata_sources:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
-
-outdata_in_work:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM

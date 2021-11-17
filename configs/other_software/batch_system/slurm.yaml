@@ -50,7 +50,7 @@ name_flag: "--job-name=${expid}"
 
 heterogeneous_parallelization: false
 
-choose_heterogeneous_parallelization:
+add_choose_heterogeneous_parallelization:
         true:
                 cpu_bind: "none"
         false:
@@ -59,10 +59,13 @@ choose_heterogeneous_parallelization:
 choose_launcher:
         srun:
                 launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
+                execution_command: "echo mpiexec.hydra as launcher not yet available"
         mpirun:
-                launcher_flags: "-l"
+                launcher_flags: ""
+                execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} $(cat ${config_files.hostfile})"
 
 choose_debugger:
         None:
@@ -94,13 +97,8 @@ choose_SLURM_NNODES:
                 #method: "scontrol show hostnames"
 
 config_files:
+        # don't change the name at the moment, it's currently hardcoded in esm_runscripts/slurm.py
         hostfile: hostfile_srun
-
-        #config_create:
-        #hostfile:
-        #        - "[[setup.orderedexecs-->MODEL]]<--startproc-- - MODEL<--endproc-- ./MODEL<--exe-- <--append--"
-
-execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 check_error:
         "srun: error:" :
@@ -114,8 +112,8 @@ check_error:
                 method: "kill"
                 message: "SLURM ERROR: slurm probably didn't find executable"
                 file: "stdout"
-                
-# possibility to use less cores than processes. Useful for test runs / debugging                
+
+# possibility to use less cores than processes. Useful for test runs / debugging
 # can be specified in user runscript
 overcommit_nodes: None
 overcommit_rule: ""

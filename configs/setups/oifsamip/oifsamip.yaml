@@ -202,15 +202,6 @@ oasis3mct:
 
         time_step: 86400
 
-        a2o_lag: "${lag}"
-        a2r_lag: "${lag}"
-        o2a_lag: "${lag}"
-        o2r_lag: 0
-        r2a_lag: "${lag}"
-        a2o_seq: 2
-        o2a_seq: 2
-        o2r_seq: 1
-        r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.version:
@@ -221,8 +212,8 @@ oasis3mct:
 
         coupling_directions:
                 'AMIP->atma':
-                        lag: ${o2a_lag}
-                        seq: ${o2a_seq}
+                        lag: 0
+                        seq: 1
 
 
         coupling_methods:
@@ -251,17 +242,14 @@ oasis3mct:
 
         restart_in_files:
                 rmp: rmp
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_in_in_work:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         choose_lresume:
                 false:
-                        lag: 0
                         choose_general.run_number:
                                 1:
                                         add_input_files:
@@ -270,7 +258,6 @@ oasis3mct:
                                                 masks: masks
                                                 grids: grids
                 true:
-                        lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
                         # it is not a branched off experiment add the / to the
                         # sources when the run_number is 1
@@ -279,27 +266,22 @@ oasis3mct:
                                 true:
                                         add_restart_in_sources:
                                                 rmp: ${input_dir}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/rstas.nc
                                                 rstos.nc: ${input_dir}/rstos.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_files:
                 rmp: rmp
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_in_work:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
         restart_out_sources:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
 
 

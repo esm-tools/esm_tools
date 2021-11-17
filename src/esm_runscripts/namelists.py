@@ -267,7 +267,7 @@ class Namelist:
                 import pandas as pd
 
                 try:
-                    forcing_table = pd.open_csv(
+                    forcing_table = pd.read_csv(
                         config["echam"]["transient_forcing_table"], sep=";", index_col=0
                     )
                     co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[

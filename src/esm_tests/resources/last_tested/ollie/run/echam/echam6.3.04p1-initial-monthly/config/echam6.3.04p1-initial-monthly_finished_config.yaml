@@ -2,6 +2,11 @@ computer:
     account: None
     accounting: false
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
     cc: mpiicc
@@ -16,6 +21,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -119,6 +125,9 @@ computer:
     thisrun_logfile: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131.log
     threads_per_core: 1
     time_flag: --time=00:15:00
+    unset_vars:
+    - SLURM_MEM_PER_NODE
+    - SLURM_MEM_PER_CPU
     useMPI: intelmpi
 debug_info:
     loaded_from_file: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/scripts/echam6.3.04p1-initial-monthly.yaml
@@ -437,7 +446,7 @@ echam:
         swflux:
         - need_year_before
         - need_year_after
-        volcanir:
+        volcir:
         - need_year_before
         - need_year_after
         volcsw:
@@ -1098,6 +1107,7 @@ echam:
     restart_rate: 1
     restart_unit: months
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     setup_dir: /work/ollie/mandresm/testing//comp/echam/echam-6.3.04p1
     standalone_model: true
     streams:
@@ -1325,7 +1335,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 69930
+    jobid: 2443
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false
@@ -1801,7 +1811,6 @@ jsbach:
         a_nd_file: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/a_nd_file.nc
         lightning: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/lightning.nc
         popdens: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/work/population_density.nc
-    hist_fold: hist_harvest
     ignore_intermediate:
         jsbach: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/ignore/jsbach/echam6.3.04p1-initial-monthly_200002.01_jsbach
         jsbach_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/ignore/jsbach/echam6.3.04p1-initial-monthly_200002.01_jsbach.codes
@@ -1896,51 +1905,24 @@ jsbach:
     - namelist.jsbach
     no_dynveg_file_ending: _no-dynveg
     other_date: '2000-01-31T23:52:30'
-    outdata_intermediate:
-        jsbach: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbid.codes
-        land: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_land
-        land_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_land.codes
-        nitro: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_nitro.codes
-        surf: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/run_20000101-20000131/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_yasso.codes
-    outdata_sources:
-        jsbach: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_jsbid.codes
-        land: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_land
-        land_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_land.codes
-        nitro: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_nitro.codes
-        surf: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_surf
-        surf_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_surf.codes
-        veg: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_veg
-        veg_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work//echam6.3.04p1-initial-monthly_200001.01_yasso.codes
-    outdata_targets:
-        jsbach: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_jsbid.codes
-        land: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_land
-        land_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_land.codes
-        nitro: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_nitro.codes
-        surf: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/outdata/jsbach/echam6.3.04p1-initial-monthly_200001.01_yasso.codes
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        jsbach: echam6.3.04p1-initial-monthly_2000*.01_jsbach
+        jsbach_codes: echam6.3.04p1-initial-monthly_2000*.01_jsbach.codes
+        jsbid: echam6.3.04p1-initial-monthly_2000*.01_jsbid
+        jsbid_codes: echam6.3.04p1-initial-monthly_2000*.01_jsbid.codes
+        land: echam6.3.04p1-initial-monthly_2000*.01_land
+        land_codes: echam6.3.04p1-initial-monthly_2000*.01_land.codes
+        nitro: echam6.3.04p1-initial-monthly_2000*.01_nitro
+        nitro_codes: echam6.3.04p1-initial-monthly_2000*.01_nitro.codes
+        surf: echam6.3.04p1-initial-monthly_2000*.01_surf
+        surf_codes: echam6.3.04p1-initial-monthly_2000*.01_surf.codes
+        veg: echam6.3.04p1-initial-monthly_2000*.01_veg
+        veg_codes: echam6.3.04p1-initial-monthly_2000*.01_veg.codes
+        yasso: echam6.3.04p1-initial-monthly_2000*.01_yasso
+        yasso_codes: echam6.3.04p1-initial-monthly_2000*.01_yasso.codes
+    outdata_targets: {}
     parent_date: '1999-12-31T23:52:30'
     parent_expid: echam6.3.04p1-initial-monthly
     parent_restart_dir: /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/restart/jsbach/
@@ -1973,6 +1955,7 @@ jsbach:
         veg: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/restart/jsbach/restart_echam6.3.04p1-initial-monthly_veg_20000131.nc
         yasso: /work/ollie/mandresm/testing/run/echam/echam6.3.04p1-initial-monthly/restart/jsbach/restart_echam6.3.04p1-initial-monthly_yasso_20000131.nc
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     streams:
     - jsbach
     - jsbid

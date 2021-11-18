@@ -3,6 +3,11 @@ computer:
     accounting: true
     accounting_flag: --account=ab0995
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: --mem=0
     batch_system: slurm
     cc: mpiicc
@@ -17,6 +22,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -85,11 +91,12 @@ computer:
     - purge
     - unload netcdf_c
     - unload intel intelmpi
-    - load python/3.5.2
+    - load python3/2021.01-gcc-9.1.0
     - load cmake/3.13.3
     - load autoconf/2.69
     - load nco
     - load cdo
+    - load gcc/4.8.2
     - unload intel intelmpi
     - load intel/18.0.4 intelmpi/2018.5.288
     - load libtool/2.4.6
@@ -199,6 +206,8 @@ fesom:
         io: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/work/namelist.io
         oce: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/work/namelist.oce
     coupling_fields:
+        enth_oce:
+            grid: feom
         evap_oce:
             grid: feom
         heat_ico:
@@ -274,6 +283,26 @@ fesom:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
+        fesom_raw_restart_in:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_info_in:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_info_out:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_out:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
         forcing:
             exp_to_run: copy
             init_to_exp: copy
@@ -403,6 +432,7 @@ fesom:
     - namelist.oce
     - namelist.ice
     - namelist.io
+    - namelist.cvmix
     nproc: 288
     nx: 126858
     old_mesh_format: false
@@ -423,15 +453,17 @@ fesom:
     restart_first: 1
     restart_flag: last
     restart_out_intermediate:
-        icb_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/restart/fesom/iceberg.restart
         ice_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/restart/fesom/fesom.2001.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/restart/fesom/fesom.2001.oce.restart.nc
     restart_out_sources:
-        icb_restart: /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/run_20010101-20010131/work//iceberg.restart
         ice_restart: /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/run_20010101-20010131/work//fesom.2001.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/run_20010101-20010131/work//fesom.2001.oce.restart.nc
+    restart_out_sources_wild_card:
+        fesom_raw_restart: '*.dump'
+        fesom_raw_restart_info: '*.info'
+        par_ice_restart: '*.nc'
+        par_oce_restart: '*.nc'
     restart_out_targets:
-        icb_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/restart/fesom/iceberg.restart
         ice_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/restart/fesom/fesom.2001.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing/run/fesom/fesom2.0-initial-monthly/restart/fesom/fesom.2001.oce.restart.nc
     restart_rate: 1
@@ -633,7 +665,7 @@ general:
     - restart_in
     initial_date: '2001-01-01T00:00:00'
     inspect: null
-    jobid: 30845
+    jobid: 30409
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false

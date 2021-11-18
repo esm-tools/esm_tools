@@ -52,7 +52,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 138329 - start >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 191021 - start >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
 
 cd /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/
 time srun --mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL --multi-prog hostfile_srun 2>&1 &
@@ -64,6 +64,6 @@ process=$!
 cd /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
 esm_runscripts foci-initial-piCtl-test_daily_restart_lowcpu.yaml -e foci-initial-piCtl-test_daily_restart_lowcpu -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 138329 - done >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 191021 - done >> /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/log//foci-initial-piCtl-test_daily_restart_lowcpu_foci.log
 
 wait

@@ -36,7 +36,7 @@ computer:
     cxx: $CXX
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//machines/juwels.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//machines/juwels.yaml
     debugger: None
     debugger_flags_prelauncher: ''
     exclusive_flag: --exclusive
@@ -136,7 +136,7 @@ defaults:
     clean_command: rm -rf build CMakeCache.txt
     comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/download_and_compile.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/download_and_compile.yaml
 general:
     account: hhb19
     additional_files: []
@@ -192,10 +192,10 @@ general:
     compute_time: 00:30:00
     current_date: '1979-01-01T00:00:00'
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/general.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/general.yaml
     defaults.yaml:
         debug_info:
-            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//esm_software/esm_runscripts/defaults.yaml
         per_model_defaults: {}
     delta_date:
     - 0
@@ -307,7 +307,7 @@ general:
     - restart_in
     initial_date: '1979-01-01T00:00:00'
     inspect: null
-    jobid: 17586
+    jobid: 7720
     jobtype: prepcompute
     last_run_datestamp: 19781231-19781231
     last_run_in_chunk: false
@@ -692,7 +692,6 @@ oifs:
                 - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 "
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS "
                 compiler_mpi: intel2020_psmpi2020
-                iolibraries: geomar_libs
             mistral:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -792,16 +791,17 @@ oifs:
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
                 add_module_actions:
                 - unload gribapi
+        iolibraries: geomar_libs
     config_intermediate:
         fort.4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/oifs/fort.4
     config_sources:
-        fort.4: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3//fort.4
+        fort.4: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//oifs/43r3//fort.4
     config_targets:
         fort.4: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/fort.4
     copy_forcing: false
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/oifs.yaml
     description: 'The OpenIFS atmosphere model based on ECMWF IFS
 
         Carver et al., in prep.'
@@ -1337,7 +1337,7 @@ oifs:
                 NFRRES: 24
                 NRESTS(1):
                 - -24
-    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3/
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//oifs/43r3/
     namelists:
     - fort.4
     - wam_namelist
@@ -1388,7 +1388,7 @@ oifs:
     post_processing: 0
     postprocess:
         postprocess_shell:
-            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ ECE3 19790101 19790101
+            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/ ECE3 19790101 19790101
             type: shell
     prepcompute_recipe:
     - compile_model
@@ -1412,9 +1412,9 @@ oifs:
     prepifs_startdate: '20080101'
     preprocess:
         preprocess_shell:
-            method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// ECE3 ECE3 19790101 19790101 0 0 40320 1;  /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/; echo ''Run number for internal OpenIFS timekeeping: 1'''
+            method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// ECE3 ECE3 19790101 19790101 0 0 40320 1;  /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/; echo ''Run number for internal OpenIFS timekeeping: 1'''
             type: shell
-    preprocess_method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// ECE3 ECE3 19790101 19790101 0 0 40320 1;  /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/; echo ''Run number for internal OpenIFS timekeeping: 1'''
+    preprocess_method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// ECE3 ECE3 19790101 19790101 0 0 40320 1;  /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/; echo ''Run number for internal OpenIFS timekeeping: 1'''
     prev_date: '1978-12-31T23:00:00'
     pseudo_initial_date: '1979-01-01T00:00:00'
     read_icmcl: 0
@@ -1476,7 +1476,6 @@ oifs:
                 - OMP_SCHEDULE=STATIC
                 - OMP_STACKSIZE=128M
                 compiler_mpi: intel2020_psmpi2020
-                iolibraries: geomar_libs
             mistral:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
@@ -1512,13 +1511,14 @@ oifs:
                     PATH[(1)]: $GRIBAPIROOT/bin:$PATH
                 add_module_actions:
                 - unload gribapi
+        iolibraries: geomar_libs
     runtime_seconds: 86400
     scenario: amip-prepifs
     sclct_switch: 0
     seconds_since_initial: 0
     setup_dir: /p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1
     simulation_length_seconds: 86400
-    slice_icml: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
+    slice_icml: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/slice_icmcl_file.sh /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/input/oifs// /p/project/hirace/foci_input2/OPENIFS43R3-TCO95-AMIP//ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231 ECE3 19790101 19790103 /p/scratch/chhb19/mandresm/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/;
     source_days_string: -1
     source_ndays_wam: -1
     start_days_string: -1
@@ -1593,7 +1593,7 @@ xios:
         server: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/xios.x
     branch: esm-tools
     clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
-    comp_command: export XIOS_TOPLEVEL=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par  --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=/p/scratch/chhb19/mandresm/testing//comp/oifs/oifs-43r3-v1; ./make_xios --arch ESMTOOLS_generic_intel --netcdf_lib netcdf4_par --full  --job 24; cp bin/xios_server.exe bin/xios.x
     config_intermediate:
         context_ifs: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/context_ifs.xml
         ifs_xml_glob_0: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/config/xios/ifs_xml/grid_def_ifs.xml
@@ -1625,7 +1625,7 @@ xios:
         io_def: /p/scratch/chhb19/mandresm/testing/run/oifs/oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/iodef.xml
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/xios/xios.yaml
     destination: xios
     environment_changes:
         choose_computer.name:
@@ -1724,6 +1724,13 @@ xios:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://git.geomar.de/foci/src/xios.git
+    ignore_intermediate: {}
+    ignore_sources: {}
+    ignore_sources_wild_card:
+        xios_err: xios*.err
+        xios_int: xios_interpolation_weights*
+        xios_out: xios*.out
+    ignore_targets: {}
     install_bins: bin/xios.x
     leapyear: true
     lresume: false

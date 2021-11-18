@@ -3,6 +3,11 @@ computer:
     accounting: true
     accounting_flag: --account=ab0995
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: --mem=0
     batch_system: slurm
     cc: mpiicc
@@ -17,6 +22,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -85,11 +91,12 @@ computer:
     - purge
     - unload netcdf_c
     - unload intel intelmpi
-    - load python/3.5.2
+    - load python3/2021.01-gcc-9.1.0
     - load cmake/3.13.3
     - load autoconf/2.69
     - load nco
     - load cdo
+    - load gcc/4.8.2
     - unload intel intelmpi
     - load intel/18.0.4 intelmpi/2018.5.288
     - load libtool/2.4.6
@@ -760,7 +767,7 @@ general:
     - restart_in
     initial_date: '2001-01-01T00:00:00'
     inspect: null
-    jobid: 30784
+    jobid: 30248
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false

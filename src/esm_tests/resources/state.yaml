@@ -15,6 +15,29 @@ awicm:
       ollie:
         compilation: true
         run: true
+awicm3:
+  frontiers:
+    awicm3-frontiers-TCO159L91-CORE2_initial:
+      juwels:
+        compilation: true
+        run: true
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
+  v3.0:
+    awicm3-v3.0-TCO159L91-CORE2_initial:
+      juwels:
+        compilation: true
+        run: true
+      mistral:
+        compilation: true
+        run: true
+      ollie:
+        compilation: true
+        run: true
 awiesm:
   2.1-recom:
     all_awiesm-2.1-recom:
@@ -64,3 +87,39 @@ fesom-recom:
       ollie:
         compilation: true
         run: true
+foci:
+  default:
+    foci-initial-piCtl-test_daily_restart_lowcpu:
+      blogin:
+        compilation: true
+        run: true
+      juwels:
+        compilation: true
+        run: true
+focioifs:
+  '2.0':
+    focioifs-piCtl-test_lowcpu:
+      blogin:
+        compilation: true
+        run: true
+      juwels:
+        compilation: true
+        run: true
+oifs:
+  43r3-v1:
+    oifs-43r3-tco95-amip-test_lowcpu:
+      blogin:
+        compilation: true
+        run: true
+      juwels:
+        compilation: true
+        run: true
+oifsamip:
+  cy43:
+    oifsamip-TCO159L91_inital:
+      juwels:
+        compilation: true
+        run: false
+      ollie:
+        compilation: true
+        run: false

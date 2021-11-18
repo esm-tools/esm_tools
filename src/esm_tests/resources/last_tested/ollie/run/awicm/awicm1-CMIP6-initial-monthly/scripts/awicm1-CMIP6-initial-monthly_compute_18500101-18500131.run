@@ -50,12 +50,14 @@ export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/awicm/
 export MODEL_DIR=/work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
 export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 
+unset SLURM_MEM_PER_NODE
+unset SLURM_MEM_PER_CPU
 
 # Set stack size to unlimited
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 67903 - start >> /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/log//awicm1-CMIP6-initial-monthly_awicm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 109327 - start >> /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/log//awicm1-CMIP6-initial-monthly_awicm.log
 
 cd /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -67,6 +69,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/scripts/
 esm_runscripts awicm1-CMIP6-initial-monthly.yaml -e awicm1-CMIP6-initial-monthly -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 67903 - done >> /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/log//awicm1-CMIP6-initial-monthly_awicm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 109327 - done >> /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/log//awicm1-CMIP6-initial-monthly_awicm.log
 
 wait

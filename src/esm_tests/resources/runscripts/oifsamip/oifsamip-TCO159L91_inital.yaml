@@ -1,6 +1,6 @@
 general:
     account: !ENV ${ACCOUNT}
-    setup_name: "awicm3"
+    setup_name: "oifsamip"
     version: "cy43"
     compute_time: "00:20:00"
     initial_date: "2000-01-01"

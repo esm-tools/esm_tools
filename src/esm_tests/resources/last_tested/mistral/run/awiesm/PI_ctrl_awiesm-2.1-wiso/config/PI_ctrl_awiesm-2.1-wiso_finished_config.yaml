@@ -3,6 +3,11 @@ computer:
     accounting: true
     accounting_flag: --account=ab0995
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: --mem=0
     batch_system: slurm
     cc: mpiicc
@@ -17,6 +22,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -85,11 +91,12 @@ computer:
     - purge
     - unload netcdf_c
     - unload intel intelmpi
-    - load python/3.5.2
+    - load python3/2021.01-gcc-9.1.0
     - load cmake/3.13.3
     - load autoconf/2.69
     - load nco
     - load cdo
+    - load gcc/4.8.2
     - unload intel intelmpi
     - load intel/18.0.4 intelmpi/2018.5.288
     - load libtool/2.4.6
@@ -153,7 +160,7 @@ echam:
             OIFS_OASIS_BASE: $(pwd)/oasis
             OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
             configure_opts: --with-coupler=oasis3-mct
-    add_test1: &id001
+    add_test1: &id002
         test3: false
     adj_input_dir: /pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2//tarfilesT63/input/echam6
     all_filetypes:
@@ -495,7 +502,7 @@ echam:
         swflux:
         - need_year_before
         - need_year_after
-        volcanir:
+        volcir:
         - need_year_before
         - need_year_after
         volcsw:
@@ -1364,6 +1371,7 @@ echam:
             LD_LIBRARY_PATH: /sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH
             NETCDFROOT: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     setup_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-wiso
     standalone_model: true
     streams:
@@ -1395,7 +1403,7 @@ echam:
     - sp6h
     - spim
     switch: 1
-    test1: *id001
+    test1: *id002
     thisrun_analysis_dir: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/analysis/echam/
     thisrun_bin_dir: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/bin/echam/
     thisrun_config_dir: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/config/echam/
@@ -2011,7 +2019,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /work/ba1066/a270061/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 15198
+    jobid: 23920
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false
@@ -2507,7 +2515,6 @@ jsbach:
         a_nd_file: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/a_nd_file.nc
         lightning: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/lightning.nc
         popdens: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/population_density.nc
-    hist_fold: hist_harvest
     ignore_intermediate:
         js_wiso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/ignore/jsbach/PI_ctrl_awiesm-2.1-wiso_200102.01_js_wiso
         js_wiso_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/ignore/jsbach/PI_ctrl_awiesm-2.1-wiso_200102.01_js_wiso.codes
@@ -2617,57 +2624,26 @@ jsbach:
     - namelist.jsbach
     no_dynveg_file_ending: _no-dynveg
     other_date: '2001-01-31T23:52:30'
-    outdata_intermediate:
-        js_wiso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso
-        js_wiso_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso.codes
-        jsbach: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid.codes
-        land: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_land
-        land_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_land.codes
-        nitro: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_nitro.codes
-        surf: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_surf
-        surf_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_surf.codes
-        veg: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_veg
-        veg_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_veg.codes
-        yasso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_yasso.codes
-    outdata_sources:
-        js_wiso: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso
-        js_wiso_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso.codes
-        jsbach: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid.codes
-        land: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_land
-        land_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_land.codes
-        nitro: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_nitro.codes
-        surf: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_surf
-        surf_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_surf.codes
-        veg: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_veg
-        veg_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_veg.codes
-        yasso: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//PI_ctrl_awiesm-2.1-wiso_200101.01_yasso.codes
-    outdata_targets:
-        js_wiso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso
-        js_wiso_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_js_wiso.codes
-        jsbach: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_jsbid.codes
-        land: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_land
-        land_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_land.codes
-        nitro: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_nitro.codes
-        surf: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_surf
-        surf_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_surf.codes
-        veg: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_veg
-        veg_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_veg.codes
-        yasso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/outdata/jsbach/PI_ctrl_awiesm-2.1-wiso_200101.01_yasso.codes
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        js_wiso: PI_ctrl_awiesm-2.1-wiso_2001*.01_js_wiso
+        js_wiso_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_js_wiso.codes
+        jsbach: PI_ctrl_awiesm-2.1-wiso_2001*.01_jsbach
+        jsbach_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_jsbach.codes
+        jsbid: PI_ctrl_awiesm-2.1-wiso_2001*.01_jsbid
+        jsbid_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_jsbid.codes
+        land: PI_ctrl_awiesm-2.1-wiso_2001*.01_land
+        land_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_land.codes
+        nitro: PI_ctrl_awiesm-2.1-wiso_2001*.01_nitro
+        nitro_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_nitro.codes
+        surf: PI_ctrl_awiesm-2.1-wiso_2001*.01_surf
+        surf_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_surf.codes
+        veg: PI_ctrl_awiesm-2.1-wiso_2001*.01_veg
+        veg_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_veg.codes
+        yasso: PI_ctrl_awiesm-2.1-wiso_2001*.01_yasso
+        yasso_codes: PI_ctrl_awiesm-2.1-wiso_2001*.01_yasso.codes
+    outdata_targets: {}
     parent_date: '2000-12-31T23:52:30'
     parent_expid: PI_ctrl_awiesm-2.1-wiso
     parent_restart_dir: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/restart/jsbach/
@@ -2703,6 +2679,7 @@ jsbach:
         veg: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/restart/jsbach/restart_PI_ctrl_awiesm-2.1-wiso_20010131235230_veg.nc
         yasso: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/restart/jsbach/restart_PI_ctrl_awiesm-2.1-wiso_20010131235230_yasso.nc
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     streams:
     - jsbach
     - jsbid
@@ -2776,6 +2753,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-wiso/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -2930,6 +2909,16 @@ oasis3mct:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    ignore_intermediate:
+        nout: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/ignore/oasis3mct/nout.000000
+    ignore_sources:
+        nout: /work/ab0995/a270152/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work//nout.000000
+    ignore_sources_wild_card:
+        debug.notroot: debug.notroot*
+        debug.root: debug.root*
+        lucia: lucia.*
+    ignore_targets:
+        nout: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/ignore/oasis3mct/nout.000000
     install_libs:
     - build/lib/psmile/libpsmile.a
     - build/lib/psmile/mct/libmct.a
@@ -2961,6 +2950,7 @@ oasis3mct:
     model_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-wiso/oasis
     norestart: F
     o2a_lag: 1800
+    oasis_date_stamp: ''
     outdata_intermediate:
         evap_atm_echam6_12.nc: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/oasis3mct/evap_atm_echam6_12.nc
         evap_oce_fesom_12.nc: /work/ab0995/a270152/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/outdata/oasis3mct/evap_oce_fesom_12.nc

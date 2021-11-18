@@ -18,11 +18,17 @@ awicm:
 awicm3:
   frontiers:
     awicm3-frontiers-TCO159L91-CORE2_initial:
+      mistral:
+        compilation: true
+        run: true
       ollie:
         compilation: true
         run: true
   v3.0:
     awicm3-v3.0-TCO159L91-CORE2_initial:
+      mistral:
+        compilation: true
+        run: true
       ollie:
         compilation: true
         run: true

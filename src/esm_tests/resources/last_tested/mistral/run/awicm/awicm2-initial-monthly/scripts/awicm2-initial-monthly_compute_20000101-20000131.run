@@ -13,11 +13,12 @@
 module purge
 module unload netcdf_c
 module unload intel intelmpi
-module load python/3.5.2
+module load python3/2021.01-gcc-9.1.0
 module load cmake/3.13.3
 module load autoconf/2.69
 module load nco
 module load cdo
+module load gcc/4.8.2
 module unload intel intelmpi
 module load intel/18.0.4 intelmpi/2018.5.288
 module load libtool/2.4.6
@@ -73,7 +74,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 46487 - start >> /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/log//awicm2-initial-monthly_awicm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 11857 - start >> /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/log//awicm2-initial-monthly_awicm.log
 
 cd /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -85,6 +86,6 @@ process=$!
 cd /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/scripts/
 esm_runscripts awicm2-initial-monthly.yaml -e awicm2-initial-monthly -t observe_compute -p ${process} -s 20000101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 46487 - done >> /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/log//awicm2-initial-monthly_awicm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 11857 - done >> /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/log//awicm2-initial-monthly_awicm.log
 
 wait

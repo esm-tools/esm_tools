@@ -3,6 +3,11 @@ computer:
     accounting: true
     accounting_flag: --account=ab0995
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: --mem=0
     batch_system: slurm
     cc: mpiicc
@@ -17,6 +22,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -85,11 +91,12 @@ computer:
     - purge
     - unload netcdf_c
     - unload intel intelmpi
-    - load python/3.5.2
+    - load python3/2021.01-gcc-9.1.0
     - load cmake/3.13.3
     - load autoconf/2.69
     - load nco
     - load cdo
+    - load gcc/4.8.2
     - unload intel intelmpi
     - load intel/18.0.4 intelmpi/2018.5.288
     - load libtool/2.4.6
@@ -454,7 +461,7 @@ echam:
         swflux:
         - need_year_before
         - need_year_after
-        volcanir:
+        volcir:
         - need_year_before
         - need_year_after
         volcsw:
@@ -1106,6 +1113,7 @@ echam:
     restart_rate: 1
     restart_unit: months
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     setup_dir: /work/ab0995/a270152/testing//comp/awicm/awicm-2.0
     standalone_model: true
     streams:
@@ -1167,7 +1175,7 @@ echam:
     yr_perp_off: false
 fesom:
     add_namelist_changes:
-        namelist.oce: &id001
+        namelist.oce: &id002
             boundary:
                 restore_s_surf: 0
             oce_tra:
@@ -1228,6 +1236,8 @@ fesom:
         io: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/namelist.io
         oce: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/namelist.oce
     coupling_fields:
+        enth_oce:
+            grid: feom
         evap_oce:
             grid: feom
         heat_ico:
@@ -1303,6 +1313,26 @@ fesom:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
+        fesom_raw_restart_in:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_info_in:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_info_out:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
+        fesom_raw_restart_out:
+            exp_to_run: move
+            init_to_exp: move
+            run_to_work: move
+            work_to_run: move
         forcing:
             exp_to_run: copy
             init_to_exp: copy
@@ -1425,7 +1455,7 @@ fesom:
                 nm_tair_file: /pool/data/AWICM//FESOM2/FORCING//t_10.
                 nm_xwind_file: /pool/data/AWICM//FESOM2/FORCING//u_10.
                 nm_ywind_file: /pool/data/AWICM//FESOM2/FORCING//v_10.
-        namelist.oce: *id001
+        namelist.oce: *id002
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//fesom2/2.0/
     namelists:
     - namelist.config
@@ -1433,6 +1463,7 @@ fesom:
     - namelist.oce
     - namelist.ice
     - namelist.io
+    - namelist.cvmix
     nproc: 288
     nx: 126858
     old_mesh_format: false
@@ -1452,15 +1483,17 @@ fesom:
     restart_first: 1
     restart_flag: last
     restart_out_intermediate:
-        icb_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/restart/fesom/iceberg.restart
         ice_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/restart/fesom/fesom.2000.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/restart/fesom/fesom.2000.oce.restart.nc
     restart_out_sources:
-        icb_restart: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//iceberg.restart
         ice_restart: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//fesom.2000.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//fesom.2000.oce.restart.nc
+    restart_out_sources_wild_card:
+        fesom_raw_restart: '*.dump'
+        fesom_raw_restart_info: '*.info'
+        par_ice_restart: '*.nc'
+        par_oce_restart: '*.nc'
     restart_out_targets:
-        icb_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/restart/fesom/iceberg.restart
         ice_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/restart/fesom/fesom.2000.ice.restart.nc
         oce_restart: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/restart/fesom/fesom.2000.oce.restart.nc
     restart_rate: 1
@@ -1669,7 +1702,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 46487
+    jobid: 11857
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false
@@ -2159,7 +2192,6 @@ jsbach:
         a_nd_file: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/a_nd_file.nc
         lightning: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/lightning.nc
         popdens: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/population_density.nc
-    hist_fold: hist_harvest
     ignore_intermediate:
         jsbach: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm2-initial-monthly_200002.01_jsbach
         jsbach_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/ignore/jsbach/awicm2-initial-monthly_200002.01_jsbach.codes
@@ -2258,51 +2290,24 @@ jsbach:
     - namelist.jsbach
     no_dynveg_file_ending: ''
     other_date: '2000-01-31T23:52:30'
-    outdata_intermediate:
-        jsbach: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbid.codes
-        land: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_land
-        land_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_land.codes
-        nitro: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_nitro.codes
-        surf: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_surf
-        surf_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_surf.codes
-        veg: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_veg
-        veg_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_veg.codes
-        yasso: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/jsbach/awicm2-initial-monthly_200001.01_yasso.codes
-    outdata_sources:
-        jsbach: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_jsbid.codes
-        land: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_land
-        land_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_land.codes
-        nitro: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_nitro.codes
-        surf: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_surf
-        surf_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_surf.codes
-        veg: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_veg
-        veg_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_veg.codes
-        yasso: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//awicm2-initial-monthly_200001.01_yasso.codes
-    outdata_targets:
-        jsbach: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbach
-        jsbach_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbach.codes
-        jsbid: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbid
-        jsbid_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_jsbid.codes
-        land: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_land
-        land_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_land.codes
-        nitro: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_nitro
-        nitro_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_nitro.codes
-        surf: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_surf
-        surf_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_surf.codes
-        veg: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_veg
-        veg_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_veg.codes
-        yasso: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_yasso
-        yasso_codes: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/outdata/jsbach/awicm2-initial-monthly_200001.01_yasso.codes
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        jsbach: awicm2-initial-monthly_2000*.01_jsbach
+        jsbach_codes: awicm2-initial-monthly_2000*.01_jsbach.codes
+        jsbid: awicm2-initial-monthly_2000*.01_jsbid
+        jsbid_codes: awicm2-initial-monthly_2000*.01_jsbid.codes
+        land: awicm2-initial-monthly_2000*.01_land
+        land_codes: awicm2-initial-monthly_2000*.01_land.codes
+        nitro: awicm2-initial-monthly_2000*.01_nitro
+        nitro_codes: awicm2-initial-monthly_2000*.01_nitro.codes
+        surf: awicm2-initial-monthly_2000*.01_surf
+        surf_codes: awicm2-initial-monthly_2000*.01_surf.codes
+        veg: awicm2-initial-monthly_2000*.01_veg
+        veg_codes: awicm2-initial-monthly_2000*.01_veg.codes
+        yasso: awicm2-initial-monthly_2000*.01_yasso
+        yasso_codes: awicm2-initial-monthly_2000*.01_yasso.codes
+    outdata_targets: {}
     parent_date: '1999-12-31T23:52:30'
     parent_expid: awicm2-initial-monthly
     parent_restart_dir: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/restart/jsbach/
@@ -2335,6 +2340,7 @@ jsbach:
         veg: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/restart/jsbach/restart_awicm2-initial-monthly_veg_20000131.nc
         yasso: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/restart/jsbach/restart_awicm2-initial-monthly_yasso_20000131.nc
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     streams:
     - jsbach
     - jsbid
@@ -2407,6 +2413,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /work/ab0995/a270152/testing//comp/awicm/awicm-2.0/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -2549,6 +2557,16 @@ oasis3mct:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    ignore_intermediate:
+        nout: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/ignore/oasis3mct/nout.000000
+    ignore_sources:
+        nout: /work/ab0995/a270152/testing//run/awicm//awicm2-initial-monthly/run_20000101-20000131/work//nout.000000
+    ignore_sources_wild_card:
+        debug.notroot: debug.notroot*
+        debug.root: debug.root*
+        lucia: lucia.*
+    ignore_targets:
+        nout: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/ignore/oasis3mct/nout.000000
     install_libs:
     - build/lib/psmile/libpsmile.a
     - build/lib/psmile/mct/libmct.a
@@ -2580,6 +2598,7 @@ oasis3mct:
     model_dir: /work/ab0995/a270152/testing//comp/awicm/awicm-2.0/oasis
     norestart: F
     o2a_lag: 1800
+    oasis_date_stamp: ''
     outdata_intermediate:
         evap_atm_echam6_06.nc: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/oasis3mct/evap_atm_echam6_06.nc
         evap_oce_fesom_06.nc: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/outdata/oasis3mct/evap_oce_fesom_06.nc

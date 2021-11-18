@@ -84,7 +84,8 @@ forcing_sources:
                         to: 1850
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
-                        to: 2008
+                        # to: 2008
+                        to: 2014
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"

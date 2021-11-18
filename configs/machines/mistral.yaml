@@ -82,7 +82,7 @@ module_actions:
         - "purge"
         - "unload netcdf_c"
         - "unload intel intelmpi"
-        - "load python/3.5.2"
+        - "load python3/2021.01-gcc-9.1.0"
         - "load cmake/3.13.3"
         - "load autoconf/2.69"
         - "load nco"

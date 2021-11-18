@@ -125,7 +125,7 @@
     NPRNT_STATS = 70
     LBARRIER_STATS = .false.
     LBARRIER_STATS2 = .false.
-    NPROC = 96
+    NPROC = 24
     NSPECRESMIN = 160
     NOUTPUT = 1
     MP_TYPE = 2
@@ -193,13 +193,13 @@
 
 &NAMGFL
     NERA40 = 14
-    YQ_NL%LGP = .true.
-    YQ_NL%LSP = .false.
-    YL_NL%LGP = .true.
-    YI_NL%LGP = .true.
-    YA_NL%LGP = .true.
-    YO3_NL%LGP = .true.
+    YS_NL%LMASSFIX = .true.
+    YR_NL%LMASSFIX = .true.
+    YI_NL%LMASSFIX = .true.
+    YL_NL%LMASSFIX = .true.
+    YQ_NL%LMASSFIX = .true.
     LTRCMFMG = .true.
+    YO3_NL%LGP = .true.
     YS_NL%LMASSFIX = .true.
     YR_NL%LMASSFIX = .true.
     YI_NL%LMASSFIX = .true.

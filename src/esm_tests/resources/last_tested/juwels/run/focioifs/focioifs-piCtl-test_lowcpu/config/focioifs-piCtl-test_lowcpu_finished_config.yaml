@@ -58,7 +58,7 @@ computer:
     cxx: $CXX
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//machines/juwels.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//machines/juwels.yaml
     debugger: None
     debugger_flags_prelauncher: ''
     exclusive_flag: --exclusive
@@ -154,12 +154,12 @@ computer:
     use_hyperthreading: false
 debug_info:
     loaded_from_file:
-    - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//setups/focioifs/focioifs.yaml
+    - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//setups/focioifs/focioifs.yaml
 defaults:
     clean_command: rm -rf build CMakeCache.txt
     comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/download_and_compile.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/download_and_compile.yaml
 general:
     account: hhb19
     additional_files: []
@@ -221,10 +221,10 @@ general:
     - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
     current_date: '1850-01-01T00:00:00'
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/general.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/general.yaml
     defaults.yaml:
         debug_info:
-            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//esm_software/esm_runscripts/defaults.yaml
         per_model_defaults: {}
     delta_date:
     - 0
@@ -336,13 +336,12 @@ general:
     - config
     - restart_in
     ini_nemo_restart_steps: 0
-    ini_parent_date: '1849-12-31T23:00:00'
+    ini_parent_date: '18500101'
     ini_parent_dir: /path/to/restart/data/
     ini_parent_exp_id: unset
-    ini_string_parent_date: '1850-01-01'
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 12176
+    jobid: 6725
     jobtype: prepcompute
     last_run_datestamp: 18491227-18491231
     last_run_in_chunk: false
@@ -368,7 +367,7 @@ general:
     no_motd: true
     nsecond: 0
     nyear: 0
-    oasis_date_stamp: 18500101
+    oasis_date_stamp: _18500101-1850101
     original_command: focioifs-piCtl-test_lowcpu.yaml -e focioifs-piCtl-test_lowcpu --open-run --no-motd
     out_filetypes:
     - analysis
@@ -558,7 +557,7 @@ nemo:
     - 1_O_ITauy1
     agr2_t_fields:
     - 1_O_AgrSpg
-    agrif_dir: /p/project/hirace/foci_input2/AGRIF/agrif_VIKING10
+    agrif_dir: /p/project/hirace/foci_input2/AGRIF/agrif_False
     all_filetypes:
     - analysis
     - bin
@@ -649,7 +648,7 @@ nemo:
     coupling_freq: 1
     coupling_freq_in_steps: 6
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/nemo/nemo.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/nemo/nemo.yaml
     destination: nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4/CONFIG/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
     end_date_m1: '1850-01-05T23:30:00'
     executable: oceanx
@@ -789,7 +788,7 @@ nemo:
             ny: 511
             oasis_grid_type: LR
     hosing: false
-    ini_parent_date: '1849-12-31T23:30:00'
+    ini_parent_date: '18500101'
     ini_parent_dir: /path/to/restart/data//restart/nemo/
     ini_parent_exp_id: unset
     ini_restart_steps: 0
@@ -840,13 +839,24 @@ nemo:
     ln_trcdta: true
     ln_tsd_init: true
     ln_tsd_tradmp: false
+    loccunif_nb: 4
     log_intermediate:
+        layout: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/log/nemo/layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/log/nemo/solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/log/nemo/time.step
         tracer: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/log/nemo/tracer.stat
     log_sources:
+        layout: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//time.step
         tracer: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//tracer.stat
     log_sources_wild_card:
+        namout: output.namelist.*
         ocean: '*ocean.output'
     log_targets:
+        layout: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/log/nemo/layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/log/nemo/solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/log/nemo/time.step
         tracer: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/log/nemo/tracer.stat
     lresume: false
     metadata:
@@ -934,8 +944,8 @@ nemo:
     - 1_namelist_cfg
     - 1_namelist_top_cfg
     - 1_namelist_ice_cfg
-    nest: VIKING10
     nest1: false
+    nest_refinement: 3
     newstep: 240
     newstep_formatted: 240
     newstep_formatted_nest: 720
@@ -1330,7 +1340,7 @@ oasis3mct:
         r2oloccunif:
             remapping:
             -   loccunif:
-                    nb_of_neighbours: 1
+                    nb_of_neighbours: 4
                     search_bin: latitude
             -   mapping:
                     map_regrid_on: dst
@@ -1375,7 +1385,7 @@ oasis3mct:
         - A_OCury1 <--o2agauswgt-- O_OCury1
     coupling_time_step: 10800
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oasis3mct/oasis3mct.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oasis3mct/oasis3mct.yaml
     debug_level: 50
     destination: oasis
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/analysis/oasis3mct/
@@ -1479,7 +1489,7 @@ oasis3mct:
         lucia: lucia.*
     ignore_targets:
         nout: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/ignore/oasis3mct/nout.000000
-    ini_parent_date: '1849-12-31T23:00:00'
+    ini_parent_date: '18500101'
     ini_parent_dir: /p/project/hirace/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/
     ini_parent_exp_id: unset
     input_intermediate:
@@ -1657,7 +1667,7 @@ oasis3mct:
         R_Runoff_atm_rnfma_08.nc: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/outdata/oasis3mct/R_Runoff_atm_rnfma_08.nc
         R_Runoff_oce_rnfma_21.nc: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/outdata/oasis3mct/R_Runoff_oce_rnfma_21.nc
     output_exchanged_vars: false
-    parent_date: '1849-12-31T23:00:00'
+    parent_date: '18500101'
     parent_expid: unset
     parent_restart_dir: /p/project/hirace/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/
     pool_dir: /p/project/hirace/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/
@@ -2139,7 +2149,7 @@ oifs:
     config_intermediate:
         fort.4: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/config/oifs/fort.4
     config_sources:
-        fort.4: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3//fort.4
+        fort.4: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//oifs/43r3//fort.4
     config_targets:
         fort.4: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/fort.4
     copy_forcing: false
@@ -2186,7 +2196,7 @@ oifs:
             grid: atml
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/oifs.yaml
     description: 'The OpenIFS atmosphere model based on ECMWF IFS
 
         Carver et al., in prep.'
@@ -2241,6 +2251,21 @@ oifs:
     experiment_restart_out_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/restart/oifs/
     experiment_viz_dir: /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/viz/oifs/
     file_movements:
+        ICMGG_INIT:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ICMGG_INIUA:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ICMSH_INIT:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
         analysis:
             exp_to_run: copy
             init_to_exp: copy
@@ -2387,7 +2412,7 @@ oifs:
     in_date_folder: 18491231
     include_models:
     - xios
-    ini_parent_date: '1849-12-31T23:00:00'
+    ini_parent_date: '18500101'
     ini_parent_dir: /path/to/restart/data//restart/oifs/
     ini_parent_exp_id: unset
     input_dir: /p/project/hirace/foci_input2/OPENIFS43R3-TCO95/
@@ -2758,7 +2783,7 @@ oifs:
                 NFRRES: 120
                 NRESTS(1):
                 - -120
-    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//oifs/43r3/
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//oifs/43r3/
     namelists:
     - fort.4
     - wam_namelist
@@ -2809,7 +2834,7 @@ oifs:
     post_processing: 0
     postprocess:
         postprocess_shell:
-            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ ECE3 18500101 18500105
+            method: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/oifs-43r3-postprocess.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/ ECE3 18500101 18500105
             type: shell
     prepcompute_recipe:
     - compile_model
@@ -2833,9 +2858,9 @@ oifs:
     prepifs_startdate: '20080101'
     preprocess:
         preprocess_shell:
-            method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
+            method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
             type: shell
-    preprocess_method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
+    preprocess_method: '/p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oifs/change_icm_date.sh /p/scratch/chhb19/mandresm/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/input/oifs// ECE3 ECE3 18500101 18500101 0 1 40320 1;  echo ''Run number for internal OpenIFS timekeeping: 1'''
     prev_date: '1849-12-31T23:00:00'
     pseudo_initial_date: '1850-01-01T00:00:00'
     read_icmcl: 0
@@ -3040,7 +3065,7 @@ rnfmap:
     config_intermediate:
         namelist.runoffmapper: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/config/rnfmap/namelist.runoffmapper
     config_sources:
-        namelist.runoffmapper: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//rnfmap//namelist.runoffmapper
+        namelist.runoffmapper: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//rnfmap//namelist.runoffmapper
     config_targets:
         namelist.runoffmapper: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/namelist.runoffmapper
     coupling_fields:
@@ -3049,7 +3074,7 @@ rnfmap:
         R_Runoff_oce:
             grid: rnfo
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/rnfmap/rnfmap.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/rnfmap/rnfmap.yaml
     description: 'River routing scheme taken from EC-Earth
 
         Modified for use in FOCI'
@@ -3174,7 +3199,7 @@ rnfmap:
             nx: 512
             ny: 256
             oasis_grid_type: LR
-    ini_parent_date: '1849-12-31T23:00:00'
+    ini_parent_date: '18500101'
     ini_parent_dir: /path/to/restart/data//rnfmap
     ini_parent_exp_id: unset
     input_dir: /pool/data/not/available/on/juwels/runoff-mapper
@@ -3192,7 +3217,7 @@ rnfmap:
             NAMRNFMAP:
                 RunLengthSec: 432000
                 TimeStepSec: 10800
-    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//rnfmap/
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//rnfmap/
     namelists:
     - namelist.runoffmapper
     nproc: 1
@@ -3304,7 +3329,7 @@ xios:
         io_def: /p/scratch/chhb19/mandresm/testing/run/focioifs/focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/iodef.xml
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/xios/xios.yaml
     destination: xios
     environment_changes:
         choose_computer.name:
@@ -3403,7 +3428,14 @@ xios:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://git.geomar.de/foci/src/xios.git
-    ini_parent_date: '1849-12-31T23:00:00'
+    ignore_intermediate: {}
+    ignore_sources: {}
+    ignore_sources_wild_card:
+        xios_err: xios*.err
+        xios_int: xios_interpolation_weights*
+        xios_out: xios*.out
+    ignore_targets: {}
+    ini_parent_date: '18500101'
     ini_parent_dir: /path/to/restart/data//xios
     ini_parent_exp_id: unset
     install_bins: bin/xios.x

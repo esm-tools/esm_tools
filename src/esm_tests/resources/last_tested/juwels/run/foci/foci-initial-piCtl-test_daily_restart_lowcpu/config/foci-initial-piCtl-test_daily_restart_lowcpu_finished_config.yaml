@@ -30,7 +30,7 @@ computer:
     cxx: $CXX
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//machines/juwels.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//machines/juwels.yaml
     debugger: None
     debugger_flags_prelauncher: ''
     exclusive_flag: --exclusive
@@ -126,12 +126,12 @@ computer:
     use_hyperthreading: false
 debug_info:
     loaded_from_file:
-    - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//setups/foci/foci.yaml
+    - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//setups/foci/foci.yaml
 defaults:
     clean_command: rm -rf build CMakeCache.txt
     comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/download_and_compile.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/download_and_compile.yaml
 echam:
     _nx: 192
     _ny: 96
@@ -179,6 +179,7 @@ echam:
         - 6.3.04p1-recom-awicm
         - 6.3.05p2-concurrent_radiation-paleodyn
         - 6.3.04p1
+        - 6.3.05p2-wiso
         branch: 6.3.05p2-foci
         choose_version:
             6.3.02p4:
@@ -220,9 +221,10 @@ echam:
                 git-repository: https://git.geomar.de/foci/src/echam.git
             6.3.05p2-wiso:
                 branch: wiso
-                clean_command: make clean
-                comp_command: make; make install
-                conf_command: ./configure
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+                comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+                destination: echam-6.3.05p2-wiso
+                git-repository: https://gitlab.awi.de/pgierz/echam6.git
         clean_command: rm -rf build CMakeCache.txt
         comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
@@ -241,7 +243,7 @@ echam:
     config_intermediate:
         namelist.echam: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/echam/namelist.echam
     config_sources:
-        namelist.echam: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//echam/6.3.05p2-foci/PI-CTRL/namelist.echam
+        namelist.echam: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//echam/6.3.05p2-foci/PI-CTRL/namelist.echam
     config_targets:
         namelist.echam: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist.echam
     coupling_fields:
@@ -318,8 +320,8 @@ echam:
     dataset: r0008
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/echam/echam.yaml
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/echam/echam.postprocessing.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/echam/echam.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/echam/echam.postprocessing.yaml
     disturbance: 1.000001
     executable: echam6
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/echam/
@@ -435,10 +437,19 @@ echam:
         aerocoarse:
         - need_year_before
         - need_year_after
+        aerocoarse_kinne_1850:
+        - need_year_before
+        - need_year_after
         aerofarir:
         - need_year_before
         - need_year_after
+        aerofarir_kinne_1850:
+        - need_year_before
+        - need_year_after
         aerofin:
+        - need_year_before
+        - need_year_after
+        aerofin_kinne_1850:
         - need_year_before
         - need_year_after
         ozone:
@@ -580,6 +591,8 @@ echam:
     lrad_async: remove_from_namelist
     lrestart_from_old: false
     lresume: false
+    lwiso: false
+    lwiso_rerun: false
     metadata:
         Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
         Description: The ECHAM atmosphere model, major version 6
@@ -622,7 +635,7 @@ echam:
                 - days
                 - last
                 - 0
-    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//echam/6.3.05p2-foci/PI-CTRL
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//echam/6.3.05p2-foci/PI-CTRL
     namelists:
     - namelist.echam
     nproca: 8
@@ -631,6 +644,7 @@ echam:
     nprocbr: 0
     nprocrad: remove_from_namelist
     npromar: 0
+    nwiso: 0
     ocean_resolution: ORCA05
     other_date: '1850-01-01T23:52:30'
     outdata_intermediate:
@@ -838,6 +852,19 @@ echam:
     type: atmosphere
     value: echam switch
     version: 6.3.05p2-foci
+    wiso_fields:
+    - o18w_atm
+    - hdow_atm
+    - o16w_atm
+    - o18i_atm
+    - hdoi_atm
+    - o16i_atm
+    - w1_atm
+    - w2_atm
+    - w3_atm
+    - i1_atm
+    - i2_atm
+    - i3_atm
     yr_perp_off: false
 general:
     account: hhb19
@@ -900,10 +927,10 @@ general:
     - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
     current_date: '1850-01-01T00:00:00'
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//defaults/general.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//defaults/general.yaml
     defaults.yaml:
         debug_info:
-            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+            loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//esm_software/esm_runscripts/defaults.yaml
         per_model_defaults: {}
     delta_date:
     - 0
@@ -1020,7 +1047,7 @@ general:
     ini_string_parent_date: '1850-01-01'
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 12033
+    jobid: 3458
     jobtype: prepcompute
     last_run_datestamp: 18491231-18491231
     last_run_in_chunk: false
@@ -1200,7 +1227,7 @@ hdmodel:
     - ignore
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/hdmodel/hdmodel.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/hdmodel/hdmodel.yaml
     description: 'The Hagemann/Duemenil hydrology model,
 
         (someone from Hamburg)
@@ -1367,15 +1394,15 @@ jsbach:
     config_intermediate:
         namelist.jsbach: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/config/jsbach/namelist.jsbach
     config_sources:
-        namelist.jsbach: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//jsbach/3.20p1/PI-CTRL/dynveg/namelist.jsbach
+        namelist.jsbach: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//jsbach/3.20p1/PI-CTRL/dynveg/namelist.jsbach
     config_targets:
         namelist.jsbach: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namelist.jsbach
     cover_fract_dir: /p/project/hirace/foci_input2/JSBACH/input/r0010/T63/land_use_maps/
     dataset: r0010
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/jsbach/jsbach.yaml
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/jsbach/jsbach.datasets.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/jsbach/jsbach.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/jsbach/jsbach.datasets.yaml
     description: 'The JSBACH vegetation model, major version 3
 
         (someone from Hamburg)
@@ -1605,7 +1632,7 @@ jsbach:
     lresume: false
     model: jsbach
     model_dir: /p/scratch/chhb19/mandresm/testing//comp/foci/foci-default/echam-6.3.05p2-foci
-    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists//jsbach/3.20p1/PI-CTRL/dynveg
+    namelist_dir: /p/home/jusers/andres-martinez1/juwels/esm_tools/namelists/.//jsbach/3.20p1/PI-CTRL/dynveg
     namelists:
     - namelist.jsbach
     no_dynveg_file_ending: _no-dynveg
@@ -1710,7 +1737,7 @@ nemo:
     - 1_O_ITauy1
     agr2_t_fields:
     - 1_O_AgrSpg
-    agrif_dir: /p/project/hirace/foci_input2/AGRIF/agrif_VIKING10
+    agrif_dir: /p/project/hirace/foci_input2/AGRIF/agrif_False
     all_filetypes:
     - analysis
     - bin
@@ -1800,7 +1827,7 @@ nemo:
             grid: opac
     coupling_freq_in_steps: 6
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/nemo/nemo.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/nemo/nemo.yaml
     destination: nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW
     end_date_m1: '1850-01-01T23:30:00'
     executable: oceanx
@@ -1992,12 +2019,22 @@ nemo:
     ln_tsd_init: true
     ln_tsd_tradmp: false
     log_intermediate:
+        layout: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/time.step
         tracer: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/log/nemo/tracer.stat
     log_sources:
+        layout: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//time.step
         tracer: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work//tracer.stat
     log_sources_wild_card:
+        namout: output.namelist.*
         ocean: '*ocean.output'
     log_targets:
+        layout: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/layout.dat
+        solver_stat: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/solver.stat
+        time_step: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/time.step
         tracer: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/log/nemo/tracer.stat
     lresume: false
     metadata:
@@ -2071,8 +2108,8 @@ nemo:
     - 1_namelist_cfg
     - 1_namelist_top_cfg
     - 1_namelist_ice_cfg
-    nest: VIKING10
     nest1: false
+    nest_refinement: 3
     newstep: 48
     newstep_formatted: 48
     newstep_formatted_nest: 144
@@ -2301,7 +2338,7 @@ oasis3mct:
         - A_OCury1 <--conserv-- O_OCury1
     coupling_time_step: 10800
     debug_info:
-        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/oasis3mct/oasis3mct.yaml
+        loaded_from_file: /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/oasis3mct/oasis3mct.yaml
     destination: oasis
     experiment_analysis_dir: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/analysis/oasis3mct/
     experiment_bin_dir: /p/scratch/chhb19/mandresm/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/bin/oasis3mct/
@@ -2685,7 +2722,7 @@ xios:
         io_def: /p/scratch/chhb19/mandresm/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/iodef.xml
     debug_info:
         loaded_from_file:
-        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs//components/xios/xios.yaml
+        - /p/home/jusers/andres-martinez1/juwels/esm_tools/configs/.//components/xios/xios.yaml
     destination: xios
     environment_changes:
         choose_computer.name:
@@ -2784,6 +2821,13 @@ xios:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://git.geomar.de/foci/src/xios.git
+    ignore_intermediate: {}
+    ignore_sources: {}
+    ignore_sources_wild_card:
+        xios_err: xios*.err
+        xios_int: xios_interpolation_weights*
+        xios_out: xios*.out
+    ignore_targets: {}
     ini_parent_date: '1849-12-31T23:52:30'
     ini_parent_dir: /p/project/hirace/foci_input2/FOCI_RESTART/unset//xios
     ini_parent_exp_id: unset

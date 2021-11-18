@@ -18,6 +18,9 @@ awicm:
 awicm3:
   frontiers:
     awicm3-frontiers-TCO159L91-CORE2_initial:
+      juwels:
+        compilation: true
+        run: true
       mistral:
         compilation: true
         run: true
@@ -26,6 +29,9 @@ awicm3:
         run: true
   v3.0:
     awicm3-v3.0-TCO159L91-CORE2_initial:
+      juwels:
+        compilation: true
+        run: true
       mistral:
         compilation: true
         run: true
@@ -87,10 +93,16 @@ foci:
       blogin:
         compilation: true
         run: true
+      juwels:
+        compilation: true
+        run: true
 focioifs:
   '2.0':
     focioifs-piCtl-test_lowcpu:
       blogin:
+        compilation: true
+        run: true
+      juwels:
         compilation: true
         run: true
 oifs:
@@ -99,9 +111,15 @@ oifs:
       blogin:
         compilation: true
         run: true
+      juwels:
+        compilation: true
+        run: true
 oifsamip:
   cy43:
     oifsamip-TCO159L91_inital:
+      juwels:
+        compilation: true
+        run: false
       ollie:
         compilation: true
         run: false

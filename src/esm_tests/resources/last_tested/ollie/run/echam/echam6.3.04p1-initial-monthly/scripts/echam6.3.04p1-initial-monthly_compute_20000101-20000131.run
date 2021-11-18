@@ -49,12 +49,14 @@ export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/echam/
 export MODEL_DIR=/work/ollie/mandresm/testing//comp/echam/echam-6.3.04p1
 export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 
+unset SLURM_MEM_PER_NODE
+unset SLURM_MEM_PER_CPU
 
 # Set stack size to unlimited
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 69930 - start >> /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/log//echam6.3.04p1-initial-monthly_echam.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 2443 - start >> /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/log//echam6.3.04p1-initial-monthly_echam.log
 
 cd /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/run_20000101-20000131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -66,6 +68,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/scripts/
 esm_runscripts echam6.3.04p1-initial-monthly.yaml -e echam6.3.04p1-initial-monthly -t observe_compute -p ${process} -s 20000101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 69930 - done >> /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/log//echam6.3.04p1-initial-monthly_echam.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 2443 - done >> /work/ollie/mandresm/testing//run/echam//echam6.3.04p1-initial-monthly/log//echam6.3.04p1-initial-monthly_echam.log
 
 wait

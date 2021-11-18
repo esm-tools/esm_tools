@@ -15,6 +15,17 @@ awicm:
       ollie:
         compilation: true
         run: true
+awicm3:
+  frontiers:
+    awicm3-frontiers-TCO159L91-CORE2_initial:
+      ollie:
+        compilation: true
+        run: true
+  v3.0:
+    awicm3-v3.0-TCO159L91-CORE2_initial:
+      ollie:
+        compilation: true
+        run: true
 awiesm:
   2.1-recom:
     all_awiesm-2.1-recom:
@@ -82,3 +93,9 @@ oifs:
       blogin:
         compilation: true
         run: true
+oifsamip:
+  cy43:
+    oifsamip-TCO159L91_inital:
+      ollie:
+        compilation: true
+        run: false

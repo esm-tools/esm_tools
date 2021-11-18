@@ -51,12 +51,14 @@ export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/awiesm/
 export MODEL_DIR=/work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-recom
 export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 
+unset SLURM_MEM_PER_NODE
+unset SLURM_MEM_PER_CPU
 
 # Set stack size to unlimited
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 67609 - start >> /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 1803 - start >> /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
 
 cd /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -68,6 +70,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/scripts/
 esm_runscripts all_awiesm-2.1-recom.yaml -e all_awiesm-2.1-recom -t observe_compute -p ${process} -s 20010101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 67609 - done >> /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 1803 - done >> /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
 
 wait

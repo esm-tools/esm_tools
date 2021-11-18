@@ -1,10 +1,10 @@
 &NAMECECFG
     ECE_CPL_NEMO_LIM = .false.
-    ECE_CPL_FESOM_FESIM = .true.
+    ECE_CPL_FESOM_FESIM = .false.
 /
 
 &NAMAWICFG
-    ECE_AWI_CPL_FESOM = .true.
+    ECE_AWI_CPL_FESOM = .false.
 /
 
 &NAMFOCICFG
@@ -44,8 +44,9 @@
 /
 
 &NAMRES
-    NFRRES = 1
-    NRESTS = -1, -24
+    NFRRES = 24
+    NRESTS = -1, -48
+    NRESTS(1) = -24
 /
 
 &NAERAD
@@ -193,13 +194,13 @@
 
 &NAMGFL
     NERA40 = 14
-    YS_NL%LMASSFIX = .true.
-    YR_NL%LMASSFIX = .true.
-    YI_NL%LMASSFIX = .true.
-    YL_NL%LMASSFIX = .true.
-    YQ_NL%LMASSFIX = .true.
-    LTRCMFMG = .true.
+    YQ_NL%LGP = .true.
+    YQ_NL%LSP = .false.
+    YL_NL%LGP = .true.
+    YI_NL%LGP = .true.
+    YA_NL%LGP = .true.
     YO3_NL%LGP = .true.
+    LTRCMFMG = .true.
     YS_NL%LMASSFIX = .true.
     YR_NL%LMASSFIX = .true.
     YI_NL%LMASSFIX = .true.

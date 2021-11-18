@@ -2,6 +2,11 @@ computer:
     account: None
     accounting: false
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
     cc: mpiicc
@@ -16,6 +21,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -119,6 +125,9 @@ computer:
     thisrun_logfile: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/log/awicm1-CMIP6-initial-monthly_awicm_@jobtype@_18500101-18500131.log
     threads_per_core: 1
     time_flag: --time=01:00:00
+    unset_vars:
+    - SLURM_MEM_PER_NODE
+    - SLURM_MEM_PER_CPU
     useMPI: intelmpi
 debug_info:
     loaded_from_file:
@@ -438,7 +447,7 @@ echam:
         swflux:
         - need_year_before
         - need_year_after
-        volcanir:
+        volcir:
         - need_year_before
         - need_year_after
         volcsw:
@@ -1091,6 +1100,7 @@ echam:
     restart_rate: 1
     restart_unit: months
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     setup_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6
     standalone_model: true
     streams:
@@ -1157,7 +1167,7 @@ fesom:
         namelist.oce:
             boundary:
                 restore_s_surf: 0
-            oce_tra: &id001
+            oce_tra: &id002
                 surf_relax_s: 0
     all_filetypes:
     - analysis
@@ -1512,7 +1522,7 @@ fesom:
         namelist.oce:
             boundary:
                 restore_s_surf: 0
-            oce_tra: *id001
+            oce_tra: *id002
     namelist_dir: /home/ollie/mandresm/esm_tools/namelists/.//fesom
     namelists:
     - namelist.config
@@ -2121,7 +2131,7 @@ general:
     - restart_in
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 67903
+    jobid: 109327
     jobtype: prepcompute
     last_run_datestamp: 18491201-18491231
     last_run_in_chunk: false
@@ -2597,7 +2607,6 @@ jsbach:
         LU_trans_year_1850: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/work/landuseTransitions.1850.nc
         Ndepo_year_1849: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/work/Ndepo.1849.nc
         Ndepo_year_1850: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/work/Ndepo.1850.nc
-    hist_fold: hist_harvest
     ignore_intermediate:
         jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/ignore/jsbach/awicm1-CMIP6-initial-monthly_185002.01_jsbach
         jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/ignore/jsbach/awicm1-CMIP6-initial-monthly_185002.01_jsbach.codes
@@ -2678,39 +2687,20 @@ jsbach:
     - namelist.jsbach
     no_dynveg_file_ending: ''
     other_date: '1850-01-31T23:56:40'
-    outdata_intermediate:
-        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbid.codes
-        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_yasso.codes
-    outdata_sources:
-        jsbach: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_jsbid.codes
-        surf: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_surf
-        surf_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_surf.codes
-        veg: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_veg
-        veg_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//awicm1-CMIP6-initial-monthly_185001.01_yasso.codes
-    outdata_targets:
-        jsbach: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_jsbid.codes
-        surf: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/outdata/jsbach/awicm1-CMIP6-initial-monthly_185001.01_yasso.codes
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        jsbach: awicm1-CMIP6-initial-monthly_1850*.01_jsbach
+        jsbach_codes: awicm1-CMIP6-initial-monthly_1850*.01_jsbach.codes
+        jsbid: awicm1-CMIP6-initial-monthly_1850*.01_jsbid
+        jsbid_codes: awicm1-CMIP6-initial-monthly_1850*.01_jsbid.codes
+        surf: awicm1-CMIP6-initial-monthly_1850*.01_surf
+        surf_codes: awicm1-CMIP6-initial-monthly_1850*.01_surf.codes
+        veg: awicm1-CMIP6-initial-monthly_1850*.01_veg
+        veg_codes: awicm1-CMIP6-initial-monthly_1850*.01_veg.codes
+        yasso: awicm1-CMIP6-initial-monthly_1850*.01_yasso
+        yasso_codes: awicm1-CMIP6-initial-monthly_1850*.01_yasso.codes
+    outdata_targets: {}
     parent_date: '1849-12-31T23:56:40'
     parent_expid: awicm1-CMIP6-initial-monthly
     parent_restart_dir: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/restart/jsbach/
@@ -2737,6 +2727,7 @@ jsbach:
         veg: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/restart/jsbach/restart_awicm1-CMIP6-initial-monthly_veg_18500131.nc
         yasso: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/restart/jsbach/restart_awicm1-CMIP6-initial-monthly_yasso_18500131.nc
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     streams:
     - jsbach
     - jsbid
@@ -2807,6 +2798,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -2949,6 +2942,16 @@ oasis3mct:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    ignore_intermediate:
+        nout: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/ignore/oasis3mct/nout.000000
+    ignore_sources:
+        nout: /work/ollie/mandresm/testing//run/awicm//awicm1-CMIP6-initial-monthly/run_18500101-18500131/work//nout.000000
+    ignore_sources_wild_card:
+        debug.notroot: debug.notroot*
+        debug.root: debug.root*
+        lucia: lucia.*
+    ignore_targets:
+        nout: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/ignore/oasis3mct/nout.000000
     install_libs:
     - build/lib/psmile/libpsmile.a
     - build/lib/psmile/mct/libmct.a
@@ -2980,6 +2983,7 @@ oasis3mct:
     model_dir: /work/ollie/mandresm/testing//comp/awicm/awicm-CMIP6/oasis
     norestart: F
     o2a_lag: 450
+    oasis_date_stamp: ''
     outdata_intermediate:
         evap_atm_echam6_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/oasis3mct/evap_atm_echam6_06.nc
         evap_oce_fesom_06.nc: /work/ollie/mandresm/testing/run/awicm/awicm1-CMIP6-initial-monthly/run_18500101-18500131/outdata/oasis3mct/evap_oce_fesom_06.nc

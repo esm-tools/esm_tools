@@ -2,6 +2,11 @@ computer:
     account: None
     accounting: false
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
     cc: mpiicc
@@ -16,6 +21,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -119,6 +125,9 @@ computer:
     thisrun_logfile: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131.log
     threads_per_core: 1
     time_flag: --time=00:29:00
+    unset_vars:
+    - SLURM_MEM_PER_NODE
+    - SLURM_MEM_PER_CPU
     useMPI: intelmpi
 debug_info:
     loaded_from_file:
@@ -131,14 +140,14 @@ defaults:
 echam:
     _nx: 192
     _ny: 96
-    add_compiletime_environment_changes: &id001
+    add_compiletime_environment_changes: &id002
         add_export_vars:
             OASIS3MCTROOT: $(pwd)/oasis/
             OASIS3MCT_FC_LIB: $(pwd)/lib/
             OIFS_OASIS_BASE: $(pwd)/oasis
             OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
             configure_opts: --with-coupler=oasis3-mct
-    add_test1: &id002
+    add_test1: &id003
         test3: false
     adj_input_dir: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean//tarfilesT63/input/echam6
     all_filetypes:
@@ -229,7 +238,7 @@ echam:
         comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
         install_bins: src/echam/bin/echam6
-    compiletime_environment_changes: *id001
+    compiletime_environment_changes: *id002
     config_intermediate:
         namelist.echam: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/config/echam/namelist.echam
     config_sources:
@@ -466,7 +475,7 @@ echam:
         swflux:
         - need_year_before
         - need_year_after
-        volcanir:
+        volcir:
         - need_year_before
         - need_year_after
         volcsw:
@@ -1331,6 +1340,7 @@ echam:
     restart_rate: 1
     restart_unit: months
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     setup_dir: /work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-recom
     standalone_model: true
     streams:
@@ -1362,7 +1372,7 @@ echam:
     - sp6h
     - spim
     switch: 1
-    test1: *id002
+    test1: *id003
     thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/analysis/echam/
     thisrun_bin_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/bin/echam/
     thisrun_config_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/config/echam/
@@ -1966,7 +1976,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 67609
+    jobid: 1803
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false
@@ -2465,7 +2475,6 @@ jsbach:
         a_nd_file: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/a_nd_file.nc
         lightning: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/lightning.nc
         popdens: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/population_density.nc
-    hist_fold: hist_harvest
     ignore_intermediate:
         js_wiso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/ignore/jsbach/all_awiesm-2.1-recom_200102.01_js_wiso
         js_wiso_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/ignore/jsbach/all_awiesm-2.1-recom_200102.01_js_wiso.codes
@@ -2577,57 +2586,26 @@ jsbach:
     - namelist.jsbach
     no_dynveg_file_ending: ''
     other_date: '2001-01-31T23:52:30'
-    outdata_intermediate:
-        js_wiso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_js_wiso
-        js_wiso_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_js_wiso.codes
-        jsbach: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbid.codes
-        land: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_land
-        land_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_land.codes
-        nitro: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_nitro.codes
-        surf: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/jsbach/all_awiesm-2.1-recom_200101.01_yasso.codes
-    outdata_sources:
-        js_wiso: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_js_wiso
-        js_wiso_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_js_wiso.codes
-        jsbach: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_jsbid.codes
-        land: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_land
-        land_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_land.codes
-        nitro: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_nitro.codes
-        surf: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_surf
-        surf_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_surf.codes
-        veg: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_veg
-        veg_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_veg.codes
-        yasso: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//all_awiesm-2.1-recom_200101.01_yasso.codes
-    outdata_targets:
-        js_wiso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_js_wiso
-        js_wiso_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_js_wiso.codes
-        jsbach: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbach
-        jsbach_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbach.codes
-        jsbid: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbid
-        jsbid_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_jsbid.codes
-        land: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_land
-        land_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_land.codes
-        nitro: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_nitro
-        nitro_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_nitro.codes
-        surf: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_surf
-        surf_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_surf.codes
-        veg: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_veg
-        veg_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_veg.codes
-        yasso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_yasso
-        yasso_codes: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/outdata/jsbach/all_awiesm-2.1-recom_200101.01_yasso.codes
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        js_wiso: all_awiesm-2.1-recom_2001*.01_js_wiso
+        js_wiso_codes: all_awiesm-2.1-recom_2001*.01_js_wiso.codes
+        jsbach: all_awiesm-2.1-recom_2001*.01_jsbach
+        jsbach_codes: all_awiesm-2.1-recom_2001*.01_jsbach.codes
+        jsbid: all_awiesm-2.1-recom_2001*.01_jsbid
+        jsbid_codes: all_awiesm-2.1-recom_2001*.01_jsbid.codes
+        land: all_awiesm-2.1-recom_2001*.01_land
+        land_codes: all_awiesm-2.1-recom_2001*.01_land.codes
+        nitro: all_awiesm-2.1-recom_2001*.01_nitro
+        nitro_codes: all_awiesm-2.1-recom_2001*.01_nitro.codes
+        surf: all_awiesm-2.1-recom_2001*.01_surf
+        surf_codes: all_awiesm-2.1-recom_2001*.01_surf.codes
+        veg: all_awiesm-2.1-recom_2001*.01_veg
+        veg_codes: all_awiesm-2.1-recom_2001*.01_veg.codes
+        yasso: all_awiesm-2.1-recom_2001*.01_yasso
+        yasso_codes: all_awiesm-2.1-recom_2001*.01_yasso.codes
+    outdata_targets: {}
     parent_date: '2000-12-31T23:52:30'
     parent_expid: all_awiesm-2.1-recom
     parent_restart_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/restart/jsbach/
@@ -2663,6 +2641,7 @@ jsbach:
         veg: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/restart/jsbach/restart_all_awiesm-2.1-recom_20010131235230_veg.nc
         yasso: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/restart/jsbach/restart_all_awiesm-2.1-recom_20010131235230_yasso.nc
     scenario: PI-CTRL
+    scenario_type: PI-CTRL
     streams:
     - jsbach
     - jsbid
@@ -2736,6 +2715,8 @@ oasis3mct:
     - 3
     - 4
     - 4.0-oifsdeck
+    - 4.0-awicm-frontiers
+    - 4.0-awicm-3.0
     branch: '2.8'
     cf_name_dir: /work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-recom/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
@@ -2887,6 +2868,16 @@ oasis3mct:
             run_to_work: copy
             work_to_run: copy
     git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    ignore_intermediate:
+        nout: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/ignore/oasis3mct/nout.000000
+    ignore_sources:
+        nout: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work//nout.000000
+    ignore_sources_wild_card:
+        debug.notroot: debug.notroot*
+        debug.root: debug.root*
+        lucia: lucia.*
+    ignore_targets:
+        nout: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/ignore/oasis3mct/nout.000000
     ini_parent_date: '20021231'
     ini_parent_dir: /work/ollie/mbutzin/awiesm-2.1-recom/tests/piw_zstar_swon_atbox/restart/oasis3mct/
     ini_parent_exp_id: piw_zstar_swon_atbox
@@ -2921,6 +2912,7 @@ oasis3mct:
     model_dir: /work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-recom/oasis
     norestart: F
     o2a_lag: 1800
+    oasis_date_stamp: ''
     outdata_intermediate:
         evap_atm_echam6_09.nc: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/oasis3mct/evap_atm_echam6_09.nc
         evap_oce_fesom_09.nc: /work/ollie/mandresm/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/oasis3mct/evap_oce_fesom_09.nc

@@ -2,6 +2,11 @@ computer:
     account: None
     accounting: false
     actual_script_dir: <--methods.script_dir--
+    add_choose_heterogeneous_parallelization: &id001
+        false:
+            cpu_bind: cores
+        true:
+            cpu_bind: none
     additional_flags: ''
     batch_system: slurm
     cc: mpiicc
@@ -16,6 +21,7 @@ computer:
             frequency: 30
             message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
+    choose_heterogeneous_parallelization: *id001
     config_files:
         hostfile: hostfile_srun
     cpu_bind: cores
@@ -119,6 +125,9 @@ computer:
     thisrun_logfile: /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101.log
     threads_per_core: 1
     time_flag: --time=00:10:00
+    unset_vars:
+    - SLURM_MEM_PER_NODE
+    - SLURM_MEM_PER_CPU
     useMPI: intelmpi
 debug_info:
     loaded_from_file:
@@ -1249,7 +1258,7 @@ general:
     - restart_in
     initial_date: '1958-01-01T00:00:00'
     inspect: null
-    jobid: 67065
+    jobid: 180761
     jobtype: prepcompute
     last_run_datestamp: 19571231-19571231
     last_run_in_chunk: false

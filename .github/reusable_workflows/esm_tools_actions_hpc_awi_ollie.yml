@@ -27,19 +27,16 @@ jobs:
         outputs:
             matrix: ${{ steps.set-matrix.outputs.matrix }}
         steps:
-          - name: Download Code
-            uses: actions/checkout@v2
-          - id: set-versions
-            run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})" >> $GITHUB_ENV
-          - id: test-set-matrix
-            run: echo "..set-output name=matrix..${{ env.VERSION }}"
-          - id: set-matrix
-            run: echo "::set-output name=matrix::${{ env.VERSION }}"
+            - name: Download Code
+              uses: actions/checkout@v2
+            - id: set-matrix
+              run: echo "::set-output name=matrix::$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
     basic_compile_test:
         needs: setup_version_matrix
         runs-on: hpc_awi_ollie
         strategy:
             matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}
+            fail-fast: false
         env:
             LC_ALL: en_US.UTF-8
             LANG: en_US.UTF-8

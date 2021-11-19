@@ -1,4 +1,4 @@
-name: Tests for FESOM Standalone
+name: Tests for ECHAM Standlone
 
 on:
     push:
@@ -8,12 +8,14 @@ on:
             - 'src/**'
             - 'tests/**'
             - 'configs/machines/ollie.yaml'
-            - 'configs/components/fesom/*.yaml'
-            - '.github/workflows/esm_tools_fesom-standalone.yml'
+            - 'configs/components/echam/*.yaml'
+            - 'configs/components/jsbach/*.yaml'
+            - 'configs/components/hdmodel/*.yaml'
+            - '.github/workflows/esm_tools_echam-standalone.yml'
 
 jobs:
     compile-ollie:
-        name: Compile Test fesom-standalone (Ollie)
+        name: Compile Test echam-standalone (Ollie)
         # Pattern for uses: github-org/repo/some/path/in/repo@commit_or_branch
         # (if @commit_or_branch is omitted, it assumes the default)
         uses: esm-tools/esm_tools/.github/resuable_workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
@@ -21,6 +23,6 @@ jobs:
           dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
           awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
         with:
-          model_name: fesom
+          model_name: echam
           # versions to test as a space seperated list
-          model_version: "1.4-esm_interface 1.4-recom-awicm 1.4-recom-mocsy-slp 1.4 2.0-jio 2.0-o 2.0-paleodyn 2.0-r 2.0 2.1"
+          model_version: "6.3.05p2 6.3.05p2-foci 6.3.02p4 6.3.04p1-esm_interface 6.3.05p2-concurrent_radiation 6.3.04p1-paleodyn 6.3.04p1-recom-awicm 6.3.05p2-concurrent_radiation-paleodyn 6.3.04p1 6.3.05p2-wiso"

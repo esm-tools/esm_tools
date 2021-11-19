@@ -22,15 +22,17 @@ defaults:
     shell: bash -leo pipefail {0}
 
 jobs:
-    split_string:
-        runs-on: ubuntu-latest
+    setup_version_matrix:
+        runs-on: hpc_awi_ollie
         outputs:
             matrix: ${{ steps.set-matrix.outputs.matrix }}
         steps:
-            - id: set-matrix
-              run: echo "::set-output name=matrix::{\"version\": [${{inputs.model_version}}]}"
+          - name: Download Code
+            uses: actions/checkout@v2
+          - id: set-matrix
+            run: echo "::set-output name=matrix::$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
     basic_compile_test:
-        needs: split_string
+        needs: setup_version_matrix
         runs-on: hpc_awi_ollie
         strategy:
             matrix: ${{fromJSON(needs.split_string.outputs.matrix)}}

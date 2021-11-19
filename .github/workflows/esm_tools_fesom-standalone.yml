@@ -22,4 +22,5 @@ jobs:
           awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
         with:
           model_name: fesom
+          # versions to test as a space seperated list
           model_version: "1.4-esm_interface 1.4-recom-awicm 1.4-recom-mocsy-slp 1.4 2.0-jio 2.0-o 2.0-paleodyn 2.0-r 2.0 2.1"

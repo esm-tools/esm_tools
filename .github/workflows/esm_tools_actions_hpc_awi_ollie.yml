@@ -39,7 +39,7 @@ jobs:
         needs: setup_version_matrix
         runs-on: hpc_awi_ollie
         strategy:
-            matrix: ${{fromJSON(needs.split_string.outputs.matrix)}}
+            matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}
         env:
             LC_ALL: en_US.UTF-8
             LANG: en_US.UTF-8

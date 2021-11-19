@@ -29,6 +29,8 @@ jobs:
         steps:
           - name: Download Code
             uses: actions/checkout@v2
+          - id: test-set-matrix
+            run: echo "..set-output name=matrix..$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
           - id: set-matrix
             run: echo "::set-output name=matrix::$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
     basic_compile_test:

@@ -9,21 +9,14 @@ def logfile_stats(logfile_to_read):
     with open(logfile_to_read, "r") as f:
         table = f.read()
 
-    df = pd.read_table(
-        io.StringIO(table),
-        sep=" : | -",
-        engine="python",
-        names=["Date", "Stuff", "State"],
-    )
+    df = pd.read_table(io.StringIO(table), sep=" : | -", engine="python", names=["Date", "Stuff", "State"])
     # Remove commented rows
     df = df[~df.Stuff.str.startswith("#")]
     # Clean up Date
-    df["Date"] = pd.to_datetime(df.Date, errors="coerce")
+    df["Date"] = pd.to_datetime(df.Date, errors='coerce')
     # Clean up Stuff
     ## Split columns
-    df[["Jobtype", "Job Number", "Job Date", "Job PID"]] = df.Stuff.str.split(
-        " ", expand=True
-    )
+    df[["Jobtype", "Job Number", "Job Date", "Job PID"]] = df.Stuff.str.split(" ", expand=True)
     del df["Stuff"]
     ## Fix types
     df["Jobtype"] = df.Jobtype.str.strip()
@@ -45,8 +38,8 @@ def logfile_stats(logfile_to_read):
     for (jobnumber, jobtype), subdf in gb:
         if jobnumber > 1:
             prev_subdf = gb.get_group((jobnumber - 1, jobtype))
-            prev_compute = gb.get_group((jobnumber - 1, "compute"))
-            prev_tidy = gb.get_group((jobnumber - 1, "tidy_and_resubmit"))
+            prev_compute = gb.get_group((jobnumber -1, "compute"))
+            prev_tidy = gb.get_group((jobnumber -1, "tidy_and_resubmit"))
         if "compute" in jobtype:
             submit = subdf.Date[subdf.State == "submitted"].values[0].astimezone(None)
             end = subdf.Date[subdf.State == "done"].values[0].astimezone(None)
@@ -54,9 +47,7 @@ def logfile_stats(logfile_to_read):
             compute_submit_to_start.append((jobnumber, start - submit))
             compute_start_to_end.append((jobnumber, end - start))
             if jobnumber > 1:
-                queue_time = start - prev_compute.Date[
-                    prev_compute.State == "done"
-                ].values[0].astimezone(None)
+                queue_time = start - prev_compute.Date[prev_compute.State == "done"].values[0].astimezone(None)
             else:
                 queue_time = None
             queue_time_list.append((jobnumber, queue_time))
@@ -65,37 +56,28 @@ def logfile_stats(logfile_to_read):
             start = subdf.Date[subdf.State == "start"].values[0].astimezone(None)
             tidy_start_to_end.append((jobnumber, end - start))
 
-    queue_time_df = (
-        pd.DataFrame(queue_time_list, columns=["Job Number", "Queue Time"])
-        .set_index("Job Number")
-        .transpose()
-    )
 
-    compute_start_to_end_df = (
-        pd.DataFrame(compute_start_to_end, columns=["Job Number", "Compute"])
-        .set_index("Job Number")
-        .transpose()
-    )
-    compute_submit_to_start_df = (
-        pd.DataFrame(compute_submit_to_start, columns=["Job Number", "Submit"])
-        .set_index("Job Number")
-        .transpose()
-    )
-    tidy_df = (
-        pd.DataFrame(tidy_start_to_end, columns=["Job Number", "Tidy"])
-        .set_index("Job Number")
-        .transpose()
-    )
-    df = pd.concat(
-        [queue_time_df, compute_submit_to_start_df, compute_start_to_end_df, tidy_df]
-    )
+    queue_time_df = pd.DataFrame(queue_time_list, columns=["Job Number", "Queue Time"]).set_index("Job Number").transpose()
+    queue_time_df[1]['Queue Time'] = 0
+
+
+    compute_start_to_end_df = pd.DataFrame(compute_start_to_end, columns=["Job Number", "Compute"]).set_index("Job Number").transpose()
+    compute_submit_to_start_df = pd.DataFrame(compute_submit_to_start, columns=["Job Number", "Submit"]).set_index("Job Number").transpose()
+    tidy_df = pd.DataFrame(tidy_start_to_end, columns=["Job Number", "Tidy"]).set_index("Job Number").transpose()
+    df = pd.concat([queue_time_df, compute_submit_to_start_df, compute_start_to_end_df, tidy_df])
     df = df.transpose()
-    print(df)
-    print(df.mean())
+    print(df.to_markdown())
+    print("\n\n")
+    averages = pd.DataFrame({"Average Job Times": df.mean()})
+    print(averages)
 
     one_day = datetime.timedelta(1)
     throughput = one_day / df["Compute"][1:].mean()
-    print(
-        f"Theoretical Throughput assuming no queueing time: {np.round(throughput, 2)} runs per day"
-    )
+    print("Theoretical Throughput assuming no queueing time:")
+    print(f"{np.round(throughput, 2)} runs per day")
+    print(f"{np.round(throughput, 2)*7} runs per week")
+    print(f"{np.round(throughput, 2)*30} runs per month")
+    for num_runs in 10, 100, 1000:
+        print(f"Time for {num_runs} runs: {num_runs * df['Compute'][1:].mean()}")
+    print("This throughput ignores the first year, which is generally slightly longer due to initialization!")
     return df

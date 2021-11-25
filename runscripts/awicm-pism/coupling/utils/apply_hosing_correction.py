@@ -11,10 +11,11 @@ cell_area_fesom_file = sys.argv[3]
 hosing_dir = sys.argv[4]
 
 if os.path.exists(cell_area_fesom_file):
-    print(" * Loading total FESOM grid area from ", os.path.join(cell_area_fesom_file, "fesom.mesh.diag.nc"))
-    fl = xr.open_dataset(os.path.join(cell_area_fesom_file, "fesom.mesh.diag.nc"), engine="netcdf4")
+    print(" * Loading total FESOM grid area from ", cell_area_fesom_file)
+    fl = xr.open_dataset(cell_area_fesom_file, engine="netcdf4")
     print(" * Summing up FESOM grid areas")
     total_FESOM_cell_area = fl.nod_area[0, :].sum().squeeze().values
+    #total_FESOM_cell_area = fl.cell_area[:].sum().squeeze().values
     print(" * Total cell area = ", total_FESOM_cell_area)
 else:
     print(" * File does not exist!")
@@ -40,13 +41,10 @@ else:
     exit
 
 if not os.path.isfile(os.path.join(hosing_dir, "landice_nodes_in_region_1.out")):
-    df = pd.read_csv(os.path.join(cell_area_fesom_file, "nod2d.out"), sep=" ", skiprows=[0], header=None)
+    df = pd.read_csv(os.path.join(os.path.dirname(cell_area_fesom_file), "nod2d.out"), sep=" ", skiprows=[0], header=None)
     n=df.iloc[:, 0]
     n.to_csv(os.path.join(hosing_dir, "landice_nodes_in_region_1.out"), header=[str(len(n.values))], index=False)
 
-#if not os.path.isfile(os.path.join(hosing_dir, "landice_yearly_mass_loss.out")):
-#    mass_loss = 0.0
-#else:
 mass_loss = discharge.squeeze().values
 with open(os.path.join(hosing_dir, "landice_yearly_mass_loss.out"), 'w') as f:
     f.write(str(1) + "\n" + str(mass_loss))

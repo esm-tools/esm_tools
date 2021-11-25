@@ -236,6 +236,10 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     elif [ "$MACHINE" == "mistral" ]; then
         module load anaconda3/bleeding_edge
     fi
+    if [ -f ${COUPLE_DIR}/num_non_melted_icb_file ]; then
+        rm ${COUPLE_DIR}/num_non_melted_icb_file
+    fi
+
     if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
         if [[ ! -f ${COUPLE_DIR}/nod2d.out.rot ]]; then
             python ${FUNCTION_PATH}/utils/rotate_mesh.py ${MESH_DIR_fesom} ${COUPLE_DIR}
@@ -246,8 +250,9 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR} ${BASIN_FILE}
     fi
 
-    if [ -f ../restart/fesom/iceberg.restart.ISM ]; then
-        wc -l ../restart/fesom/iceberg.restart.ISM | awk '{ print $1 }' > ${COUPLE_DIR}/num_non_melted_icb_file
+    echo; echo "    * Finished iceberg generation"
+    if [ -f ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM ]; then
+        wc -l ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM | awk '{ print $1 }' > ${COUPLE_DIR}/num_non_melted_icb_file
     fi
     use_icesheet_coupling=1
 }

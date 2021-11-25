@@ -5,7 +5,7 @@ function ocean2pism {
 
     if [ "$MACHINE" == "ollie" ]; then
         module unload python3
-        module load anaconda3
+        module load miniconda
     elif [ "$MACHINE" == "mistral" ]; then
         module load defaults
     fi

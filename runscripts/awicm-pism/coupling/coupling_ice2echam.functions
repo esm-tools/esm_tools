@@ -1034,13 +1034,14 @@ distribute_total_discharge_over_ocean() {
 #        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
         cdo -s gridarea ${ifile1} ${ifile2}
 #        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
-        echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS} "
+        CELL_AREA_FESOM_FILE=${CELL_AREA_FESOM_FILE:-"fesom.mesh.diag.nc"}
+        echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE} ${HOSING_FILE_LANDICE_LOSS} "
         module load python3
         if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
             rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
         fi
 
-        python3 ${FUNCTION_PATH}/utils/apply_hosing_correction.py $ifile1 $ifile2 ${MESH_PATH_FESOM} ${HOSING_FILE_LANDICE_LOSS}
+        python3 ${FUNCTION_PATH}/utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
         module unload python3
         echo; echo "            * Finished apply_hosing_correction.py "
 #

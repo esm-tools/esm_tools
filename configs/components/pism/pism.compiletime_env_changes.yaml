@@ -14,9 +14,11 @@ choose_computer.name:
                 - "use ~dbarbi/modulefiles"
                 - "unload hdf5"
                 - "load pism_externals"
+                - "load proj"
             add_export_vars:
                 - "I_MPI_FABRICS=shm:tmi"
                 - "HDF5_ROOT=$HDF5ROOT"
+                - "PROJ_ROOT=/global/AWIsoft/proj/5.1.0/"
     mistral:
         environment_changes:
             add_module_actions:

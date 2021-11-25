@@ -166,24 +166,28 @@ restart_in_files:
         ice_restart: ice_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
 
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
 
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -191,6 +195,7 @@ restart_out_in_work:
         #wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -198,6 +203,7 @@ restart_out_sources:
         #wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM
 
 outdata_sources:
         #"[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
@@ -220,7 +226,7 @@ choose_use_icebergs:
                                             iceberg_dir: "${general.experiment_couple_dir}"
             
                             input_sources:
-                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
             
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
@@ -331,14 +337,13 @@ choose_general.iterative_coupling:
                         "*":
                                 use_landice_water: True
                 
-                choose_echam.hosing_correction:
-                            add_namelist_changes:
-                                        namelist.forcing:
-                                                land_ice:
-                                                        use_landice_water: "${use_landice_water}"
-                                                        landice_start_mon: 1
-                                                        landice_end_mon: 12
-                                                        fwf_path: "${fwf_path}" 
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${general.experiment_couple_dir}" 
         '*':
                 use_landice_water: False
 
@@ -413,6 +418,12 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
+        o18_feom:
+                grid: feom
+        hdo_feom:
+                grid: feom
+        o16_feom:
+                grid: feom
         #o18w_oce:
         #        grid: feom
         #hdow_oce:
@@ -449,18 +460,18 @@ coupling_fields:
                 grid: feom
         hydr_oce:
                 grid: feom
-        #w1_oce:
-        #        grid: feom
-        #w2_oce:
-        #        grid: feom
-        #w3_oce:
-        #        grid: feom
-        #i1_oce:
-        #        grid: feom
-        #i2_oce:
-        #        grid: feom
-        #i3_oce:
-        #        grid: feom
+        w1_oce:
+                grid: feom
+        w2_oce:
+                grid: feom
+        w3_oce:
+                grid: feom
+        i1_oce:
+                grid: feom
+        i2_oce:
+                grid: feom
+        i3_oce:
+                grid: feom
 
 grids:
         feom:

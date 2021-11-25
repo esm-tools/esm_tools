@@ -34,7 +34,7 @@ def prepare_environment(config):
             "DOMAIN_pism": config["pism"]["domain"],
             "RES_pism": config["pism"]["resolution"],
             "EXE_pism": config["pism"]["executable"],
-            "iterative_coupling_atmosphere_pism_ablation_method": "DEBM",
+            "iterative_coupling_atmosphere_pism_ablation_method": config["pism"]["ablation_method"],
             "DEBM_EXE": config["pism"]["debm_path"],
             "MY_OBLIQUITY": config["pism"]["debm_obl"], 
             "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 

@@ -677,12 +677,12 @@ coupling_fields:
                 grid: atmo
         snt_atmo:
                 grid: atmo
-        #o18_atmo:
-        #        grid: atmo
-        #hdo_atmo:
-        #        grid: atmo
-        #o16_atmo:
-        #        grid: atmo
+        o18_atmo:
+                grid: atmo
+        hdo_atmo:
+                grid: atmo
+        o16_atmo:
+                grid: atmo
         #o18w_atm:
         #        grid: atmo
         #hdow_atm:
@@ -719,18 +719,18 @@ coupling_fields:
                 grid: atmo
         hydr_atm:
                 grid: atmo
-        #w1_atm:
-        #        grid: atmo
-        #w2_atm:
-        #        grid: atmo
-        #w3_atm:
-        #        grid: atmo
-        #i1_atm:
-        #        grid: atmo
-        #i2_atm:
-        #        grid: atmo
-        #i3_atm:
-        #        grid: atmo
+        w1_atm:
+                grid: atmo
+        w2_atm:
+                grid: atmo
+        w3_atm:
+                grid: atmo
+        i1_atm:
+                grid: atmo
+        i2_atm:
+                grid: atmo
+        i3_atm:
+                grid: atmo
 
         "[[foci_fields-->FIELD]]":
                 grid: atmo
@@ -746,7 +746,7 @@ grids:
 choose_lgfw:
         True:
                 add_input_sources:
-                        gfw_atmo: "${general.couple_dir}/latest_gfw_atmo.nc"
+                        gfw_atmo: "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
                 add_input_files:
                         gfw_atmo: gfw_atmo
                 add_input_in_work:

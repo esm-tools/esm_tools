@@ -298,6 +298,14 @@ choose_resolution:
                 res_number: 399
                 res_number_tl: "399_4"
                 truncation: "TCO"
+        TCO639:
+                nx: 1661440
+                ny: 1
+                time_step: 600
+                oasis_grid_name: 640
+                res_number: 639
+                res_number_tl: "639_4"
+                truncation: "TCO"
         TL511:
                 nx: 348528
                 ny: 1

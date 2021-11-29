@@ -19,23 +19,35 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src'))
 
-
+sys.path.insert(0, os.path.abspath("../src"))
+sys.path.insert(1, os.path.abspath("../utils"))
 
 
 # PG: Here, we grab the main yaml for each model stated in configs, and get a metadata chapter:
 import yaml
-config_blacklist = ["batch_system", "machines", "vcs", "esm_master", "esm_runscripts", "general_yaml"]
-configs = [f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist]
+
+config_blacklist = [
+    "batch_system",
+    "machines",
+    "vcs",
+    "esm_master",
+    "esm_runscripts",
+    "general_yaml",
+]
+configs = [
+    f for f in os.listdir(os.path.abspath("../configs")) if f not in config_blacklist
+]
 components = {}
-for component in ["../configs/components/"+c for c in os.listdir("../configs/components")]:
+for component in [
+    "../configs/components/" + c for c in os.listdir("../configs/components")
+]:
     d = yaml.load(component, Loader=yaml.FullLoader)
     comp_name = component.split("/")[-1].replace(".yaml", "")
     components[comp_name] = d
 configs = []
 for comp in components:
-    if os.path.exists("../configs/components/"+comp+"/"+comp+".yaml"):
+    if os.path.exists("../configs/components/" + comp + "/" + comp + ".yaml"):
         configs.append(comp)
 with open("Supported_Models.rst", "w") as rst:
     rst.write("================\n")
@@ -43,30 +55,32 @@ with open("Supported_Models.rst", "w") as rst:
     rst.write("================\n")
 configs.sort()
 for config in configs:
-    with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
+    with open(os.path.join("../configs/components/", config, config + ".yaml")) as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
         metadata = d.get("metadata")
         name = config.upper()
-        with open("metadata/"+config+".csv", "w") as table:
+        with open("metadata/" + config + ".csv", "w") as table:
             if metadata:
                 for key in metadata:
-                    if key=="Publications":
+                    if key == "Publications":
                         if type(metadata[key]) is list:
                             public_string = key + '; "\n'
                             for publication in metadata[key]:
-                                public_string = public_string + "`{0}`_\n\n".format(publication.replace('"', '""'))
-                            table.write(public_string+'"\n')
+                                public_string = public_string + "`{0}`_\n\n".format(
+                                    publication.replace('"', '""')
+                                )
+                            table.write(public_string + '"\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
-                    elif key=="Name" or key=="name":
+                    elif key == "Name" or key == "name":
                         name = metadata[key]
                     else:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:
             rst.write("%s\n" % name)
-            rst.write("-"*len(config) + "\n")
+            rst.write("-" * len(config) + "\n")
             rst.write(".. csv-table::\n")
-            rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
+            rst.write("   :file: %s\n" % ("metadata/" + config + ".csv"))
             rst.write("   :delim: ;\n")
             rst.write("   :widths: 20, 80\n")
             rst.write("   :stub-columns: 1\n\n")
@@ -85,30 +99,47 @@ esm_tools_modules = os.listdir("../src/")
 
 # Ensure the API folder exists:
 try:
- os.makedirs("api")
+    os.makedirs("api")
 except FileExistsError:
- shutil.rmtree("api")
- os.makedirs("api")
+    shutil.rmtree("api")
+    os.makedirs("api")
 
 with open("API.rst", "w") as rst:
- rst.write("============================\n")
- rst.write("ESM Tools Code Documentation\n")
- rst.write("============================\n")
- rst.write(".. toctree::\n")
- rst.write("   :glob:\n\n")
- rst.write("   api/*")
+    rst.write("============================\n")
+    rst.write("ESM Tools Code Documentation\n")
+    rst.write("============================\n")
+    rst.write(".. toctree::\n")
+    rst.write("   :glob:\n\n")
+    rst.write("   api/*")
 
- for esm_mod in sorted(esm_tools_modules):
-     sphinx.ext.apidoc.main(
-         [
-             "--no-toc",
-             "--module-first",
-             "--output-dir",
-             "api",
-             "../src/" + esm_mod,
-         ]
-     )
+    for esm_mod in sorted(esm_tools_modules):
+        sphinx.ext.apidoc.main(
+            [
+                "--no-toc",
+                "--module-first",
+                "--output-dir",
+                "api",
+                "../src/" + esm_mod,
+            ]
+        )
 
+try:
+    os.makedirs("utils")
+except FileExistsError:
+    shutil.rmtree("utils")
+    os.makedirs("utils")
+
+with open("Utils.rst", "w") as rst:
+    rst.write("=============================\n")
+    rst.write("ESM Tools Auxillary Utilities\n")
+    rst.write("=============================\n")
+    rst.write(".. toctree::\n")
+    rst.write("   :glob:\n\n")
+    rst.write("   utils/*")
+
+sphinx.ext.apidoc.main(
+    ["--no-toc", "--module-first", "--output-dir", "utils", "../utils"]
+)
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -119,12 +150,26 @@ with open("API.rst", "w") as rst:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 # MA: for some reason sphinxcontrib.napoleon does not work on ollie so
 # the working module sphinx.ext.napoleon is used when compiled from ollie.
-if os.getcwd().split('/')[2]=="ollie":
-    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
-        'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
+if os.getcwd().split("/")[2] == "ollie":
+    extensions = [
+        "sphinx.ext.autodoc",
+        "sphinx.ext.viewcode",
+        "sphinx.ext.graphviz",
+        "sphinx.ext.autosectionlabel",
+        "sphinx.ext.napoleon",
+        "sphinx_copybutton",
+        "sphinx_tabs.tabs",
+    ]
 else:
-    extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
-        'sphinx.ext.autosectionlabel', 'sphinxcontrib.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs']
+    extensions = [
+        "sphinx.ext.autodoc",
+        "sphinx.ext.viewcode",
+        "sphinx.ext.graphviz",
+        "sphinx.ext.autosectionlabel",
+        "sphinxcontrib.napoleon",
+        "sphinx_copybutton",
+        "sphinx_tabs.tabs",
+    ]
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
 
@@ -133,19 +178,19 @@ copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: 
 copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'ESM Tools'
+project = "ESM Tools"
 copyright = "2020, Dirk Barbi"
 author = "Dirk Barbi, Nadine Wieters, Paul Gierz, Fatemeh Chegini, Miguel Andrés-Martínez, Deniz Ural"
 version = esm_tools.__version__.split(".")
@@ -155,9 +200,9 @@ version = "{0}.{1}".format(version[0], version[1])
 # the built documents.
 #
 # The short X.Y version.
-#version = esm_tools.__version__
+# version = esm_tools.__version__
 # The full version, including alpha/beta/rc tags.
-#release = esm_tools.__version__
+# release = esm_tools.__version__
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
@@ -169,10 +214,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
@@ -197,18 +242,19 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
 # Add custom css (to disable the horizontal scrolling in tables).
 def setup(app):
-    app.add_css_file('custom.css')
+    app.add_css_file("custom.css")
+
 
 # -- Options for HTMLHelp output ---------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'esm_toolsdoc'
+htmlhelp_basename = "esm_toolsdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------
@@ -217,15 +263,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -235,10 +278,13 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'esm_tools.tex',
-     'ESM Tools r{0} UserManual'.format(version),
-     'Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez, \\\\Deniz Ural',
-     'manual'),
+    (
+        master_doc,
+        "esm_tools.tex",
+        "ESM Tools r{0} UserManual".format(version),
+        "Dirk Barbi, Nadine Wieters, Paul Gierz, \\\\Fatemeh Chegini, Miguel Andrés-Martínez, \\\\Deniz Ural",
+        "manual",
+    ),
 ]
 
 
@@ -246,11 +292,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'esm_tools',
-     'ESM Tools Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "esm_tools", "ESM Tools Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------
@@ -259,12 +301,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'esm_tools',
-     'ESM Tools Documentation',
-     author,
-     'esm_tools',
-     'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "esm_tools",
+        "ESM Tools Documentation",
+        author,
+        "esm_tools",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 
@@ -274,6 +319,3 @@ texinfo_documents = [
 # :ref:`rst_file_name:title of the section` avoiding problems with
 # duplicated sections across different rst files.
 autosectionlabel_prefix_document = True
-
-
-

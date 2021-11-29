@@ -23,6 +23,7 @@ Welcome to ESM Tools's documentation!
    faq
    packages
    API
+   Utils
    contributing
    authors
 

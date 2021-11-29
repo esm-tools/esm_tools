@@ -2,3 +2,4 @@ graft configs
 graft namelists
 graft runscripts
 graft stuff
+graft **.jinja

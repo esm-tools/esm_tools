@@ -1,17 +1,18 @@
-import datetime
-import os
-import sys
-import shutil
-import filecmp
 import copy
-import time
-import six
+import datetime
+import filecmp
 import glob
+import os
+import pathlib
+import re
+import shutil
+import sys
+import time
 
 import esm_parser
-
-import f90nml
 import esm_tools
+import f90nml
+import six
 import yaml
 
 
@@ -935,6 +936,72 @@ def copy_files(config, filetypes, source, target):
                 print(f"- missing target: {missing_file}", flush=True)
                 print(datetime.datetime.now(), flush=True)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
+    return config
+
+
+def filter_allowed_missing_files(config):
+    """
+    Filters the general.files_missing_when_preparing_run dictionary to move any
+    allowed missing files to a seperate dictionary.
+
+
+    This function can be included to mark specific files as "allowed to be
+    missing". A list of allowed missing files should be put into the model
+    configuration::
+
+        echam:
+            allowed_missing_files:
+                - "*restart*jsbid*"
+                - "unit.*"
+
+    The allowed missing files may either be globs or regular expressions. The
+    filename (without full path) on either the source or the target is used for
+    matching. Therefore, if a file is renamed in the process of being moved
+    from the pool filesystem to the experiment tree, or to the work folder, an
+    exclusion can be made both with the source name or with the target name.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+    """
+    allowed_missing_files = config["general"].setdefault("allowed_missing_files", {})
+    missing_files = config["general"].get("files_missing_when_preparing_run", {})
+    # TODO(PG): Replace with logger statements
+    print("Currently known missing files:")
+    for k, v in missing_files.items():
+        print(f"source: {k} --> target: {v}")
+    remove_missing_files = []
+    for missing_file_source, missing_file_target in missing_files.items():
+        missing_file_source_fname = pathlib.Path(missing_file_source).name
+        missing_file_target_fname = pathlib.Path(missing_file_target).name
+        for model in config["general"]["valid_model_names"] + ["general"]:
+            for allowed_missing_pattern in config[model].get(
+                "allowed_missing_files", []
+            ):
+                if (
+                    re.match(allowed_missing_pattern, missing_file_source_fname)
+                    or missing_file_source_fname in glob.glob(allowed_missing_pattern)
+                    or re.match(allowed_missing_pattern, missing_file_target_fname)
+                    or missing_file_target_fname in glob.glob(allowed_missing_pattern)
+                ):
+                    # TODO(PG): Replace with logger statements
+                    print(
+                        f"Detected allowed missing file with {allowed_missing_pattern}"
+                    )
+                    print("Adding to allowed missing files:")
+                    print(f"source: {missing_file_source}")
+                    print(f"target: {missing_file_target}")
+                    remove_missing_files.append(missing_file_source)
+                    allowed_missing_files.update(
+                        {missing_file_source: missing_file_target}
+                    )
+    for remove_missing in remove_missing_files:
+        missing_files.pop(remove_missing)
     return config
 
 

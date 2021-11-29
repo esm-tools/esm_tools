@@ -1,8 +1,8 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "frontiers"
-    account: "esmtst"
+    version: "frontiers-xios"
+    account: "hhb20"
     compute_time: "00:30:00"
     initial_date: "1990-01-01"
     final_date: "1990-01-03"

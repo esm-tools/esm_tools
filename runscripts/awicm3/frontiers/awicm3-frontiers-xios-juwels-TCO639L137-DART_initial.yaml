@@ -73,7 +73,6 @@ oasis3mct:
 #            remove_input_files: ['rmp']
 
 xios:
-    xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/"
     with_model: oifs
     nproc: 10
     omp_num_threads: 48

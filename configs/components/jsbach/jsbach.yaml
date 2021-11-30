@@ -75,7 +75,8 @@ choose_version:
                                         jsbach: jsbach_1850
                                 forcing_files:
                                         LU: LU_1850
-                                        LU_trans: LU_trans_none
+                                        #LU_trans: LU_trans_none
+                                        LU_trans: LU_trans_1850
                                         Ndepo: Ndepo_1850
                                         a_nd_file: a_nd_file
                                         lightning: lightning
@@ -301,6 +302,7 @@ streams:
         - land
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
+current_minus_dt_date: $(( ${current_date} - ${time_step}seconds ))
 
 parent_date: ${echam.parent_date}
 
@@ -336,7 +338,8 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        #"[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${current_minus_dt_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc

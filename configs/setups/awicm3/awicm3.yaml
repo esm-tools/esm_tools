@@ -61,6 +61,8 @@ general:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:
                         pool_dir: "/proj/awi/input"
+                blogin:
+                        pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
 
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
@@ -537,3 +539,8 @@ oasis3mct:
 
 computer:
         heterogeneous_parallelization: false
+        choose_computer.name:
+                blogin:
+                        compiler_mpi: intel2019_ompi
+                glogin:
+                        compiler_mpi: intel2019_ompi

@@ -151,11 +151,11 @@ update_orography_prepare_calnoro() {
 update_orography_run_calnoro() {
         echo; echo "                *   running CALNORO"
         
-        if [ "${MACHINE}" == "ollie" ]; then
-            module unload netcdf
-            module load hdf5/1.10.2_gnu
-            module load netcdf/4.6.2_gnu
-        fi
+        #if [ "${MACHINE}" == "ollie" ]; then
+        #    module unload netcdf
+        #    module load hdf5/1.10.2_gnu
+        #    module load netcdf/4.6.2_gnu
+        #fi
 
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
@@ -170,11 +170,11 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-        if [ "$MACHINE" == "ollie" ]; then
-            module unload netcdf
-            module unload hdf5/1.10.2_gnu
-            module load netcdf/4.6.0_gnu
-        fi
+        #if [ "$MACHINE" == "ollie" ]; then
+        #    module unload netcdf
+        #    module unload hdf5/1.10.2_gnu
+        #    module load netcdf/4.6.0_gnu
+        #fi
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
@@ -229,6 +229,8 @@ update_orography_generate_target_orography_file() {
                 ${ifile} \
                 ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                 ${ofile} 2>>cdo_stderr_ice2echam
+        
+        ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
         # Destroy the time dimension; just in case
 	#if ncdump -h $ofile | grep -q "time"; then
 	#	ncwa -a time $ofile tmp; mv tmp $ofile

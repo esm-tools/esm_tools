@@ -83,7 +83,6 @@ choose_job_type:
                           #- "add_batch_hostfile"
                         - "assemble"
                         - "log_used_files"
-                        - "_write_finalized_config"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"
@@ -91,6 +90,7 @@ choose_job_type:
                           #- "write_simple_runscript"
                         - "report_missing_files"
                         - "database_entry"
+                        - "_write_finalized_config"
                           #- "submit"
 
         inspect:

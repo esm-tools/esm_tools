@@ -107,12 +107,15 @@ lresume: false
 dataset: "r0007"
 
 lgfw: False
+lupdate_orography: False
 choose_general.iterative_coupling:
         True:
                 lgfw: True
+                lupdate_orography: True
                 choose_general.chunk_number:
                         1:
                                 lgfw: False
+                                lupdate_orography: False
                 hosing_correction: True
         '*':
                 hosing_correction: False
@@ -664,7 +667,7 @@ namelist_changes:
                         nprocb: "${nprocb}"
                 submodelctl:
                         lgfw: "${lgfw}"
-
+                        lupdate_orog: "${lupdate_orography}"
 
 foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
@@ -751,6 +754,15 @@ choose_lgfw:
                         gfw_atmo: gfw_atmo
                 add_input_in_work:
                         gfw_atmo: "gfw_atmo.nc"
+
+choose_lupdate_orography:
+        True:
+                add_input_sources:
+                        target_oro: "${general.experiment_couple_dir}/latest_target_orography.nc"
+                add_input_files:
+                        target_oro: target_oro
+                add_input_in_work:
+                        target_oro: "target_orography_echam6.nc"
 
 # Configuration Files:
 config_sources:

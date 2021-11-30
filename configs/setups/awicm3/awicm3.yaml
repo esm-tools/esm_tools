@@ -288,6 +288,7 @@ fesom:
 #       - fesom/fesom-2.0.io.yaml
 
 xios:
+        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${choose_general.resolution}"
         nproc: 1
         omp_num_threads: ${computer.cores_per_node}
 

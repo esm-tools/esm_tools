@@ -1,4 +1,5 @@
 hist_fold: hist_harvest
+hist_scenario: ssp370  # dataset to use for year > 2014
 
 input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
@@ -19,10 +20,17 @@ forcing_sources:
                         to: 1850
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 1851
+                        to: 2014
+                # HIST scenario will use this data beyond year 2014
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                        from: 2015
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
         "LU_trans_time":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
+            # For the transient land data use a similar fix like in HIST land use
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
 
 
 choose_dataset:

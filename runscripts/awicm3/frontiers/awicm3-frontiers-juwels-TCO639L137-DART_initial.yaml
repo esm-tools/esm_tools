@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "frontiers-xios"
+    version: "frontiers"
     account: "hhb20"
     compute_time: "00:30:00"
     initial_date: "1990-01-01"
@@ -61,7 +61,7 @@ oifs:
     wam: true
     lresume: false
     time_step: 900
-    nproc: 600
+    nproc: 1200
     omp_num_threads: 4
 
 oasis3mct:
@@ -71,9 +71,3 @@ oasis3mct:
 #   choose_lresume:
 #      false:
 #            remove_input_files: ['rmp']
-
-xios:
-    with_model: oifs
-    nproc: 10
-    omp_num_threads: 48
-

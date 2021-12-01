@@ -322,6 +322,17 @@ choose_scenario:
                         swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP
+        SSP585:
+                greenhouse_dir: "${input_dir}"
+                forcing_files:
+                        aerocoarse_kinne_1850: piaerocoarse
+                        aerofarir_kinne_1850: piaerofarir
+                        aerofin_kinne_1850: piaerofin
+                        ozone: ssp585ozone
+                        greenhouse: ssp585greenh
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP_ssp585
         RCP26:
                 greenhouse_dir: "${forcing_dir}"
                 forcing_files:

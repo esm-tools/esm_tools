@@ -154,6 +154,18 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+                        SSP585:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        #LU: LU_HIST ?
+                                        # LU_trans: LU_trans_none
+                                        LU_trans: LU_trans_ssp585
+                                        cover_fract: cover_fract_SSP585
+                                        #Ndepo: Ndepo_1850 ? 
+                                        #a_nd_file: a_nd_file ?
+                                        #lightning: lightning ?
+                                        #popdens: popdens ?
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976

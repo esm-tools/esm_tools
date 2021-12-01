@@ -54,29 +54,21 @@ fesom:
     nproc: 4320
 
 oifs:
-    resolution: "TCO319"
+    resolution: "TCO639"
     levels: "L137"
-    prepifs_expid: a0iw
+    prepifs_expid: hf1d
     input_expid: awi3
     wam: true
     lresume: false
-    time_step: 900
+    time_step: 600
     nproc: 1200
     omp_num_threads: 2
-    add_namelist_changes:
-        fort.4:
-           NAMFPC:
-              NFPPHY: 74
-              MFPPHY(:): [31,32,34,35,36,37,38,44,45,47,50,57,58,59,78,79,136,137,139,141,142,143,228,144,145,146,147,148,151,159,164,165,166,167,168,169,170,172,175,176,177,178,179,180,181,182,183,186,187,188,195,196,197,198,205,206,208,209,210,211,235,236,238,243,244,245,229,230,231,232,213,212,8,9]
 
 oasis3mct:
     lresume: true # Set to false to generate the rst files for first leg
     time_step: 3600
     use_lucia: true
-#   choose_lresume:
-#      false:
-#            remove_input_files: ['rmp']
-#
+
 xios:
     with_model: oifs
     nproc: 1

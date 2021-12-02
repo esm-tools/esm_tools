@@ -205,8 +205,7 @@ def update_reusable_files(config, reusable_filetypes=None):
 
     if return_config:
         return config
-    else:
-        return reusable_filetypes
+    return reusable_filetypes
 
 
 ############################## SINK CLASS FOR LOGURU.LOGGER ###########################

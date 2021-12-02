@@ -144,7 +144,7 @@ def update_reusable_files(config, reusable_filetypes=None):
     such as ``bin``, ``input``, ``forcing``, etc., to be copied only once into the
     general experiment folder, and then **reused** them through out every run. If a
     given file type is not present in this list, that file type will be copied from
-    its external source (i.e. for binaries from the folder where the model is compiled).
+    its external source at the beginning of every run (i.e. for binaries from the folder where the model is compiled).
 
     This method takes care of removing the reusable file types from
     ``reusable_filetypes``, specified by the user in the ``esm_runscripts`` call with

@@ -23,7 +23,7 @@ requirements = [
     "loguru",
     "numpy",
     "packaging",
-    "pandas",
+    "pandas>=1.0",
     "psutil",
     "pyyaml",
     "pyyaml>=5.1",

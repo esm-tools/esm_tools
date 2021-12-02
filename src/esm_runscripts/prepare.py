@@ -494,6 +494,12 @@ def _add_all_folders(config):
     config["general"]["reusable_filetypes"] = config["general"].get(
         "reusable_filetypes", ["bin", "src"]
     )
+    # Define the files that could be reusable accross runs (external files)
+    config["general"]["potentially_reusable_files"] = (
+         all_filetypes + config["general"]["in_filetypes"]
+    )
+    # Apply changes from ``--update-files`` flag
+    config = helpers.update_reusable_files(config)
 
     config["general"]["thisrun_dir"] = (
         config["general"]["experiment_dir"]

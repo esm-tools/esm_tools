@@ -14,6 +14,8 @@ import f90nml
 import esm_tools
 import yaml
 
+from . import helpers
+
 
 def rename_sources_to_targets(config):
     # Purpose of this routine is to make sure that filetype_sources and
@@ -195,6 +197,10 @@ def reuse_sources(config):
             # general ones
             model_reusable_filetypes = config[model].get(
                 "reusable_filetypes", config["general"]["reusable_filetypes"]
+            )
+            # Apply changes from ``--update-files`` flag
+            model_reusable_filetypes = helpers.update_reusable_files(
+                config, reusable_filetypes=model_reusable_filetypes
             )
             # If <filetype>_sources dictionary exists and filetype is in the
             # model-specific filetype list then add the sources
@@ -1152,6 +1158,7 @@ def get_movement(config, model, categ, filetype, source, target):
         model_reusable_filetypes = config[model].get(
             "reusable_filetypes", config["general"]["reusable_filetypes"]
         )
+
         if (
             config["general"]["run_number"] == 1
             or filetype not in model_reusable_filetypes

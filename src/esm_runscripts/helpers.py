@@ -3,6 +3,7 @@ from datetime import datetime
 
 import esm_rcfile
 
+import esm_parser
 import esm_plugin_manager
 import esm_tools
 
@@ -134,6 +135,78 @@ def assemble_log_message(
     # TODO: Do we want to be able to specify a timestamp seperator as well?
     line = timestampStr + " : " + message_sep.join(message)
     return line
+
+
+def update_reusable_files(config, reusable_filetypes=None):
+    """
+    Reusable files, in general (``config["general"]["reusable_filetypes"]``), or model
+    specific (``config[<model>]["reusable_filetypes"]``) forces files of a given type,
+    such as ``bin``, ``input``, ``forcing``, etc., to be copied only once into the
+    general experiment folder, and then **reused** them through out every run. If a
+    given file type is not present in this list, that file type will be copied from
+    its external source (i.e. for binaries from the folder where the model is compiled).
+
+    This method takes care of removing the reusable file types from
+    ``reusable_filetypes``, specified by the user in the ``esm_runscripts`` call with
+    the ``--update-files`` flag.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the information about the experiment.
+    reusable_filetypes : list
+        List of reusable file types that can be specified by the user.
+
+    Returns
+    -------
+    config : dict
+        If the user gives no ``reusable_filetypes`` as input. ``config`` contains the
+        changes requested by the user with the ``--update-flag``.
+    reusable_filetypes : list
+        If the user gives ``reusable_filetypes`` as input. ``reusable_filetypes``
+        contains the changes requested by the user with the ``--update-flag``.
+    """
+    # Set the logic for what to return
+    if reusable_filetypes:
+        return_config = False
+    else:
+        return_config = True
+        reusable_filetypes = config["general"].get("reusable_filetypes", [])
+
+    update_files = config["general"].get("command_line_config", {}).get("update_files")
+    potentially_reusable_files = config["general"]["potentially_reusable_files"]
+
+    # If there are file types to update specified by the user, do so
+    if update_files:
+        # Loop through the file types specified by the user with the ``--update-files``
+        # flag
+        for ufile in update_files:
+            # Check if that file type exists/makes sense. Otherwise, through an error
+            if ufile not in potentially_reusable_files:
+                esm_parser.user_error("update-files",
+                    f"``{ufile}`` specified by you in ``--update-files`` is not a "
+                    + "ESM-Tools file type. Please, select one (or more) of the "
+                    + "following file types:\n\t- "
+                    + "\n\t- ".join(potentially_reusable_files)
+                )
+            # Actually remove the file types specified by the user from
+            # ``reusable_filetypes``
+            if ufile in reusable_filetypes:
+                # Remove duplicates just in case
+                reusable_filetypes = list(set(reusable_filetypes))
+                # Do the removal
+                reusable_filetypes.remove(ufile)
+            elif config["general"]["verbose"]:
+                print(
+                    f"- The file type ``{ufile}`` you are trying to update was not "
+                    "reusable accross runs in the first place, so it's been always "
+                    "updated with the external source, and it will still be."
+                )
+
+    if return_config:
+        return config
+    else:
+        return reusable_filetypes
 
 
 ############################## SINK CLASS FOR LOGURU.LOGGER ###########################

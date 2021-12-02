@@ -174,6 +174,8 @@ def update_reusable_files(config, reusable_filetypes=None):
         reusable_filetypes = config["general"].get("reusable_filetypes", [])
 
     update_files = config["general"].get("command_line_config", {}).get("update_files")
+    # NOTE(MAM, PG): Originally defined in prepare.py
+    # https://tinyurl.com/2p8awzsu
     potentially_reusable_files = config["general"]["potentially_reusable_files"]
 
     # If there are file types to update specified by the user, do so

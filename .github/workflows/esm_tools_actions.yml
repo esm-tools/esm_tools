@@ -29,6 +29,11 @@ jobs:
       run: |
         ./install.sh
 
+    - name: Run Pytest
+      run: |
+        pip install pytest
+        pytest .
+
     - name: run esm_master first time
       run: |
         yes Y | esm_master

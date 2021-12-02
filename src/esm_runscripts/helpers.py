@@ -24,8 +24,7 @@ def evaluate(config, job_type, recipe_name):
         ].get(recipe_name)
     except KeyError:
         print(
-            "Your configuration is incorrect, and should include headings for %s as well as general!"
-            % setup_name
+            f"Your configuration is incorrect, and should include headings for {setup_name} as well as general!"
         )
         sys.exit(1)
 
@@ -136,18 +135,23 @@ def assemble_log_message(
     return line
 
 
-def update_reusable_files(config, reusable_filetypes=None):
+def update_reusable_filetypes(config, reusable_filetypes=None):
     """
-    Reusable files, in general (``config["general"]["reusable_filetypes"]``), or model
-    specific (``config[<model>]["reusable_filetypes"]``) forces files of a given type,
-    such as ``bin``, ``input``, ``forcing``, etc., to be copied only once into the
-    general experiment folder, and then **reused** them through out every run. If a
-    given file type is not present in this list, that file type will be copied from
-    its external source at the beginning of every run (i.e. for binaries from the folder where the model is compiled).
+    Removes some filetypes from the "resuable files" list. Filetypes to be
+    removed are either specifed in the config, or passed as an argument.
+
+    Reusable filetypes, declared in general
+    (``config["general"]["reusable_filetypes"]``), or in model specific
+    (``config[<model>]["reusable_filetypes"]``) forces files of a given type,
+    such as ``bin``, ``input``, ``forcing``, etc., to be copied only once into
+    the general experiment folder, and then **reuse** them through out every
+    run. If a given file type is not present in this list, that file type will
+    be copied from its external source at the beginning of every run (i.e. for
+    binaries from the folder where the model is compiled).
 
     This method takes care of removing the reusable file types from
-    ``reusable_filetypes``, specified by the user in the ``esm_runscripts`` call with
-    the ``--update-files`` flag.
+    ``reusable_filetypes``, specified by the user in the ``esm_runscripts``
+    call with the ``--update-files`` flag.
 
     Parameters
     ----------
@@ -172,38 +176,38 @@ def update_reusable_files(config, reusable_filetypes=None):
         return_config = True
         reusable_filetypes = config["general"].get("reusable_filetypes", [])
 
-    update_files = config["general"].get("command_line_config", {}).get("update_files")
+    update_filetypes = (
+        config["general"].get("command_line_config", {}).get("update_filetypes", [])
+    )
     # NOTE(MAM, PG): Originally defined in prepare.py
     # https://tinyurl.com/2p8awzsu
-    potentially_reusable_files = config["general"]["potentially_reusable_files"]
+    potentially_reusable_filetypes = config["general"]["potentially_reusable_filetypes"]
 
-    # If there are file types to update specified by the user, do so
-    if update_files:
-        # Loop through the file types specified by the user with the ``--update-files``
-        # flag
-        for ufile in update_files:
-            # Check if that file type exists/makes sense. Otherwise, through an error
-            if ufile not in potentially_reusable_files:
-                esm_parser.user_error(
-                    "update-files",
-                    f"``{ufile}`` specified by you in ``--update-files`` is not a "
-                    + "ESM-Tools file type. Please, select one (or more) of the "
-                    + "following file types:\n\t- "
-                    + "\n\t- ".join(potentially_reusable_files),
-                )
-            # Actually remove the file types specified by the user from
-            # ``reusable_filetypes``
-            if ufile in reusable_filetypes:
-                # Remove duplicates just in case
-                reusable_filetypes = list(set(reusable_filetypes))
-                # Do the removal
-                reusable_filetypes.remove(ufile)
-            elif config["general"]["verbose"]:
-                print(
-                    f"- The file type ``{ufile}`` you are trying to update was not "
-                    "reusable accross runs in the first place, so it's been always "
-                    "updated with the external source, and it will still be."
-                )
+    # Loop through the file types specified by the user with the ``--update-files``
+    # flag
+    for update_filetype in update_filetypes:
+        # Check if that file type exists/makes sense. Otherwise, through an error
+        if update_filetype not in potentially_reusable_filetypes:
+            esm_parser.user_error(
+                "update-files",
+                f"``{update_filetype}`` specified by you in ``--update-files`` is not a "
+                + "ESM-Tools file type. Please, select one (or more) of the "
+                + "following file types:\n\t- "
+                + "\n\t- ".join(potentially_reusable_filetypes),
+            )
+        # Actually remove the file types specified by the user from
+        # ``reusable_filetypes``
+        if update_filetype in reusable_filetypes:
+            # Remove duplicates just in case
+            reusable_filetypes = list(set(reusable_filetypes))
+            # Do the removal
+            reusable_filetypes.remove(update_filetype)
+        elif config["general"]["verbose"]:
+            print(
+                f"- The file type ``{update_filetype}`` you are trying to update was not "
+                "reusable accross runs in the first place, so it's been always "
+                "updated with the external source, and it will still be."
+            )
 
     if return_config:
         return config

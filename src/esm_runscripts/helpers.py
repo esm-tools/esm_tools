@@ -1,10 +1,9 @@
 import sys
 from datetime import datetime
 
-import esm_rcfile
-
 import esm_parser
 import esm_plugin_manager
+import esm_rcfile
 import esm_tools
 
 
@@ -185,11 +184,12 @@ def update_reusable_files(config, reusable_filetypes=None):
         for ufile in update_files:
             # Check if that file type exists/makes sense. Otherwise, through an error
             if ufile not in potentially_reusable_files:
-                esm_parser.user_error("update-files",
+                esm_parser.user_error(
+                    "update-files",
                     f"``{ufile}`` specified by you in ``--update-files`` is not a "
                     + "ESM-Tools file type. Please, select one (or more) of the "
                     + "following file types:\n\t- "
-                    + "\n\t- ".join(potentially_reusable_files)
+                    + "\n\t- ".join(potentially_reusable_files),
                 )
             # Actually remove the file types specified by the user from
             # ``reusable_filetypes``

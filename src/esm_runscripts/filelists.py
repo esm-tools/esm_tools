@@ -1,17 +1,16 @@
-import datetime
-import os
-import sys
-import shutil
-import filecmp
 import copy
-import time
-import six
+import datetime
+import filecmp
 import glob
+import os
+import shutil
+import sys
+import time
 
 import esm_parser
-
-import f90nml
 import esm_tools
+import f90nml
+import six
 import yaml
 
 from . import helpers
@@ -199,7 +198,7 @@ def reuse_sources(config):
                 "reusable_filetypes", config["general"]["reusable_filetypes"]
             )
             # Apply changes from ``--update-files`` flag
-            model_reusable_filetypes = helpers.update_reusable_files(
+            model_reusable_filetypes = helpers.update_reusable_filetypes(
                 config, reusable_filetypes=model_reusable_filetypes
             )
             # If <filetype>_sources dictionary exists and filetype is in the

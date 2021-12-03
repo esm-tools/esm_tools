@@ -151,7 +151,7 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
 
     This method takes care of removing the reusable file types from
     ``reusable_filetypes``, specified by the user in the ``esm_runscripts``
-    call with the ``--update-files`` flag.
+    call with the ``--update-filetypes`` flag.
 
     Parameters
     ----------
@@ -179,18 +179,22 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     update_filetypes = (
         config["general"].get("command_line_config", {}).get("update_filetypes", [])
     )
+    if config["general"].get("verbose", False) and update_filetypes:
+        print("User requests that the following filetypes be updated:")
+        [print(f"* {filetype}") for filetype in update_filetypes]
+
     # NOTE(MAM, PG): Originally defined in prepare.py
     # https://tinyurl.com/2p8awzsu
     potentially_reusable_filetypes = config["general"]["potentially_reusable_filetypes"]
 
-    # Loop through the file types specified by the user with the ``--update-files``
+    # Loop through the file types specified by the user with the ``--update-filetypes``
     # flag
     for update_filetype in update_filetypes:
         # Check if that file type exists/makes sense. Otherwise, through an error
         if update_filetype not in potentially_reusable_filetypes:
             esm_parser.user_error(
-                "update-files",
-                f"``{update_filetype}`` specified by you in ``--update-files`` is not a "
+                "update-filetypes",
+                f"``{update_filetype}`` specified by you in ``--update-filetypes`` is not a "
                 + "ESM-Tools file type. Please, select one (or more) of the "
                 + "following file types:\n\t- "
                 + "\n\t- ".join(potentially_reusable_filetypes),
@@ -201,13 +205,21 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             # Remove duplicates just in case
             reusable_filetypes = list(set(reusable_filetypes))
             # Do the removal
+            if config["general"].get("verbose", False):
+                print(f"Removing f{update_filetype}")
             reusable_filetypes.remove(update_filetype)
-        elif config["general"]["verbose"]:
+        elif config["general"].get("verbose", False):
             print(
                 f"- The file type ``{update_filetype}`` you are trying to update was not "
                 "reusable accross runs in the first place, so it's been always "
                 "updated with the external source, and it will still be."
             )
+
+    if config["general"].get("verbose", False):
+        print("The following filetypes will be re-used from already copied sources:")
+        for reusable_filetype in reusable_filetypes:
+            print(f"* {reusable_filetype}")
+    config["general"]["reusable_filetypes"] = reusable_filetypes
 
     if return_config:
         return config

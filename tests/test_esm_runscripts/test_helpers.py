@@ -7,10 +7,11 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
     def setUp(self) -> None:
         self.config = {
             "general": {
+                "verbose": True,
                 "command_line_config": {
                     "update_files": [],
                 },
-                "potentially_reusable_filetypes": [],
+                "potentially_reusable_filetypes": ["bin", "log", "src", "forcing"],
                 "reusable_filetypes": ["bin", "log", "src"],
             },
         }
@@ -20,10 +21,10 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
         """ "
         Mimic a call such as::
 
-            $ esm_runscripts run.yaml -e exp1 --update-files bin
+            $ esm_runscripts run.yaml -e exp1 --update-filetypes bin
         """
         # NOTE(PG): It would be nice to find a way to call the actual cli code here...
-        self.config["general"]["command_line_config"]["update_files"] = ["bin"]
+        self.config["general"]["command_line_config"]["update_filetypes"] = ["bin"]
         out_config = esm_runscripts.helpers.update_reusable_filetypes(self.config)
         self.assertNotIn("bin", out_config["general"]["reusable_filetypes"])
 
@@ -31,7 +32,7 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
         """
         Mimic a call such as::
 
-            $ esm_runscripts run.yaml -e exp1 --update-files extra
+            $ esm_runscripts run.yaml -e exp1 --update-filetypes extra
 
         Where the run.yaml has a model ``foo_model`` with the following
         ``reusable_fletypes``::
@@ -39,7 +40,9 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
             foo_model:
                reusable_filetypes: ["input", "forcing", "extra"]
         """
-        self.config["general"]["command_line_config"]["update_files"] = ["extra"]
+        self.config["general"]["command_line_config"]["update_filestypes"] = ["extra"]
+        self.config["foo_model"] = {}
+        self.config["foo_model"]["reusable_filetypes"] = ["input", "forcing", "extra"]
         out_config = esm_runscripts.helpers.update_reusable_filetypes(self.config)
         self.assertNotIn("extra", out_config["general"]["reusable_filetypes"])
         self.assertNotIn("extra", out_config["foo_model"]["reusable_filetypes"])

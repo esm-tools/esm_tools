@@ -12,10 +12,11 @@ import logging
 import os
 import sys
 
-from .sim_objects import *
-from .helpers import SmartSink
-from loguru import logger
 from esm_motd import check_all_esm_packages
+from loguru import logger
+
+from .helpers import SmartSink
+from .sim_objects import *
 
 
 def parse_shargs():
@@ -137,12 +138,11 @@ def parse_shargs():
     )
 
     parser.add_argument(
-        "--update-files",
-        help=
-            "Updates the requested files from external sources in a currently ongoing "
-            "simulation. We strongly advise against using this option unless you "
-            "really know what you are doing.",
-        nargs='+',
+        "--update-filetypes",
+        help="Updates the requested files from external sources in a currently ongoing "
+        "simulation. We strongly advise against using this option unless you "
+        "really know what you are doing.",
+        nargs="+",
     )
 
     parser.add_argument(
@@ -189,8 +189,8 @@ def main():
         run_number = parsed_args["run_number"]
     if "update" in parsed_args:
         update = parsed_args["update"]
-    if "update_files" in parsed_args:
-        update_files = parsed_args["update_files"]
+    if "update_filetypes" in parsed_args:
+        update_filetypes = parsed_args["update_filetypes"]
     if "expid" in parsed_args:
         expid = parsed_args["expid"]
     if "task" in parsed_args:
@@ -216,7 +216,7 @@ def main():
     command_line_config["check"] = check
     command_line_config["profile"] = profile
     command_line_config["update"] = update
-    command_line_config["update_files"] = update_files
+    command_line_config["update_filetypes"] = update_filetypes
     command_line_config["expid"] = expid
     command_line_config["launcher_pid"] = pid
     command_line_config["current_date"] = start_date

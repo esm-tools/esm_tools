@@ -109,20 +109,6 @@ with open("API.rst", "w") as rst:
          ]
      )
 
-# Ensure that importing works correctly when running apidoc
-subprocess.check_call(
-    [
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "--no-warn-script-location",
-        # "--user",
-        "-e",
-        "../",
-     ]
- )
-
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

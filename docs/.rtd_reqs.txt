@@ -1,6 +1,7 @@
 click
 colorama
 coloredlogs
+emoji
 numpy
 loguru
 pandas
@@ -10,3 +11,4 @@ sphinxcontrib-napoleon
 sphinx-copybutton
 sphinx-tabs
 sqlalchemy
+xdgenvpy

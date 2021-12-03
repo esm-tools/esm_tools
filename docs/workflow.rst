@@ -47,6 +47,7 @@ Subjob                                                 Function
   tidy                                                 Sorts the produced outputs, restarts and log files into 
                                                        the correct folders, checks for missing and unknown files,
                                                        builds coupler restart files if not present
+====================================================== ==========================================================
 
 It is important to understand that none of this has to be edited by the users, this is the default setup. 
 
@@ -91,6 +92,7 @@ Keyword                                                Function
   call_function:
   env_preparation:
   next_run_triggered_by:
+====================================================== ==========================================================
 
 
 

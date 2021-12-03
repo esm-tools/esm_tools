@@ -35,12 +35,12 @@ input_sources:
         rmp_hd: "${input_dir}/rmp_${echam.resolution}_to_hd.nc"
         hdstart: "${input_dir}/hdstart.nc"
 
-
 restart_in_in_work:
         hdrestart: hdrestart.nc
 
 restart_in_sources:
-        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
+        #hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
+        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
 
 restart_in_files:
         hdrestart: hdrestart
@@ -49,17 +49,16 @@ restart_out_in_work:
         hdrestart: hdrestart.nc
 
 restart_out_sources:
-        hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
+        #hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
+        hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart.nc
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist
-
 
 choose_hdpara_file:
         "*":
                 add_input_sources:
                         hdpara: ${hdpara_file}
-
 
 further_reading:
         - hdmodel/hdmodel.inherit.yaml

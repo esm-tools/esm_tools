@@ -99,6 +99,8 @@ forcing_sources:
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "ssp585ozone": 
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        to: 2014
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp585_@YEAR@.nc":
                         from: 2015
                         to: 2099

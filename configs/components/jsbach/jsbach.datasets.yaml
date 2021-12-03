@@ -25,15 +25,23 @@ forcing_sources:
                 # HIST scenario will use this data beyond year 2014
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 2015
+        "LU_ssp585":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp585_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
         # landuse transitions
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
-        "LU_trans_time":
+        "LU_trans_hist":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
             # For the transient land data use a similar fix like in HIST land use
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 from: 2015
         "LU_trans_ssp585":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp585${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 from: 2015
                 to: 2299
@@ -84,16 +92,26 @@ choose_dataset:
                                         from: 1851
         r0010:
                 add_forcing_sources:
-                        "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc"
+                        "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
+                        "Ndepo_ssp585":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_@YEAR@.nc": # 12 months
+                                        from: 1850
+                                        to: 2099
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
-                        "popdens":   "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc"
+                        "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
+                        "popdens_ssp5":
+                                #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp5_${echam.resolution}.nc": # nyear
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp5_T63.nc": # correct varname
+                                        from: 1850
+                                        to: 2100
                         "cover_fract_HIST":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 1850
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 1851
-                        "cover_fract_SSP585":
+                        "cover_fract_ssp585":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/land_use_maps/ssp585/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":

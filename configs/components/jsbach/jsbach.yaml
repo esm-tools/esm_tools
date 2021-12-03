@@ -147,8 +147,7 @@ choose_version:
                                         jsbach: jsbach_1850
                                 forcing_files:
                                         LU: LU_HIST
-                                        # LU_trans: LU_trans_none
-                                        LU_trans: LU_trans_time
+                                        LU_trans: LU_trans_hist
                                         cover_fract: cover_fract_HIST
                                         Ndepo: Ndepo_1850
                                         a_nd_file: a_nd_file
@@ -158,14 +157,13 @@ choose_version:
                                 add_input_files:
                                         jsbach: jsbach_1850
                                 forcing_files:
-                                        #LU: LU_HIST ?
-                                        # LU_trans: LU_trans_none
+                                        LU: LU_ssp585
                                         LU_trans: LU_trans_ssp585
-                                        cover_fract: cover_fract_SSP585
-                                        #Ndepo: Ndepo_1850 ? 
-                                        #a_nd_file: a_nd_file ?
-                                        #lightning: lightning ?
-                                        #popdens: popdens ?
+                                        cover_fract: cover_fract_ssp585
+                                        Ndepo: Ndepo_ssp585
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens_ssp5
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -267,7 +265,6 @@ choose_version:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
 
-
 input_files:
         "lctlib": "lctlib"
 
@@ -290,7 +287,6 @@ forcing_in_work:
 
 forcing_modifications:
         Ndepo:  "<--setyear-- @YEAR@"
-
 
 forcing_additional_information:
         "LU":
@@ -331,7 +327,6 @@ ignore_in_work:
         "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
 
-
 outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
@@ -356,7 +351,6 @@ restart_in_sources:
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
-
 
 restart_out_files:
         "[[streams-->STREAM]]": STREAM

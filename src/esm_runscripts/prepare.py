@@ -494,7 +494,7 @@ def _add_all_folders(config):
         "reusable_filetypes", ["bin", "src"]
     )
     # Define the files that could be reusable accross runs (external files)
-    config["general"]["potentially_reusable_files"] = (
+    config["general"]["potentially_reusable_filetypes"] = (
         all_filetypes + config["general"]["in_filetypes"]
     )
     # Apply changes from ``--update-files`` flag

@@ -1,5 +1,12 @@
+click
+colorama
+coloredlogs
+numpy
+loguru
+pandas
+pyyaml
+questionary
 sphinxcontrib-napoleon
 sphinx-copybutton
 sphinx-tabs
-pyyaml
-loguru
+sqlalchemy

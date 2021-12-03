@@ -64,7 +64,7 @@ for config in configs:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:
             rst.write("%s\n" % name)
-            rst.write("-"*len(config) + "\n")
+            rst.write("-"*len(name) + "\n")
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
             rst.write("   :delim: ;\n")

@@ -88,10 +88,10 @@ class Calendar(object):
     isleapyear(year)
         Returns a boolean testing if the given year is a leapyear
 
-    day_in_year(year):
+    day_in_year(year)
         Returns the total number of days in a given year
 
-    day_in_month(year, month):
+    day_in_month(year, month)
         Returns the total number of days in a given month for a given year
         (considering leapyears)
     """

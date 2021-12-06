@@ -47,6 +47,7 @@ Subjob                                                 Function
   tidy                                                 Sorts the produced outputs, restarts and log files into 
                                                        the correct folders, checks for missing and unknown files,
                                                        builds coupler restart files if not present
+====================================================== ==========================================================
 
 It is important to understand that none of this has to be edited by the users, this is the default setup. 
 
@@ -91,6 +92,7 @@ Keyword                                                Function
   call_function:
   env_preparation:
   next_run_triggered_by:
+====================================================== ==========================================================
 
 
 
@@ -135,38 +137,3 @@ that each coupling step consists of two data processing jobs, one pre- and one p
 as to make the coupling modular, and enable the modeller to easily replace one of the coupled components by a different
 implementation. This is of course up to the user to decide, but we generally advise to do so, and the iterative couplings
 distributed with ESM-Tools are organized this way.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-..
-.. graphviz:: graph/exp_dir_struct.dot
-    :name: exp_dir_structure
-    :caption: Experiment directory structure
-    :alt: Experiment directory structure
-    :align: center
-
-
-
-..
-.. Note::
-   Having a `general` and several `run` subfolders means that files are duplicated and, when
-   models consist of several runs, the `general` directory can end up looking very untidy.
-   `Run` folders were created with the idea that they will be deleted once all files
-   have been transferred to their respective folders in the `general` experiment directory.
-   The default is not to delete this folders as they can be useful for debugging or
-   restarting a crashed simulation, but the user can choose to delete them
-   (see :ref:`esm_runscripts:Cleanup of \`\`run_\`\` directories`).
-
-..
-.. automethod:: esm_runscripts.tidy.clean_run_dir

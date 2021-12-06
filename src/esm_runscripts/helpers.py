@@ -163,11 +163,11 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     Returns
     -------
     dict or list
-        If the user gives no ``reusable_filetypes`` as input. A dict 
-        ``config`` is returned, which contains the changes requested 
+        If the user gives no ``reusable_filetypes`` as input. A dict
+        ``config`` is returned, which contains the changes requested
         by the user with the ``--update-flag``.
-        
-        If the user gives ``reusable_filetypes`` as input, a list is 
+
+        If the user gives ``reusable_filetypes`` as input, a list is
         returned. This list ``reusable_filetypes`` contains the changes
         requested by the user with the ``--update-flag``.
     """

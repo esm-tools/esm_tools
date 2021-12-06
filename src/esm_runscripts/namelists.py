@@ -173,7 +173,9 @@ class Namelist:
                 namvar, prop = key.split("%")
                 del mconfig["namelists"][namelist][change_chapter][namvar][prop]
             else:
-                logging.debug("Unable to remove %s: %s, %s", namelist, change_chapter, key)
+                logging.debug(
+                    "Unable to remove %s: %s, %s", namelist, change_chapter, key
+                )
         return mconfig
 
     @staticmethod

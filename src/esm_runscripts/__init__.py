@@ -4,7 +4,6 @@ __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
 __version__ = "5.1.32"
 
-from .cli import *
 from .sim_objects import *
 from .batch_system import *
 from .database import *
@@ -21,3 +20,22 @@ from .tidy import *
 from .namelists import *
 from .virtual_env_builder import *
 from .prepexp import *
+
+__all__ = (
+    "sim_objects",
+    "batch_system",
+    "database",
+    "database_actions",
+    "prepcompute",
+    "tidy",
+    "prepare",
+    "last_minute",
+    "dataprocess",
+    "filelists",
+    "chunky_parts",
+    "workflow",
+    "tidy",
+    "namelists",
+    "virtual_env_builder",
+    "prepexp",
+)

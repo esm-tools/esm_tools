@@ -9,7 +9,7 @@ general:
         #submit_to_batch_system: False
 
 vilma:
-        model_dir: /home/ollie/mandresm/model_codes/vilma-1d/
+        model_dir: !ENV ${MODEL_DIR}
         pool_dir: ${model_dir}
         lresume: False
         scenario: small

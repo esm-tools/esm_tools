@@ -3,6 +3,9 @@ general:
         base_dir: !ENV ${ESM_TESTING_DIR}
         use_venv: False
 
+vilma-pism:
+        version: "1.0v1d"
+
 model1:
         setup_name: pism
         runscript: subscripts/pism-ollie-initial-yearly.yaml

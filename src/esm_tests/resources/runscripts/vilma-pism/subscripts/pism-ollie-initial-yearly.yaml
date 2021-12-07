@@ -12,7 +12,7 @@ general:
 pism:
         version: "github1.2.1"
         resolution: "5km"
-        model_dir: /home/ollie/mandresm/model_codes/pism-github1.2.1/
+        model_dir: !ENV ${MODEL_DIR}
         lresume: 0
         pool_dir: /work/ollie/pgierz/pool_pism/
         ts_interval: "monthly"

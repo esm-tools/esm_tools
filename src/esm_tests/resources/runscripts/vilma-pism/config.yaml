@@ -1,0 +1,20 @@
+comp:
+        actual:
+                files:
+                    - "bin/pismr"
+                    - "bin/vega_vip.x"
+        check: {}
+run:
+        actual:
+                errors:
+                    - "MISSING FILES"
+                    - "Traceback"
+                files:
+                    - "outdata/fesom/*_fesom_*.nc"
+                    - "restart/fesom/fesom.*.oce.nc*"
+                    - "restart/fesom/fesom.*.ice.nc*"
+                    - "outdata/recom/aCO2_fesom_*.nc"
+                    - "restart/recom/fesom.*.bio.nc"
+        check: {}
+computers:
+        - ollie

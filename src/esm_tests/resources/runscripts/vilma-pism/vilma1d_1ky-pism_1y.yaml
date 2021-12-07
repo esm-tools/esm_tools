@@ -8,13 +8,13 @@ vilma-pism:
 
 model1:
         setup_name: pism
-        runscript: subscripts/pism-ollie-initial-yearly.yaml
+        runscript: pism-ollie-initial-yearly.yaml
         chunk_size: 1
         chunk_unit: "years"
 
 model2:
         setup_name: vilma
-        runscript: subscripts/vilma_test_run.yaml
+        runscript: vilma_test_run.yaml
         chunk_size: 1000
         chunk_unit: "years"
 

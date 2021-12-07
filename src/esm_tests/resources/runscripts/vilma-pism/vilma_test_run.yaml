@@ -9,7 +9,8 @@ general:
         #submit_to_batch_system: False
 
 vilma:
-        model_dir: !ENV ${MODEL_DIR}
+        comp_dir: !ENV ${MODEL_DIR}
+        model_dir: ${comp_dir}/${model}-${version}/
         pool_dir: ${model_dir}
         lresume: False
         scenario: small

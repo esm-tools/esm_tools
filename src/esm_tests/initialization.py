@@ -158,6 +158,9 @@ def get_scripts(info):
                 # If this runscript is not to be evaluated in this computer, move on
                 if info["this_computer"] not in computers:
                     continue
+            # Load files to ignore
+            ignore_scripts = config_test.get("ignore_scripts", [])
+            ignore_scripts.append("config.yaml")
 
             scripts_info[model] = {}
             # Loop through the testing runscripts of this model
@@ -169,7 +172,7 @@ def get_scripts(info):
                     or script in test_info.get(model, [])
                 ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
                     # Check that it is actually a runscript
-                    if script != "config.yaml" and ".swp" not in script:
+                    if not any(script in s for s in ignore_scripts) and ".swp" not in script:
                         # Store information about the runscript
                         scripts_info[model][script.replace(".yaml", "")] = {}
                         scripts_info[model][script.replace(".yaml", "")][

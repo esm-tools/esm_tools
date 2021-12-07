@@ -354,7 +354,7 @@ class batch_system:
         return doneline
 
     @staticmethod
-    def get_run_commands(config, subjob):  # here or in compute.py?
+    def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
 
         commands = []
         if subjob.startswith("compute"):
@@ -375,7 +375,7 @@ class batch_system:
                             "time ./" + config[model]["execution_command"] + " 2>&1 &"
                         )
         else:
-            subjob_tasks = dataprocess.subjob_tasks(config, subjob)
+            subjob_tasks = dataprocess.subjob_tasks(config, subjob, batch_or_shell)
             for task in subjob_tasks:
                 commands.append(task)
 
@@ -470,7 +470,7 @@ class batch_system:
                         runfile.write(line + "\n")
 
                     # Add actual commands
-                    commands = batch_system.get_run_commands(config, subjob)
+                    commands = batch_system.get_run_commands(config, subjob, batch_or_shell)
                     # commands = clusterconf.get("data_task_list", [])
                     runfile.write("\n")
                     runfile.write(self.append_start_statement(config, subjob) + "\n")

@@ -1,7 +1,9 @@
 #########################################################################################
 ########################## VILMA-PISM YAML CONFIGURATION FILE ###########################
 #########################################################################################
-# This file is put together for compilation purposes only
+# This file is put together for compilation purposes only. In order to run VILMA-PISM
+# please edit the paths of the 3 involved runscripts (the general one, the pism-specific
+# one and the vilma-specific one) in runscripts/vilma-pism.
 
 general:
         model: vilma-pism

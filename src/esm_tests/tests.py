@@ -30,6 +30,7 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
     in each ``resources/runscripts/<model>`` folder.
 """
 
+
 class Comparison:
     """Compares two ESM Tools files"""
 
@@ -323,11 +324,21 @@ def run_test(info):
                 os.chdir(os.path.dirname(runscript_path))
 
                 # Define the check flag if necessary
+                additional_actions = ""
                 if actually_run:
                     check_flag = ""
                 else:
                     check_flag = "-c"
-
+                    # In case of iterative coupling, submit the subscripts too
+                    if v["iterative_coupling"]:
+                        for imodel, mdata in v["iterative_models"].items():
+                            additional_actions = (
+                                f"{additional_actions}; "
+                                f"echo {'='*10}; echo {imodel}; echo {'='*10}; "
+                                f"esm_runscripts "
+                                f"{os.path.dirname(v['path'])}/{mdata['script']} "
+                                f"-e {script} --open-run {check_flag}"
+                            )
                 # Export test variables and run the simulation
                 env_vars = [
                     f"ACCOUNT='{user_info['account']}'",
@@ -335,7 +346,8 @@ def run_test(info):
                     f"MODEL_DIR='{model_dir}'",
                 ]
                 run_command = (
-                    f"esm_runscripts {v['path']} -e {script} --open-run {check_flag}"
+                    f"esm_runscripts {v['path']} -e {script} --open-run "
+                    f"{check_flag}{additional_actions}"
                 )
                 out = sh(run_command, env_vars)
 
@@ -381,7 +393,7 @@ def run_test(info):
                         # ``run_finished`` as ``True`` and run a check for files that
                         # should have been created
                         if "Reached the end of the simulation, quitting" in observe_out:
-                            if nmodels_success==v["nmodels_iterative_coupling"]:
+                            if nmodels_success == v["nmodels_iterative_coupling"]:
                                 logger.info(
                                     f"\tRUN FINISHED ({progress}%) {model}/{script}"
                                 )
@@ -422,7 +434,7 @@ def run_test(info):
                                 script,
                                 v,
                             )
-            #if not info["keep_run_folders"]:
+            # if not info["keep_run_folders"]:
             #    folders_to_remove = [
             #        "run_",
             #        "restart",
@@ -941,5 +953,3 @@ def sort_dict(dict_to_sort):
             dict_to_sort[key] = sort_dict(value)
 
     return dict_to_sort
-
-

@@ -123,3 +123,9 @@ oifsamip:
       ollie:
         compilation: true
         run: false
+vilma-pism:
+  1.0v1d:
+    vilma1d_1ky-pism_1y:
+      ollie:
+        compilation: true
+        run: true

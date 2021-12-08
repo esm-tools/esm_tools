@@ -222,9 +222,13 @@ def read_info_from_rs(info):
             v["iterative_coupling"] = runscript["general"].get("iterative_coupling", False)
             if v["iterative_coupling"]:
                 v["nmodels_iterative_coupling"] = 0
+                v["iterative_models"] = {}
                 for model in runscript:
                     if "model" in model:
                         v["nmodels_iterative_coupling"] += 1
+                        # Store the name of the subscripts so that they can be run in
+                        # checks
+                        v["iterative_models"][model] = {"script": runscript[model]["runscript"]}
             else:
                 v["nmodels_iterative_coupling"] = 1
 

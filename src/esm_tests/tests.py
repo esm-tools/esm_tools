@@ -370,6 +370,7 @@ def run_test(info):
             progress = round(subc / total_sub * 100, 1)
             exp_dir = f"{user_info['test_dir']}/run/{model}/{script}/"
             exp_dir_log = f"{exp_dir}/log/"
+            nmodels_success = 1
             # Search through the ``_compute_`` files for a string that indicates that
             # the run has finished
             for f in os.listdir(exp_dir_log):
@@ -380,23 +381,26 @@ def run_test(info):
                         # ``run_finished`` as ``True`` and run a check for files that
                         # should have been created
                         if "Reached the end of the simulation, quitting" in observe_out:
-                            logger.info(
-                                f"\tRUN FINISHED ({progress}%) {model}/{script}"
-                            )
-                            logger.info(f"\t\tSuccess!")
-                            finished_runs.append(cc)
-                            subc += 1
-                            v["state"]["run_finished"] = True
-                            # Run a check for run finished
-                            success = check(
-                                info,
-                                "run",
-                                model,
-                                version,
-                                "",
-                                script,
-                                v,
-                            )
+                            if nmodels_success==v["nmodels_iterative_coupling"]:
+                                logger.info(
+                                    f"\tRUN FINISHED ({progress}%) {model}/{script}"
+                                )
+                                logger.info(f"\t\tSuccess!")
+                                finished_runs.append(cc)
+                                subc += 1
+                                v["state"]["run_finished"] = True
+                                # Run a check for run finished
+                                success = check(
+                                    info,
+                                    "run",
+                                    model,
+                                    version,
+                                    "",
+                                    script,
+                                    v,
+                                )
+                            else:
+                                nmodels_success += 1
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway

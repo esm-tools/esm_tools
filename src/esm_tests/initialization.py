@@ -218,6 +218,15 @@ def read_info_from_rs(info):
                 "comp_version", runscript[model]["version"]
             )
             v["comp_command"] = runscript["general"].get("comp_command", None)
+            # Data for iterative coupling
+            v["iterative_coupling"] = runscript["general"].get("iterative_coupling", False)
+            if v["iterative_coupling"]:
+                v["nmodels_iterative_coupling"] = 0
+                for model in runscript:
+                    if "model" in model:
+                        v["nmodels_iterative_coupling"] += 1
+            else:
+                v["nmodels_iterative_coupling"] = 1
 
     info["scripts"] = scripts_info
 

@@ -13,7 +13,7 @@ general:
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/${user}/model_codes/${general.setup_name}-${general.version}//
+    model_dir: "/home/${user}/model_codes/${general.setup_name}-${general.version}/"
 
 fesom:
     resolution: "CORE2"

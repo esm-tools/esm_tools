@@ -70,7 +70,15 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2014.nc":
                         from: 2015
         # greenhouse
-        "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        "histgreenh": 
+                "${greenhouse_dir}/greenhouse_historical.nc":
+                        from: 1
+                        to: 2013
+                "${pool_dir}/input/r0008/greenhouse_ssp370.nc": # echam needs +-1 year ghg values 
+                        # 2014: hist = ssp126 = ssp245 = ssp370 = ssp585 = 397.547, obs=397.34
+                        # 2015: ssp126=399.9492, ssp245=399.9491, ssp370=399.9484, ssp585=399.9488, obs=399.65
+                        from: 2014
+                        to: 2014
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
         # radiation
         "histswflux":

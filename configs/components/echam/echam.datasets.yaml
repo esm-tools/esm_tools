@@ -10,6 +10,7 @@ input_sources:
         "vgratclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VGRATCLIM.nc"
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
         "MAC-SP": "${input_dir}/MAC-SP.nc"
+        "MAC-SP_ssp126": "${input_dir}/MAC-SP_ssp126.nc"
         "MAC-SP_ssp585": "${input_dir}/MAC-SP_ssp585.nc"
 
 # forcings
@@ -50,9 +51,6 @@ forcing_sources:
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
                         from: 1865
                         to: 2000
-        #"ssp585aerocoarse": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc" # same as pi
-        #"ssp585aerofarir": "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc"
-        #"ssp585aerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
 
         # volcanic
         "histvolcanir":
@@ -75,6 +73,7 @@ forcing_sources:
         # greenhouse
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
+        "ssp126greenh": "${greenhouse_dir}/greenhouse_ssp126.nc"
         "ssp585greenh": "${greenhouse_dir}/greenhouse_ssp585.nc"
         
         # radiation
@@ -98,6 +97,12 @@ forcing_sources:
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "ssp126ozone": 
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp126_@YEAR@.nc":
+                        from: 2015
+                        to: 2099
         "ssp585ozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014

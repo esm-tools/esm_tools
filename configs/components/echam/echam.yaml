@@ -322,6 +322,17 @@ choose_scenario:
                         swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP
+        SSP126:
+                greenhouse_dir: "${input_dir}"
+                forcing_files:
+                        aerocoarse_kinne_1850: piaerocoarse
+                        aerofarir_kinne_1850: piaerofarir
+                        aerofin_kinne_1850: piaerofin
+                        ozone: ssp126ozone
+                        greenhouse: ssp126greenh
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP_ssp126
         SSP585:
                 greenhouse_dir: "${input_dir}"
                 forcing_files:

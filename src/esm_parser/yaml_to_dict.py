@@ -496,8 +496,8 @@ def check_duplicates(src):
     src : object
         Source file object
 
-    Exceptions
-    ----------
+    Raises
+    ------
     ConstructorError
         If duplicated keys are found, returns an error
     """

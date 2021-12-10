@@ -1,6 +1,16 @@
+click
+colorama
+coloredlogs
+emoji
+numpy
+loguru
+pandas
+pyyaml
+questionary
 sphinxcontrib-napoleon
 sphinx-copybutton
 sphinx-tabs
+sqlalchemy
 pyyaml
-loguru
+xdgenvpy
 .

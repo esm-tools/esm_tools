@@ -594,6 +594,10 @@ def check(info, mode, model, version, out, script, v):
 
     # Compare scripts with previous, if existing
     this_compare_files = copy.deepcopy(compare_files[config_mode])
+    # TODO: The iterative coupling needs a rework. Therefore, no testing for files
+    # is develop. Include the tests after iterative coupling is reworked
+    if config_mode=="run" and v["iterative_coupling"]:
+        this_compare_files = []
     this_compare_files.extend(config_test.get(test_type, {}).get("compare", []))
     this_test_dir = f"{config_mode}/{model}/{subfolder}/"
     v["state"][f"{mode}_files_identical"] = True
@@ -603,7 +607,7 @@ def check(info, mode, model, version, out, script, v):
         ignore_lines = info["ignore"].get(cfile, [])
         # Get relative paths of the files to be compared
         subpaths_source, subpaths_target = get_rel_paths_compare_files(
-            info, cfile, this_test_dir
+            info, cfile, v, this_test_dir
         )
         for sp, sp_t in zip(subpaths_source, subpaths_target):
             # Check if the source exists (this simulation file)
@@ -652,15 +656,23 @@ def exist_files(files, path):
     return files_checked
 
 
-def get_rel_paths_compare_files(info, cfile, this_test_dir):
+def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
+    # Load relevant variables from ``info``
     user_info = info["user"]
+    # Initialize ``subpaths`` list
     subpaths = []
+    # If the file type is ``comp-``, append all the files that match that string to
+    # ``subpaths``
     if cfile == "comp-":
         for f in os.listdir(f"{user_info['test_dir']}/{this_test_dir}"):
             if cfile in f:
                 subpaths.append(f"{this_test_dir}/{f}")
         if len(subpaths) == 0:
             logger.error("\t\tNo 'comp-*.sh' file found!")
+    # If the file type matches ``.run`` or ``finished_config``, append all the files
+    # that match that string to ``subpaths``. These files are taken always from the
+    # first ``run_`` folder so that a check test and an actual test files are
+    # comparable
     elif cfile in [".run", "finished_config"]:
         files_to_folders = {".run": "scripts", "finished_config": "config"}
         ctype = files_to_folders[cfile]
@@ -687,7 +699,7 @@ def get_rel_paths_compare_files(info, cfile, this_test_dir):
     elif cfile == "namelists":
         # Get path of the finished_config
         s_config_yaml, _ = get_rel_paths_compare_files(
-            info, "finished_config", this_test_dir
+            info, "finished_config", v, this_test_dir
         )
         namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
         ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
@@ -784,12 +796,18 @@ def print_diff(sscript, tscript, name, ignore_lines):
 
 
 def save_files(info, user_choice):
+    # Load relevant variables from ``info``
     scripts_info = info["scripts"]
     actually_run = info["actually_run"]
     user_info = info["user"]
     last_tested_dir = info["last_tested_dir"]
     runscripts_dir = get_runscripts_dir()
     this_computer = info["this_computer"]
+    # ``user_choice`` is set through the ``--save`` flag. If the flag is not used the
+    # main program reaches this point and asks the user about saving files in
+    # ``last_tested``. If the flag is used alone or the value is set to ``True``, then
+    # it does save without asking. If the flag is used and the value is set to ``False``
+    # then it doesn't save and it doesn't ask
     if not user_choice:
         not_answered = True
         while not_answered:
@@ -820,18 +838,25 @@ def save_files(info, user_choice):
     logger.info(f"Saving files to '{last_tested_dir}'...")
     # Loop through models
     for model, scripts in scripts_info.items():
+        # Ignore ``general``
         if model == "general":
             continue
+        # Load the model's ``config.yaml``
         model_config = f"{runscripts_dir}/{model}/config.yaml"
         if not os.path.isfile(model_config):
             logger.error(f"'{model_config}' not found!")
         with open(model_config, "r") as c:
             config_test = yaml.load(c, Loader=yaml.FullLoader)
+        # Get name patters from the files to be compared
         compare_files_comp = copy.deepcopy(compare_files["comp"])
         compare_files_comp.extend(
             config_test.get("comp", {}).get(test_type_c, {}).get("compare", [])
         )
         compare_files_run = copy.deepcopy(compare_files["run"])
+        # TODO: The iterative coupling needs a rework. Therefore, no testing for files
+        # is develop. Include the tests after iterative coupling is reworked
+        if next(iter(scripts.values()))["iterative_coupling"]:
+            compare_files_run = []
         compare_files_run.extend(
             config_test.get("run", {}).get(test_type_r, {}).get("compare", [])
         )
@@ -850,7 +875,7 @@ def save_files(info, user_choice):
                 # Loop through comparefiles
                 for cfile in this_compare_files:
                     subpaths_source, subpaths_target = get_rel_paths_compare_files(
-                        info, cfile, this_test_dir
+                        info, cfile, v, this_test_dir
                     )
                     for sp, sp_t in zip(subpaths_source, subpaths_target):
                         if os.path.isfile(f"{last_tested_dir}/{sp_t}"):

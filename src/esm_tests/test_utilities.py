@@ -29,6 +29,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     -------
     loader : yaml.loader
     """
+
     def constructor_env_variables(loader, node):
         return ""
 
@@ -141,6 +142,3 @@ def combine_folders(source_dir, target_dir):
         # Check if the source path is a file, it it is copy the file into the target
         if os.path.isfile(source_dir):
             shutil.copy2(source_dir, target_dir)
-
-
-

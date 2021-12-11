@@ -596,7 +596,7 @@ def check(info, mode, model, version, out, script, v):
     this_compare_files = copy.deepcopy(compare_files[config_mode])
     # TODO: The iterative coupling needs a rework. Therefore, no testing for files
     # is develop. Include the tests after iterative coupling is reworked
-    if config_mode=="run" and v["iterative_coupling"]:
+    if config_mode == "run" and v["iterative_coupling"]:
         this_compare_files = []
     this_compare_files.extend(config_test.get(test_type, {}).get("compare", []))
     this_test_dir = f"{config_mode}/{model}/{subfolder}/"

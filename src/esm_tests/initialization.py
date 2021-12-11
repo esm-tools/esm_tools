@@ -172,7 +172,10 @@ def get_scripts(info):
                     or script in test_info.get(model, [])
                 ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
                     # Check that it is actually a runscript
-                    if not any(script in s for s in ignore_scripts) and ".swp" not in script:
+                    if (
+                        not any(script in s for s in ignore_scripts)
+                        and ".swp" not in script
+                    ):
                         # Store information about the runscript
                         scripts_info[model][script.replace(".yaml", "")] = {}
                         scripts_info[model][script.replace(".yaml", "")][
@@ -219,7 +222,9 @@ def read_info_from_rs(info):
             )
             v["comp_command"] = runscript["general"].get("comp_command", None)
             # Data for iterative coupling
-            v["iterative_coupling"] = runscript["general"].get("iterative_coupling", False)
+            v["iterative_coupling"] = runscript["general"].get(
+                "iterative_coupling", False
+            )
             if v["iterative_coupling"]:
                 v["nmodels_iterative_coupling"] = 0
                 v["iterative_models"] = {}
@@ -228,7 +233,9 @@ def read_info_from_rs(info):
                         v["nmodels_iterative_coupling"] += 1
                         # Store the name of the subscripts so that they can be run in
                         # checks
-                        v["iterative_models"][model] = {"script": runscript[model]["runscript"]}
+                        v["iterative_models"][model] = {
+                            "script": runscript[model]["runscript"]
+                        }
             else:
                 v["nmodels_iterative_coupling"] = 1
 
@@ -270,4 +277,3 @@ def del_prev_tests(info):
                 shutil.rmtree(f"{user_info['test_dir']}/run/{model}/{script}")
                 if len(os.listdir(f"{user_info['test_dir']}/run/{model}")) == 0:
                     shutil.rmtree(f"{user_info['test_dir']}/run/{model}")
-

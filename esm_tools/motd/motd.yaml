@@ -78,3 +78,23 @@ release5.1_esm_tools:
                 "
         action: DELAY(1)
 
+release6.0_event:
+        package: "esm_tools"
+        versions: "<6.0.0"
+        message: "\x1b[1m\x1b[96mVERSION 6.0: RELEASE EVENT ON 17.10.2021 at 10:00\x1b[0m\n
+
+                We are very happy to announce to you that we will be releasing version 6 of\n
+                ESM-Tools next Friday (\x1b[96m17/10/2021\x1b[0m). We will also be hosting the release event on\n
+                the same day, at \x1b[96m10 AM\x1b[0m on \x1b[96mwebex\x1b[0m: \x1b[4m\x1b[94mhttps://awi.webex.com/meet/deniz.ural\x1b[0m\n
+
+                Join us for the release event to get to know more about the many new features and\n
+                improvements version 6.0 is coming with!\n
+
+                We hope to see you all there.\n
+
+                The ESM-Tools Team\n
+
+                \x1b[93mNOTE:\x1b[0m you might see right below a few lines with \x1b[93m'Upgrade this/all package by typing...'\x1b[0m.\n
+                Please, \x1b[93mignore this lines\x1b[0m, as release 6.0 won't be available until 17.10.2021."
+        action: DELAY(2)
+        announcement: true

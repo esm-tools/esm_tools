@@ -208,7 +208,7 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             reusable_filetypes = list(set(reusable_filetypes))
             # Do the removal
             if config["general"].get("verbose", False):
-                print(f"Removing f{update_filetype}")
+                print(f"Removing {update_filetype}")
             reusable_filetypes.remove(update_filetype)
         elif config["general"].get("verbose", False):
             print(

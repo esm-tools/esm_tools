@@ -9,7 +9,7 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
             "general": {
                 "verbose": True,
                 "command_line_config": {
-                    "update_files": [],
+                    "update_filetypes": [],
                 },
                 "potentially_reusable_filetypes": ["bin", "log", "src", "forcing"],
                 "reusable_filetypes": ["bin", "log", "src"],
@@ -40,12 +40,14 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
             foo_model:
                reusable_filetypes: ["input", "forcing", "extra"]
         """
-        self.config["general"]["command_line_config"]["update_filestypes"] = ["extra"]
+        self.config["general"]["command_line_config"]["update_filetypes"] = ["extra"]
+        self.config["general"]["potentially_reusable_filetypes"].append("extra")
         self.config["foo_model"] = {}
         self.config["foo_model"]["reusable_filetypes"] = ["input", "forcing", "extra"]
-        out_config = esm_runscripts.helpers.update_reusable_filetypes(self.config)
-        self.assertNotIn("extra", out_config["general"]["reusable_filetypes"])
-        self.assertNotIn("extra", out_config["foo_model"]["reusable_filetypes"])
+        out_config = esm_runscripts.helpers.update_reusable_filetypes(
+            self.config, self.config["foo_model"]["reusable_filetypes"]
+        )
+        self.assertNotIn("extra", out_config)
 
 
 if __name__ == "__main__":

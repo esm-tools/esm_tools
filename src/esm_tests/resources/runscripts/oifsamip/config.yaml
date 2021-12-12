@@ -20,6 +20,6 @@ run:
                     - "outdata/oifs/*/ICMSH*"
                     - "outdata/oifs/*/ICMUA*"
         check: {}
-computer:
+computers:
         - ollie
         - juwels

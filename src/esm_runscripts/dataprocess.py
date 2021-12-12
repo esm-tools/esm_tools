@@ -47,9 +47,20 @@ def subjob_tasks(config, subjob):
         script = assemble_filename(script, scriptdir, config)
         # task_list += add_scriptcall(script, cluster, config)
         if subjob_config["batch_or_shell"] == "batch":
+            if "calc_launcher_flags" in dir(config['general']["batch"].bs):
+                launcher_flags = config['general']["batch"].bs.calc_launcher_flags(
+                    {
+                        "dataprocess": subjob_config,
+                        "computer": config["computer"]
+                    },
+                    'dataprocess',
+                    'pp',
+                )
+            else:
+                launcher_flags = config['computer']['launcher_flags']
             task_list += [
                 f"time {config['computer']['launcher']} "
-                f"{config['computer']['launcher_flags']} {script} 2>&1 &"
+                f"{launcher_flags} {script} 2>&1 &"
             ]
         else:
             if call_function:

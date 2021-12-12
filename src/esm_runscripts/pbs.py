@@ -152,6 +152,8 @@ class Pbs:
         # Replace all tags
         for (tag, repl) in replacement_tags:
             launcher_flags = launcher_flags.replace(tag, str(repl))
+        # Substitute @MODEL@ with the model name
+        launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
 
@@ -192,8 +194,6 @@ class Pbs:
             if command:
                 launcher = config["computer"].get("launcher")
                 launcher_flags = self.calc_launcher_flags(config, model, cluster)
-                # Substitute @MODEL@ with the model name
-                launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
                 component_lines.append(f"{launcher_flags} ./{command} ")
 
         # Merge each component flags and commands into a single string
@@ -227,7 +227,7 @@ class Pbs:
     def write_het_par_wrappers(config):
         if config["general"].get("verbose", False):
             print(
-                f"Skipping the het-par wrapper as it is not needed for {self.name}"
+                f"Skipping the het-par wrapper as it is not needed for {config['computer']['batch_system']}"
             )
         return config
 

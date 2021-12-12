@@ -54,7 +54,7 @@ class Pbs:
         return os.environ.get("PBS_JOBID")
 
     @staticmethod
-    def calc_launcher_flags(config, model):
+    def calc_launcher_flags(config, model, cluster):
         """
         Calculates the launcher flags for the job luncher based on the ``nproc`` of the
         different components, with the possibility of using heterogeneous
@@ -90,6 +90,7 @@ class Pbs:
             experiment directory.
         model : str
             Component for which the flags are to be calculated.
+        cluster : str
 
         Returns
         -------
@@ -115,12 +116,8 @@ class Pbs:
                 cores_per_node = config["computer"]["partitions"]["pp"][
                     "cores_per_node"
                 ]
-            # Define OMP threads if heterogeneous MPI-OMP
-            if config["computer"].get("heterogeneous_parallelization", False):
-                omp_num_threads = config[model].get("omp_num_threads", 1)
-            # Define OMP threads if only MPI
-            else:
-                omp_num_threads = 1
+            # Get the OMP number of threads
+            omp_num_threads = config[model].get("omp_num_threads", 1)
             # CPUs per MPI-rank (e.g. aprun -d)n
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
@@ -158,7 +155,7 @@ class Pbs:
 
         return launcher_flags
 
-    def calc_requirements(self, config):
+    def prepare_launcher(self, config, cluster):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
@@ -172,6 +169,7 @@ class Pbs:
         config : dict
             Configuration dictionary containing information about the experiment and
             experiment directory.
+        cluster : str
         """
         # PBS does not support yet multi_apruns
         # if config['general'].get('multi_apruns'):
@@ -193,7 +191,7 @@ class Pbs:
             # Prepare the MPMD commands
             if command:
                 launcher = config["computer"].get("launcher")
-                launcher_flags = self.calc_launcher_flags(config, model)
+                launcher_flags = self.calc_launcher_flags(config, model, cluster)
                 # Substitute @MODEL@ with the model name
                 launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
                 component_lines.append(f"{launcher_flags} ./{command} ")
@@ -222,7 +220,16 @@ class Pbs:
         # This changes the name of the output stream to include the $PBS_JOBID. This
         # cannot be done in the header because PBS does not support its own variables
         # to be used there (at least in the ALEPH's version).
-        runfile.write(f'qalter $PBS_JOBID -o {config["computer"]["thisrun_logfile"]}\n')
+        #runfile.write(f'qalter $PBS_JOBID -o {config["computer"]["thisrun_logfile"]}\n')
+        pass
+
+    @staticmethod
+    def write_het_par_wrappers(config):
+        if config["general"].get("verbose", False):
+            print(
+                f"Skipping the het-par wrapper as it is not needed for {self.name}"
+            )
+        return config
 
     @staticmethod
     def get_job_state(jobid):

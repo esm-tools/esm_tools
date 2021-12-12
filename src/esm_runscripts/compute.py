@@ -80,30 +80,6 @@ def all_files_to_copy_append(
     return config
 
 
-def add_batch_hostfile(config):
-    if config["general"]["verbose"]:
-        print(
-            "Calculating the required resources and launcher options for:\n"
-            + "- batch system: "
-            + f'{config["computer"].get("batch_system", "NOT DEFINED!")}\n'
-            + "- job launcher: "
-            + f'{config["computer"].get("launcher", "NOT DEFINED!")}\n'
-        )
-
-    config["general"]["batch"].calc_requirements(config)
-
-    config = all_files_to_copy_append(
-        config,
-        "general",
-        "config",
-        "batchhostfile",
-        config["general"]["batch"].bs.path,
-        None,
-        None,
-    )
-    return config
-
-
 def prepare_coupler_files(config):
     if config["general"]["standalone"] is False:
         coupler_filename = config["general"]["coupler"].prepare(

@@ -55,13 +55,19 @@ class Slurm:
         """
         return os.environ.get("SLURM_JOB_ID")
 
-    def write_hostfile(self, config):
+    def prepare_launcher(self, config, cluster):
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
         else:
             self.write_one_hostfile(self.path, config)
+
+        hostfile_in_work = (
+            config["general"]["work_dir"] + "/" + os.path.basename(self.bs.path)
+        )
+        shutil.copyfile(self.bs.path, hostfile_in_work)
+
         return config
 
     def write_one_hostfile(self, hostfile, config):

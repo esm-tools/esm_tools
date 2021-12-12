@@ -55,12 +55,8 @@ class batch_system:
 
     # methods that actually do something
 
-    def write_hostfile(self, config):
-        self.bs.write_hostfile(config)
-        hostfile_in_work = (
-            config["general"]["work_dir"] + "/" + os.path.basename(self.bs.path)
-        )
-        shutil.copyfile(self.bs.path, hostfile_in_work)
+    def prepare_launcher(self, config, cluster):
+        self.bs.prepare_launcher(config, cluster)
         return config
 
     @staticmethod
@@ -443,7 +439,7 @@ class batch_system:
                 if cluster in reserved_jobtypes:
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 header = batch_system.get_batch_header(config, cluster)
-                config = add_batch_hostfile(config)
+                config = config["general"]["batch"].prepare_launcher(config, cluster)
 
                 for line in header:
                     runfile.write(line + "\n")
@@ -606,21 +602,6 @@ def submits_another_job(config, cluster):
     if clusterconf.get("next_submit", []) == []:
         return False
     return True
-
-
-def add_batch_hostfile(config):
-    config["general"]["batch"].write_hostfile(config)
-
-    # config = all_files_to_copy_append(
-    #    config,
-    #    "general",
-    #    "config",
-    #    "batchhostfile",
-    #    config["general"]["batch"].bs.path,
-    #    None,
-    #    None,
-    # )
-    return config
 
 
 def find_openmp(config):

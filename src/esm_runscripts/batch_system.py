@@ -2,7 +2,6 @@ import os
 import textwrap
 import sys
 import stat
-import shutil
 import copy
 
 import esm_environment

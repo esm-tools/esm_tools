@@ -2,6 +2,7 @@
 Contains functions for dealing with SLURM-based batch systems
 """
 import os
+import shutil
 import subprocess
 import sys
 
@@ -64,9 +65,9 @@ class Slurm:
             self.write_one_hostfile(self.path, config)
 
         hostfile_in_work = (
-            config["general"]["work_dir"] + "/" + os.path.basename(self.bs.path)
+            config["general"]["work_dir"] + "/" + os.path.basename(self.path)
         )
-        shutil.copyfile(self.bs.path, hostfile_in_work)
+        shutil.copyfile(self.path, hostfile_in_work)
 
         return config
 

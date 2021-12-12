@@ -32,7 +32,7 @@ jobs:
     - name: Run Pytest
       run: |
         pip install pytest
-        pytest .
+        pytest -v .
 
     - name: run esm_master first time
       run: |

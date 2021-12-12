@@ -18,6 +18,9 @@ awicm:
 awicm3:
   frontiers:
     awicm3-frontiers-TCO159L91-CORE2_initial:
+      aleph:
+        compilation: true
+        run: true
       juwels:
         compilation: true
         run: true
@@ -29,6 +32,9 @@ awicm3:
         run: true
   v3.0:
     awicm3-v3.0-TCO159L91-CORE2_initial:
+      aleph:
+        compilation: true
+        run: true
       juwels:
         compilation: true
         run: true

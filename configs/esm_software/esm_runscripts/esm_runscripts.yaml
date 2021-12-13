@@ -14,6 +14,7 @@ choose_job_type:
 # kh 01.12.20 this must be done before resolve_some_choose_blocks, because potentially also choosable
 # entries can be overridden via usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
                         - "apply_last_minute_changes"
+                        - "find_openmp"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
                         - "set_chunk_calendar"

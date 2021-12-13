@@ -10,12 +10,9 @@ general:
     nmonth: 0
     nyear: 0
 
-computer:
-    heterogeneous_parallelization: true
-
 awicm3:
     version: "frontiers"
-    postprocessing: false
+    postprocessing: true
     model_dir: !ENV ${MODEL_DIR}
     choose_computer.name:
         juwels:
@@ -32,6 +29,8 @@ fesom:
             rnproc: 144
         mistral:
             rnproc: 144
+        aleph:
+            rnproc: 40
     nproc: ${rnproc}
     restart_rate: 1
     restart_unit: "d"
@@ -59,6 +58,8 @@ oifs:
             rnproc: 72
         juwels:
             rnproc: 24
+        aleph:
+            rnproc: 80
     nproc: ${rnproc}
     omp_num_threads: 2
 

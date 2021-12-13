@@ -935,7 +935,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 178750
+    jobid: 191903
     jobtype: prepcompute
     last_run_datestamp: 19991231-19991231
     last_run_in_chunk: false
@@ -1144,17 +1144,6 @@ general:
                 subjobs:
                 - compute_general
                 submit_to_batch_system: true
-            postprocessing:
-                batch_or_shell: batch
-                called_from: tidy
-                next_submit: []
-                nproc: 1
-                order_in_cluster: concurrent
-                run_after: tidy
-                run_on_queue: smp
-                subjobs:
-                - postprocessing_oifs_general
-                submit_to_batch_system: true
             prepcompute:
                 batch_or_shell: SimulationSetup
                 called_from: tidy
@@ -1170,7 +1159,6 @@ general:
                 batch_or_shell: SimulationSetup
                 called_from: compute
                 next_submit:
-                - postprocessing
                 - prepcompute
                 nproc: 1
                 order_in_cluster: sequential
@@ -1184,16 +1172,6 @@ general:
                 run_before: tidy
                 run_on_queue: mpp
                 subjob_cluster: compute
-                submit_to_batch_system: true
-            postprocessing_oifs_general:
-                batch_or_shell: batch
-                nproc: 1
-                order_in_cluster: concurrent
-                run_after: tidy
-                run_on_queue: smp
-                script: postprocessing.sh /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/outdata/oifs/ 20000101
-                script_dir: /home/ollie/mandresm/esm_tools/configs/.//setups/awicm3
-                subjob_cluster: postprocessing
                 submit_to_batch_system: true
             prepcompute_general:
                 nproc: 1
@@ -2972,18 +2950,6 @@ oifs:
     wam_work_in: -1230000
     with_nest1: false
     with_xios: false
-    workflow:
-        next_run_triggered_by: tidy
-        subjobs:
-            postprocessing:
-                batch_or_shell: batch
-                nproc: 1
-                order_in_cluster: concurrent
-                run_after: tidy
-                run_on_queue: smp
-                script: postprocessing.sh /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/outdata/oifs/ 20000101
-                script_dir: /home/ollie/mandresm/esm_tools/configs/.//setups/awicm3
-                submit_to_batch_system: true
     xml_dir: ''
 rnfmap:
     all_filetypes:

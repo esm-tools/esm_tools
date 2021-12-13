@@ -32,6 +32,6 @@ run:
                     - "restart/oifs/*/rcf"
                     - "restart/oifs/*/srf*"
         check: {}
-computer:
+computers:
         - blogin
         - glogin

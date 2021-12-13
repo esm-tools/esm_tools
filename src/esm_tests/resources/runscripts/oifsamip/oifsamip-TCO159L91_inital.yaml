@@ -10,9 +10,6 @@ general:
     nmonth: 0
     nyear: 0
 
-computer:
-    heterogeneous_parallelization: true
-
 oifsamip:
     version: "cy43"
     postprocessing: false

@@ -601,7 +601,7 @@ class batch_system:
         """
         Defines the ``heterogeneous_parallelization`` variable based on the
         ``omp_num_threads`` found in the model's sections. If any
-        ``omp_num_threads > 1``, then ``heterogeneous_parallelization`` becomes
+        ``omp_num_threads`` exists, then ``heterogeneous_parallelization`` becomes
         ``True``. Otherwise, is set to ``False``. The user has no control on setting
         this variable, as the user's choice is overridden here. This is because the
         functionality triggered by ``heterogeneous_parallelization`` is entirely
@@ -630,7 +630,7 @@ class batch_system:
                 (
                     "Since version 6.0, ``heterogeneous_parallelization`` variable "
                     "defined by the user is ignored, and instead its value is "
-                    "calculated from the values of ``omp_num_threads`` in the model's "
+                    "set to true if any ``omp_num_threads`` exists in the model's "
                     "sections. To get rid of this warning, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "

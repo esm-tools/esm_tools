@@ -141,7 +141,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version"]
+early_choose_vars = ["include_models", "version", "omp_num_threads"]
 
 # Ensure FileNotFoundError exists:
 if six.PY2:  # pragma: no cover

@@ -596,22 +596,23 @@ class batch_system:
         return config
 
 
+    @staticmethod
+    def find_openmp(config):
+        for model in config:
+            if "omp_num_threads" in config[model]:
+                config["general"]["heterogeneous_parallelization"] = True
+                config["computer"]["heterogeneous_parallelization"] = True  # dont like this
+                if (
+                    not config[model].get("nproc", False)
+                    and not config[model].get("nproca", False)
+                    and not config[model].get("nprocar", False)
+                ):
+                    config[model]["nproc"] = 1
+        return config
+
+
 def submits_another_job(config, cluster):
     clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
     if clusterconf.get("next_submit", []) == []:
         return False
     return True
-
-
-def find_openmp(config):
-    for model in config:
-        if "omp_num_threads" in config[model]:
-            config["general"]["heterogeneous_parallelization"] = True
-            config["computer"]["heterogeneous_parallelization"] = True  # dont like this
-            if (
-                not config[model].get("nproc", False)
-                and not config[model].get("nproca", False)
-                and not config[model].get("nprocar", False)
-            ):
-                config[model]["nproc"] = 1
-    return config

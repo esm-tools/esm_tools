@@ -7,7 +7,7 @@ import copy
 import esm_environment
 import six
 
-from esm_parser import user_error
+from esm_parser import user_error, user_note
 from . import helpers
 from . import dataprocess
 from .slurm import Slurm
@@ -598,6 +598,49 @@ class batch_system:
 
     @staticmethod
     def find_openmp(config):
+        """
+        Defines the ``heterogeneous_parallelization`` variable based on the
+        ``omp_num_threads`` found in the model's sections. If any
+        ``omp_num_threads > 1``, then ``heterogeneous_parallelization`` becomes
+        ``True``. Otherwise, is set to ``False``. The user has no control on setting
+        this variable, as the user's choice is overridden here. This is because the
+        functionality triggered by ``heterogeneous_parallelization`` is entirely
+        dependent to the values of ``omp_num_threads``, so for the user, it doesn't
+        make sense to define two variables for the same thing. One could think then
+        that there is not need for such a variable, however, there are instances
+        in which the yaml files need to know whether the simulation is heterogeneously
+        parallelize (i.e. in the machine files to define some environment variables
+        under a ``choose_computer.heterogeneous_parallelization``), so this is a way
+        of not having to check every ``omp_num_threads`` in the yamls to verify such
+        condition.
+
+        Parameters
+        ----------
+        config : dict
+            Dictionary containing the information about the experiment.
+
+        Returns
+        -------
+        config : dict
+            Dictionary containing the information about the experiment.
+        """
+        if config["computer"].get("heterogeneous_parallelization", False):
+            user_note(
+                "heterogeneous_parallelization variable",
+                (
+                    "Since version 6.0, ``heterogeneous_parallelization`` variable "
+                    "defined by the user is ignored, and instead its value is "
+                    "calculated from the values of ``omp_num_threads`` in the model's "
+                    "sections. To get rid of this warning, remove "
+                    "``heterogeneous_parallelization`` from your yaml files. "
+                    "``heterogeneous_parallelization`` can still be used from a "
+                    "``choose_`` block to decice the case."
+                )
+            )
+        # Set ``heterogeneous_parallelization`` false, overriding whatever the user
+        # has defined for this variable to be
+        config["computer"]["heterogeneous_parallelization"] = False
+        # Set ``heterogeneous_parallelization`` true if needed
         for model in config:
             if "omp_num_threads" in config[model]:
                 config["general"]["heterogeneous_parallelization"] = True

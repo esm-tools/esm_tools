@@ -162,7 +162,7 @@ class Slurm:
                     f.write("#!/bin/ksh" + "\n")
                     f.write(
                         "export OMP_NUM_THREADS="
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + "\n"
                     )
                     f.write(command + "\n")
@@ -178,7 +178,7 @@ class Slurm:
                     f.write("(( init = " + str(start_core) + " + $1 ))" + "\n")
                     f.write(
                         "(( index = init * "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " ))"
                         + "\n"
                     )
@@ -187,14 +187,14 @@ class Slurm:
                         "echo "
                         + model
                         + " taskset -c $slot-$((slot + "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " - 1"
                         + "))"
                         + "\n"
                     )
                     f.write(
                         "taskset -c $slot-$((slot + "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " - 1)) ./script_"
                         + model
                         + ".ksh"
@@ -234,7 +234,7 @@ class Slurm:
                     "omp_threads_"
                     + model
                     + "="
-                    + str(config[model]["omp_num_threads"])
+                    + str(config[model].get("omp_num_threads", 1))
                     + "\n"
                 )
         import pdb

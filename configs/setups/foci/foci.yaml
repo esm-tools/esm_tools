@@ -442,39 +442,46 @@ oasis3mct:
                         coupling_target_fields:
         
                            sstocean:
-                              - 'AIceFrac <--bilinear_average-- OIceFrac'
-                              - 'A_SSTSST <--bilinear_average-- O_SSTSST'
-                              - 'A_TepIce <--bilinear_average-- O_TepIce'
-                              - 'A_IceTck <--bilinear_average-- O_IceTck'
-                              - 'A_SnwTck <--bilinear_average-- O_SnwTck'
-                              - 'A_OCurx1 <--bilinear_average-- O_OCurx1'
-                              - 'A_OCury1 <--bilinear_average-- O_OCury1'
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              #- 'AIceFrac <--bilinear_average-- OIceFrac'
+                              #- 'A_SSTSST <--bilinear_average-- O_SSTSST'
+                              #- 'A_TepIce <--bilinear_average-- O_TepIce'
+                              #- 'A_IceTck <--bilinear_average-- O_IceTck'
+                              #- 'A_SnwTck <--bilinear_average-- O_SnwTck'
+                              #- 'A_OCurx1 <--bilinear_average-- O_OCurx1'
+                              #- 'A_OCury1 <--bilinear_average-- O_OCury1'
                            flxatmos:
-                              - 'O_OTaux1 <--bilinear-- A_OTaux1'
-                              - 'O_OTauy1 <--bilinear-- A_OTauy1'
-                              - 'O_ITaux1 <--bilinear-- A_ITaux1'
-                              - 'O_ITauy1 <--bilinear-- A_ITauy1'
-                              - 'O_QsrIce <--bilinear-- A_QsrIce'
-                              - 'O_QsrMix <--bilinear_glbpos-- A_QsrMix'
-                              - 'O_QnsIce <--bilinear-- A_QnsIce'
-                              - 'O_QnsMix <--bilinear_glbpos-- A_QnsMix'
-                              - 'OTotRain <--bilinear_global-- ATotRain'
-                              - 'OTotSnow <--bilinear-- ATotSnow'
-                              - 'OIceEvap <--bilinear-- AIceEvap'
-                              - 'O_dQnsdT <--bilinear-- A_dQnsdT'
+                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--gauswgt-- ATotSnow'
+                              - 'OIceEvap <--gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
                            flxatmos_1:
-                              - '1_O_OTaux1 <--bilinear-- A_OTaux1'
-                              - '1_O_OTauy1 <--bilinear-- A_OTauy1'
-                              - '1_O_ITaux1 <--bilinear-- A_ITaux1'
-                              - '1_O_ITauy1 <--bilinear-- A_ITauy1'
-                              - '1_O_QsrIce <--bilinear-- A_QsrIce'
-                              - '1_O_QsrMix <--bilinear-- A_QsrMix'
-                              - '1_O_QnsIce <--bilinear-- A_QnsIce'
-                              - '1_O_QnsMix <--bilinear-- A_QnsMix'
-                              - '1_OTotRain <--bilinear-- ATotRain'
-                              - '1_OTotSnow <--bilinear-- ATotSnow'
-                              - '1_OIceEvap <--bilinear-- AIceEvap'
-                              - '1_O_dQnsdT <--bilinear-- A_dQnsdT'
+                              - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - '1_O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - '1_O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - '1_O_QsrIce <--gauswgt-- A_QsrIce'
+                              - '1_O_QsrMix <--gauswgt-- A_QsrMix'
+                              - '1_O_QnsIce <--gauswgt-- A_QnsIce'
+                              - '1_O_QnsMix <--gauswgt-- A_QnsMix'
+                              - '1_OTotRain <--gauswgt-- ATotRain'
+                              - '1_OTotSnow <--gauswgt-- ATotSnow'
+                              - '1_OIceEvap <--gauswgt-- AIceEvap'
+                              - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
 
         coupling_directions:
                 'opat->atmo':
@@ -583,6 +590,56 @@ oasis3mct:
                         postprocessing:
                                 conserv:
                                         method: global
+
+                gauswgt_average:
+                        time_transformation: average
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 10
+                                        weight: 0.15
+                                #- mapping:
+                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        map_regrid_on: src
+
+                gauswgt:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 10
+                                        weight: 0.15
+                                #- mapping:
+                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        map_regrid_on: src
+
+                gauswgt_global:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 10
+                                        weight: 0.15
+                                #- mapping:
+                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: global
+
+                gauswgt_glbpos:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 10
+                                        weight: 0.15
+                                #- mapping:
+                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        map_regrid_on: src
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
 
         input_files:
                 rmp_a2n_B: rmp_a2n_B

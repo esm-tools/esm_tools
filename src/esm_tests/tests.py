@@ -743,7 +743,11 @@ def extract_namelists(s_config_yaml):
     for component in config.keys():
         namelists_component = config[component].get("namelists", [])
         for nml in namelists_component:
-            if nml in config[component].get("config_sources", {}):
+            config_sources = config[component].get("config_sources", {})
+            if (
+                nml in config_sources
+                or any([nml in x for x in config_sources.values()])
+            ):
                 namelists.append(nml)
 
     return namelists

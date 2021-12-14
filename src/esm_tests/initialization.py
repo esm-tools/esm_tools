@@ -183,6 +183,10 @@ def get_scripts(info):
                         ] = f"{runscripts_dir}/{model}/{script}"
                         scripts_info[model][script.replace(".yaml", "")]["state"] = {}
                         ns += 1
+            # Delete models that do not contain any script
+            if not scripts_info[model]:
+                del scripts_info[model]
+
     scripts_info["general"] = {"num_scripts": ns}
 
     info["scripts"] = scripts_info

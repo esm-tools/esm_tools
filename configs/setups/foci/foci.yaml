@@ -15,11 +15,9 @@ general:
         # settings are only used if lresume = true
         # default is to start from year 1500 of SW038
         ini_parent_exp_id: "unset"
-        ini_string_parent_date: "1850-01-01"
+        ini_parent_date: "18491231"
         ini_nemo_restart_steps: 26297472
         ini_parent_dir: "${pool_dir}/FOCI_RESTART/${ini_parent_exp_id}/"
-        # don't change unless you know what you are doing
-        ini_parent_date: "$(( ${ini_string_parent_date} - ${echam.time_step}seconds ))"       
 
         coupled_setup: True
 
@@ -105,7 +103,7 @@ echam:
 
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/echam6/"
 
         # TODO: document this crazy ECHAM6 restart math
@@ -262,7 +260,7 @@ jsbach:
         # settings for restarting from another run
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/jsbach/" 
 
         # Use initialized carbon and nitrogen pools
@@ -316,7 +314,7 @@ nemo:
         # settings for restarting from another run
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${nemo.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/nemo/"
         ini_restart_steps: ${general.ini_nemo_restart_steps}
 
@@ -342,7 +340,7 @@ oasis3mct:
         # always as restart files
         lresume: true
         ini_parent_exp_id: ${general.ini_parent_exp_id}
-        ini_parent_date: "$(( ${general.ini_string_parent_date} - ${echam.time_step}seconds ))"
+        ini_parent_date: "${general.ini_parent_date}"
         #ini_parent_dir is set below in choose_echam.lresume 
         #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
         #

@@ -18,11 +18,9 @@ general:
 
    lresume: True
    ini_parent_exp_id: "FOCI1.3-SW038"
-   ini_string_parent_date: "3350-01-01" 
+   ini_parent_date: "33491231" 
    ini_nemo_restart_steps: 26297472
    ini_parent_dir: "${general.pool_dir}/FOCI_RESTART/${ini_parent_exp_id}/"
-   # don't change unless you know what you are doing
-   ini_parent_date: "$(( ${ini_string_parent_date} - ${echam.time_step}seconds ))"
 
 foci:
    model_dir: ${general.homedir}/esm/models/foci-default/

@@ -32,7 +32,10 @@ nemo:
    version: "ORCA05_LIM2_KCM_AOW"
    restart_rate: ${general.nmonth}
    restart_unit: "months"
-   jpni: 24
-   jpnj: 20
+   jpni: 20
+   jpnj: 24
    nproc: 480 
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   
+xios:
+   nproc: 12

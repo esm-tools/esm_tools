@@ -634,6 +634,7 @@ outdata_in_work:
         MPP: MPP*
 #        # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+        awi_cm3: awi_cm3*
 
 outdata_sources:
         # old grib based output
@@ -643,6 +644,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+        ICMUA: ${out_date_folder}/awi_cm3*
 
 
 #======================================================================================
@@ -675,6 +677,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
+                        awi_cm3: awi_cm3
         0:
                 outdata_files:
                         ICMGG: ICMGG

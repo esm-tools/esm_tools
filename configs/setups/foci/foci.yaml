@@ -397,6 +397,7 @@ oasis3mct:
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
                               - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                 agrif:
                         version: "foci"
@@ -423,6 +424,7 @@ oasis3mct:
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
                               - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                 agrif_oasismct4:
 

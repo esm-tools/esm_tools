@@ -164,6 +164,17 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens_ssp1
+                        SSP534OS:
+                                add_input_files:
+                                        jsbach: jsbach_1850
+                                forcing_files:
+                                        LU: LU_ssp534os
+                                        LU_trans: LU_trans_ssp534os
+                                        cover_fract: cover_fract_ssp534os
+                                        Ndepo: Ndepo_ssp534os
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens_ssp5
                         SSP585:
                                 add_input_files:
                                         jsbach: jsbach_1850

@@ -296,7 +296,7 @@ choose_scenario:
                         aerofarir: piaerofarir
                         ozone: 1850ozone
         1950:
-                forcing_files:
+                forcing_filslurm_cronjob.loges:
                         aerocoarse: piaerocoarse
                         aerofin: piaerofin
                         aerofarir: piaerofarir
@@ -333,6 +333,18 @@ choose_scenario:
                         swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP_ssp126
+        SSP534OS:
+                pool_dir: "/mnt/lustre02/work/bb0519/foci_input2/ECHAM6" # forcing files not in default pool yet
+                greenhouse_dir: "${input_dir}"
+                forcing_files:
+                        aerocoarse_kinne_1850: piaerocoarse
+                        aerofarir_kinne_1850: piaerofarir
+                        aerofin_kinne_1850: piaerofin
+                        ozone: ssp534osozone
+                        greenhouse: ssp534osgreenh
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP_ssp534os
         SSP585:
                 greenhouse_dir: "${input_dir}"
                 forcing_files:

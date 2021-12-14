@@ -11,6 +11,7 @@ input_sources:
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
         "MAC-SP": "${input_dir}/MAC-SP.nc"
         "MAC-SP_ssp126": "${input_dir}/MAC-SP_ssp126.nc"
+        "MAC-SP_ssp534os": "${input_dir}/MAC-SP_ssp534os.nc"
         "MAC-SP_ssp585": "${input_dir}/MAC-SP_ssp585.nc"
 
 # forcings
@@ -74,6 +75,7 @@ forcing_sources:
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
         "ssp126greenh": "${greenhouse_dir}/greenhouse_ssp126.nc"
+        "ssp534osgreenh": "${greenhouse_dir}/greenhouse_ssp534os.nc"
         "ssp585greenh": "${greenhouse_dir}/greenhouse_ssp585.nc"
         
         # radiation
@@ -101,6 +103,12 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp126_@YEAR@.nc":
+                        from: 2015
+                        to: 2099
+        "ssp534osozone": 
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp534os_@YEAR@.nc":
                         from: 2015
                         to: 2099
         "ssp585ozone": 

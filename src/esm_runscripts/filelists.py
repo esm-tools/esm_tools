@@ -972,9 +972,10 @@ def filter_allowed_missing_files(config):
     allowed_missing_files = config["general"].setdefault("allowed_missing_files", {})
     missing_files = config["general"].get("files_missing_when_preparing_run", {})
     # TODO(PG): Replace with logger statements
-    print("Currently known missing files:")
-    for k, v in missing_files.items():
-        print(f"source: {k} --> target: {v}")
+    if config["general"].get("verbose", False):
+        print("Currently known missing files:")
+        for k, v in missing_files.items():
+            print(f"source: {k} --> target: {v}")
     remove_missing_files = []
     for missing_file_source, missing_file_target in missing_files.items():
         missing_file_source_fname = pathlib.Path(missing_file_source).name
@@ -990,12 +991,13 @@ def filter_allowed_missing_files(config):
                     or missing_file_target_fname in glob.glob(allowed_missing_pattern)
                 ):
                     # TODO(PG): Replace with logger statements
-                    print(
-                        f"Detected allowed missing file with {allowed_missing_pattern}"
-                    )
-                    print("Adding to allowed missing files:")
-                    print(f"source: {missing_file_source}")
-                    print(f"target: {missing_file_target}")
+                  if config["general"].get("verbose", False):
+                      print(
+                            f"Detected allowed missing file with {allowed_missing_pattern}"
+                        )
+                        print("Adding to allowed missing files:")
+                        print(f"source: {missing_file_source}")
+                        print(f"target: {missing_file_target}")
                     remove_missing_files.append(missing_file_source)
                     allowed_missing_files.update(
                         {missing_file_source: missing_file_target}

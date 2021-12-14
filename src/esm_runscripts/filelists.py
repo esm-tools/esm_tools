@@ -7,11 +7,12 @@ import shutil
 import sys
 import time
 
-import esm_parser
-import esm_tools
 import f90nml
 import six
 import yaml
+
+import esm_parser
+import esm_tools
 
 from . import helpers
 

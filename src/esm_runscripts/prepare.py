@@ -1,13 +1,12 @@
-import os
-import sys
 import copy
 import logging
+import os
+import sys
 
 import esm_parser
-from esm_calendar import Date, Calendar
+from esm_calendar import Calendar, Date
 
-from . import helpers
-from . import batch_system
+from . import batch_system, helpers
 
 
 def run_job(config):
@@ -42,8 +41,8 @@ def mini_resolve_variable_date_file(date_file, config):
 
 
 def _read_date_file(config):
-    import os
     import logging
+    import os
 
     date_file = (
         f"{config['general']['experiment_dir']}/scripts"
@@ -494,6 +493,12 @@ def _add_all_folders(config):
     config["general"]["reusable_filetypes"] = config["general"].get(
         "reusable_filetypes", ["bin", "src"]
     )
+    # Define the files that could be reusable accross runs (external files)
+    config["general"]["potentially_reusable_filetypes"] = (
+        all_filetypes + config["general"]["in_filetypes"]
+    )
+    # Apply changes from ``--update-files`` flag
+    config = helpers.update_reusable_filetypes(config)
 
     config["general"]["thisrun_dir"] = (
         config["general"]["experiment_dir"]

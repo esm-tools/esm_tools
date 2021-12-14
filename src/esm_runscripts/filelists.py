@@ -3,17 +3,18 @@ import datetime
 import filecmp
 import glob
 import os
-import pathlib
-import re
 import shutil
 import sys
 import time
 
-import esm_parser
-import esm_tools
 import f90nml
 import six
 import yaml
+
+import esm_parser
+import esm_tools
+
+from . import helpers
 
 
 def rename_sources_to_targets(config):
@@ -196,6 +197,10 @@ def reuse_sources(config):
             # general ones
             model_reusable_filetypes = config[model].get(
                 "reusable_filetypes", config["general"]["reusable_filetypes"]
+            )
+            # Apply changes from ``--update-files`` flag
+            model_reusable_filetypes = helpers.update_reusable_filetypes(
+                config, reusable_filetypes=model_reusable_filetypes
             )
             # If <filetype>_sources dictionary exists and filetype is in the
             # model-specific filetype list then add the sources
@@ -1221,6 +1226,7 @@ def get_movement(config, model, categ, filetype, source, target):
         model_reusable_filetypes = config[model].get(
             "reusable_filetypes", config["general"]["reusable_filetypes"]
         )
+
         if (
             config["general"]["run_number"] == 1
             or filetype not in model_reusable_filetypes

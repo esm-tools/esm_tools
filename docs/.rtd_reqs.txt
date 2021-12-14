@@ -11,4 +11,6 @@ sphinxcontrib-napoleon
 sphinx-copybutton
 sphinx-tabs
 sqlalchemy
+pyyaml
 xdgenvpy
+.

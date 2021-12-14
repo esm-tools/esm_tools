@@ -1,0 +1,33 @@
+
+
+
+
+
+prepare -> compute (auf frontend) -> runfile:
+					- batch header
+					- environment
+					- extra
+					- srun hostfile
+					- esm_runscripts -t tidy -p process-id? sollte mit observe starten, dann direkt in tidy übergehen
+					  ok, -p gibt nicht nur die process-id an, sondern auch dass observe starten soll
+
+					- esm_runscripts -t compute -p... genauso
+					- esm_runscripts -t user-defined -p... direkt zum resubmit?
+
+
+
+
+
+Allgemeiner Ablauf
+
+	-> prepare, including:	
+			check chunks
+			assemble workflow
+
+	-> check for -p, if yes: observe,	
+			 if no: skip observe
+
+	-> if -t compute or tidy:  	eigentlicher job 
+					set next_clusters forward		
+		
+	-> resubmit next_clusters

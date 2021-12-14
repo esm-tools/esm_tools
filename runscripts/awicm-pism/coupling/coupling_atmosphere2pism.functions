@@ -1,0 +1,1787 @@
+#!/bin/ksh
+## @file
+## @author Dr. Paul Gierz
+## @author Alfred Wegener Institute for Polar and Marine Research
+## @author Bremerhaven, Germany
+##
+## @brief Functions for preparing a generic atmosphere output for use with the `PISM` ice sheet model.
+##
+## NOTES and TODO for this file:
+## * [ ] Unify name structure, it's a bit messy right now.
+## * [ ] Unset all local variables to keep the global namespace clean (sort-of done, could be better).
+## * [ ] Get the abstraction levels figured out correctly. We really want 1
+##       function to do 1 thing (and only 1 thing)
+
+
+################################################################################
+################################################################################
+# T O P   L E V E L  :: Calls all other functions
+################################################################################
+################################################################################
+
+
+## @fn atmosphere2pism()
+## @brief
+## The top-level container which is called if the
+## logical switch `ACM_TO_PISM=1` is set.
+##
+## This is the top-level container which is called if the 
+## logical switch `ACM_TO_PISM` is set. In this case, the
+## following steps are performed:
+##
+## 1. Variable names as provided by the atmosphere model are read,
+##    so that they may be easily renamed to correct `PISM` names.
+## 2. The `PISM` target grid description is generated or copied to
+##    the working directory.
+## 3. atmospheric forcing is regridded from the original source
+##    grid (defined by `atmosphere.griddes`) to `PISM` model grid 
+##    defined by `ice.griddes`. The regridding occurs based upon
+##    the value of `iterative_coupling_atmosphere_pism_regrid_method`
+## 4. An approriate `PISM` forcing is generated. In this step, 
+##    variables are renamed to conform to `PISM` standards, and a
+##    file is generated which will pass approrpriate command flags
+##    to the `PISM` run.
+## 5. Temporary files are removed from the working directory.
+##
+## Variables Used:
+##
+## @var bool ACM_TO_PISM
+## @var ic_atm2pism_regrid_method
+## @var ic_atm2pism_ablation_method
+## 
+## Variables Assigned:
+##
+## @var INTERPOL_TYPE_ATM :: "bil"
+## @var WEIGHTS_ATM2ICE   :: weights_atm2ice.${INTERPOL_TYPE_ATM}.nc
+## @var GRIDDES_ICE       :: ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+## @var GRIDDES_ATM       ::
+## @var ic_atm2pism_regrid_method :: The method which will be used to get
+##      from the general atmosphere grid to the `PISM` grid. Default value is
+##      "INTERPOLATE", which specifies bilinear interpolation. Choices are:
+##
+##      1. DOWNSCALE: Performs bilinear interpolation and then applies
+##         lapse-rate and atmospheric desertification corrections
+##      2. INTERPOLATE: Just bilinear interpolation
+##      3. REMAP: Just conservative remapping
+##
+##      Given a different option, the function will exit
+##
+## @var ic_atm2pism_ablation_method :: Which method should be used to get
+##      from atmospheric information to a surface mass balance. Default value is "PDD",
+##      which prepares files and `PISM` options for a positive-degree day ablation
+##      scheme. Current choices are:
+##
+##      1. PDD: Prepares files/flags for the positive degree day scheme
+##      2. DEBM: Prepares files/flags for the diurnal energy balance model (see here: REF to Uta)
+##      3. EBM: Prepares files/flags for the SEMIC energy balance model (see here: REF Mario)
+atmosphere2pism() {
+    echo -e "\t\t=================================================================="
+    echo -e "\t\t*** S T A R T I N G    atmosphere2pism *** "; echo
+    
+    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_helpers.functions
+    . ${FUNCTION_PATH}/coupling_general.functions
+
+    echo -e "\t\t---> Preparing to couple generic atmosphere to specific ice sheet model PISM"
+    ic_atm2pism_prepare
+
+    iterative_coupling_atmosphere_pism_regrid_method=${iterative_coupling_atmosphere_pism_regrid_method:-DOWNSCALE}
+    bool_atm2pism_regrid_dyn_downscaling=${bool_atm2pism_regrid_dyn_downscaling:-0}
+    echo -e "\t\t--> Regrid method >>> ${GREEN}${iterative_coupling_atmosphere_pism_regrid_method}${NOCOLOR} <<<"
+    case $iterative_coupling_atmosphere_pism_regrid_method in
+    	"DYN_DOWNSCALE")
+            bool_atm2pism_regrid_dyn_downscaling=1
+            ic_atm2pism_regrid_dyn_downscale
+            ;;
+    	"DOWNSCALE")
+            ic_atm2pism_regrid_downscale
+            ;;
+        "INTERPOLATE")
+            ic_atm2pism_regrid_interpolate
+            ;;
+        "REMAP")
+            ic_atm2pism_regrid_remap
+            ;;
+        *)
+            echo "Unknown regrid method selected!"
+            echo "Known options: DOWNSCALE, INTERPOLATE, REMAP"
+            exit 1
+            ;;
+    esac
+
+    iterative_coupling_atmosphere_pism_ablation_method=${iterative_coupling_atmosphere_pism_ablation_method:-PDD}
+    echo -e "\t\t--> Ablation method >>> ${GREEN}${iterative_coupling_atmosphere_pism_ablation_method}${NOCOLOR} <<<"
+    case $iterative_coupling_atmosphere_pism_ablation_method in
+        "PDD")
+            ic_atm2pism_ablation_pdd
+            latest_atmo_file=${COUPLE_DIR}/atmosphere_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+            ;;
+        "DEBM")
+            ic_atm2pism_ablation_debm
+            latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+            ;;
+        "EBM")
+            ic_atm2pism_ablation_ebm
+            ;;
+        *)
+            echo "Unknown mass balance selected!"
+            echo "Known options: PDD, DEBM, EBM"
+            exit 2
+            ;;
+    esac
+
+    echo -e "\t\t---> Tidying up after coupling generic atmosphere to specific ice sheet model PISM"
+    ic_atm2pism_finish_up
+
+    max_retry=12
+    retry=0
+    sleep 10 # Minimum time for st_new.sh to finish
+        
+    ln -sf ${latest_atmo_file} ${COUPLE_DIR}/latest_atmo_forcing_file.nc
+    
+    while [ ${retry} -lt ${max_retry} ]; do
+        if [ -f ${COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
+            break # call results.sh outside loop
+        else
+            (( retry = retry + 1 ))
+            sleep 1
+        fi
+    done
+    if [ ! -f ${COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
+        echo "Something wrong after waiting for 120 seconds!"
+    fi
+    echo -e "\t\t*** F I N I S H E D    atmosphere2pism *** "
+    echo -e "\t\t=================================================================="
+}
+
+################################################################################
+################################################################################
+# P R E P A R E   :: Does all the preperation steps: sets variables, reads names
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_prepare()
+## @brief Calls functions for preperation
+##
+## Prefix of called functions: ic_atm2pism_prepare (if not defined elsewhere)
+##
+## 1. Defines useful constants
+## 2. Reads names of variables and units which are in the atmosphere_file_for_ice.nc
+## 3. Saves PISM grid description to COUPLE_DIR for use when regridding
+## 4. Cleans up missing values out of the atmosphere_file_for_ice
+ic_atm2pism_prepare() {
+    echo; echo -e "\t\tPreparing to recieve atmosphere..."
+    ic_atm2pism_prepare_define_constants
+    read_names atmosphere ice
+    ic_atm2pism_prepare_save_griddes
+    ic_atm2pism_prepare_clean_missing_values
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+################################################################################
+################################################################################
+# R E G R I D D I N G  :: Wraps up functions down downscaling, interpolating, usw.
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_regrid_downscale()
+## @brief Calls functions for downscaling GCM forcing
+##
+## Prefix of called functions: ic_atm2pism_regrid_downscale
+##
+## 1. Splits names into individual files for each atmospheric variable
+## 2. Generates an elevation anomaly between the low resolution and high resolution grid
+## 3. Downscales temperature
+## 4. Downscales precipitation
+ic_atm2pism_regrid_dyn_downscale() {
+    echo; echo -e "\t\tDynamically downscaling atmosphere forcing..."
+    ic_atm2pism_regrid_dyn_downscale_split_names
+    ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference
+    ic_atm2pism_regrid_dyn_downscale_temperature
+    ic_atm2pism_regrid_dyn_downscale_precipitation
+    ic_atm2pism_regrid_dyn_downscale_shortwave_downward_radiation
+    ic_atm2pism_regrid_dyn_downscale_TOAshortwave
+    #ic_atm2pism_regrid_dyn_downscale_longwave_downward_radiation
+    ic_atm2pism_regrid_dyn_downscale_humidity
+    ic_atm2pism_regrid_dyn_downscale_emissivity
+    ic_atm2pism_regrid_dyn_downscale_cloud_cover
+    ic_atm2pism_regrid_dyn_downscale_transmissivity
+    
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_regrid_downscale()
+## @brief Calls functions for downscaling GCM forcing
+##
+## Prefix of called functions: ic_atm2pism_regrid_downscale
+##
+# temperature_varname                     = 'air_temp'
+# shortwave_radiation_downward_varname    = 'swd'
+# TOA_shortwave_varname                   = 'TOAswd'
+# humidity_varname                        = 'q2m'
+# emissivity_varname                      = 'emiss'
+# cloud_cover_varname                     = 'cc'
+# transmissivity_varname                  = 'tau'
+## 1. Splits names into individual files for each atmospheric variable
+## 2. Generates an elevation anomaly between the low resolution and high resolution grid
+## 3. Downscales temperature
+## 4. Downscales precipitation
+ic_atm2pism_regrid_downscale() {
+    echo; echo -e "\t\tDownscaling atmosphere forcing..."
+    ic_atm2pism_regrid_downscale_split_names
+    ic_atm2pism_regrid_downscale_generate_elevation_difference
+    ic_atm2pism_regrid_downscale_temperature
+    ic_atm2pism_regrid_downscale_precipitation
+    ic_atm2pism_regrid_downscale_shortwave_downward_radiation
+    ic_atm2pism_regrid_downscale_TOAshortwave
+    #ic_atm2pism_regrid_downscale_longwave_downward_radiation
+    ic_atm2pism_regrid_downscale_humidity
+    ic_atm2pism_regrid_downscale_emissivity
+    ic_atm2pism_regrid_downscale_cloud_cover
+    ic_atm2pism_regrid_downscale_transmissivity
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_regrid_interpolate()
+## @brief Interpolates temperature and precipitation biliniearly
+##
+## Prefix of called functions: ic_atm2pism_regrid_interpolate
+##
+## Uses `cdo -P 8 remapbil` to interpolate atmospheric fields to the `PISM` grid.
+ic_atm2pism_regrid_interpolate() {
+    echo; echo -e "\t\tInterpolating atmosphere forcing..."
+    ic_atm2pism_regrid_interpolate_temperature
+    ic_atm2pism_regrid_interpolate_precipitation
+    ic_atm2pism_regrid_interpolate_shortwave_downward_radiation
+    ic_atm2pism_regrid_interpolate_TOAshortwave
+    #ic_atm2pism_regrid_interpolate_longwave_downward_radiation
+    ic_atm2pism_regrid_interpolate_humidity
+    ic_atm2pism_regrid_interpolate_emissivity
+    ic_atm2pism_regrid_interpolate_cloud_cover
+    ic_atm2pism_regrid_interpolate_transmissivity
+    
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_regrid_remap()
+## @brief Conservative remapping of atmospheric fields 
+##
+## Uses `cdo remapcon` to conservatively remap to the `PISM` grid
+ic_atm2pism_regrid_remap() {
+    echo; echo -e "\t\tRemapping atmosphere forcing..."
+    ic_atm2pism_regrid_remap_temperature
+    ic_atm2pism_regrid_remap_precipitation
+    ic_atm2pism_regrid_remap_shortwave_downward_radiation
+    ic_atm2pism_regrid_remap_TOAshortwave
+    #ic_atm2pism_regrid_remap_longwave_downward_radiation
+    ic_atm2pism_regrid_remap_humidity
+    ic_atm2pism_regrid_remap_emissivity
+    ic_atm2pism_regrid_remap_cloud_cover
+    ic_atm2pism_regrid_remap_transmissivity
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+################################################################################
+################################################################################
+# A B L A T I O N   :: Wraps up functions for PDD, DEBM, and SEMIC
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_ablation_pdd()
+ic_atm2pism_ablation_pdd() {
+    echo; echo -e "\t\tSetting up SMB scheme PDD..."
+    ic_atm2pism_ablation_pdd_make_atmosphere_forcing
+    # TODO(PG): consistent names
+    iterative_coupling_pism_regrid_add_xy_array \
+        ${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
+        "atmosphere"
+    ic_atm2pism_ablation_pdd_set_options_atmo_given
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_ablation_debm()
+ic_atm2pism_ablation_debm() {
+    echo; echo -e "\t\tSetting up SMB scheme DEBM..."
+    ic_atm2debm_ablation_debm_make_forcing
+    ic_atm2debm_ablation_debm_run
+    ic_debm2pism_ablation_debm_make_surface_forcing
+    ic_debm2pism_ablation_debm_set_options_surface_given
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_ablation_ebm()
+ic_atm2pism_ablation_ebm() {
+    echo; echo -e "\t\tSetting up SMB scheme EBM (SEMIC)..."
+    # NOTE: Not yet implemented. Turning this one will break...
+    ic_atm2semic_ablation_ebm_make_forcing
+    ic_atm2semic_ablation_ebm_run
+    ic_semic2pism_ablation_ebm_make_surface_forcing
+    ic_semic2pism_set_options_surface_given
+    echo; echo -e "\t\t...done."; echo
+}
+
+################################################################################
+################################################################################
+# F I N I S H   :: Does all the clean up steps
+################################################################################
+################################################################################
+
+
+ic_atm2pism_finish_up() {
+    for file in ${cleanup_list}; do
+        if [ -f ${file} ]; then
+            rm ${file}
+        fi
+    done
+}
+
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for preparing
+################################################################################
+################################################################################
+
+
+ic_atm2pism_prepare_define_constants() {
+    echo; echo -e "\t\t* Defining constants"
+    INTERPOL_TYPE_ATM="bil"  #"bil" "con" "dis" "nn"
+    WEIGHTS_ATM2ICE=weights_atm2ice.${INTERPOL_TYPE_ATM}.nc
+    GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    GRIDDES_ATM=atmosphere.griddes
+
+    NOCOLOR='\033[0m'
+    GREEN='\033[32m'
+    RED='\033[31m'
+}
+
+
+## @fn ic_atm2pism_prepare_save_griddes()
+## @brief
+## Saves grid description for a ice sheet
+##
+## Saves a ice.griddes file in the `COUPLE_DIR` of your experiment. By default,
+## tries to copy from the `POOL_DIR_pism`
+ic_atm2pism_prepare_save_griddes() {
+    if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
+        echo; echo -e "\t\t* Saving ice.griddes"
+        if [ -f ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes ]; then
+            cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+            ${COUPLE_DIR}/ice.griddes
+        else
+            echo " Was Looking for: ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes"
+            echo "Could not find griddes file, exiting..."
+            exit 3
+        fi
+    else
+        echo; echo -e "\t\t* File ice.griddes is in place"
+    fi
+}
+
+
+ic_atm2pism_prepare_clean_missing_values() {
+    # Determine if there are any missing values in the
+    # atmosphere_file_for_ice, and issue a warning. They will be all set to
+    # 0, but this might have unintended side-effects
+    echo; echo -e "\t\t* Cleaning up missing values from atmosphere_file_for_ice.nc (If any are found)"
+
+    missing_value_filler=0
+    variables_in_atmosphere_file_for_ice=$(cdo -s pardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk '{print $2}')
+    cdo -s splitvar ${COUPLE_DIR}/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice_
+    for var in ${variables_in_atmosphere_file_for_ice}; do
+        current_min=$(cdo -s \
+            -output \
+            -timmin \
+            -fldmin \
+            -selvar,$var \
+            ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+            | tr -s ' ' \
+            | awk '{print $NF}')
+        current_max=$(cdo -s \
+            -output \
+            -timmax \
+            -fldmax \
+            -selvar,$var \
+            ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+            | tr -s ' ' \
+            | awk '{print $NF}')
+        if [ "x$debug_ic_atm2pism_clean_missing_values" == "x1" ]; then
+            echo -e "\t\t @ DEBUG: The variable ${var} has current_min=${current_min} and current_max=${current_max}"
+        fi
+        number_of_missing_values=$(cdo -s \
+            -output \
+            -timsum \
+            -fldsum \
+            -setmisstoc,1 \
+            -setrtoc,${current_min},${current_max},0 \
+            -selvar,$var \
+            ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+            | tr -s ' ' \
+            | awk '{print $NF}')
+       echo "number_of_missing_values = ${number_of_missing_values}"
+       #if [ "$number_of_missing_values" -gt 0 ]; then
+       if [ "x$number_of_missing_values" != "x0" ]; then
+            echo -e "\t\t!!! ${RED}W A R N I N G${NOCOLOR}: The variable ${var} has ${number_of_missing_values} missing values."
+            echo -e "\t\t!!! ${RED}W A R N I N G${NOCOLOR}: These are being set to $missing_value_filler"
+            cdo -s \
+                -setmisstoc,${missing_value_filler} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice_${var}.nc \
+                tmp
+            mv tmp ${COUPLE_DIR}/atmosphere_file_for_ice_${var}.nc
+        fi
+        merge_list="$merge_list ${COUPLE_DIR}/atmosphere_file_for_ice_${var}.nc"
+    done
+    cdo -s -O merge $merge_list ${COUPLE_DIR}/atmosphere_file_for_ice.nc
+}
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for dynamic downscaling
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_regrid_downscale_split_names()
+## @brief
+## Splits names **and** regrids via `INTERPOL_TYPE_ATM`
+##
+## Using the `INTERPOL_TYPE_ATM`, weights are generated for remapping, and
+## then used to remap `atmosphere_file_for_ice.nc`.
+## Variable names are split into seperate files for further processing.
+## Error output of the cdo commant is dumped in `cdo_stderr_atm2pism`.
+##
+## After regridding, all files matching variable names in `cdo pardes atmosphere_file_for_ice` are added to the `cleanup_list`
+ic_atm2pism_regrid_dyn_downscale_split_names() {
+	ic_atm2pism_regrid_downscale_split_names
+}
+
+## @fn ic_atm2pism_regrid_downscale_generate_elevation_difference()
+## @brief
+## Calculates `evel_hi` minus `elev_lo`.
+##
+## Using the `INPUT_FILE_pism` variable `usurf` as high resolution orography, the differnce to the low resolution orography is calculed. 
+##
+## @pre
+## Assumes that a variable `atmosphere_name_elevation` is present in the `atmosphere_file_for_ice.nc`
+ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
+        echo ""; echo "                *  calculating elevation difference"
+        echo "*** INPUT_FILE_pism = ${INPUT_FILE_pism} ***"
+        if [ -z ${INPUT_FILE_pism} ]; then
+                echo "Oh no, help."
+                exit 5
+        fi
+        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        if ${cdo} -L -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
+                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
+        else
+                ${cdo} -s -add \
+                        -selvar,thk ${INPUT_FILE_pism} \
+                        -setrtoc,-10000,0,0 \
+                        -selvar,topg ${INPUT_FILE_pism} \
+                        "${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+        fi
+        mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
+        cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
+        ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
+	cdo settbounds,1mon -setreftime,1850-01-01,00:00:00 -setunit,m tmp.nc surface_altitude_coarse_resolution.nc
+
+	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc"
+}
+
+ic_atm2pism_regrid_dyn_downscale_temperature() {
+	echo""; echo -e "\t\t*   dynamical downscaling temperature"
+        echo -e "\t\t-   falling back to bilinear interpolation for temperature!"
+        echo -e "\t\t-   PISM will internally apply lapse rates to this field!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/temperature.nc
+}
+
+ic_atm2pism_regrid_dyn_downscale_precipitation() {
+	echo""; echo -e "\t\t*   dynamical downscaling precipitation"
+        echo -e "\t\t-   falling back to bilinear interpolation for precipitation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc ${COUPLE_DIR}/precipitation.nc
+}
+
+ic_atm2pism_regrid_dyn_downscale_shortwave_downward_radiation() {
+        echo""; echo -e "\t\t*   downscaling shortwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation for SW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_shortwave}.nc ${COUPLE_DIR}/shortwave_down.nc
+}
+
+ic_atm2pism_regrid_dyn_downscale_TOAshortwave() {
+        echo""; echo -e "\t\t*   downscaling TOA shortwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation for SW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_TOAshortwave}.nc ${COUPLE_DIR}/TOAshortwave.nc
+}
+
+ic_atm2pism_regrid_dyn_downscale_humidity() {
+        echo""; echo -e "\t\t*   downscaling TOA shortwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_humidity}.nc ${COUPLE_DIR}/humidity.nc
+}
+ic_atm2pism_regrid_dyn_downscale_longwave_downward_radiation() {
+        echo""; echo -e "\t\t*   downscaling longwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation for LW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_longwave}.nc ${COUPLE_DIR}/longwave_down.nc
+}
+ic_atm2pism_regrid_dyn_downscale_emissivity() {
+        echo""; echo -e "\t\t*   downscaling atm. emissivity"
+        echo -e "\t\t-   falling back to bilinear interpolation for LW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_emissivity}.nc ${COUPLE_DIR}/emissivity.nc
+}
+ic_atm2pism_regrid_dyn_downscale_cloud_cover() {
+        echo""; echo -e "\t\t*   downscaling cloud cover"
+        echo -e "\t\t-   falling back to bilinear interpolation for cloud cover!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_cloud_cover}.nc ${COUPLE_DIR}/cloud_cover.nc
+}
+
+ic_atm2pism_regrid_dyn_downscale_transmissivity() {
+        echo""; echo -e "\t\t*   downscaling transmissivity"
+        echo -e "\t\t-   falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_transmissivity}.nc ${COUPLE_DIR}/transmissivity.nc
+}
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for downscaling
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_regrid_downscale_split_names()
+## @brief
+## Splits names **and** regrids via `INTERPOL_TYPE_ATM`
+##
+## Using the `INTERPOL_TYPE_ATM`, weights are generated for remapping, and
+## then used to remap `atmosphere_file_for_ice.nc`.
+## Variable names are split into seperate files for further processing.
+## Error output of the cdo commant is dumped in `cdo_stderr_atm2pism`.
+##
+## After regridding, all files matching variable names in `cdo pardes atmosphere_file_for_ice` are added to the `cleanup_list`
+ic_atm2pism_regrid_downscale_split_names() {
+        echo; echo "                *   spliting names and regridding via ${INTERPOL_TYPE_ATM}"
+
+        # Umbau wegen dieser Fehlermeldungen
+        #*   spliting names and regridding via remapbil
+        #cdo(2) remapbil (Abort): Bilinear/bicubic interpolation doesn't support unstructured source grids!
+        #cdo: posixio.c:660: px_get: Assertion `pxp->bf_refcount <= 0' failed.
+        #
+        #/tmp/slurmd/job2388013/slurm_script[73]: eval[73]: eval[73]: eval[393]: atmosphere2pism[12]: ic_atm2pism_regrid_downscale[65]: regrid_downscale_split_names: line 342: 92036: Abort(coredump)
+
+        if [ 1 -eq 0 ] ; then
+                # IF CDO does not recognize the grid, you activate this mode
+                # section and it may solve the problem
+
+                VAR4REMAP=$( $cdo -s showvar ../couple/atmosphere_file_for_ice.nc | awk '{print $1}' )
+                echo "                 Fix for missing information metadata information about longitude and latitude: 'lon lat'"
+                ncatted -a coordinates,${VAR4REMAP},c,c,'lon lat' ${COUPLE_DIR}/atmosphere_file_for_ice.nc
+
+                build_weights4remap \
+                        ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                        ${GRIDDES_ICE:?Missing variable} \
+                        ${WEIGHTS_ATM2ICE:?Missing variable} \
+                        ${INTERPOL_TYPE_ATM:?Missing variable} \
+                        couple \
+                        dummy_restart_dir_weights \
+                        $VAR4REMAP
+        else
+                build_weights4remap \
+                        ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                        ${GRIDDES_ICE:?Missing variable} \
+                        ${WEIGHTS_ATM2ICE:?Missing variable} \
+                        ${INTERPOL_TYPE_ATM:?Missing variable} \
+                        couple
+        fi
+
+        test_file_or_exit $WEIGHTS_ATM2ICE 4
+
+        $cdo -s -splitname \
+                -remap,$GRIDDES_ICE,$WEIGHTS_ATM2ICE \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_ 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        ##atmosphere_file_at_ice.${INTERPOL_TYPE_ATM}.nc # && rm atmosphere_file_for_ice.nc
+
+        for varname in $(cdo -s pardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk -F ' ' '{print $2}'); do
+                cleanup_list="$cleanup_list ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${varname}.nc"
+        done
+}
+
+## @fn ic_atm2pism_regrid_downscale_generate_elevation_difference()
+## @brief
+## Calculates `evel_hi` minus `elev_lo`.
+##
+## Using the `INPUT_FILE_pism` variable `usurf` as high resolution orography,
+## the difference to the low resolution orography is calculated.
+##
+## @pre
+## Assumes that a variable `atmosphere_name_elevation` is present in the `atmosphere_file_for_ice.nc`
+ic_atm2pism_regrid_downscale_generate_elevation_difference() {
+        echo ""; echo "                *  calculating elevation difference"
+        if [ -z ${INPUT_FILE_pism} ]; then
+                echo "Oh no, help."
+                exit 5
+        fi
+        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        if ${cdo} -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
+                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
+        else
+                ${cdo} -s -add \
+                        -selvar,thk ${INPUT_FILE_pism} \
+                        -setrtoc,-10000,0,0 \
+                        -selvar,topg ${INPUT_FILE_pism} \
+                        "${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+        fi
+        mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
+        cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
+        ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc"
+}
+
+## @fn ic_atm2pism_regrid_downscale_temperature()
+## @brief
+## Downscales atmospheric temperature using a lapse-rate correction
+##
+## The following operation applies a spatially uniform, temporally constant lapse rate to the
+## elevation difference and corrects the interpolated 2m temperature as:
+##
+## \f[
+##      T_{downscaled} = T_{2m} + \Gamma \cdot \left(z_{hi} - z_{lo}\right)
+## \f]
+## Where:
+## \f$ T_{downscaled} \f$ = Downscaled temperature (K)
+##
+## \f$ T_{2m} \f$ = 2m air temperature (K)
+##
+## \f$ \Gamma \f$ = Lapse rate (K/1000m)
+##
+## \f$ z_{hi} \f$ = High resolution orography (m)
+##
+## \f$ z_{lo} \f$ = Low resolution orography (m)
+##
+## The lapse-rate correction may be defined via `DOWNSCALING_LAPSE_RATE`
+## (default value is -0.007) units of K/1000m.
+##
+## @note
+## Downscaling of temperature can be explicitly turned **OFF** by setting `DOWNSCALE_TEMP` to a value not equal to 1.
+## In this case, temperature information is instead generated via bilinear interpolation.
+ic_atm2pism_regrid_downscale_temperature() {
+        DOWNSCALE_TEMP=${DOWNSCALE_TEMP:-1}
+        if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
+                echo ""; echo "                *  downscaling temperature"
+                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.007"}
+                if (( ${DOWNSCALING_LAPSE_RATE} >= 0 )); then
+                        echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
+                        echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
+                        exit 6
+                fi
+                echo "                -  Lapse rate applied was Γ=${DOWNSCALING_LAPSE_RATE} (K/km)"
+                ${cdo} -s -f nc \
+                        -add ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc \
+                        -mulc,${DOWNSCALING_LAPSE_RATE} \
+                        ${COUPLE_DIR}/elev_hi_minus_lo.nc \
+                        ${COUPLE_DIR}/temp_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo "                -  corrections applied (time mean of difference Hi-Res - Lo-Res) "
+                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc)"
+                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc)"
+                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc)"
+                mv ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/temperature.nc
+        else
+                echo ""; echo -e "\t\t*   NOT downscaling temperature"
+                echo -e "\t\t-   falling back to bilinear interpolation for temperature!"
+                # Take the already bilinearly interpolated file
+                mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/temperature.nc
+        fi
+}
+
+## @fn ic_atm2pism_regrid_downscale_precipitation()
+## @brief
+## Downscales atmospheric precipitaiton using temperature differences and a scaling factor \f$ \gamma \f$
+##
+## The following is after Quiquet et al, The Cryosphere, 2012
+## https://www.the-cryosphere.net/6/999/2012/
+##
+## \f[
+##      P_{downscaled} = P_{lo} \cdot e^{\gamma \cdot (T_{hi} - T_{lo})}
+## \f]
+##
+## The factor gamma is chosen after Huybrechts 2002, but is poorly constrained (see Charbit et al. 2002)
+ic_atm2pism_regrid_downscale_precipitation() {
+        DOWNSCALE_PRECIP=${DOWNSCALE_PRECIP:-1}
+        if [ "x${DOWNSCALE_PRECIP}" == "x1" ]; then
+                echo ""; echo -e "\t\t*  downscaling precipitation"
+                # Now we do precipitation
+                gamma="-0.07"
+                echo -e "\t\t-  factor γ=${gamma}"
+                echo -e "\t\t-  P_downscaled = P * e ** (gamma * (T_downscaled - T_original))"
+                ${cdo} -s \
+                        -mul \
+                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc \
+                        -exp \
+                        -mulc,$gamma \
+                        -sub \
+                        ${COUPLE_DIR}/temperature.nc \
+                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc \
+                        ${COUPLE_DIR}/precip_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo -e "\t\t-  corrections applied (time mean of difference Hi-Res - Lo-Res) "
+                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                mv ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/precipitation.nc
+                if [ "x$backup_temperature" == "x1" ]; then
+                        echo -e "\t\t  Restoring interpolated temperature for use in atmo_given_file.nc"
+                        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/temperature.nc
+			DOWNSCALE_TEMP=0
+                fi
+        elif [ "x${DOWNSCALE_PRECIP}" == "desertification" ]; then
+        echo ""; echo -e "\t\t*  downscaling precipitation following desertification scheme -> Ziemen et al, 2014 "
+                # Now we do precipitation
+                gamma=${gamma:-"-0.00069315"}
+                echo -e "\t\t-  factor γ=${gamma}"
+                echo -e "\t\t-  P_downscaled = P * e ** (-gamma * max(0,(max(2000,Z_hi) - max(2000,Z_lo))))"
+               
+                ${cdo} -s \
+                        -mul \
+                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc \
+                        -exp \
+                        -mulc,$gamma \
+                        ${COUPLE_DIR}/elev_hi_minus_lo_2000.nc \
+                        ${COUPLE_DIR}/precip_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo -e "\t\t-  corrections applied (time mean of difference Hi-Res - Lo-Res) "
+                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
+                mv ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/precipitation.nc   
+        else
+                echo ""; echo -e "\t\t*   NOT downscaling precipitation"
+                echo -e "\t\t-   falling back to bilinear interpolation for precipitation!"
+                # Take the already bilinearly interpolated file
+                mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc ${COUPLE_DIR}/precipitation.nc
+        fi
+}
+
+ic_atm2pism_regrid_downscale_shortwave_downward_radiation() {
+        echo""; echo -e "\t\t*   downscaling shortwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation for SW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_shortwave}.nc ${COUPLE_DIR}/shortwave_down.nc
+}
+
+ic_atm2pism_regrid_downscale_longwave_downward_radiation() {
+        echo""; echo -e "\t\t*   downscaling longwave downward radiation"
+        echo -e "\t\t-   falling back to bilinear interpolation for LW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_longwave}.nc ${COUPLE_DIR}/longwave_down.nc
+}
+ic_atm2pism_regrid_downscale_TOAshortwave() {
+        echo""; echo -e "\t\t*   downscaling shortwave_radiation_TOA"
+        echo -e "\t\t-   falling back to bilinear interpolation for LW radiation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_TOAshortwave}.nc ${COUPLE_DIR}/TOAshortwave.nc
+}
+ic_atm2pism_regrid_downscale_humidity() {
+        echo""; echo -e "\t\t*   downscaling near_surface_humidity"
+        echo -e "\t\t-   falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_humidity}.nc ${COUPLE_DIR}/humidity.nc
+}
+ic_atm2pism_regrid_downscale_emissivity() {
+        echo""; echo -e "\t\t*   downscaling atm_emissivity"
+        echo -e "\t\t-   falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_emissivity}.nc ${COUPLE_DIR}/emissivity.nc
+}
+ic_atm2pism_regrid_downscale_cloud_cover() {
+        echo""; echo -e "\t\t*   downscaling cloud cover"
+        echo -e "\t\t-   falling back to bilinear interpolation for cloud cover!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_cloud_cover}.nc ${COUPLE_DIR}/cloud_cover.nc
+}
+ic_atm2pism_regrid_downscale_transmissivity() {
+        echo""; echo -e "\t\t*   downscaling transmissivity"
+        echo -e "\t\t-   UKK falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_transmissivity}.nc ${COUPLE_DIR}/transmissivity.nc
+}
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for bilinear interpolation
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_regrid_interpolate_temperature()
+## @brief
+## Interpolates temperature field bilinearly
+##
+## This uses `cdo remapbil` to bilinearly interpolate the atmospheric temperature to the ice grid.
+## It is the fallback option if downscaling is only applied to precipitation.
+ic_atm2pism_regrid_interpolate_temperature() {
+        atmosphere_file=${1:-${COUPLE_DIR}/atmosphere_file_for_ice.nc}
+        echo ""; echo -e "\t\t* Regridding temperature bilinearly from atmosphere_file_for_ice.nc"
+
+        if [ "x$debug_ic_atm2pism_regrid_interpolate_temperature" == "x1" ]; then
+                echo -e "\t\t Command is:"
+                echo " ${cdo} -v -f nc -P 8 \
+                        -remapbil,${COUPLE_DIR}/ice.griddes \
+                        -selvar,${atmosphere_name_temperature} \
+                        ${atmosphere_file} ${COUPLE_DIR}/temperature.nc \
+                        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism"
+        fi
+
+        ${cdo} -s -f nc -P 8 \
+                -remapbil,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_temperature} \
+                ${atmosphere_file} \
+                ${COUPLE_DIR}/temperature.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+## @fn ic_atm2pism_regrid_interpolate_precipitation()
+## @brief
+## Interpolates atmospheric precipitation field bilinearly
+##
+## Uses `cdo remapbil` to interpolate precipitation biliniearly to the ice grid.
+## This is the fallback option if downscaling only is applied to temperature.
+ic_atm2pism_regrid_interpolate_precipitation() {
+        echo ""; echo -e "\t\t* Regridding precipitation bilinearly from atmosphere_file_for_ice.nc"
+        ${cdo} -v -f nc  -P 8 \
+                -remapbil,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_precipitation} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/precipitation.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+ic_atm2pism_regrid_interpolate_shortwave_downward_radiation() {
+        echo ""; echo -e "\t\t* Regridding short-wave downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_shortwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/shortwave_down.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+ic_atm2pism_regrid_interpolate_longwave_downward_radiation() {
+        echo ""; echo -e "\t\t* Regridding long-wave downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_longwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/longwave_down.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+ic_atm2pism_regrid_interpolate_TOAshortwave() {
+        echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_TOAshortwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/TOAshortwave.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+ic_atm2pism_regrid_interpolate_emissivity() {
+        echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_emissivity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/emissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+ic_atm2pism_regrid_interpolate_humidity() {
+        echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_humidity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/humidity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+ic_atm2pism_regrid_interpolate_transmissivity() {
+        echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_transmissivity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/transmissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+ic_atm2pism_regrid_interpolate_cloud_cover() {
+        echo ""; echo -e "\t\t* Regridding cloud cover downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_cloud_cover} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/cloud_cover.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for conservative remapping
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_regrid_remap_temperature()
+## @brief
+## Conservative remapping for temperature to ice grid
+ic_atm2pism_regrid_remap_temperature() {
+        echo ""; echo -e "\t\t* Regridding temperature conservatively from atmosphere_file_for_ice.nc"
+        ${cdo} -s -f nc  \
+                -remapcon,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_temperature} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/temperature.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+## @fn ic_atm2pism_regrid_remap_precipitation()
+## @brief
+## Conservative remapping for precipitation to ice grid
+ic_atm2pism_regrid_remap_precipitation() {
+        echo ""; echo -e "\t\t* Regridding precipitation conservatively from atmosphere_file_for_ice.nc"
+        ${cdo} -s -f nc  \
+                -remapcon,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_precipitation} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/precipitation.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+ic_atm2pism_regrid_remap_shortwave_downward_radiation() {
+        echo ""; echo -e "\t\t* Regridding short-wave downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_shortwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/shortwave_down.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+ic_atm2pism_regrid_remap_longwave_downward_radiation() {
+        echo ""; echo -e "\t\t* Regridding long-wave downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_longwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/longwave_down.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+ic_atm2pism_regrid_remap_TOAshortwave() {
+        echo ""; echo -e "\t\t* Regridding TOA shortwave radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_TOAshortwave} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/TOAshortwave.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+} 
+ic_atm2pism_regrid_remap_emissivity() {
+        echo ""; echo -e "\t\t* Regridding TOA shortwave radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_emissivity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/emissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+} 
+ic_atm2pism_regrid_remap_humidity() {
+        echo ""; echo -e "\t\t* Regridding TOA shortwave radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_humidity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/humidity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+} 
+ic_atm2pism_regrid_remap_transmissivity() {
+        echo ""; echo -e "\t\t* Regridding TOA shortwave radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_transmissivity} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/transmissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+} 
+ic_atm2pism_regrid_remap_cloud_cover() {
+        echo ""; echo -e "\t\t* Regridding cloud cover downward radiation from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_cloud_cover} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/cloud_cover.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for PDD
+################################################################################
+################################################################################
+
+
+## @fn ic_atm2pism_make_atmosphere_forcing()
+## @brief
+## Sets correct temperature and precipitation units, adds a time axis
+##
+## Sets temperature and precipitation units and combines the files along with a time axis.
+ic_atm2pism_ablation_pdd_make_atmosphere_forcing() {
+        echo; echo -e "\t\t* Generating atmo_given file with sensible metadata"
+        ic_atm2pism_ablation_pdd_set_temperature_units
+        ic_atm2pism_ablation_pdd_set_precipitation_units
+        ic_atm2pism_ablation_pdd_merge_preliminary_files
+        ic_atm2pism_ablation_pdd_set_time_axis
+}
+
+
+## @fn ic_atm2pism_ablation_pdd_set_temperature_units()
+## @brief
+## Sets metadata for air temperature when using an atmosphere given scheme in `PISM`
+##
+## Renames the variable read from atmosphere_name_temperature to air_temp
+##
+## @fixme This probably should be named atmo_given_set_temperature_metadata instead...
+ic_atm2pism_ablation_pdd_set_temperature_units() {
+        echo -e "\t\t- setting temperature units and variable names"
+        ncrename \
+                -v ${atmosphere_name_temperature},air_temp \
+                ${COUPLE_DIR}/temperature.nc
+}
+
+
+## @fn ic_atm2pism_ablation_pdd_set_precipitation_units()
+## @brief
+## Sets metadata for precipitation when using an atmo given scheme in `PISM`
+##
+## If `$VERSION_pism` is specificed to 0.7, the precipitation field is rescaled to mm/day.
+## Otherwise, in `$VERSION_pism` == 1.0 or 1.1, we can use `kg m-2 second-1`.
+## File metadata and variable names are set according.
+ic_atm2pism_ablation_pdd_set_precipitation_units() {
+        echo -e "\t\t- setting precipitation units and variable names"
+        test_if_set VERSION_pism
+        if [ "x$VERSION_pism" == "x0.7" ]; then
+                # FIXME(PG): This is currently very specific and assumes that
+                # the units coming out of the atmosphere model are kg/m2/s
+                #
+                # Divide by ice density and convert from kg/m^2s to mm/day ice equivalent
+                # Next step is skipped if we use pism1.0, then pism wants kg m-2 s-1
+                ${cdo} -s \
+                        -mulc,3600 -mulc,24 -mulc,1000 -divc,910 \
+                        ${COUPLE_DIR}/precipitation.nc \
+                        tmp \
+                        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism \
+                        && mv tmp ${COUPLE_DIR}/precipitation.nc
+        fi
+        ncrename \
+                -v ${atmosphere_name_precipitation},precipitation \
+                ${COUPLE_DIR}/precipitation.nc
+        case ${VERSION_pism:--0.1} in
+                "0.7")
+                        ncatted \
+                                -a units,precipitation,o,c,"mm day-1" \
+                                ${COUPLE_DIR}/precipitation.nc \
+                                tmp
+                        ;;
+                "1.0"|"1.1"|"1.2")
+                        ncatted \
+                                -a units,precipitation,o,c,"kg m-2 second-1" \
+                                ${COUPLE_DIR}/precipitation.nc \
+                                tmp
+                        ;;
+                *)
+                        echo "Undefined pism version, exiting"
+                        exit 7
+                        ;;
+        esac
+        mv tmp ${COUPLE_DIR}/precipitation.nc
+}
+
+
+ic_atm2pism_ablation_pdd_merge_preliminary_files() {
+        echo -e "\t\t- merging atmospheric temp and precip together"
+        ${cdo} -s -O \
+                -merge \
+                ${COUPLE_DIR}/precipitation.nc \
+                ${COUPLE_DIR}/temperature.nc \
+                ${COUPLE_DIR}/atmo_given_file.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
+
+
+## @fn ic_atm2pism_ablation_pdd_set_time_axis()
+## @brief adds a time axis to a forcing file
+##
+## Uses a predefined time axis file to attach time bounds to an atmo_given file
+##
+## @fixme: This function currently does 360 days. This needs to be improved.
+ic_atm2pism_ablation_pdd_set_time_axis() {
+
+        echo -e "\t\t- appending time axis to forcing file >>${COUPLE_DIR}/atmo_given_file.nc<<"
+        # Determine how many timesteps we have and set time unit accordingly
+        nt=$(${cdo} -s ntime ${COUPLE_DIR}/atmo_given_file.nc)
+        if [ "x$nt" == "x1" ]; then
+                echo -e "\t\t- only ONE timestep given"
+                time_unit="year"
+                echo "Dont know what to do"
+                exit 8
+        else
+                echo -e "\t\t- assuming MONTHLY MEANS (for now -- using 30 equivalent days per month)"
+                time_calendar="360_day"
+        fi
+
+        ncatted \
+                -a \
+                bounds,time,o,c,"time_bnds" \
+                -a \
+                calendar,time,o,c,${time_calendar} \
+                ${COUPLE_DIR}/atmo_given_file.nc tmp && mv tmp ${COUPLE_DIR}/atmo_given_file.nc
+        ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${COUPLE_DIR}/atmo_given_file.nc
+
+        #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc
+        #         Producesses unrealistic x-/y-arrays with a values like: -8.0e+51, 1.7e+161, 1.e-258
+
+        echo -e "\t\t- appending unique date-stamp to file name"
+        echo -e "\t\t- atmo_given_file.nc ---> atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc"
+
+        #ncks -Av x ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/atmo_given_file.nc
+        #ncks -Av y ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/atmo_given_file.nc
+        mv ${COUPLE_DIR}/atmo_given_file.nc ${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+        ln -fs ${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc ${COUPLE_DIR}/latest_atmo_given_file.nc
+        cleanup_list="${cleanup_list} ${COUPLE_DIR}/temperature.nc ${COUPLE_DIR}/precipitation.nc"
+}
+
+
+ic_atm2pism_ablation_pdd_set_options_atmo_given() {
+        echo; echo -e "\t\t* Generating files with option information for PISM"
+        pism_conf_file_list="${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat ${COUPLE_DIR}/pism_config_value_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat"
+        for pism_conf_file in $pism_conf_file_list; do
+                if [ ! -f $pism_conf_file ]; then
+                        :> $pism_conf_file
+                fi
+        done
+
+	if [ "x${bool_atm2pism_regrid_dyn_downscaling}" == "x1" ]; then
+            echo; echo -e "\t\t* Write options for dynamic downscaling"
+
+            echo "pism_set_coupler___atmosphere=given,lapse_rate" >> \
+		${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+            echo "pism_set_forcing_file___atmosphere_lapse_rate=${COUPLE_DIR}/surface_altitude_coarse_resolution.nc" >> \
+		${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+	else
+            echo "pism_set_coupler___atmosphere=given" >> \
+		${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+        fi
+        
+        echo "pism_set_coupler___surface=pdd" \
+        >> ${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+
+        echo "pism_set_forcing_file___atmosphere_given=${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc" \
+        >> ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+
+        number_of_timesteps_in_atmo_given_file=$(cdo -s \
+            nyear \
+            ${COUPLE_DIR}/atmo_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)
+        echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
+        >> ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+		
+        #        ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+        #    echo "pism_set_forcing_file___atmosphere_lapse_rate=${COUPLE_DIR}/surface_altitude_coarse_resolution.nc" >> \
+	#	${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+	#else
+        #    echo "pism_set_coupler___atmosphere=given" >> \
+	#	${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+        #fi
+        #
+        #echo "pism_set_coupler___surface=pdd" \
+        #>> ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+
+        #echo "pism_set_forcing_file___atmosphere_given=${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc" \
+        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+
+        #number_of_timesteps_in_atmo_given_file=$(cdo -s \
+        #    nyear \
+        #    ${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc)
+        #echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
+        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
+}
+
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Steps for DEBM
+################################################################################
+################################################################################
+## @fn ic_atm2debm_make_forcing()
+## @brief
+## Prepares a forcing file for the Fortran implementation of the dEBM mass balance model
+ic_atm2debm_ablation_debm_make_forcing() {
+        echo; echo -e "\t\t* Preparing forcing file from atmosphere_file_for_ice.nc for the dEBM Mass Balance Model"
+        ic_atm2debm_ablation_debm_make_forcing_set_temperature_units
+        ic_atm2debm_ablation_debm_make_forcing_set_precipitation_units
+        ic_atm2debm_ablation_debm_make_forcing_set_cloud_cover_units
+        ic_atm2debm_ablation_debm_make_forcing_set_shortwave_units
+        ic_atm2debm_ablation_debm_make_forcing_set_longwave_units
+        ic_atm2debm_ablation_debm_make_forcing_set_TOAshortwave_units
+        ic_atm2debm_ablation_debm_make_forcing_set_emissivity_units
+        ic_atm2debm_ablation_debm_make_forcing_set_transmissivity_units
+        ic_atm2debm_ablation_debm_make_forcing_set_humidity_units
+        ic_atm2debm_ablation_debm_make_forcing_merge_preliminary_files
+}
+
+
+## @fn ic_atm2debm_run()
+## @brief
+## Downloads dEBM Fortran code, compile and create excute binary file
+## Specific steps:
+## 
+## 1) Generates namelists specific for the Fortran dEBM run
+## 2) Downloads dEBM code and create dEBM execute binary file; this only do for the first time step
+## 3) Run the Fortran version of the dEBM
+ic_atm2debm_ablation_debm_run() {
+        echo; echo -e "\t\t* Running dEBM Model"
+        ic_atm2debm_ablation_debm_run_modify_nml
+        ic_atm2debm_ablation_debm_run_compile_binary
+        ic_atm2debm_ablation_debm_run_execute_binary
+}
+
+## @fn ic_debm2pism_make_surface_forcing()
+## @brief
+## Sets the metadata and time axis needed for a surface given file which comes out of the dEBM model
+##
+## Specific steps:
+## 1) Sets the temperature variable name
+## 2) Converts temperature to Kelvin if needed
+## 3) Sets the SMB variable name
+## 4) Sets the SMB units to kg/m2/s (see pism-docs)
+## 5) Merges results together
+## 6) Sets a time axis
+ic_debm2pism_ablation_debm_make_surface_forcing() {
+        echo; echo -e "\t\t* Generating a surface_given file with sensible names, units, and a time axis..."
+        ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature
+        ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask
+        ic_debm2pism_ablation_debm_make_surface_forcing_set_temperature_varname_and_units
+        ic_debm2pism_ablation_debm_make_surface_forcing_set_smb_varname_and_units
+        ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files
+        ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
+}
+
+
+ic_atm2debm_ablation_debm_make_forcing_set_temperature_units() {
+        echo -e "\t\t-   setting temperature units and variable names"
+        ncrename -v ${atmosphere_name_temperature},air_temp ${COUPLE_DIR}/temperature.nc
+        # Units skipped, although we need a way to ensure they are in Kelvin
+}
+
+
+ic_atm2debm_ablation_debm_make_forcing_set_precipitation_units() {
+        echo -e "\t\t-   setting precipitation units and variable names"
+        ncrename -v ${atmosphere_name_precipitation},precipitation ${COUPLE_DIR}/precipitation.nc
+        ncatted -a units,precipitation,o,c,"kg m-2 second-1" ${COUPLE_DIR}/precipitation.nc
+}
+
+
+ic_atm2debm_ablation_debm_make_forcing_set_cloud_cover_units() {
+        echo -e "\t\t-   NO CHANGES for clouds units and variable names"
+}
+
+
+ic_atm2debm_ablation_debm_make_forcing_set_shortwave_units() {
+        echo -e "\t\t-   NO CHANGES for shortwave units and variable names"
+}
+
+ic_atm2debm_ablation_debm_make_forcing_set_TOAshortwave_units() {
+        echo -e "\t\t-   NO CHANGES for TOAshortwave units and variable names"
+}
+
+ic_atm2debm_ablation_debm_make_forcing_set_emissivity_units() {
+        echo -e "\t\t-   NO CHANGES for emissivity units and variable names"
+}
+ 
+ic_atm2debm_ablation_debm_make_forcing_set_transmissivity_units() {
+        echo -e "\t\t-   NO UKK CHANGES for transmissivity units and variable names"
+        #ncrename -v ${atmosphere_name_transmissivity},tau ${COUPLE_DIR}/transmissivity.nc
+        #ncatted -a units,transmissivity,o,c,"" ${COUPLE_DIR}/transmissivity.nc
+}
+
+ic_atm2debm_ablation_debm_make_forcing_set_humidity_units() {
+        echo -e "\t\t-   NO CHANGES for humidity units and variable names"
+}
+
+ic_atm2debm_ablation_debm_make_forcing_set_longwave_units() {
+        echo -e "\t\t-   NO CHANGES for longwave units and variable names"
+}
+
+
+ic_atm2debm_ablation_debm_make_forcing_merge_preliminary_files() {
+        echo -e "\t\t-   merging together atmospheric temperature, precip, cloud cover, SW and LW radiation"
+        $cdo -s -O \
+                -merge \
+                ${COUPLE_DIR}/temperature.nc \
+                ${COUPLE_DIR}/precipitation.nc \
+                ${COUPLE_DIR}/cloud_cover.nc \
+                ${COUPLE_DIR}/shortwave_down.nc \
+                ${COUPLE_DIR}/TOAshortwave.nc \
+	        ${COUPLE_DIR}/emissivity.nc \
+	        ${COUPLE_DIR}/transmissivity.nc \
+                ${COUPLE_DIR}/humidity.nc \
+                ${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
+                2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                #${COUPLE_DIR}/longwave_down.nc \
+        echo -e "\t\t-   UKK  input_file_for_debm_" ${CURRENT_YEAR_pism}-${END_YEAR_pism}
+}
+
+
+
+
+## @fn ic_atm2pism_set_options_surface_given
+## @brief
+## Sets surface given options for the next PISM run
+ic_debm2pism_ablation_debm_set_options_surface_given() {
+        pism_conf_file_list="${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat ${COUPLE_DIR}/pism_config_value_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat"
+        for pism_conf_file in $pism_conf_file_list; do
+                if [ ! -f $pism_conf_file ]; then
+                        :> $pism_conf_file
+                fi
+        done
+
+        echo "pism_set_coupler___surface=given" >> \
+                ${COUPLE_DIR}/pism_coupler_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+        echo "pism_set_forcing_file___surface_given=${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc" >> \
+                ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+        echo "pism_set_config_value_FORCE___surface_given_period=$(cdo -s nyear ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)" \
+                >> ${COUPLE_DIR}/pism_forcing_${CURRENT_YEAR_pism}-${END_YEAR_pism}.dat
+}
+
+
+ic_atm2debm_ablation_debm_run_modify_nml() {
+        PISM_GRID_FILE=${COUPLE_DIR}/ice.griddes
+        #number_of_timesteps=$(cdo -s ntime ${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)
+
+        #number_of_x_points=$(grep 'xsize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
+        #number_of_y_points=$(grep 'ysize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
+        obliquity_value=${MY_VALUE:-"23.17"}
+
+        echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 
+
+        # Plus ten points for Shan: variable names are actually variable. Sortof...
+        # UKK Paul, sometimes I don't understand you
+        cat -> ${COUPLE_DIR}/namelist.debm << EOF
+&runctl
+lresume=.false.
+use_shortwave_radiation_TOA=.true.
+use_mask=.false.
+debug_switch=.false.
+debug_lon=241
+debug_lat=107
+debug_mon=12
+debug_year=1
+/
+
+&debm
+filename_in='${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc'
+precipitation_varname='precipitation'
+temperature_varname='air_temp'
+shortwave_radiation_downward_varname='swd'
+shortwave_radiation_TOA_varname='TOAswd'
+cloud_cover_varname='cc'
+emissivity_varname='emiss'
+transmissivity_varname='tau'
+mapping_varname='thk'
+longitude_varname='lon'
+latitude_varname='lat'
+time_varname='time'
+stddev=3.5
+obliquity=${obliquity_value}
+/
+EOF
+#        cat -> ${COUPLE_DIR}/namelist.debm << EOF
+#& debm
+# xlen                                  = ${number_of_x_points}
+# ylen                                  = ${number_of_y_points}
+# tlen                                  = ${number_of_timesteps}
+# filename_in                           = '${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc'
+# precipitation_varname                 = 'precipitation'
+# temperature_varname                   = 'air_temp'
+# shortwave_radiation_downward_varname  = 'swd'
+# mapping_varname                       = 'siced'
+# longitude_varname                     = 'lon'
+# latitude_varname                      = 'lat'
+# time_varname                          = 'time'
+# stddev                                =  3.5
+# obliquity                             =  ${obliquity_value}
+#/
+
+echo -e "\t\t- Namelist used in this dEBM run was:"
+cat ${COUPLE_DIR}/namelist.debm
+
+}
+
+
+ic_atm2debm_ablation_debm_run_compile_binary() {
+        debug_compile_ic_atm2debm_binary=${debug_compile_ic_atm2debm_binary:-1}
+        # Get a user supplied version if available:
+        echo "*** DEBM_EXE = ${DEBM_EXE} ***"
+        if [ ! -z ${DEBM_EXE} ]; then
+                cp ${DEBM_EXE} ${COUPLE_DIR}/dEBMmain
+        fi
+
+        # Clone Shan's fortran version if it's not already here:
+        if [ ! -f ${COUPLE_DIR}/dEBMmain ]; then
+                echo -e "\t\t- Couldn't find: ${COUPLE_DIR}/dEBMmain"
+                if [ ! -d ${COUPLE_DIR}/dEBM ]; then
+                        echo -e "\t\t- Cloning dEBM"
+                        git clone --quiet -b fortran https://github.com/ukrebska/dEBM
+                fi
+                # compile it
+                current_dir=$(pwd)
+                cd dEBM/Fortran-v1.0
+                if command -v nc-config > /dev/null 2>&1; then
+                        # Do nothing
+                        :
+                else
+                        echo -e "\t\t!!! F A T A L   E R R O R !!! nc-config not found, not sure how to compile. Aborting"
+                        exit
+                fi
+
+                if [ $(nc-config --has-fortran) == "no" ]; then
+                        echo -e "\t\t!!! F A T A L   E R R O R !!! netcdf specified via nc-config doesn't have FORTRAN bindings. Aborting"
+                        exit
+                fi
+
+                echo -e "\t\t- Compiling dEBM"
+
+                compiler=$(nc-config --fc)
+                include=$(nc-config --fflags)
+                libs=$(nc-config --flibs)
+
+                # For ollie, a bad hack: the library -lsz and -lcurl don't
+                # appear to be found on the compute nodes, we throw them out:
+                bad_libs="-lsz -lcurl"
+                for bad_lib in ${bad_libs}; do
+                        libs="${libs//$bad_lib/}"
+                done
+
+                if [ "x${debug_compile_ic_atm2debm_binary}" == "x1" ]; then
+                        echo -e "\t\t- INFO: compiler=$compiler"
+                        echo -e "\t\t- INFO: include=$include"
+                        echo -e "\t\t- INFO: libs=$libs"
+                        echo -e "\t\t- INFO: the compile command will be:"
+                        echo "$compiler $include $libs MOD_PRE.f90 MOD_DATA.f90 MOD_MAIN.f90 MOD_OUTPUT.f90 dEBMmain.f90 -o dEBMmain"
+                fi
+                $compiler \
+                        $include \
+                        $libs \
+                        MOD_PRE.f90 \
+                        MOD_DATA.f90 \
+                        MOD_MAIN.f90 \
+                        MOD_OUTPUT.f90 \
+                        dEBMmain.f90 \
+                        -o dEBMmain \
+                        2>> ${compiler}_stdout_stderr
+                cp dEBMmain ${COUPLE_DIR}
+                cd $current_dir
+        fi
+}
+
+
+## @fn execute_ic_atm2debm_binary
+## @brief
+## Runs the Fortran version of the dEBM Mass Balance Model
+##
+## Note:
+## 1) Also checks if the namelist and binary file exist
+## 2) The stdout and stderr of dEBM are piped to
+##    ${COUPLE_DIR}/ic_atm2debm_stdout_stderr. If the program exits with an error code of
+##    non-zero, this stdout/stderr file is printed to the console.
+ic_atm2debm_ablation_debm_run_execute_binary() {
+        echo -e "\t\t- Running DEBM Binary"
+        cd ${COUPLE_DIR}
+        DEBM_BINARY=dEBMmain
+        DEBM_NAMELIST=namelist.debm
+        required_files_to_run_dEBM="$DEBM_NAMELIST $DEBM_BINARY"
+        for required_file in $required_files_to_run_dEBM; do
+                required_file_exit_code=1
+                if [ ! -f $required_file ]; then
+                        echo -e "\t\t!!! F A T A L   E R R O R !!! required file for dEBM $required_file could not befound, exiting"
+                        exit $required_file_exit_code
+                fi
+                required_file_exit_code=$((required_file_exit_code + 1))
+        done
+        module unload netcdf
+        module load netcdf/4.6.0_intel
+
+        ./$DEBM_BINARY > debm_stdout_stderr 2>&1 || cat debm_stdout_stderr
+        
+        module unload netcdf/4.6.0_intel
+        module load netcdf/4.6.0_gnu
+        cd -
+}
+
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature
+## @brief
+## generates a surface forcing that could passes down to PISM: dEBM output + air_temp
+## dEBM ouput is generated from above functions
+## air_temp is yearly mean air_temperature under zero degC calculated from echam output 
+ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
+        echo -e "\t\t- Adding yearly-averaged atmospheric surface temperature to surface given file"
+        echo -e "\t\t  NOTE: this serves as a first-order estimate for surface temperature below the firn layer"
+        cd ${COUPLE_DIR}
+        
+        debug_add_surface_temperature=${debug_add_surface_temperature:-0}
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Getting air temperature"
+        fi
+        # select air_temperature
+        cdo -s \
+                -timmean \
+                -selvar,air_temp \
+                ${COUPLE_DIR}/input_file_for_debm_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
+                tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Determining temperature scale Kelvin vs Celsius" 
+        fi
+
+        cdo -s \
+                -setmisstoc,273.15 \
+                -ifthen \
+                -ltc,273.15 \
+                tmp0 \
+                tmp0 \
+                tmp 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        cdo -s \
+                -setmisstoc,273.15 \
+                tmp \
+                tmp1 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Duplicating array 12x" 
+        fi
+        #  copy this array 12x so you have one for each month
+        cdo -s \
+                cat \
+                tmp1 tmp1 tmp1 tmp1 tmp1 tmp1 \
+                tmp6 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        cdo -s \
+                cat \
+                tmp6 tmp6 \
+                tmp12 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Setting time axis" 
+        fi
+        cdo -s \
+                -settaxis,1000-01-16,12:00:00,1mon \
+                tmp12 \
+                ${COUPLE_DIR}/air_temp_copy.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        rm tmp0 tmp tmp1 tmp6 tmp12 
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Multi-year monthly means" 
+        fi
+        # merge air_temp with debm output files
+        # & set time axies
+        # PG: Why is this set to noon on the year 1000? Does that have any reason?
+        cdo -s \
+                -ymonmean \
+                -settaxis,1000-01-16,12:00:00,1mon \
+                surface_mass_balance.nc \
+                tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Merge and clean up" 
+        fi
+        cdo -s -O \
+                -merge \
+                tmp \
+                ${COUPLE_DIR}/air_temp_copy.nc \
+                ${COUPLE_DIR}/smb.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        rm tmp
+		cleanup_list="$cleanup_list ${COUPLE_DIR}/air_temp_copy.nc"
+                cd -
+}
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask
+## @brief
+## apply a mask for PISM surface forcing
+## 
+## Specific steps:
+## 1) creates a glacial mask 
+##		for the first time step, users could specifiy DEBM_MASK_SOURCE_FILE
+##		then, fn will generate a glacial mask from PISM latest output
+## 2) appply the above mask
+ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
+        echo -e "\t\t- Applying a mask"
+        cd ${COUPLE_DIR}
+        # TODO/BUG (sxu): It looks like the mask we are getting is just 1 everywhere... is this correct?
+
+        debug_apply_ic_atm2debm_mask=${debug_apply_ic_atm2debm_mask:-0}
+        # create glacial mask according to the latest output by setting mask.nc 2 3 —> 1; 4 —>0
+        mask_file=mask.nc
+        if [ "x$RUN_NUMBER_pism" == "x1" ]; then
+                echo -e "\t\t- First run, you can specify to use DEBM_MASK_FILE to get the mask you want to use"
+                DEBM_MASK_FILE=${DEBM_MASK_FILE:-${POOL_DIR_pism}/masks/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_mask_${RES_pism}.nc}
+        else
+                cdo -f nc -selvar,mask ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc mask.nc
+                DEBM_MASK_FILE=mask.nc
+        fi
+        echo -e "\t\t- DEBM_MASK_FILE=${DEBM_MASK_FILE}"
+        cdo -s selvar,mask -seltimestep,-1 ${DEBM_MASK_FILE} mask.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        cdo -s -lec,3 mask.nc tmp 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        mv tmp ${mask_file}
+
+        # apply mask
+        for var in SNH MELT SMB REFR A air_temp; do
+                #cdo -s -f nc ifthen ${mask_file} -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+                cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        done
+        cdo -s -O merge SNH MELT SMB REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        #cdo -s -O merge SNH MELT SMB ACC REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+
+        # TODO/BUG (sxu): For right now, Paul is just filling in any missing
+        # values with a setmisstodis, maybe there is a better way to solve
+        # this?
+
+        #cdo -s -O -setmisstodis surface_mass_balance_masked.nc tmp
+
+        # TODO(sxu) Not urgent, but we can use a cleanup list for this, that
+        # way we can have a debug step print it out if anything needs to get
+        # checked.
+        # make clean
+        rm SNH MELT SMB REFR A air_temp
+        #rm SNH MELT SMB ACC REFR A air_temp
+        rm smb.nc
+        if [ ! -f ${COUPLE_DIR}/${mask_file} ]; then
+                mv ${mask_file} ${COUPLE_DIR}/
+        fi
+        if [ "x${debug_apply_ic_atm2debm_mask}" == "x1" ]; then
+                echo -e "\t\t@ DEBUG: Opening the results in ncview for you"
+                # Put this in the background, or it blocks the rest of the script
+                ncview surface_mass_balance_masked.nc &
+        fi
+
+        cdo -splitname \
+                surface_mass_balance_masked.nc \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_\
+                1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        cd -
+}
+
+
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_temperature_varname_and_units
+## @brief
+## ## Sets variables name that conform to PISM standards
+##
+## Sets air_temp to ice_surface_temp 
+ic_debm2pism_ablation_debm_make_surface_forcing_set_temperature_varname_and_units() {
+        echo -e "\t\t- Setting variable name and unit for temperature"
+        echo -e "\t\t- In surface_given variant, this corresponds to firn temperature"
+
+        debm_ice_temp_varname="air_temp"
+        pism_ice_temp_varname="ice_surface_temp"
+        ncrename \
+                -v ${debm_ice_temp_varname},${pism_ice_temp_varname} \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_ice_temp_varname}.nc 
+        # TODO(pg or shan): Unit check
+}
+
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_smb_varname_and_units
+## @brief
+## ## Sets variables name that conform to PISM standards
+##
+## Sets SMB to climatic_mass_balance 
+ic_debm2pism_ablation_debm_make_surface_forcing_set_smb_varname_and_units() {
+        echo -e "\t\t- Setting variable name and unit for SMB"
+
+        debm_mass_balance_varname="SMB"
+        pism_mass_balance_varname="climatic_mass_balance"
+        ncrename \
+                -v ${debm_mass_balance_varname},${pism_mass_balance_varname} \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc
+        ncatted -a \
+                units,${pism_mass_balance_varname},o,c,"kg m-2 s-1" \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc \
+                tmp_${debm_mass_balance_varname}
+        mv tmp_${debm_mass_balance_varname} \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc
+}
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files
+## @brief
+##     merge temperature and surface mass balance
+##
+ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files() {
+        echo -e "\t\t- Merging below-firn temperature and surface mass balance together!"
+        cdo -O merge \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_ice_temp_varname}.nc \
+                ${COUPLE_DIR}/debm_output_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}_${debm_mass_balance_varname}.nc \
+                ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc \
+                1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+}
+
+## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
+## @brief
+## adds a time axis to a forcing file
+##
+ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
+        echo -e "\t\t- Adding a time axis"
+
+        # Determine how many timesteps we have and set time unit accordingly
+        nt=$(${cdo} -s ntime ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc)
+        if [ "x$nt" == "x1" ]; then
+                echo "                 -   only ONE timestep given"
+                time_unit="year"
+                echo "Dont know what to do"
+                exit 8
+        else
+                echo "                -   assuming MONTHLY MEANS (for now -- using 30 equivalent days per month)"
+                time_calendar="360_day"
+        fi
+
+        ncatted \
+                -a \
+                bounds,time,o,c,"time_bnds" \
+                -a \
+                calendar,time,o,c,${time_calendar} \
+                ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc tmp_with_taxis \
+                && mv tmp_with_taxis ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+
+        ncks -A \
+                ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc \
+                ${COUPLE_DIR}/surface_given_file_${CURRENT_YEAR_pism}-${END_YEAR_pism}.nc
+
+        #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc
+        #         Producesses unrealistic x-/y-arrays with a values like: -8.0e+51, 1.7e+161, 1.e-258
+
+        # PG: Why was this necessary?
+        # iterative_coupling_pism_regrid_add_xy_array ${COUPLE_DIR}/atmo_given_file.nc "atmosphere"
+        # TODO: cleanup_list="${cleanup_list} ${COUPLE_DIR}/temperature.nc ${COUPLE_DIR}/precipitation.nc"
+
+}
+
+
+################################################################################
+################################################################################
+# U T I L I T Y   F U N C T I O N S
+################################################################################
+################################################################################
+# NOTE: These probably should be moved to a general file.
+
+
+## @fn cdo_verbosity()
+## @brief
+## Controls how verbose CDO should be.
+cdo_verbosity() {
+        if [ "x$CDO_QUIET" == "x1" ]; then
+                cdo="cdo -s"
+        elif [ "x$CDO_VERBOSE" == "x1" ]; then
+                cdo="cdo -v"
+        else
+                cdo=cdo
+        fi
+}

@@ -126,7 +126,7 @@ xios:
         model_dir: ${general.model_dir}/xios-${nemo.version}
         setup_dir: ${general.model_dir}
 
-        nproca: ${computer.cores_per_node}
+        nproca: ${computer.partitions.compute.cores_per_node}
         nprocb: 1
 
 

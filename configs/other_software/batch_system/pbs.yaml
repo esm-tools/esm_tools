@@ -1,0 +1,59 @@
+# PBS YAML CONFIGURATION FILE
+#
+#
+
+header_start: "#PBS"
+submit: qsub
+launcher: aprun
+debugger: None
+account: None
+
+
+
+
+# intermediate vars
+
+mail1: ""
+mail2: ""
+
+choose_accounting:
+        True:
+                accounting_flag: "-A ${general.account}"
+
+choose_mail_type:
+        "*":
+                mail1:  "-m ${mail_type}"
+choose_general.mail_type:
+        "*":
+                mail1:  "-m ${general.mail_type}"
+choose_mail_user:
+        "*":
+                mail2:  "-M ${mail_user}"
+choose_general.mail_user:
+        "*":
+                mail2:  "-M ${general.mail_user}"
+
+notification_flag: "${mail1} ${mail2}"
+#single_proc_submit_flag: "--ntasks-per-node=1"
+nodes_flag: "-l nodes=@nodes@"
+partition_flag: "-q ${partition}"
+time_flag: "-l walltime=${compute_time}"
+additional_flags: ""
+output_path: "${experiment_dir}/log/"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
+output_flags: "-j oe -o ${thisrun_logfile}"
+name_flag: "-N ${expid}"
+
+choose_launcher:
+        aprun:
+                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
+                        env OMP_NUM_THREADS=@omp_num_threads@"
+                launcher_comp_sep: "\\\n         : "
+
+choose_debugger:
+        None:
+                debugger_flags_prelauncher: ""
+
+submitted: false
+
+execution_command: "${debugger_flags_prelauncher} ${launcher} @components@"

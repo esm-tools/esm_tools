@@ -1,0 +1,25 @@
+#!/bin/ksh
+awiesm2pism() {
+    . ${FUNCTION_PATH}/coupling_atmosphere2pism.functions
+    . ${FUNCTION_PATH}/coupling_ocean2pism.functions
+    . ${FUNCTION_PATH}/pism_helpers.functions
+    . ${FUNCTION_PATH}/general_lists.functions
+    
+    atmosphere2pism
+    ocean2pism
+
+#    max_retry=12
+#    retry=0
+#    sleep 10 # Minimum time for st_new.sh to finish
+#    while [ ${retry} -lt ${max_retry} ]; do
+#        if [ -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+#            break # call results.sh outside loop
+#        else
+#            (( retry = retry + 1 ))
+#            sleep 1
+#        fi
+#    done
+#    if [ ! -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+#        echo "Something wrong after waiting for 120 seconds!"
+#    fi
+}

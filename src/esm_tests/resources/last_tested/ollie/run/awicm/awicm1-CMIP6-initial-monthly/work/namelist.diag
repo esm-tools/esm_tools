@@ -1,0 +1,14 @@
+&diag_flag
+    check_run_state = .true.
+    diag_oce = .true.
+    diag_oce_ke = .true.
+    diag_oce_energy_conv = .false.
+    diag_oce_mix_layer = .true.
+    diag_oce_transp = .true.
+    diag_oce_gm_vel = .false.
+    diag_oce_sgs_transp = .false.
+    diag_oce_kv = .false.
+    diag_ice = .true.
+    diag_forcing = .true.
+    diag_mesh = .false.
+/

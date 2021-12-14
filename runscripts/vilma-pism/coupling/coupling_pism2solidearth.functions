@@ -1,0 +1,169 @@
+#!/usr/bin/ksh
+
+function pism2solidearth {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    pism2solidearth *** "; echo
+
+
+        echo "                PISM_TO_SOLID_EARTH=${PISM_TO_SOLID_EARTH}"
+
+        if [[ "x${PISM_TO_SOLID_EARTH}" == "x1" ]]; then
+	#	iterative_coupling_pism_remove_unchanged_files_for_safety
+		iterative_coupling_pism_solidearth_write_grid
+                iterative_coupling_pism_solidearth_write_names
+                iterative_coupling_pism_solidearth_make_forcing
+        else
+                echo " NOT generating ice forcing for solid earth"
+        fi
+        echo
+        echo "                 *** F I N I S H E D    pism2solidearth *** "
+        echo "                =================================================================="
+}
+
+
+#function iterative_coupling_pism_remove_unchanged_files_for_safety {
+#	echo "Removing files to be changed by pism couple_in later, so that the run intentionally"
+#	echo "crashes if something goes wrong. Removing:"
+#	
+#
+#	if [[ -e  "${RESTART_DIR_pism}/${latest_restart_file_pism}" ]]
+#	then
+#		echo "   - ${RESTART_DIR_pism}/${restart_file_pism}"
+#        	cp $(readlink ${RESTART_DIR_pism}/${restart_file_pism}) ${RESTART_DIR_pism}/${restart_file_pism}_unchanged_${RUN_DATE_STAMP}.nc
+#		rm ${RESTART_DIR_pism}/${latest_restart_file_pism}
+#	fi
+#
+#}
+
+
+
+function iterative_coupling_pism_solidearth_make_forcing {
+        pism_solidearth_initialize_ice_thickness_file
+        pism_solidearth_append_ice_thickness_file
+}
+
+function iterative_coupling_pism_solidearth_write_names {
+        : > ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        ICE_THICKNESS_VARNAME_pism=thk
+        MASK_VARNAME_pism=mask
+        TOPOGRAPHY_VARNAME_pism=topg
+        echo "ice_thickness_name=$ICE_THICKNESS_VARNAME_pism" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "ice_mask_name=${MASK_VARNAME_pism}" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "ice_topography_name=${TOPOGRAPHY_VARNAME_pism}" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "RUN_NUMBER_ice=${RUN_NUMBER_pism}" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "CURRENT_YEAR_ice=${CURRENT_YEAR_pism}" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "END_YEAR_ice=${END_YEAR_pism}" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "VALUE_LAND_ice=0" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "VALUE_GROUNDED_ice=2" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "VALUE_FLOATING_ice=3" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+        echo "VALUE_OCEAN_ice=4" >> ${COUPLE_DIR}/ice_names_for_solidearth.dat
+}
+
+function iterative_coupling_pism_solidearth_write_grid {
+	echo "Making sure that ice.griddes is found..."
+
+	if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
+
+                cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+                      ${COUPLE_DIR}/ice.griddes  
+        fi
+}
+
+function pism_solidearth_initialize_ice_thickness_file {
+		
+	echo "Generating ${COUPLE_DIR}/ice_thickness.nc"
+
+        if [ "x${RUN_NUMBER_pism}" == "x1" ]; then
+                solidearth_ice_thickness_file=${COUPLE_DIR}/ice_thickness.nc 
+
+                # Three different options, user HAS to make a choice, see runscript
+                case $pism_solidearth_initialize_method in
+                    "dummy")
+                        echo " "
+                        echo "                The initialization method for the pism-solid earth coupling is dummy."
+                        echo "                The last timestep of the specfied output file of the dummy run will be taken as initial condition for the ice thickness."
+                        if [ ! -f ${pism_solidearth_initialize_dummyrun_file} ]; then
+                                echo "                WARNING: no valid dummy run for the pism-solid earth coupling chosen!"
+                                echo "                Ice thickness file will not be initialized."
+                        else
+                                cdo -s \
+                                        selvar,${ICE_THICKNESS_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism} \
+                                        -select,timestep=-1 \
+                                        ${pism_solidearth_initialize_dummyrun_file} \
+                                        ${COUPLE_DIR}/regrid-tmp.nc
+
+                                # Create dummy mask with missing values, this mask is not used
+                                ncap2 -s 'mask=byte((thk*0)-127)' ${COUPLE_DIR}/regrid-tmp.nc ${solidearth_ice_thickness_file}
+                                rm ${COUPLE_DIR}/regrid-tmp.nc 
+                        fi 
+                    ;;
+                    "regrid")
+                        echo " "
+                        echo "                The initialization method for the pism-solid earth coupling is regrid."
+                        echo "                The PISM input file, regridding to output shape, will be taken as initial condition for the ice thickness."
+
+                        INPUT_GRID_pism=${INPUT_GRID_pism:-${COUPLE_DIR}/ice.griddes}
+
+                                cdo -s \
+                                        remapcon,${COUPLE_DIR}/ice.griddes \
+                                        -selvar,${ICE_THICKNESS_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism}  \
+                                        -setgrid,${INPUT_GRID_pism} \
+                                        ${INPUT_FILE_pism} ${COUPLE_DIR}/regrid-tmp.nc 
+
+                                # Create dummy mask with missing values, this mask is not used
+                                ncap2 -s 'mask=byte((thk*0)-127)' ${COUPLE_DIR}/regrid-tmp.nc ${solidearth_ice_thickness_file}
+                                rm ${COUPLE_DIR}/regrid-tmp.nc                                        
+                    ;;
+                    "first_timestep")
+                        echo " "
+                        echo "                The initialization method for the pism-solid earth coupling is first_timestep."
+                        echo "                The first timestep of the first PISM output file will be taken as initial condition for the ice thickness."
+
+                                cdo -s \
+                                        selvar,${ICE_THICKNESS_VARNAME_pism},${MASK_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism}  \
+                                        -select,timestep=1 \
+                                        ${DATA_DIR_pism}/${latest_ex_file_pism} \
+                                        ${solidearth_ice_thickness_file}
+                    ;;
+                    *)
+                        echo "                WARNING: no valid initialization method for the pism-solid earth coupling chosen!"
+                        echo "                Ice thickness file will not be initialized, please set parameter pism_solidearth_initialize_method in your runscript."
+                esac
+                      
+                ncap2 -s "time=${YR0_INI_pism}" ${solidearth_ice_thickness_file} -A ${solidearth_ice_thickness_file}
+                ncatted -a calendar,time,o,c,"365_day" ${solidearth_ice_thickness_file}
+
+        fi
+
+
+}
+
+function pism_solidearth_append_ice_thickness_file {
+
+	echo "Appending latest ex_file to ice_thickness.nc"
+
+        solidearth_ice_thickness_file=${COUPLE_DIR}/ice_thickness.nc
+
+        cdo -s \
+                selvar,${ICE_THICKNESS_VARNAME_pism},${MASK_VARNAME_pism},${TOPOGRAPHY_VARNAME_pism}  \
+                -select,timestep=-1 \
+                ${DATA_DIR_pism}/${latest_ex_file_pism} \
+                ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc
+
+        ncap2 -s "time=${END_YEAR_pism}" ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc -A ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc
+
+        ncrcat -A ${solidearth_ice_thickness_file} ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc ${solidearth_ice_thickness_file}
+
+        cdo -s -O \
+                shifttime,${YR0_INI_pism}year \
+                -settaxis,0-1-1,00:00,${NYEAR_pism_standalone}year \
+                ${solidearth_ice_thickness_file} ${COUPLE_DIR}/tmp_ice_thickness.nc 
+
+        mv ${COUPLE_DIR}/tmp_ice_thickness.nc ${solidearth_ice_thickness_file}
+
+# clean up
+        rm ${COUPLE_DIR}/ofile_${RUN_NUMBER_pism}.nc
+	cp ${solidearth_ice_thickness_file} ${solid_earth_ice_thickness_file}_${RUN_DATE_STAMP}
+
+}
+

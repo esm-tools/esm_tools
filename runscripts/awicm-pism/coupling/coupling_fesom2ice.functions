@@ -1,0 +1,730 @@
+#!/usr/bin/ksh
+
+function fesom2ice {
+    FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
+    echo " *** S T A R T I N G    fesom2ice *** "
+
+    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . ${FUNCTION_PATH}/coupling_general.functions
+
+    echo "     Starting coupling_fesom2ice.functions ...."
+    echo "FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing}"
+
+    export FileName_depth4levels_FESOM=depth_axis_fesom.nc
+    iter_coup_interact_method_oce2ice=${iter_coup_interact_method_oce2ice:-}
+
+    iterative_coupling_fesom1x_ice_make_forcing
+    iterative_coupling_fesom1x_ice_write_grid
+    iterative_coupling_fesom1x_ice_write_names
+
+    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    unset cleanup_list file
+}
+
+function iterative_coupling_fesom1x_ice_make_forcing {
+    echo "Preparing fesom1x file for processing in an ice sheet model..."
+
+    FESOM_TO_ISM_multiyear_mean=${FESOM_TO_ISM_multiyear_mean:-1}
+    FESOM_TO_ISM_total_mean=${FESOM_TO_ISM_total_mean:-1}
+
+    fesom_ice_construct_input_list
+    fesom_ice_select_relevant_variables
+    # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    fesom_ice_fesom_build_grid_with_lonlat_depth
+    fesom_ice_concatenate_files
+    if [ "x${FESOM_TO_ISM_multiyear_mean:-0}" == "x1" ] ; then
+            fesom_ice_generate_multiyear_mean
+    fi
+    if [ "x${FESOM_TO_ISM_total_mean:-0}" == "x1" ] ; then
+            fesom_ice_generate_total_mean
+    fi
+
+    # Since depth array "depth(level)" is lost after each CDO
+    # command (because the vertical dimension is "level"), we have
+    # to add the depth array as very last command.
+    # To keep the "depth" and allow CDO to use this information,
+    # we have to rename the dimension "level" against "depth" as well.
+    # Hence use "fesom_ice_rename_level2depth_add_depth" and not
+    # "fesom_ice_add_depth", because the latter does not work as
+    # wanted.
+    #
+    # These selections of `$iter_coup_interact_method_oce2ice`
+    # could lead to enormous main memory request, if we use many
+    # time step. Therefore we collapse the data file into one
+    # single time step .
+    if [ "${iter_coup_interact_method_oce2ice}" == "MIXED" -o \
+         "${iter_coup_interact_method_oce2ice}" == "TS_RESCALED2FLUX" -o \
+         "${iter_coup_interact_method_oce2ice}" == "TEMPSALT2FLUX" -o \
+         "${iter_coup_interact_method_oce2ice}" == "TEMP2FLUX" -o \
+         "${iter_coup_interact_method_oce2ice}" == "OCEANTEMP" ] ; then
+            FESOM_TO_ISM_total_mean=1
+    fi
+
+    fesom_ice_construct_input_list
+    fesom_ice_select_relevant_variables
+    # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    fesom_ice_fesom_build_grid_with_lonlat_depth
+    fesom_ice_concatenate_files
+    if [ "x${FESOM_TO_ISM_multiyear_mean}" == "x1" ] ; then
+        fesom_ice_generate_multiyear_mean
+    fi
+    if [ "x${FESOM_TO_ISM_total_mean}" == "x1" ] ; then
+        fesom_ice_generate_total_mean
+    fi
+
+    # Since depth array "depth(level)" is lost after each CDO
+    # command (because the vertical dimension is "level"), we have
+    # to add the depth array as very last command.
+    # To keep the "depth" and allow CDO to use this information,
+    # we have to rename the dimension "level" against "depth" as well.
+    # Hence use "fesom_ice_rename_level2depth_add_depth" and not
+    # "fesom_ice_add_depth", because the latter does not work as
+    # wanted.
+    #
+    # Adding the depth works only for z-coordinates
+    #
+    if [ -f ${FileName_depth4levels_FESOM} ] ; then
+	cp ocean_file_for_ice.nc ocean_file_for_ice.before_add_depth.nc
+	fesom_ice_rename_level2depth_add_depth ${FileName_depth4levels_FESOM} ocean_file_for_ice.nc
+	cleanup_list="${cleanup_list} $(pwd)/ocean_file_for_ice.before_add_depth.nc"
+    fi
+
+    #add_to $(pwd)/ocean_file_for_ice.nc ocean_file_for_ice.nc couple
+    cp $(pwd)/ocean_file_for_ice.nc ${COUPLE_DIR}/ocean_file_for_ice.nc
+    echo "     ...done."
+}
+
+function iterative_coupling_fesom1x_ice_write_grid {
+        echo "Writing fesom1x grid description to generic ocean.griddes..."
+        echo ""; echo " *   generating griddes"
+	NEW_OCE2ICE_GRID=$(build_grid_des ocean_file_for_ice.nc ocean.griddes couple)
+	export NEW_OCE2ICE_GRID
+        cp $(pwd)/ocean.griddes ${COUPLE_DIR}/ocean.griddes
+
+        echo "....done."
+}
+
+function iterative_coupling_fesom1x_ice_write_names {
+        echo "Writing fesom1x names and units for use with generic ocean_file_for_ice.nc"
+        :> ocean_names_for_ice.dat
+        echo ""; echo " *   temperature"
+        echo "ocean_name_pot_temperature=temp" >> ocean_names_for_ice.dat
+        echo "ocean_units_pot_temperature=degC" >> ocean_names_for_ice.dat
+        echo ""; echo " *   salinity"
+        echo "ocean_name_salinity=salt" >> ocean_names_for_ice.dat
+	# Since "psu" is not a standard unit, we use "g/kg", which follows the newest definitions
+        #echo "ocean_units_salinity=psu" >> ocean_names_for_ice.dat
+        echo "ocean_units_salinity=g/kg" >> ocean_names_for_ice.dat
+        echo ""; echo " *   ice base depth"
+        echo "ocean_name_ice_base_depth=basedepth" >> ocean_names_for_ice.dat
+        echo "ocean_units_ice_base_depth=m" >> ocean_names_for_ice.dat
+
+        echo ""; echo " *   top/surface tempeature"
+        echo "ocean_name_pot_temperature_z0=Tsurf" >> ocean_names_for_ice.dat
+        echo "ocean_units_pot_temperature_z0=degC" >> ocean_names_for_ice.dat
+
+        echo ""; echo " *   top/surface salinity"
+        echo "ocean_name_salinity_z0=Ssurf" >> ocean_names_for_ice.dat
+        echo "ocean_units_salinity_z0=g/kg" >> ocean_names_for_ice.dat
+
+        echo ""; echo " *   top-of-ocean heat flux"
+        echo "ocean_name_heatflux_z0=fh" >> ocean_names_for_ice.dat
+        echo "ocean_units_heatflux_z0=W/m2/s" >> ocean_names_for_ice.dat
+
+        echo ""; echo " *   top-of-ocean freshwater flux"
+        echo "ocean_name_fwflux_z0=fw" >> ocean_names_for_ice.dat
+        echo "ocean_units_fwflux_z0=kg/m2" >> ocean_names_for_ice.dat
+
+        echo ""; echo " *   iteration counter"
+        echo "ocean_name_iter=iter" >> ocean_names_for_ice.dat
+        echo "ocean_units_iter=1" >> ocean_names_for_ice.dat
+
+        #add_to $(pwd)/ocean_names_for_ice.dat ocean_names_for_ice.dat couple
+        cp $(pwd)/ocean_names_for_ice.dat ${COUPLE_DIR}/ocean_names_for_ice.dat
+        echo "     ...done."
+}
+
+function fesom_ice_construct_input_list {
+        echo ""; echo " *   constructing input list"
+
+        export CHUNK_END_YEAR_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%Y)
+        export CHUNK_END_MONTH_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%m)
+        export CHUNK_END_DAY_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%d)
+
+        number_of_years_for_forcing=${number_of_years_for_forcing:-1}
+        start_year_couple=$(( CHUNK_END_YEAR_fesom - number_of_years_for_forcing + 1 ))
+        end_year_couple=${CHUNK_END_YEAR_fesom}
+        fesom1x_raw_file3D_T_list_for_ice=""
+        fesom1x_raw_file3D_S_list_for_ice=""
+        fesom1x_raw_file2D_list_for_ice=""
+        fesom1x_raw_file2Dstatic_list_for_ice=""
+
+	#
+	# Standard (monthly) 3dimensional+time FESOM output
+	#
+
+        for year in $(seq $start_year_couple $end_year_couple ); do
+	    month=01
+	    #for month in $(seq -f "%02g" 1 12); do
+		day=01
+		variable=temp
+		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
+		if [ -f $current_file ] ; then
+		    fesom1x_raw_file3D_T_list_for_ice="$fesom1x_raw_file3D_T_list_for_ice $current_file"
+		else
+		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo " S T O P  1  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 1
+		fi
+
+		variable=salt
+		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
+		if [ -f $current_file ] ; then
+		    fesom1x_raw_file3D_S_list_for_ice="$fesom1x_raw_file3D_S_list_for_ice $current_file"
+		else
+		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo " S T O P  2  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 2
+		fi
+	    #done
+        done
+
+# TODO Activate this part once Ozgur's fesom is ready (allow STOP & exit)
+	#
+	# Special 2dimensional+time FESOM output
+	#
+	# -- SST, SSS, fluxes through surface
+        for year in $(seq $start_year_couple $end_year_couple ); do
+	    month=01
+		day=01
+		current_file=${DATA_DIR_fesom}/${EXP_ID}.${year}.pism.nc
+		if [ -f $current_file ] ; then
+		    fesom1x_raw_file2D_list_for_ice="$fesom1x_raw_file2D_list_for_ice $current_file"
+		else
+		    echo "     - Missing 2D fesom file ${current_file}"
+#		echo " S T O P  3  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 3
+		fi
+            #done
+        done
+
+# TODO Activate this part once Ozgur's fesom is ready (allow STOP & exit)
+	#
+	# Special 2dimensional FESOM output
+	#
+	# -- basal ice depth/ice draft
+        for year in $(seq $start_year_couple $end_year_couple ); do
+	    month=01
+	    #for month in $(seq -f "%02g" 1 12); do
+		day=01
+		current_file=${DATA_DIR_fesom}/${EXP_ID}.initial.mesh.diag.nc
+		if [ -f $current_file ] ; then
+		    fesom1x_raw_file2Dstatic_list_for_ice="$fesom1x_raw_file2Dstatic_list_for_ice $current_file"
+		else
+		    echo "     - Missing 2D static fesom file ${current_file}"
+#		echo " S T O P  4  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 4
+		fi
+            #done
+        done
+
+        unset variable year month #current_file start_year_couple end_year_couple
+}
+   
+function fesom_ice_select_relevant_variables {
+    echo ""; echo " *   selecting relevant variables"
+    fesom1x_file3D_T_list_for_ice=""
+    fesom1x_file3D_S_list_for_ice=""
+    fesom1x_file2D_list_for_ice=""
+    fesom1x_file2Dstatic_list_for_ice=""
+    
+    variable=temp
+    for file in ${fesom1x_raw_file3D_T_list_for_ice} ; do
+	echo -n "     - >${variable}< from ${file}"
+        filename=$(basename $file)
+	output="${filename%.*}"_var4ice.nc
+        ${cdo} -s -f nc monmean $file $output
+        fesom1x_file3D_T_list_for_ice="$fesom1x_file3D_T_list_for_ice ${output}"
+	echo " : STILL alive"
+    done
+
+    variable=salt
+    for file in ${fesom1x_raw_file3D_S_list_for_ice} ; do
+	echo -n "     - >${variable}< from ${file}"
+        filename=$(basename $file)
+	output="${filename%.*}"_var4ice.nc
+        ${cdo} -s -f nc monmean $file $output
+        fesom1x_file3D_S_list_for_ice="$fesom1x_file3D_S_list_for_ice ${output}"
+	echo " : STILL alive"
+    done
+
+    variable="2dim-fields"
+    for file in ${fesom1x_raw_file2D_list_for_ice} ; do
+	echo -n "     - >${variable}< from ${file}"
+        filename=$(basename $file)
+	output="${filename%.*}"_var4ice.nc
+        ${cdo} -s -f nc monmean $file $output
+        fesom1x_file2D_list_for_ice="$fesom1x_file2D_list_for_ice ${output}"
+	echo " : STILL alive"
+    done
+
+    variable="static 2dim-fields"
+    for file in ${fesom1x_raw_file2Dstatic_list_for_ice} ; do
+	echo -n "     - >${variable}< from ${file}"
+        filename=$(basename $file)
+	output="${filename%.*}"_var4ice.nc
+	cp $file $output        #${cdo} -s -f nc selvar,XXX,YYY,ZZZ $file $output
+        fesom1x_file2D_list_for_ice="$fesom1x_file2D_list_for_ice ${output}"
+	echo " : STILL alive"
+    done
+
+    #
+    # Do NOT delete the raw files!
+    #
+
+    unset output filename
+    unset fesom1x_raw_file3D_T_list_for_ice fesom1x_raw_file2D_list_for_ice
+    unset fesom1x_raw_file3D_S_list_for_ice fesom1x_raw_file2Dstatic_list_for_ice
+}
+
+function fesom_ice_fesom_build_grid_with_lonlat_depth {
+	# Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+        echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"
+
+	pyfesom_script=${FUNCTION_PATH:-${FPATH}}/fesom_scalar_array_to_LonLat.py
+	if [ ! -f $pyfesom_script ] ; then
+	    echo "     - Missing pyfesom_script ${pyfesom_script}"
+	    echo " S T O P  5  (coupling_fesom2ice.functions::fesom_ice_fesom_build_grid_with_lonlat_depth)" ; exit 5
+	fi
+
+	# Path of PYFESOM installation
+	PYFESOM_PATH=${PYFESOM_PATH:-${FUNCTION_PATH}/pyfesom}
+	CMOCEAN_PATH=${CMOCEAN_PATH:-${FUNCTION_PATH}/cmocean}
+	for dir in ${PYFESOM_PATH} ${CMOCEAN_PATH} ; do
+	    base_dir=$(basename $dir)
+	    echo -n "     - $base_dir"
+	    if [ ! -d $base_dir ] ; then
+		echo " - create link"
+		ln -s $dir
+	    else
+		echo " - exists in $(pwd)"
+	    fi
+	done
+        
+        processed_fesom1x_file3D_T_list_for_ice=""
+        processed_fesom1x_file3D_S_list_for_ice=""
+        processed_fesom1x_file2D_list_for_ice=""
+        processed_fesom1x_file2Dstatic_list_for_ice=""
+
+# --------------------------------------------------------
+#
+# HOT fix, part 1/2
+#
+	echo "=====## ---------------------------------------------------------------"
+	echo "     ## HOT fix for the python2 (needed for pyfesom) vs python3 problem"
+	node_name=$(hostname)
+	echo "     ## Check for computer/node name '${node_name}'"
+	FLAG_SWITCHED_PYTHON=0
+	case ${node_name} in
+	    prod-[0-9]*)
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python3"
+                module_python2="python"
+		;;
+	    ollie[0-1])
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python3"
+                module_python2="python"
+		;;
+	    fat-*[0-9]|fat[0-9])
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python3"
+                module_python2="python"
+		;;
+	    xfat*)
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python3"
+                module_python2="python"
+		;;
+            m[0-9]*[0-9])
+                    # Mistral has compute nodes named m-number(several times)
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python/3.5.2"
+                module_python2="python/2.7.12"
+                ;;
+            mlogin[0-9]*)
+                    # Mistral has compute nodes named m-number(several times)
+		FLAG_SWITCHED_PYTHON=1
+                module_python3="python/3.5.2"
+                module_python2="python/2.7.12"
+                ;;
+	    *)
+		echo "     ## Nothing defined for computer '$(hostname)'"
+		;;
+	esac
+	FLAG_SWITCHED_PYTHON=0
+        if [ ${FLAG_SWITCHED_PYTHON} -eq 1 ] ; then
+	    echo "     ## ACTIVATE HOT fix for the ${module_python2} vs ${module_python3} problem"
+	    echo "--------- module output --- begin"
+	    module unload ${module_python3}
+	    module load ${module_python2}
+	    echo "--------- module output --- end"
+	    echo "     ## unload ${module_python3} and load ${module_python2} : ${node_name}"
+	else
+	    echo "     ## Do not activate HOT fix"
+	    echo "=====## ---------------------------------------------------------------"
+	fi
+        
+        # Several things might be needed for pyfesom. If it isn't installed;
+        # get it
+        module unload python
+        module load ${module_python3}
+        for required_python_external in xarray joblib cmocean seawater; do
+                python -c "import $required_python_external" \
+                        || pip install --user ${required_python_external} \
+                        && echo -e "\t\t - Using existing ${required_python_external} for python"
+        done
+# --------------------------------------------------------
+
+	# ------------------------------------------------
+	#
+	# Determine if grid is rotated and how much
+	#
+	# See issue #83 :
+	# [...] from now on all new meshes will be in geographical
+	# coordinates and old meshes will be converted
+	# accordingly. This means force_rotation=.FALSE. and
+	# rotated_grid=.true. will be the fixed options
+	#
+	# ==> related code is placed at the end of this file
+	#
+        variable=temp
+        for file in ${fesom1x_file3D_T_list_for_ice} ; do
+                filename=$(basename $file) ; logfile=${filename}.${variable}.log
+		output="${filename%.*}"_goodgrid.nc
+
+		echo -n "     - >${variable}< from ${file}"
+                python3 $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		    --FESOM_PATH $DATA_DIR_fesom \
+		    --FESOM_VARIABLE $variable \
+		    --FESOM_MESH ${MESH_DIR_fesom} \
+		    --FESOM_YEARS $start_year_couple $end_year_couple \
+                    --FESOM_OUTPUT $output #> $logfile
+		echo " : STILL alive"
+
+		test_file_or_exit $output 6
+                processed_fesom1x_file3D_T_list_for_ice="$processed_fesom1x_file3D_T_list_for_ice ${output}"
+        done
+
+	variable=salt
+        for file in ${fesom1x_file3D_S_list_for_ice} ; do
+                filename=$(basename $file) ; logfile=${filename}.${variable}.log
+		output="${filename%.*}"_goodgrid.nc
+
+		echo -n "     - >${variable}< from ${file}"
+                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		    --FESOM_PATH $DATA_DIR_fesom \
+		    --FESOM_VARIABLE $variable \
+		    --FESOM_MESH ${MESH_DIR_fesom} \
+		    --FESOM_YEARS $start_year_couple $end_year_couple \
+		    --FESOM_OUTPUT $output > $logfile
+		echo " : STILL alive"
+
+		test_file_or_exit $output 7
+                processed_fesom1x_file3D_S_list_for_ice="$processed_fesom1x_file3D_S_list_for_ice ${output}"
+        done
+
+        for file in ${fesom1x_file2D_list_for_ice} ; do
+                filename=$(basename $file)
+		output="${filename%.*}"_goodgrid.nc
+
+		ic=0
+		for variable in Tsurf Ssurf fh fw ; do
+		    ic=$(( ic + 1 ))
+
+		    logfile=${filename}.${variable}.log
+		    input=$file
+		    if [[ "x${variable}" =~ x[q,w]net ]] ; then
+			echo "     + ${variable} set to zero outside of ice fesom ice shelves"
+			# Set heat and freshwater/mass fluxes to
+			# zero outside of the ice shelf region
+			filename=$(echo $fesom1x_file2Dstatic_list_for_ice | cut -d' ' -f1)
+			test_file_or_exit $filename 8
+			input=tmp_cavity_flag_extended
+			$cdo -O ifthen -selvar,cavity_flag_extended $filename \
+			    -selvar,${variable} $file $input
+		    fi
+
+		    echo -n "     - >${variable}< from ${file}"
+		    result_file=tmp_file_$(printf "%04i" $ic)__${variable}
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+		        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+
+		    test_file_or_exit $result_file 9
+		done
+		$cdo -f nc cat tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output}
+
+		ncks -Av iter tmp_file_0001__[A-Z,a-z]* ${output} && \
+		    rm tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
+
+                processed_fesom1x_file2D_list_for_ice="$processed_fesom1x_file2D_list_for_ice ${output}"
+        done
+
+	for file in ${fesom1x_file2Dstatic_list_for_ice} ; do
+                filename=$(basename $file)
+		output="${filename%.*}"_goodgrid.nc
+
+		ic=0
+# TODO: Wait for OG code for cavities in standard FESOM
+#TODO : variable names of 1) cavitity mask (extend)
+#                         2) depth of ice base (top depth of top ocean layer)
+		for variable in cavity_flag_extended fld ; do
+		    ic=$(( ic + 1 ))
+
+		    logfile=${filename}.${variable}.log
+		    echo -n "     - >${variable}< from ${file}"
+		    result_file=tmp_file_$(printf "%04i" $ic)__${variable}
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+		        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+
+		    test_file_or_exit $result_file 10
+		done
+		$cdo -f nc cat tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output} \
+		    && rm tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
+
+                processed_fesom1x_file2Dstatic_list_for_ice="$processed_fesom1x_file2Dstatic_list_for_ice ${output}"
+        done
+
+	if [ 1 -eq 1 ] ; then
+	    # Clean up and discard intermediate temporary files
+	    for file in tmp_cavity_flag_extended $result_file \
+		${fesom1x_file3D_T_list_for_ice} \
+		${fesom1x_file2D_list_for_ice} \
+		${fesom1x_file3D_S_list_for_ice} \
+		${fesom1x_file2Dstatic_list_for_ice}
+	    do
+		if [ -f $file ] ; then
+		    cleanup_list="${cleanup_list} $(pwd)/$(basename ${file})"
+		fi
+	    done
+	    rm -f tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
+	fi
+
+# --------------------------------------------------------
+#
+# HOT fix, part 2/2
+#
+	if [ ${FLAG_SWITCHED_PYTHON} -eq 1 ] ; then
+	    echo "     ## DEactivate HOT fix for the ${module_python2} vs ${module_python3} problem"
+	    echo "     ## unload ${module_python2} and load ${module_python3}"
+	    echo "     ## HOT fix for the ${module_python2} (needed for pyfesom) vs ${module_python3} problem"
+	    echo "     ## Check computer name"
+	    echo "--------- module output --- begin"
+	    module unload ${module_python2}
+	    module load ${module_python3}
+	    echo "--------- module output --- end"
+	    echo "=====## ---------------------------------------------------------------"
+	    FLAG_SWITCHED_PYTHON=0
+	fi
+# --------------------------------------------------------
+
+	unset dir file filename input logfile output result_file
+	unset fesom1x_file3D_T_list_for_ice fesom1x_file2D_list_for_ice
+	unset fesom1x_file3D_S_list_for_ice fesom1x_file2Dstatic_list_for_ice
+	unset FLAG_SWITCHED_PYTHON FESOM_MESH_SWITCHES
+}
+
+function fesom_ice_concatenate_files {
+        echo ""; echo " *   concatenating files"
+	# New cdo versions sometimes do not allow to overwrite files for
+	# "collective" commands. Hence delete existing old output file
+	[[ -f ocean_file_for_ice.nc ]] && rm ocean_file_for_ice.nc
+	${cdo} -s merge \
+	    ${processed_fesom1x_file3D_T_list_for_ice} \
+	    ${processed_fesom1x_file3D_S_list_for_ice} \
+	    ${processed_fesom1x_file2D_list_for_ice} \
+	    ${processed_fesom1x_file2Dstatic_list_for_ice} \
+	    ocean_file_for_ice.nc
+
+	_flag_extract_depth=1
+	# Extract depth axis and Clean up temporary files
+	for file in \
+	    ${processed_fesom1x_file3D_T_list_for_ice} \
+	    ${processed_fesom1x_file3D_S_list_for_ice} \
+	    ${processed_fesom1x_file2D_list_for_ice} \
+	    ${processed_fesom1x_file2Dstatic_list_for_ice}
+	do
+	    if [ -f $file ] ; then
+		if [ ${_flag_extract_depth} -ne 0 ] ; then
+		    # Shall we add the depth axis (discarded above during merge/cat)
+		    varname_depth="depth"
+		    echo "     - extract depth variable >${varname_depth}< axis from >>${file}<<"
+
+		    if [ ! -f ${FileName_depth4levels_FESOM} ] ; then
+			ncks -v ${varname_depth} ${file} ${FileName_depth4levels_FESOM} \
+			    || echo "     ****** FAILED extracting >${varname_depth}< *****" \
+			    && _flag_extract_depth=0 # Preventing further attempts adding "depth"
+# TODO : compute layer bounds and add them also
+		    fi
+		fi
+
+		if [ 0 -eq 1 ] ; then
+		    cleanup_list="${cleanup_list} $(pwd)/$(basename ${file})"
+		    #OR rm $file
+		fi
+	    fi
+	done
+
+	unset _flag_extract_depth file
+        unset processed_fesom1x_file3D_T_list_for_ice processed_fesom1x_file2D_list_for_ice
+	unset processed_fesom1x_file3D_S_list_for_ice processed_fesom1x_file2Dstatic_list_for_ice
+}
+
+
+function fesom_ice_rename_level2depth_add_depth {
+    _file_depth=$1
+    _file_data=$2
+    echo ""; echo " *   Rename dimension level and add depth axis >>${_file_depth}<< to >>${_file_data}<<"
+    if [ $# -lt 2 ] ; then
+	echo " not enought input variables in coupling_fesom2ice.functions::fesom_ice_rename_level2depth_add_depth"
+	echo " S T O P  11"
+	exit 11
+    fi
+    test_file_or_exit ${_file_depth} 12
+    test_file_or_exit ${_file_data} 13
+
+    # Since depth(level) and level is the vertical dimension, the
+    # "depth" is not recognized by just adding the "depth". As a
+    # consequence "cdo vertlevel,150/500" does not work as expected.
+
+    #
+    # REPLACE 'level' with real 'depth' values
+    #
+    # Step 1 : rename dimension "level" into "depth"
+    #
+    ncrename -d level,depth -v level,depth ${_file_data}
+    ncatted -a axis,depth,o,c,'Z' ${_file_data}
+
+    #
+    # Step 2 : Modified depth/level file comparable to the data file
+    #
+    _file_depth_level=${_file_depth}.level2depth
+    if [ ! -f ${_file_depth_level} ] ; then
+	if [ 1 -eq 0 ] ; then
+	    # This does not work, because we have a missmatch of
+	    # number types between "float" and "double". At the end
+	    # the below added reasonable depth values (via ncks -A)
+	    # are converted into ridiculous large numbers without
+	    # meaning.
+	    # Therefore we first have to convert the depth type
+	    # "float" into "double" and then add this depth.
+	    ncrename -d level,depth ${_file_depth} ${_file_depth_level}
+	    ncatted -a axis,level,d,, \
+		-a axis,depth,o,c,'Z' \
+		${_file_depth_level}
+	else
+	    # As before
+	    ncrename -d level,depth ${_file_depth} ${_file_depth_level}.tmp1
+	    ncatted -a axis,level,d,, \
+		-a axis,depth,c,c,'Z' \
+		${_file_depth_level}.tmp1
+
+	    # This multipliation transforms "float" into "double"
+            ncap=${ncap:-ncap2}
+	    $ncap -s "depth=depth*1.0000000000000;" \
+		${_file_depth_level}.tmp1 \
+		${_file_depth_level}.tmp2
+
+	    # Repair the broken meta-data information for depth and
+	    # get the final $_file_depth_level
+	    ncatted \
+		-a long_name,depth,o,c,"depth" \
+		-a units,depth,o,c,"m" \
+		-a description,depth,o,c,"depth below sea level" \
+		-a positive,depth,o,c,"down" \
+		${_file_depth_level}.tmp2 \
+	    ${_file_depth_level}
+
+	    # Cleanup
+	    rm -f ${_file_depth_level}.tmp1 ${_file_depth_level}.tmp2
+	fi
+    fi
+
+    #
+    # Step 3 : Overwrite former "level" values with real "depth"
+    #
+    ncks -A ${_file_depth_level} ${_file_data}
+
+    unset _file_data _file_depth _file_depth_level
+}
+
+function fesom_ice_add_depth {
+    _file_depth=$1
+    _file_data=$2
+    echo ""; echo " *   Adding depth axis >>${_file_depth}<< to >>${_file_data}<<"
+    if [ $# -lt 2 ] ; then
+	echo " not enought input variables in coupling_fesom2ice.functions::fesom_ice_add_depth"
+	echo " S T O P  11"
+	exit 11
+    fi
+    test_file_or_exit ${_file_depth} 12
+    test_file_or_exit ${_file_data} 13
+
+    #--> This depth is not recognized since depth(level) and
+    # level is the vertical dimension and, hence, the command
+    # "cdo vertlevel,150/500" does not work as expected
+    ncks -A ${_file_depth} ${_file_data}
+
+    unset _file_data _file_depth
+}
+
+
+function fesom_ice_generate_multiyear_mean {
+	input=ocean_file_for_ice.nc
+        echo ""; echo " *   making multi-year monthly mean >>${input}<<"
+
+	bakfile=ocean_file_for_ice.before_ymonmean.nc
+	test_file_or_exit $input 14
+	mv $input $bakfile
+
+	for __var in $($cdo -s showvar ${bakfile} )
+	do
+	    $cdo ymonmean -selvar,${__var} ${bakfile} ${input}.TMP_FIX_$$.${__var}
+	done
+	$cdo -O merge ${input}.TMP_FIX_$$.* ${input} && rm ${input}.TMP_FIX_$$.*
+
+	$cdo showvar ${input}
+        #add_to $(pwd)/${bakfile} ${bakfile} couple
+        cp $(pwd)/${bakfile} ${COUPLE_DIR}/${bakfile}
+	cleanup_list="${cleanup_list} $(pwd)/${bakfile}"
+
+	unset __var
+}
+
+function fesom_ice_generate_total_mean {
+	input=ocean_file_for_ice.nc
+        echo ""; echo " *   making total mean >>${input}<<"
+
+	bakfile=ocean_file_for_ice.before_totalmean.nc
+	test_file_or_exit $input 15
+	mv $input $bakfile
+	if [ 1 -eq 1 ] ; then
+            ${cdo} timmean $bakfile $input
+	else
+	    ncwa -a time   $bakfile $input
+	fi
+
+        #add_to $(pwd)/${bakfile} ${bakfile} couple
+        cp $(pwd)/${bakfile} ${COUPLE_DIR}/${bakfile}
+	cleanup_list="${cleanup_list} $(pwd)/${bakfile}"
+
+	unset bakfile
+}
+
+# -- last line

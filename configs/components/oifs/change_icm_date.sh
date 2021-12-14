@@ -12,46 +12,14 @@ inexpid=$2
 outexpid=$3
 inidate=$4
 startdate=$5
-outdir=$6
-with_wam=$7
-perturb=$8
-nx=$9
-ensemble_id=${10}
+with_wam=$6
+perturb=$7
+nx=$8
+ensemble_id=$9
 
-if [[ "$(hostname -f)" =~ ollie ]] ; then
-    module purge
-    module load intel.compiler
-    module load cdo netcdf/4.6.2_intel
-    export PATH=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu/bin:$PATH
+outdir=$indir
 
-elif [[ "$(hostname -f)" =~ dkrz.de ]] ; then
-    export PATH=/sw/rhel6-x64/grib_api/grib_api-1.15.0-intel14/bin:$PATH
-    module purge
-    module load netcdf_c/4.3.2-gcc48
-    module load cdo
-
-elif [[ "$(hostname -f)" =~ hlrn.de ]] ; then
-    module load intel/19.0.5 impi/2019.5
-     export PATH=/home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811/bin:$PATH
-elif [[ "$(hostname -f)" =~ juwels ]] ; then
-    # new Intel 2019 settings 
-    # self compiled netcdf etc from Sebastian Wahl
-    module --force purge
-    module use $OTHERSTAGES
-    module load Stages/Devel-2019a    
-    module load Intel/2019.5.281-GCC-8.3.0
-    module load ParaStationMPI/5.4.4-1-mt    
-    module load Python/3.6.8
-    module load imkl/2019.3.199
-    export IO_LIB_ROOT=/p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113/
-    export PATH=$IO_LIB_ROOT/bin:$PATH
-    export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-else
-   echo
-   echo $0 has not been adapted for $(hostname)
-   echo
-   exit 1
-fi 
+source $indir/../../scripts/env.sh
 
 echo " OpenIFS preprocessing "
 echo " ===================== "
@@ -63,17 +31,19 @@ cdo -V
 echo " "
 echo " Input dir: $indir "
 echo " Output dir: $outdir "
-echo " Exp ID: $expid "
+echo " InExp ID: $inexpid "
+echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
 echo " End date: $enddate "
-
+echo " Perturb: $perturb "
 ndate=$(date -u -d "${inidate}" +%Y%m%d)
 initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
-
+endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
 echo " Initial time: $initime "
 echo " Start time: $starttime "
+echo " End time: $endtime "
 echo " "
 
 echo " * Change dataDate in files: "
@@ -82,18 +52,22 @@ echo " $files "
 old=${indir}/ICMGG${inexpid}INIT
 new=${outdir}/ICMGG${outexpid}INIT
 newgginit=${new}
-if [ -f $old ]; then 
-    grib_set -s dataDate=$ndate $old $new 
-    echo " Made new file: " $new " with date " $ndate 
-else     
-    echo " Could not find file " $old 
-    exit  
-fi 
+if [ -f $old ]; then
+    cp $old $old\_ori
+    rm $old
+    grib_set -s dataDate=$ndate $old\_ori $new
+    echo " Made new file: " $new " with date " $ndate
+else
+    echo " Could not find file " $old
+    exit
+fi
 
 old=${indir}/ICMGG${inexpid}INIUA
 new=${outdir}/ICMGG${outexpid}INIUA
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -137,7 +111,9 @@ fi
 old=${indir}/ICMSH${inexpid}INIT
 new=${outdir}/ICMSH${outexpid}INIT
 if [ -f $old ]; then
-    grib_set -s dataDate=$ndate $old $new
+    cp $old $old\_ori
+    rm $old  
+    grib_set -s dataDate=$ndate $old\_ori $new
     echo " Made new file: " $new " with date " $ndate
 else
     echo " Could not find file " $old
@@ -153,10 +129,12 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         
         ## new file
         new=${outdir}/$file
-   
+
         if [ -f $old ]; then
+            cp $old $old\_ori
+            rm $old 
             ## use grib_set to make new files
-            grib_set -s dataDate=$ndate $old $new
+            grib_set -s dataDate=$ndate $old\_ori $new
             echo " Made new file: " $new " with date " $ndate
         else
             echo " Could not find file " $old
@@ -164,7 +142,4 @@ if [[ "x${with_wam}" == "x1" ]] ; then
         fi
     done
 fi
-
-
-
 

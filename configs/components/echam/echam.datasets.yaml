@@ -29,13 +29,28 @@ forcing_sources:
         # aero
         "piaerocoarse": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc"
         "piaerofarir": "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc"
+        "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
+        
+        "histaerocoarse": 
+            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc":
+                to: 1864
+            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa_@YEAR@.nc":
+                from: 1865
+                to: 2000
+                
+        "histaerofarir": 
+            "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc":
+                to: 1864
+            "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa_@YEAR@.nc":
+                from: 1865
+                to: 2000
+
         "histaerofin":
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
                         to: 1864
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
                         from: 1865
                         to: 2000
-        "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
         # volcanic
         "histvolcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1850.nc":
@@ -59,10 +74,10 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
         # greenhouse
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
-        "greenhouse_hist_scenario": 
-                "${greenhouse_dir}/greenhouse_historical.nc": 
+        "greenhouse_hist_scenario":
+                "${greenhouse_dir}/greenhouse_historical.nc":
                         to: 2014
-                "${greenhouse_dir}/greenhouse_${scenario}.nc": 
+                "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
 
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
@@ -92,11 +107,14 @@ forcing_sources:
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozonea": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
         # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
         "MAC-SP": "${input_dir}/MAC-SP.nc"
 
-        "MAC-SP_hist_scenario": 
+        "MAC-SP_hist_scenario":
                  "${input_dir}/MAC-SP.nc":
                          to: 2014
                  "${input_dir}/MAC-SP_${scenario}.nc":

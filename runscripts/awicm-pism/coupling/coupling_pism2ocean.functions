@@ -1,0 +1,769 @@
+#!/bin/ksh
+
+
+function pism2ocean {
+    echo " *** S T A R T I N G    pism2ocean *** (PISM version ${VERSION_pism})"
+
+    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . ${FUNCTION_PATH}/coupling_general.functions
+
+    echo "PISM_TO_OCEAN=${PISM_TO_OCEAN:-0}"
+    if [[ $PISM_TO_OCEAN -le 0 ]]; then
+        echo " NOT generating ice forcing for ocean model"
+	echo "   since PISM_TO_OCEAN=${PISM_TO_OCEAN}"
+	return
+    fi
+
+    #
+    # ==> if [[ $PISM_TO_OCEAN -ge 1 ]]; then
+    #
+    #
+    # PISM OUTPUT 1a) Temporal stream for ice shelf basal melting (ymonmean/timmeam)
+    # pism2ocean  1b) Temporal stream for ice berg calving/discharging (ymonmean/timmean)
+    #             1c) Stream of vertical temperature gradient at base (last year-ymonmean/last record)
+    #             1d) Stream of mask (ice-free ocean, ice shelf, land) (last record)
+    #             2) Convert them into sensible units (calving: Gt < area, densities)
+    #             3) Combine the basal melting, calving, temperature gradient files
+    # ice2fesom (other file)
+    #             4) Remap/Regrid to FESOM grid
+    #             5) FESOM Names
+    #
+    CHUNK_DATE_TAG_pism="${CURRENT_YEAR_pism}-${END_YEAR_pism}"
+    #CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
+
+#TODO Get the right file names for the forcing/extra and restart/output file names
+    PISM_FORCING_EXTRA_FILE=../outdata/pism/${EXP_ID}_pismr_extra_${CHUNK_DATE_TAG_pism}.nc
+    PISM_RESTART_OUTPUT_FILE=../restart/pism/${EXP_ID}_pismr_out_${CHUNK_DATE_TAG_pism}.nc
+    COMBINED_OUTPUT=ice_file_at_ocean.combined.nc
+
+    # TODO Are these sensible choices?
+    iter_coup_interact_method_ice2oce=${iter_coup_interact_method_ice2oce:-BASALSHELF_WATER}
+
+    iterative_coupling_pism_ocean_write_names
+    read_names ice ocean
+
+    cdo_table_file=cdo_partable.txt
+    iterative_coupling_pism_ocean_fesom2pism_names $cdo_table_file
+
+    NOCOLOR='\033[0m'
+    GREEN='\033[32m'
+
+    echo "Interaction (ocean) : ${iter_coup_interact_method_ice2oce}"
+    echo -e "   --> Interaction >>> ${GREEN}${iter_coup_interact_method_ice2oce}${NOCOLOR} <<< ocean"
+    case $iter_coup_interact_method_ice2oce in
+        "BASALSHELF_WATER_ICEBERG_WATER")
+	    iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+	    iterative_coupling_pism_ocean_prepare_ocean_iceberg_water_forcing
+            ;;
+        "BASALSHELF_WATER")
+            iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+            ;;
+	"ICEBERG_WATER")
+	    iterative_coupling_pism_ocean_prepare_ocean_iceberg_water_forcing
+	    ;;
+	"ICEBERG_HEAT")
+	    iterative_coupling_pism_ocean_prepare_ocean_iceberg_heat_forcing
+	    ;;
+	"BASALSHELF_WATER_ICEBERG_WATERHEAT")
+	    iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+	    iterative_coupling_pism_ocean_prepare_ocean_iceberg_water_forcing
+	    iterative_coupling_pism_ocean_prepare_ocean_iceberg_heat_forcing
+	    ;;
+	"BASALSHELF_WATER_ICEBERG_PDF")
+            iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+            iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing
+	    ;;
+	"BASALSHELF_WATER_ICEBERG_MODEL")
+            #iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+            iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+	    ;;
+        *)
+            echo " UNKNOWN mass balance selected!"
+	    echo "   Known: BASALSHELF_WATER_ICEBERG_WATER, BASALSHELF_WATER, ICEBERG_WATER, ICEBERG_HEAT,"
+	    echo "          BASALSHELF_WATER_ICEBERG_WATERHEAT, BASALSHELF_WATER_ICEBERG_PDF, BASALSHELF_WATER_ICEBERG_MODEL"
+	    echo " S T O P   1"
+            exit 1
+    esac
+
+    if [ ${iter_coup_interact_method_ice2oce_ice_temp_gradient:-0} -gt 0 ] ; then
+	iterative_coupling_pism_ocean_prepare_iceshelf_temperature_gradient_forcing
+    else
+	echo " *   Skip preparation of temperature gradient in lowest iceshelf layer"
+    fi
+    if [ ${iter_coup_interact_method_ice2oce_update_mask:-0} -gt 0 ] ; then
+	iterative_coupling_pism_ocean_prepare_ocean_update_mask_forcing
+    else
+	echo " *   Skip preparation of actual masks (ocean, ice shelves, land)"
+    fi
+
+    iterative_coupling_pism_ocean_prepare_combine_forcings
+
+    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    unset cleanup_list file
+    unset NOCOLOR GREEN
+
+    unset PISM_FORCING_EXTRA_FILE PISM_RESTART_OUTPUT_FILE cdo_table_file
+
+    echo "     ...done."
+}
+
+
+
+function iterative_coupling_pism_ocean_write_names {
+    echo "Writing fesom1x input names and units for use with generic ocean_file_for_ice.nc"
+    :> ice_names_for_ocean.dat
+
+    #
+    # PISM names
+    #
+    case ${VERSION_pism:--0.1} in
+	"0.0")
+	    _pism_basalshelf_freshwater_flux_varn="B_FW_FLX"
+	    _pism_basalshelf_freshwater_flux_unit="Gt/m2/s"
+	    _pism_iceberg_freshwater_flux_varn="IB_FW_FLX"
+	    _pism_iceberg_freshwater_flux_unit="Gt/m2/s"
+	    #_pism_iceberg_heat_flux_varn="IB_H_FLX"
+	    #_pism_iceberg_heat_flux_unit="W/s/m2"
+	    ;;
+	"0.7")
+	    #SNAPSHOT! _pism_basalshelf_freshwater_flux_varn="floating_basal_flux"
+	    #SNAPSHOT! _pism_iceberg_freshwater_flux_varn="discharge_flux"
+	    _pism_basalshelf_freshwater_flux_varn="floating_basal_flux_cumulative"
+	    _pism_basalshelf_freshwater_flux_unit="Gt/m2/s"
+	    _pism_iceberg_freshwater_flux_varn="discharge_flux_cumulative"
+	    _pism_iceberg_freshwater_flux_unit="Gt"
+	    ;;
+	"1.0"|"1.1"|"1.2")
+	    _pism_basalshelf_freshwater_flux_varn="basal_mass_flux_floating" #"floating_basal_flux_cumulative"
+	    _pism_basalshelf_freshwater_flux_unit="kg/m2/year"
+	    _pism_iceberg_freshwater_flux_varn="tendency_of_ice_amount_due_to_discharge" #"discharge_flux_cumulative"
+	    _pism_iceberg_freshwater_flux_unit="kg/m2/year"
+	    ;;
+	*)
+	    echo "NOT DEFINED PISM version >${VERSION_pism}<"
+	    echo "Please adjust function >iterative_coupling_pism_ocean_write_names<"
+	    echo " S T O P  2"
+	    exit 2
+	    ;;
+    esac
+
+    echo ""; echo " *   basal iceshelf melt flux"
+    echo "pism_name_basal_shelf_melt_flux=${_pism_basalshelf_freshwater_flux_varn}" >> ice_names_for_ocean.dat
+    echo "pism_units_basal_shelf_melt_flux=${_pism_basalshelf_freshwater_flux_unit}" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   ice berg calving"
+    echo "pism_name_iceberg_calving_flux=${_pism_iceberg_freshwater_flux_varn}" >> ice_names_for_ocean.dat
+    echo "pism_units_iceberg_calving_flux=${_pism_iceberg_freshwater_flux_unit}" >> ice_names_for_ocean.dat
+
+    #
+    # OCEAN (generic) names
+    #
+    echo ""; echo " *   freshwater flux"
+    echo "ocean_name_freshwater_flux=wnet" >> ice_names_for_ocean.dat
+    echo "ocean_units_freshwater_flux=W/m2" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   heat flux"
+    echo "ocean_name_heat_flux=qnet" >> ice_names_for_ocean.dat
+    #echo "ocean_units_heat_flux=kg/m2/s" >> ice_names_for_ocean.dat
+    echo "ocean_units_heat_flux=m" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   basal ice shelf temperature gradient"
+    echo "ocean_name_temperature_gradient=dTdz" >> ice_names_for_ocean.dat
+    echo "ocean_unit_temperature_gradient=K/m" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   landmask"
+    echo "ocean_name_landmask=mask" >> ice_names_for_ocean.dat
+    echo "ocean_units_landmask=1" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   oceanmask"
+    echo "ocean_name_oceanmask=mask" >> ice_names_for_ocean.dat
+    echo "ocean_units_oceanmask=1" >> ice_names_for_ocean.dat
+
+    echo ""; echo " *   iceshelfmask"
+    echo "ocean_name_iceshelfmask=mask" >> ice_names_for_ocean.dat
+    echo "ocean_units_iceshelfmask=1" >> ice_names_for_ocean.dat
+
+    add_to $(pwd)/ice_names_for_ocean.dat ice_names_for_ocean.dat couple
+    echo "     ...done."
+
+    unset _pism_basalshelf_freshwater_flux_varn _pism_basalshelf_freshwater_flux_unit
+    unset _pism_iceberg_freshwater_flux_varn _pism_iceberg_freshwater_flux_unit
+    unset _pism_iceberg_heat_flux_varn _pism_iceberg_heat_flux_unit
+}
+
+
+#
+# Compute actual forcing files : Convert variable names to pism names
+#
+
+function iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing {
+    echo " WE DOT NOT have yet an ICEBERG MODULE, where the fresh water is spread along"
+    echo "            static Probability Density Function (pdf) maps"
+    echo " Please replace iter_coup_interact_method_ice2oce=${iter_coup_interact_method_ice2oce} with something else"
+    echo " S T O P  3"
+    exit 3
+
+    #
+    # Please add after this comment the commands that are specific for
+    # running the iceberg PDF module.
+    #
+}
+
+
+########################################################################
+########################################################################
+# Lars Ackermann 07.09.2020
+########################################################################
+function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
+    # iceberg coupling LA
+    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
+        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+        pism_discharge_file=${SPINUP_FILE_pism}
+    fi
+
+    ICEBERG_DIR=${COUPLE_DIR}/../icb/
+    echo "ICEBERG_DIR: ${ICEBERG_DIR}"
+    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+    if [[ -d ${ICEBERG_DIR} ]]; then
+        mv ${ICEBERG_DIR}/LON.dat ${ICEBERG_DIR}/LON.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/LAT.dat ${ICEBERG_DIR}/LAT.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/LENGTH.dat ${ICEBERG_DIR}/LENGTH.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/HEIGHT.dat ${ICEBERG_DIR}/HEIGHT.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/buoys_track.nc ${ICEBERG_DIR}/buoys_track.nc.${CURRENT_YEAR_pism}
+    fi
+
+    cdo mulc,${CHUNK_SIZE_pism_standalone} \
+            -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+    
+    module unload python
+    #module load python3
+    module load python3/3.7.7_intel2020u2
+    
+    if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
+        if [[ ! -f ${ICEBERG_DIR}/nod2d.out.rot ]]; then
+            python ${FUNCTION_PATH}/utils/rotate_mesh.py ${MESH_DIR_fesom} ${ICEBERG_DIR}
+            cp ${MESH_DIR_fesom}/elem2d.out ${ICEBERG_DIR}/elem2d.out
+        fi
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${ICEBERG_DIR} ${ICEBERG_DIR}
+    else
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${ICEBERG_DIR}
+    fi
+
+    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
+    use_icesheet_coupling=1
+
+#    get_ib_num_after_ice_sheet_coupling
+}
+
+#function get_ib_num_after_ice_sheet_coupling {
+#    _a="$( wc -l icb/LON.dat | awk '{ print $1 }' )"
+#    _b="$( cat ../icb/num_non_melted_icb_file )"
+#
+#    ib_num=$(( $_a + $_b ))
+#    general_replace_namelist_value namelist.config icebergs ib_num $ib_num
+#    general_replace_namelist_value namelist.config icebergs use_icesheet_coupling ".true."
+#}
+############################################################################
+############################################################################
+
+
+
+function iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing {
+    echo " *   Preparing basal melting iceshelf(PISM) forcing file with sensible units from >${PISM_FORCING_EXTRA_FILE}<"
+    # Rename all input variables
+
+    test_file_or_exit $PISM_FORCING_EXTRA_FILE 5
+    test_file_or_exit $cdo_table_file 6
+
+    _out_file=ice_file_at_ocean.basalwater.nc
+#TODO :
+#Warning: Number of OMP threads is greater than number of Cores=1!
+#srun: error: prod-0177: task 0: Exited with exit code 1
+#srun: Terminating job step 2518500.0
+    $cdo ymonmean \
+	-selvar,lon,lat,wnet_basal -setpartabn,${cdo_table_file},convert \
+	$PISM_FORCING_EXTRA_FILE ${_out_file}
+
+    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_loss
+
+    cleanup_list="${cleanup_list} $(pwd)/${_out_file}"
+    unset _out_file
+    echo "     ...done."
+}
+
+
+function iterative_coupling_pism_ocean_prepare_ocean_iceberg_water_forcing {
+    echo " *   Preparing iceberg melting iceshelf(PISM) forcing file with sensible units from >${PISM_FORCING_EXTRA_FILE}<"
+    # Rename all input variables
+
+    test_file_or_exit $PISM_FORCING_EXTRA_FILE 7
+    test_file_or_exit $cdo_table_file 8
+
+    _out_file=ice_file_at_ocean.icebergwater.nc
+    $cdo ymonmean \
+	-selvar,lon,lat,wnet_iceberg -setpartabn,${cdo_table_file},convert \
+	$PISM_FORCING_EXTRA_FILE ${_out_file}
+
+    case ${VERSION_pism:--0.1} in
+	"0.7")
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_abs
+	    ;;
+	"1.0"|"1.1"|"1.2")
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_loss
+	    ;;
+	*)
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_loss
+	    ;;
+    esac
+
+    cleanup_list="${cleanup_list} $(pwd)/${_out_file}"
+    unset _out_file
+    echo "     ...done."
+}
+
+
+function iterative_coupling_pism_ocean_prepare_ocean_iceberg_heat_forcing {
+    echo " *   Preparing iceberg heat conversion iceshelf(PISM) forcing file with sensible units from >${PISM_FORCING_EXTRA_FILE}<"
+    # Rename all input variables
+
+    test_file_or_exit $PISM_FORCING_EXTRA_FILE 9
+    test_file_or_exit $cdo_table_file 10
+
+    #
+    # Since we shall have a unit "kg ...", we now convert the mass
+    # into the energy needed to change the phase of the related mass
+    # from solid to liquid
+    # TODO : Check if we use a consident set for "heat of fusion of water into ice"
+    heat_of_fusion_of_water=333550 #Joule kg-1
+
+    _out_file=ice_file_at_ocean.icebergheat.nc
+    $cdo ymonmean \
+	-setvar,qnet_iceberg \
+	-setunit,"Joule" \
+	-selvar,wnet_iceberg -setpartabn,${cdo_table_file},convert \
+	$PISM_FORCING_EXTRA_FILE ${_out_file}
+
+    case ${VERSION_pism:--0.1} in
+	"0.7")
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} heat_abs
+	    ;;
+	"1.0"|"1.1"|"1.2")
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} heat_loss
+	    ;;
+	*)
+	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} heat_loss
+	    ;;
+    esac
+
+    cleanup_list="${cleanup_list} $(pwd)/${_out_file}"
+    unset _out_file
+    echo "     ...done."
+}
+
+
+function iterative_coupling_pism_ocean_prepare_iceshelf_temperature_gradient_forcing {
+    echo " *   Preparing temperature gradient in lowest iceshelf(PISM) layer from latest restart file with sensible units from >${PISM_RESTART_OUTPUT_FILE}<"
+    case ${VERSION_pism:--0.1} in
+	"0.7")
+	    __varname="shelfbtemp"
+	    ;;
+	"1.0"|"1.1"|"1.2")
+	    __varname="shelfbtemp"
+	    ;;
+	*)
+	    __varname="shelfbtemp"
+	    ;;
+    esac
+
+    test_file_or_exit $PISM_RESTART_OUTPUT_FILE 11
+
+    #ncks -d time,-1,-1 -d z,0,1 -v ${__varname} \
+    ncks -d time,-1,-1 -v ${__varname} \
+	${PISM_RESTART_OUTPUT_FILE} ice_file_at_ocean.laststep.bottom_iceshelf_temp.nc
+
+    cleanup_list="${cleanup_list} $(pwd)/ice_file_at_ocean.laststep.bottom_iceshelf_temp.nc"
+    unset __varname
+    echo "     ...done."
+}
+
+
+function iterative_coupling_pism_ocean_prepare_ocean_update_mask_forcing {
+    echo " *   Preparing actual masks (ocean, ice shelf, land) from restart file with sensible units from >${PISM_RESTART_OUTPUT_FILE}<"
+    case ${VERSION_pism:--0.1} in
+	"0.7")
+	    __varname="mask"
+	    ;;
+	"1.0"|"1.1"|"1.2")
+	    __varname="mask"
+	    ;;
+	*)
+	    __varname="mask"
+	    ;;
+    esac
+
+    test_file_or_exit $PISM_RESTART_OUTPUT_FILE 12
+
+    ncks -d time,-1,-1 -v ${__varname} \
+	${PISM_RESTART_OUTPUT_FILE} ice_file_at_ocean.laststep.pismmask.nc
+
+    $cdo -setvar,${ocean_name_oceanmask} \
+	eqc,4 ice_file_at_ocean.laststep.pismmask.nc \
+	ice_file_at_ocean.laststep.mask_ocean.nc
+    $cdo -setvar,${ocean_name_iceshelfmask} \
+	-eqc,3 ice_file_at_ocean.laststep.pismmask.nc \
+	ice_file_at_ocean.laststep.mask_iceshelf.nc
+    $cdo -setvar,${ocean_name_landmask} \
+	-lec,2 ice_file_at_ocean.laststep.pismmask.nc \
+	ice_file_at_ocean.laststep.mask_land.nc
+
+    if [ 1 -eq 0 ] ; then
+	#
+	# Drop time axis
+	#
+	for _file in \
+	    ice_file_at_ocean.laststep.mask_land.nc \
+	    ice_file_at_ocean.laststep.mask_ocean.nc \
+	    ice_file_at_ocean.laststep.mask_iceshelf.nc
+	do
+	    if [ -f ${_file} ] ; then
+		_file_tmp=${_file%.*}_before_collapse_time.nc
+		mv -f $_file $_file_tmp
+		ncwa -a time $_file_tmp ${_file}
+		cleanup_list="${cleanup_list} $(pwd)/${_file} $(pwd)/${_file_tmp}"
+	    fi
+	done
+    fi
+
+    cleanup_list="${cleanup_list} $(pwd)/ice_file_at_ocean.laststep.pismmask.nc"
+    unset _file _file_tmp __varname
+}
+
+
+function iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux {
+    _infile=$1
+    _type=$2
+    echo " *   Convert loss into flux of type >${_type}< (${_infile})..."
+    if [ ! -f ${_infile} ] ; then
+	echo "     - Missing file ${_infile}"
+	echo "     S T O P  30"
+	exit 30
+    fi
+
+    #
+    # Physical variables
+    #
+    # Determine density of ice
+    #
+    if [ -f ${PISM_RESTART_OUTPUT_FILE} ] ; then
+	density_ice=$(ncdump -h ${PISM_RESTART_OUTPUT_FILE}| grep "pism_config:ice_density =" | tr -d '[:space:],;' | cut -d= -f2)
+    elif [ -f ${PISM_FORCING_EXTRA_FILE} ] ; then
+	density_ice=$(ncdump -h ${PISM_FORCING_EXTRA_FILE} | grep "pism_config:ice_density =" | tr -d '[:space:],;' | cut -d= -f2)
+    fi
+    density_ice=${density_ice:-910.}
+    #
+    # Time step in data file to force the ocean
+    #
+    if [ $($cdo -s ntime ${_infile} | tr -d '[:space:]') -gt 1 ] ; then
+	_time_diff=$(iterative_coupling_get_pism_time_size ${_infile})
+    else
+	if [ $($cdo -s ntime ${PISM_FORCING_EXTRA_FILE} | tr -d '[:space:]') -gt 1 ] ; then
+	    _time_diff=$(iterative_coupling_get_pism_time_size ${PISM_FORCING_EXTRA_FILE})
+	else
+	    # Fall back: Delta Time = Years difference
+	    _time_diff=$(echo "86400. * 365.25 * (${END_YEAR_pism}-${CURRENT_YEAR_pism})" | bc -l )
+	fi
+    fi
+    #
+    # Area of grid cell
+    #
+    _area=$(iterative_coupling_get_pism_area_size ${_infile})
+
+    #
+    # CDO commands as multiplier
+    #
+    MUL_density="-mulc,${density_ice}"
+    MUL_recipro_delta_time="-mulc,$( echo 1./${_time_diff} | bc -l)"
+    MUL_recipro_grid_area="-mulc,$( echo 1./${_area} | bc -l)"
+
+    #
+    # Combine the CDO flags due to request
+    #
+    case ${_type:-"Not provided"} in
+	heat_loss)
+	    _unit="J m-2 s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time}"
+	    ;;
+	water_loss)
+	    _unit="m s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time} ${MUL_density_ice}"
+	    ;;
+	mass_loss)
+	    _unit="kg m-2 s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time}"
+	    ;;
+	heat_abs)
+	    _unit="J m-2 s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time} ${MUL_recipro_grid_area}"
+	    ;;
+	water_abs)
+	    _unit="m s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time} ${MUL_recipro_grid_area} ${MUL_density_ice}"
+	    ;;
+	mass_abs)
+	    _unit="kg m-2 s-1"
+	    _CDO_Factor_flags="${MUL_recipro_delta_time} ${MUL_recipro_grid_area}"
+	    ;;
+	"Not provided")
+	    echo "     - The type was not provided as second argument during the call of the function"
+	    echo "       'iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux'"
+	    echo "       Update the call of this function and restart"
+	    echo "     S T O P  31"
+	    exit 31
+	    ;;
+	*)
+	    echo "     - Unkown type=${type}"
+	    echo "     => Adjust function 'iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux'"
+	    echo "     S T O P  32"
+	    exit 32
+	    ;;
+    esac
+
+    _bak=${_infile%.*}_before_loss2flux.nc
+    mv -f ${_infile} ${_bak}
+
+    $cdo -setunit,"${_unit}" ${_CDO_Factor_flags} \
+	${_bak} ${_infile}
+
+    cleanup_list="${cleanup_list} $(pwd)/${_bak}"
+
+    unset _bak _infile _type _unit _CDO_Factor_flags
+    unset MUL_recipro_delta_time MUL_recipro_grid_area
+    unset _area _time_diff
+}
+
+
+function iterative_coupling_pism_ocean_prepare_combine_forcings {
+    echo " *   Combine various ice shelf/sheet forcing (PISM) into one file with sensible units..."
+
+    cdo_task_list=""
+    #
+    # Fresh water
+    #
+    _file1=ice_file_at_ocean.basalwater.nc
+    _file2=ice_file_at_ocean.icebergwater.nc
+    if [ -f $_file1 -a -f $_file2  ] ; then
+	cdo_task_list="${cdo_task_list} -setvar,${ocean_name_freshwater_flux}"
+	cdo_task_list="${cdo_task_list} -add -selvar,wnet_basal $_file1 -selvar,wnet_iceberg $_file2"
+	cleanup_list="${cleanup_list} $(pwd)/${_file1}"
+	cleanup_list="${cleanup_list} $(pwd)/${_file2}"
+    else
+	if [ -f $_file1  ] ; then
+	    cdo_task_list="${cdo_task_list} -setvar,${ocean_name_freshwater_flux} -selvar,wnet_basal $_file1"
+	    cleanup_list="${cleanup_list} $(pwd)/${_file1}"
+	elif [ -f $_file2  ] ; then
+	    cdo_task_list="${cdo_task_list} -setvar,${ocean_name_freshwater_flux} -selvar,wnet_iceberg $_file2"
+	    cleanup_list="${cleanup_list} $(pwd)/${_file2}"
+	fi
+    fi
+
+    #
+    # Heat flux
+    #
+    _file1=ice_file_at_ocean.icebergheat.nc
+    if [ -f ${_file1} ] ; then
+	cdo_task_list="${cdo_task_list} -setvar,${ocean_name_heat_flux} -selvar,qnet_iceberg ${_file1}"
+	cleanup_list="${cleanup_list} $(pwd)/${_file1}"
+    fi
+
+    #
+    # Temperature gradient, Masks
+    #
+    for _file1 in ice_file_at_ocean.laststep.bottom_iceshelf_temp.nc \
+	ice_file_at_ocean.laststep.mask_ocean.nc \
+	ice_file_at_ocean.laststep.mask_iceshelf.nc \
+	ice_file_at_ocean.laststep.mask_land.nc
+    do
+	if [ -f $_file1 ] ; then
+	    # Drop time axis is done above (search for ncwa)
+	    _file2=${_file1%.*}_before_combine.nc
+	    mv -f $_file1 $_file2
+	    ncwa -a time $_file2 $_file1
+	    cleanup_list="${cleanup_list} $(pwd)/${_file2}"
+
+	    cdo_task_list="${cdo_task_list} ${_file1}"
+	    cleanup_list="${cleanup_list} $(pwd)/${_file1}"
+	fi
+    done
+
+    #
+    # Auxillary fields
+    #
+    _file1=aux_field_pism4ocean.nc
+    if [ -f ${PISM_RESTART_OUTPUT_FILE} ] ; then
+	ncks -OQv lon,lat ${PISM_RESTART_OUTPUT_FILE} ${_file1}
+    elif [ -f ${PISM_FORCING_EXTRA_FILE} ] ; then
+	ncks -OQv lon,lat ${PISM_FORCING_EXTRA_FILE}  ${_file1}
+    fi
+    if [ -f $_file1 ] ; then
+	cdo_task_list="${cdo_task_list} ${_file1}"
+    fi
+    cleanup_list="${cleanup_list} $(pwd)/${_file1}"
+
+    #
+    # Merge
+    #
+    if [ -f ${COMBINED_OUTPUT} ] ; then
+	mv -f ${COMBINED_OUTPUT} ${COMBINED_OUTPUT}~
+	cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}~"
+    fi
+    $cdo -O merge ${cdo_task_list} ${COMBINED_OUTPUT}
+
+    #
+    # Attributes related to auxillary fields
+    #
+    if [ -f $_file1 ] ; then
+	ncatted -a coordinates,,c,c,'lon lat' \
+	    -a coordinates,lat,d,, \
+	    -a coordinates,lon,d,, \
+	    -a coordinates,time,d,, \
+	    -a coordinates,x,d,, \
+	    -a coordinates,y,d,, \
+	    ${COMBINED_OUTPUT}
+    fi
+
+    unset cdo_task_list _file1 _file2
+}
+
+
+#
+# Auxillary functions
+#
+function iterative_coupling_get_pism_area_size {
+    #TODO : generalize the area computation, so that even
+    #       curvlinear grid are recognized
+    __file=$1
+    if [ ! -f ${__file} ] ; then
+	echo " *   Compute PISM grid size..."
+	echo "     - Missing file ${__file} in >iterative_coupling_get_pism_area_size<"
+	echo "     S T O P  38"
+	exit 38
+    fi
+
+    __area_file=tmp_pism_area.nc
+    # Compute the area
+    if [ 0 -eq 1 ] ; then
+	# NCAP2 version (NCAP does not work)
+	test -f $__area_file && rm -f $__area_file
+	ncap2 -Ovs "area=abs( (x(0)-x(1)) * (y(0)-y(1)) );" ${__file} $__area_file
+	__area_size=$(ncks -CHs '%f' -v area $__area_file)
+    else
+	# NCAP2 free alternative
+	__x0=$(ncks -d x,0 -v x -CHs '%14.4f' ${__file} | tr -d '[:space:]')
+	__x1=$(ncks -d x,1 -v x -CHs '%14.4f' ${__file} | tr -d '[:space:]')
+	__y0=$(ncks -d y,0 -v y -CHs '%14.4f' ${__file} | tr -d '[:space:]')
+	__y1=$(ncks -d y,1 -v y -CHs '%14.4f' ${__file} | tr -d '[:space:]')
+
+	#__area_size=$(echo "((${__x1} - ${__x0}) * (${__y1} - ${__y0}))" | bc -l)
+	# Ensures positive numbers
+	__area_size=$(echo "sqrt(((${__x1} - ${__x0}) * (${__y1} - ${__y0}))^2)" | bc -l)
+	unset __x0 __x1 __y0 __y1
+    fi
+
+    echo ${__area_size}
+    cleanup_list="${cleanup_list} $(pwd)/${__area_file}"
+    unset __area_file __area_size __file
+}
+
+
+function iterative_coupling_get_pism_time_size {
+    #TODO : generalize the time difference computation, so
+    #       that even all time difference between all time
+    #       steps are computed, such as
+    #       time_diff(0)=time(1)-time(0), ...,
+    #       time(i-1)=time(i)-time(i-1), ...,
+    #       time(n-1)=time(n)-time(n-1),
+    #       time(n) = time(n)-time(n-1) <== repeat the last time difference for the last time step??
+    #
+    __file=$1
+    if [ ! -f ${__file} ] ; then
+	echo " *   Compute PISM writing time step size..."
+	echo "     - Missing file ${__file} in >iterative_coupling_get_pism_time_size<"
+	echo "     S T O P  39"
+	exit 39
+    fi
+
+    __time_file=tmp_pism_time.nc
+
+    # Compute the time
+    if [ 0 -eq 1 ] ; then
+	# NCAP2 version (NCAP does not work)
+	test -f $__time_file && rm -f $__time_file
+	ncap2 -Ovs "timediff=abs( time(1)-time(0) );" ${__file} $__time_file
+	__time_size=$(ncks -CHs '%f' -v timediff $__time_file)
+    else
+	# NCAP2 free alternative
+	__t0=$(ncks -d time,0 -v time -CHs '%14.6f' ${__file} | tr -d '[:space:]')
+	__t1=$(ncks -d time,1 -v time -CHs '%14.6f' ${__file} | tr -d '[:space:]')
+	#__time_size=$(echo "(${__t1} - ${__t0})" | bc -l)
+	# Ensures a positive number
+	__time_size=$(echo "sqrt((${__t1} - ${__t0})^2)" | bc -l)
+
+	unset __t0 __t1
+    fi
+
+    echo ${__time_size}
+    cleanup_list="${cleanup_list} $(pwd)/${__time_file}"
+    unset __time_file __time_size __file
+}
+
+
+function iterative_coupling_pism_ocean_fesom2pism_names {
+    _file=$1
+
+    #
+    # These names are constant and are also use above internally (!)
+    #
+    _fesom_basalshelf_freshwater_flux_varn="wnet_basal"
+    _fesom_basalshelf_freshwater_flux_unit="kg m-2"
+    _fesom_iceberg_freshwater_flux_varn="wnet_iceberg"
+    # Since PISM discharge/ice berg calving may has the unit "Gt"
+    # and the implicit timing information, we convert it into "kg"
+    # and repair later the mass loss into a mass flux
+    # -> iterative_coupling_pism_ocean_compute_calving_loss_to_calving_flux
+    ##_fesom_iceberg_freshwater_flux_unit="kg m-2"
+    _fesom_iceberg_freshwater_flux_unit="kg"
+
+#
+# Controlling sequence
+#
+
+cat > ${_file:-cdo_partable.txt} <<EOFcdo
+&parameter
+name = ${pism_name_basal_shelf_melt_flux}
+out_name = ${_fesom_basalshelf_freshwater_flux_varn}
+units = "${_fesom_basalshelf_freshwater_flux_unit}"
+long_name = "shelf basal mass flux"
+standard_name = shelf_basal_mass_flux
+comment = "reference density=1000kg m-3"
+/
+
+&parameter
+name = ${pism_name_iceberg_calving_flux}
+out_name = ${_fesom_iceberg_freshwater_flux_varn}
+units = "${_fesom_iceberg_freshwater_flux_unit}"
+long_name = "iceberg discharge related mass flux"
+comment = "reference density=1000kg m-3"
+/
+
+EOFcdo
+
+    unset _fesom_basalshelf_freshwater_flux_varn _fesom_basalshelf_freshwater_flux_unit
+    unset _fesom_iceberg_freshwater_flux_varn _fesom_iceberg_freshwater_flux_unit
+}
+
+
+
+# -- last line

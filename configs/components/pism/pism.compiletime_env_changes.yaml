@@ -1,8 +1,8 @@
 # PG: BUG!! This doesn't work, but should. It is overriden by the other
 # add_export_vars???
-add_export_vars:
+#add_export_vars:
     # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake:
-    - "HDF5_ROOT=$HDF5ROOT"
+    #    - "HDF5_ROOT=$HDF5ROOT"
 
 choose_computer.name:
     ollie:
@@ -16,6 +16,7 @@ choose_computer.name:
                 - "load pism_externals"
             add_export_vars:
                 - "I_MPI_FABRICS=shm:tmi"
+                - "HDF5_ROOT=$HDF5ROOT"
     mistral:
         environment_changes:
             add_export_vars:
@@ -23,3 +24,4 @@ choose_computer.name:
                 - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
                 - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
                 - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                - "HDF5_ROOT=$HDF5ROOT"

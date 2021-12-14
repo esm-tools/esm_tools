@@ -48,6 +48,7 @@ general:
                 couplings:
                     - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2.1+scope-dev+debm-esm_tools
         scenario: "PALEO"
+        variant: beta
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -60,12 +61,15 @@ general:
                         compute_time: "02:00:00"
         multi_srun:
             climate_srun:
-                - echam
-                - fesom
+                models:
+                  - echam
+                  - fesom
             ice_srun:
-                - pism
+                models:
+                  - pism
             couple_srun:
-                - scope
+                models:
+                  - scope
 
 
 #########################################################################################
@@ -91,18 +95,18 @@ echam:
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
-                        nprocb: 18
-                        nprocar: 24
-                        nprocbr: 18
+                        nprocb: 24
+                        nprocar: 0
+                        nprocbr: 0
                         npromar: 8
                         lrad_async: true
                         lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
                 T63_REF:
                         nproca: 24
-                        nprocb: 18
+                        nprocb: 24
 
         compiletime_environment_changes:
             add_export_vars:
@@ -164,9 +168,14 @@ fesom:
 
         add_namelist_changes:
                 namelist.oce:
+                        oce_tra:
+                                surf_relax_s: 0.0
                         boundary:
                                 restore_s_surf: 0.0
 
+        choose_general.variant:
+            beta:
+                K_gm_max: "remove_from_namelist"
         leapyear: True
         asforcing: ECHAM5
 

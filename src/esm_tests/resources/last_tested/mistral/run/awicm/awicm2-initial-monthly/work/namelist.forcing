@@ -1,0 +1,46 @@
+&forcing_exchange_coeff
+    ce_atm_oce = 0.00175
+    ch_atm_oce = 0.00175
+    cd_atm_oce = 0.001
+    ce_atm_ice = 0.00175
+    ch_atm_ice = 0.00175
+    cd_atm_ice = 0.0012
+/
+
+&forcing_source
+    wind_data_source = 'CORE2'
+    rad_data_source = 'CORE2'
+    precip_data_source = 'CORE2'
+    runoff_data_source = 'CORE2'
+    sss_data_source = 'CORE2'
+    wind_ttp_ind = 1
+    rad_ttp_ind = 2
+    precip_ttp_ind = 3
+    runoff_ttp_ind = 4
+    sss_ttp_ind = 4
+/
+
+&forcing_bulk
+    aomip_drag_coeff = .false.
+    ncar_bulk_formulae = .true.
+/
+
+&land_ice
+    use_landice_water = .false.
+    landice_start_mon = 5
+    landice_end_mon = 10
+/
+
+&namsbc
+    nm_xwind_file = '/pool/data/AWICM//FESOM2/FORCING//u_10.'
+    nm_ywind_file = '/pool/data/AWICM//FESOM2/FORCING//v_10.'
+    nm_humi_file = '/pool/data/AWICM//FESOM2/FORCING//q_10.'
+    nm_qsr_file = '/pool/data/AWICM//FESOM2/FORCING//ncar_rad.'
+    nm_qlw_file = '/pool/data/AWICM//FESOM2/FORCING//ncar_rad.'
+    nm_tair_file = '/pool/data/AWICM//FESOM2/FORCING//t_10.'
+    nm_prec_file = '/pool/data/AWICM//FESOM2/FORCING//ncar_precip.'
+    nm_snow_file = '/pool/data/AWICM//FESOM2/FORCING//ncar_precip.'
+    nm_mslp_file = '/pool/data/AWICM//FESOM2/FORCING//slp.'
+    nm_runoff_file = '/pool/data/AWICM//FESOM2/FORCING//runoff.nc'
+    nm_sss_data_file = '/pool/data/AWICM//FESOM2/FORCING//PHC2_salx.nc'
+/

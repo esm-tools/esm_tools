@@ -21,18 +21,12 @@ function quit_install () {
 if [[ -z ${LANG+x} ]]; then
     err_msg="LANG environment variable is not set"
     shall_exit=true
-elif [[ ${LANG} != "en_US.UTF-8" ]]; then
-    err_msg="LANG environment variable is not set correctly. The current value is ${LANG}"
-    shall_exit=true
 fi
 
 
 # check if LC_ALL variable is set to the correct value
 if [[ -z ${LC_ALL+x} ]]; then
     err_msg="LC_ALL variable is not set"
-    shall_exit=true
-elif [[ ${LC_ALL} != "en_US.UTF-8" ]]; then
-    err_msg="LC_ALL environment variable is not set correctly. The current value is ${LC_ALL}"
     shall_exit=true
 fi
 
@@ -62,5 +56,12 @@ else
 	echo "No installed git version found."
 fi
 
-
-pip install --user -e .
+# See here: https://tinyurl.com/5b57knvx
+if [ ! -z ${VIRTUAL_ENV+x} ]; then
+    echo "Detected virtual environment $VIRTUAL_ENV"
+    pip install -e .
+#FIXME(PG): We might still need a case for Conda virtual environments
+else
+    echo "Standard install to user directory (likely ${HOME}/.local)"
+    pip install --user -e .
+fi

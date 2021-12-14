@@ -15,6 +15,11 @@ available_versions:
 - 1.4-recom-awicm
 - '2.0'
 - '2.0-r' # OG: temporarily here
+- '2.0-jio'
+- '2.1-recom'
+- '2.1-wiso'
+- '2.1'
+
 choose_version:
   '1.4-recom-awicm':
     destination: fesom-1.4
@@ -87,6 +92,8 @@ choose_asforcing:
                 leapyear: true
         JRA55:
                 leapyear: true
+        ECHAM6:
+                leapyear: true
 
 executable: fesom
 choose_resolution:
@@ -97,6 +104,9 @@ choose_resolution:
         GLOB:
                 nx: 830305
                 mesh_dir: "${pool_dir}/meshes_default/glob/"
+        GLOB_rmstep:
+                nx: 830305
+                mesh_dir: "/work/ba1150/a270147/meshes/"
         REF87K:
                 nx: 86803
                 mesh_dir: "${pool_dir}/meshes/mesh_ref87k/"
@@ -125,9 +135,9 @@ restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.nc
         ice_restart: fesom.${parent_date!syear}.ice.nc
 restart_in_sources:
-        oce_diag: fesom.${parent_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${parent_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${parent_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${parent_date!syear}.oce.diag.nc
+        oce_restart: fesom.${parent_date!syear}.oce.nc
+        ice_restart: fesom.${parent_date!syear}.ice.nc
 
 restart_out_files:
         oce_diag: oce_diag
@@ -140,9 +150,9 @@ restart_out_in_work:
         ice_restart: fesom.${end_date!syear}.ice.nc
 
 restart_out_sources:
-        oce_diag: fesom.${end_date!syear!smonth!sday}.oce.diag.nc
-        oce_restart: fesom.${end_date!syear!smonth!sday}.oce.nc
-        ice_restart: fesom.${end_date!syear!smonth!sday}.ice.nc
+        oce_diag: fesom.${end_date!syear}.oce.diag.nc
+        oce_restart: fesom.${end_date!syear}.oce.nc
+        ice_restart: fesom.${end_date!syear}.ice.nc
 
 
 
@@ -162,7 +172,8 @@ log_sources:
 namelist_changes:
         namelist.config:
                 clockinit:
-                        yearnew: "${initial_date!syear}"
+                        daynew: "${daynew}"
+                        yearnew: "${yearnew}"
                 calendar:
                         include_fleapyear: "${leapyear}"
                 paths:
@@ -218,15 +229,18 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
-                choose_general.run_number:
-                        # MAM: If it is a restart triggered from a runscript
-                        # it is necessary to specify the year of the initial
-                        # date of the experiment that is to be continued
-                        1:
-                                add_namelist_changes:
-                                        namelist.config:
-                                                clockinit:
-                                                        yearnew: "${first_initial_year}"
+# Is it a branchoff experiment?
+branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
+choose_branchoff:
+        # Makes sure the <units>new in the namelist make an earlier date than that of
+        # of the clock to avoid cold starts for branching off experiments
+        true:
+                daynew: "${startday}"
+                yearnew: "$(( ${initial_date!syear} - 1 ))"
+        false:
+                daynew: "${initial_date!sdoy}"
+                yearnew: "${initial_date!syear}"
+
 
 
 
@@ -288,11 +302,11 @@ compiletime_environment_changes:
         add_export_vars:
                 takenfrom:      fesom1
 choose_computer.name:
-        #mistral:
-        #        add_compiletime_environment_changes:
-        #                add_module_actions:
-        #                        - "unload gcc"
-        #                        - "load gcc/4.8.2"
+        mistral:
+                add_compiletime_environment_changes:
+                        add_module_actions:
+                                - "unload gcc"
+                                - "load gcc/4.8.2"
         blogin:
                 add_compiletime_environment_changes:
                         add_export_vars:

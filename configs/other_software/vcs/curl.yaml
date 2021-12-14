@@ -1,0 +1,12 @@
+# Support for the codes that are not hosted in a repository but in a URL, eg.
+# in a tarball
+get_command: "curl ${define_options}  --url ${curl-repository} ${pipe_options}"
+update_command: ""   # these need to be empty so that esm_master does not crash
+status_command: ""
+log_command: ""
+
+# options for wget. repo_options can be defined in the model yaml file
+define_options: "${repo_options}"
+
+# provided in the model yaml file. Eg. | tar xz
+pipe_options: ""

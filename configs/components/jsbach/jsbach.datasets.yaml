@@ -47,9 +47,9 @@ choose_dataset:
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                         "popdens":   "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc"
                         "cover_fract_HIST":
-                                "${cover_fract_dir}/cover_fract_11tiles_1850.nc":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 1850
-                                "${cover_fract_dir}/cover_fract_11tiles_@YEAR@.nc":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 1851
 
                         "cover_fract_hist_scenario":

@@ -50,6 +50,26 @@ general:
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+echam-6.3.05p2-foci_oasismct4
             #add_include_models:
             #- xios
+
+        file_movements:
+           forcing:
+              all_directions: link
+           input:
+              all_directions: link
+           restart_in:
+              # seb-wahl: need to copy restart files by default
+              # as oasis modifies the restart file !!!!
+              init_to_exp: copy
+              exp_to_run: copy
+              run_to_work: copy
+              work_to_run: link
+           restart_out:
+              all_directions: copy
+           #config:
+           #   init_to_exp: copy
+           #   exp_to_run: copy
+           #   run_to_work: link
+           #   work_to_run: link
         
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -60,9 +80,10 @@ echam:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019 
+                compiler_mpi: intel2019_impi2019
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
@@ -71,9 +92,10 @@ echam:
                 compiler_mpi: intel2019_impi2019
 
         runtime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019 
+                compiler_mpi: intel2019_impi2019
                 add_module_actions:
                    - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
              blogin:
@@ -341,7 +363,7 @@ nemo:
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
 
 xios:
-        nproc: ${computer.cores_per_node}
+        nproc: ${computer.partitions.compute.cores_per_node}
 
 #########################################################################################
 

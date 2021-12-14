@@ -1,0 +1,419 @@
+# FESOM2 YAML CONFIGURATION FILE
+#
+
+model: fesom
+branch: master
+version: "2.1"
+type: ocean
+
+comp_command: ${defaults.comp_command}
+clean_command: ${defaults.clean_command}
+
+use_icebergs: False
+
+choose_version:
+  2.1-unstable:
+    branch: master
+    namelist_dir: "${model_dir}/config/"
+  '2.1':
+    branch: "2.1.0"
+  2.1-wiso:
+    branch: wiso
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
+  2.1-recom:
+    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
+destination: "fesom-2.1"
+install_bins: bin/fesom.x
+git-repository:
+- https://github.com/FESOM/fesom2.git
+
+
+restart_rate: "12"
+restart_unit: "m"
+restart_first: 12
+restart_flag: "last"
+
+time_step: 1800
+resolution: CORE2
+
+comp_executable: fesom.x
+executable: fesom
+
+mesh_rotated: false
+old_mesh_format: false
+with_part_format: false
+time_dimension: "time"
+
+pool_dir: "${computer.pool_directories.pool}"
+
+choose_computer.name:
+    ollie:
+        pool_dir: "${computer.pool_directories.pool}/../clidyn/"
+    mistral:
+        pool_dir: "${computer.pool_directories.pool}/AWICM/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+        forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
+        mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+        add_compiletime_environment_changes:
+            add_module_actions:
+                - "unload gcc"
+                - "load gcc/4.8.2"
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
+forcing_data_dir: "${pool_dir}/forcing/"
+mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
+ini_data_dir: "${pool_dir}/pool-data/"
+namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
+
+opbnd_dir: "somepath"
+tide_forcing_dir: "somepath"
+
+steps_per_day: "$(( 86400 / ${time_step} ))"
+
+asforcing: JRA55
+
+namelists:
+        - namelist.config
+        - namelist.forcing
+        - namelist.oce
+        - namelist.ice
+        - namelist.io
+        - namelist.cvmix
+        - namelist.icepack
+
+
+
+choose_resolution:
+        CORE2:
+                nx: 126858
+                mesh_dir: "${fesom.mesh_base_dir}/core2/"
+                nproc: 288
+        pi:
+                nx: 3140
+                mesh_dir: "${fesom.mesh_base_dir}/pi/"
+                nproc: 4
+
+restart_in_files:
+        oce_restart: oce_restart
+        ice_restart: ice_restart
+        icb_restart: icb_restart
+
+restart_in_in_workdir:
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
+restart_in_sources:
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
+
+restart_out_files:
+        oce_restart: oce_restart
+        ice_restart: ice_restart
+        icb_restart: icb_restart
+restart_out_in_workdir:
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
+restart_out_sources:
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
+
+outdata_sources:
+        fesom: "*.fesom.*.nc"
+outdata_targets:
+        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+
+choose_use_icebergs:
+        True:
+            ib_num_old: 0
+            ib_num_new: 0
+
+            input_in_work:
+                    longitude: "icb_longitude.dat"
+                    latitude: "icb_latitude.dat"
+                    length: "icb_length.dat"
+                    height: "icb_height.dat"
+                    scaling: "icb_scaling.dat"
+
+            input_sources:
+                    longitude: "${iceberg_dir}/LON.dat"
+                    latitude: "${iceberg_dir}/LAT.dat"
+                    length: "${iceberg_dir}/LENGTH.dat"
+                    height: "${iceberg_dir}/HEIGHT.dat"
+                    scaling: "${iceberg_dir}/SCALING.dat"
+
+            input_files:
+                    longitude: "longitude"
+                    latitude: "latitude"
+                    length: "length"
+                    height: "height"
+                    scaling: "scaling"
+
+log_files:
+        clock: clock
+        mesh_diag: mesh_diag
+
+log_in_work:
+        clock: fesom.clock
+        mesh_diag: fesom.mesh.diag.nc
+
+log_sources:
+        clock: fesom.clock
+        mesh_diag: fesom.mesh.diag.nc
+
+
+# Is it a branchoff experiment?
+branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
+choose_branchoff:
+        # Makes sure the <units>new in the namelist make an earlier date than that of
+        # of the clock to avoid cold starts for branching off experiments
+        true:
+                daynew: "${startday}"
+                yearnew: "$(( ${initial_date!syear} - 1 ))"
+        false:
+                daynew: "${initial_date!sdoy}"
+                yearnew: "${initial_date!syear}"
+
+
+namelist_changes:
+        namelist.config:
+                clockinit:
+                        daynew: "${daynew}"
+                        yearnew: "${yearnew}"
+                calendar:
+                        include_fleapyear: "${leapyear}"
+                paths:
+                        MeshPath: "${mesh_dir}"
+                        ClimateDataPath: "${climate_data_dir}"
+                        ResultPath: "${work_dir}"
+                timestep:
+                        step_per_day: "${steps_per_day}"
+                        run_length: "${restart_rate}"
+                        run_length_unit: "${restart_unit}"
+                restart_log:
+                        restart_length: "${restart_rate}"
+                        restart_length_unit: "${restart_unit}"
+
+        namelist.forcing:
+
+                forcing_exchange_coeff:
+                        Ce_atm_oce: ${Ce_atm_oce}
+                        Ch_atm_oce: ${Ch_atm_oce}
+                        Cd_atm_oce: ${Cd_atm_oce}
+                        Ce_atm_ice: ${Ce_atm_ice}
+                        Ch_atm_ice: ${Ch_atm_ice}
+                        Cd_atm_ice: ${Cd_atm_ice}
+
+                forcing_bulk:
+                        AOMIP_drag_coeff: ${AOMIP_drag_coeff}
+                        ncar_bulk_formulae: ${ncar_bulk_formulae}
+                        ncar_bulk_z_wind: ${ncar_bulk_z_wind}
+                        ncar_bulk_z_tair: ${ncar_bulk_z_tair}
+                        ncar_bulk_z_shum: ${ncar_bulk_z_shum}
+
+                nam_sbc:
+                        nm_xwind_file: "${forcing_data_dir}/${forcing_folder}/${xwind_prefix}"
+                        nm_ywind_file: "${forcing_data_dir}/${forcing_folder}/${ywind_prefix}"
+                        nm_humi_file: "${forcing_data_dir}/${forcing_folder}/${humi_prefix}"
+                        nm_qsr_file: "${forcing_data_dir}/${forcing_folder}/${qsr_prefix}"
+                        nm_qlw_file: "${forcing_data_dir}/${forcing_folder}/${qlw_prefix}"
+                        nm_tair_file: "${forcing_data_dir}/${forcing_folder}/${tair_prefix}"
+                        nm_prec_file: "${forcing_data_dir}/${forcing_folder}/${prec_prefix}"
+                        nm_snow_file: "${forcing_data_dir}/${forcing_folder}/${snow_prefix}"
+                        nm_mslp_file: "${forcing_data_dir}/${forcing_folder}/${mslp_prefix}"
+
+                        nm_xwind_var: ${nm_xwind_var}
+                        nm_ywind_var: ${nm_ywind_var}
+                        nm_humi_var: ${nm_humi_var}
+                        nm_qsr_var: ${nm_qsr_var}
+                        nm_qlw_var: ${nm_qlw_var}
+                        nm_tair_var: ${nm_tair_var}
+                        nm_prec_var: ${nm_prec_var}
+                        nm_snow_var: ${nm_snow_var}
+                        nm_mslp_var: ${nm_mslp_var}
+
+                        nm_nc_iyear: ${nm_nc_iyear}
+                        nm_nc_imm: ${nm_nc_imm}
+                        nm_nc_idd: ${nm_nc_idd}
+                        nm_nc_freq: ${nm_nc_freq}
+                        nm_nc_tmid: ${nm_nc_tmid}
+                        l_xwind: ${l_xwind}
+                        l_ywind: ${l_ywind}
+                        l_humi: ${l_humi}
+                        l_qsr: ${l_qsr}
+                        l_qlw: ${l_qlw}
+                        l_tair: ${l_tair}
+                        l_prec: ${l_prec}
+                        l_mslp: ${l_mslp}
+                        l_cloud: ${l_cloud}
+                        l_snow: ${l_snow}
+
+                        nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
+                        nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+
+                        runoff_data_source: ${runoff_data_source}
+                        sss_data_source: ${sss_data_source}
+
+lasttime: "$(( 86400 - ${time_step}))"
+currentday: "${current_date!sdoy}"
+choose_currentday:
+        "1":
+                starttime: "0.0000000000000"
+                startday: 1
+        '*':
+                starttime: "86400.0000000000"
+                startday: "$(( ${start_date!sdoy} - 1 ))"
+
+choose_lresume:
+        false:
+                create_config:
+                        fesom.clock:
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+        true:
+                create_config:
+                        fesom.clock:
+                                - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
+                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+
+bin_in_work:
+        fesom: "${executable}"
+
+bin_sources:
+        fesom: "${bin_dir}/${comp_executable}"
+
+
+
+config_files:
+        config:  config
+        forcing: forcing
+        ice:     ice
+        oce:     oce
+        io:      io
+        cvmix:   cvmix
+        icepack: icepack
+
+config_sources:
+        config:  "${namelist_dir}/namelist.config"
+        forcing: "${namelist_dir}/namelist.forcing"
+        ice:     "${namelist_dir}/namelist.ice"
+        oce:     "${namelist_dir}/namelist.oce"
+        io:      "${namelist_dir}/namelist.io"
+        cvmix:   "${namelist_dir}/namelist.cvmix"
+        icepack: "${namelist_dir}/namelist.icepack"
+
+compiletime_environment_changes:
+        add_export_vars:
+                taken2from:      fesom2_compile
+        choose_computer.name:
+                juwels:
+                        add_module_actions:
+                                - "unload ParaStationMPI"
+                                - "load ParaStationMPI/5.4.4-1"
+                                - "load netCDF-Fortran/4.4.5"
+
+runtime_environment_changes:
+        add_export_vars:
+                takenfrom:      fesom2_run
+                taken2from:     fesom2_ru
+        choose_computer.name:
+                juwels:
+                        add_module_actions:
+                                - "unload ParaStationMPI"
+                                - "load ParaStationMPI/5.4.4-1"
+                                - "load netCDF-Fortran/4.4.5"
+
+config_in_work:
+        config:  "namelist.config"
+        forcing: "namelist.forcing"
+        ice:     "namelist.ice"
+        oce:     "namelist.oce"
+        io:      "namelist.io"
+        cvmix:   "namelist.cvmix"
+        icepack: "namelist.icepack"
+
+coupling_fields:
+        sst_feom:
+                grid: feom
+        sit_feom:
+                grid: feom
+        sie_feom:
+                grid: feom
+        snt_feom:
+                grid: feom
+        taux_oce:
+                grid: feom
+        tauy_oce:
+                grid: feom
+        taux_ico:
+                grid: feom
+        tauy_ico:
+                grid: feom
+        prec_oce:
+                grid: feom
+        snow_oce:
+                grid: feom
+        evap_oce:
+                grid: feom
+        subl_oce:
+                grid: feom
+        heat_oce:
+                grid: feom
+        heat_ico:
+                grid: feom
+        heat_swo:
+                grid: feom
+        hydr_oce:
+                grid: feom
+
+
+wiso_fields:
+        - o18w_oce
+        - hdow_oce
+        - o16w_oce
+        - o18i_oce
+        - hdoi_oce
+        - o16i_oce
+        - w1_oce
+        - w2_oce
+        - w3_oce
+        - i1_oce
+        - i2_oce
+        - i3_oce
+
+grids:
+        feom:
+                name: feom
+                nx: ${nx}
+                ny: 1
+                oasis_grid_type: "U"
+                number_of_overlapping_points: 0 # oasis P-value
+
+
+further_reading:
+        - fesom/fesom.forcing.yaml

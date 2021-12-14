@@ -3,6 +3,7 @@
 name: glogin
 account: None
 
+# set default for hyperthreading_flag
 use_hyperthreading: False
 choose_use_hyperthreading:
         "1":
@@ -21,20 +22,22 @@ batch_system: "slurm"
 jobtype: compute
 sh_interpreter: "/bin/bash"
 
-choose_jobtype:
-        tidy_and_resubmit:
-                partition: standard96
-        post:
-                partition: standard96
-        compute:
-                partition: standard96
 
+partition: standard96
 
 choose_partition:
         standard96:
-                cores_per_node: 96
-        medium40:
-                cores_per_node: 40
+                partition_name: standard96
+                partition_cpn: 96
+
+partitions:
+        compute:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+
 
 logical_cpus_per_core: 2
 
@@ -49,6 +52,13 @@ pool_dir:  "/scratch/usr/hbkawi"
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
+#iolibraries: system_libs
+#
+# for FOCIOIFS use
+# compiler_mpi: intel2019_ompi
+# for FOCI use
+# compiler_mpi: intel2019_impi2019
+# for both FOCI and FOCIOIFS use
 iolibraries: geomar_libs
 
 # basic modules and export vars needed

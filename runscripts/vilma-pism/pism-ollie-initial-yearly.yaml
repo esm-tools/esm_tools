@@ -1,0 +1,49 @@
+general:
+        setup_name: pism
+        compute_time: "00:02:00"
+        initial_date: "2000-01-01"
+        final_date: "2001-12-31"
+        project_base: !ENV ${PROJECT_BASE}
+        base_dir: "${project_base}/experiments/"
+        nyear: 1
+        #clean_old_rundirs_keep_every: 5
+        #clean_old_rundirs_except: 2
+        use_venv: False
+
+pism:
+        version: "github1.2.1"
+        resolution: "5km"
+        model_dir: /work/ollie/dbarbi/modelcodes/pism-github1.2.1/
+        lresume: 0
+        pool_dir: /work/ollie/pgierz/pool_pism/
+        ts_interval: "monthly"
+        ex_interval: "monthly"
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                #script: pseudo_couple_in_pism.sh
+                                script: coupling_solidearth2pism.functions
+                                script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
+                                #call_function: call_this
+                                call_function: solidearth2pism
+                                env_preparation: env_pism.py
+                                run_only: first_run_in_chunk
+                                skip_chunk_number: 1
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                #script: pseudo_couple_out_pism.sh
+                                script: coupling_pism2solidearth.functions
+                                script_dir: /work/ollie/dbarbi/esm_tools/runscripts/vilma-pism/coupling
+                                #call_function: call_this
+                                call_function: pism2solidearth
+                                env_preparation: env_pism.py
+                                run_only: last_run_in_chunk
+
+

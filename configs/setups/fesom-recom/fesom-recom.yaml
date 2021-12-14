@@ -23,6 +23,26 @@ general:
             couplings:
             - fesom-1.4+recom-2.0
 
+        choose_computer.name:
+                blogin:
+                        add_runtime_environment_changes:
+                                add_add_export_vars:
+                                        # MA: Delete in the future, when libraries in blogin.yaml
+                                        # do the job for fesom-recom-1.4 as well (talk about this
+                                        # with Sebastian)
+                                        - "IO_LIB_ROOT=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
+                                        - "ZLIBROOT=$IO_LIB_ROOT"
+                                        - "SZIPROOT=$IO_LIB_ROOT"
+                                        - "HDF5ROOT=$IO_LIB_ROOT"
+                                        - "HDF5_ROOT=$HDF5ROOT"
+                                        - "NETCDFROOT=$IO_LIB_ROOT"
+                                        - "NETCDFFROOT=$IO_LIB_ROOT"
+                                        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
+                                        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
+                                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/netcdf-cxx4-4.3.1/cxx4/"
+                                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -159,26 +179,6 @@ fesom:
                                                 unit: y
                                                 first: ${recom.yearly_outputs_start}
                                                 rate: 1
-
-        choose_computer.name:
-                blogin:
-                        add_runtime_environment_changes:
-                                add_add_export_vars:
-                                        # MA: Delete in the future, when libraries in blogin.yaml
-                                        # do the job for fesom-recom-1.4 as well (talk about this
-                                        # with Sebastian)
-                                        - "IO_LIB_ROOT=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                        - "LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH"
-                                        - "ZLIBROOT=$IO_LIB_ROOT"
-                                        - "SZIPROOT=$IO_LIB_ROOT"
-                                        - "HDF5ROOT=$IO_LIB_ROOT"
-                                        - "HDF5_ROOT=$HDF5ROOT"
-                                        - "NETCDFROOT=$IO_LIB_ROOT"
-                                        - "NETCDFFROOT=$IO_LIB_ROOT"
-                                        - "HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include"
-                                        - "NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include"
-                                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/netcdf-cxx4-4.3.1/cxx4/"
-                                        - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
 
 
         choose_lresume:

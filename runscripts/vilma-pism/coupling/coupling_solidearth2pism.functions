@@ -1,0 +1,80 @@
+#!/usr/bin/ksh
+
+function solidearth2pism {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    solidearth2pism *** "; echo
+
+        echo "                SOLID_EARTH_TO_PISM=${SOLID_EARTH_TO_PISM}"
+
+        if [[ "x${SOLID_EARTH_TO_PISM}" == "x1" ]]; then
+                read_names solidearth ice
+                iterative_coupling_pism_solidearth_write_grid
+                iterative_coupling_solid_earth_pism_regrid_rename
+                iterative_coupling_solid_earth_pism_update_restart_file
+        else
+                echo " NOT generating solid earth forcing for ice"
+        fi
+        echo
+        echo "                 *** F I N I S H E D    solidearth2pism *** "
+        echo "                =================================================================="
+}
+
+function iterative_coupling_solid_earth_pism_regrid_rename {
+
+	echo "Regridding and renaming solidearth results for next pism run..."
+# Regrid: use remapbic because is gives smoother results and conservatism is not essential in this case
+        cdo -s \
+                remapbic,${COUPLE_DIR}/ice.griddes \
+                -setgrid,${SOLIDEARTH_grid} \
+                ${ice_bedrock_change_file} \
+                ${COUPLE_DIR}/bedrock_change_regrid.nc
+
+# Rename
+        cdo -s \
+                chname,${bedrock_change_name},topg \
+                ${COUPLE_DIR}/bedrock_change_regrid.nc ${COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc
+}
+
+function iterative_coupling_pism_solidearth_write_grid {
+	echo "Writing ice.griddes for next pism run..."
+
+        if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
+
+                cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+                      ${COUPLE_DIR}/ice.griddes  
+        fi
+}
+
+function iterative_coupling_solid_earth_pism_update_restart_file {
+
+	echo "Changing pism restart file with last solidearth results..."
+# Import the restart file to be changed
+        cp $(readlink ${RESTART_DIR_pism}/${latest_restart_file_pism}_unchanged_${LAST_RUN_DATE_STAMP}) ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc
+
+# Select topg (bedrock height), add the change, and replace this variable in the restart file
+        cdo -s \
+                selvar,topg \
+                ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc \
+                ${COUPLE_DIR}/tmp.nc
+
+        cdo -s \
+                add ${COUPLE_DIR}/tmp.nc \
+                ${COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc \
+                ${COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc
+
+        cdo -s \
+                replace ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc \
+                ${COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc \
+                ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc
+
+# Export the changed restart file
+        cp ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc ${RESTART_DIR_pism}/${latest_restart_file_pism}
+        cp ${RESTART_DIR_pism}/${latest_restart_file_pism} ${RESTART_DIR_pism}/${latest_restart_file_pism}_changed_${RUN_DATE_STAMP}
+
+# Clean up
+        rm ${COUPLE_DIR}/tmp.nc 
+        rm ${COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc ${COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc
+# You may not want to (but nevertheless you can) delete these files:
+        rm ${COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc ${COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc
+
+}

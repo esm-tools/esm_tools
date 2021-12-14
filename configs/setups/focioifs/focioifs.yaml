@@ -3,30 +3,23 @@
 #########################################################################################
 general:
 
-        compute_recipe:
-           - "venv_bootstrap"
-           - "_create_setup_folders"
-           - "_create_component_folders"
-           - "initialize_experiment_logfile"
-           - "copy_tools_to_thisrun"
+        prepcompute_recipe:
            - "compile_model"
-           - "_copy_preliminary_files_from_experiment_to_thisrun"
            - "_show_simulation_info"
            - "create_new_files"
+           - "create_empty_folders"
            - "prepare_coupler_files"
-           - "add_batch_hostfile"
            - "assemble"
            - "log_used_files"
            - "_write_finalized_config"
            - "copy_files_to_thisrun"
+           - "write_env"
+           - "preprocess"
            - "modify_namelists"
            - "modify_files"
            - "copy_files_to_work"
-           - "write_simple_runscript"
-           - "preprocess"
            - "report_missing_files"
            - "database_entry"
-           - "submit"
 
         model: focioifs
         pool_dir: "${computer.pool_directories.focipool}"
@@ -75,6 +68,24 @@ general:
         
         runoff_method: "old"
 
+        file_movements:
+           forcing:
+              all_directions: link
+           input:
+              all_directions: link
+           restart_in:
+              # seb-wahl: need to copy restart files by default
+              # as oasis modifies the restart file !!!!
+              init_to_exp: copy
+              exp_to_run: copy
+              run_to_work: copy
+              work_to_run: link
+           #config:
+           #   init_to_exp: copy
+           #   exp_to_run: copy
+           #   run_to_work: link
+           #   work_to_run: link
+
 # postprocessing is not supported, and causes a crash in release 5 if not commented
 # seb-wahl 2020-11-27
 #postprocess:
@@ -91,17 +102,19 @@ oifs:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
+          iolibraries: geomar_libs
           choose_computer.name:
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
                 compiler_mpi: intel2019_impi2019
              juwels:
-                compiler_mpi: intel2020_parastation 
+                compiler_mpi: intel2020_psmpi2020
              nesh:
                 compiler_mpi: intel2020_impi2020
 
         runtime_environment_changes:
+          iolibraries: geomar_libs
           add_export_vars:
              # Turn on FOCI coupling        
              - 'FOCI_USE_CPLNG="active"'
@@ -116,7 +129,7 @@ oifs:
              glogin:
                 compiler_mpi: intel2019_impi2019
              juwels:
-                compiler_mpi: intel2020_parastation 
+                compiler_mpi: intel2020_psmpi2020
              nesh:
                 compiler_mpi: intel2020_impi2020
                 add_module_actions:
@@ -128,6 +141,14 @@ oifs:
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
+
+        file_movements:
+                ICMGG_INIT:
+                        all_directions: copy
+                ICMSH_INIT:
+                        all_directions: copy
+                ICMGG_INIUA:
+                        all_directions: copy
         
         # nproc must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -214,6 +235,10 @@ nemo:
         
         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
         
+        #file_movements:
+        #        input:
+        #                all_directions: link
+        
         choose_general.resolution:
                 TCO95_ORCA05:
                         nproca: 24
@@ -288,7 +313,7 @@ xios:
         model_dir: ${general.model_dir}/xios-${nemo.version}
         setup_dir: ${general.model_dir}
         
-        nproc: ${computer.cores_per_node}
+        nproc: ${computer.partitions.compute.cores_per_node}
         
 
 rnfmap: 
@@ -1029,7 +1054,7 @@ oasis3mct:
                 agrifspg: agrifspg${this_oasis_date_stamp}
 
 # Set up CPU layout
-choose_cores_per_node:
+choose_partitions.compute.cores_per_node:
         24:
                 choose_resolution:
                         T159_ORCA05:

@@ -1,0 +1,111 @@
+&viscdiff
+    ah0 = 0.0
+    ahb0 = 30000000000000.0
+    biharmonic_visc = .true.
+    smagorinsky_visc = .true.
+    increase_equ_zonal_visc = .true.
+    fac_visc_increase = 2.0
+    kh0 = 1500.0
+    kh_flow_depend = .true.
+    scale_mixing_h = .true.
+    scale_mixing_type = 2
+    scalevol = 5800000000.0
+    redi_gm = .true.
+    s_neutral_max = 0.01
+    av0 = 0.0001
+    kv0 = 1e-05
+    kv0_const = .false.
+    mix_scheme = 'KPP'
+    visc_sh_limit = 0.01
+    diff_sh_limit = 0.01
+    double_diffusion = .false.
+    smooth_blmc = .true.
+    pp_max_mix_coeff = 0.01
+    wndmix = 0.0
+    allow_convect_global = .true.
+    add_tb04_to_pp = .true.
+    modiff = 0.01
+    tidal_mixing = .false.
+    use_drag_dissipation = .true.
+    use_wave_dissipation = .false.
+    read_tide_speed = .true.
+    default_tide_speed = 0.01
+    max_drag_diffusivity = 0.005
+    max_wave_diffusivity = 0.005
+    tmix_tidalconstituent = 'M2'
+    tmix_tidalmodelname = 'tpxo71'
+    brine_rejection_param = .true.
+    visc_conv_limit = 1.0
+    diff_conv_limit = 1.0
+    c_d = 0.0025
+/
+
+&boundary
+    ts_surfbd = .true.
+    ref_sss_local = .true.
+    ref_sss = 34.0
+    restore_s_surf = 0
+    restore_t_surf = 0.0
+    balance_salt_water = .true.
+    buffer_zone = .false.
+    restore_ts_buff = 2.3148e-06
+/
+
+&oce_scheme
+    gamma_stab = 0.99
+    gamma_stab_nh = 0.5
+    gamma_fct = 0.5
+    alpha_ab = 1.55
+    alpha_trapez = 0.55
+    theta_ssh = 0.5
+    theta_vel = 0.5
+    use_cori_semi = .true.
+/
+
+&denspress
+    density_linear = .false.
+    use_ref_density = .true.
+/
+
+&param_freesurf
+    max_ice_loading = 0.0
+/
+
+&tide_obc
+    nmbr_tidal_cons = 4
+    tidal_constituent = 'M2S2K1O1'
+    tidemodelname = 'tpxo71'
+    tide_opbnd_type = 'vel'
+    tide_amplify_coeff = 0.0
+/
+
+&passive_tracer
+    use_passive_tracer = .false.
+    num_passive_tracer = 3
+    ptr_start_year = 1968
+    passive_tracer_flux = .false.
+    passive_tracer_restore = .true.
+    ptr_restore_in_volume = .true.
+    ptr_background_value = 0.0
+    ptr_restore_value = 1.0
+/
+
+&age_tracer
+    use_age_tracer = .false.
+    num_age_tracer = 1
+    age_tracer_start_year = 1947
+    age_tracer_global_surf = .true.
+    age_release_in_volume = .false.
+    zero_age_at_release = .true.
+    age_tracer_restore_time = 86400.0
+/
+
+&tracer_cutoff
+    limit_salinity = .true.
+    salinity_min = 0.5
+    coeff_limit_salinity = 0.0019
+/
+
+&oce_tra
+    surf_relax_s = 0
+/

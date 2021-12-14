@@ -4,7 +4,7 @@
 
 header_start: "#SBATCH"
 submit: sbatch
-launcher: srun 
+launcher: srun
 debugger: None
 mail_type: NONE
 account: None
@@ -25,24 +25,40 @@ choose_accounting:
 choose_mail_type:
         "*":
                 mail1:  "--mail-type=${mail_type}"
+choose_general.mail_type:
+        "*":
+                mail1:  "--mail-type=${general.mail_type}"
 choose_mail_user:
         "*":
                 mail2:  "--mail-user=${mail_user}"
+choose_general.mail_user:
+        "*":
+                mail2:  "--mail-user=${general.mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
 tasks_flag: "--ntasks=@tasks@"
-partition_flag: "--partition=${partition}"
+partition_flag: "--partition=@partition@"
+nodes_flag: "--nodes=@nodes@"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
-output_path: "${experiment_dir}/scripts/"
-thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+output_path: "${experiment_dir}/log/"
+#thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+heterogeneous_parallelization: false
+
+add_choose_heterogeneous_parallelization:
+        true:
+                cpu_bind: "none"
+        false:
+                cpu_bind: "cores"
+
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores"
+                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
                 execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
@@ -96,3 +112,16 @@ check_error:
                 method: "kill"
                 message: "SLURM ERROR: slurm probably didn't find executable"
                 file: "stdout"
+
+# possibility to use less cores than processes. Useful for test runs / debugging
+# can be specified in user runscript
+overcommit_nodes: None
+overcommit_rule: ""
+
+choose_overcommit_nodes:
+    None:
+        overcommit_rule: ""
+    "*":
+        overcommit_rule:  "--overcommit --nodes=${overcommit_nodes}"
+
+overcommit_flag: "${overcommit_rule}"

@@ -1,0 +1,333 @@
+# FESOM2 YAML CONFIGURATION FILE
+#
+
+model: fesom
+branch: master
+version: "2.0"
+type: ocean
+
+comp_command: ${defaults.comp_command}
+clean_command: ${defaults.clean_command}
+
+use_icebergs: False
+
+choose_version:
+  '2.0':
+    branch: 2.0.2
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    - github.com/FESOM/fesom2.git
+    install_bins: bin/fesom.x
+  2.0-esm_interface:
+    branch: using_esm-interface_yac
+    destination: fesom-2.0
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    install_bins: bin/fesom.x
+  2.0-o:
+    branch: oifs-deck
+  2.0-jio:
+    branch: juwels_chunk_io
+    destination: fesom-2.0
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    #- https://github.com/FESOM/fesom2.git # Change later to this repository
+  2.0-paleodyn:
+    branch: paleodyn_frozen
+    destination: fesom-2.0
+  2.0-r:
+    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
+    # files will be cleared from the src folder. After Dima's update we will return
+    # fesom-2.0 master branch back and remove this part
+    branch: recom-update
+
+install_bins: bin/fesom.x
+git-repository:
+- https://gitlab.dkrz.de/FESOM/fesom2.git
+- github.com/FESOM/fesom2.git
+
+
+restart_rate: "12"
+restart_unit: "m"
+restart_first: 12
+restart_flag: "last"
+
+time_step: 1800
+resolution: CORE2
+
+comp_executable: fesom.x
+executable: fesom
+
+mesh_rotated: false
+old_mesh_format: false
+with_part_format: false
+time_dimension: "time"
+
+pool_dir: ${computer.pool_directories.pool}
+#model_dir: "${esm_master_dir}/fesom-${version}/"
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+climate_data_dir: "${pool_dir}/hydrography/"
+forcing_data_dir: "${pool_dir}/forcing/"
+ini_data_dir: "${pool_dir}/pool-data/"
+namelist_dir: "${esm_namelist_dir}/fesom2/"
+
+opbnd_dir: "somepath"
+tide_forcing_dir: "somepath"
+
+steps_per_day: "$(( 86400 / ${time_step} ))"
+
+asforcing: CORE2
+
+namelists:
+        - namelist.config
+        - namelist.forcing
+        - namelist.oce
+        - namelist.ice
+        - namelist.io
+
+choose_asforcing:
+        CORE2:
+                leapyear: false
+        ECHAM5:
+                leapyear: true
+
+
+
+choose_resolution:
+        CORE2:
+                nx: 126858
+                mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+                nproc: 288
+        GLOB:
+                nx: 830305
+        CAVCORE2:
+                nx: 72411
+                mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+                nproc: 288
+
+restart_in_files:
+        oce_restart: oce_restart
+        ice_restart: ice_restart
+        icb_restart: icb_restart
+
+restart_in_in_workdir:
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
+restart_in_sources:
+        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
+        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
+
+restart_out_files:
+        oce_restart: oce_restart
+        ice_restart: ice_restart
+        icb_restart: icb_restart
+restart_out_in_workdir:
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
+restart_out_sources:
+        oce_restart: fesom.${end_date!syear}.oce.restart.nc
+        ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear}
+
+outdata_sources:
+        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
+outdata_targets:
+        "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
+
+choose_use_icebergs:
+        True:
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+            
+            input_in_work:
+                    longitude: "icb_longitude.dat"
+                    latitude: "icb_latitude.dat"
+                    length: "icb_length.dat"
+                    height: "icb_height.dat"
+                    scaling: "icb_scaling.dat"
+            
+            input_sources:
+                    longitude: "${iceberg_dir}/LON.dat"
+                    latitude: "${iceberg_dir}/LAT.dat"
+                    length: "${iceberg_dir}/LENGTH.dat"
+                    height: "${iceberg_dir}/HEIGHT.dat"
+                    scaling: "${iceberg_dir}/SCALING.dat"
+            
+            input_files:
+                    longitude: "longitude" 
+                    latitude: "latitude" 
+                    length: "length" 
+                    height: "height"
+                    scaling: "scaling"
+        
+        False:
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w]
+
+log_files:
+        clock: clock
+        mesh_diag: mesh_diag
+
+log_in_work:
+        clock: fesom.clock
+        mesh_diag: fesom.mesh.diag.nc
+
+log_sources:
+        clock: fesom.clock
+        mesh_diag: fesom.mesh.diag.nc
+
+
+
+
+
+namelist_changes:
+        namelist.config:
+                clockinit:
+                        yearnew: "${initial_date!syear}"
+                calendar:
+                        include_fleapyear: "${leapyear}"
+                paths:
+                        ForcingDataPath: "${forcing_data_dir}"
+                        MeshPath: "${mesh_dir}"
+                        OpbndPath: "${opbnd_dir}"
+                        ClimateDataPath: "${climate_data_dir}"
+                        TideForcingPath: "${tide_forcing_dir}"
+                        ResultPath: "${work_dir}"
+                timestep:
+                        step_per_day: "${steps_per_day}"
+                        run_length: "${restart_rate}"
+                        run_length_unit: "${restart_unit}"
+                inout:
+                        restartflag: "${restart_flag}"
+                        output_length: "${restart_rate}"
+                        output_length_unit: "${restart_unit}"
+                        restart_length: "${restart_rate}"
+                        restart_length_unit: "${restart_unit}"
+        namelist.forcing:
+                namsbc:
+                        nm_xwind_file: "${forcing_data_dir}/u_10."
+                        nm_ywind_file: "${forcing_data_dir}/v_10."
+                        nm_humi_file: "${forcing_data_dir}/q_10."
+                        nm_qsr_file: "${forcing_data_dir}/ncar_rad."
+                        nm_qlw_file: "${forcing_data_dir}/ncar_rad."
+                        nm_tair_file: "${forcing_data_dir}/t_10."
+                        nm_prec_file: "${forcing_data_dir}/ncar_precip."
+                        nm_snow_file: "${forcing_data_dir}/ncar_precip."
+                        nm_mslp_file: "${forcing_data_dir}/slp."
+                        nm_runoff_file: "${forcing_data_dir}/runoff.nc"
+                        nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
+
+lasttime: "$(( 86400 - ${time_step}))"
+currentday: "${current_date!sdoy}"
+choose_currentday:
+        "1":
+                starttime: "0.0000000000000"
+                startday: 1
+        '*':
+                starttime: "86400.0000000000"
+                startday: "$(( ${start_date!sdoy} - 1 ))"
+
+choose_lresume:
+        false:
+                create_config:
+                        fesom.clock:
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+                                - "<--append-- 0.0000000000000 ${initial_date!sdoy} ${initial_date!syear}"
+        true:
+                create_config:
+                        fesom.clock:
+                                - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
+                                - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+
+bin_in_work:
+        fesom: "${executable}"
+
+bin_sources:
+        fesom: "${bin_dir}/${comp_executable}"
+
+
+
+config_files:
+        config:  config
+        forcing: forcing
+        ice:     ice
+        oce:     oce
+        diag:    diag
+        io:      io
+
+config_sources:
+        config:  "${namelist_dir}/namelist.config"
+        forcing: "${namelist_dir}/namelist.forcing"
+        ice:     "${namelist_dir}/namelist.ice"
+        oce:     "${namelist_dir}/namelist.oce"
+        io:      "${namelist_dir}/namelist.io"
+        diag:    "${namelist_dir}/namelist.diag"
+
+compiletime_environment_changes:
+        add_export_vars:
+                - taken2from:      fesom2_compile
+
+runtime_environment_changes:
+        add_export_vars:
+                - takenfrom:      fesom2_run
+                - taken2from:     fesom2_ru
+
+config_in_work:
+        config:  "namelist.config"
+        forcing: "namelist.forcing"
+        ice:     "namelist.ice"
+        oce:     "namelist.oce"
+        io:      "namelist.io"
+        diag:    "namelist.diag"
+
+coupling_fields:
+        sst_feom:
+                grid: feom
+        sit_feom:
+                grid: feom
+        sie_feom:
+                grid: feom
+        snt_feom:
+                grid: feom
+                #description: |
+                #       whatever snt means
+                #unit: kg m s
+                #standard_cf_name: 'shit no tuna?'
+                #cf_code: 42
+        taux_oce:
+                grid: feom
+        tauy_oce:
+                grid: feom
+        taux_ico:
+                grid: feom
+        tauy_ico:
+                grid: feom
+        prec_oce:
+                grid: feom
+        snow_oce:
+                grid: feom
+        evap_oce:
+                grid: feom
+        subl_oce:
+                grid: feom
+        heat_oce:
+                grid: feom
+        heat_ico:
+                grid: feom
+        heat_swo:
+                grid: feom
+        hydr_oce:
+                grid: feom
+
+grids:
+        feom:
+                name: feom
+                nx: ${nx}
+                ny: 1
+                oasis_grid_type: "U"
+                number_of_overlapping_points: 0 # oasis P-value
+

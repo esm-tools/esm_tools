@@ -1,0 +1,64 @@
+name: esm-tools Ollie
+
+# Controls when the action will run. Triggers the workflow on push or pull request.
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
+jobs:
+  basic_tests:
+    runs-on: hpc_awi_ollie
+    env:
+        LC_ALL: en_US.UTF-8
+        LANG: en_US.UTF-8
+
+    steps:
+      - name: Download Code
+        uses: actions/checkout@v2
+
+      - name: Add to the path
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install esm-tools
+        run: |
+          module load git
+          module load python3
+          ./install.sh
+
+      - name: Create esmtoolsrc file
+        run: |
+            echo GITLAB_DKRZ_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+            echo SWREPO_AWI_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+
+      - name: Run esm_master
+        run: |
+          esm_master
+
+      - name: Run esm_plugins
+        run: |
+          esm_plugins
+
+      - name: Run get-fesom-2.0
+        run: |
+          esm_master get-fesom-2.0
+
+      - name: Run status-fesom-2.0
+        run: |
+          esm_master status-fesom-2.0
+
+      - name: Run comp-fesom-2.0
+        run: |
+            esm_master comp-fesom-2.0
+
+      - name: Run clean-fesom-2.0
+        run: |
+          esm_master clean-fesom-2.0
+
+      - name: Clean up
+        if: ${{ always() }}
+        run: |
+            rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools

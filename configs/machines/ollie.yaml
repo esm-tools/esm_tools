@@ -11,19 +11,14 @@ jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
 
-choose_jobtype:
-        post:
-                partition: smp
+partitions:
         compute:
-                partition: mpp
-        tidy_and_resubmit:
-                partition: mpp
-
-choose_partition:
-        "mpp":
+                name: mpp
                 cores_per_node: 36
-        "smp":
+        pp:
+                name: smp
                 cores_per_node: 1
+
 
 logical_cpus_per_core: 2
 
@@ -46,6 +41,17 @@ choose_submitted:
 
 submitted: false
 hyper_flag: "" # No hyperthreading on ollie
+choose_heterogeneous_parallelization:
+        True:
+                add_unset_vars:
+                        - "SLURM_DISTRIBUTION"
+                        - "SLURM_NTASKS"
+                        - "SLURM_NPROCS"
+                        - "SLURM_ARBITRARY_NODELIST"
+
+unset_vars:
+        - "SLURM_MEM_PER_NODE"
+        - "SLURM_MEM_PER_CPU"
 
 # standard environment setup
 #

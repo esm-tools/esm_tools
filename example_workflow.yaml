@@ -1,0 +1,54 @@
+# default is compute and tidy, known are postprocess, preprocess
+#
+#
+
+workflow:
+
+        next_run_triggered_by: out_stuff # default: tidy, or anything with run_after tidy
+        
+        subjob_clusters:   
+                # these should work on a setup level,
+                # subjobs without a cluster should become their own cluster
+                # anything defined on cluster level should be default
+                # for all subjobs, unless defined otherwise
+        
+                out_stuff: 
+                        #type: postprocess # is that necessary?
+                        order_in_cluster: concurrent # concurrent / sequential
+                        run_on_queue: ${computer.postprocessing_queue}
+                        run_after: tidy
+                        env_preparation: set_this_env.py
+                        scriptdir: /path/to/script
+                        submit_to_batch_system: True
+        
+        subjobs:
+                couple_out:
+                        #type: postprocess
+                        run_after: tidy
+                        script: my_old_script.ksh
+                        scriptdir: /path/to/script
+                        env_preparation: set_this_env.py
+                        submit_to_batch_system: False
+
+                couple_in:
+                        #type: preprocess
+                        run_before: compute
+                        run_before_first_compute: False
+                        
+                        script: some_other_script.ksh
+                        scriptdir: /path/to/script
+                        env_preparation: set_this_env.py
+                        submit_to_batch_system: False
+
+                post_ATM:
+                        subjob_cluster: out_stuff
+                        nproc: 8
+                        script: ATM_post_script.ksh
+
+                post_BOT:
+                        subjob_cluster: out_stuff
+                        nproc: 4
+                        script: BOT_post_script.ksh
+
+                #some_day_in_the_future:
+                        #script: awesome_yaml_config.yaml

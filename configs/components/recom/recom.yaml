@@ -44,6 +44,8 @@ scenario: "preindustrial"
 
 time_step: 1800
 
+bgc_num: 22
+
 
 choose_scenario:
         preindustrial:
@@ -80,7 +82,7 @@ namelists:
 namelist_changes:
         namelist.recom:
                 pavariables:
-                        bgc_num: 22
+                        bgc_num: "${bgc_num}"
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         firstyearoffesomcycle: "${firstyearoffesomcycle}"
@@ -109,25 +111,27 @@ config_files:
 
 config_sources:
         recom:  "${namelist_dir}/namelist.recom"
+#        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
+restart_name: ""
 
 restart_in_files:
         bio_restart: bio_restart
 
 restart_in_in_work:
-        bio_restart: fesom.${parent_date!syear}.bio.nc
+        bio_restart: fesom.${parent_date!syear}.bio.${restart_name}nc
 
 restart_in_sources:
-        bio_restart: fesom.${parent_date!syear!smonth!sday}.bio.nc
+        bio_restart: fesom.${parent_date!syear}.bio.nc
 
 restart_out_files:
         bio_restart: bio_restart
 
 restart_out_in_work:
-        bio_restart: fesom.${end_date!syear}.bio.nc
+        bio_restart: fesom.${end_date!syear}.bio.${restart_name}nc
 
 restart_out_sources:
-        bio_restart: fesom.${end_date!syear!smonth!sday}.bio.nc
+        bio_restart: fesom.${end_date!syear}.bio.nc
 
 
 yearly_outputs: []

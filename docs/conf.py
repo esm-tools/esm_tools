@@ -19,7 +19,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../src'))
 
 
 
@@ -46,6 +46,7 @@ for config in configs:
     with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
         metadata = d.get("metadata")
+        name = config.upper()
         with open("metadata/"+config+".csv", "w") as table:
             if metadata:
                 for key in metadata:
@@ -57,11 +58,13 @@ for config in configs:
                             table.write(public_string+'"\n')
                         else:
                             table.write("%s; `%s`_\n" % (key, metadata[key]))
+                    elif key=="Name" or key=="name":
+                        name = metadata[key]
                     else:
                         table.write("%s; %s\n" % (key, metadata[key]))
         with open("Supported_Models.rst", "a") as rst:
-            rst.write("%s\n" % config.upper())
-            rst.write("-"*len(config) + "\n")
+            rst.write("%s\n" % name)
+            rst.write("-"*len(name) + "\n")
             rst.write(".. csv-table::\n")
             rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
             rst.write("   :delim: ;\n")
@@ -77,29 +80,8 @@ import shutil
 import sphinx.ext.apidoc
 import esm_tools
 
-esm_tools_modules = [
- "esm_archiving",
- "esm_calendar",
- "esm_database",
- "esm_environment",
- "esm_master",
- "esm_parser",
- "esm_profile",
- "esm_rcfile",
- "esm_runscripts",
- "esm_tools",
- "esm_version_checker",
-]
-esm_tools_modules.remove("esm_tools")
-# Creating a docs/.docstrings.yml file allows you to control the compilation of
-# the docstrings. Fill this file with ``docstrings: 0`` if you want to avoid
-# docstring's compilation, or ``docstrings: 1`` if you want to compile the
-# docstrings. If the file does not exists it always compiles the docstrings.
-if os.path.isfile(".docstrings.yml"):
-    with open(".docstrings.yml") as docstrings_yaml:
-         docstrings_dict = yaml.load(docstrings_yaml, Loader=yaml.FullLoader)
-    if docstrings_dict.get('docstrings')==0:
-        esm_tools_modules = []
+esm_tools_modules = os.listdir("../src/")
+
 
 # Ensure the API folder exists:
 try:
@@ -107,20 +89,6 @@ try:
 except FileExistsError:
  shutil.rmtree("api")
  os.makedirs("api")
-try:
- os.makedirs("tmp_clone")
-except FileExistsError:
- shutil.rmtree("tmp_clone")
- os.makedirs("tmp_clone")
-
-ESM_TOOLS_PROJECT_ADDRESS = "https://github.com/esm-tools/"
-
-mods_to_skip = []
-
-branches = {}
-if os.path.isfile(".api_branches.yml"):
-    with open(".api_branches.yml") as branch_yaml:
-        branches = yaml.load(branch_yaml, Loader=yaml.FullLoader)
 
 with open("API.rst", "w") as rst:
  rst.write("============================\n")
@@ -131,52 +99,15 @@ with open("API.rst", "w") as rst:
  rst.write("   api/*")
 
  for esm_mod in sorted(esm_tools_modules):
-     branch = branches.get(esm_mod, "")
-     if branch:
-         branch = "-b "+branch+" "
-     # Clone:
-     subprocess.call(
-         "git clone "
-         + branch
-         + ESM_TOOLS_PROJECT_ADDRESS
-         + esm_mod
-         + " tmp_clone/"
-         + esm_mod,
-         shell=True,
-     )
-     # Run apidoc. Need the name twice to go into the actual part where the code is
      sphinx.ext.apidoc.main(
          [
              "--no-toc",
              "--module-first",
              "--output-dir",
              "api",
-             "tmp_clone/" + esm_mod + "/" + esm_mod,
+             "../src/" + esm_mod,
          ]
      )
-     # rst.write(esm_mod+"\n")
-     # rst.write("-"*len(esm_mod)+"\n")
-     # rst.write("\n")
-     # rst.write()
-     # Skip a few hings for testing:
-     if esm_mod in mods_to_skip:
-         continue
-
-     # Ensure that importing works correctly when running apidoc
-     subprocess.check_call(
-         [
-             sys.executable,
-             "-m",
-             "pip",
-             "install",
-             "--no-warn-script-location",
-             # "--user",
-             "tmp_clone/" + esm_mod,
-         ]
-     )
-     # sys.path.append(os.path.abspath("tmp_clone/" + esm_mod))
-shutil.rmtree("tmp_clone")
-
 
 # -- General configuration ---------------------------------------------
 
@@ -272,7 +203,7 @@ html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
 
 # Add custom css (to disable the horizontal scrolling in tables).
 def setup(app):
-    app.add_stylesheet('custom.css')
+    app.add_css_file('custom.css')
 
 # -- Options for HTMLHelp output ---------------------------------------
 

@@ -1,6 +1,6 @@
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
-    print (config)
+    #print (config)
     environment_dict = {
             "PISM_TO_SOLID_EARTH": 1,
             "SOLID_EARTH_TO_PISM": 1,

@@ -22,7 +22,7 @@ def subjob_environment(config, subjob):
     return task_list
 
 
-def subjob_tasks(config, subjob):
+def subjob_tasks(config, subjob, batch_or_shell):
 
     task_list = []
     subjob_config = config["general"]["workflow"]["subjobs"][subjob]
@@ -46,7 +46,7 @@ def subjob_tasks(config, subjob):
     if script:
         script = assemble_filename(script, scriptdir, config)
         # task_list += add_scriptcall(script, cluster, config)
-        if subjob_config["batch_or_shell"] == "batch":
+        if batch_or_shell == "batch":
             if "calc_launcher_flags" in dir(config['general']["batch"].bs):
                 launcher_flags = config['general']["batch"].bs.calc_launcher_flags(
                     {

@@ -65,6 +65,7 @@ comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -
 
 
 executable: pismr
+install_bins: "bin/pismr"
 version: github1.2.1
 domain: "greenland"
 resolution: 20km

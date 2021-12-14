@@ -158,6 +158,9 @@ def get_scripts(info):
                 # If this runscript is not to be evaluated in this computer, move on
                 if info["this_computer"] not in computers:
                     continue
+            # Load files to ignore
+            ignore_scripts = config_test.get("ignore_scripts", [])
+            ignore_scripts.append("config.yaml")
 
             scripts_info[model] = {}
             # Loop through the testing runscripts of this model
@@ -169,7 +172,10 @@ def get_scripts(info):
                     or script in test_info.get(model, [])
                 ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
                     # Check that it is actually a runscript
-                    if script != "config.yaml" and ".swp" not in script:
+                    if (
+                        not any(script in s for s in ignore_scripts)
+                        and ".swp" not in script
+                    ):
                         # Store information about the runscript
                         scripts_info[model][script.replace(".yaml", "")] = {}
                         scripts_info[model][script.replace(".yaml", "")][
@@ -177,6 +183,10 @@ def get_scripts(info):
                         ] = f"{runscripts_dir}/{model}/{script}"
                         scripts_info[model][script.replace(".yaml", "")]["state"] = {}
                         ns += 1
+            # Delete models that do not contain any script
+            if not scripts_info[model]:
+                del scripts_info[model]
+
     scripts_info["general"] = {"num_scripts": ns}
 
     info["scripts"] = scripts_info
@@ -215,6 +225,23 @@ def read_info_from_rs(info):
                 "comp_version", runscript[model]["version"]
             )
             v["comp_command"] = runscript["general"].get("comp_command", None)
+            # Data for iterative coupling
+            v["iterative_coupling"] = runscript["general"].get(
+                "iterative_coupling", False
+            )
+            if v["iterative_coupling"]:
+                v["nmodels_iterative_coupling"] = 0
+                v["iterative_models"] = {}
+                for model in runscript:
+                    if "model" in model:
+                        v["nmodels_iterative_coupling"] += 1
+                        # Store the name of the subscripts so that they can be run in
+                        # checks
+                        v["iterative_models"][model] = {
+                            "script": runscript[model]["runscript"]
+                        }
+            else:
+                v["nmodels_iterative_coupling"] = 1
 
     info["scripts"] = scripts_info
 
@@ -254,4 +281,3 @@ def del_prev_tests(info):
                 shutil.rmtree(f"{user_info['test_dir']}/run/{model}/{script}")
                 if len(os.listdir(f"{user_info['test_dir']}/run/{model}")) == 0:
                     shutil.rmtree(f"{user_info['test_dir']}/run/{model}")
-

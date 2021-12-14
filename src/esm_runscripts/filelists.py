@@ -4,6 +4,7 @@ import filecmp
 import glob
 import os
 import pathlib
+import re
 import shutil
 import sys
 import time

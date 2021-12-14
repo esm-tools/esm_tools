@@ -2,6 +2,7 @@
 Contains functions for dealing with SLURM-based batch systems
 """
 import os
+import shutil
 import subprocess
 import sys
 
@@ -55,13 +56,19 @@ class Slurm:
         """
         return os.environ.get("SLURM_JOB_ID")
 
-    def write_hostfile(self, config):
+    def prepare_launcher(self, config, cluster):
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
         else:
             self.write_one_hostfile(self.path, config)
+
+        hostfile_in_work = (
+            config["general"]["work_dir"] + "/" + os.path.basename(self.path)
+        )
+        shutil.copyfile(self.path, hostfile_in_work)
+
         return config
 
     def write_one_hostfile(self, hostfile, config):
@@ -155,7 +162,7 @@ class Slurm:
                     f.write("#!/bin/ksh" + "\n")
                     f.write(
                         "export OMP_NUM_THREADS="
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + "\n"
                     )
                     f.write(command + "\n")
@@ -171,7 +178,7 @@ class Slurm:
                     f.write("(( init = " + str(start_core) + " + $1 ))" + "\n")
                     f.write(
                         "(( index = init * "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " ))"
                         + "\n"
                     )
@@ -180,14 +187,14 @@ class Slurm:
                         "echo "
                         + model
                         + " taskset -c $slot-$((slot + "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " - 1"
                         + "))"
                         + "\n"
                     )
                     f.write(
                         "taskset -c $slot-$((slot + "
-                        + str(config[model]["omp_num_threads"])
+                        + str(config[model].get("omp_num_threads", 1))
                         + " - 1)) ./script_"
                         + model
                         + ".ksh"
@@ -227,7 +234,7 @@ class Slurm:
                     "omp_threads_"
                     + model
                     + "="
-                    + str(config[model]["omp_num_threads"])
+                    + str(config[model].get("omp_num_threads", 1))
                     + "\n"
                 )
         import pdb

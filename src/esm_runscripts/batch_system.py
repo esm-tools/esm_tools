@@ -2,13 +2,12 @@ import os
 import textwrap
 import sys
 import stat
-import shutil
 import copy
 
 import esm_environment
 import six
 
-from esm_parser import user_error
+from esm_parser import user_error, user_note
 from . import helpers
 from . import dataprocess
 from .slurm import Slurm
@@ -55,12 +54,8 @@ class batch_system:
 
     # methods that actually do something
 
-    def write_hostfile(self, config):
-        self.bs.write_hostfile(config)
-        hostfile_in_work = (
-            config["general"]["work_dir"] + "/" + os.path.basename(self.bs.path)
-        )
-        shutil.copyfile(self.bs.path, hostfile_in_work)
+    def prepare_launcher(self, config, cluster):
+        self.bs.prepare_launcher(config, cluster)
         return config
 
     @staticmethod
@@ -443,7 +438,7 @@ class batch_system:
                 if cluster in reserved_jobtypes:
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 header = batch_system.get_batch_header(config, cluster)
-                config = add_batch_hostfile(config)
+                config = config["general"]["batch"].prepare_launcher(config, cluster)
 
                 for line in header:
                     runfile.write(line + "\n")
@@ -601,37 +596,66 @@ class batch_system:
         return config
 
 
+    @staticmethod
+    def find_openmp(config):
+        """
+        Defines the ``heterogeneous_parallelization`` variable based on the
+        ``omp_num_threads`` found in the model's sections. If any
+        ``omp_num_threads`` exists, then ``heterogeneous_parallelization`` becomes
+        ``True``. Otherwise, is set to ``False``. The user has no control on setting
+        this variable, as the user's choice is overridden here. This is because the
+        functionality triggered by ``heterogeneous_parallelization`` is entirely
+        dependent to the values of ``omp_num_threads``, so for the user, it doesn't
+        make sense to define two variables for the same thing. One could think then
+        that there is not need for such a variable, however, there are instances
+        in which the yaml files need to know whether the simulation is heterogeneously
+        parallelize (i.e. in the machine files to define some environment variables
+        under a ``choose_computer.heterogeneous_parallelization``), so this is a way
+        of not having to check every ``omp_num_threads`` in the yamls to verify such
+        condition.
+
+        Parameters
+        ----------
+        config : dict
+            Dictionary containing the information about the experiment.
+
+        Returns
+        -------
+        config : dict
+            Dictionary containing the information about the experiment.
+        """
+        if config["computer"].get("heterogeneous_parallelization", False):
+            user_note(
+                "heterogeneous_parallelization variable",
+                (
+                    "Since version 6.0, ``heterogeneous_parallelization`` variable "
+                    "defined by the user is ignored, and instead its value is "
+                    "set to true if any ``omp_num_threads`` exists in the model's "
+                    "sections. To get rid of this warning, remove "
+                    "``heterogeneous_parallelization`` from your yaml files. "
+                    "``heterogeneous_parallelization`` can still be used from a "
+                    "``choose_`` block to decice the case."
+                )
+            )
+        # Set ``heterogeneous_parallelization`` false, overriding whatever the user
+        # has defined for this variable to be
+        config["computer"]["heterogeneous_parallelization"] = False
+        # Set ``heterogeneous_parallelization`` true if needed
+        for model in config:
+            if "omp_num_threads" in config[model]:
+                config["general"]["heterogeneous_parallelization"] = True
+                config["computer"]["heterogeneous_parallelization"] = True  # dont like this
+                if (
+                    not config[model].get("nproc", False)
+                    and not config[model].get("nproca", False)
+                    and not config[model].get("nprocar", False)
+                ):
+                    config[model]["nproc"] = 1
+        return config
+
+
 def submits_another_job(config, cluster):
     clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
     if clusterconf.get("next_submit", []) == []:
         return False
     return True
-
-
-def add_batch_hostfile(config):
-    config["general"]["batch"].write_hostfile(config)
-
-    # config = all_files_to_copy_append(
-    #    config,
-    #    "general",
-    #    "config",
-    #    "batchhostfile",
-    #    config["general"]["batch"].bs.path,
-    #    None,
-    #    None,
-    # )
-    return config
-
-
-def find_openmp(config):
-    for model in config:
-        if "omp_num_threads" in config[model]:
-            config["general"]["heterogeneous_parallelization"] = True
-            config["computer"]["heterogeneous_parallelization"] = True  # dont like this
-            if (
-                not config[model].get("nproc", False)
-                and not config[model].get("nproca", False)
-                and not config[model].get("nprocar", False)
-            ):
-                config[model]["nproc"] = 1
-    return config

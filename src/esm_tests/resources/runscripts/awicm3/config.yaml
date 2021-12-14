@@ -37,7 +37,8 @@ run:
                     - "outdata/oifs/*/ICMUA*"
                     - "outdata/fesom/*.fesom.*.nc"
         check: {}
-computer:
+computers:
         - ollie
         - mistral
         - juwels
+        - aleph

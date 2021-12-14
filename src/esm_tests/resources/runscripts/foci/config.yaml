@@ -27,6 +27,6 @@ run:
                     - "restart/oasis3mct/flxatmos"
                     - "restart/oasis3mct/sstocean"
         check: {}
-computer:
+computers:
         - blogin
         - glogin

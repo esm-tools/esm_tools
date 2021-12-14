@@ -644,7 +644,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        ICMUA: ${out_date_folder}/awi_cm3*
+        awi_cm3: ${out_date_folder}/awi_cm3*
 
 
 #======================================================================================

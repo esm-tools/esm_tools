@@ -991,8 +991,8 @@ def filter_allowed_missing_files(config):
                     or missing_file_target_fname in glob.glob(allowed_missing_pattern)
                 ):
                     # TODO(PG): Replace with logger statements
-                  if config["general"].get("verbose", False):
-                      print(
+                    if config["general"].get("verbose", False):
+                        print(
                             f"Detected allowed missing file with {allowed_missing_pattern}"
                         )
                         print("Adding to allowed missing files:")

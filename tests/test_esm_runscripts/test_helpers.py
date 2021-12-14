@@ -44,10 +44,12 @@ class TestHelpersUpdateReusableFiles(unittest.TestCase):
         self.config["general"]["potentially_reusable_filetypes"].append("extra")
         self.config["foo_model"] = {}
         self.config["foo_model"]["reusable_filetypes"] = ["input", "forcing", "extra"]
-        out_config = esm_runscripts.helpers.update_reusable_filetypes(
+        # NOTE(PG): Remember, this gives back a list if the second argument
+        # given to update_reusable_filetypes is defined as a list!
+        modified_reusable_filetypes = esm_runscripts.helpers.update_reusable_filetypes(
             self.config, self.config["foo_model"]["reusable_filetypes"]
         )
-        self.assertNotIn("extra", out_config)
+        self.assertNotIn("extra", modified_reusable_filetypes)
 
 
 if __name__ == "__main__":

@@ -115,6 +115,13 @@ choose_general.setup_name:
                     field_def: field_def
                     file_def: file_def
                     file_def_agrif: file_def_agrif
+              agrif_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+                    file_def_agrif: file_def_agrif
         awicm3:
                 xml_dir: "${pool_dir}"
 

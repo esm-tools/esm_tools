@@ -10,6 +10,7 @@ compile_infos:
         available_versions:
         - 6.3.05p2
         - 6.3.05p2-foci
+        - 6.3.05p2-foci_oasismct4
         - 6.3.02p4
         - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
@@ -58,6 +59,9 @@ compile_infos:
             git-repository: https://gitlab.awi.de/pgierz/echam6.git
           6.3.05p2-foci:
             branch: esm-tools
+            git-repository: https://git.geomar.de/foci/src/echam.git
+          6.3.05p2-foci_oasismct4:
+            branch: esm-tools-oasis3mct4
             git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-wiso:
             branch: wiso
@@ -192,6 +196,11 @@ choose_version:
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
+                repo_tag: not_set
+                dataset: r0008
+                nprocrad: "remove_from_namelist"
+                lrad_async: "remove_from_namelist"
+        6.3.05p2-foci_oasismct4:
                 repo_tag: not_set
                 dataset: r0008
                 nprocrad: "remove_from_namelist"
@@ -640,10 +649,6 @@ namelist_changes:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
 
-
-
-foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
-
 coupling_fields:
         sst_atmo:
                 grid: atmo
@@ -681,9 +686,6 @@ coupling_fields:
         heat_swa:
                 grid: atmo
         hydr_atm:
-                grid: atmo
-
-        "[[foci_fields-->FIELD]]":
                 grid: atmo
 
 grids:

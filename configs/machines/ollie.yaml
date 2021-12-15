@@ -87,6 +87,7 @@ export_vars:
         CC: ${cc}
         CXX: ${cxx}
 
+        IO_LIB_ROOT: ""
         HDF5ROOT: $HDF5_ROOT
 
         NETCDFFROOT: $NETCDF_DIR

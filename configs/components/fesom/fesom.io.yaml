@@ -1,0 +1,97 @@
+# WARNING: the information contained on this file is applicable only to the correct
+# version of fesom (2.0) as this contains and modifies the full io_list. This file is
+# intended ONLY for AWICM3 development purposes until a generalization strategy is
+# chosen.
+fesom:
+        # General control of ice output
+        ice_freq: 1
+        ice_unit: 'm'
+        atmice_freq: 1
+        atmice_unit: 'm'
+        
+        # General control of surface output
+        surf_freq: 1
+        surf_unit: 'd'
+
+        # General control of MLD output 
+        # MLD1: max buoyancy gradient criterion
+        # MLD2: sigma criterion (surf + 0.125 kg.m3)
+        mld_freq: 1
+        mld_unit: 'm'
+
+        # Specific control of ice output
+        uice_freq: "${ice_freq}"
+        uice_unit: "${ice_unit}"
+        vice_freq: "${ice_freq}"
+        vice_unit: "${ice_unit}"
+        a_ice_freq: "${ice_freq}"
+        a_ice_unit: "${ice_unit}"
+        m_ice_freq: "${ice_freq}"
+        m_ice_unit: "${ice_unit}"
+
+        # Specific control of surface output
+        sst_freq: "${surf_freq}"
+        sst_unit: "${surf_unit}"
+        sss_freq: "${surf_freq}"
+        sss_unit: "${surf_unit}"
+        ssh_freq: "${surf_freq}"
+        ssh_unit: "${surf_unit}"
+
+        add_namelist_changes:
+                namelist.io:
+                        nml_list:
+                                io_list: [
+                                        'sst       ',"${sst_freq}", "${sst_unit}", 4,
+                                        'sss       ',"${sss_freq}", "${sss_unit}", 4,
+                                        'ssh       ',"${ssh_freq}", "${ssh_unit}", 4,
+                                        'vve_5     ',1, 'm', 4,
+                                        'uice      ',"${uice_freq}", "${uice_unit}", 4,
+                                        'vice      ',"${vice_freq}", "${vice_unit}", 4,
+                                        'a_ice     ',"${a_ice_freq}", "${a_ice_unit}", 4,
+                                        'm_ice     ',"${m_ice_freq}", "${m_ice_unit}", 4,
+                                        'thdgr     ',1, 'm', 4,
+                                        'thdgrsn   ',1, 'm', 4,
+                                        'm_snow    ',1, 'm', 4,
+                                        'MLD1      ',"${mld_freq}", "${mld_unit}", 4,
+                                        'MLD2      ',"${mld_freq}", "${mld_unit}", 4,
+                                        'fh        ',1, 'm', 4,
+                                        'fw        ',1, 'm', 4,
+                                        'atmice_x  ',"${atmice_freq}", "${atmice_unit}", 4,
+                                        'atmice_y  ',"${atmice_freq}", "${atmice_unit}", 4,
+                                        'atmoce_x  ',1, 'm', 4,
+                                        'atmoce_y  ',1, 'm', 4,
+                                        'alpha     ',1, 'm', 4,
+                                        'beta      ',1, 'm', 4,
+                                        'runoff    ',1, 'm', 4,
+                                        'evap      ',1, 'm', 4,
+                                        'subl      ',1, 'm', 4,
+                                        'prec      ',1, 'm', 4,
+                                        'swr      ',1, 'm', 4,
+                                        'lwr      ',1, 'm', 4,
+                                        'qsi       ',1, 'm', 4,
+                                        'qso       ',1, 'm', 4,
+                                        'alb       ',1, 'm', 4,
+                                        'ist       ',1, 'm', 4,
+                                        'hsn       ',1, 'm', 4,
+                                        'tx_sur    ',1, 'm', 4,
+                                        'ty_sur    ',1, 'm', 4,
+                                        'curl_surf ',1, 'm', 4,
+                                        'fer_C     ',1, 'm', 4,
+                                        'temp      ',1, 'm', 4,
+                                        'salt      ',1, 'm', 4,
+                                        'otracers  ',1, 'y', 4,
+                                        'slope_x   ',1, 'y', 4,
+                                        'slope_y   ',1, 'y', 4,
+                                        'slope_z   ',1, 'y', 4,
+                                        'N2        ',1, 'y', 4,
+                                        'Kv        ',1, 'y', 4,
+                                        'u         ',1, 'y', 4,
+                                        'v         ',1, 'y', 4,
+                                        'w         ',1, 'y', 4,
+                                        'Av        ',1, 'y', 4,
+                                        'bolus_u   ',1, 'y', 4,
+                                        'bolus_v   ',1, 'y', 4,
+                                        'bolus_w   ',1, 'y', 4,
+                                        'kpp_obldepth',1, 'm', 4,
+                                        'kpp_sbuoyflx',1, 'm', 4,
+                                        'dMOC      ',1, 'y', 4]

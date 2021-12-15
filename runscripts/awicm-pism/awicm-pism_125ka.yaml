@@ -1,0 +1,17 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ollie/lackerma/awicm_pism_tests/"
+
+model1:
+        setup_name: awiesm
+        runscript: awicm_125ka.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism_125ka.yaml
+        chunk_size: 100
+        chunk_unit: "years"
+

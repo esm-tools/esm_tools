@@ -1,4 +1,4 @@
-! This is the namelist recom 
+This is the namelist recom 
 
 &pavariables
 use_REcoM             =.true.
@@ -6,9 +6,10 @@ REcoM_restart         =.false.
 recom_binary_write    =.false.      ! Determines if tracervalue snapshots are saved. For fine grids it may crash the model to set this to true
 
 recom_binary_init     = .false.     ! Restart from binary
-bgc_num               = 21
-diags3d_num           = 2           ! Number of diagnostic 3d tracers to be saved
+bgc_num               = 22
+diags3d_num           = 20           ! Number of diagnostic 3d tracers to be saved
 VDet                  = 20.d0       ! Sinking velocity, constant through the water column and positive downwards
+VDet_zoo2             = 200.d0       ! Sinking velocity, constant through the water column
 VPhy                  = 0.d0        !!! If the number of sinking velocities are different from 3, code needs to be changed !!!
 VDia                  = 0.d0 
 allow_var_sinking     = .true.   
@@ -16,21 +17,27 @@ biostep               = 1           ! Number of times biology should be stepped 
 REcoM_Geider_limiter  = .false.     ! Decides what routine should be used to calculate limiters in sms
 REcoM_Grazing_Variable_Preference = .false. ! Decides if grazing should have preference for phyN or DiaN 
 REcoM_Second_Zoo      = .false.     ! Decides second zooplankton or no 
+Grazing_detritus      = .false.
+zoo2_fecal_loss       = .false.
+zoo2_initial_field    = .false.
+het_resp_noredfield   = .false.    ! Decides respiratation of copepod group
+diatom_mucus          = .false.    ! Decides nutrient limitation effect on aggregation
+Graz_pref_new         = .false.    ! If it is true Fasham 1990, if not recom original variable preference
 Diagnostics           = .true.
-constant_CO2          = .true.
+constant_CO2          = .false.
 UseFeDust             = .true.      ! Turns dust input of iron off when set to.false.
 UseDustClim           = .true.
 UseDustClimAlbani     = .true.     ! Use Albani dustclim field (If it is false Mahowald will be used)
 use_Fe2N              = .true.      ! use Fe2N instead of Fe2C, as in MITgcm version
 use_photodamage       = .true.      ! use Alvarez et al (2018) for chlorophyll degradation
 HetRespFlux_plus      = .true.      !MB More stable computation of zooplankton respiration fluxes adding a small number to HetN
-REcoMDataPath         = '/work/ollie/projects/MarESys/forcing/CORE2mesh/'
+REcoMDataPath         = '/work/ollie/okarakus/forcing/core_new_REcoMforcing/'
 restore_alkalinity    = .true.
 NitrogenSS            = .false.     ! When set to true, external sources and sinks of nitrogen are activated (Riverine, aeolian and denitrification)
 useAeolianN           = .false.      ! When set to true, aeolian nitrogen deposition is activated
-firstyearoffesomcycle = 1948        ! The first year of the actual physical forcing (e.g. JRA-55) used
-lastyearoffesomcycle  = 2009        ! Last year of the actual physical forcing used
-numofCO2cycles        = 1           ! Number of cycles of the forcing planned 
+firstyearoffesomcycle = 1958        ! The first year of the actual physical forcing (e.g. JRA-55) used
+lastyearoffesomcycle  = 2017        ! Last year of the actual physical forcing used
+numofCO2cycles        = 3           ! Number of cycles of the forcing planned 
 currentCO2cycle       = 1           ! Which CO2 cycle we are currently running
 REcoM_PI              = .true.
 Nmocsy                = 1           ! Length of the vector that is passed to mocsy (always one for recom)
@@ -117,20 +124,33 @@ tiny_het              = 1.d-5       ! for more stable computation of HetRespFlux
 /
 
 &pasecondzooplankton
-graz_max2      = 0.1d0              ! [mmol N/(m3 * day)] Maximum grazing loss parameter                                                                                        
-epsilon2       = 0.0144d0           ! [(mmol N)2 /m6] Half saturation constant for grazing loss                                                                              
-res_zoo2       = 0.0107d0           ! [1/day] Respiration by heterotrophs and mortality (loss to detritus)                                                            
-loss_zoo2      = 0.003d0            ! [1/day] Temperature dependent N degradation of extracellular organic N (EON)                                                            
-pzDia2         = 1.d0               ! Maximum diatom preference                                                                                                                 
+graz_max2      = 0.1d0              ! [mmol N/(m3 * day)] Maximum grazing loss parameter                              
+epsilon2       = 0.0144d0           ! [(mmol N)2 /m6] Half saturation constant for grazing loss                       
+res_zoo2       = 0.0107d0           ! [1/day] Respiration by heterotrophs and mortality (loss to detritus)           
+loss_zoo2      = 0.003d0            ! [1/day] Temperature dependent N degradation of extracellular organic N (EON)    
+fecal_rate_n      = 0.104d0          ! [1/day] Temperature dependent N degradation of \
+fecal_rate_c      = 0.236d0
+pzDia2         = 1.d0               ! Maximum diatom preference                                                       
 sDiaNsq2       = 0.d0
-pzPhy2         = 0.5d0              ! Maximum diatom preference                                                                                                                
+pzPhy2         = 0.5d0              ! Maximum diatom preference                                                       
 sPhyNsq2       = 0.d0
-pzHet          = 0.8d0              ! Maximum diatom preference                                                                                                               
+pzHet          = 0.8d0              ! Maximum diatom preference                                                       
 sHetNsq        = 0.d0
-t1_zoo2        = 28145.d0           ! Krill temp. function constant1                                                                                                       
-t2_zoo2        = 272.5d0            ! Krill temp. function constant2                                                                                                         
-t3_zoo2        = 105234.d0          ! Krill temp. function constant3                                                                                                      
+t1_zoo2        = 28145.d0           ! Krill temp. function constant1                                                  
+t2_zoo2        = 272.5d0            ! Krill temp. function constant2                                                  
+t3_zoo2        = 105234.d0          ! Krill temp. function constant3                                                
 t4_zoo2        = 274.15d0           ! Krill temp. function constant3
+/
+
+&pagrazingdetritus
+pzDet         = 0.5d0           ! Maximum small detritus prefence by first zooplankton
+sDetNsq       = 0.d0
+pzDetZ2       = 0.5d0         ! Maximum large detritus preference by first zooplankton                                 
+sDetZ2Nsq     = 0.d0
+pzDet2         = 0.5d0           ! Maximum small detritus prefence by second zooplankton                               
+sDetNsq2       = 0.d0
+pzDetZ22       = 0.5d0           ! Maximum large detritus preference by second zooplankton
+sDetZ2Nsq2     = 0.d0
 /
 
 &paaggregation
@@ -195,6 +215,7 @@ dust_sol              = 0.02d0      ! Dissolution of Dust for bioavaliable
 calc_prod_ratio       = 0.02
 calc_diss_guts        = 0.0d0
 calc_diss_rate        = 0.005714    ! 20.d0/3500.d0
+calc_diss_rate2       = 0.005714d0
 /
 
 &pabenthos_decay_rate

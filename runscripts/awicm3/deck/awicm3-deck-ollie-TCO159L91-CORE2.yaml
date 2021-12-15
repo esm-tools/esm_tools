@@ -1,0 +1,36 @@
+general:
+    setup_name: "awicm3"
+    version: "1.0-deck"
+    compute_time: "00:15:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-05"
+    base_dir: "/work/ollie/mandresm/esm_yaml_test/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+awicm3:
+    postprocessing: false
+    model_dir: "/home/ollie/mandresm/model_codes/awicm3-1.0-deck/"
+
+fesom:
+    resolution: "CORE2"
+    #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
+    mesh_dir: "${pool_dir}/core2_meanz/"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    lresume: false
+    time_step: 1800
+    nproc: 72
+
+oifs:
+    lresume: false
+    time_step: 3600
+    prepifs_expid: h9wu
+    input_expid: awi3
+    wam: true
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600

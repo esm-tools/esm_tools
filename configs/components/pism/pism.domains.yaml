@@ -107,6 +107,12 @@ choose_domain:
                                 nz: 101
                                 bz: 11
                                 grid_edge: 20
+                        10km:
+                                nx: 1200
+                                ny: 1200
+                                nz: 101
+                                bz: 11
+                                grid_edge: 10
                         5km:
                                 nx: 2400
                                 ny: 2400

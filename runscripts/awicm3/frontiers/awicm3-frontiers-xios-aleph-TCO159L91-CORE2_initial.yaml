@@ -1,0 +1,47 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "frontiers-xios"
+    account: "awiiccp"
+    compute_time: "01:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-03"
+    base_dir: "/scratch/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+awicm3:
+    postprocessing: false
+    model_dir: "/home/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    #pool_dir: "/work/ollie/jstreffi/input/fesom2/"
+    mesh_dir: "${pool_dir}/core2/"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    lresume: false
+    time_step: 2400
+    nproc: 320
+
+oifs:
+    resolution: "TCO159"
+    levels: "L91"
+    prepifs_expid: h9wu
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 360
+    omp_num_threads: 1
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 7200
+
+xios:
+    with_model: oifs
+    nproc: 1
+

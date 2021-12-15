@@ -17,16 +17,24 @@ description: |
 ##
 available_versions:
 - ec-earth
+- awicm-3.0
+- awicm-frontiers
 - focioifs
 - focioifs1
 choose_version:
   ec-earth:
     branch: esm-tools
+  awicm-frontiers:
+    branch: awicm-3-frontiers
+    destination: rnfmap
+  awicm-3.0:
+    branch: awicm3-frontiers-freeze-candidate-1
+    destination: rnfmap
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:
     branch: esm-tools-focioifs
-clean_command: rm -rf bin; cd src; make clean
+clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
 install_bins: bin/rnfma
@@ -36,7 +44,9 @@ install_bins: bin/rnfma
 model_dir: ${general.model_dir}
 bin_dir: ${model_dir}/bin
 pool_dir: "${computer.pool_directories.pool}"
+input_dir: "${pool_dir}/runoff-mapper"
 namelist_dir: ${general.esm_namelist_dir}/rnfmap/
+runoff_maps_name: ""
 
 parent_expid: "test" 
 parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
@@ -60,6 +70,8 @@ choose_resolution:
 
 nproca: 1
 nprocb: 1
+
+runoff_method: "old"
                          
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
@@ -71,14 +83,42 @@ bin_sources:
 config_sources:
         namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
 
-runoff_fields_recv: [R_Runoff_atm] 
-runoff_fields_send: [R_Runoff_oce]
+input_files: {}
+
+input_in_work:
+        runoff_maps: runoff_maps.nc
+
+input_sources:
+        runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}.nc
 
 coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
                 grid: rnfa
         "[[runoff_fields_send-->FIELD]]":
                 grid: opaf
+
+choose_runoff_method:
+        'new':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                calving_fields_send: [R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_fields_send-->FIELD]]":
+                                grid: rnfs
+        '*':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfo
+        'awicm3-deck':
+                runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+        'awicm3-default':
+                runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
+                runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
 
 namelist_changes:
         namelist.runoffmapper:
@@ -102,6 +142,22 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 2
+                        rnfo:
+                                name: rnfo
+                                nx: "${nemo._nx}"
+                                ny: "${nemo._ny}"
+                                oasis_grid_type: "LR"
+                                number_of_overlapping_points: 0
+                        rnfm:   
+                                name: rnfm
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
+                        rnfs:
+                                name: rnfs
+                                nx: 512
+                                ny: 256
+                                oasis_grid_type: "LR"
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

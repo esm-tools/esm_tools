@@ -1,0 +1,62 @@
+#!/usr/bin/bash
+#SBATCH --partition=mpp
+#SBATCH --time=00:10:00
+#SBATCH --ntasks=288
+#SBATCH --output=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-restart-daily//scripts/fesom-recom1.4-restart-daily_compute_19580102-19580102_%j.log --error=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-restart-daily//scripts/fesom-recom1.4-restart-daily_compute_19580102-19580102_%j.log
+#SBATCH --job-name=fesom-recom1.4-restart-daily
+#SBATCH --mail-type=NONE
+#SBATCH --exclusive
+
+module purge
+module load cmake
+module load udunits
+module load gribapi/1.28.0
+module unload intel.compiler
+module load intel.compiler
+module unload netcdf
+module load hdf5
+module load centoslibs cdo nco netcdf/4.6.2_intel
+module load automake
+module load python3/3.7.7_intel2020u2
+module load git
+module list
+module unload intel.mpi
+module load intel.mpi
+
+export LC_ALL=en_US.UTF-8
+export FC="mpiifort -mkl"
+export F77="mpiifort -mkl"
+export MPIFC=mpiifort
+export MPICC=mpiicc
+export CC=mpiicc
+export CXX=mpiicpc
+export HDF5ROOT=$HDF5_ROOT
+export NETCDFFROOT=$NETCDF_DIR
+export NETCDFROOT=$NETCDF_DIR
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib
+export PERL5LIB=/usr/lib64/perl5
+export LAPACK_LIB="-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"
+export LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+export XML2ROOT=/usr
+export ZLIBROOT=/usr
+export MPIROOT=${I_MPI_ROOT}/intel64
+export MPI_LIB=$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
+export PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH
+export AWI_FESOM_YAML='{'output_schedules': [{'vars': ['restart'], 'unit': 'd', 'first': 1, 'rate': 1}, {'vars': [], 'unit': 'm', 'rate': 1}, {'vars': ['evs', 'fsitherm', 'opottemptend', 'pbo', 'prlq', 'prsn', 'rsdo', 'siarean', 'siareas', 'sidmassevapsubl', 'sidmasssi', 'sidmassth', 'sidmasstranx', 'sidmasstrany', 'siextentn', 'siextents', 'sifllatstop', 'sisnconc', 'sisnmass', 'sisnthick', 'sispeed', 'sivol', 'sivoln', 'sivols', 'soga', 'thetaoga', 'u2o', 'uso', 'uto', 'v2o', 'volo', 'vso', 'vto', 'w2o', 'wfo', 'wso', 'wto', 'zossq', 'rho', 'uhice', 'uhsnow', 'urho', 'uv', 'vhice', 'vhsnow', 'virtual_salt', 'vrho', 'tso', 'lwrd', 'olat', 'olwout', 'osen', 'relax_salt', 'shum', 'tair', 'uwind', 'vwind', 'sistrxdtop', 'sistrxubot', 'sistrydtop', 'sistryubot', 'siu', 'siv', 'thdgr', 'thdgrsn', 'mlotst', 'omldamax', 'sic', 'sithick', 'sitimefrac', 'so', 'sos', 'tauuo', 'tauvo', 'thetao', 'tos', 'zos', 'flice', 'wnet', 'evap', 'runoff', 'hfds', 'uo', 'vo', 'wo'], 'unit': 'd', 'rate': 1}, {'vars': [], 'unit': 's', 'rate': 12}, {'vars': [], 'unit': 'y', 'first': 1, 'rate': 1}, {'vars': ['FPzoo2_2d', 'Mortzoo2_3d', 'MortHet3d', 'TotGraz2_3d', 'NPPphy3d', 'NPPdia3d', 'GPPphy3d', 'GPPdia3d', 'TotGraz3d', 'AGGphy3d', 'AGGdia3d', 'CO2y', 'aCO2', 'rDIN', 'rDON', 'rDOC', 'rDSi', 'PAR', 'NPPn', 'NPPd', 'GPPn', 'GPPd', 'NNAn', 'NNAd', 'GNAn', 'GNAd', 'benCalc', 'benSi', 'benC', 'benN', 'denb', 'aN', 'aFe', 'Hp', 'CO2f', 'dpCO2s', 'pCO2s', 'bgc01', 'bgc02', 'bgc03', 'bgc04', 'bgc05', 'bgc06', 'bgc07', 'bgc08', 'bgc09', 'bgc10', 'bgc11', 'bgc12', 'bgc13', 'bgc14', 'bgc15', 'bgc16', 'bgc17', 'bgc18', 'bgc19', 'bgc20', 'bgc21', 'bgc22', 'bgc23', 'bgc24', 'bgc25', 'bgc26', 'bgc27', 'bgc28', 'age01', 'Kw', 'alphaCO2', 'O2f'], 'unit': 'm', 'rate': 1}, {'vars': ['diags3d01', 'diags3d02', 'slp'], 'unit': 'd', 'rate': 1}, {'vars': [], 'unit': 's', 'rate': 12}, {'vars': ['RESphy3d', 'RESdia3d', 'RESzoo3d', 'calcdiss', 'calcif3d', 'NNAsphy3d', 'NNAsdia3d', 'GNAsphy3d', 'GNAsdia3d', 'EXChet3d', 'EXCphy3d', 'EXCdia3d', 'GRAZ2phy3d', 'GRAZ2dia3d', 'GRAZ2het3d', 'RESzoo2_3d', 'EXCzoo2_3d', 'GRAZphy3d', 'GRAZdia3d', 'GRAZdet3d', 'GRAZ2det3d', 'GRAZdet2_3d', 'GRAZ2det2_3d'], 'unit': 'y', 'first': 1, 'rate': 1}]}'
+export ACCOUNT=None
+export ESM_TESTING_DIR=/work/ollie/mandresm/testing//run/fesom-recom/
+export MODEL_DIR=/work/ollie/mandresm/testing//comp/fesom-recom/fesom-recom-1.4
+export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+
+# Set stack size to unlimited
+ulimit -s unlimited
+# 3...2...1...Liftoff!
+
+cd /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-restart-daily//run_19580102-19580102/work/
+echo $(date +%c) : compute 1 1958-01-02T00:00:00 7050 - start >> /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-restart-daily//log//fesom-recom1.4-restart-daily_fesom-recom.log
+time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun &
+process=$! 
+cd /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-restart-daily//scripts/
+esm_runscripts fesom-recom1.4-restart-daily.yaml -e fesom-recom1.4-restart-daily -t tidy_and_resubmit -p ${process} -j compute -v --no-motd  --open-run

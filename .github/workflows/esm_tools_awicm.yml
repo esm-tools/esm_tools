@@ -1,0 +1,31 @@
+name: Tests for AWICM
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/echam/*.yaml'
+            - 'configs/components/jsbach/*.yaml'
+            - 'configs/components/hdmodel/*.yaml'
+            - 'configs/components/fesom/*.yaml'
+            - 'config/components/oasis3mct/*.yaml'
+            - 'config/setups/awicm/*.yaml'
+            - '.github/workflows/esm_tools_awicm.yml'
+
+jobs:
+    compile-ollie:
+        name: Compile Test AWICM (Ollie)
+        # Pattern for uses: github-org/repo/some/path/in/repo@commit_or_branch
+        # (if @commit_or_branch is omitted, it assumes the default)
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        secrets:
+          dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
+          awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
+        with:
+          model_name: awiesm
+          # versions to test as a space seperated list
+          model_version: "1.0 1.0-recom CMIP6 2.0"

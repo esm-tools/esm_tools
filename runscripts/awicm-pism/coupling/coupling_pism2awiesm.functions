@@ -1,0 +1,16 @@
+#!/bin/ksh
+pism2awiesm() {
+    latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    if [ -f ${latest_pism_ex_file} ]; then
+        ln -fs ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+    else
+        echo "*** ${latest_pism_ex_file} not found ***"
+        exit 42
+    fi
+
+    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
+    . ${FUNCTION_PATH}/coupling_pism2ocean.functions
+
+    pism2atmosphere
+    #pism2ocean
+}

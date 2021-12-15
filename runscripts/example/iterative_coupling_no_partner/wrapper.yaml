@@ -1,0 +1,9 @@
+general:
+        iterative_coupling: True
+        base_dir: ... put the path here ...
+        
+model1:
+        setup_name: awiesm-wiso
+        runscript: normal_run_script.yaml
+        chunk_size: 10
+        chunk_unit: "years"

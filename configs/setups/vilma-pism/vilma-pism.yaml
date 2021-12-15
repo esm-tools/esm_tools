@@ -1,0 +1,27 @@
+#########################################################################################
+########################## VILMA-PISM YAML CONFIGURATION FILE ###########################
+#########################################################################################
+# This file is put together for compilation purposes only. In order to run VILMA-PISM
+# please edit the paths of the 3 involved runscripts (the general one, the pism-specific
+# one and the vilma-specific one) in runscripts/vilma-pism.
+
+general:
+        model: vilma-pism
+        #model_dir: ${esm_master_dir}/fesom-recom-${version}
+
+        version: "1.0v1d"
+
+        coupled_setup: false
+        standalone: true
+
+        include_models:
+                - vilma
+                - pism
+
+        available_versions:
+        - '1.0v1d'
+        choose_version:
+          '1.0v1d':
+            couplings:
+            - vilma-1d+pism-github1.2.1
+

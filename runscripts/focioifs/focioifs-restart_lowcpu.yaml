@@ -1,0 +1,81 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "00:15:00"
+   initial_date: "1850-01-03T00:00:00"       # Initial exp. date
+   final_date: "1850-01-05T00:00:00"         # Final date of the experiment
+   
+   nyear: 0
+   nmonth: 0
+   nday: 1
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+
+   # machine specific setup 
+   account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   lresume: True
+   ini_parent_exp_id: "test_focioifs-2.0"
+   ini_parent_date: "18500102"
+   ini_nemo_restart_steps: 96
+   ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCIOIFS_RESTART/${ini_parent_exp_id}/"
+   oasis_date_stamp: "_18500102-18500102"
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-2.0
+  
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   nproc: 31 
+   use_ocean_currents: 0
+   initial_date_cold: "1850-01-01"
+
+oasis3mct:
+   norestart: F
+   use_lucia: True
+   # in FOCIOIFS all oasis input files are treated as restarts.
+   # in FOCI all remapping files are handled as inputs. Both approaches work.
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct"
+   #oasis_date_stamp: "_18500102-18500102"
+   #oasis_date_stamp: "" 
+   
+nemo:
+   resolution: "ORCA05"
+   jpni: 8 
+   jpnj: 4
+   nproc: 32
+   add_namelist_changes:
+       namelist_cfg:
+           namtra_ldf:
+               rn_aht_0: 599
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   nproc: 16

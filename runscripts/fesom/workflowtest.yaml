@@ -1,0 +1,57 @@
+general:
+        setup_name: fesom
+        compute_time: "00:08:00"
+        initial_date: '2000-01-01'
+        final_date: '2000-02-29'
+        base_dir: "/work/ollie/dbarbi/esm_yaml_test/"
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+fesom:
+        version: 1.4
+        model_dir: "/work/ollie/dbarbi/modelcodes/fesom-1.4/"
+        pool_dir: "/work/ollie/pool/FESOM/"
+        mesh_dir: "/work/ollie/pool/FESOM/meshes_default/core/"
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        post_processing: 0
+
+        #        further_reading: "fesom_output_control.yaml"
+
+        workflow:
+                next_run_triggered_by: couple_out
+                
+                subjobs:
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                script: pseudo_couple_out.sh
+                                script_dir: /work/ollie/dbarbi/esm_tools/dataprocessings/fesom
+                                call_function: call_this
+                                env_preparation: testenv_co.py
+                                run_only: last_run_in_chunk
+
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: pseudo_couple_in.sh
+                                script_dir: /work/ollie/dbarbi/esm_tools/dataprocessings/fesom
+                                call_function: call_this
+                                env_preparation: testenv_cc.py
+                                run_only: first_run_in_chunk
+                                skip: first_chunk
+
+                                #postpro1:
+                                #nproc: 1
+                                #run_after: tidy
+                                ##submit_to_batch_system: True
+                                ##run_on_queue: mpp
+                                #script: stupidtestscript.sh
+                                #script_dir: /work/ollie/dbarbi/esm_tools/dataprocessings/fesom
+                                #env_preparation: testenv.py 
+

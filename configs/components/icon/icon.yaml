@@ -258,7 +258,7 @@ choose_resolution:
             36:
                 nproc: 900
 
-bin_in_workdir:
+bin_in_work:
     icon: icon
 
 bin_sources:

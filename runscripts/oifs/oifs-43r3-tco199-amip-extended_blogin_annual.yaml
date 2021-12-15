@@ -1,0 +1,58 @@
+general:
+        use_venv: False
+        verbose: True
+        
+        setup_name: oifs
+        compute_time: "08:00:00"
+        account: shk00018
+        initial_date: "1979-01-01T00:00:00"
+        final_date: "2020-01-01T00:00:00"
+        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-slask/
+        nyear: 1
+        nmonth: 0
+        nday: 0
+        restart_rate: 1
+        restart_unit: days 
+        #file_movements:
+        #        restart_in:
+        #                exp_to_run: copy
+        #                init_to_exp: copy
+        #                run_to_work: copy
+        #                work_to_run: copy
+        #        restart_out:
+        #                exp_to_run: copy
+        #                init_to_exp: copy
+        #                run_to_work: copy
+        #                work_to_run: copy
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        time_step: 1800.0        
+        #pool_dir: /scratch/usr/shkifmsw/foci_input2
+        input_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199/
+        rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
+        vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
+        clim_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199/199_4/
+        ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
+        cmip6_data_dir: ${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/
+        mip: cmip6
+        scenario: SSP5-8.5 
+        icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199-AMIP/
+        icmcl_file: ICMCLhaahINIT_AMIP_EXTENDED_ERA5_20150101-20200101
+        prepifs_expid: haah
+        prepifs_startdate: 20080101
+        resolution: TCO199
+        levels: L91
+        lresume: 0
+        post_processing: 0
+        nproc: 960
+        perturb: 0
+        ensemble_id: 1
+        
+xios:
+        # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
+        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO199/output_3hr+6hrPLev+1dayPV+Amon/
+        with_model: oifs
+        nproc: 96

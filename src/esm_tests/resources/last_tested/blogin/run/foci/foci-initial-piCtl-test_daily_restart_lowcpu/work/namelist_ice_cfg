@@ -1,0 +1,25 @@
+&namicerun
+    cn_icerst_in = 'foci-initial-piCtl-test_daily_restart_lowcpu_00000000_restart_ice_18491231'
+    cn_icerst_indir = '/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/'
+    cn_icerst_out = 'restart_ice_18500101'
+    cn_icerst_outdir = '/scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/'
+/
+
+&namiceini
+    ln_limini = .true.
+    hninn = 0.1
+    hginn = 2.0
+/
+
+&namicedyn
+    pstar = 15000.0
+    rn_creepl = 2e-08
+    nn_nevp = 360
+    telast = 3600
+    testlimrhg = 10
+/
+
+&namicethd
+    hiccrit = 0.3, 0.6
+    parsub = 0.0
+/

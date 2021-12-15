@@ -8,8 +8,11 @@ version: GYRE_XIOS
 include_models:
 - xios
 
+runoff_method: "old"
+
 available_versions:
 - ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_FOCI_AGRIF_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
 - ORCA05_LIM2_NEMO_JRA55_test
@@ -20,6 +23,120 @@ choose_version:
     requires:
     - xios-2.5_r1910_ogcm
     - nemobasemodel-3.6ogcm
+  ORCA05_LIM2_FOCI_AGRIF_AOW:
+    requires:
+    # seb-wahl: comment xios below if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    - xios-2.0_r982
+    # TODO: test with newer version of XIOS
+    # - xios-2.5_r1910
+    - nemobasemodel-3.6foci_agrif
+    branch: master 
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
+    free_surface: linear
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       1_sn_tem_levitus: 1_sn_tem_levitus 
+       1_sn_sal_levitus: 1_sn_sal_levitus 
+       1_ice_init: 1_ice_init
+       # reference namelists
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       # grids and coefficients 
+       # batmeter: bathy_meter
+       cn_batmeter: bathy_updated
+       1_cn_batmeter: 1_bathy_meter
+       1_coordinates: 1_coordinates
+       fixed_grids: fixed_grids
+       # reshape files for nest
+       1_reshape_bicub: 1_reshape_bicub 
+       1_reshape_bilin: 1_reshape_bilin 
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       1_coordinates: 1_coordinates_ORCA05.nc
+
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       1_namelist_top_cfg: 1_namelist_top_cfg
+
+    add_restart_in_sources:    
+       restart_in_nest: 1_${parent_expid}_${prevstep_formatted_nest}_restart*_${parent_date!syear!smonth!sday}_*.nc
+
+    add_restart_out_sources:
+       restart_out_nest: 1_${expid}_${newstep_formatted_nest}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag} 
+             cn_ocerst_indir: '${work_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${work_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy} 
+             nn_rstctl: ${nn_rstctl} 
+             ln_rstart: ${nemo.lresume}
+          namtsd:                                                
+             ln_tsd_tradmp: ${ln_tsd_tradmp} 
+             ln_tsd_init: ${ln_tsd_init} 
+          namdom:
+             nn_closea: 1
+             nn_msh: ${nn_msh} 
+             rn_rdt: ${time_step_nest}
+          namsbc:
+             nn_fsbc: ${nest_refinement} 
+             ln_echam: '.true.'
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          namsbc_echam:
+             sn_owndi: ['A_OTaux1_echam6_08', 3, 'A_OTaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_owndj: ['A_OTauy1_echam6_09', 3, 'A_OTauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iwndi: ['A_ITaux1_echam6_10', 3, 'A_ITaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_iwndj: ['A_ITauy1_echam6_11', 3, 'A_ITauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iqsr: ['A_QsrIce_echam6_12', 3, 'A_QsrIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_qsr: ['A_QsrMix_echam6_13', 3, 'A_QsrMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_iqns: ['A_QnsIce_echam6_14', 3, 'A_QnsIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_qns: ['A_QnsMix_echam6_15', 3, 'A_QnsMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_prec: ['ATotRain_echam6_16', 3, 'ATotRain', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_snow: ['ATotSnow_echam6_17', 3, 'ATotSnow', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_ievp: ['AIceEvap_echam6_18', 3, 'AIceEvap', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_dqns: ['A_dQnsdT_echam6_19', 3, 'A_dQnsdT', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+         
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF 
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       namelist_cfg:
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+
   ORCA05_LIM2_KCM_AGRIF_OASISMCT4:
     requires:
     # seb-wahl: workaround if used with OIFS which also uses XIOS which causes XIOS
@@ -29,16 +146,135 @@ choose_version:
     branch: esm-tools
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
-
+    
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
+    free_surface: linear
+    
     add_input_files:
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
+       1_sn_tem_levitus: 1_sn_tem_levitus
+       1_sn_sal_levitus: 1_sn_sal_levitus
+       1_ice_init: 1_ice_init
+       # reference namelists
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       # grids and coefficients
+       cn_batmeter: bathy_updated
+       1_cn_batmeter: 1_bathy_meter
+       1_coordinates: 1_coordinates
+       fixed_grids: fixed_grids
+       # reshape files for nest
+       1_reshape_bicub: 1_reshape_bicub
+       1_reshape_bilin: 1_reshape_bilin
 
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       1_coordinates: 1_coordinates_ORCA05.nc
+    
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       1_namelist_top_cfg: 1_namelist_top_cfg
+
+    add_restart_in_sources:
+       restart_in_nest: 1_${parent_expid}_${prevstep_formatted_nest}_restart*_${parent_date!syear!smonth!sday}_*.nc
+
+    add_restart_out_sources:
+       restart_out_nest: 1_${expid}_${newstep_formatted_nest}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag}
+             cn_ocerst_indir: '${work_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${work_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy}
+             nn_rstctl: ${nn_rstctl}
+             ln_rstart: ${nemo.lresume}
+          #namcfg:
+          #   jpidta: ${_nx_nest1}
+          #   jpjdta: ${_ny_nest1}
+          #   jpiglo: ${_nx_nest1}
+          #   jpjglo: ${_ny_nest1}
+          namlbc: 
+             rn_shlat: 2
+             ln_vorlat: '.false.'
+          namagrif:
+             #nn_cln_update: 3
+             rn_sponge_tra: 600 
+             rn_sponge_dyn: 600 
+          namtsd:
+             ln_tsd_tradmp: ${ln_tsd_tradmp}
+             ln_tsd_init: ${ln_tsd_init}
+          namdom:
+             nn_closea: 1
+             nn_msh: ${nn_msh}
+             rn_rdt: ${time_step_nest}
+          namsbc:
+             nn_fsbc: 3
+             nn_ice: 2
+             ln_echam: '.false.'
+             ln_cpl: '.true.'
+          namtra_ldf: 
+             rn_aeiv_0: 0.
+             rn_aht_0: 120.
+             rn_aht_m: 120.
+          namdyn_ldf:
+             rn_ahm_0_blp: -2.4e10
+             rn_ahm_m_blp: -8.e9
+             rn_ahm_m_lap: 0.
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          #namnc4:
+          #   ln_nc4zip: '.false.'
+          #   nn_nchunks_i: 4
+          #   nn_nchunks_j: 4
+          #   nn_nchunks_k: 4
+          nambbl:
+             rn_ahtbbl: 1000
+          namctl:
+             ln_ctl: '.false.'
+             nn_timing: 0
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       namelist_cfg:
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+    
+    add_coupling_fields:
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1r
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
 
   ORCA05_LIM2_KCM_AOW:
     requires:
@@ -53,6 +289,7 @@ choose_version:
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
+       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -75,6 +312,7 @@ choose_version:
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
+       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -111,7 +349,7 @@ choose_version:
        #namelist_top_ref: namelist_top_ref
 
        # grids and coefficients 
-       #bathy_meter: bathy_meter 
+       cn_batmeter: bathy_meter 
        #coordinates: coordinates
        #subbasins: subbasins
        #coef-G70: coef-G70
@@ -205,7 +443,7 @@ choose_version:
              to: 1960
 
 
-clean_command: echo Cleaning is handled by nemobasemodel.yaml 
+clean_command: echo Cleaning is handled by nemobasemodel.yaml; cd ../../ 
 comp_command: echo Compilation is handled by nemobasemodel.yaml 
 
 metadata:
@@ -235,23 +473,48 @@ hosing:         false
 lresume:        false
 free_surface:   linear
 correct_neg_tracer_conc: true
+# use damping?
+ln_tsd_tradmp: false 
 
-restart_rate:   1
-restart_unit:   months
+# Nest settings
+nest1: no
+use_tracer_agrif:   false
+use_lim2_agrif:     false
+
+# calendar:
+leapyear: True
+nn_leapy: 1 
+
+# Restart or initial run settings
+# values below will be set to false if lresume = true
+ln_tsd_init: true 
+ln_limini: true 
+ln_limini_agrif: false
+nn_msh: 1
+# will be set to 0 if lresume = true and run_number=1
+# i.e. restart from another run
+nn_rstctl: 2
+# tracer stuff
+ln_rsttr: ${lresume} 
+nn_rsttr : 2
+ln_trcdta: true
 
 # default directories
 pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
-jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
-jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
-# TODO
-ini_restart_dir: ${pool_dir}/models/foci1.10.1/experiments/FOCI1.10-SWtestd/restart/nemo
 namelist_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
 model_dir: ${general.model_dir}/nemo-${nemo.version}
 setup_dir: ${general.model_dir}
 bin_dir: ${setup_dir}/bin
 
-start_date_m1: $((${start_date} - ${time_step}seconds))
+# AGRIF
+agrif_dir: ${pool_dir}/AGRIF/agrif_${nest1}
+
+# forcing for uncoupled setups
+jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
+jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
+
+# start_date_m1: $((${start_date} - ${time_step}seconds))
 end_date_m1: $((${next_date} - ${time_step}seconds))
 runtime: $((${next_date} - ${start_date}))
 timestep_per_run: $(( ${runtime} / ${time_step} ))
@@ -267,13 +530,27 @@ prevstep_formatted: "<--format(%08d)-- ${prevstep}"
 thisstep_formatted: "<--format(%08d)-- ${thisstep}"
 newstep_formatted: "<--format(%08d)-- ${newstep}"
 
+time_step_nest: $(( ${time_step} / ${nest_refinement} ))
+prevstep_nest: $(( ${steps_since_initial} * ${nest_refinement} ))
+thisstep_nest: $(( ${prevstep_nest} + 1 ))
+timesteps_per_run_nest: $(( ${timestep_per_run} * ${nest_refinement} ))
+newstep_nest: $(( ${prevstep_nest} + ${timesteps_per_run_nest} ))
+
+prevstep_formatted_nest: "<--format(%08d)-- ${prevstep_nest}"
+thisstep_formatted_nest: "<--format(%08d)-- ${thisstep_nest}"
+newstep_formatted_nest: "<--format(%08d)-- ${newstep_nest}"
+
+# generate settings for a restart from a different run
+ini_restart_steps: 0 # this value will be/needs to be set in the runscript
+ini_restart_steps_nest: $(( ${ini_restart_steps} * ${nest_refinement} ))
+global_tag: ""
+   
 coupling_freq_in_steps: 6
+
 # TODO: link with model start and end
 #jrastart: 1958
 #jraend: 1960
 
-# calendar:
-leapyear: True
 
 namelist_changes:
         namelist_cfg:
@@ -282,20 +559,20 @@ namelist_changes:
                         nn_it000: ${thisstep}
                         nn_itend: ${newstep}
                         nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
-                        cn_ocerst_in: ${expid}_${prevstep_formatted}_restart_${start_date_m1!syear!smonth!sday}  #${restart_in}
+                        cn_ocerst_in: ${parent_expid}_${prevstep_formatted}_restart_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
                         cn_ocerst_indir: '${work_dir}/'
                         cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
                         cn_ocerst_outdir: '${work_dir}/'
                         nn_stock: ${newstep}
-                        #nn_leapy: 1
-                        nn_rstctl: 2
-                        ln_rstart: 'false'
+                        nn_leapy: ${nn_leapy} 
+                        nn_rstctl: ${nn_rstctl} 
+                        ln_rstart: ${nemo.lresume}
                 namtsd:                                                
-                        ln_tsd_tradmp: '.true.' 
-                        ln_tsd_init: '.true.'
+                        ln_tsd_tradmp: ${ln_tsd_tradmp} 
+                        ln_tsd_init: ${ln_tsd_init} 
                 namdom:
                         nn_closea: 1
-                        nn_msh: 1
+                        nn_msh: ${nn_msh} 
                         rn_rdt: ${time_step}
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
@@ -304,16 +581,8 @@ namelist_changes:
                         jpnj: ${jpnj}
                         jpnij: ${nproc}
 choose_leapyear:
-        True:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namrun:
-                                       nn_leapy: 1 
         False:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namrun:
-                                       nn_leapy: 0 
+              nn_leapy: 1 
 
 choose_free_surface:
         linear:
@@ -340,43 +609,25 @@ choose_hosing:
 
 choose_lresume:
         true:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namrun:
-                                        ln_rstart: '.true.'
-                                nam_tsd:
-                                        nam_tsd_init: '.true.'
-                                namdom:
-                                        nn_msh: 0
+                ln_limini: false
+                ln_limini_agrif: false
+                ln_tsd_init: false
+                nn_msh: 0
+                                        
                 choose_general.run_number:
                         1:
-                                add_namelist_changes:
-                                        namelist_cfg:
-                                                namrun:
-                                                        nn_rstctl: 0
+                                nn_rstctl: 0
+                                nn_rsttr : 0 # only needed if tracers are used
+                                # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+                                global_tag: "_global" 
+                                prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+                                prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+
         false:
                 add_outdata_sources:
-                        mesh_mask: mesh_mask*.nc
+                        mesh_mask: "*mesh_mask*.nc"
 
 
-choose_correct_neg_tracer_conc:
-        true:
-                add_namelist_changes:
-                        namelist_top_cfg:
-                                namtrc_rad:
-                                        ln_trcrad: ".true."
-        false:
-                add_namelist_changes:
-                        namelist_top_cfg:
-                                namtrc_rad:
-                                        ln_trcrad: ".false."
-
-choose_general.run_number:
-        1:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namdom:
-                                        nn_msh: 1
 # choices:
 #
 choose_resolution:
@@ -394,7 +645,6 @@ choose_resolution:
                         namelist_ice_ref: namelist_ice_ref
                         namelist_top_ref: namelist_top_ref
                         # grids and coefficients 
-                        bathy_meter: bathy_meter
                         coordinates: coordinates
                         subbasins: subbasins
                         coef-G70: coef-G70
@@ -411,7 +661,7 @@ choose_resolution:
                    namelist_cfg:
                       namtsd:                                                
                         ln_tsd_tradmp: '.false.' 
-                        ln_tsd_init: '.false.'
+                        ln_tsd_init: '.false.' 
                       nameos:
                         ln_useCT: '.false.'
                 input_files:
@@ -423,57 +673,98 @@ choose_resolution:
                 config_in_work:        
                         namelist_cfg: namelist_cfg
 
+_nx_nest1: 0
+_ny_nest1: 0
+nest_refinement: 3
+choose_nest1:
+        # nest_refinement MUST (!!!) match the last value
+        # in AGRIF_FixedGrids.in
+        # for backward compatibility with Joakims settings
+        viking10:
+                _nx_nest1: 884
+                _ny_nest1: 869
+                nest_refinement: 3
+        VIKING10:
+                _nx_nest1: 884
+                _ny_nest1: 869
+                nest_refinement: 3
+        INALT10X:
+                _nx_nest1: 1404
+                _ny_nest1: 924
+                nest_refinement: 3
+        NPAC10:
+                _nx_nest1: 1569
+                _ny_nest1: 664
+                nest_refinement: 3
+        WG10:
+                _nx_nest1: 1414
+                _ny_nest1: 944
+                nest_refinement: 5
 
 choose_use_lim2:
-        true:
-                add_config_files:
-                        namelist_ice_cfg: namelist_ice_cfg
-                add_namelist_changes:
-                        namelist_ice_cfg:
-                                namicerun:
-                                        cn_icerst_in: ${expid}_${prevstep_formatted}_restart_ice_${start_date_m1!syear!smonth!sday}
-                                        cn_icerst_indir: '${work_dir}'
-                                        cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-                                        cn_icerst_outdir: '${work_dir}'
-                                namiceini:
-                                        ln_limini: '.true.'
-                choose_lresume:
-                        true:
-                                add_namelist_changes:
-                                        namelist_ice_cfg:
-                                                namiceini:
-                                                        ln_limini: '.false.'
+   true:
+      add_config_files:
+         namelist_ice_cfg: namelist_ice_cfg
+
+      add_namelist_changes:
+         namelist_ice_cfg:
+            namicerun:
+               cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+               cn_icerst_indir: '${work_dir}'
+               cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+               cn_icerst_outdir: '${work_dir}'
+            namiceini:
+               ln_limini: ${ln_limini} 
+
+      choose_use_lim2_agrif:
+         true:
+            add_config_files:
+               1_namelist_ice_cfg: 1_namelist_ice_cfg
+            add_namelist_changes:
+               1_namelist_ice_cfg:
+                  namicerun:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                     cn_icerst_indir: '${work_dir}'
+                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                     cn_icerst_outdir: '${work_dir}'
+                  namiceini:
+                     ln_limini: ${ln_limini_agrif} 
 
 choose_use_tracer:
-        true:
-                add_config_files:
-                        namelist_top_cfg: namelist_top_cfg
-                add_namelist_changes:
-                        namelist_top_cfg:
-                                namtrc_run:
-                                        cn_trcrst_in: ${expid}_${prevstep_formatted}_restart_trc_${start_date_m1!syear!smonth!sday}  #${restart_in}
-                                        cn_trcrst_indir: '${work_dir}'
-                                        cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
-                                        cn_trcrst_outdir: '${work_dir}'
-                                        ln_rsttr: '.false.'
-                                        nn_rsttr : 0
-                                namtrc:
-                                        ln_trcdta: '.true.'
-                choose_lresume:
-                        true:
-                                add_namelist_changes:
-                                        namelist_top_cfg:
-                                                namtrc_run:
-                                                        ln_rsttr: '.true.'
-                                                namtrc:
-                                                        ln_trcdta: '.false.'
-                choose_general.run_number:
-                        1:
-                                add_namelist_changes:
-                                        namelist_top_cfg:
-                                                namtrc_run:
-                                                        nn_rsttr : 0
-
+   true:
+      add_config_files:
+         namelist_top_cfg: namelist_top_cfg
+      add_namelist_changes:
+         namelist_top_cfg:
+            namtrc_run:
+               cn_trcrst_in: ${parent_expid}_${prevstep_formatted}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
+               cn_trcrst_indir: '${work_dir}'
+               cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
+               cn_trcrst_outdir: '${work_dir}'
+               ln_rsttr: ${ln_rsttr} 
+               nn_rsttr : ${nn_rsttr}
+            namtrc:
+               ln_trcdta: ${ln_trcdta} 
+            namtrc_rad:
+               ln_trcrad: ${correct_neg_tracer_conc} 
+               
+      choose_use_tracer_agrif:
+         true:
+            add_config_files:
+               1_namelist_top_cfg: 1_namelist_top_cfg
+            add_namelist_changes:
+               1_namelist_top_cfg:
+                  namtrc_run:
+                     cn_trcrst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
+                     cn_trcrst_indir: '${work_dir}'
+                     cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
+                     cn_trcrst_outdir: '${work_dir}'
+                     ln_rsttr: ${ln_rsttr} 
+                     nn_rsttr : ${nn_rsttr}
+                  namtrc:
+                     ln_trcdta: ${ln_trcdta} 
+                  namtrc_rad:
+                     ln_trcrad: ${correct_neg_tracer_conc} 
 
 bin_sources:
         nemo: ${bin_dir}/oceanx
@@ -492,7 +783,8 @@ input_sources:
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
         reshape_jra_orca05_bicub: ${input_dir}/reshape_jra_bicub__3.6.0_ORCA05_Kv1.0.0.nc 
         reshape_jra_orca05_bilin: ${input_dir}/reshape_jra_bilin__3.6.0_ORCA05_Kv1.0.0.nc
-        # input data
+
+        # inital data
         sn_tem_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
         sn_tem_woa13_omip: ${input_dir}/woa13_decav_ptemp_OMIPinit__3.6.0_ORCA05.L46_Kv1.0.0.nc
         sn_sal_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
@@ -503,11 +795,35 @@ input_sources:
         # restoring data / mask
         sn_sss_phc21_woa98: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc
         cn_resto_medsea: ${input_dir}/dmpmsk_MedSea_orca05.l46_RA-II.nc 
+
+        # namelists
         # add namelist_ref as input source to avoid removal of comments which
         # makes namelist unreadable
         namelist_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ref
         namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
         namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
+
+        # AGRIF: grids and coefficients
+        bathy_updated: ${agrif_dir}/bathy_updated.nc 
+        1_bathy_meter: ${agrif_dir}/1_bathy_meter.nc
+        1_coordinates: ${agrif_dir}/1_coordinates_ORCA05.nc 
+        fixed_grids: ${agrif_dir}/AGRIF_FixedGrids.in
+
+        # ini files
+        1_sn_tem_levitus: ${agrif_dir}/1_Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
+        1_sn_sal_levitus: ${agrif_dir}/1_Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
+        1_ice_init: ${agrif_dir}/1_Ice_initialization.nc
+
+        # reshape files for nest, only required with file based coupling
+        # TODO: replace T63 with proper variable
+        1_reshape_bicub: ${agrif_dir}/1_reshape_T63invert_${nest1}_bicub.nc 
+        1_reshape_bilin: ${agrif_dir}/1_reshape_T63invert_${nest1}_bilin.nc 
+
+        # add namelist_ref as input source to avoid removal of comments which
+        # makes namelist unreadable
+        1_namelist_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ref
+        1_namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
+        1_namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
 
 #forcing_files:
 
@@ -520,21 +836,30 @@ config_sources:
         namelist_cfg: ${namelist_dir}/namelist_cfg
         namelist_top_cfg: ${namelist_dir}/namelist_top_cfg
         namelist_ice_cfg: ${namelist_dir}/namelist_ice_cfg
+        1_namelist_cfg: ${namelist_dir}/1_namelist_cfg
+        1_namelist_top_cfg: ${namelist_dir}/1_namelist_top_cfg
+        1_namelist_ice_cfg: ${namelist_dir}/1_namelist_ice_cfg
 
 config_in_work:
         namelist_cfg: namelist_cfg
         namelist_ice_cfg: namelist_ice_cfg
         namelist_top_cfg: namelist_top_cfg
+        1_namelist_cfg: 1_namelist_cfg
+        1_namelist_ice_cfg: 1_namelist_ice_cfg
+        1_namelist_top_cfg: 1_namelist_top_cfg
 
 namelists:
         - namelist_cfg
         - namelist_top_cfg
         - namelist_ice_cfg
+        - 1_namelist_cfg
+        - 1_namelist_top_cfg
+        - 1_namelist_ice_cfg
 
 ############## restart files:
-
+#
 restart_in_sources:
-        restart_in: ${expid}_${prevstep_formatted}_restart*_${start_date_m1!syear!smonth!sday}_*.nc
+        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}_*.nc
 
 restart_out_sources:
         restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
@@ -542,28 +867,60 @@ restart_out_sources:
 ############## output files:
 
 outdata_sources:
-         5d: ${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
-         1m: ${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc
+         6h: "*${expid}_6h_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
+         1d: "*${expid}_1d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
+         5d: "*${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
+         1m: "*${expid}_1m_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
 
 ############## log files:
 
 log_sources:
         tracer:  tracer.stat
         ocean:  '*ocean.output'
+        namout: output.namelist.*
+        solver_stat: solver.stat
+        time_step: time.step
+        layout: layout.dat
 
 ##########################  coupling stuff
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
-opar_fields: [O_Runoff]
+
+agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 
+                1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OIceEvap, 1_O_dQnsdT]
+agr2_t_fields: [1_O_AgrSpg]
 
 coupling_fields:
         "[[opat_fields-->FIELD]]":
                 grid: opat
         "[[opac_fields-->FIELD]]":
                 grid: opac
-        "[[opar_fields-->FIELD]]":
-                grid: opar
+
+choose_runoff_method:
+        "new":
+                ornf_fields: [O_Runoff]
+                ocal_fields: [OCalving]
+                agr1_r_fields: [1_O_Runoff]
+                agr1_c_fields: [1_OCalving]
+                add_coupling_fields:
+                        "[[ornf_fields-->FIELD]]":
+                                grid: opac
+                        "[[ocal_fields-->FIELD]]":
+                                grid: opaa
+                        "[[agr1_r_fields-->FIELD]]":
+                                grid: agr1r
+                        "[[agr1_c_fields-->FIELD]]":
+                                grid: agr1c
+        "*":
+                ornf_fields: [O_Runoff]
+                agr1_r_fields: [1_O_Runoff]
+                add_coupling_fields:
+                        "[[ornf_fields-->FIELD]]":
+                                grid: rnfo
+                        "[[agr1_r_fields-->FIELD]]":
+                                grid: agr1r
 
 grids:
         opat:
@@ -578,10 +935,40 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
                 number_of_overlapping_points: 2 # oasis P-value
-        opar:
-                name: opar
+        opaa:   
+                name: opaa
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
-                number_of_overlapping_points: 2 
+                number_of_overlapping_points: 0
+        #opar:
+        #        name: opar
+        #        nx: ${_nx}
+        #        ny: ${_ny}
+        #        oasis_grid_type: "LR"
+        #        number_of_overlapping_points: 2 
+        rnfo:
+                name: rnfo
+                nx: ${_nx}
+                ny: ${_ny}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0
+        agr1:
+                name: agr1
+                nx: ${_nx_nest1}
+                ny: ${_ny_nest1}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0
+        agr2: 
+                name: agr2
+                nx: ${_nx_nest1}
+                ny: ${_ny_nest1}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0
+        agr1r:
+                name: agr1r
+                nx: ${_nx_nest1}
+                ny: ${_ny_nest1}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0
 

@@ -1,0 +1,22 @@
+general:
+        account: !ENV ${ACCOUNT}
+        setup_name: "echam"
+        compute_time: "00:15:00"
+        initial_date: "2000-01-01"      # Initial exp. date
+        final_date: "2000-03-31"        # Final date of the experiment
+        base_dir: !ENV ${ESM_TESTING_DIR}
+        nyear: 0                        # Number of years per run
+        nmonth: 1                       # Number of months per run
+        use_database: false
+        use_venv: False
+
+echam:
+        version: "6.3.04p1"
+        model_dir: !ENV ${MODEL_DIR}
+        res: T63
+        scenario: "PI-CTRL"
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: "months"
+        post_processing: 0

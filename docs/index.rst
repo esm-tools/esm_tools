@@ -16,6 +16,7 @@ Welcome to ESM Tools's documentation!
    esm_master
    esm_versions
    esm_runscripts
+   workflow
    esm_environment
    motd
    cookbook

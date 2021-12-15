@@ -1,25 +1,27 @@
-
 general:
+   use_venv: False
+   verbose: True
+   
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
-   compute_time: "04:00:00"
-   account: hirace 
-   #partition: standard96
+   compute_time: "10:00:00"
+   partition: batch
+   account: hirace
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2301-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
    version: "default"
-   postprocessing: 1
-   nyear: 1
+   postprocessing: 0
+   nyear: 10
    nmonth: 0
    nday: 0
    restart_rate: 1
    restart_unit: days 
    base_dir: /p/scratch/hirace/kjellsson1/esm-experiments 
-   pool_dir: "/p/project/hirace/foci_input2"
+   pool_dir: /p/project/hirace/foci_input2
    hours: 0
 
 focioifs:
-   model_dir: /p/project/hirace/kjellsson1/models/focioifs-2.0/
+   model_dir: /p/project/hirace/kjellsson1/model_codes/focioifs-2.0/
    
 oifs:
    version: "43r3"
@@ -41,27 +43,31 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   post_processing: 1
-   nproca: 287
-   nprocb: 1  
+   post_processing: 0
+   nproc: 287 
    use_ocean_currents: 0
 
 oasis3mct:
    norestart: F
    use_lucia: True
+   export_mode: EXPORTED
+   coupling_time_step: 3600
       
 nemo:
    resolution: "ORCA05"
    jpni: 24
    jpnj: 18
    nproc: 432
+
+   add_namelist_changes:
+        namelist_cfg:
+            namtra_ldf:
+                rn_aht_0: 600
    
 rnfmap:
-   nproca: 1
-   nprocb: 1
+   nproc: 1
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/p/project/hirace/kjellsson1/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
-   nproca: 48
-   nprocb: 1
+   xml_dir: "/p/project/hirace/kjellsson1/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_1m"
+   nproc: 48

@@ -1,0 +1,237 @@
+#!/usr/bin/ksh
+## @file
+## @author Dr. Paul Gierz
+## @author Alfred Wegener Institute for Polar and Marine Research
+## @author Bremerhaven, Germany
+##
+## @brief Functions for preparing `ECHAM6` output for use with a generic ice sheet model
+
+# Here, variables which control the program flow are "declared", even if they are defined in other files
+## @var ECHAM_TO_ISM_multiyear_mean
+## Controls whether or not a multi-year mean is made from `atmosphere_file_for_ice.nc`
+## Originally defined in ::echam_after_last_run_in_chunk
+export ECHAM_TO_ISM_multiyear_mean
+
+##@var ECHAM_TO_ISM_atmosphere_forcing
+## Controls whether `ECHAM6` output is used to prepare a forcing file for a generic ice sheet model.
+## Originally defined in ::echam_after_last_run_in_chunk
+export ECHAM_TO_ISM_atmosphere_forcing
+
+## @fn echam2ice()
+## @brief Container for all functionality of `ECHAM6` to a generic ice sheet
+##
+## This function contains all functions needed to gather standard `ECHAM6` output for use with a
+## generic ice sheet model. The following steps are preformed:
+## 1. Generation of forcing
+## 2. Preparing a grid description for later use with `cdo remap`
+## 3. Preparing a file describing the names `ECHAM6` uses for its variables 
+##
+## The variable #ECHAM_TO_ISM_atmosphere_forcing must be set to `1` 
+## for this function to be called (This is the default value).
+##
+## (Re)-initializes an empty file in `COUPLE_DIR` to store standard error of cdo output (for cleaner logs)
+echam2ice() {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    echam2ice *** "; echo
+
+        . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+        . ${FUNCTION_PATH}/coupling_general.functions
+        . ${FUNCTION_PATH}/general_helpers.functions
+
+        :> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        iterative_coupling_echam6_ice_make_forcing
+        iterative_coupling_echam6_ice_write_grid
+        iterative_coupling_echam6_ice_write_names
+
+        echo "*** build dynamic link of ${RESTART_DIR_echam}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_echam.nc"
+        ln -sf ${RESTART_DIR_echam}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_echam.nc ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+
+        echo "                 *** F I N I S E D      echam2ice *** "
+        echo "                =================================================================="
+}
+
+
+## @fn iterative_coupling_echam6_ice_make_forcing()
+## @brief Container for all functionality to prepare forcing
+##
+## Preforms the following steps:
+## 1. Constructs an input list of files from which the `ECHAM6` output will be extracted
+## 2. Selects relevant variables from these files
+## 3. Concatenates files to single file for further manipulation
+## 4. Generates a multiyear mean, if `ECHAM_TO_ISM_multiyear_mean` is `1`
+## 5. Adds `atmosphere_file_for_ice.nc` to the couple directory via `add_to`.
+iterative_coupling_echam6_ice_make_forcing() {
+        echo "                Preparing echam6 file for processing in an ice sheet model..."
+
+        ECHAM_TO_ISM_multiyear_mean=${ECHAM_TO_ISM_multiyear_mean:-1}
+
+        echam_ice_construct_input_list
+        echam_ice_select_relevant_variables
+        echam_ice_concatenate_files
+        if [ "x${ECHAM_TO_ISM_multiyear_mean}" == "x1" ]; then
+                echam_ice_generate_multiyear_mean
+        fi
+        #add_to $(pwd)/atmosphere_file_for_ice.nc atmosphere_file_for_ice.nc couple
+        cp $(pwd)/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice.nc
+
+        echo; echo "                  ...done."; echo
+}
+
+## @fn iterative_coupling_echam6_ice_write_grid()
+## @brief Writes grids via `cdo griddes`
+##
+## Uses `cdo griddes` to determine the atmosphere grid information in the file `atmosphere.griddes`.
+## Adds this to the couple directory.
+iterative_coupling_echam6_ice_write_grid() {
+        echo "                Writing echam6 grid description to generic atmosphere.griddes..."
+
+        echo ""; echo "                *   generating griddes"
+        ${cdo} -s griddes atmosphere_file_for_ice.nc > atmosphere.griddes 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        #add_to $(pwd)/atmosphere.griddes atmosphere.griddes couple
+        cp $(pwd)/atmosphere.griddes ${COUPLE_DIR}/atmosphere.griddes
+
+        echo; echo "                  ...done."; echo
+}
+
+## @fn iterative_coupling_echam6_ice_write_names() 
+## @brief Writes names and units of atmospheric variables to `atmosphere_names_for_ice.dat`
+##
+## (Re)-initializes an empty file atmosphere_names_for_ice.dat 
+## @note This function currently only generates names useful for the `PISM` mass-ablation scheme PDD!
+iterative_coupling_echam6_ice_write_names() {
+        echo "                Writing echam6 names and units for use with generic atmosphere_file_for_ice.nc"
+
+        :> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   temperature"
+        echo "atmosphere_name_temperature=tsurf" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_temperature=K" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   precipitation"
+        echo "atmosphere_name_precipitation=aprt" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_precipitation=kg/m2/s" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   elevation"
+        echo "atmosphere_name_elevation=orog" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_elevation=m" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   shortwave downward radiation"
+        echo "atmosphere_name_shortwave=swd" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_shortwave=W/m2" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   emissivity"
+        echo "atmosphere_name_emissivity=emiss" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_emissivity=frac" >> atmosphere_names_for_ice.dat
+        #echo ""; echo "                 *   longwave downward radiation"
+        #echo "atmosphere_name_longwave=lwd" >> atmosphere_names_for_ice.dat
+        #echo "atmosphere_units_longwave=W/m2" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   cloud cover"
+        echo "atmosphere_name_cloud_cover=cc" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_cloud_cover=frac" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   spec. humidity@2m" 
+        echo "atmosphere_name_humidity=q2m" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_humidity=frac" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   atm. transmissivity" 
+        echo "atmosphere_name_transmissivity=tau" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_transmissivity=frac" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   TOA shortwave downward radiation"
+        echo "atmosphere_name_TOAshortwave=TOAswd" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_TOAshortwave=W/m2" >> atmosphere_names_for_ice.dat
+        #add_to $(pwd)/atmosphere_names_for_ice.dat atmosphere_names_for_ice.dat couple
+        cp $(pwd)/atmosphere_names_for_ice.dat ${COUPLE_DIR}/atmosphere_names_for_ice.dat
+
+        echo; echo "                  ...done."; echo
+}
+
+## @fn echam_ice_construct_input_list()
+## @brief constructs the list of input files
+##
+## By using a parsed version of `CHUNK_END_DATE_echam` and `number_of_years_for_forcing`,
+## this constructs a list of files which match:
+##    `${DATA_DIR_echam}/${EXP_ID}_echam6_echam_${year}${month}.grb`
+##
+## @warning Construction of the input list is **directly** dependent on the formatting of `ECHAM6` 
+## output filenames. **A change in the convention of output filenames will break this function.**
+echam_ice_construct_input_list() {
+        echo ""; echo "                *   constructing input list"
+
+        CHUNK_END_YEAR_echam=$(date -d "${CHUNK_END_DATE_echam:?Missing_var}" +%Y)
+        CHUNK_END_MONTH_echam=$(date -d "${CHUNK_END_DATE_echam:?Missing_var}" +%m)
+        CHUNK_END_DAY_echam=$(date -d "${CHUNK_END_DATE_echam:?Missing_var}" +%d)
+
+        test_if_set CHUNK_END_YEAR_echam
+        number_of_years_for_forcing=${number_of_years_for_forcing:-1}
+        start_year_couple=$(( CHUNK_END_YEAR_echam - number_of_years_for_forcing + 1 ))
+        end_year_couple=${CHUNK_END_YEAR_echam}
+        echam6_file_list_for_ice=""
+        for year in $(seq $start_year_couple $end_year_couple ); do
+                for month in $(seq -f "%02g" 1 12); do
+                        if [ -f "${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam" ]; then
+                            current_file="${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam"
+                        else
+                            echo ""; echo " FILE ${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam not found! "
+                            exit 42
+                        fi
+                        echam6_file_list_for_ice="$echam6_file_list_for_ice $current_file"
+                done
+        done
+
+}
+
+## @fn echam_ice_select_relevant_variables() 
+## @brief Cuts out orography, precipitation, and 2-m air temperature from `ECHAM6` output.
+##
+## Selects variables `geosp`, `aprl`, `aprc`, `temp2` 'sradsu', 'srads', 
+# 'trads'. 'tradsu' and 'aclcov' from files in `echam6_file_list_for_ice`
+## In the output, `aprt` = `aprl` + `aprc`, and `orog`=`geosp`/9.81, 
+# 'swd'= 'srads'-'sradsu' and 'lwd'= 'trads'-'tradsu'
+##
+## @todo This function needs to be more flexible and also select variables needed for different 
+## mass balance schemes, e.g. an EBM.
+echam_ice_select_relevant_variables() {
+        echo ""; echo "                *   selecting relevant variables"
+
+        processed_echam6_file_list_for_ice=""
+        for file in ${echam6_file_list_for_ice}; do
+                filename=$(basename $file)
+                ${cdo} -s -f nc \
+                        -expr,"orog=geosp/9.81; aprt=aprl+aprc; tsurf=tsurf; swd=srads-sradsu; cc=aclcov; \
+                               emiss=(trads-tradsu)/(5.6703744e-8*tsurf^4); \
+                               tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; " \
+                        -setcodetab,${file}.codes \
+                        -selcode,169,143,142,129,176,204,177,205,164,184,54 \
+                        $file \
+                        "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+                        #-expr,"tsurf=tsurf; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
+                        #-setcodetab,echam \
+                        #-selcode,169,143,142,129,176,204,177,205,164 \
+
+                processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
+        done
+        
+        unset echam6_file_list_for_ice 
+}
+
+## @fn echam_ice_concatenate_files()
+## @brief Combines files from `processed_echam6_file_list_for_ice`
+##
+## Combines all files in the `processed_echam6_file_list_for_ice` to a file `atmosphere_file_for_ice.nc`,
+## and removes the individual files.
+echam_ice_concatenate_files() {
+        echo ""; echo "                *   concatenating files"
+
+        test -f atmosphere_file_for_ice.nc && rm atmosphere_file_for_ice.nc
+        ${cdo} -s cat ${processed_echam6_file_list_for_ice} atmosphere_file_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        #rm ${processed_echam6_file_list_for_ice}
+        unset processed_echam6_file_list_for_ice
+}
+
+## @fn echam_ice_generate_multiyear_mean() 
+## @brief Makes a multiyear mean of `atmosphere_file_for_ice.nc`
+##
+## If the switch #ECHAM_TO_ISM_multiyear_mean is set to `1`, a multi-year monthly mean of `atmosphere_file_for_ice.nc` is made.
+echam_ice_generate_multiyear_mean() {
+        echo ""; echo "                *   making multi-year monthly mean"
+
+        ${cdo} -s ymonmean atmosphere_file_for_ice.nc tmp 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        mv -f tmp atmosphere_file_for_ice.nc
+}
+
+# emacs: -*- mode: shell;
+# vim: expandtab copyindent preserveindent softtabstop=0 shiftwidth=4 tabstop=4
+# -- last line

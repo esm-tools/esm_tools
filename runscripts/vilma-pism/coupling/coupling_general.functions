@@ -1,0 +1,441 @@
+#!/usr/bin/ksh
+
+function read_names {
+        model_from=$1
+        model_to=$2
+        if [ -f ${COUPLE_DIR}/${model_from}_names_for_${model_to}.dat ]; then
+                namefile=${COUPLE_DIR}/${model_from}_names_for_${model_to}.dat 
+        elif [ -f ${model_from}_names_for_${model_to}.dat ]; then
+                namefile=${model_from}_names_for_${model_to}.dat 
+        else
+                echo "Could not find ${COUPLE_DIR}/${model_from}_names_for_${model_to}.dat"
+                exit 42
+        fi
+        echo; echo -e "\t\t* Reading ${model_from} variable names for ${model_to}"
+        source ${namefile}
+}
+
+function test_file_or_exit {
+    # Checks if the file exists and exit if file is missing
+    # Call: test_file_or_exit FILENAME (ExitCode)
+    # Christian Rodehacke, AWI, 2018-09-04
+    __file=$1
+    __error_code=$2
+    if [ ! -f ${__file:-/DiesenFileNamenSeheIchSehrSelten_Oder_Fragezeichen} ] ; then
+	echo " Missing file >>${__file}<< in $(pwd)"
+	echo " S T O P  ${__error_code:-998}"
+	exit ${__error_code:-998}
+    fi
+
+    unset __file __error_code
+}
+
+# ----------------------------------------------------------
+#
+# CDO (Climate Data Operator) specific functions
+#
+function build_grid_des {
+    # Build grid description file (cdo griddes) for provided 
+    # input or use existing older file if both are identical
+    # Call: build_grid_des InputData, GridDesFileName (TargetDir) (RestartDir) (Var2SelectGrid)
+    # Christian Rodehacke, AWI, 2018-10-15
+    _source_file=$1
+    _griddes_file=$2
+    _target_dir=$3
+    _restart_dir=$4
+    _var2grid=$5
+
+    test_file_or_exit $_source_file
+    if [ "x${_var2grid}" != "x" ] ; then
+	$cdo -s griddes -selvar,${_var2grid} $_source_file > $_griddes_file
+    else
+	$cdo -s griddes $_source_file > $_griddes_file
+    fi
+
+    _restart_griddes_file=${_restart_dir}/$_griddes_file
+
+    _new_grid_flag=1
+    if [ -f $_restart_griddes_file ] ; then
+	if [ "x$(diff $griddes_file $_restart_griddes_file)" == "x" ] ; then
+	    # Identical grid description
+	    _new_grid_flag=0
+	fi
+    fi
+
+    if [ "x${_target_dir}" != "x" ] ; then
+	if [ $_new_grid_flag -ge 1 ] ; then
+	    add_to $(pwd)/$griddes_file         $_griddes_file $_target_dir
+	else
+	    add_to $_restart_dir/$_griddes_file $_griddes_file $_target_dir
+	fi
+    fi
+
+    unset _griddes_file _restart_dir _restart_griddes_file _source_file _target_dir
+    return ${_new_grid_flag}
+}
+
+
+function build_weights4remap {
+    # Build remapping weights (cdo griddes) for provided input 
+    # or use existing restart weights of it exists
+    # Call: build_grid_des InputData, GridDesFileName WeightFileName RemapType (TargetDir) (RestartDir) (VariableSelection)
+    # Christian Rodehacke, 2018-09-05
+    _source_file=$1
+    _griddes_file=$2
+    _weight_file=$3
+    _remap_type=$4
+    _target_dir=$5
+    _restart_dir=$6
+    _selvar2regrid=$7
+
+    _restart_weight_file=${_restart_dir}/$_weight_file
+
+    if [ -f $_restart_weight_file ] ; then
+	echo "                -   Reuse restart weight file $_restart_weight_file"
+	use_weight_file=$_restart_weight_file
+    else
+	echo "                -   Compute new weight file >>${_weight_file}<< based on >>${_source_file}<<"
+	test_file_or_exit $_source_file
+	test_file_or_exit $_griddes_file
+
+	check_allowed_cdo_remap_flag ${_remap_type}
+
+	if [ "x${vars2regrid}" == "x" ] ; then
+	    $cdo -s gen${_remap_type},${_griddes_file} \
+		-seltimestep,1 $_source_file \
+		$_weight_file
+	else
+	    $cdo -s gen${_remap_type},${_griddes_file} \
+		-selvar,${_selvar2regrid} -seltimestep,1 $_source_file \
+		$_weight_file
+	fi
+	use_weight_file=$(pwd)/$_weight_file
+
+	if [ "x${_restart_dir}" != "x" ] ; then
+	    add_to $use_weight_file $_weight_file $(basename ${_restart_dir})
+	fi
+    fi
+
+    if [ "x${_target_dir}" != "x" ] ; then
+	add_to $use_weight_file $_weight_file $_target_dir
+    fi
+
+    unset _griddes_file _restart_dir _remap_type _restart_weight_file
+    unset _selvar2regrid _source_file _target_dir use_weight_file _weight_file
+}
+
+
+function check_allowed_cdo_remap_flag {
+    # Check allowed remapping type flags in the frame work
+    # of the here used script environment
+    # Call: check_allowed_cdo_remap_flag RemapType
+    # Christian Rodehacke, 2018-09-05
+    __remap_type=$1
+    case ${__remap_type} in
+	bil)
+	    echo "                -   Remapping ${__remap_type} : bilinear (for curvelinear grid)"
+	    ;;
+	bic)
+	    echo "                -   Remapping ${__remap_type} : bicubic (for curvelinear grid)"
+	    ;;
+	nn)
+	    echo "                -   Remapping ${__remap_type} : nearest neighbor (any grid)"
+	    ;;
+	dis)
+	    echo "                -   Remapping ${__remap_type} : distance-weighted average (any grid)"
+	    ;;
+	con)
+	    echo "                -   Remapping ${__remap_type} : First order conservative (requires corner points)"
+	    ;;
+	ycon)
+	    echo "                -   Remapping ${__remap_type} : First order conservative, YAC (requires corner points)"
+	    ;;
+	con2)
+	    echo "                -   Remapping ${__remap_type} : Second order conservative (requires corner points)"
+	    ;;
+	laf)
+	    echo "                -   Remapping ${__remap_type} : largest area fraction (for spherical grid)"
+	    ;;
+	*)
+	    echo " UNKNOWN remapping <<${__remap_type}>>"
+	    echo "   Known: bil, bic, nn, dis, con, ycon, con2, laf"
+	    echo " S T O P  1"
+	    exit 1
+	    ;;
+    esac
+    unset __remap_type
+}
+
+
+function return_allowed_cdo_miss_replace_flags {
+    # Determine allowd filling missing values flags
+    # Call: return_allowed_cdo_miss_replace_flags ReplaceType
+    # Christian Rodehacke, 2018-09-10
+
+    _fill_type=$1
+    _regrid_extra_misstoc=$2
+
+    case ${_fill_type} in
+	setmisstoc)
+	    # missing to constant value
+	    #echo "     - Set miss to constant ${_regrid_extra_misstoc:-0} (any grid)"
+	    _cdo_flag=${_fill_type},${_regrid_extra_misstoc:-0}
+	    ;;
+	fillmiss2)
+	    #echo "     - Fillmiss2 (any grid)"
+	    # cdo "strip"-like filling
+	    _cdo_flag=${_fill_type}
+	    ;;
+	setmisstodis)
+	    # distance
+	    #echo "     - distance-weighted average values (any grid)"
+	    _cdo_flag=${_fill_type}
+		;;
+	setmisstonn)
+	    # neigherst neigbour
+	    #echo "     - nearest neighbor values (any grid)"
+	    _cdo_flag=${_fill_type}
+	    ;;
+	*)
+	    echo " UNKNOWN extrapolation type <<${_fill_type}>>"
+	    echo "   Known: setmisstoc, fillmiss2, setmisstodis, setmisstonn"
+	    echo " S T O P   2"
+	    exit 2
+	    ;;
+    esac
+
+    echo "${_cdo_flag[@]}"
+}
+
+# ----------------------------------------------------------
+#
+# PISM specific functions
+#
+
+function pism_coupler_to_esm_runsscripts_syntax {
+    # Transform PISM command line coupler options into esm-runscript syntax
+    # Call: pism_coupler_to_esm_runsscripts_syntax "-ocean given"
+    # Christian Rodehacke, 2018-09-17
+
+    echo "pism_set_coupler__$(echo $* | tr -s '-' '_' | tr -s ' ' '=' )"
+}
+
+function pism_forcing_to_esm_runsscripts_syntax {
+    # Transform PISM command line forcing file options into esm-runscript syntax
+    # Call: pism_forcing_to_esm_runsscripts_syntax "-ocean given"
+    # Christian Rodehacke, 2018-09-17
+    _arg1=$(echo $1 | sed s/_file//g | tr -s '-' '_')
+    _arg2=$2
+
+    echo "pism_set_forcing_file__$(echo $_arg1 $_arg2 | tr -s ' ' '=')"
+    unset _arg1 _arg2
+}
+
+
+
+
+
+function get_units4pism_version {
+    # Resolve the units for provided variables and PISM version
+    # Call: get_units4pism_version VariableName PISMVersionString
+    # Christian Rodehacke, 2018-09-10
+
+    # NOTE: Please keep alphabetic order of variable names in each
+    #       section. This helps maintaining this function
+
+    __varname=$1
+    __ver_pism_string=$2
+
+    __units="IDoNotKnowThisDummyUnit"
+
+    case ${__ver_pism_string:--0.1} in
+	"0.0")
+	    # TEMPLATE
+	    case ${__varname} in
+		#
+		# Atmosphere/Surface forcing related variables
+		#
+
+		#
+		# Ocean forcing related variables
+		#
+
+		#
+		# Miscellaneous
+		#
+		topg)
+		    __units="meter"
+		    ;;
+		#
+		# UKNOWN
+		#
+		*)
+		    echo "NOT DEFINED VARIABLE >${__varname}< for PISM version >${__ver_pism_string}<"
+		    echo " You may have changed the pism version, which requires different variables and units"
+		    echo "Please adjust function >get_units4pism_version<"
+		    echo " S T O P   999"
+		    exit 999
+		    ;;
+	    esac
+	    ;;
+
+	"0.7")
+	    case ${__varname} in
+		#
+		# Atmosphere/Surface forcing related variables
+		#
+		air_temp)
+		    __units="Kelvin"
+		    ;;
+		air_temp_std)
+		    __units="Kelvin"
+		    ;;
+		climatic_mass_balance)
+		    __units="kg m-2 s-1"
+		    ;;
+		ice_surface_temperature)
+		    __units="Kelvin"
+		    ;;
+		precipitation)
+		    #__units="mm day-1" #Ice equivalent
+		    __units="m second-1" #Ice equivalent
+		    ;;
+		#snow_depth)
+		#    __units=""
+		#    ;;
+		surface_altitude)
+		    __units="meter"
+		    ;;
+		#
+		# Ocean forcing related variables
+		#
+		salinity_ocean)
+		    __units="g kg-1"
+		    ;;
+		shelfbmassflux)
+		    __units="kg m-2 s-1"
+		    ;;
+		shelfbtemp)
+		    __units="degC"
+		    ;;
+		theta_ocean)
+		    __units="degC"
+		    ;;
+		theta_ocean_ref)
+		    __units="degC"
+		    ;;
+		#
+		# Miscellaneous
+		#
+		topg)
+		    __units="meter"
+		    ;;
+		#
+		# UKNOWN
+		#
+		*)
+		    echo "NOT DEFINED VARIABLE >${__varname}< for PISM version >${__ver_pism_string}<"
+		    echo " You may have changed the pism version, which requires different variables and units"
+		    echo "Please adjust function >get_units4pism_version<"
+		    echo " S T O P   10"
+		    exit 10
+		    ;;
+	    esac
+	    ;;
+	"1.0" | "1.1")
+	    case ${__varname} in
+		#
+		# Atmosphere/Surface forcing related variables
+		#
+		air_temp)
+		    __units="Kelvin"
+		    ;;
+		air_temp_std)
+		    __units="Kelvin"
+		    ;;
+		climatic_mass_balance)
+		    __units="kg m-2 s-1"
+		    ;;
+		ice_surface_temperature)
+		    __units="Kelvin"
+		    ;;
+		precipitation)
+		    __units="kg m-2 second-1"
+		    ;;
+		#
+		# Ocean forcing related variables
+		#
+		salinity_ocean)
+		    __units="g kg-1"
+		    ;;
+		shelfbmassflux)
+		    __units="kg m-2 s-1"
+		    ;;
+		shelfbtemp)
+		    __units="degC"
+		    ;;
+		theta_ocean)
+		    __units="degC"
+		    ;;
+		theta_ocean_ref)
+		    __units="degC"
+		    ;;
+		#
+		# Miscellaneous
+		#
+		topg)
+		    __units="meter"
+		    ;;
+		#
+		# UKNOWN
+		#
+		*)
+		    echo "NOT DEFINED VARIABLE >${__varname}< for PISM version >${__ver_pism_string}<"
+		    echo " You may have changed the pism version, which requires different variables and units"
+		    echo "Please adjust function >get_units4pism_version<"
+		    echo " S T O P   11"
+		    exit 11
+		    ;;
+	    esac
+	    ;;
+	*)
+	    echo "NOT DEFINED PISM version >${__ver_pism_string}<"
+	    echo "Please adjust function >get_units4pism_version<"
+	    echo " S T O P   99"
+	    exit 99
+	    ;;
+    esac
+
+    echo "${__units[@]}"
+
+    unset __units __varname __ver_pism_string
+}
+
+function iterative_coupling_pism_regrid_add_xy_array {
+    _file_name_add_xy=$1
+    _model=${2:-"generic"}
+
+    echo; echo -e "\t\t*   x- and y-array to 'pism' ${_model} forcing file >>${_file_name_add_xy}<<"
+
+    test_file_or_exit $_file_name_add_xy 10
+
+    if [ 1 -eq 0 ] ; then
+	# Problems with float vs double: does not work as expected when using directly: "ncks -A .."
+	PISM_GRID_XY_FILE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    else
+        # This is the standard case: generate both float and double files, just in case something strange happens
+	INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+	PISM_GRID_xy_file_double=${PISM_GRID_xy_file_double:-xy_file_double.$(basename ${INITIAL_FILE_pism})}
+	PISM_GRID_xy_file_float=${PISM_GRID_xy_file_float:-xy_file_float.$(basename ${INITIAL_FILE_pism})}
+	pism_helpers_create_xy_axis ${INITIAL_FILE_pism} ${PISM_GRID_xy_file_double} ${PISM_GRID_xy_file_float}
+
+	PISM_GRID_XY_FILE=${PISM_GRID_xy_file_double}
+    fi
+
+    test_file_or_exit $PISM_GRID_XY_FILE 11
+
+    ncrename -v .x,x_org_$$ -v .y,y_org_$$ $_file_name_add_xy && \
+	ncks -A -v x,y $PISM_GRID_XY_FILE $_file_name_add_xy
+
+    unset _file_name_add_xy _model
+}

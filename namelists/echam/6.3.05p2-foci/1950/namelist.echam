@@ -1,0 +1,105 @@
+&parctl
+    nproca = 24
+    nprocb = 24
+    iomode = 0
+    nprocio = 0
+/
+&submodelctl
+    lmethox = .true.
+/
+&qboctl
+    i_time = 0
+/
+&runctl
+    dt_start = 1949, 12, 31, 23, 52, 30
+    dt_stop = 1980, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    out_datapath = './'
+    out_expname = 'EXP_ID'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'days', 'last', 0
+    trigfiles = 1, 'months', 'first', 0
+    nproma = 32
+    lcouple = .false.
+    getocean = 24, 'steps', 'exact', 0
+    putocean = 24, 'steps', 'exact', -450
+    lcouple_co2 = .false.
+    default_output = .false.
+    ltdiag = .true.
+    lresume = .false.
+/
+&gwsctl
+    rmscon_hi = 0.92 ! default is 1.0
+/
+&mvstreamctl ! 'default spm glm g3bm'
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+&mvstreamctl ! 'default co2m'
+    filetag = 'co2'
+    source = 'co2'
+/
+&mvstreamctl ! 'default tdiagm'
+    filetag = 'tdiag'
+    source = 'tdiag'
+    meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp',
+              'gboxarea'
+/
+&mvstreamctl ! 'default jsbachm'
+    filetag = 'jsbach'
+    source = 'jsbach'
+/
+&mvstreamctl ! 'default landm'
+    filetag = 'land'
+    source = 'land'
+/
+&mvstreamctl ! 'default vegm'
+    filetag = 'veg'
+    source = 'veg'
+/
+&mvstreamctl ! 'default surfm'
+    filetag = 'surf'
+    source = 'surf'
+/
+&mvstreamctl ! 'default yassom'
+    filetag = 'yasso'
+    source = 'yasso'
+/
+&set_stream ! 'default jsbach'
+    stream = 'jsbach'
+    lpost = 0
+/
+&set_stream ! 'default land'
+    stream = 'land'
+    lpost = 0
+/
+&set_stream ! 'default veg'
+    stream = 'veg'
+    lpost = 0
+/
+&set_stream ! 'default surf'
+    stream = 'surf'
+    lpost = 0
+/
+&set_stream ! 'default yasso'
+    stream = 'yasso'
+    lpost = 0
+/
+&radctl
+    iaero = 3
+    io3 = 4
+    ighg = 0
+    isolrad = 1
+    icfc = 2
+    ich4 = 3
+    in2o = 3
+    ico2 = 2
+    co2vmr = 312.820983886719e-06
+    ch4vmr = 1163.82055664062e-09
+    n2ovmr = 289.739044189453e-09
+    cfcvmr(1) = 0.893881857395172e-12
+    cfcvmr(2) = 6.38225698471069e-12
+    yr_perp = 1950
+/

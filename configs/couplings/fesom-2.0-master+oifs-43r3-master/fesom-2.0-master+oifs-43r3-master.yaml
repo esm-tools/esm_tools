@@ -1,0 +1,10 @@
+components:
+- rnfmap-awicm-frontiers
+- oifs-43r3-master
+- fesom-2.0-master
+- oasis3mct-4.0-awicm-frontiers
+coupling_changes:
+- sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3/src/ifs/module/yommcc.F90
+- sed -i '/COUPLEFESOM2 = /s/.FALSE./.TRUE./g' oifs-43r3/src/ifs/module/yommcc.F90
+- sed -i '/COUPLENEMOFOCI = /s/.TRUE./.FALSE./g' oifs-43r3/src/ifs/module/yommcc.F90
+

@@ -1,0 +1,69 @@
+# example to use the a small number of nodes / CPUs that
+general:
+   use_venv: False
+   verbose: False
+
+   setup_name: "focioifs"
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "01:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-11T00:00:00"         # Final date of the experiment
+
+   nyear: 0
+   nmonth: 0
+   nday: 5
+   restart_rate: 1
+   restart_unit: days
+   hours: 0
+
+   # machine specific setup
+   account: !ENV ${ACCOUNT}
+   base_dir: !ENV ${ESM_TESTING_DIR}
+
+focioifs:
+   model_dir: !ENV ${MODEL_DIR}
+   version: "2.0"
+
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   lresume: 0
+   nproc: 31
+   use_ocean_currents: 0
+
+oasis3mct:
+   norestart: F
+   use_lucia: False
+   debug_level: 50
+   ini_parent_dir: "${oasis3mct.pool_dir}"
+
+nemo:
+   resolution: "ORCA05"
+   jpni: 8
+   jpnj: 4
+   nproc: 32
+
+rnfmap:
+   nproc: 1
+
+xios:
+   with_model: focioifs
+   xml_dir: "${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_3h+6hrLev_5dUVTS"
+   #xml_dir: "/gxfs_work1/geomar/smomw352/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
+   nproc: 16

@@ -1,0 +1,49 @@
+# It is currently under investigation whether the extra
+# #SBATCH flags below improve model performance
+# Sebastian Wahl 05/2021
+#
+# use this on nesh
+#computer:
+#   additional_flags:
+#      - --mem=72000
+#      - --constraint="cascade"
+
+general:
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "default"
+   homedir: !ENV ${HOME}
+
+   compute_time: "01:30:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
+   postprocessing: 0
+   scenario: "PI-CTRL"
+   nmonth: 12
+   
+   # machine specific setup 
+   account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-default/
+
+echam:
+   resolution: "T63"
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   nproca: 12
+   nprocb: 24
+   
+nemo:
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW"
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   jpni: 16
+   jpnj: 16
+   nproc: 256
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+xios:
+   nproc: 32 

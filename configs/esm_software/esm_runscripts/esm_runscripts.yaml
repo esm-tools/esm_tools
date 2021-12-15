@@ -1,19 +1,23 @@
 choose_job_type:
 
-        postprocess:
-                recipe:
-                        - "postprocess"
+        #postprocess:
+        #        recipe:
+        #                - "postprocess"
 
         prepare:
                 recipe:
                         - "_read_date_file"
+                        #- "setup_correct_chunk_config"
+                        - "_update_run_in_chunk"
                         - "check_model_lresume"
 
 # kh 01.12.20 this must be done before resolve_some_choose_blocks, because potentially also choosable
 # entries can be overridden via usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
                         - "apply_last_minute_changes"
+                        - "find_openmp"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
+                        - "set_chunk_calendar"
                         - "resolve_some_choose_blocks"
 
 # kh 01.12.20 moved up a few positions
@@ -22,19 +26,37 @@ choose_job_type:
                         - "set_prev_date"
                         - "set_parent_info"
                         - "finalize_config"
+                        - "assemble_workflow"
                         - "restore_protected_last_minute_changes"
                         - "add_submission_info"
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
 
+        assemble:
+                recipe:
+                        - "assemble"
+
+        prepexp:
+                recipe:
+                        - "venv_bootstrap"
+                        - "_create_setup_folders"
+                        - "_create_component_folders"
+                        - "initialize_experiment_logfile"
+                        - "copy_tools_to_thisrun"
+                        - "_copy_preliminary_files_from_experiment_to_thisrun"
+
+
+        observe:
+                recipe:
+                        - "init_monitor_file"
+                          #- "get_last_jobid"
+                        - "wait_and_observe"
+                        - "wake_up_call"
+
 
         tidy:
                 recipe:
-                        - "init_monitor_file"
-                        - "get_last_jobid"
-                        - "wait_and_observe"
-                        - "wake_up_call"
                         - "tidy_coupler"
                         - "assemble"
                         - "check_for_unknown_files"
@@ -42,42 +64,40 @@ choose_job_type:
                         - "throw_away_some_infiles"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
+                          #- "_update_chunk_date_file"
                         - "clean_run_dir"
-                        - "start_post_job"
-                        - "signal_tidy_completion"
-                        - "_increment_date_and_run_number"
-                        - "_write_date_file"
-                        - "maybe_resubmit"
+                          #- "start_post_job"
+                          #- "signal_tidy_completion"
+                          #- "_increment_date_and_run_number"
+                          #- "_write_date_file"
+                          #- "maybe_resubmit"
 
 
-        compute:
+        prepcompute:
                 recipe:
-                        - "venv_bootstrap"
-                        - "_create_setup_folders"
-                        - "_create_component_folders"
-                        - "initialize_experiment_logfile"
-                        - "copy_tools_to_thisrun"
                         - "compile_model"
-                        - "_copy_preliminary_files_from_experiment_to_thisrun"
                         - "_show_simulation_info"
                         - "create_new_files"
+                        - "create_empty_folders"
                         - "prepare_coupler_files"
-                        - "add_batch_hostfile"
+                          #- "calculate_requirements"
+                          #- "add_batch_hostfile"
                         - "assemble"
                         - "log_used_files"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"
                         - "copy_files_to_work"
-                        - "write_simple_runscript"
+                          #- "write_simple_runscript"
                         - "report_missing_files"
                         - "_write_finalized_config"
                         - "database_entry"
-                        - "submit"
+                          #- "submit"
 
         inspect:
                 recipe:
                         - "assemble"
+                        - "inspect_workflow"
                         - "inspect_overview"
                         - "inspect_namelists"
                         - "inspect_size"

@@ -1,42 +1,33 @@
 model: vilma
+
+
+
+# defaults
+
 version: 1d
 internal_version: 'I189'
 
 logfile: 'vega.log'
 executable: 'vega_vip.x'
+execution_command: "vilma_wrapper.sh"
 
 pool_dir: /dev/null
 model_dir: /dev/null
 bin_dir: ${model_dir}/bin
 
-ini_input_dir: ${pool_dir}/ice5g
 ini_forcing_dir: ${pool_dir}/config
-ini_parent_dir: ${pool_dir}/ice5g
+
+scenario: ice5g
 
 available_versions:
 - 1d
 - 3d
 
-choose_version:
-        1d:
-                clean_command: ${defaults.clean_command}
-                comp_command: ${defaults.comp_command}
-                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
-                install_bins: bin/vega_vip.x
-                branch: ${version}
-        3d:
-                clean_command: ${defaults.clean_command}
-                comp_command: ${defaults.comp_command}
-                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
-                install_bins: bin/vega_vip.x
-                branch: ${version}
+wepochsfile: automatic
+tintfile: automatic
 
-
-resolution: '512x1024'
-
-eislastfile: ice5g_total.nc
-eislastconf: loadh_ice5g_total.inp
-bedrockfile: ETOPO1_Bed_n256.nc
+coupled_to_ice: False
+coupled_to_ocean: False
 
 # parameters:
 #
@@ -48,7 +39,7 @@ jmax: 340
 time_step: 0.025
 output_interval: 0.1
 
-l_rot: ???
+l_rot: 1
 
 # polynomial representation of PREM
 l_prem: 1
@@ -75,11 +66,6 @@ l_wepo: 1
 
 # calendar stuff
 #
-#final_year: ${final_date!syear}
-#initial_year: ${initial_date!syear}
-#last_year: ${end_date!syear}
-#start_year: ${start_date!syear}
-
 fyear: $(( ${final_date!syear} / 1000. ))
 
 dtimes: $(( ${final_date!syear} / 1000. - ${initial_date!syear} / 1000. ))
@@ -94,8 +80,68 @@ wbtime: $(( ${initial_date!syear} / 1000. + ${output_interval} ))
 etime: $(( ${lastyear_p1} / 1000. ))
 wetime: $(( ${finalyear_p1} / 1000. ))
 
-OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
 
+# different setups and scenarios 
+
+
+choose_version:
+        1d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+                nproc: 1
+        3d:
+                clean_command: ${defaults.clean_command}
+                comp_command: ${defaults.comp_command}
+                git-repository: https://gitlab.dkrz.de/modular_esm/vilma.git
+                install_bins: bin/vega_vip.x
+                branch: ${version}
+                nproc: 8
+
+
+choose_scenario:
+        ice5g:
+                ini_input_dir: ${pool_dir}/ice5g
+                ini_parent_dir: ${pool_dir}/ice5g
+                grid_input: n256
+                resolution: '512x1024'
+                eislastfile: ice5g_total.nc
+                eislastconf: loadh_ice5g_total.inp
+                bedrockfile: ETOPO1_Bed_n256.nc
+        ice6g:
+                ini_input_dir: ${pool_dir}/ice6g
+                ini_parent_dir: ${pool_dir}/ice6g
+                grid_input: n256
+                resolution: '512x1024' # ??? not used at all
+                eislastfile: ice6g_total.nc
+                eislastconf: loadh_ice6g_total.inp
+                bedrockfile: ice6g_bed.nc
+        small:
+                ini_input_dir: ${pool_dir}/small_setup
+                ini_parent_dir: ${pool_dir}/small_setup
+                grid_input: n128
+                resolution: '512x1024' # ??? not used at all
+                bedrockfile: initial_topo.nc
+                eislastconf: couple_eislastconf.inp
+                eislastfile: ice_thickness_forcing.nc
+
+
+choose_coupled_to_ice:
+        True:
+                choose_run_number:
+                        1: 
+                                nothing: special
+                        "*":
+                                add_input_sources:
+                                        eislastfile: ${experiment_input_dir}/${eislastfile}
+                                add_config_sources:
+                                        eislastconf: ${experiment_input_dir}/${eislastconf}
+
+
+
+# files to be created
 create_config:
         vilma_wrapper.sh:
                 - "<--append-- #!/bin/ksh"
@@ -111,33 +157,36 @@ create_config:
                 - "<--append-- ${itimes}"
                 - "<--append-- ${l_wepo}"
                 - "<--append-- restart/restart.log"
-        wepochs.inp:
-                - "<--append-- [[OUTPUT_DATES-->od]]"
-                # ???
-                # for epoch in `seq $wbtime $OUTPUT_INTERVAL_vilma $wetime`; do
-                #	echo $epoch >> $CONFIG_DIR_vilma/inp/wepochs.inp
-                # done
+                - "<--append-- ${btime} ${etime}"
+                - "<--append-- END"
 
-        tint.inp:
-                - "<--append-- 0 0"
-                - "<--append-- 42.0 -42.0 ${time_step}"
-
-        load_hist.inp:
+        inp/load_hist.inp:
                 - "<--append-- inp/${eislastconf}"
                 - "<--append-- ${eislastfile}"
                 - "<--append-- ${bedrockfile} ${eislastfile}"
 
-
-execution_command: "vilma_wrapper.sh"
-
-input_sources:
-        vega_oce.dat: ${ini_input_dir}/vega_oce.dat
-        vega_rpt.dat: ${ini_input_dir}/vega_rpt.dat
-        vega_deg1.dat: ${ini_input_dir}/vega_deg1.dat
-        vega1.nc: ${ini_input_dir}/vega1.nc
-        dflag.nc: ${ini_input_dir}/dflag.nc
+choose_tintfile:
+        "automatic":
+                add_create_config:        
+                        inp/tint.inp:
+                                - "<--append-- 0 0"
+                                - "<--append-- 42.0 -42.0 ${time_step}"
 
 
+choose_wepochsfile:
+        "automatic":
+                OUTPUT_DATES: "<--fseq-- ${btime} ${etime} ${output_interval}"
+                add_create_config:        
+                        inp/wepochs.inp:
+                                - "<--append-- [[OUTPUT_DATES-->od]]"
+
+create_folders:
+        - ${work_dir}/out
+        - ${work_dir}/restart
+
+
+# files to be copied
+#
 restart_in_sources:
         io.tmp: io.tmp
         restart.log: restart.log
@@ -150,6 +199,11 @@ restart_in_sources:
         pefgh.nc: pefgh.nc
         pjj.nc: pjj.nc
         ve_struct.nc: ve_struct.nc
+        vega_oce.dat: vega_oce.dat
+        vega_rpt.dat: vega_rpt.dat
+        vega_deg1.dat: vega_deg1.dat
+        vega1.nc: vega1.nc
+        dflag.nc: dflag.nc
 
 restart_in_targets:
         io.tmp: io.tmp
@@ -169,16 +223,31 @@ restart_in_targets:
         vega1.nc: out/vega1.nc
         dflag.nc: out/dflag.nc
 
-config_sources:
-        eislastconf: ${eislastconf}
 
-forcing_sources:
+config_sources:
+        eislastconf: ${ini_input_dir}/${eislastconf}
+
+config_targets:
+        eislastconf: inp/${eislastconf}
+
+
+input_sources:
         eislastfile: ${ini_input_dir}/${eislastfile}
         bedrockfile: ${ini_input_dir}/${bedrockfile}
+        
+        # There are different visko.inp files available, all having a different
+        # number of lines (seemingly radial layers). It is a bit confusing to
+        # understand how that can work. What vilma does is this: It first reads in 
+        # densi.inp, that looks like this:
+        # lower_radius   upper_radius    delta_radius    densi0   densi1
+        # out of the first three the number of layers between lower_radius and
+        # upper_radius is calculated. While reading visko.inp it looks for the visko
+        # that is valid for each layer.
+
         densi: ${ini_forcing_dir}/densi.inp
         visko: ${ini_input_dir}/visko.inp
 
-forcing_targets:
+input_targets:
         densi: inp/densi.inp
         visko: inp/visko.inp
         
@@ -189,16 +258,30 @@ outdata_sources:
         vegalis: vega.lis
         radii: out/radii.dat
         rsl: out/rsl.nc
+
+restart_out_sources:
+        restarts: restart/*.nc
+        io: io.tmp
         dflag: out/dflag.nc
         vega1: out/vega1.nc
         vega_deg1: out/vega_deg1.dat
         vega_oce: out/vega_out.dat
         vega_rpt: out/vega_rpt.dat
 
-restart_out_sources:
+restart_out_targets:
         restarts: restart/*.nc
         io: io.tmp
+        dflag: dflag.nc
+        vega1: vega1.nc
+        vega_deg1: vega_deg1.dat
+        vega_oce: vega_out.dat
+        vega_rpt: vega_rpt.dat
 
 log_sources:
+        restart_log: restart/restart.log
+
+log_targets:
         restart_log: restart.log
+
+
 

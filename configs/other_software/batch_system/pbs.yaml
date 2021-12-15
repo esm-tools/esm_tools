@@ -23,9 +23,15 @@ choose_accounting:
 choose_mail_type:
         "*":
                 mail1:  "-m ${mail_type}"
+choose_general.mail_type:
+        "*":
+                mail1:  "-m ${general.mail_type}"
 choose_mail_user:
         "*":
                 mail2:  "-M ${mail_user}"
+choose_general.mail_user:
+        "*":
+                mail2:  "-M ${general.mail_user}"
 
 notification_flag: "${mail1} ${mail2}"
 #single_proc_submit_flag: "--ntasks-per-node=1"
@@ -33,8 +39,8 @@ nodes_flag: "-l nodes=@nodes@"
 partition_flag: "-q ${partition}"
 time_flag: "-l walltime=${compute_time}"
 additional_flags: ""
-output_path: "${experiment_dir}/scripts/"
-thisrun_logfile: "${output_path}${expid}_${jobtype}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_$PBS_JOBID.log"
+output_path: "${experiment_dir}/log/"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
 output_flags: "-j oe -o ${thisrun_logfile}"
 name_flag: "-N ${expid}"
 

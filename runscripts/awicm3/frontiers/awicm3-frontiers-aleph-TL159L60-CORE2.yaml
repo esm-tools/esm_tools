@@ -10,9 +10,6 @@ general:
     nmonth: 0
     nyear: 0
 
-computer:
-    heterogeneous_parallelization: true
-
 awicm3:
     postprocessing: false
     model_dir: "/home/${user}/model_codes/${general.setup_name}-${general.version}/"

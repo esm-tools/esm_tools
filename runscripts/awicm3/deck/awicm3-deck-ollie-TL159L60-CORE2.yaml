@@ -9,9 +9,6 @@ general:
     nmonth: 0
     nyear: 0
 
-computer:
-    heterogeneous_parallelization: false #true
-
 awicm3:
     postprocessing: false
     model_dir: "/home/ollie/jstreffi/model_codes/awicm3-1.0-deck/"

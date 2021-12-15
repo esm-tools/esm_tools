@@ -7,7 +7,7 @@ import copy
 import esm_environment
 import six
 
-from esm_parser import user_error, user_note
+from esm_parser import find_variable, user_error, user_note
 from . import helpers
 from . import dataprocess
 from .slurm import Slurm
@@ -601,11 +601,11 @@ class batch_system:
         """
         Defines the ``heterogeneous_parallelization`` variable based on the
         ``omp_num_threads`` found in the model's sections. If any
-        ``omp_num_threads`` exists, then ``heterogeneous_parallelization`` becomes
+        ``omp_num_threads`` > 1, then ``heterogeneous_parallelization`` becomes
         ``True``. Otherwise, is set to ``False``. The user has no control on setting
         this variable, as the user's choice is overridden here. This is because the
         functionality triggered by ``heterogeneous_parallelization`` is entirely
-        dependent to the values of ``omp_num_threads``, so for the user, it doesn't
+        dependent on the values of ``omp_num_threads``, so for the user, it doesn't
         make sense to define two variables for the same thing. One could think then
         that there is not need for such a variable, however, there are instances
         in which the yaml files need to know whether the simulation is heterogeneously
@@ -640,9 +640,24 @@ class batch_system:
         # Set ``heterogeneous_parallelization`` false, overriding whatever the user
         # has defined for this variable to be
         config["computer"]["heterogeneous_parallelization"] = False
-        # Set ``heterogeneous_parallelization`` true if needed
+        # Loop through the components to find ``omp_num_threads``
         for model in config:
-            if "omp_num_threads" in config[model]:
+            # Set omp_num_threads 1 if it is not defined in the model
+            omp_num_threads = str(config[model].get("omp_num_threads", 1))
+            # Resolve the variable if necessary
+            if "${" in omp_num_threads:
+                omp_num_threads = find_variable(
+                    [model, "omp_num_threads"],
+                    config[model]["omp_num_threads"],
+                    config,
+                    [],
+                    True,
+                )
+            # Set ``heterogeneous_parallelization`` true if needed
+            if (
+                int(omp_num_threads) > 1
+                and model in config["general"].get("valid_model_names", [])
+            ):
                 config["general"]["heterogeneous_parallelization"] = True
                 config["computer"]["heterogeneous_parallelization"] = True  # dont like this
                 if (

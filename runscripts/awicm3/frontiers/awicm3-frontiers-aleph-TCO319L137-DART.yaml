@@ -11,9 +11,6 @@ general:
     nyear: 0
     use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
 
-computer:
-    heterogeneous_parallelization: true
-
 awicm3:
     postprocessing: false
     model_dir: /home/awiiccp2/esm/model_codes/awicm3-1.0-frontiers/

@@ -1,0 +1,57 @@
+general:
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "agrif_oasismct4"
+   homedir: !ENV ${HOME}
+
+   compute_time: "00:35:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-01-16T00:00:00"         # Final date of the experiment
+   postprocessing: 0
+   nday: 5 
+   
+   # machine specific setup 
+   account: shk00018
+   base_dir: ${homedir}/esm/esm-experiments/
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-agrif_oasismct4/
+
+# set input_dir for oasis grids, masks and areas
+# until everything is finalized
+oasis3mct:
+   input_dir: "/scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05_VIKING10/"
+
+echam:
+   scenario: "PI-CTRL"
+   resolution: "T63"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproca: 16
+   nprocb: 12
+   
+nemo:
+   #nest: NPAC10
+   #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
+   nest: VIKING10
+   nest1: viking10
+   #nest: INALT10x
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   jpni: 36 
+   jpnj: 24
+   nproc: 864
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   #
+   # if an initial run does not work, or if you experience instabilities in NEMO or the NEST
+   # the following settings may help to get past those instabilities
+   #namelist_changes:
+   #  namelist_cfg:
+   #    namtra_ldf:
+   #      rn_aht_0: 599
+
+xios:
+   nproc: 36

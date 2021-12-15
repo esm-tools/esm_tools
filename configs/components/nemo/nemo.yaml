@@ -54,6 +54,7 @@ choose_version:
        1_namelist_ice_ref: 1_namelist_ice_ref
        1_namelist_top_ref: 1_namelist_top_ref
        # grids and coefficients 
+       # batmeter: bathy_meter
        cn_batmeter: bathy_updated
        1_cn_batmeter: 1_bathy_meter
        1_coordinates: 1_coordinates

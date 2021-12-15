@@ -48,8 +48,6 @@ thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${gener
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
-heterogeneous_parallelization: false
-
 add_choose_heterogeneous_parallelization:
         true:
                 cpu_bind: "none"

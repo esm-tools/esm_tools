@@ -11,9 +11,6 @@ general:
     nmonth: 0
     nyear: 3
 
-computer:
-    heterogeneous_parallelization: true
-
 awicm3:
     postprocessing: false
     model_dir: "/p/project/chhb19/${user}/model_codes/${general.setup_name}-${general.version}/"

@@ -10,7 +10,6 @@ general:
     nday: 1
     nmonth: 0
     nyear: 0
-    heterogeneous_parallelization: true
 
 awicm3:
     postprocessing: false

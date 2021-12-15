@@ -4,12 +4,15 @@
     iomode = 0
     nprocio = 0
 /
+
 &submodelctl
     lmethox = .true.
 /
+
 &qboctl
     i_time = 0
 /
+
 &runctl
     dt_start = 1849, 12, 31, 23, 52, 30
     dt_stop = 1880, 12, 31, 23, 52, 30
@@ -21,7 +24,7 @@
     delta_time = 450
     putdata = 1, 'days', 'last', 0
     trigfiles = 1, 'months', 'first', 0
-    nproma = 32
+    nproma = 8
     lcouple = .false.
     getocean = 24, 'steps', 'exact', 0
     putocean = 24, 'steps', 'exact', -450
@@ -30,71 +33,85 @@
     ltdiag = .true.
     lresume = .false.
 /
+
 &gwsctl
-    rmscon_hi = 0.92 ! default is 1.0
+    rmscon_hi = 0.92
 /
-&mvstreamctl ! 'default spm glm g3bm'
+
+&mvstreamctl
     filetag = 'echam'
     source = 'sp', 'gl', 'g3b'
 /
-&mvstreamctl ! 'default co2m'
+
+&mvstreamctl
     filetag = 'co2'
     source = 'co2'
 /
-&mvstreamctl ! 'default tdiagm'
+
+&mvstreamctl
     filetag = 'tdiag'
     source = 'tdiag'
-    meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp',
-              'gboxarea'
+    meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp', 'gboxarea'
 /
-&mvstreamctl ! 'default jsbachm'
+
+&mvstreamctl
     filetag = 'jsbach'
     source = 'jsbach'
 /
-&mvstreamctl ! 'default landm'
+
+&mvstreamctl
     filetag = 'land'
     source = 'land'
 /
-&mvstreamctl ! 'default vegm'
+
+&mvstreamctl
     filetag = 'veg'
     source = 'veg'
 /
-&mvstreamctl ! 'default surfm'
+
+&mvstreamctl
     filetag = 'surf'
     source = 'surf'
 /
-&mvstreamctl ! 'default yassom'
+
+&mvstreamctl
     filetag = 'yasso'
     source = 'yasso'
 /
-&set_stream ! 'default jsbach'
+
+&set_stream
     stream = 'jsbach'
     lpost = 0
 /
-&set_stream ! 'default land'
+
+&set_stream
     stream = 'land'
     lpost = 0
 /
-&set_stream ! 'default veg'
+
+&set_stream
     stream = 'veg'
     lpost = 0
 /
-&set_stream ! 'default surf'
+
+&set_stream
     stream = 'surf'
     lpost = 0
 /
-&set_stream ! 'default yasso'
+
+&set_stream
     stream = 'yasso'
     lpost = 0
 /
+
 &radctl
     iaero = 3
     io3 = 4
     isolrad = 6
     ich4 = 3
     in2o = 3
-    co2vmr = 284.3169860840e-06
-    ch4vmr = 808.2490234375e-09
-    n2ovmr = 273.0210571289e-09
+    co2vmr = 0.000284316986084
+    ch4vmr = 8.082490234375e-07
+    n2ovmr = 2.730210571289e-07
     yr_perp = 1850
 /

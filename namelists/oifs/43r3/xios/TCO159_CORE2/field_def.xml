@@ -1,4 +1,4 @@
-<field_definition level="1" prec="4" enabled="true" operation="instant" freq_op="1ts" ts_enabled="false" default_value="1.e+20" >
+<field_definition level="1" prec="4" enabled="true" operation="instant" freq_op="1ts" ts_enabled="true" default_value="1.e+20" >
   <field_group id="2D_physical" grid_ref="reduced_sfc" freq_op="3h" >
     <!--TODO: convert to kg m-2-->
     <field id="sro"    long_name="surface runoff"                                             standard_name="runoff_amount"                                            unit="m" />

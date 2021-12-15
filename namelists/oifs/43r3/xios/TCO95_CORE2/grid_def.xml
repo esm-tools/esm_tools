@@ -1,0 +1,75 @@
+<grid_definition>
+  <!-- Definition of surface grids -->
+  <grid_group id="sfc_grids" >
+    <grid id="reduced_sfc" description="2D model grid" >
+      <domain domain_ref="reduced_gaussian" />
+    </grid>
+    <grid id="regular_sfc" description="2D interpolated regular grid" >
+      <domain domain_ref="regular" />
+    </grid>
+  </grid_group>
+
+  <!-- Definition of model levels grids -->
+  <grid_group id="ml_grids" >
+    <grid id="reduced_ml" description="3D model grid with hybrid model levels" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="model_levels" />
+    </grid>
+    <grid id="regular_ml" description="3D interpolated regular grid with hybrid model levels" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="model_levels" />
+    </grid>
+    <grid id="regular_ml_axis_zoom" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="model_levels_zoom" />
+    </grid>
+  </grid_group>
+
+  <!-- Definition of pressure levels grids -->
+  <grid_group id="pl_grids" >
+    <grid id="reduced_pl" description="3D model grid with pressure levels" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels" />
+    </grid>
+    <grid id="regular_pl" description="3D interpolated regular grid with pressure levels" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="pressure_levels" />
+    </grid>
+    <grid id="regular_pl_axis_zoom" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="pressure_levels_zoom" />
+    </grid>
+  </grid_group>
+
+  <!-- Definition of theta levels grids -->
+  <grid_group id="th_grids" >
+    <grid id="reduced_th" description="3D model grid with theta levels" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="theta_levels" />
+    </grid>
+    <grid id="regular_th" description="3D interpolated regular grid with theta levels" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="theta_levels" />
+    </grid>
+    <grid id="regular_th_axis_zoom" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="theta_levels_zoom" />
+    </grid>
+  </grid_group>
+
+  <!-- Definition of PV levels grids -->
+  <grid_group id="pv_grids" >
+    <grid id="reduced_pv" description="3D model grid with pv levels" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pv_levels" />
+    </grid>
+    <grid id="regular_pv" description="3D interpolated regular grid with pv levels" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="pv_levels" />
+    </grid>
+    <grid id="regular_pv_axis_zoom" >
+      <domain domain_ref="regular" />
+      <axis axis_ref="pv_levels_zoom" />
+    </grid>
+  </grid_group>
+</grid_definition>

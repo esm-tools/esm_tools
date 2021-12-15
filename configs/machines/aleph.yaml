@@ -48,14 +48,23 @@ hyper_flag: ""
 
 useMPI: cray_mpich
 
+fc: ftn
+f77: ftn
+mpifc: ftn
+mpicc: cc
+cc: cc
+cxx: CC
+
 module_actions:
-        - "load ${PrgEnv}"
+        - "unload craype"
+        - "load craype/2.6.2"
+        - "load PrgEnv-cray/6.0.4"
         - "load alps pbs"
         - "load cray-mpich/7.7.3"
         - "load craype-x86-skylake"
         - "load cmake/3.14.0"
-        - "load cray-netcdf-hdf5parallel"
         - "load cray-hdf5-parallel/1.10.2.0"
+        - "load cray-netcdf-hdf5parallel/4.6.1.3"
         - "load cdo/1.9.5"
         - "load fftw/2.1.5.9"
         - "load nco/4.9.4"
@@ -79,60 +88,30 @@ export_vars:
         #LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         XML2ROOT: /usr
         ZLIBROOT: /usr
+        TMPDIR: /tmp
+        # Prepend labels to the stdout/sterr lines
+        PMI_LABEL_ERROUT: 1
 
         ECCODESROOT: /home/awiiccp2/software/ecmwf/eccodes_cce_mpich
-        TMPDIR: /tmp
 
-choose_useMPI:
-        intelmpi: #Only work on if we get stuck badly with CRAY
-                add_module_actions:
-                        - "unload PrgEnv-pgi"
-                        - "unload PrgEnv-gnu"
-                        - "unload cray-netcdf"
-                        - "unload cray-hdf5"
-                        - "unload cray-parallel-netcdf"
-                        - "unload cray-netcdf-hdf5parallel"
-                        - "load craype-hugepages2M"
-                        - "unload perftools-base/7.0.4"
-                        - "load cray-netcdf/4.6.1.3"
-                        - "load cray-hdf5/1.10.2.0"
-                        - "load cray-parallel-netcdf/1.11.1.1"
-                        - "load papi/5.6.0.4"
-                        - "load gridftp/6.0"
+        # enable full MPI thread support level (MPI_THREAD_MULTIPLE)
+        MPICH_MAX_THREAD_SAFETY: multiple # to also switch to an alternative (probably with faster locking) multi threading implementation of the cray-mpich library, use the compiler flag -craympich-mt
+        MPICH_CRAY_OPT_THREAD_SYNC: 0 # the Cray MPICH library falls back to using the pthread_mutex-based thread-synchronization implementation
+        MPICH_OPT_THREAD_SYNC: 0 # seems to be a duplicate variable which also appears in some documentation instead of MPICH_CRAY_OPT_THREAD_SYNC (but this one brings a huge speed gain on aleph)
 
-                PrgEnv: PrgEnv-intel
+        # for the fesom cmake setup
+        ENABLE_ALEPH_CRAYMPICH_WORKAROUNDS: ''
+        FC: ${fc}
+        CC: ${cc}
+        CXX: ${cxx}
 
-                fc: '"mpiifort -mkl"'
-                f77: '"mpiifort -mkl"'
-                mpifc: mpiifort
-                mpicc: mpiicc
-                cc: mpiicc
-                cxx: mpiicpc
+        # Important for eccodes to work
+        CRAYPE_LINK_TYPE: dynamic
 
-                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
-                        env OMP_NUM_THREADS=@omp_num_threads@ -cc depth"
-
-                add_export_vars:
-                        MPIROOT: ${I_MPI_ROOT}/intel64
-                        KMP_AFFINITY: disabled
-        cray_mpich:
-                PrgEnv: PrgEnv-cray/6.0.4
-
-                fc: ftn
-                f77: ftn
-                mpifc: ftn
-                mpicc: cc
-                cc: cc
-                cxx: CC
-                add_export_vars:
-                        CRAYPE_LINK_TYPE: dynamic
-                        # Prepend labels to the stdout/sterr lines
-                        PMI_LABEL_ERROUT: 1
-
-                label_format: '"[@MODEL@]%l:"'
-                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
-                        env OMP_NUM_THREADS=@omp_num_threads@
-                        env PMI_LABEL_ERROUT_FORMAT=${label_format}"
+label_format: '"[@MODEL@]%l:"'
+launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
+        env OMP_NUM_THREADS=@omp_num_threads@
+        env PMI_LABEL_ERROUT_FORMAT=${label_format}"
 
 further_reading:
         - batch_system/pbs.yaml

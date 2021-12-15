@@ -5,7 +5,7 @@ general:
     account: "hhb19"
     compute_time: "08:00:00"
     initial_date: "1990-01-01"
-    final_date: "1991-01-03"
+    final_date: "1990-01-03"
     base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 1
     nmonth: 0
@@ -30,7 +30,7 @@ fesom:
     ini_parent_exp_id: "placeholder"
     ini_parent_date: "1989-12-31"
     ini_parent_dir: "/p/project/chhb19/hegewald1/fesom_restarts/D3/"
-    time_step: 400
+    time_step: 100
     nproc: 576
 
 oifs:

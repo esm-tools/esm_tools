@@ -111,11 +111,16 @@ lupdate_orography: False
 choose_general.iterative_coupling:
         True:
                 lgfw: True
-                lupdate_orography: True
                 choose_general.chunk_number:
                         1:
                                 lgfw: False
                                 lupdate_orography: False
+                        "*":
+                                choose_general.first_run_in_chunk:
+                                        True:
+                                                lupdate_orography: True
+                                        "*":
+                                                lupdate_orography: False
                 hosing_correction: True
         '*':
                 hosing_correction: False

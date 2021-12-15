@@ -143,6 +143,7 @@ def parse_shargs():
         "simulation. We strongly advise against using this option unless you "
         "really know what you are doing.",
         nargs="+",
+        default=[],
     )
 
     parser.add_argument(

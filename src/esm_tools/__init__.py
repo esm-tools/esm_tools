@@ -98,6 +98,7 @@ def _get_real_dir_from_pth_file(subfolder):
     )
     logger.debug(site_packages_dirs)
     for site_package_dir in site_packages_dirs:
+        logger.debug(f"Working on {site_package_dir}")
         # Read the pth file:
         if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
             with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:

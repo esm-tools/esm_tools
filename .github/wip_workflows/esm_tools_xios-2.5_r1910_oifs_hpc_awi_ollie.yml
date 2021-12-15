@@ -1,0 +1,18 @@
+name: Compile Test for xios-2.5_r1910_oifs
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/xios/*.yaml'
+
+jobs:
+    call-workflow:
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        with:
+            model_name: xios
+            model_version: 2.5_r1910_oifs

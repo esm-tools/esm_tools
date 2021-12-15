@@ -1,0 +1,18 @@
+name: Compile Test for nemo-ORCA05_LIM2_NEMO_JRA55_test
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/nemo/*.yaml'
+
+jobs:
+    call-workflow:
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        with:
+            model_name: nemo
+            model_version: ORCA05_LIM2_NEMO_JRA55_test

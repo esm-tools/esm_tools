@@ -1,0 +1,26 @@
+name: Tests for PISM Standalone
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/pism/*.yaml'
+            - '.github/workflows/esm_tools_echam-standalone.yml'
+
+jobs:
+    compile-ollie:
+        name: Compile Test pism-standalone (Ollie)
+        # Pattern for uses: github-org/repo/some/path/in/repo@commit_or_branch
+        # (if @commit_or_branch is omitted, it assumes the default)
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        secrets:
+          dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
+          awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
+        with:
+          model_name: pism
+          # versions to test as a space seperated list
+          model_version: "snowflake0.7 snowflake1.0 github1.1.4 github1.2 github1.2.1 index1.1"

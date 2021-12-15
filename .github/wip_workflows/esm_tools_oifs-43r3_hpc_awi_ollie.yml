@@ -1,0 +1,18 @@
+name: Compile Test for oifs-43r3
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/oifs/*.yaml'
+
+jobs:
+    call-workflow:
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        with:
+            model_name: oifs
+            model_version: 43r3

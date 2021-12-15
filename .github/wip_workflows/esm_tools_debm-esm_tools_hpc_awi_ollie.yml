@@ -1,0 +1,18 @@
+name: Compile Test for debm-esm_tools
+
+on:
+    push:
+        paths:
+            - '!docs/**'
+            - '!README.md'
+            - 'src/**'
+            - 'tests/**'
+            - 'configs/machines/ollie.yaml'
+            - 'configs/components/debm/*.yaml'
+
+jobs:
+    call-workflow:
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        with:
+            model_name: debm
+            model_version: esm_tools

@@ -1,64 +1,94 @@
 name: esm-tools Ollie
 
-# Controls when the action will run. Triggers the workflow on push or pull request.
+# Reusuable part
+on:
+    workflow_call:
+        inputs:
+            model_name:
+                required: True
+                type: string
+            model_version:
+                required: True
+                type: string
+        secrets:
+            dkrz-token:
+                required: True
+            awi-token:
+                required: True
 
-on: [push, pull_request]
 
 defaults:
   run:
     shell: bash -leo pipefail {0}
 
 jobs:
-  basic_tests:
-    runs-on: hpc_awi_ollie
-    env:
-        LC_ALL: en_US.UTF-8
-        LANG: en_US.UTF-8
+    setup_version_matrix:
+        runs-on: hpc_awi_ollie
+        outputs:
+            matrix: ${{ steps.set-matrix.outputs.matrix }}
+        steps:
+            - name: Download Code
+              uses: actions/checkout@v2
+            - id: set_version_env
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})" >> $GITHUB_ENV
+            - id: test-set-matrix
+              run: echo "..set-output name=matrix..${{ env.VERSION }}"
+            - id: set-matrix
+              run: echo "::set-output name=matrix::${{ env.VERSION }}"
+    basic_compile_test:
+        needs: setup_version_matrix
+        runs-on: hpc_awi_ollie
+        strategy:
+            matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}
+            fail-fast: false
+        env:
+            LC_ALL: en_US.UTF-8
+            LANG: en_US.UTF-8
 
-    steps:
-      - name: Download Code
-        uses: actions/checkout@v2
+        steps:
+          - name: Download Code
+            uses: actions/checkout@v2
 
-      - name: Add to the path
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          - name: Add to the path
+            run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install esm-tools
-        run: |
-          module load git
-          module load python3
-          ./install.sh
+          - name: Install esm-tools
+            run: |
+              module load git
+              module load python3
+              ./install.sh
 
-      - name: Create esmtoolsrc file
-        run: |
-            echo GITLAB_DKRZ_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
-            echo SWREPO_AWI_USER_NAME=dummy >> ${HOME}/.esmtoolsrc
+          - name: Create esmtoolsrc file
+            run: |
+                echo GITLAB_DKRZ_USER_NAME=${{ secrets.dkrz-token }} >> ${HOME}/.esmtoolsrc
+                echo SWREPO_AWI_USER_NAME=${{ secrets.awi-token }} >> ${HOME}/.esmtoolsrc
 
-      - name: Run esm_master
-        run: |
-          esm_master
+          - name: Run esm_master
+            run: |
+              esm_master
 
-      - name: Run esm_plugins
-        run: |
-          esm_plugins
+          - name: Run esm_plugins
+            run: |
+              esm_plugins
 
-      - name: Run get-fesom-2.0
-        run: |
-          esm_master get-fesom-2.0
+          - name: Run get-${{ inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master get-${{ inputs.model_name }}-${{ matrix.version }}
 
-      - name: Run status-fesom-2.0
-        run: |
-          esm_master status-fesom-2.0
+          - name: Run status-${{ inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master status-${{ inputs.model_name }}-${{ matrix.version }}
 
-      - name: Run comp-fesom-2.0
-        run: |
-            esm_master comp-fesom-2.0
+          - name: Run comp-${{ inputs.model_name }}-${{ matrix.version }}
+            run: |
+                esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
 
-      - name: Run clean-fesom-2.0
-        run: |
-          esm_master clean-fesom-2.0
+          - name: Run clean-${{ inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
 
-      - name: Clean up
-        if: ${{ always() }}
-        run: |
-            rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools
+          - name: Clean up
+            if: ${{ always() }}
+            run: |
+                rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools

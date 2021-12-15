@@ -31,6 +31,12 @@ forcing_sources:
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp126_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                 from: 2015
                 to: 2299
+        "LU_ssp245":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp245_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
         "LU_ssp534os":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                 to: 2014
@@ -55,6 +61,12 @@ forcing_sources:
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp126${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_trans_ssp245":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp245${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 from: 2015
                 to: 2299
         "LU_trans_ssp534os":
@@ -122,6 +134,11 @@ choose_dataset:
                                 "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months
                                         from: 1850
                                         to: 2099
+                        "Ndepo_ssp245":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_@YEAR@.nc": # 12 months
+                                        from: 1850
+                                        to: 2099
                         "Ndepo_ssp534os":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os.nc": # nyear x nmonth
                                 "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_@YEAR@.nc": # 12 months
@@ -140,6 +157,11 @@ choose_dataset:
                                 "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp1_T63.nc": # correct varname
                                         from: 1850
                                         to: 2100
+                        "popdens_ssp2":
+                                #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp2_${echam.resolution}.nc": # nyear
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp2_T63.nc": # correct varname
+                                        from: 1850
+                                        to: 2100
                         "popdens_ssp5":
                                 #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp5_${echam.resolution}.nc": # nyear
                                 "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp5_T63.nc": # correct varname
@@ -154,6 +176,12 @@ choose_dataset:
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/land_use_maps/ssp126/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
+                                        from: 2015
+                                        to: 2300
+                        "cover_fract_ssp245":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/land_use_maps/ssp245/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
                                         to: 2300
                         "cover_fract_ssp534os":

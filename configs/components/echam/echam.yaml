@@ -333,6 +333,17 @@ choose_scenario:
                         swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP_ssp126
+        SSP245:
+                greenhouse_dir: "${input_dir}"
+                forcing_files:
+                        aerocoarse_kinne_1850: piaerocoarse
+                        aerofarir_kinne_1850: piaerofarir
+                        aerofin_kinne_1850: piaerofin
+                        ozone: ssp245ozone
+                        greenhouse: ssp245greenh
+                        swflux: histswflux
+                add_input_files:
+                        MAC-SP: MAC-SP_ssp245
         SSP534OS:
                 pool_dir: "/mnt/lustre02/work/bb0519/foci_input2/ECHAM6" # forcing files not in default pool yet
                 greenhouse_dir: "${input_dir}"

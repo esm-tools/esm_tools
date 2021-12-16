@@ -4,6 +4,7 @@ import subprocess
 import copy
 import pathlib
 
+import f90nml
 import six
 import yaml
 from colorama import Fore, Back, Style, init
@@ -312,6 +313,9 @@ def _write_finalized_config(config):
     def oasis_representer(dumper, oasis):
         return dumper.represent_str(f"{oasis.name}")
 
+    def namelist_representer(dumper, f90nml):
+        return dumper.represent_str(f"f90nml.name")
+
     # dumper object for the ESM-Tools configuration
     class EsmConfigDumper(yaml.dumper.Dumper):
         pass
@@ -344,6 +348,10 @@ def _write_finalized_config(config):
 
     EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
+    )
+
+    EsmConfigDumper.add_representer(
+        f90nml.namelist.Namelist, namelist_representer
     )
 
     if "oasis3mct" in config:

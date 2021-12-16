@@ -10,6 +10,7 @@ import six
 from esm_parser import find_variable, user_error, user_note
 from . import helpers
 from . import dataprocess
+from . import prepare
 from .slurm import Slurm
 from .pbs import Pbs
 
@@ -646,10 +647,13 @@ class batch_system:
             omp_num_threads = str(config[model].get("omp_num_threads", 1))
             # Resolve the variable if necessary
             if "${" in omp_num_threads:
+                # Resolve necessary chooses and the ``omp_num_threads`` variable
+                config2 = copy.deepcopy(config)
+                config2 = prepare.resolve_some_choose_blocks(config2)
                 omp_num_threads = find_variable(
                     [model, "omp_num_threads"],
-                    config[model]["omp_num_threads"],
-                    config,
+                    config2[model]["omp_num_threads"],
+                    config2,
                     [],
                     True,
                 )

@@ -186,6 +186,7 @@ echam:
         available_versions:
         - 6.3.05p2
         - 6.3.05p2-foci
+        - 6.3.05p2-foci_oasismct4
         - 6.3.02p4
         - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
@@ -233,6 +234,9 @@ echam:
             6.3.05p2-foci:
                 branch: esm-tools
                 git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-foci_oasismct4:
+                branch: esm-tools-oasis3mct4
+                git-repository: https://git.geomar.de/foci/src/echam.git
             6.3.05p2-wiso:
                 branch: wiso
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -250,44 +254,6 @@ echam:
     config_targets:
         namelist.echam: /work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/run_20000101-20000131/work/namelist.echam
     coupling_fields:
-        AIceEvap:
-            grid: atmo
-        AIceFrac:
-            grid: atmo
-        ATotRain:
-            grid: atmo
-        ATotSnow:
-            grid: atmo
-        A_ITaux1:
-            grid: atmo
-        A_ITauy1:
-            grid: atmo
-        A_IceTck:
-            grid: atmo
-        A_OCurx1:
-            grid: atmo
-        A_OCury1:
-            grid: atmo
-        A_OTaux1:
-            grid: atmo
-        A_OTauy1:
-            grid: atmo
-        A_QnsIce:
-            grid: atmo
-        A_QnsMix:
-            grid: atmo
-        A_QsrIce:
-            grid: atmo
-        A_QsrMix:
-            grid: atmo
-        A_SSTSST:
-            grid: atmo
-        A_SnwTck:
-            grid: atmo
-        A_TepIce:
-            grid: atmo
-        A_dQnsdT:
-            grid: atmo
         evap_atm:
             grid: atmo
         heat_atm:
@@ -416,26 +382,6 @@ echam:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-    foci_fields:
-    - AIceFrac
-    - A_SSTSST
-    - A_TepIce
-    - A_IceTck
-    - A_SnwTck
-    - A_OCurx1
-    - A_OCury1
-    - A_OTaux1
-    - A_OTauy1
-    - A_ITaux1
-    - A_ITauy1
-    - A_QsrIce
-    - A_QsrMix
-    - A_QnsIce
-    - A_QnsMix
-    - ATotRain
-    - ATotSnow
-    - AIceEvap
-    - A_dQnsdT
     forcing_additional_information:
         aerocoarse:
         - need_year_before
@@ -717,8 +663,10 @@ echam:
                 - first
                 - 0
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//echam/6.3.04p1/PI-CTRL
+    namelist_objs:
+        namelist.echam: &id002 f90nml.name
     namelists:
-    - namelist.echam
+        namelist.echam: *id002
     nproca: 24
     nprocar: 0
     nprocb: 24
@@ -1175,7 +1123,7 @@ echam:
     yr_perp_off: false
 fesom:
     add_namelist_changes:
-        namelist.oce: &id002
+        namelist.oce: &id003
             boundary:
                 restore_s_surf: 0
             oce_tra:
@@ -1455,15 +1403,22 @@ fesom:
                 nm_tair_file: /pool/data/AWICM//FESOM2/FORCING//t_10.
                 nm_xwind_file: /pool/data/AWICM//FESOM2/FORCING//u_10.
                 nm_ywind_file: /pool/data/AWICM//FESOM2/FORCING//v_10.
-        namelist.oce: *id002
+        namelist.oce: *id003
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//fesom2/2.0/
+    namelist_objs:
+        namelist.config: &id004 f90nml.name
+        namelist.cvmix: &id005 f90nml.name
+        namelist.forcing: &id006 f90nml.name
+        namelist.ice: &id007 f90nml.name
+        namelist.io: &id008 f90nml.name
+        namelist.oce: &id009 f90nml.name
     namelists:
-    - namelist.config
-    - namelist.forcing
-    - namelist.oce
-    - namelist.ice
-    - namelist.io
-    - namelist.cvmix
+        namelist.config: *id004
+        namelist.cvmix: *id005
+        namelist.forcing: *id006
+        namelist.ice: *id007
+        namelist.io: *id008
+        namelist.oce: *id009
     nproc: 288
     nx: 126858
     old_mesh_format: false
@@ -1577,6 +1532,7 @@ general:
         scriptname: awicm2-initial-monthly.yaml
         started_from: /mnt/lustre02/work/ab0995/a270152/testing/run/awicm/awicm2-initial-monthly/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
     compute_time: 00:15:00
@@ -1702,7 +1658,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 11857
+    jobid: 15203
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false
@@ -1737,6 +1693,22 @@ general:
     - restart_out
     post_time: 00:05:00
     postprocessing: false
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '1999-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -1786,6 +1758,7 @@ general:
     - 44640
     - 2678400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -1996,6 +1969,8 @@ hdmodel:
         unsure, please contact redmine....'
     lresume: false
     model: hdmodel
+    namelist_objs: {}
+    namelists: {}
     other_date: '2000-01-31T23:52:30'
     parent_date: '1999-12-31T23:52:30'
     parent_expid: awicm2-initial-monthly
@@ -2282,12 +2257,12 @@ jsbach:
     model_dir: /work/ab0995/a270152/testing//comp/awicm/awicm-2.0/echam-6.3.04p1
     namelist_changes:
         namelist.jsbach:
-            hydrology_ctl:
-                gethd: remove_from_namelist
-                puthd: remove_from_namelist
+            hydrology_ctl: {}
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//jsbach/3.20/PI-CTRL/no_dynveg
+    namelist_objs:
+        namelist.jsbach: &id010 f90nml.name
     namelists:
-    - namelist.jsbach
+        namelist.jsbach: *id010
     no_dynveg_file_ending: ''
     other_date: '2000-01-31T23:52:30'
     outdata_intermediate: {}
@@ -2596,6 +2571,8 @@ oasis3mct:
     mct_version: 2.8
     model: oasis3mct
     model_dir: /work/ab0995/a270152/testing//comp/awicm/awicm-2.0/oasis
+    namelist_objs: {}
+    namelists: {}
     norestart: F
     o2a_lag: 1800
     oasis_date_stamp: ''

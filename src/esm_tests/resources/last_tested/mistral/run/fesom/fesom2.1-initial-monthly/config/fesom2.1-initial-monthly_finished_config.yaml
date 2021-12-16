@@ -471,14 +471,22 @@ fesom:
                 runoff_data_source: CORE2
                 sss_data_source: CORE2
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//fesom2/2.1/
+    namelist_objs:
+        namelist.config: &id002 f90nml.name
+        namelist.cvmix: &id003 f90nml.name
+        namelist.forcing: &id004 f90nml.name
+        namelist.ice: &id005 f90nml.name
+        namelist.icepack: &id006 f90nml.name
+        namelist.io: &id007 f90nml.name
+        namelist.oce: &id008 f90nml.name
     namelists:
-    - namelist.config
-    - namelist.forcing
-    - namelist.oce
-    - namelist.ice
-    - namelist.io
-    - namelist.cvmix
-    - namelist.icepack
+        namelist.config: *id002
+        namelist.cvmix: *id003
+        namelist.forcing: *id004
+        namelist.ice: *id005
+        namelist.icepack: *id006
+        namelist.io: *id007
+        namelist.oce: *id008
     ncar_bulk_formulae: true
     ncar_bulk_z_shum: 10
     ncar_bulk_z_tair: 10
@@ -647,6 +655,7 @@ general:
         scriptname: fesom2.1-initial-monthly.yaml
         started_from: /mnt/lustre02/work/ab0995/a270152/testing/run/fesom/fesom2.1-initial-monthly/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
     compute_time: 00:08:00
@@ -767,7 +776,7 @@ general:
     - restart_in
     initial_date: '2001-01-01T00:00:00'
     inspect: null
-    jobid: 30248
+    jobid: 42239
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false
@@ -796,6 +805,22 @@ general:
     - unknown
     - outdata
     - restart_out
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '2000-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -843,6 +868,7 @@ general:
     - 44640
     - 2678400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:

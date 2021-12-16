@@ -160,7 +160,7 @@ echam:
             OIFS_OASIS_BASE: $(pwd)/oasis
             OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
             configure_opts: --with-coupler=oasis3-mct
-    add_test1: &id002
+    add_test1: &id003
         test3: false
     adj_input_dir: /pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2//tarfilesT63/input/echam6
     all_filetypes:
@@ -194,6 +194,7 @@ echam:
         available_versions:
         - 6.3.05p2
         - 6.3.05p2-foci
+        - 6.3.05p2-foci_oasismct4
         - 6.3.02p4
         - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
@@ -241,6 +242,9 @@ echam:
             6.3.05p2-foci:
                 branch: esm-tools
                 git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-foci_oasismct4:
+                branch: esm-tools-oasis3mct4
+                git-repository: https://git.geomar.de/foci/src/echam.git
             6.3.05p2-wiso:
                 branch: wiso
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -267,44 +271,6 @@ echam:
     config_targets:
         namelist.echam: /work/ab0995/a270152/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/work/namelist.echam
     coupling_fields:
-        AIceEvap:
-            grid: atmo
-        AIceFrac:
-            grid: atmo
-        ATotRain:
-            grid: atmo
-        ATotSnow:
-            grid: atmo
-        A_ITaux1:
-            grid: atmo
-        A_ITauy1:
-            grid: atmo
-        A_IceTck:
-            grid: atmo
-        A_OCurx1:
-            grid: atmo
-        A_OCury1:
-            grid: atmo
-        A_OTaux1:
-            grid: atmo
-        A_OTauy1:
-            grid: atmo
-        A_QnsIce:
-            grid: atmo
-        A_QnsMix:
-            grid: atmo
-        A_QsrIce:
-            grid: atmo
-        A_QsrMix:
-            grid: atmo
-        A_SSTSST:
-            grid: atmo
-        A_SnwTck:
-            grid: atmo
-        A_TepIce:
-            grid: atmo
-        A_dQnsdT:
-            grid: atmo
         evap_atm:
             grid: atmo
         hdo_atmo:
@@ -451,26 +417,6 @@ echam:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-    foci_fields:
-    - AIceFrac
-    - A_SSTSST
-    - A_TepIce
-    - A_IceTck
-    - A_SnwTck
-    - A_OCurx1
-    - A_OCury1
-    - A_OTaux1
-    - A_OTauy1
-    - A_ITaux1
-    - A_ITauy1
-    - A_QsrIce
-    - A_QsrMix
-    - A_QnsIce
-    - A_QnsMix
-    - ATotRain
-    - ATotSnow
-    - AIceEvap
-    - A_dQnsdT
     forcing_additional_information:
         aerocoarse:
         - need_year_before
@@ -806,8 +752,10 @@ echam:
                 lwiso_rerun: false
                 nwiso: 0
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//echam/6.3.05p2-wiso/PI-CTRL
+    namelist_objs:
+        namelist.echam: &id002 f90nml.name
     namelists:
-    - namelist.echam
+        namelist.echam: *id002
     nproca: 24
     nprocar: 0
     nprocb: 24
@@ -1397,7 +1345,7 @@ echam:
     - sp6h
     - spim
     switch: 1
-    test1: *id002
+    test1: *id003
     thisrun_analysis_dir: /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/analysis/echam/
     thisrun_bin_dir: /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/bin/echam/
     thisrun_config_dir: /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/config/echam/
@@ -1694,11 +1642,8 @@ fesom:
                 force_rotation: true
             paths:
                 ClimateDataPath: /pf/a/a270108/fesom2_recom_config/input-for-awiesm/
-                ForcingDataPath: remove_from_namelist
                 MeshPath: /pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/
-                OpbndPath: remove_from_namelist
                 ResultPath: /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work/
-                TideForcingPath: remove_from_namelist
             restart_log:
                 restart_length: 1
                 restart_length_unit: m
@@ -1712,21 +1657,28 @@ fesom:
             boundary:
                 restore_s_surf: 0
             oce_dyn:
-                K_gm: remove_from_namelist
                 K_gm_max: 2000
             oce_tra:
                 K_hor: 3000
                 num_tracers: 33
                 surf_relax_s: 0
     namelist_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-recom/fesom-2.1/config/
+    namelist_objs:
+        namelist.config: &id004 f90nml.name
+        namelist.cvmix: &id005 f90nml.name
+        namelist.forcing: &id006 f90nml.name
+        namelist.ice: &id007 f90nml.name
+        namelist.icepack: &id008 f90nml.name
+        namelist.io: &id009 f90nml.name
+        namelist.oce: &id010 f90nml.name
     namelists:
-    - namelist.config
-    - namelist.forcing
-    - namelist.oce
-    - namelist.ice
-    - namelist.io
-    - namelist.cvmix
-    - namelist.icepack
+        namelist.config: *id004
+        namelist.cvmix: *id005
+        namelist.forcing: *id006
+        namelist.ice: *id007
+        namelist.icepack: *id008
+        namelist.io: *id009
+        namelist.oce: *id010
     nproc: 288
     num_tracers: 33
     nx: 126858
@@ -1873,8 +1825,33 @@ general:
         scriptname: all_awiesm-2.1-recom.yaml
         started_from: /mnt/lustre02/work/ab0995/a270152/testing/run/awiesm/all_awiesm-2.1-recom/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
+    compute_recipe:
+    - venv_bootstrap
+    - _create_setup_folders
+    - _create_component_folders
+    - initialize_experiment_logfile
+    - copy_tools_to_thisrun
+    - compile_model
+    - _copy_preliminary_files_from_experiment_to_thisrun
+    - _show_simulation_info
+    - create_new_files
+    - create_hosing_files
+    - prepare_coupler_files
+    - add_batch_hostfile
+    - assemble
+    - log_used_files
+    - copy_files_to_thisrun
+    - modify_namelists
+    - modify_files
+    - copy_files_to_work
+    - write_simple_runscript
+    - report_missing_files
+    - _write_finalized_config
+    - database_entry
+    - submit
     compute_time: 00:29:00
     coupled_setup: true
     coupler: oasis3mct
@@ -2004,7 +1981,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 30005
+    jobid: 40574
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false
@@ -2040,6 +2017,22 @@ general:
     - restart_out
     post_time: 00:05:00
     postprocessing: false
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '2000-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -2089,6 +2082,7 @@ general:
     - 44640
     - 2678400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -2305,6 +2299,8 @@ hdmodel:
         unsure, please contact redmine....'
     lresume: false
     model: hdmodel
+    namelist_objs: {}
+    namelists: {}
     other_date: '2001-01-31T23:52:30'
     parent_date: '2000-12-31T23:52:30'
     parent_expid: all_awiesm-2.1-recom
@@ -2604,14 +2600,14 @@ jsbach:
     model_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-recom/echam-6.3.05p2-wiso
     namelist_changes:
         namelist.jsbach:
-            hydrology_ctl:
-                gethd: remove_from_namelist
-                puthd: remove_from_namelist
+            hydrology_ctl: {}
             jsbach_ctl:
                 use_dynveg: true
     namelist_dir: /mnt/lustre01/pf/a/a270152/esm_tools/namelists/.//jsbach/3.20/PI-CTRL/no_dynveg
+    namelist_objs:
+        namelist.jsbach: &id011 f90nml.name
     namelists:
-    - namelist.jsbach
+        namelist.jsbach: *id011
     no_dynveg_file_ending: _no-dynveg
     other_date: '2001-01-31T23:52:30'
     outdata_intermediate: {}
@@ -2938,6 +2934,8 @@ oasis3mct:
     mct_version: 2.8
     model: oasis3mct
     model_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-recom/oasis
+    namelist_objs: {}
+    namelists: {}
     norestart: F
     o2a_lag: 1800
     oasis_date_stamp: ''
@@ -3370,8 +3368,10 @@ recom:
                 recom_restart: false
                 use_atbox: true
     namelist_dir: /work/ab0995/a270152/testing//comp/awiesm/awiesm-2.1-recom/fesom-2.1/config/
+    namelist_objs:
+        namelist.recom: &id012 f90nml.name
     namelists:
-    - namelist.recom
+        namelist.recom: *id012
     numofCO2cycles: 1
     outdata_intermediate:
         CO2f: /work/ab0995/a270152/testing/run/awiesm/all_awiesm-2.1-recom/run_20010101-20010131/outdata/recom/CO2f_fesom_20010101.nc

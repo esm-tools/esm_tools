@@ -39,6 +39,7 @@ computer:
         F77: '"mpiifort -mkl"'
         FC: '"mpiifort -mkl"'
         HDF5ROOT: $HDF5_ROOT
+        IO_LIB_ROOT: ''
         LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
         LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         LC_ALL: en_US.UTF-8
@@ -147,7 +148,7 @@ echam:
             OIFS_OASIS_BASE: $(pwd)/oasis
             OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
             configure_opts: --with-coupler=oasis3-mct
-    add_test1: &id003
+    add_test1: &id004
         test3: false
     adj_input_dir: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean//tarfilesT63/input/echam6
     all_filetypes:
@@ -181,6 +182,7 @@ echam:
         available_versions:
         - 6.3.05p2
         - 6.3.05p2-foci
+        - 6.3.05p2-foci_oasismct4
         - 6.3.02p4
         - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
@@ -228,6 +230,9 @@ echam:
             6.3.05p2-foci:
                 branch: esm-tools
                 git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-foci_oasismct4:
+                branch: esm-tools-oasis3mct4
+                git-repository: https://git.geomar.de/foci/src/echam.git
             6.3.05p2-wiso:
                 branch: wiso
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -246,44 +251,6 @@ echam:
     config_targets:
         namelist.echam: /work/ollie/mandresm/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/namelist.echam
     coupling_fields:
-        AIceEvap:
-            grid: atmo
-        AIceFrac:
-            grid: atmo
-        ATotRain:
-            grid: atmo
-        ATotSnow:
-            grid: atmo
-        A_ITaux1:
-            grid: atmo
-        A_ITauy1:
-            grid: atmo
-        A_IceTck:
-            grid: atmo
-        A_OCurx1:
-            grid: atmo
-        A_OCury1:
-            grid: atmo
-        A_OTaux1:
-            grid: atmo
-        A_OTauy1:
-            grid: atmo
-        A_QnsIce:
-            grid: atmo
-        A_QnsMix:
-            grid: atmo
-        A_QsrIce:
-            grid: atmo
-        A_QsrMix:
-            grid: atmo
-        A_SSTSST:
-            grid: atmo
-        A_SnwTck:
-            grid: atmo
-        A_TepIce:
-            grid: atmo
-        A_dQnsdT:
-            grid: atmo
         evap_atm:
             grid: atmo
         hdoi_atm:
@@ -436,26 +403,6 @@ echam:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-    foci_fields:
-    - AIceFrac
-    - A_SSTSST
-    - A_TepIce
-    - A_IceTck
-    - A_SnwTck
-    - A_OCurx1
-    - A_OCury1
-    - A_OTaux1
-    - A_OTauy1
-    - A_ITaux1
-    - A_ITauy1
-    - A_QsrIce
-    - A_QsrMix
-    - A_QnsIce
-    - A_QnsMix
-    - ATotRain
-    - ATotSnow
-    - AIceEvap
-    - A_dQnsdT
     forcing_additional_information:
         aerocoarse:
         - need_year_before
@@ -791,8 +738,10 @@ echam:
                 lwiso_rerun: false
                 nwiso: 3
     namelist_dir: /home/ollie/mandresm/esm_tools/namelists/.//echam/6.3.05p2-wiso/PI-CTRL
+    namelist_objs:
+        namelist.echam: &id003 f90nml.name
     namelists:
-    - namelist.echam
+        namelist.echam: *id003
     nproca: 6
     nprocar: 6
     nprocb: 6
@@ -1378,7 +1327,7 @@ echam:
     - sp6h
     - spim
     switch: 1
-    test1: *id003
+    test1: *id004
     thisrun_analysis_dir: /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/analysis/echam/
     thisrun_bin_dir: /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/bin/echam/
     thisrun_config_dir: /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/config/echam/
@@ -1682,11 +1631,8 @@ fesom:
                 restartflag: last
             paths:
                 ClimateDataPath: /home/ollie/mwerner/model_input/FESOM2/present-day/hydrography/
-                ForcingDataPath: remove_from_namelist
                 MeshPath: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/
-                OpbndPath: remove_from_namelist
                 ResultPath: /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/
-                TideForcingPath: remove_from_namelist
             restart_log:
                 restart_length: 1
                 restart_length_unit: m
@@ -1700,20 +1646,27 @@ fesom:
             boundary:
                 restore_s_surf: 0
             oce_dyn:
-                K_gm: remove_from_namelist
                 K_gm_max: 2000
             oce_tra:
                 K_hor: 3000
                 surf_relax_s: 0
     namelist_dir: /home/ollie/mwerner/work/AWIESM_2_1_LR_concurrent_rad/work_RC12_wiso/
+    namelist_objs:
+        namelist.config: &id005 f90nml.name
+        namelist.cvmix: &id006 f90nml.name
+        namelist.forcing: &id007 f90nml.name
+        namelist.ice: &id008 f90nml.name
+        namelist.icepack: &id009 f90nml.name
+        namelist.io: &id010 f90nml.name
+        namelist.oce: &id011 f90nml.name
     namelists:
-    - namelist.config
-    - namelist.forcing
-    - namelist.oce
-    - namelist.ice
-    - namelist.io
-    - namelist.cvmix
-    - namelist.icepack
+        namelist.config: *id005
+        namelist.cvmix: *id006
+        namelist.forcing: *id007
+        namelist.ice: *id008
+        namelist.icepack: *id009
+        namelist.io: *id010
+        namelist.oce: *id011
     nproc: 288
     nx: 126858
     old_mesh_format: false
@@ -1861,8 +1814,33 @@ general:
         scriptname: PI_ctrl_awiesm-2.1-wiso.yaml
         started_from: /work/ollie/mandresm/testing/run/awiesm/PI_ctrl_awiesm-2.1-wiso/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
+    compute_recipe:
+    - venv_bootstrap
+    - _create_setup_folders
+    - _create_component_folders
+    - initialize_experiment_logfile
+    - copy_tools_to_thisrun
+    - compile_model
+    - _copy_preliminary_files_from_experiment_to_thisrun
+    - _show_simulation_info
+    - create_new_files
+    - create_hosing_files
+    - prepare_coupler_files
+    - add_batch_hostfile
+    - assemble
+    - log_used_files
+    - copy_files_to_thisrun
+    - modify_namelists
+    - modify_files
+    - copy_files_to_work
+    - write_simple_runscript
+    - report_missing_files
+    - _write_finalized_config
+    - database_entry
+    - submit
     compute_time: 01:00:00
     coupled_setup: true
     coupler: oasis3mct
@@ -1991,7 +1969,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 193367
+    jobid: 132453
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false
@@ -2026,6 +2004,22 @@ general:
     - restart_out
     post_time: 00:05:00
     postprocessing: true
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '2000-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -2075,6 +2069,7 @@ general:
     - 44640
     - 2678400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -2289,6 +2284,8 @@ hdmodel:
         unsure, please contact redmine....'
     lresume: false
     model: hdmodel
+    namelist_objs: {}
+    namelists: {}
     other_date: '2001-01-31T23:52:30'
     parent_date: '2000-12-31T23:52:30'
     parent_expid: PI_ctrl_awiesm-2.1-wiso
@@ -2586,14 +2583,14 @@ jsbach:
     model_dir: /work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-wiso/echam-6.3.05p2-wiso
     namelist_changes:
         namelist.jsbach:
-            hydrology_ctl:
-                gethd: remove_from_namelist
-                puthd: remove_from_namelist
+            hydrology_ctl: {}
             jsbach_ctl:
                 use_dynveg: true
     namelist_dir: /home/ollie/mandresm/esm_tools/namelists/.//jsbach/3.20/PI-CTRL/no_dynveg
+    namelist_objs:
+        namelist.jsbach: &id012 f90nml.name
     namelists:
-    - namelist.jsbach
+        namelist.jsbach: *id012
     no_dynveg_file_ending: ''
     other_date: '2001-01-31T23:52:30'
     outdata_intermediate: {}
@@ -2920,6 +2917,8 @@ oasis3mct:
     mct_version: 2.8
     model: oasis3mct
     model_dir: /work/ollie/mandresm/testing//comp/awiesm/awiesm-2.1-wiso/oasis
+    namelist_objs: {}
+    namelists: {}
     norestart: F
     o2a_lag: 1800
     oasis_date_stamp: ''

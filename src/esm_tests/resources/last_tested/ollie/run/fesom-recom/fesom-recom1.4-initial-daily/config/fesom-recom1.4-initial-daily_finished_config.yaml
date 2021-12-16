@@ -39,6 +39,7 @@ computer:
         F77: '"mpiifort -mkl"'
         FC: '"mpiifort -mkl"'
         HDF5ROOT: $HDF5_ROOT
+        IO_LIB_ROOT: ''
         LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
         LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         LC_ALL: en_US.UTF-8
@@ -481,11 +482,8 @@ fesom:
                 output_length: 1
                 output_length_unit: d
                 output_length_unit_restart: d
-                restart_length: remove_from_namelist
-                restart_length_unit: remove_from_namelist
                 restartflag: last
-            mesh_def:
-                part_format: remove_from_namelist
+            mesh_def: {}
             paths:
                 ClimateDataPath: /work/ollie/pool/FESOM//hydrography/
                 ForcingDataPath: /work/ollie/projects/MarESys/forcing_clim61/
@@ -498,11 +496,7 @@ fesom:
                 run_length_unit: d
                 step_per_day: 96
         namelist.diag:
-            diag_flag:
-                diag_mesh: remove_from_namelist
-                diag_oce_KE: remove_from_namelist
-                diag_oce_Kv: remove_from_namelist
-                diag_oce_energy_conv: remove_from_namelist
+            diag_flag: {}
         namelist.forcing:
             forcing_bulk:
                 AOMIP_drag_coeff: true
@@ -552,12 +546,18 @@ fesom:
                 Kh0: 800
                 brine_rejection_param: false
     namelist_dir: /home/ollie/mandresm/esm_tools/namelists/.//fesom
+    namelist_objs:
+        namelist.config: &id002 f90nml.name
+        namelist.diag: &id003 f90nml.name
+        namelist.forcing: &id004 f90nml.name
+        namelist.ice: &id005 f90nml.name
+        namelist.oce: &id006 f90nml.name
     namelists:
-    - namelist.config
-    - namelist.forcing
-    - namelist.oce
-    - namelist.ice
-    - namelist.diag
+        namelist.config: *id002
+        namelist.diag: *id003
+        namelist.forcing: *id004
+        namelist.ice: *id005
+        namelist.oce: *id006
     nproc: 288
     nx: 126859
     old_mesh_format: false
@@ -1137,6 +1137,7 @@ general:
         scriptname: fesom-recom1.4-initial-daily.yaml
         started_from: /work/ollie/mandresm/testing/run/fesom-recom/fesom-recom1.4-initial-daily/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
     compute_time: 00:10:00
@@ -1258,7 +1259,7 @@ general:
     - restart_in
     initial_date: '1958-01-01T00:00:00'
     inspect: null
-    jobid: 191069
+    jobid: 135641
     jobtype: prepcompute
     last_run_datestamp: 19571231-19571231
     last_run_in_chunk: false
@@ -1291,6 +1292,22 @@ general:
     - unknown
     - outdata
     - restart_out
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '1957-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -1338,6 +1355,7 @@ general:
     - 1440
     - 86400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -1641,8 +1659,10 @@ recom:
                 numofCO2cycles: 1
                 recom_restart: false
     namelist_dir: /home/ollie/mandresm/esm_tools/namelists/.//recom
+    namelist_objs:
+        namelist.recom: &id007 f90nml.name
     namelists:
-    - namelist.recom
+        namelist.recom: *id007
     numofCO2cycles: 1
     outdata_intermediate:
         AGGdia3d: /work/ollie/mandresm/testing/run/fesom-recom/fesom-recom1.4-initial-daily/run_19580101-19580101/outdata/recom/AGGdia3d_fesom_19580101.nc

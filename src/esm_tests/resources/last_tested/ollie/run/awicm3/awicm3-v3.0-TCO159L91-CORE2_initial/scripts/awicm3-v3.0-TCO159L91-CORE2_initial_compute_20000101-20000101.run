@@ -32,10 +32,11 @@ export MPIFC=mpiifort
 export MPICC=mpiicc
 export CC=mpiicc
 export CXX=mpiicpc
-export HDF5ROOT=$HDF5_ROOT
-export NETCDFFROOT=$NETCDF_DIR
-export NETCDFROOT=$NETCDF_DIR
-export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export IO_LIB_ROOT=/work/ollie/jstreffi/software/HPC_libraries/intel2018.0.5_intelmpi_18.0.4_20210804
+export HDF5ROOT=$IO_LIB_ROOT
+export NETCDFFROOT=$IO_LIB_ROOT
+export NETCDFROOT=$IO_LIB_ROOT
+export NETCDF_Fortran_INCLUDE_DIRECTORIES=$NETCDFFROOT/include
 export NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDFROOT/include
 export NETCDF_CXX_LIBRARIES=$NETCDFROOT/lib
 export PERL5LIB=/usr/lib64/perl5
@@ -46,12 +47,17 @@ export ZLIBROOT=/usr
 export MPIROOT=${I_MPI_ROOT}/intel64
 export MPI_LIB=$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
 export PATH=/work/ollie/jhegewal/sw/cmake/bin:$PATH
-export GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"
+export PATH=$IO_LIB_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+export SZIPROOT=$IO_LIB_ROOT
+export HDF5_ROOT=$HDF5ROOT
+export ECCODESROOT=$IO_LIB_ROOT
+export HDF5_C_INCLUDE_DIRECTORIES=$HDF5_ROOT/include
+export NETCDF_C_INCLUDE_DIRECTORIES=$NETCDFROOT/include
+export OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"
 export OIFS_FFIXED=""
-export GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"
+export GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2"
 export DR_HOOK_IGNORE_SIGNALS=-1
-export PATH=$GRIBAPIROOT/bin:$PATH
 export OMP_SCHEDULE=STATIC
 export OMP_STACKSIZE=128M
 export ACCOUNT=None
@@ -74,7 +80,7 @@ unset SLURM_ARBITRARY_NODELIST
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 191903 - start >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 135942 - start >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
 
 cd /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/work/
 
@@ -114,6 +120,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/scripts/
 esm_runscripts awicm3-v3.0-TCO159L91-CORE2_initial.yaml -e awicm3-v3.0-TCO159L91-CORE2_initial -t observe_compute -p ${process} -s 20000101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 191903 - done >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 135942 - done >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
 
 wait

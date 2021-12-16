@@ -56,8 +56,8 @@ cc: cc
 cxx: CC
 
 module_actions:
-        #- "unload craype"
-        #- "load craype/2.6.2"
+        - "unload craype"
+        - "load craype/2.6.2"
         - "load PrgEnv-cray/6.0.4"
         - "load alps pbs"
         - "load cray-mpich/7.7.3"

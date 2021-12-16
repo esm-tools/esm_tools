@@ -625,7 +625,7 @@ class batch_system:
             Dictionary containing the information about the experiment.
         """
         if config["computer"].get("heterogeneous_parallelization", False):
-            user_note(
+            user_error(
                 "heterogeneous_parallelization variable",
                 (
                     "Since version 6.0, ``heterogeneous_parallelization`` variable "

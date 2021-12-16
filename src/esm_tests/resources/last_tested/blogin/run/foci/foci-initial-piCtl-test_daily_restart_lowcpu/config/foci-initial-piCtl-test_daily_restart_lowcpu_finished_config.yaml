@@ -171,6 +171,7 @@ echam:
         available_versions:
         - 6.3.05p2
         - 6.3.05p2-foci
+        - 6.3.05p2-foci_oasismct4
         - 6.3.02p4
         - 6.3.04p1-esm_interface
         - 6.3.05p2-concurrent_radiation
@@ -217,6 +218,9 @@ echam:
                 git-repository: https://gitlab.awi.de/pgierz/echam6.git
             6.3.05p2-foci:
                 branch: esm-tools
+                git-repository: https://git.geomar.de/foci/src/echam.git
+            6.3.05p2-foci_oasismct4:
+                branch: esm-tools-oasis3mct4
                 git-repository: https://git.geomar.de/foci/src/echam.git
             6.3.05p2-wiso:
                 branch: wiso
@@ -541,7 +545,7 @@ echam:
         echam: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam
         echam_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_echam.codes
         echam_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/echam/restart_foci-initial-piCtl-test_daily_restart_lowcpu_echam.nc
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/FOCI_RESTART/unset//echam6/
     ini_parent_exp_id: unset
     input_dir: /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008
@@ -610,7 +614,6 @@ echam:
                 nprocb: 4
             runctl:
                 delta_time: 450
-                dt_resume: remove_from_namelist
                 dt_start:
                 - 1849
                 - 12
@@ -635,8 +638,10 @@ echam:
                 - last
                 - 0
     namelist_dir: /home/hbkmandr/esm_tools/namelists/.//echam/6.3.05p2-foci/PI-CTRL
+    namelist_objs:
+        namelist.echam: &id002 f90nml.name
     namelists:
-    - namelist.echam
+        namelist.echam: *id002
     nproca: 8
     nprocar: 0
     nprocb: 4
@@ -896,6 +901,7 @@ general:
     available_versions:
     - default
     - agrif
+    - agrif_oasismct4
     base_dir: /scratch/usr/hbkmandr/testing//run/foci/
     batch: slurm
     calendar: esm_calendar object with allowed leap years
@@ -916,6 +922,7 @@ general:
         scriptname: foci-initial-piCtl-test_daily_restart_lowcpu.yaml
         started_from: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
     compute_time: 00:15:00
@@ -1040,13 +1047,12 @@ general:
     - config
     - restart_in
     ini_nemo_restart_steps: 26297472
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset/
     ini_parent_exp_id: unset
-    ini_string_parent_date: '1850-01-01'
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 191021
+    jobid: 264123
     jobtype: prepcompute
     last_run_datestamp: 18491231-18491231
     last_run_in_chunk: false
@@ -1084,6 +1090,22 @@ general:
     pool_dir: /scratch/usr/shkifmsw/foci_input2
     post_time: 00:05:00
     postprocessing: 0
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prev_date: '1849-12-31T00:00:00'
     profile: false
     relevant_filetypes:
@@ -1133,6 +1155,7 @@ general:
     - 1440
     - 86400
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -1323,7 +1346,7 @@ hdmodel:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../hdmodel/
     ini_parent_exp_id: foci-initial-piCtl-test_daily_restart_lowcpu
     ini_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../hdmodel/
@@ -1347,6 +1370,8 @@ hdmodel:
         unsure, please contact redmine....'
     lresume: false
     model: hdmodel
+    namelist_objs: {}
+    namelists: {}
     other_date: '1850-01-01T23:52:30'
     parent_date: '1849-12-31T23:52:30'
     parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu
@@ -1599,7 +1624,7 @@ jsbach:
         yasso: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso
         yasso_codes: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/foci-initial-piCtl-test_daily_restart_lowcpu_185001.02_yasso.codes
         yasso_restart: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/jsbach/restart_foci-initial-piCtl-test_daily_restart_lowcpu_yasso.nc
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/JSBACH/FOCI_RESTART/unset//jsbach/
     ini_parent_exp_id: unset
     ini_restart_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/restart/echam//../jsbach/
@@ -1632,8 +1657,10 @@ jsbach:
     model: jsbach
     model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/echam-6.3.05p2-foci
     namelist_dir: /home/hbkmandr/esm_tools/namelists/.//jsbach/3.20p1/PI-CTRL/dynveg
+    namelist_objs:
+        namelist.jsbach: &id003 f90nml.name
     namelists:
-    - namelist.jsbach
+        namelist.jsbach: *id003
     no_dynveg_file_ending: _no-dynveg
     other_date: '1850-01-01T23:52:30'
     outdata_intermediate: {}
@@ -1966,7 +1993,7 @@ nemo:
             ny: 511
             oasis_grid_type: LR
     hosing: false
-    ini_parent_date: '1849-12-31T23:30:00'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset//nemo/
     ini_parent_exp_id: unset
     ini_restart_steps: 26297472
@@ -2100,13 +2127,20 @@ nemo:
                 ln_rsttr: false
                 nn_rsttr: 2
     namelist_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/nemo-ORCA05_LIM2_KCM_AOW/CONFIG/ORCA05_LIM2_KCM_AOW/EXP00
+    namelist_objs:
+        1_namelist_cfg: &id004 f90nml.name
+        1_namelist_ice_cfg: &id005 f90nml.name
+        1_namelist_top_cfg: &id006 f90nml.name
+        namelist_cfg: &id007 f90nml.name
+        namelist_ice_cfg: &id008 f90nml.name
+        namelist_top_cfg: &id009 f90nml.name
     namelists:
-    - namelist_cfg
-    - namelist_top_cfg
-    - namelist_ice_cfg
-    - 1_namelist_cfg
-    - 1_namelist_top_cfg
-    - 1_namelist_ice_cfg
+        1_namelist_cfg: *id004
+        1_namelist_ice_cfg: *id005
+        1_namelist_top_cfg: *id006
+        namelist_cfg: *id007
+        namelist_ice_cfg: *id008
+        namelist_top_cfg: *id009
     nest1: false
     nest_refinement: 3
     newstep: 48
@@ -2228,7 +2262,7 @@ oasis3mct:
     - 4.0-oifsdeck
     - 4.0-awicm-frontiers
     - 4.0-awicm-3.0
-    branch: '2.8'
+    branch: oasis3mct2.8-foci
     cf_name_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/oasis
     clean_command: rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a
     comp_command: mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include
@@ -2242,6 +2276,10 @@ oasis3mct:
         cf: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/cf_name_table.txt
         namcouple: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/work/namcouple
     coupling_directions:
+        atmo->agr1:
+            export_mode: EXPORTED
+            lag: 450
+            seq: 3
         atmo->opac:
             export_mode: EXPORTED
             lag: 450
@@ -2262,6 +2300,36 @@ oasis3mct:
             -   mapping:
                     map_regrid_on: src
                     mapname: rmp_atmo_to_opat_BICUBIC_D_T63_ORCA05.nc
+            time_transformation: instant
+        bilinear:
+            remapping:
+            -   bilinear:
+                    nb_of_search_bins: 1
+                    search_bin: latitude
+            time_transformation: instant
+        bilinear_average:
+            remapping:
+            -   bilinear:
+                    nb_of_search_bins: 1
+                    search_bin: latitude
+            time_transformation: average
+        bilinear_glbpos:
+            postprocessing:
+                conserv:
+                    method: glbpos
+            remapping:
+            -   bilinear:
+                    nb_of_search_bins: 1
+                    search_bin: latitude
+            time_transformation: instant
+        bilinear_global:
+            postprocessing:
+                conserv:
+                    method: global
+            remapping:
+            -   bilinear:
+                    nb_of_search_bins: 1
+                    search_bin: latitude
             time_transformation: instant
         conserv:
             remapping:
@@ -2312,6 +2380,40 @@ oasis3mct:
             -   mapping:
                     map_regrid_on: src
                     mapname: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_T63_ORCA05.nc
+            time_transformation: instant
+        gauswgt:
+            remapping:
+            -   gauswgt:
+                    nb_of_neighbours: 10
+                    search_bin: latitude
+                    weight: 0.15
+            time_transformation: instant
+        gauswgt_average:
+            remapping:
+            -   gauswgt:
+                    nb_of_neighbours: 10
+                    search_bin: latitude
+                    weight: 0.15
+            time_transformation: average
+        gauswgt_glbpos:
+            postprocessing:
+                conserv:
+                    method: glbpos
+            remapping:
+            -   gauswgt:
+                    nb_of_neighbours: 10
+                    search_bin: latitude
+                    weight: 0.15
+            time_transformation: instant
+        gauswgt_global:
+            postprocessing:
+                conserv:
+                    method: global
+            remapping:
+            -   gauswgt:
+                    nb_of_neighbours: 10
+                    search_bin: latitude
+                    weight: 0.15
             time_transformation: instant
     coupling_target_fields:
         flxatmos:
@@ -2429,7 +2531,7 @@ oasis3mct:
             init_to_exp: copy
             run_to_work: copy
             work_to_run: copy
-    git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+    git-repository: https://git.geomar.de/foci/src/oasis3mct.git
     ignore_intermediate:
         nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/ignore/oasis3mct/nout.000000
     ignore_sources:
@@ -2440,7 +2542,7 @@ oasis3mct:
         lucia: lucia.*
     ignore_targets:
         nout: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/ignore/oasis3mct/nout.000000
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//
     ini_parent_exp_id: unset
     input_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05/
@@ -2494,6 +2596,8 @@ oasis3mct:
     mct_version: 2.8
     model: oasis3mct
     model_dir: /scratch/usr/hbkmandr/testing//comp/foci/foci-default/oasis
+    namelist_objs: {}
+    namelists: {}
     norestart: F
     o2a_lag: 1800
     oasis_date_stamp: ''
@@ -2614,7 +2718,7 @@ oasis3mct:
         O_SnwTck_oceanx_05.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_SnwTck_oceanx_05.nc
         O_TepIce_oceanx_03.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_TepIce_oceanx_03.nc
         O_dQnsdT_oceanx_19.nc: /scratch/usr/hbkmandr/testing/run/foci/foci-initial-piCtl-test_daily_restart_lowcpu/outdata/oasis3mct/O_dQnsdT_oceanx_19.nc
-    parent_date: '1849-12-31T23:52:30'
+    parent_date: '18491231'
     parent_expid: unset
     parent_restart_dir: /scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05//
     prev_date: '1849-12-31T23:45:00'
@@ -2670,7 +2774,7 @@ oasis3mct:
     thisrun_viz_dir: /scratch/usr/hbkmandr/testing//run/foci//foci-initial-piCtl-test_daily_restart_lowcpu/run_18500101-18500101/viz/oasis3mct/
     time_step: 900
     use_lucia: false
-    version: 2.8
+    version: foci
 xios:
     all_filetypes:
     - analysis
@@ -2827,7 +2931,7 @@ xios:
         xios_int: xios_interpolation_weights*
         xios_out: xios*.out
     ignore_targets: {}
-    ini_parent_date: '1849-12-31T23:52:30'
+    ini_parent_date: '18491231'
     ini_parent_dir: /scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/unset//xios
     ini_parent_exp_id: unset
     install_bins: bin/xios.x
@@ -2840,6 +2944,8 @@ xios:
         License: Please make sure you have a licence to use XIOS. In case you are unsure, please contact redmine...
         Website: https://portal.enes.org/models/software-tools/xios
     model: xios
+    namelist_objs: {}
+    namelists: {}
     nproc: 8
     parent_date: '1850-01-01T00:00:00'
     parent_expid: foci-initial-piCtl-test_daily_restart_lowcpu

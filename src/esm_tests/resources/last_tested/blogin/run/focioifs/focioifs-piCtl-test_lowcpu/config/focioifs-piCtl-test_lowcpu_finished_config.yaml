@@ -210,6 +210,7 @@ general:
         scriptname: focioifs-piCtl-test_lowcpu.yaml
         started_from: /scratch/usr/hbkmandr/testing/run/focioifs/focioifs-piCtl-test_lowcpu/scripts/
         update: false
+        update_filetypes: []
         use_venv: false
         verbose: false
     compute_time: 01:00:00
@@ -340,7 +341,7 @@ general:
     ini_parent_exp_id: unset
     initial_date: '1850-01-01T00:00:00'
     inspect: null
-    jobid: 191278
+    jobid: 264170
     jobtype: prepcompute
     last_run_datestamp: 18491227-18491231
     last_run_in_chunk: false
@@ -380,6 +381,22 @@ general:
     pool_dir: /scratch/usr/shkifmsw/foci_input2
     post_time: 00:05:00
     postprocessing: false
+    potentially_reusable_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - couple
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
     prepcompute_recipe:
     - compile_model
     - _show_simulation_info
@@ -451,6 +468,7 @@ general:
     - 7200
     - 432000
     update: false
+    update_filetypes: []
     use_database: false
     use_venv: false
     valid_model_names:
@@ -1932,31 +1950,31 @@ oifs:
         choose_computer.name:
             aleph:
                 add_export_vars:
-                - OIFS_GRIB_API_INCLUDE="-I$ECCODESROOT/include"
-                - OIFS_GRIB_API_LIB="-L$ECCODESROOT/lib -leccodes_f90 -leccodes"
-                - OIFS_GRIB_INCLUDE="$OIFS_GRIB_API_INCLUDE"
-                - OIFS_GRIB_LIB="$OIFS_GRIB_API_LIB"
-                - OIFS_GRIB_API_BIN="$ECCODESROOT/bin"
-                - GRIB_SAMPLES_PATH="$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"
-                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
-                - OIFS_FFTW_INCLUDE='-I$FFTW_INC'
-                - OIFS_FFTW_LIB='-L$FFTW_DIR -ldfftw -ldrfftw'
-                - OIFS_OASIS_BASE=$(pwd)/oasis
-                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
-                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
-                - OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include
-                - OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"
-                - OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include
-                - OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"
-                - OIFS_FC=$FC
-                - OIFS_FFLAGS="-O2 -emf -hthread1 -hflex_mp=conservative -hfp1 -hadd_paren -hbyteswapio -J./ -hcpu=x86-skylake -U_CRAYFTN"
-                - OIFS_FFIXED="-s real64"
-                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
-                - OIFS_LFLAGS="-dynamic -hbyteswapio"
-                - OIFS_CC=$CC
-                - OIFS_CFLAGS="-emf -O2 -hcpu=x86-skylake"
-                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
-                - OIFS_XIOS_LIB_NAME=none
+                    GRIB_SAMPLES_PATH: '"$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2/"'
+                    LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
+                    OIFS_CC: $CC
+                    OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+                    OIFS_CFLAGS: '"-emf -O2 -hcpu=x86-skylake"'
+                    OIFS_FC: $FC
+                    OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
+                    OIFS_FFIXED: '"-s real64"'
+                    OIFS_FFLAGS: '"-O2 -emf -hthread1 -hflex_mp=conservative -hfp1 -hadd_paren -hbyteswapio -J./ -hcpu=x86-skylake -U_CRAYFTN"'
+                    OIFS_FFTW_INCLUDE: '''-I$FFTW_INC'''
+                    OIFS_FFTW_LIB: '''-L$FFTW_DIR -ldfftw -ldrfftw'''
+                    OIFS_GRIB_API_BIN: '"$ECCODESROOT/bin"'
+                    OIFS_GRIB_API_INCLUDE: '"-I$ECCODESROOT/include"'
+                    OIFS_GRIB_API_LIB: '"-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
+                    OIFS_GRIB_INCLUDE: '"$OIFS_GRIB_API_INCLUDE"'
+                    OIFS_GRIB_LIB: '"$OIFS_GRIB_API_LIB"'
+                    OIFS_LFLAGS: '"-dynamic -hbyteswapio"'
+                    OIFS_NETCDFF_INCLUDE: -I$NETCDF_DIR/include
+                    OIFS_NETCDFF_LIB: '"-L$NETCDF_DIR/lib -lnetcdff"'
+                    OIFS_NETCDF_INCLUDE: -I$NETCDF_DIR/include
+                    OIFS_NETCDF_LIB: '"-L$NETCDF_DIR/lib -lnetcdf"'
+                    OIFS_OASIS_BASE: $(pwd)/oasis
+                    OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                    OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+                    OIFS_XIOS_LIB_NAME: none
             blogin:
                 add_export_vars:
                 - LAPACK_LIB='-mkl=sequential'
@@ -2117,31 +2135,41 @@ oifs:
                 compiler_mpi: intel2020_impi2020
             ollie:
                 add_export_vars:
-                - LAPACK_LIB_DEFAULT="-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
-                - GRIBAPIROOT=/home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
-                - LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}"$GRIBAPIROOT/lib"
-                - GRIB_SAMPLES_PATH=$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2
-                - OIFS_GRIB_API_INCLUDE=-I$GRIBAPIROOT/include
-                - OIFS_GRIB_API_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
-                - OIFS_GRIB_INCLUDE=-I$GRIBAPIROOT/include
-                - OIFS_GRIB_LIB="-L$GRIBAPIROOT/lib -lgrib_api_f90 -lgrib_api"
-                - OIFS_GRIB_API_BIN="$GRIBAPIROOT/bin"
-                - OIFS_GRIB_BIN="$GRIBAPIROOT/bin"
-                - OIFS_OASIS_BASE=$(pwd)/oasis
-                - OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
-                - OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
-                - OIFS_NETCDF_INCLUDE=-I$NETCDF_DIR/include
-                - OIFS_NETCDF_LIB="-L$NETCDF_DIR/lib -lnetcdf"
-                - OIFS_NETCDFF_INCLUDE=-I$NETCDF_DIR/include
-                - OIFS_NETCDFF_LIB="-L$NETCDF_DIR/lib -lnetcdff"
-                - OIFS_FC=$FC
-                - OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"
-                - OIFS_FFIXED=""
-                - OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"
-                - OIFS_LFLAGS=-qopenmp
-                - OIFS_CC=$CC
-                - OIFS_CFLAGS="-fp-model precise -O3 -qopenmp -xCORE_AVX2 -g -traceback -qopt-report=0"
-                - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                    ECCODESROOT: $IO_LIB_ROOT
+                    ESM_NETCDF_C_DIR: $NETCDFROOT
+                    ESM_NETCDF_F_DIR: $NETCDFFROOT
+                    HDF5ROOT: $IO_LIB_ROOT
+                    HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                    HDF5_ROOT: $HDF5ROOT
+                    IO_LIB_ROOT: /work/ollie/jstreffi/software/HPC_libraries/intel2018.0.5_intelmpi_18.0.4_20210804
+                    LAPACK_LIB_DEFAULT: '"-L$MKLROOT/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+                    LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+                    NETCDFFROOT: $IO_LIB_ROOT
+                    NETCDFROOT: $IO_LIB_ROOT
+                    NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    OIFS_CC: $CC
+                    OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS _OPENMP"'
+                    OIFS_CFLAGS: '"-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0 -qopenmp"'
+                    OIFS_FC: $FC
+                    OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
+                    OIFS_FFIXED: '""'
+                    OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -xCORE_AVX2 -g -traceback -convert big_endian"'
+                    OIFS_GRIB_API_BIN: '"$ECCODESROOT/bin"'
+                    OIFS_GRIB_API_INCLUDE: '"-I$ECCODESROOT/include"'
+                    OIFS_GRIB_API_LIB: '"-L$ECCODESROOT/lib -leccodes_f90 -leccodes"'
+                    OIFS_GRIB_INCLUDE: '"$OIFS_GRIB_API_INCLUDE"'
+                    OIFS_GRIB_LIB: '"$OIFS_GRIB_API_LIB"'
+                    OIFS_LFLAGS: '"$OIFS_MPI_LIB -qopenmp"'
+                    OIFS_NETCDFF_INCLUDE: '"-I$NETCDFFROOT/include"'
+                    OIFS_NETCDFF_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    OIFS_NETCDF_INCLUDE: '"-I$NETCDFROOT/include"'
+                    OIFS_NETCDF_LIB: '"-L$NETCDFROOT/lib -lnetcdf"'
+                    OIFS_OASIS_BASE: $(pwd)/oasis
+                    OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+                    OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+                    SZIPROOT: $IO_LIB_ROOT
                 add_module_actions:
                 - unload gribapi
         iolibraries: geomar_libs
@@ -2820,6 +2848,7 @@ oifs:
     outdata_sources: {}
     outdata_sources_wild_card:
         ICMUA: ICMUAECE3+*
+        awi_cm3: awi_cm3*
         oifsnc: ECE3_*_18500101_*.nc
     outdata_targets: {}
     output: default
@@ -2896,10 +2925,10 @@ oifs:
         choose_computer.name:
             aleph:
                 add_export_vars:
-                - GRIB_SAMPLES_PATH="$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"
-                - DR_HOOK_IGNORE_SIGNALS=-1
-                - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
-                - PATH=$ECCODESROOT/bin:${PATH}
+                    DR_HOOK_IGNORE_SIGNALS: -1
+                    GRIB_SAMPLES_PATH: '"$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2/"'
+                    LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$ECCODESROOT/lib:$PROJ4_DIR/lib
+                    PATH: $ECCODESROOT/bin:${PATH}
             blogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2954,13 +2983,23 @@ oifs:
             ollie:
                 add_export_vars:
                     DR_HOOK_IGNORE_SIGNALS: -1
-                    GRIBAPIROOT: /home/ollie/jstreffi/ecmwf/grib_api_intel_hdf5_1.10.2_gnu
-                    GRIB_SAMPLES_PATH: '"$GRIBAPIROOT/share/grib_api/ifs_samples/grib1_mlgrib2"'
-                    LD_LIBRARY_PATH: '"$LD_LIBRARY_PATH:$GRIBAPIROOT/lib"'
+                    ECCODESROOT: $IO_LIB_ROOT
+                    GRIB_SAMPLES_PATH: '"$ECCODESROOT/share/eccodes/ifs_samples/grib1_mlgrib2"'
+                    HDF5ROOT: $IO_LIB_ROOT
+                    HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                    HDF5_ROOT: $HDF5ROOT
+                    IO_LIB_ROOT: /work/ollie/jstreffi/software/HPC_libraries/intel2018.0.5_intelmpi_18.0.4_20210804
+                    LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+                    NETCDFFROOT: $IO_LIB_ROOT
+                    NETCDFROOT: $IO_LIB_ROOT
+                    NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                     OIFS_FFIXED: '""'
                     OMP_SCHEDULE: STATIC
                     OMP_STACKSIZE: 128M
-                    PATH[(1)]: $GRIBAPIROOT/bin:$PATH
+                    PATH[(2)]: $IO_LIB_ROOT/bin:$PATH
+                    SZIPROOT: $IO_LIB_ROOT
                 add_module_actions:
                 - unload gribapi
         iolibraries: geomar_libs

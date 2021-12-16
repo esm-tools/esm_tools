@@ -24,7 +24,7 @@
     delta_time = 450
     putdata = 1, 'days', 'last', 0
     trigfiles = 1, 'months', 'first', 0
-    nproma = 32
+    nproma = 8
     lcouple = .true.
     getocean = 24, 'steps', 'exact', 0
     putocean = 24, 'steps', 'exact', -450

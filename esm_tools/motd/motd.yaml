@@ -98,3 +98,10 @@ release6.0_event:
                 Please, \x1b[93mignore this lines\x1b[0m, as release 6.0 won't be available until 17.12.2021."
         action: DELAY(2)
         announcement: true
+
+release6.0:
+        package: "esm_tools"
+        versions: "<6.0.0"
+        message: "\x1b[1m\x1b[91mPlease, do not use esm_versions to upgrade ESM-Tools, we are currently working on testing version 6.0. The release will be available in the morning of the 17.12.2021.\x1b[0m\n"
+        action: DELAY(2)
+        announcement: true

@@ -37,7 +37,7 @@ def prepare_environment(config):
             "iterative_coupling_atmosphere_pism_ablation_method": config["pism"]["ablation_method"],
             "DEBM_EXE": config["pism"]["debm_path"],
             "MY_OBLIQUITY": config["pism"]["debm_obl"], 
-            "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
+            "iterative_coupling_atmosphere_pism_regrid_method": config["pism"].get("regrid_method", "DOWNSCALE"), 
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
             #"RESTART_DIR_pism": config["pism"]["experiment_restart_in_dir"],

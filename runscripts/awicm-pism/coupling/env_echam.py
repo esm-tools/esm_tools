@@ -28,6 +28,7 @@ def prepare_environment(config):
             "MESH_PATH_FESOM": config["fesom"]["mesh_dir"],
             "HOSING_FILE_LANDICE_LOSS": config["fesom"].get("fwf_path"),
             "HOSING_CORRECTION": int(config["echam"]["hosing_correction"]),
+            "CELL_AREA_FESOM_FILE": config["fesom"].get("fesom_cell_area_file", "fesom.mesh.diag.nc"),
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

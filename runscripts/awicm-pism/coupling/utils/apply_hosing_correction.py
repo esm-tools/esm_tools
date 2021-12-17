@@ -14,8 +14,10 @@ if os.path.exists(cell_area_fesom_file):
     print(" * Loading total FESOM grid area from ", cell_area_fesom_file)
     fl = xr.open_dataset(cell_area_fesom_file, engine="netcdf4")
     print(" * Summing up FESOM grid areas")
-    total_FESOM_cell_area = fl.nod_area[0, :].sum().squeeze().values
-    #total_FESOM_cell_area = fl.cell_area[:].sum().squeeze().values
+    if "nod_area" in fl.variables:
+        total_FESOM_cell_area = fl.nod_area[0, :].sum().squeeze().values
+    elif "cell_area" in fl.variables:
+        total_FESOM_cell_area = fl.cell_area[:].sum().squeeze().values
     print(" * Total cell area = ", total_FESOM_cell_area)
 else:
     print(" * File does not exist!")

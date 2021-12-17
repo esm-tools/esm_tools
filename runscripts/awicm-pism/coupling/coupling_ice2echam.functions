@@ -20,7 +20,7 @@ ice2echam() {
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
         
         counter=0
-        COUNT_MAX=12
+        COUNT_MAX=30
         while [ ${counter} -lt ${COUNT_MAX} ]
         do
             echo "          * inside while loop "
@@ -307,19 +307,20 @@ set_glacial_mask_echam_restart_file() {
         cdo -s -selvar,glac ${ECHAM_RESTART_FILE} just_glac.nc 2>> cdo_stderr_ice2echam
         cdo -s -ifthenelse -setmisstoc,0 $dfile -chname,ice_mask,glac $ifile just_glac.nc just_glac_new.nc 2>> cdo_stderr_ice2echam
 
-        ncdump just_glac_new.nc | sed s/float/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
+        ncdump just_glac_new.nc | sed s/int/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
         # This multipliation transforms "float" into "double"
         ncap=${ncap:-ncap2} 
         $ncap -s "glac=glac*1.0000000000000;" \
         just_glac_new.nc \
         just_glac_new.tmp.nc
-        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc
+        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc 
 
-        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
-        ncatted -A -h -a history,global,d,, echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
-        #ncatted -h -a history_of_appended_files,global,d,, tmp ${ECHAM_RESTART_FILE}
-        rm tmp; rm echam_with_ice_mask.nc
+        mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
         ncrename -v ice_mask,glac $ifile
+        rm just_glac_new.nc
+        rm just_glac_new.tmp.nc
+        #rmlist="$rmlist ${COUPLE_DIR}/just_glac_new.nc"
+        #rmlist="$rmlist ${COUPLE_DIR}/just_glac_new.tmp.nc"
 }
 
 ## @fn set_glacial_mask_echam_make_dummy_jan_surf() 
@@ -775,8 +776,10 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         
         # Ensure that the pack binary is here:
         if [ ! -f pack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/pack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/pack .
+                #if [ -f ${FUNCTION_PATH}/utils/_build/pack ]; then
+                #        cp -v ${FUNCTION_PATH}/utils/_build/pack .
+                if [ -f ${FUNCTION_PATH}/pack ]; then
+                        cp -v ${FUNCTION_PATH}/pack .
                 else
                         echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
                         exit
@@ -841,8 +844,10 @@ set_glacial_mask_jsbach_update_restart_veg() {
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/unpack ./
+                #if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
+                #        cp -v ${FUNCTION_PATH}/utils/_build/unpack ./
+                if [ -f ${FUNCTION_PATH}/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/unpack ./
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit

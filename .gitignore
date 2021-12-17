@@ -125,3 +125,6 @@ configs/esm_software/esm_master/esm_master.pkl
 # ESM-Test local files
 src/esm_tests/test_config.yaml
 src/esm_tests/user_config.yaml
+
+# Smooth installation of version 6 even after having checkout release and pull
+esm_tools/__init__.py

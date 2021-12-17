@@ -156,6 +156,14 @@ choose_version:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
 
+                choose_general.iterative_coupling:
+                        True:
+                                choose_general.chunk_number:
+                                        1:
+                                                jsbach: jsbach
+                                        "*":
+                                                add_input_files:
+                                                        jsbach: jsbach_ismc
 
 
         "3.10":

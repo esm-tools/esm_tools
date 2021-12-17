@@ -217,6 +217,12 @@ choose_use_icebergs:
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
 
+            add_outdata_targets:
+                    buoys_track: "buoys_track.nc_${run_datestamp}"
+
+            add_outdata_sources:
+                    buoys_track: "buoys_track.nc"
+
             choose_use_icesheet_coupling:
                     true: 
                             choose_general.chunk_number:
@@ -226,7 +232,8 @@ choose_use_icebergs:
                                             iceberg_dir: "${general.experiment_couple_dir}"
             
                             input_sources:
-                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
+                                    #num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
+                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
             
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
@@ -337,13 +344,17 @@ choose_general.iterative_coupling:
                         "*":
                                 use_landice_water: True
                 
+                fwf_path: "${general.experiment_couple_dir}" 
+                
+                #choose_echam.hosing_correction:
+                #        true:
                 add_namelist_changes:
                             namelist.forcing:
                                     land_ice:
                                             use_landice_water: "${use_landice_water}"
                                             landice_start_mon: 1
                                             landice_end_mon: 12
-                                            fwf_path: "${general.experiment_couple_dir}" 
+                                            fwf_path: "${fwf_path}" 
         '*':
                 use_landice_water: False
 

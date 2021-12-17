@@ -129,33 +129,42 @@ restart_in_files:
         ice_restart: ice_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
 
 restart_in_in_workdir:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
+
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM
+
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM
 
 outdata_sources:
         "[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
@@ -164,11 +173,34 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-            ib_num_old: 0
-            ib_num_new: 0
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
             
+            choose_use_icesheet_coupling:
+                    true: 
+                            input_sources:
+                                    num_non_melted_icb_file: "${experiment_couple_dir}/num_non_melted_icb_file"
+            
+                            input_files:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                            input_in_work:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                    false: 
+                            iceberg_dir: "${ini_iceberg_dir}"
+            
+            add_namelist_changes:
+                    namelist.config:
+                            icebergs:
+                                    use_icesheet_coupling: "${use_icesheet_coupling}"
+
+            add_outdata_targets:
+                    buoys_track: "buoys_track.nc_${run_datestamp}"
+
+            add_outdata_sources:
+                    buoys_track: "buoys_track.nc"
+
             input_in_work:
                     longitude: "icb_longitude.dat"
                     latitude: "icb_latitude.dat"

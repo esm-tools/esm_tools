@@ -78,30 +78,34 @@ release5.1_esm_tools:
                 "
         action: DELAY(1)
 
-release6.0_event:
+release6.0:
         package: "esm_tools"
         versions: "<6.0.0"
-        message: "\x1b[1m\x1b[96mVERSION 6.0: RELEASE EVENT ON 17.12.2021 at 10:00\x1b[0m\n
+        message: "\x1b[1m\x1b[96mVERSION 6.0 NOW AVAILABLE!\x1b[0m\n
 
-                We are very happy to announce to you that we will be releasing version 6 of\n
-                ESM-Tools next Friday (\x1b[96m17/12/2021\x1b[0m). We will also be hosting the release event on\n
-                the same day, at \x1b[96m10 AM\x1b[0m on \x1b[96mwebex\x1b[0m: \x1b[4m\x1b[94mhttps://awi.webex.com/meet/deniz.ural\x1b[0m\n
+            We are very happy to announce the release \x1b[96m6\x1b[0m of \x1b[1m\x1b[96mESM-Tools\x1b[0m!\n
 
-                Join us for the release event to get to know more about the many new features and\n
-                improvements version 6.0 is coming with!\n
+            If you are already a user of ESM-Tools and you would like to upgrade your system,\n
+            please follow these steps:\n
+            \x1b[96m1.\x1b[0m Navigate to your \x1b[35mesm_tools\x1b[0m folder, and make sure the branch\n
+            \ \ \ \ you are in is clean (\x1b[35mgit status\x1b[0m should report no modified files)\n
+            \x1b[96m2.\x1b[0m Run \x1b[35mesm_versions upgrade\x1b[0m (you might have to run this command twice)\n
+            \x1b[96m3.\x1b[0m You’ll be asked some questions about the installation, answer\n
+            \ \ \ \ them using the \x1b[35marrows\x1b[0m on your keyboard\n
+            \x1b[96m4.\x1b[0m Enjoy the new version!\n
 
-                We hope to see you all there.\n
+            \x1b[96mNew components and coupled setups\x1b[0m\n
+            - AWICM3\n
+            - AWICM-1-REcoM\n
+            - AWIESM-2 with\n
+                - WISO\n
+                - REcoM\n
+            - VILMA-PISM\n
 
-                The ESM-Tools Team\n
-
-                \x1b[93mNOTE:\x1b[0m you might see right below a few lines with \x1b[93m'Upgrade this/all package by typing...'\x1b[0m.\n
-                Please, \x1b[93mignore this lines\x1b[0m, as release 6.0 won't be available until 17.12.2021."
-        action: DELAY(2)
+            \x1b[96mNew features\x1b[0m\n
+            - Workflow manager (postprocessing and offline coupling)\n
+            - Monorepository\n
+            - Automatic testing\n
+            - and many others...\n\n"
+        action: DELAY(1)
         announcement: true
-
-#release6.0:
-#        package: "esm_tools"
-#        versions: "<6.0.0"
-#        message: "\x1b[1m\x1b[91mPlease, do not use esm_versions to upgrade ESM-Tools, we are currently working on testing version 6.0. The release will be available in the morning of the 17.12.2021.\x1b[0m\n"
-#        action: DELAY(2)
-#        announcement: true

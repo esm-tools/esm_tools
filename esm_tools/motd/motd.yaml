@@ -87,12 +87,16 @@ release6.0:
 
             If you are already a user of ESM-Tools and you would like to upgrade your system,\n
             please follow these steps:\n
-            \x1b[96m1.\x1b[0m Navigate to your \x1b[35mesm_tools\x1b[0m folder, and make sure the branch\n
+            \x1b[96m1.\x1b[0m Make sure you have either \x1b[35mpython3\x1b[0m or \x1b[35manaconda3\x1b[0m modules loaded\n
+            \x1b[96m2.\x1b[0m Navigate to your \x1b[35mesm_tools\x1b[0m folder, and make sure the branch\n
             \ \ \ \ you are in is clean (\x1b[35mgit status\x1b[0m should report no modified files)\n
-            \x1b[96m2.\x1b[0m Run \x1b[35mesm_versions upgrade\x1b[0m (you might have to run this command twice)\n
-            \x1b[96m3.\x1b[0m You’ll be asked some questions about the installation, answer\n
+            \x1b[96m3.\x1b[0m Run \x1b[35mesm_versions upgrade\x1b[0m (you might have to run this command twice)\n
+            \x1b[96m4.\x1b[0m You’ll be asked some questions about the installation, answer\n
             \ \ \ \ them using the \x1b[35marrows\x1b[0m on your keyboard\n
-            \x1b[96m4.\x1b[0m Enjoy the new version!\n
+            \x1b[96m5.\x1b[0m Enjoy the new version!\n
+
+            Note that the last step of the installation might take up to 10 minutes in\n
+            \ \ \ \ some machines.\n
 
             \x1b[96mNew components and coupled setups\x1b[0m\n
             - AWICM3\n

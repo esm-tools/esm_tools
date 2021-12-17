@@ -25,7 +25,7 @@ class IcebergCalving:
         self.weights_dist = [0.4, 0.2, 0.15, 0.175, 0.05, 0.025]
         self.area_mean = [0.001, 0.01, 0.1, 1, 10, 100]
         self.area_min = 0
-        self.area_max = 2000
+        self.area_max = 1000
         self.scaling_factor = np.array([1, 1, 1, 1, 1, 1])
         self.thick = np.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
         self.depth = self.thick * 7/8
@@ -215,7 +215,7 @@ class IcebergCalving:
         # with corresponding share. 
        
         if area_tot > self.area_max:
-            area = np.random.uniform(bins[-1], self.area_max)
+            area = np.array([np.random.uniform(self.bins[-1], self.area_max)])
             vol = area * self.thick[-1]
             print("*** Total area too big. Calving of giant iceberg with area [km2] = ", area)
             area_tot_new = area_tot - area
@@ -246,6 +246,7 @@ class IcebergCalving:
                     area = area_new
                     vol = vol_new
                 else:
+                    print(" *** AREA = ", area)
                     area = np.concatenate((area, area_new), axis=0)
                     vol = np.concatenate((vol, vol_new), axis=0)
             

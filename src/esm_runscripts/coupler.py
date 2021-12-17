@@ -343,6 +343,8 @@ class coupler_class:
                             if not found_left or not found_right:
                                 sys.exit(0)
 
+                        export_mode = full_config[self.name].get("export_mode", "DEFAULT")
+
                         direction_info = None
                         if "coupling_directions" in full_config[self.name]:
                             if (
@@ -352,6 +354,9 @@ class coupler_class:
                                 direction_info = full_config[self.name][
                                     "coupling_directions"
                                 ][right_grid + "->" + left_grid]
+
+                                # Use export_mode from coupling_directions if set. Required for NEMO-AGRIF
+                                export_mode = direction_info.get("export_mode",export_mode)
                         transf_info = None
                         if "coupling_methods" in full_config[self.name]:
                             if (
@@ -362,11 +367,6 @@ class coupler_class:
                                     "coupling_methods"
                                 ][interpolation]
 
-                        if "export_mode" in full_config[self.name]:
-                            export_mode = full_config[self.name]["export_mode"]
-                        else:
-                            export_mode = "DEFAULT"
-                        # print("DEBUG: EXPORT_MODE: ",export_mode)
                         self.coupler.add_coupling(
                             lefts,
                             lgrid_info,

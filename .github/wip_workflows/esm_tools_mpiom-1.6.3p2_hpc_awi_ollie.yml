@@ -12,7 +12,7 @@ on:
 
 jobs:
     call-workflow:
-        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@monorepo_ci_test
+        uses: esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml
         with:
             model_name: mpiom
             model_version: 1.6.3p2

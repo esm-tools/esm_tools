@@ -67,8 +67,16 @@ jobs:
     - name: Build package
       run: python setup.py sdist bdist_wheel
     - name: Publish package
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      id: publish
+      if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Report Skip
+      if: (! startsWith(github.ref, 'refs/tags'))
+      run: |
+        echo "Publication to PyPI skipped!"
+        echo "Event Name: ${GITHUB_EVENT_NAME}"
+        echo "Event: ${GITHUB_EVENT}"
+        echo "Event Ref: ${GITHUB_REF}"

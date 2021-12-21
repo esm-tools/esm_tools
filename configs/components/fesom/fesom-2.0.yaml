@@ -224,15 +224,18 @@ choose_use_icebergs:
                     buoys_track: "buoys_track.nc"
 
             choose_use_icesheet_coupling:
-                    true: 
-                            choose_general.chunk_number:
-                                    1:
-                                            iceberg_dir: "${ini_iceberg_dir}"
+                    True: 
+                            choose_general.iterative_coupling:
+                                    True:
+                                            choose_general.chunk_number:
+                                                    1:
+                                                            iceberg_dir: "${ini_iceberg_dir}"
+                                                    "*":
+                                                            iceberg_dir: "${general.experiment_couple_dir}"
                                     "*":
-                                            iceberg_dir: "${general.experiment_couple_dir}"
+                                            iceberg_dir: "${ini_iceberg_dir}"
             
                             input_sources:
-                                    #num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
                                     num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
             
                             input_files:
@@ -241,14 +244,13 @@ choose_use_icebergs:
                             input_in_work:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
             
-                    false: 
+                    "*": 
                             iceberg_dir: "${ini_iceberg_dir}"
             
             add_namelist_changes:
                     namelist.config:
                             icebergs:
                                     use_icesheet_coupling: "${use_icesheet_coupling}"
-
 
             input_in_work:
                     longitude: "icb_longitude.dat"

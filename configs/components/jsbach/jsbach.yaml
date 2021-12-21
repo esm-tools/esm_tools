@@ -164,6 +164,8 @@ choose_version:
                                         "*":
                                                 add_input_files:
                                                         jsbach: jsbach_ismc
+                        "*":
+                                
 
 
         "3.10":

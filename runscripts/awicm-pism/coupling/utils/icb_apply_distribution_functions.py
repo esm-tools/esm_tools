@@ -401,44 +401,45 @@ class IcebergCalving:
                 felems = new_felems
                 ##############################################################
 
-                tmp = felems * int(len(ib_elems) / len(felems)) + felems[:len(ib_elems)%len(felems)]
-                felems = tmp
+                if len(felems) != 0:
+                    tmp = felems * int(len(ib_elems) / len(felems)) + felems[:len(ib_elems)%len(felems)]
+                    felems = tmp
    
-                with tqdm(total=len(self.df_agg), file=sys.stdout, desc='initialize icebergs') as pbar:
-                    for felem, index in zip(felems, ib_elems.index):
-                        ib_elem = ib_elems.loc[index]
-                        
-                        nod1, nod2, nod3 = self.elem2d.iloc[felem].values
-                        lon1, lat1, tmp = self.nod2d.loc[nod1].values
-                        lon2, lat2, tmp = self.nod2d.loc[nod2].values
-                        lon3, lat3, tmp = self.nod2d.loc[nod3].values
+                    with tqdm(total=len(self.df_agg), file=sys.stdout, desc='initialize icebergs') as pbar:
+                        for felem, index in zip(felems, ib_elems.index):
+                            ib_elem = ib_elems.loc[index]
+                            
+                            nod1, nod2, nod3 = self.elem2d.iloc[felem].values
+                            lon1, lat1, tmp = self.nod2d.loc[nod1].values
+                            lon2, lat2, tmp = self.nod2d.loc[nod2].values
+                            lon3, lat3, tmp = self.nod2d.loc[nod3].values
 
-                        r1 = random.random()
-                        r2 = random.random()
-                        
-                        lower_bound = 0.25
-                        upper_bound = 0.75
+                            r1 = random.random()
+                            r2 = random.random()
+                            
+                            lower_bound = 0.25
+                            upper_bound = 0.75
     
-                        r1 = r1 * (upper_bound - lower_bound) + lower_bound
-                        r2 = r2 * (upper_bound - lower_bound) + lower_bound
-                        #https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle
-                        try:
-                            lon = (1-np.sqrt(r1))*lon1 + (np.sqrt(r1)*(1-r2))*lon2 + (r2*np.sqrt(r1))*lon3
-                            lat = (1-np.sqrt(r1))*lat1 + (np.sqrt(r1)*(1-r2))*lat2 + (r2*np.sqrt(r1))*lat3
-                        except:
-                            break
-                       
-                        if ib_elems_loc.empty:
-                            ib_elems_loc = pd.DataFrame({"length": [ib_elem.length], 
-                                                        "depth": [ib_elem.depth],
-                                                        "scaling": [ib_elem.scaling],
-                                                        "lon": [lon], "lat": [lat]})
-                        else:
-                            ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": [ib_elem.length], 
-                                                                                "depth": [ib_elem.depth],
-                                                                                "scaling": [ib_elem.scaling],
-                                                                                "lon": [lon], "lat": [lat]})])
-                        pbar.update(1)
+                            r1 = r1 * (upper_bound - lower_bound) + lower_bound
+                            r2 = r2 * (upper_bound - lower_bound) + lower_bound
+                            #https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle
+                            try:
+                                lon = (1-np.sqrt(r1))*lon1 + (np.sqrt(r1)*(1-r2))*lon2 + (r2*np.sqrt(r1))*lon3
+                                lat = (1-np.sqrt(r1))*lat1 + (np.sqrt(r1)*(1-r2))*lat2 + (r2*np.sqrt(r1))*lat3
+                            except:
+                                break
+                           
+                            if ib_elems_loc.empty:
+                                ib_elems_loc = pd.DataFrame({"length": [ib_elem.length], 
+                                                            "depth": [ib_elem.depth],
+                                                            "scaling": [ib_elem.scaling],
+                                                            "lon": [lon], "lat": [lat]})
+                            else:
+                                ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": [ib_elem.length], 
+                                                                                    "depth": [ib_elem.depth],
+                                                                                    "scaling": [ib_elem.scaling],
+                                                                                    "lon": [lon], "lat": [lat]})])
+                            pbar.update(1)
                 pbar.update(1)
    
         np.savetxt(os.path.join(self.icb_path, "LON.dat"), ib_elems_loc.lon.values)

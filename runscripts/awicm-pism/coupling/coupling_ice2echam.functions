@@ -589,6 +589,8 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
 
         if [[ $sum_new_glaciers -eq 0 ]] && [[ $sum_new_land -eq 0 ]]; then
                 echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
+                newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+                ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
                 return
         fi
 
@@ -835,6 +837,8 @@ set_glacial_mask_jsbach_update_restart_veg() {
 
         if [[ $sum_new_glaciers -eq 0 ]] && [[ $sum_new_land -eq 0 ]]; then
                 echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
+                newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
+                ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
                 return
         fi
 

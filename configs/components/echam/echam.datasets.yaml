@@ -125,6 +125,9 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp585_@YEAR@.nc":
                         from: 2015
                         to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp585_2099.nc":
+                        from: 2100
+                        to: 2102
 
 choose_dataset:
         r0004:

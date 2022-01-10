@@ -68,6 +68,7 @@ general:
             - fesom-2.1-paleodyn-gamma+echam-6.3.05p2-concurrent_radiation-paleodyn-wiso
             wiso_code: true
             with_wiso: false
+            with_pico: false
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-wiso':
             couplings:
@@ -249,6 +250,15 @@ fesom:
                                 wiso_restart: wiso_restart
                         add_restart_out_files:
                                 wiso_restart: wiso_restart
+        choose_general.with_pico:
+            True:
+                add_namelist_changes:
+                    namelist.forcing:
+                        pico:
+                            use_pico: True
+                            gammaS: 1.e-4
+                            gammaT: 1.e-4
+
 
 
         choose_general.resolution:

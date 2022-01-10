@@ -63,10 +63,10 @@ general:
         - '2.1-wiso'
         - '2.1-recom'
         choose_version:
-          '2.1':
+          '2.1-gamma':
             couplings:
-            - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
-            wiso_code: false
+            - fesom-2.1-paleodyn-gamma+echam-6.3.05p2-concurrent_radiation-paleodyn-wiso
+            wiso_code: true
             with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-wiso':
@@ -210,6 +210,10 @@ fesom:
                 "2.1":
                         version: "2.1"
                         ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+                "2.1-paleodyn-gamma":
+                        # FIXME(PG): ....does that make sense? Choose version sets the version???
+                        version: "2.1-paleodyn-gamma"
+                        ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-wiso":
                         version: "2.1-wiso"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.

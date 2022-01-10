@@ -17,6 +17,7 @@ compile_infos:
         - 6.3.04p1-paleodyn
         - 6.3.04p1-recom-awicm
         - 6.3.05p2-concurrent_radiation-paleodyn
+        - 6.3.05p2-concurrent_radiation-paleodyn-wiso
         - 6.3.04p1
         - 6.3.05p2-wiso
 
@@ -69,6 +70,15 @@ compile_infos:
           6.3.05p2-foci_oasismct4:
             branch: esm-tools-oasis3mct4
             git-repository: https://git.geomar.de/foci/src/echam.git
+          6.3.05p2-concurrent_radiation-paleodyn-wiso:
+            # FIXME (PG): Currently, the wiso branch seems to have everything
+            # we want for both ice coupling as well as isotopes, but this
+            # should be renamed at some point:
+            branch: "wiso"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
+            destination: echam-6.3.05p2-concurrent_radiation-paleodyn-wiso
           6.3.05p2-wiso:
             branch: "wiso"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -91,7 +101,7 @@ metadata:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
                 Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
-                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
+                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at
                 https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
                 to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
 
@@ -107,7 +117,7 @@ executable: echam6
 version: 6.3.04p1
 resolution: T63
 scenario: "PI-CTRL"
-scenario_type: ${scenario} 
+scenario_type: ${scenario}
 postprocessing_stream: 'BOT ATM LOG'
 yr_perp_off: false
 transient_advance_forcing: false
@@ -410,17 +420,17 @@ choose_scenario:
                         MAC-SP: MAC-SP
 
         ssp585:
-                scenario_type: cmip6 
+                scenario_type: cmip6
         ssp370:
-                scenario_type: cmip6 
+                scenario_type: cmip6
         ssp126:
-                scenario_type: cmip6 
+                scenario_type: cmip6
         ssp245:
-                scenario_type: cmip6 
+                scenario_type: cmip6
         ssp534os:
-                scenario_type: cmip6 
+                scenario_type: cmip6
         cmip6hist:
-                scenario_type: cmip6 
+                scenario_type: cmip6
 
 choose_scenario_type:
         cmip6:
@@ -436,7 +446,7 @@ choose_scenario_type:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario 
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
@@ -545,7 +555,7 @@ forcing_in_work:
         aerofarir_kinne_1850: "aero_farir_@YEAR_1850@.nc"
         aerofin_kinne_1850: "aero_fine_@YEAR_1850@.nc"
         # ok this is another crazy ECHAM6 speciality
-        # every year the background aerosol files for 1849 to 1851 
+        # every year the background aerosol files for 1849 to 1851
         # need to be linked to the same file for historical/scenario runs
         # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
         # MAC-SP describes aerosol w.r.t. piControl conditions.

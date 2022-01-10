@@ -17,6 +17,17 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-paleodyn-gamma:
+    branch: "paleodyn/awiesm-2.1-gamma"
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
   2.1-wiso:
     branch: wiso
     add_restart_in_files:

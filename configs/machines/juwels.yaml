@@ -8,12 +8,10 @@ accounting: true
 
 # default settings for compiler, mpi and I/O libs
 
-#compiler_mpi: intel_2019a_impi2019
+compiler_mpi: intel2020_psmpi2020
 useMPI: parastationmpi
-compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-#compiler_mpi: intel2020_psmpi2020
 iolibraries: awi_libs
 
 # slurm setup
@@ -115,7 +113,7 @@ choose_compiler_mpi:
       add_module_actions:
         - "load Stages/2020"
         - "load Intel/2020.2.254-GCC-9.3.0"
-        - "load ParaStationMPI/5.4.7-1"
+        - "load ParaStationMPI/5.4.7-1-mt"
         - "load CMake/3.18.0"
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
@@ -212,6 +210,23 @@ choose_iolibraries:
          - "load netCDF netCDF-Fortran"
     awi_libs:
        choose_compiler_mpi:
+          intel2020_psmpi2020:
+             add_export_vars:
+                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
           intel_2019a_psmpi2019:
              add_export_vars:
                 IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802

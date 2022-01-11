@@ -12,7 +12,7 @@ accounting: true
 #compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2020_impi2020
+compiler_mpi: intel2020_psmpi2020
 iolibraries: none
 
 # slurm setup
@@ -113,15 +113,14 @@ choose_compiler_mpi:
         MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
         PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
 
-   intel2020_psmpi2020: # AWICM3, not working yet, libs need to be compile with ParaStationMPI/5.4.7-1-mt
+   intel2020_psmpi2020:
       add_module_actions:
         - "load Stages/2020"
         - "load Intel/2020.2.254-GCC-9.3.0"
-        - "load ParaStationMPI/5.4.7-1"
+        - "load ParaStationMPI/5.4.7-1-mt"
         - "load CMake"
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
-        #- "load Perl/5.32.0"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -180,7 +179,7 @@ choose_iolibraries:
          - "load netCDF netCDF-Fortran"
     awi_libs:
        choose_compiler_mpi:
-          intel_2020_psmpi2020:
+          intel2020_psmpi2020:
              add_export_vars:
                 IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH

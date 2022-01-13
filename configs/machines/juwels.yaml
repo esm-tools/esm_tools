@@ -196,6 +196,7 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel_2019a_psmpi2019:
              add_export_vars:
                 IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802

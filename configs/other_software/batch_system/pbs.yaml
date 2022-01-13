@@ -56,4 +56,5 @@ choose_debugger:
 
 submitted: false
 
+write_execution_log: " | tee ${output_path}${expid}_${general.setup_name}_execution_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
 execution_command: "${debugger_flags_prelauncher} ${launcher} @components@"

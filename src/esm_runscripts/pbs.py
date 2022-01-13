@@ -201,7 +201,7 @@ class Pbs:
         # Substitute the ``@components@`` tag for the final launch command
         config["computer"]["execution_command"] = config["computer"][
             "execution_command"
-        ].replace("@components@", components)
+        ].replace("@components@", components).replace("@jobtype@", cluster)
 
     @staticmethod
     def add_pre_launcher_lines(config, runfile):

@@ -61,7 +61,7 @@ choose_version:
     use_oasis: '' 
     branch: 2.5_r1910
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
-comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+comp_command: export XIOS_TOPLEVEL=$(pwd); ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git

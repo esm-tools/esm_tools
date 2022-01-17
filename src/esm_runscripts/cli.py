@@ -261,8 +261,7 @@ def main():
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
 
-    Setup = SimulationSetup(command_line_config)
-    # if not Setup.config['general']['submitted']:
-    if not Setup.config["general"]["submitted"] and not no_motd:
+    sim_setup = SimulationSetup(command_line_config)
+    if not sim_setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
-    Setup()
+    sim_setup()

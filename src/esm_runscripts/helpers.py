@@ -69,7 +69,10 @@ def evaluate(config, job_type, recipe_name):
 #########################################################################################
 def end_it_all(config):
     if config["general"]["profile"]:
-        for line in timing_info:
+        # NOTE(PG): Not the best place for this import, but ah well...
+        from esm_profile import TIMING_INFO
+
+        for line in TIMING_INFO:
             print(line)
     if config["general"]["verbose"]:
         print("Exiting entire Python process!")

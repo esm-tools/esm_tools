@@ -37,7 +37,8 @@ def init_first_user_config(command_line_config, user_config):
         model_config = get_user_config_from_command_line(new_command_line_config)
         user_config = esm_parser.new_deep_update(user_config, model_config)
 
-    if user_config["general"].get("debug_obj_init", False):
+    if user_config.get("general", {}).get("debug_obj_init", False):
+        import pdb
         pdb.set_trace()
 
     return user_config

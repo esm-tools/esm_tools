@@ -1470,6 +1470,8 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # This allows users to use version numbers (floats) and integers as choices inside
     # the choose_blocks, instead of having to specify the choices as strings
+    if isinstance(choice, (int, float)) and not isinstance(choice, bool):
+        choice = str(choice)
     choices_available = {}
     for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
         if isinstance(ckey, (int, float)) and not isinstance(ckey, bool):

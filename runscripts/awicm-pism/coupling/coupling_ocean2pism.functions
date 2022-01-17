@@ -3,6 +3,7 @@
 function ocean2pism {
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
+    module load defaults
     . ${FUNCTION_PATH}/coupling_general.functions
     . ${FUNCTION_PATH}/general_lists.functions
 

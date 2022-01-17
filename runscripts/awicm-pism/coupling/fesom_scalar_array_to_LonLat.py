@@ -60,6 +60,8 @@ import os
 # Some information
 #
 
+print("* pyfesom path = ", pf.__file__)
+
 print('* Start at '+time.ctime(time.time()))
 
 # ----------------------------------------------------------------

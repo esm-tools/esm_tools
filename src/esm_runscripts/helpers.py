@@ -58,6 +58,9 @@ def evaluate(config, job_type, recipe_name):
     )
     esm_plugin_manager.check_plugin_availability(framework_plugins)
 
+    print("LA DEBUG: framework_recipe = ", framework_recipe)
+    print("LA DEBUG: framework_plugins = ", framework_plugins)
+    print("LA DEBUG: config = ", config)
     config = esm_plugin_manager.work_through_recipe(
         framework_recipe, framework_plugins, config
     )

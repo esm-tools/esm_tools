@@ -1,0 +1,30 @@
+choose_general.run_number:
+    1:
+        choose_lresume:
+            false:
+                cli_input_file_pism: ${cold_start_file}
+            true:
+                cli_input_file_pism: ${spinup_file}
+    "*":
+        cli_input_file_pism: "${general.base_dir}/${general.expid}/restart/pism/${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+
+input_files:
+    input: input
+input_sources:
+    input: ${cli_input_file_pism}
+input_in_work:
+    input: ${general.expid}_pismr_input_${run_datestamp}.nc
+
+restart_in_files:
+    restart: restart
+restart_in_sources:
+    restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+restart_in_in_work:
+    restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+
+restart_out_files:
+    restart: restart
+restart_out_in_work:
+    restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"
+restart_out_sources:
+    restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"

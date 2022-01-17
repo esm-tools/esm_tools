@@ -1,0 +1,176 @@
+
+lz: 5750
+lbz: 2000
+
+choose_domain:
+        "antarctica":
+                choose_resolution:
+                        32km:
+                            nx: 191
+                            ny: 191
+                            nz: 75
+                            bz: 11
+                            grid_edge: 32
+                        16km:
+                            nx: 381
+                            ny: 381
+                            nz: 81
+                            bz: 21
+                            grid_edge: 16
+                        8km:
+                            nx: 761
+                            ny: 761
+                            nz: 101
+                            bz: 21
+                            grid_edge: 8
+                        4km:
+                            nx: 1521
+                            ny: 1521
+                            nz: 121
+                            bz: 21
+                            grid_edge: 4
+                        2km:
+                            nx: 3041
+                            ny: 3041
+                            nz: 151
+                            bz: 26
+                            grid_edge: 2
+                        1km:
+                            nx: 6081
+                            ny: 6081
+                            nz: 181
+                            bz: 41
+                            grid_edge: 1
+        "greenland":
+                choose_resolution:
+                        40km:
+                                nx: 38
+                                ny: 72
+                                nz: 101
+                                bz: 11
+                                grid_edge: 40
+                        20km:
+                                nx: 76
+                                ny: 141
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+                        10km:
+                                nx: 151
+                                ny: 281
+                                nz: 201
+                                bz: 21
+                                grid_edge: 10
+                        5km:
+                                nx: 301
+                                ny: 561
+                                nz: 201
+                                bz: 21
+                                grid_edge: 5
+        "laurentide":
+                choose_resolution:
+                        40km:
+                                nx: 195
+                                ny: 165
+                                nz: 101
+                                bz: 11
+                                grid_edge: 40
+                        20km:
+                                nx: 390
+                                ny: 330
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+                        10km:
+                                nx: 780
+                                ny: 660
+                                nz: 101
+                                bz: 21
+                                grid_edge: 10
+                        5km:
+                                nx: 1560
+                                ny: 1320
+                                nz: 101
+                                bz: 11
+                                grid_edge: 5
+        "nhem":
+                choose_resolution:
+                        40km:
+                                nx: 300
+                                ny: 300
+                                nz: 101
+                                bz: 11
+                                grid_edge: 40
+                        20km:
+                                nx: 600
+                                ny: 600
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+                        10km:
+                                nx: 1200
+                                ny: 1200
+                                nz: 101
+                                bz: 11
+                                grid_edge: 10
+                        5km:
+                                nx: 2400
+                                ny: 2400
+                                nz: 101
+                                bz: 11
+                                grid_edge: 5
+        "nshem":
+                choose_resolution:
+                        120km:
+                                nx: 132
+                                ny: 97
+                                nz: 261
+                                bz: 21
+                                grid_edge: 120
+                        20km:
+                                nx: 599
+                                ny: 904
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+        "nshem_himA":
+                # NOTE(PG): Himalaya Variant Alpha
+                choose_resolution:
+                        120km:
+                                nx: 132
+                                ny: 97
+                                nz: 261
+                                bz: 21
+                                grid_edge: 120
+                        20km:
+                                nx: 599
+                                ny: 904
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+        "nshem_himB":
+                # NOTE(PG): Himalaya Variant Beta
+                choose_resolution:
+                        120km:
+                                nx: 132
+                                ny: 97
+                                nz: 261
+                                bz: 21
+                                grid_edge: 120
+                        20km:
+                                nx: 599
+                                ny: 904
+                                nz: 101
+                                bz: 11
+                                grid_edge: 20
+
+cell_area: $(( ${grid_edge} * ${grid_edge} * 1000 * 1000 ))
+# NOTE(PG) Can be set to:
+# * "none"
+# * "x"
+# * "y"
+# * "xy"
+grid_periodicity: "none"
+add_pism_command_line_opts:
+    - "-periodicity ${grid_periodicity}"
+    - "-Mx ${nx} -My ${ny} -Mz ${nz} -Mbz ${bz} -Lz ${lz} -Lbz ${lbz}"

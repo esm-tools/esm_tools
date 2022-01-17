@@ -31,7 +31,7 @@ config_sources:
 
 # normally, except awicm on ollie :-(((
 no_dynveg_file_ending: "_no-dynveg"
-dynveg_file_ending: "_dynveg"
+dynveg_file_ending: "" #"_dynveg"
 
 choose_version:
         # 3.20p1 is used within FOCI, currently only configured to run WITH
@@ -287,7 +287,7 @@ forcing_in_work:
         "a_nd_file": "a_nd_file.nc"
         "lightning": "lightning.nc"
         "popdens": "population_density.nc"
-        "LU" : "landuse_harvest.@YEAR@.nc"
+        "LU" : "landuseHarvest.@YEAR@.nc"
         "Ndepo": "Ndepo.@YEAR@.nc"
         "LU_trans": "landuseTransitions.@YEAR@.nc"
 
@@ -315,7 +315,7 @@ streams:
         - nitro
         - veg
         - land
-
+        - js_wiso
 
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
@@ -350,7 +350,7 @@ restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
@@ -360,7 +360,7 @@ restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc

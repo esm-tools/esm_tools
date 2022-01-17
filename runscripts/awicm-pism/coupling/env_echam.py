@@ -18,7 +18,7 @@ def prepare_environment(config):
             "END_YEAR_echam": config["general"]["chunk_end_date"].syear,
             "END_MONTH_echam": config["general"]["chunk_end_date"].smonth,
             "END_DAY_echam": config["general"]["chunk_end_date"].sday,
-            "FUNCTION_PATH": "/home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling",
+            "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling",
             "FORCING_DIR_jsbach": config["jsbach"]["thisrun_forcing_dir"],
             "RESTART_DIR_jsbach": config["jsbach"]["experiment_restart_out_dir"],
             }

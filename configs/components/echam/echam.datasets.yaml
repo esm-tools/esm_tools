@@ -113,10 +113,54 @@ forcing_sources:
 
         # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
         "MAC-SP": "${input_dir}/MAC-SP.nc"
-
-        "MAC-SP_hist_scenario":
-                 "${input_dir}/MAC-SP.nc":
-                         to: 2014
-                 "${input_dir}/MAC-SP_${scenario}.nc":
-                         from: 2015
-
+choose_dataset:
+        r0004:
+                forcing_sources:
+# ozone
+                        "histozone":
+                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc":
+                                        to: 1850
+                                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_@YEAR@.nc":
+                                        from: 1851
+                                        to: 2008
+                        "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc"
+                        "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1950.nc"
+                        "piozone": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"
+                        "piozonea": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"
+                        "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"
+                        "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_1850-1860.nc"
+                        "rcp26ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP26_@YEAR@.nc"
+                        "rcp45ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP45_@YEAR@.nc"
+                        "rcp85ozone": "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_RCP85_@YEAR@.nc"
+# aero
+                        "rcp26aerofin":
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
+                                        to: 1864
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
+                                        from: 1865
+                                        to: 2000
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp26_@YEAR@.nc":
+                                        from: 2001
+                                        to: 2014
+                        "rcp45aerofin":
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
+                                        to: 1864
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
+                                        from: 1865
+                                        to: 2000
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp45_@YEAR@.nc":
+                                        from: 2001
+                                        to: 2014
+                        "rcp85aerofin":
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
+                                        to: 1864
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
+                                        from: 1865
+                                        to: 2000
+                                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_rcp85_@YEAR@.nc":
+                                        from: 2001
+                                        to: 2014
+# greenhouse
+                        "rcp26greenh": "${greenhouse_dir}/greenhouse_rcp26.nc"
+                        "rcp45greenh": "${greenhouse_dir}/greenhouse_rcp45.nc"
+                        "rcp85greenh": "${greenhouse_dir}/greenhouse_rcp85.nc"

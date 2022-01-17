@@ -15,7 +15,7 @@
     getocean = 1, 'days', 'last', 0
     putocean = 1, 'days', 'last', 0
     lcouple_co2 = .true.
-    default_output = .false.
+    default_output = .true.
 /
 
 &parctl
@@ -33,6 +33,10 @@
     vphysc_lpost = .false.
 /
 
+&mvstreamctl
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
 &mvstreamctl
     interval = 1, 'months', 'last', 0
     target = 'spim'

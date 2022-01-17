@@ -1,0 +1,101 @@
+general:
+        setup_name: pism
+        compute_time: "00:05:00"
+        initial_date: "10000-01-01"
+        final_date: "10010-12-31"
+        base_dir: "/work/ollie/lackerma/awicm_pism_tests/"
+        nyear: 1
+        #clean_old_rundirs_keep_every: 5
+        #clean_old_rundirs_except: 2
+        use_venv: False
+        mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+        iceberg_dir: "/home/ollie/lackerma/iceberg/ib_10000/"
+
+pism:
+        version: "github1.2.1"
+        resolution: "20km"
+        model_dir: /home/ollie/lackerma/pism-github1.2.1/
+        lresume: 1
+        ini_parent_exp_id: "R115ka"  # Needed, but not used
+        ini_parent_date: "109999-01-01" # Needed, but not used
+        ini_restart_dir: "/work/ollie/lackerma/awicm_pism_tests/pism_antarctica01/restart/pism/"  # Needed, but not used.
+        spinup_file: "/work/ollie/sxu/esm-experiments/PISM/R115ka/restart/pism/R115ka_pismr_out_109900-109999.nc"
+        pool_dir: /work/ollie/pgierz/pool_pism/
+        ts_interval: "monthly"
+        ex_interval: "monthly"
+        domain: "nhem"
+        force_bootstrap_first_run: True
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                #script: pseudo_couple_in_pism.sh
+                                script: coupling_awiesm2pism.functions
+                                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                                #call_function: call_this
+                                call_function: awiesm2pism
+                                env_preparation: env_pism.py
+                                run_only: first_run_in_chunk
+                                #skip_chunk_number: 1
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                #script: pseudo_couple_out_pism.sh
+                                script: coupling_pism2awiesm.functions
+                                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                                #call_function: call_this
+                                call_function: pism2awiesm
+                                env_preparation: env_pism2awiesm.py
+                                run_only: last_run_in_chunk
+
+                #subjobs:
+                #        couple_in:
+                #                nproc: 1
+                #                run_before: prepcompute
+                #                #script: pseudo_couple_in_pism.sh
+                #                script: coupling_atmosphere2pism.functions
+                #                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                #                #call_function: call_this
+                #                call_function: atmosphere2pism
+                #                env_preparation: env_pism2echam.py
+                #                run_only: first_run_in_chunk
+                #                skip_chunk_number: 1
+
+                #        couple_out:
+                #                nproc: 1
+                #                run_after: tidy
+                #                #script: pseudo_couple_out_pism.sh
+                #                script: coupling_pism2atmosphere.functions
+                #                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                #                #call_function: call_this
+                #                call_function: pism2atmosphere
+                #                env_preparation: env_pism2echam.py
+                #                run_only: last_run_in_chunk
+                #
+                #subjobs:
+                #        couple_in:
+                #                nproc: 1
+                #                run_before: prepcompute
+                #                #script: pseudo_couple_in_pism.sh
+                #                script: coupling_ocean2pism.functions
+                #                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                #                #call_function: call_this
+                #                call_function: ocean2pism
+                #                env_preparation: env_pism.py
+                #                run_only: first_run_in_chunk
+                #                skip_chunk_number: 1
+
+                #        couple_out:
+                #                nproc: 1
+                #                run_after: tidy
+                #                #script: pseudo_couple_out_pism.sh
+                #                script: coupling_pism2ocean.functions
+                #                script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                #                #call_function: call_this
+                #                call_function: pism2ocean
+                #                env_preparation: env_pism.py
+                #                run_only: last_run_in_chunk

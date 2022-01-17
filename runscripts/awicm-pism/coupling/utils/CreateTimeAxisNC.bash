@@ -30,6 +30,8 @@
 #     Christian Rodehacke, AWI, 2018-09-12 (Calendar:     optional 5th parameter)
 #     Christian Rodehacke, AWI, 2018-09-19 (Numeric tyupe:optional 6th parameter)
 #
+module load nco
+
 NO_LINES=25 ; NO_NEED_INPUTS=1
 set -e
 if [ $# -lt ${NO_NEED_INPUTS} ] ; then

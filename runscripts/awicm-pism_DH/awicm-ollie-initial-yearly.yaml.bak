@@ -1,0 +1,95 @@
+general:
+    setup_name: "awiesm"
+    compute_time: "01:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2010-12-31"
+    base_dir: "/work/ollie/lackerma/awicm_pism_tests/"
+    nmonth: 0
+    nyear: 1
+
+awiesm:
+    version: "2.1"
+    postprocessing: true
+    scenario: "PALEO"
+    # NOTE: In a future version, model code will become part of the experiment
+    # tree and will be compiled for you...
+    model_dir: "/home/ollie/lackerma/awiesm-2.1/"
+
+echam:
+    version: "6.3.05p2-concurrent_radiation-paleodyn"
+    restart_unit: "years"
+    restart_rate: 1
+    nproca: 24
+    nprocb: 24
+    lresume: false
+    nprocar: "remove_from_namelist"
+    nprocbr: "remove_from_namelist"
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2echam.functions
+                    script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: ice2echam
+                    env_preparation: env_echam.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: echam2ice
+                    env_preparation: env_echam.py
+                    run_only: last_run_in_chunk
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/work/ollie/pool/FESOM/fesom2.0/"
+    # NOTE: This will be incorporated into the pool at a later stage
+    mesh_dir: "/work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/"
+    iceberg_dir: "/home/ollie/lackerma/iceberg/ib_10000/"
+    use_icebergs: false
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    nproc: 288
+    lresume: 0
+    add_namelist_changes:
+        namelist.config:
+            paths:
+                opbndpath: "remove_from_namelist"
+                forcingdatapath: "remove_from_namelist"
+                ClimateDataPath: "/work/ollie/pool/FESOM/hydrography/"
+            icebergs:
+                use_icebergs: false
+                use_icesheet_coupling: false
+                ib_num: 10000
+                steps_per_ib_step: 8
+
+
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2fesom.functions
+                    script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: ice2fesom
+                    env_preparation: env_fesom.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_fesom2ice.functions
+                    script_dir: /home/ollie/lackerma/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: fesom2ice
+                    env_preparation: env_fesom.py
+                    run_only: last_run_in_chunk

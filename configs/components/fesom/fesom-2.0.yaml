@@ -18,6 +18,7 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
+    destination: fesom-2.0
   2.0pico:
     branch: pico_cpl
     destination: fesom-2.0pico
@@ -46,8 +47,8 @@ choose_version:
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
+  #2.0-o:
+  #  branch: oifs-deck
   2.0-jio:
     branch: juwels_chunk_io
     destination: fesom-2.0
@@ -59,13 +60,27 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
-    # files will be cleared from the src folder. After Dima's update we will return
-    # fesom-2.0 master branch back and remove this part
-    branch: recom-update
+  #2.0-r:
+  #  # OG: This will be the master branch for fesom-recom-2.0. All the recom related
+  #  # files will be cleared from the src folder. After Dima's update we will return
+  #  # fesom-2.0 master branch back and remove this part
+  #  branch: recom-update
+  #  git-repository:
+  #  - https://gitlab.dkrz.de/FESOM/fesom2.git
+  2.0-wiso: # MA: This branch is actually not a 2.0 but a 2.1. TODO: move to
+            # fesom-2.1.yaml when that version is supported
+    branch: wiso
+    destination: fesom-2.0 #MA: TODO: change to 2.1 when fesom-2.1.yaml ready
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
+  2.0-recom: # MA: This branch is actually not a 2.0 but a 2.1. TODO: move to
+             # fesom-2.1.yaml when that version is supported
+    branch: wiso # MA: We will need a new branch for Martin Butzin changes
+    destination: fesom-2.0 #MA: TODO: change to 2.1 when fesom-2.1.yaml ready
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+
+
 
 install_bins: bin/fesom.x
 git-repository:
@@ -121,6 +136,29 @@ namelists:
         - namelist.io
         - namelist.cvmix
 
+# Settings for Gent/McWilliams based upon the selected ALE scheme.
+ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+K_gm: 3000.0
+K_hor: 3000.0
+K_gm_max: 2000.0
+
+choose_ALE_scheme:
+    linfs:
+        K_gm: 5000.0
+        K_hor: 5000.0
+    zstar:
+        K_gm_max: 2000.0
+        K_hor: 3000.0
+        K_gm: remove_from_namelist
+
+add_namelist_changes:
+    namelist.oce:
+        oce_dyn:
+            K_gm: ${K_gm}
+            K_gm_max: ${K_gm_max}
+        oce_tra:
+            K_hor: ${K_hor}
+
 
 choose_asforcing:
         CORE2:
@@ -138,7 +176,6 @@ choose_resolution:
                 nx: 830305
         CAVCORE2:
                 nx: 72411
-                mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                 nproc: 288
         D3:
                 nx: 3160340
@@ -153,17 +190,23 @@ restart_in_files:
         ice_restart: ice_restart
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
+        wiso_restart: wiso_restart
+        icb_restart: icb_restart
+
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
@@ -177,17 +220,25 @@ restart_out_files:
         par_ice_restart: par_ice_restart
         fesom_raw_restart_info: fesom_raw_restart_info
         fesom_raw_restart: fesom_raw_restart
+        wiso_restart: wiso_restart
+        icb_restart: icb_restart
+
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        #wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        #wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+        wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
@@ -196,8 +247,10 @@ restart_out_sources:
 
 
 outdata_sources:
+        #"[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear}.nc
         fesom: "*.fesom.*.nc"
 outdata_targets:
+        #"[[outputs-->OUTPUT]]": OUTPUT.fesom.${start_date!syear!smonth}.${start_date!sday}.nc
         fesom: "*.fesom.*.nc"
 
 choose_use_icebergs:
@@ -211,6 +264,9 @@ choose_use_icebergs:
             add_restart_out_files:
                     icb_restart: icb_restart
 
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+            
             input_in_work:
                     longitude: "icb_longitude.dat"
                     latitude: "icb_latitude.dat"
@@ -231,6 +287,10 @@ choose_use_icebergs:
                     length: "length"
                     height: "height"
                     scaling: "scaling"
+        
+        False:
+            outputs: 
+                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, www1, www2, www3, iii1, iii2, iii3]
 
 log_files:
         clock: clock

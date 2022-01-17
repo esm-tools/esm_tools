@@ -1,0 +1,23 @@
+general:
+        setup_name: pism
+        compute_time: "00:05:00"
+        initial_date: "10000-01-01"
+        final_date: "10010-12-31"
+        base_dir: "/work/ba0989/a270124/"
+        nyear: 1
+        #clean_old_rundirs_keep_every: 5
+        #clean_old_rundirs_except: 2
+        account: ba0989
+        use_venv: False
+
+pism:
+        version: "github1.2.1"
+        resolution: "5km"
+        model_dir: "/pf/a/a270124/pism_v1.2.1/"
+        lresume: 0
+        pool_dir: "/work/ba1066/a270124/pool_pism/"
+        ts_interval: "monthly"
+        ex_interval: "monthly"
+        domain: "greenland"
+        force_bootstrap_first_run: True
+        #cli_input_file_pism: "/work/ba1066/a270124/pool_pism/input/nhem/pismr_nhem_10km_LU.nc"

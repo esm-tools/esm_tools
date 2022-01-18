@@ -73,7 +73,13 @@ forcing_sources:
                         from: 2015
         
         # greenhouse
-        "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        "histgreenh": 
+                "${greenhouse_dir}/greenhouse_historical.nc":
+                        from: 1
+                        to: 2013
+                "/work/ba1103/a270073/data/ECHAM6/input/r0007/greenhouse_historical.nc": # see README.md in this dir
+                        from: 2014
+                        to: 2014
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
         "ssp126greenh": "${greenhouse_dir}/greenhouse_ssp126.nc"
         "ssp245greenh": "${greenhouse_dir}/greenhouse_ssp245.nc"

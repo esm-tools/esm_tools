@@ -131,25 +131,34 @@ choose_dataset:
                         "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
                         "Ndepo_ssp126":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126.nc": # nyear x nmonth
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
                                         from: 1850
-                                        to: 2099
+                                        to: 2101
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
                         "Ndepo_ssp245":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245.nc": # nyear x nmonth
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_@YEAR@.nc": # 12 months
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
                                         from: 1850
                                         to: 2099
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
                         "Ndepo_ssp534os":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os.nc": # nyear x nmonth
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_@YEAR@.nc": # 12 months
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
                                         from: 1850
                                         to: 2099
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
                         "Ndepo_ssp585":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585.nc": # nyear x nmonth
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_@YEAR@.nc": # 12 months
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
                                         from: 1850
                                         to: 2099
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_2100.nc": # 12 months; copy of 2099
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_2099.nc": # 12 months
                                         from: 2100
                                         to: 2101
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
@@ -157,17 +166,17 @@ choose_dataset:
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
                         "popdens_ssp1":
                                 #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp1_${echam.resolution}.nc": # nyear
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp1_T63.nc": # correct varname
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp1_T63.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "popdens_ssp2":
                                 #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp2_${echam.resolution}.nc": # nyear
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp2_T63.nc": # correct varname
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp2_T63.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "popdens_ssp5":
                                 #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp5_${echam.resolution}.nc": # nyear
-                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp5_T63.nc": # correct varname
+                                "/work/ba1103/a270073/data/JSBACH/input/r0010/T63/spitfire/population_density_ssp5_T63.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "cover_fract_HIST":

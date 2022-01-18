@@ -111,20 +111,62 @@ class batch_system:
             ("@jobtype@", cluster),
         ]
 
-        all_flags = [
-            "partition_flag",
-            "time_flag",
-            tasks_nodes_flag,
-            "output_flags",
-            "name_flag",
-        ]
-        conditional_flags = [
-            "accounting_flag",
-            "notification_flag",
-            "hyperthreading_flag",
-            "additional_flags",
-            "overcommit_flag",
-        ]
+# MA: TODO: This needs generalization, version 6 already have a good generalization
+# for heterogeneous parallelization, so let's try to come back to it before we merge.
+# LA 03.12.21 add asynchronous icebergs from Kai
+        esm_async_icebergs = os.environ.get('ESM_ASYNC_ICEBERGS')
+        if(esm_async_icebergs != None and esm_async_icebergs != '0'):
+            print("ESM_ASYNC_ICEBERGS ON")
+
+            esm_cluster = os.environ.get('ESM_CLUSTER')
+            if(esm_cluster != None and esm_cluster.lower() == 'mistraldouble'):
+                all_flags = [
+                    "partition_flag",
+                    "time_flag",
+                    "tasks_flag",
+                    "output_flags",
+                    "name_flag",
+                ]
+                conditional_flags = [
+                    "accounting_flag",
+                    "notification_flag",
+# kh 01.04.21 hard coded modification for MPI + OpenMP hybrid approach for async iceberg computations in FESOM2 / AWICM-2.0
+#                   "hyperthreading_flag",
+                    "additional_flags",
+                ]
+            else:
+                all_flags = [
+                    "partition_flag",
+                    "time_flag",
+# kh 01.04.21 hard coded modification for MPI + OpenMP hybrid approach for async iceberg computations in FESOM2 / AWICM-2.0
+#                   "tasks_flag",
+                    "output_flags",
+                    "name_flag",
+                ]
+                conditional_flags = [
+                    "accounting_flag",
+                    "notification_flag",
+# kh 01.04.21 hard coded modification for MPI + OpenMP hybrid approach for async iceberg computations in FESOM2 / AWICM-2.0
+#                   "hyperthreading_flag",
+                    "additional_flags",
+                ]
+        else:
+            print("ESM_ASYNC_ICEBERGS OFF")
+
+            all_flags = [
+                "partition_flag",
+                "time_flag",
+                tasks_nodes_flag,
+                "output_flags",
+                "name_flag",
+            ]
+            conditional_flags = [
+                "accounting_flag",
+                "notification_flag",
+                "hyperthreading_flag",
+                "additional_flags",
+                "overcommit_flag"
+            ]
         # ??? Do we need the exclusive flag?
         if config["general"]["jobtype"] in ["prepcompute", "tidy"]:
             conditional_flags.append("exclusive_flag")
@@ -157,6 +199,37 @@ class batch_system:
             for (tag, repl) in replacement_tags:
                 value = value.replace(tag, str(repl))
             header.append(this_batch_system["header_start"] + " " + value)
+
+# LA 03.12.21 add asynchronous icebergs from Kai
+# kh 01.04.21 hard coded modification for MPI + OpenMP hybrid approach for async iceberg computations in FESOM2 / AWICM-2.0
+        if(esm_async_icebergs != None and esm_async_icebergs != '0'):
+            if(esm_cluster != None and esm_cluster.lower() == 'ollie'):
+                esm_echam_nodes = os.environ.get('ESM_ECHAM_NODES')
+                esm_fesom_nodes = os.environ.get('ESM_FESOM_NODES')
+                esm_partition   = os.environ.get('ESM_PARTITION')
+
+                header.append("#SBATCH --nodes=" + esm_echam_nodes)
+                header.append("#SBATCH packjob")
+                header.append("#SBATCH --nodes=" + esm_fesom_nodes)
+                header.append("#SBATCH --partition=" + esm_partition)
+
+            elif(esm_cluster != None and esm_cluster.lower() == 'mistraldouble'):
+                esm_fesom_tasks_per_node = os.environ.get('ESM_FESOM_TASKS_PER_NODE')
+
+                header.append("#SBATCH --cpus-per-task=2")
+                header.append("#SBATCH --tasks-per-node=" + esm_fesom_tasks_per_node)
+            else:
+# kh 01.04.21 expect mistral as default here
+                esm_echam_nodes = os.environ.get('ESM_ECHAM_NODES')
+                esm_fesom_nodes = os.environ.get('ESM_FESOM_NODES')
+                esm_partition   = os.environ.get('ESM_PARTITION')
+
+                header.append("#SBATCH --nodes=" + esm_echam_nodes)
+                header.append("#SBATCH --cpu-freq=high")
+                header.append("#SBATCH packjob")
+                header.append("#SBATCH --partition=" + esm_partition)
+                header.append("#SBATCH --nodes=" + esm_fesom_nodes)
+
 
         return header
 
@@ -357,11 +430,56 @@ class batch_system:
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
-                    commands.append(
-                        "time "
-                        + batch_system["execution_command"]
-                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
-                    )
+
+        # MA: TODO another chunk that needs a good generalization/exception before merging
+        # LA 03.12.21 add asynchronous icebergs from Kai
+        # kh 01.04.21
+                    esm_async_icebergs = os.environ.get('ESM_ASYNC_ICEBERGS')
+                    if(esm_async_icebergs != None and esm_async_icebergs != '0'):
+                        esm_echam_nodes = os.environ.get('ESM_ECHAM_NODES')
+                        esm_echam_tasks = os.environ.get('ESM_ECHAM_TASKS')
+                        esm_echam_tasks_per_node = os.environ.get('ESM_ECHAM_TASKS_PER_NODE')
+                        esm_fesom_nodes = os.environ.get('ESM_FESOM_NODES')
+                        esm_fesom_tasks = os.environ.get('ESM_FESOM_TASKS')
+                        esm_fesom_tasks_per_node = os.environ.get('ESM_FESOM_TASKS_PER_NODE')
+                        esm_partition   = os.environ.get('ESM_PARTITION')
+
+                        esm_cluster = os.environ.get('ESM_CLUSTER')
+                        if(esm_cluster != None and esm_cluster.lower() == 'ollie'):
+                            exec_command = "srun" + " --kill-on-bad-exit=1" + " --label" + " \\\n"
+                            #exec_command = "srun" + " --kill-on-bad-exit=1" + " \\\n"
+                            exec_command += "--cpu_bind=cores,verbose"
+                            exec_command += " --nodes=" + esm_echam_nodes + " --ntasks=" + esm_echam_tasks + " --ntasks-per-node=" + esm_echam_tasks_per_node
+                            exec_command += " --cpus-per-task=1 --export=ALL,OMP_NUM_THREADS=1 ./echam6 :" + " \\\n"
+
+                            exec_command += "--cpu_bind=cores,verbose"
+                            exec_command += " --nodes=" + esm_fesom_nodes + " --ntasks=" + esm_fesom_tasks + " --ntasks-per-node=" + esm_fesom_tasks_per_node 
+                            exec_command += " --cpus-per-task=2 --export=ALL,OMP_NUM_THREADS=2 ./fesom"
+                        elif(esm_cluster != None and esm_cluster.lower() == 'mistraldouble'):
+                            exec_command = "srun" + " --kill-on-bad-exit=1" + " \\\n"
+                            exec_command += "--hint=nomultithread" + " --cpu_bind=verbose" + " --cpu-freq=high"
+                            exec_command += " --multi-prog hostfile_srun"
+                        else:
+        # kh 01.04.21 expect mistral as default here
+                            exec_command = "srun" + " --kill-on-bad-exit=1" + " --mpi=pmi2" + " --label" + " \\\n"
+                            #exec_command = "srun" + " --kill-on-bad-exit=1" + " \\\n"
+                            exec_command += "--cpu_bind=cores,verbose" # + " --cpu-freq=high"
+                            exec_command += " --nodes=" + esm_echam_nodes + " --ntasks=" + esm_echam_tasks + " --ntasks-per-node=" + esm_echam_tasks_per_node
+                            exec_command += " --cpus-per-task=1 --export=ALL,OMP_NUM_THREADS=1 ./echam6 :" + " \\\n"
+
+                            exec_command += "--mpi=pmi2 --hint=nomultithread --cpu_bind=verbose" # + " --cpu-freq=high"
+                            #exec_command += "--hint=nomultithread --cpu_bind=verbose" # + " --cpu-freq=high"
+                            exec_command += " --nodes=" + esm_fesom_nodes + " --ntasks=" + esm_fesom_tasks + " --ntasks-per-node=" + esm_fesom_tasks_per_node 
+                            exec_command += " --cpus-per-task=2 --export=ALL,OMP_NUM_THREADS=2 ./fesom"
+
+                        commands.append("time " + exec_command + " &")
+
+                    else:
+                        commands.append(
+                            "time "
+                            + batch_system["execution_command"]
+                            + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
+                        )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
             else:

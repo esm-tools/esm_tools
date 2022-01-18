@@ -25,4 +25,4 @@ jobs:
         with:
           model_name: pism
           # versions to test as a space seperated list
-          model_version: "snowflake0.7 snowflake1.0 github1.1.4 github1.2 github1.2.1 index1.1"
+          model_version: "github1.1.4 github1.2 github1.2.1 index1.1"

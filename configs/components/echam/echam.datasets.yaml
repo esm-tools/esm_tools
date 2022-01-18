@@ -113,18 +113,27 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp126_@YEAR@.nc":
                         from: 2015
                         to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp126_2099.nc":
+                        from: 2100
+                        to: 2102
         "ssp245ozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp245_@YEAR@.nc":
                         from: 2015
                         to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp245_2099.nc":
+                        from: 2100
+                        to: 2102
         "ssp534osozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014
                 "${forcing_dir}/ozone/${resolution}_ozone_ssp534os_@YEAR@.nc":
                         from: 2015
                         to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp534os_2099.nc":
+                        from: 2100
+                        to: 2102
         "ssp585ozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014

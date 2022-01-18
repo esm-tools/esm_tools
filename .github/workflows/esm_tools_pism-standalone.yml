@@ -9,7 +9,7 @@ on:
             - 'tests/**'
             - 'configs/machines/ollie.yaml'
             - 'configs/components/pism/*.yaml'
-            - '.github/workflows/esm_tools_echam-standalone.yml'
+            - '.github/workflows/esm_tools_pism-standalone.yml'
 
 jobs:
     compile-ollie:

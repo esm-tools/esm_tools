@@ -1473,6 +1473,12 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
     if isinstance(choice, (int, float)) and not isinstance(choice, bool):
         choice = str(choice)
     choices_available = {}
+    if not isinstance(config_to_replace_in.get(choose_key, {}), dict):
+        user_error(
+            "choose_ block",
+            "``choose_`` blocks need to be defined as ``dictionaries``. Currently, "
+            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``"
+        )
     for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
         if (
             isinstance(ckey, (int, float))

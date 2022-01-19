@@ -1474,7 +1474,11 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         choice = str(choice)
     choices_available = {}
     for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
-        if isinstance(ckey, (int, float)) and not isinstance(ckey, bool):
+        if (
+            isinstance(ckey, (int, float))
+            and not isinstance(ckey, bool)
+            and not isinstance(choice, bool)
+        ):
             choices_available[str(ckey)] = cval
         else:
             choices_available[ckey] = cval

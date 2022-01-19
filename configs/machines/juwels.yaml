@@ -47,11 +47,11 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                add_unset_vars:
-                                        - "SLURM_DISTRIBUTION"
-                                        - "SLURM_NTASKS"
-                                        - "SLURM_NPROCS"
-                                        - "SLURM_ARBITRARY_NODELIST"
+                                #add_unset_vars:
+                                #        - "SLURM_DISTRIBUTION"
+                                #        - "SLURM_NTASKS"
+                                #        - "SLURM_NPROCS"
+                                #        - "SLURM_ARBITRARY_NODELIST"
 
 sh_interpreter: "/usr/bin/bash"
 
@@ -84,7 +84,7 @@ partitions:
 # for all compiler and I/O settings
 module_actions:
         - "--force purge"
-        - "use $OTHERSTAGES" 
+        - "use $OTHERSTAGES"
 
 export_vars:
         LC_ALL: en_US.UTF-8
@@ -118,9 +118,14 @@ choose_compiler_mpi:
         - "load Stages/2020"
         - "load Intel/2020.2.254-GCC-9.3.0"
         - "load ParaStationMPI/5.4.7-1-mt"
-        - "load CMake"
+        - "load CMake/3.18.0"
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
+        - "load Perl/5.32.0"
+        - "load UCX/1.10.1"
+        - "unload netCDF-Fortran"
+        - "unload netCDF"
+        - "unload grib_api"
       add_export_vars:
         FC: mpifort
         F77: mpifort

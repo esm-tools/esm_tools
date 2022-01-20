@@ -473,7 +473,7 @@ class Namelist:
             # Get the current icebergs chapter or make a new empty one:
             icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
             # Determine if icesheet coupling is enabled:
-            if icebergs.get("use_icesheet_coupling", False):
+            if config["fesom"].get("use_icesheet_coupling", False):
                 icebergs["use_icesheet_coupling"] = True
                 if os.path.isfile(
                     config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
@@ -484,7 +484,6 @@ class Namelist:
                         ib_num_old = [
                             int(line.strip()) for line in f.readlines() if line.strip()
                         ][0]
-                    )
                 elif config["general"].get("chunk_number", 0) == 1:
                     ib_num_old = 0
                 else:

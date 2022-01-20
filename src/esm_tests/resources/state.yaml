@@ -52,7 +52,7 @@ awiesm:
         run: false
       ollie:
         compilation: true
-        run: true
+        run: false
   2.1-wiso:
     PI_ctrl_awiesm-2.1-wiso:
       mistral:

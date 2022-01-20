@@ -219,7 +219,7 @@ CO2_for_spinup        = 284.3 ! [uatm] Atmospheric partial pressure of CO2, CMIP
 /
 
 &paalkalinity_restoring
-surf_relax_Alk      = 3.2e-07 !10.d0/31536000.d0
+surf_relax_Alk      = 0 ! 3.2e-07 !10.d0/31536000.d0
 /
 
 &paciso
@@ -229,6 +229,8 @@ ciso_organic_14   = .false.     ! include organic radiocarbon
 ciso_warp         = .false.     ! accelerate RECOM -- HIGHLY EXPERIMENTAL
 warp_file         = "warptracers.nc"
 lambda_14         = 3.8561e-12  ! corresponding to 1 year = 365.00 days
-CO2_for_spinup_13 = 282.4       ! atmospheric 13CO2 spinup value (Graven et al. 2017: d13C = -6.61 permil, CO2_for_spinup = 284.3 uatm)
-CO2_for_spinup_14 = 284.3       ! if (ciso_organic_14): 294.0  ! atmospheric 14CO2 spinup value (Graven et al. 2017: d14C = -4.05 permil, CO2_for_spinup = 284.3 uatm)
+delta_CO2_13      = -6.61       ! atmospheric d13C (permil), global-mean value
+big_delta_CO2_14(1)  = 0.!! for spinup only !-2.3 ! atmospheric D14C (permil), northern hemisphere polewards of 30° N
+big_delta_CO2_14(2)  = 0.!! for spinup only !-4.0 ! atmospheric D14C (permil), (sub) tropical zone 30°N - 30°S
+big_delta_CO2_14(3)  = 0.!! for spinup only !-5.8 ! atmospheric D14C (permil), southern hemisphere polewards of 30°S
 /

@@ -1,7 +1,7 @@
 def prepare_environment(config):
     environment_dict = {
-            "ICE_TO_FESOM": 0,
-            "FESOM_TO_ICE": 1,
+            "ICE_TO_FESOM": config["fesom"]["use_icebergs"],
+            "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],
@@ -10,12 +10,14 @@ def prepare_environment(config):
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "CHUNK_START_DATE_fesom": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_fesom": config["general"]["chunk_end_date"],
-            "FUNCTION_PATH": "/pf/a/a270124/esm_tools/runscripts/awicm-pism/coupling/",
+            "FUNCTION_PATH": config["fesom"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "PYFESOM_PATH": "/pf/a/a270124/pyfesom2/",
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",
-            #"fesom_use_icebergs": config["fesom"]["use_icebergs"],
-            #"ICEBERG_DIR": config["fesom"]["iceberg_dir"],
+            "fesom_use_icebergs": config["fesom"].get("use_icebergs", ""),
+            "BASIN_FILE": config["fesom"].get("basin_file"),
+            "MACHINE": config["computer"]["name"],
+            "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

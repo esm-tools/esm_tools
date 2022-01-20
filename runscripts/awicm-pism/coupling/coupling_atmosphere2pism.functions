@@ -82,6 +82,12 @@ atmosphere2pism() {
     . ${FUNCTION_PATH}/general_helpers.functions
     . ${FUNCTION_PATH}/coupling_general.functions
 
+    if [ "${MACHINE}" == "ollie" ]; then
+        module unload netcdf
+        module load hdf5/1.10.2_gnu
+        module load netcdf/4.6.2_gnu
+    fi
+
     echo -e "\t\t---> Preparing to couple generic atmosphere to specific ice sheet model PISM"
     ic_atm2pism_prepare
 
@@ -475,9 +481,12 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 echo "Oh no, help."
                 exit 5
         fi
-        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -L -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
-                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
+                ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
                 ${cdo} -s -add \
@@ -623,13 +632,15 @@ ic_atm2pism_regrid_downscale_split_names() {
 ## Assumes that a variable `atmosphere_name_elevation` is present in the `atmosphere_file_for_ice.nc`
 ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         echo ""; echo "                *  calculating elevation difference"
+        echo "*** INPUT_FILE_pism = ${INPUT_FILE_pism} ***"
         if [ -z ${INPUT_FILE_pism} ]; then
                 echo "Oh no, help."
                 exit 5
         fi
-        INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
+        INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
-                ${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 ${INPUT_FILE_pism} usurf.tmp.nc
+                ${cdo} -s -selvar,usurf usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
                 ${cdo} -s -add \
@@ -685,7 +696,7 @@ ic_atm2pism_regrid_downscale_temperature() {
         DOWNSCALE_TEMP=${DOWNSCALE_TEMP:-1}
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature"
-                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.007"}
+                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"}
                 if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
                         echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
                         echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
@@ -1367,9 +1378,13 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
 
         #number_of_x_points=$(grep 'xsize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
         #number_of_y_points=$(grep 'ysize' $PISM_GRID_FILE | head -n 1 | awk '{print $3}')
-        obliquity_value=${MY_VALUE:-"23.17"}
+        TMP=$( grep cobld $( ls -t ${COUPLE_DIR}/../run_*/work/namelist.echam | head -1 ) | sed 's/^[ \t]*//' )
+        prefix="cobld = "
+        MY_OBLIQUITY=${TMP#"$prefix"}
+        obliquity_value=${MY_OBLIQUITY:-"23.17"}
 
         echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 
+        echo -e "\t\t- Obliquity = ${obliquity_value}"
 
         # Plus ten points for Shan: variable names are actually variable. Sortof...
         # UKK Paul, sometimes I don't understand you
@@ -1515,13 +1530,20 @@ ic_atm2debm_ablation_debm_run_execute_binary() {
                 fi
                 required_file_exit_code=$((required_file_exit_code + 1))
         done
-        #module unload netcdf
-        #module load netcdf/4.6.0_intel
+        
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf
+            module load netcdf/4.6.0_intel
+            module load intel.mpi
+            module load intel.compiler
+        fi
 
         ./$DEBM_BINARY > debm_stdout_stderr 2>&1 || cat debm_stdout_stderr
         
-        #module unload netcdf/4.6.0_intel
-        #module load netcdf/4.6.0_gnu
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload netcdf/4.6.0_intel
+            module load netcdf/4.6.0_gnu
+        fi
         cd -
 }
 

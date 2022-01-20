@@ -1,7 +1,8 @@
 #!/bin/bash
 
 module purge
-module load anaconda3/bleeding_edge
+#module load anaconda3/bleeding_edge
+module load python3
 module load gcc/7.1.0
 module load cdo nco netcdf_c netcdf-fortran
 module load cmake #/3.13.3

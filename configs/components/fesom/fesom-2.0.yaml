@@ -10,6 +10,7 @@ comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
 use_icebergs: False
+use_icesheet_coupling: False
 
 choose_version:
   '2.0':
@@ -151,14 +152,6 @@ choose_ALE_scheme:
         K_hor: 3000.0
         K_gm: remove_from_namelist
 
-add_namelist_changes:
-    namelist.oce:
-        oce_dyn:
-            K_gm: ${K_gm}
-            K_gm_max: ${K_gm_max}
-        oce_tra:
-            K_hor: ${K_hor}
-
 
 choose_asforcing:
         CORE2:
@@ -192,6 +185,7 @@ restart_in_files:
         par_ice_restart: par_ice_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
 
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
@@ -202,6 +196,7 @@ restart_in_in_work:
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
@@ -212,6 +207,7 @@ restart_in_sources:
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_out_files:
         oce_restart: oce_restart
@@ -222,6 +218,7 @@ restart_out_files:
         fesom_raw_restart: fesom_raw_restart
         wiso_restart: wiso_restart
         icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
 
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -233,6 +230,7 @@ restart_out_in_work:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        icb_restart_ISM: iceberg.restart.ISM
 
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -244,6 +242,7 @@ restart_out_sources:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        icb_restart_ISM: iceberg.restart.ISM
 
 
 outdata_sources:
@@ -255,18 +254,35 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-            ib_num_old: 0
-            ib_num_new: 0
-
-            add_restart_in_files:
-                    icb_restart: icb_restart
-
-            add_restart_out_files:
-                    icb_restart: icb_restart
-
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+
+            choose_use_icesheet_coupling:
+                    true: 
+                            choose_general.chunk_number:
+                                    1:
+                                            iceberg_dir: "${ini_iceberg_dir}"
+                                    "*":
+                                            iceberg_dir: "${general.experiment_couple_dir}"
             
+                            choose_general.run_number:
+                                    1:
+                                            input_sources:
+                                                    num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
+                                    "*":
+                                            input_sources:
+                                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
+            
+                            input_files:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                            input_in_work:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+                    false: 
+                            iceberg_dir: "${ini_iceberg_dir}"
+            
+
             input_in_work:
                     longitude: "icb_longitude.dat"
                     latitude: "icb_latitude.dat"
@@ -291,6 +307,7 @@ choose_use_icebergs:
         False:
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, www1, www2, www3, iii1, iii2, iii3]
+            
 
 log_files:
         clock: clock
@@ -368,6 +385,37 @@ namelist_changes:
                         nm_mslp_file: "${forcing_data_dir}/slp."
                         nm_runoff_file: "${forcing_data_dir}/runoff.nc"
                         nm_sss_data_file: "${forcing_data_dir}/PHC2_salx.nc"
+
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+                
+        '*':
+                use_landice_water: False
+
+add_namelist_changes:
+    namelist.config:
+        icebergs:
+            use_icebergs: "${use_icebergs}"
+            use_icesheet_coupling: "${use_icesheet_coupling}"
+            steps_per_ib_step: 8
+    namelist.forcing:
+        land_ice:
+            use_landice_water: "${use_landice_water}"
+            landice_start_mon: 1
+            landice_end_mon: 12
+            fwf_path: "${general.experiment_couple_dir}" 
+    namelist.oce:
+        oce_dyn:
+            K_gm: ${K_gm}
+            K_gm_max: ${K_gm_max}
+        oce_tra:
+            K_hor: ${K_hor}
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

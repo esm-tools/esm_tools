@@ -62,7 +62,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 329543.sdb - start >> /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log//awicm3-frontiers-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 336115.sdb - start >> /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log//awicm3-frontiers-TCO159L91-CORE2_initial_awicm3.log
 
 cd /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/run_20000101-20000101/work/
 time aprun -n 1 -N 1 -d 1 env OMP_NUM_THREADS=1 env PMI_LABEL_ERROUT_FORMAT="[DATAPROCESS]%l:" /mnt/lustre/home/awiiccp/esm_tools/configs/.//setups/awicm3/postprocessing.sh /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/outdata/oifs/ 20000101 2>&1 &

@@ -1468,9 +1468,31 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         choice = do_math_in_entry([False], choice, config)
     logging.debug(choice)
 
-    if choice in config_to_replace_in.get(choose_key):
+    # This allows users to use version numbers (floats) and integers as choices inside
+    # the choose_blocks, instead of having to specify the choices as strings
+    if isinstance(choice, (int, float)) and not isinstance(choice, bool):
+        choice = str(choice)
+    choices_available = {}
+    if not isinstance(config_to_replace_in.get(choose_key, {}), dict):
+        user_error(
+            "choose_ block",
+            "``choose_`` blocks need to be defined as ``dictionaries``. Currently, "
+            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``"
+        )
+    for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
+        if (
+            isinstance(ckey, (int, float))
+            and not isinstance(ckey, bool)
+            and not isinstance(choice, bool)
+        ):
+            choices_available[str(ckey)] = cval
+        else:
+            choices_available[ckey] = cval
+
+    # Resolve the choose variables
+    if choice in choices_available:
         for update_key, update_value in six.iteritems(
-            config_to_replace_in[choose_key][choice]
+            choices_available[choice]
         ):
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 

@@ -2,17 +2,17 @@ general:
         iterative_coupling: True
         use_venv: False
         account: ba0989
-        base_dir: "/work/ba0989/a270124/"
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
 
 model1:
         setup_name: awiesm
-        runscript: awicm-mistral.yaml
-        chunk_size: 1
+        runscript: awiesm.yaml
+        chunk_size: 2
         chunk_unit: "years"
 
 model2:
         setup_name: pism
-        runscript: pism-mistral.yaml
-        chunk_size: 5
+        runscript: pism.yaml
+        chunk_size: 20
         chunk_unit: "years"
 

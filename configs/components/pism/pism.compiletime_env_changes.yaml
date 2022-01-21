@@ -23,12 +23,7 @@ choose_computer.name:
                 - "unload gcc"
                 - "load gcc/7.1.0"
             add_export_vars:
-                - "I_MPI_FABRICS=shm:tmi"
-                #- "UDUNITS2_ROOT=/pf/a/pism_build_sebastian02/local/modules/uunits2/"
-                #- "FFTW_ROOT=/pf/a/pism_build_sebastian02/local/modules/fftw/"
-                #- "PROJ4_ROOT=/pf/a/pism_build_sebastian02/local/modules/proj4/"
-                #- "PETSC_DIR=/pf/a/pism_build_sebastian02/local/modules/petsc-v3.12/"
-                #- "HDF5_ROOT=/pf/a/pism_build_sebastian02/local/modules/hdf5/"
+                - "NETCDF_ROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.7.2-gcc64"
                 - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
                 - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
                 - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"

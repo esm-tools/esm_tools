@@ -14,7 +14,7 @@ general:
 pism:
         version: "github1.2.1"
         resolution: "10km"
-        model_dir: "/pf/a/a270124/pism_v1.2.1/"
+        model_dir: "/home/a/a270124/test_pism/pism-github1.2.1/"
         lresume: 1
 
         ###################

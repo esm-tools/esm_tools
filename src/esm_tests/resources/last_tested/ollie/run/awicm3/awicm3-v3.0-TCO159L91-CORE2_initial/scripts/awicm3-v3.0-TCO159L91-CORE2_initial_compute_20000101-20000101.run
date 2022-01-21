@@ -80,7 +80,7 @@ unset SLURM_ARBITRARY_NODELIST
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 135942 - start >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 39861 - start >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
 
 cd /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/run_20000101-20000101/work/
 
@@ -120,6 +120,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/scripts/
 esm_runscripts awicm3-v3.0-TCO159L91-CORE2_initial.yaml -e awicm3-v3.0-TCO159L91-CORE2_initial -t observe_compute -p ${process} -s 20000101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 135942 - done >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2000-01-01T00:00:00 39861 - done >> /work/ollie/mandresm/testing//run/awicm3//awicm3-v3.0-TCO159L91-CORE2_initial/log//awicm3-v3.0-TCO159L91-CORE2_initial_awicm3.log
 
 wait

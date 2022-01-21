@@ -58,7 +58,7 @@ unset SLURM_MEM_PER_CPU
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1958-01-01T00:00:00 135641 - start >> /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log//fesom-recom1.4-initial-daily_fesom-recom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1958-01-01T00:00:00 39530 - start >> /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log//fesom-recom1.4-initial-daily_fesom-recom.log
 
 cd /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/run_19580101-19580101/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -70,6 +70,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/scripts/
 esm_runscripts fesom-recom1.4-initial-daily.yaml -e fesom-recom1.4-initial-daily -t observe_compute -p ${process} -s 19580101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1958-01-01T00:00:00 135641 - done >> /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log//fesom-recom1.4-initial-daily_fesom-recom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1958-01-01T00:00:00 39530 - done >> /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log//fesom-recom1.4-initial-daily_fesom-recom.log
 
 wait

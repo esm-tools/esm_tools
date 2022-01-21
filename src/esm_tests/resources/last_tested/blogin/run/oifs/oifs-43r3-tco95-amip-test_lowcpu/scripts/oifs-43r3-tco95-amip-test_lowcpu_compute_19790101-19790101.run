@@ -57,7 +57,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 264402 - start >> /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 97982 - start >> /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
 
 cd /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/run_19790101-19790101/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -69,6 +69,6 @@ process=$!
 cd /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/scripts/
 esm_runscripts oifs-43r3-tco95-amip-test_lowcpu.yaml -e oifs-43r3-tco95-amip-test_lowcpu -t observe_compute -p ${process} -s 19790101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 264402 - done >> /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1979-01-01T00:00:00 97982 - done >> /scratch/usr/hbkmandr/testing//run/oifs//oifs-43r3-tco95-amip-test_lowcpu/log//oifs-43r3-tco95-amip-test_lowcpu_oifs.log
 
 wait

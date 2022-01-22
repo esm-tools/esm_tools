@@ -60,8 +60,13 @@ write_execution_log: " | tee ${output_path}${expid}_${general.setup_name}_execut
 execution_command: "${debugger_flags_prelauncher} ${launcher} @components@"
 
 check_error:
-        "exit signals: Killed" :
+        "exit signals: Killed":
                 frequency: 30
                 method: "kill"
                 message: "PBS ERROR: pbs ended with an error, exiting."
-                file: "${output_path}${expid}_${general.setup_name}_execution_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_.log"
+                file: "${output_path}${expid}_${general.setup_name}_execution_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_@jobid@.log"
+        "Exiting due to errors. Application aborted":
+                frequency: 30
+                method: "kill"
+                message: "PBS ERROR: pbs ended with an error, exiting."
+                file: "${output_path}${expid}_${general.setup_name}_execution_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_@jobid@.log"

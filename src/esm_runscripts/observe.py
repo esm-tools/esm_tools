@@ -126,6 +126,8 @@ def assemble_error_list(config):
                         search_file = config[model]["check_error"][trigger]["file"]
                         if search_file == "stdout" or search_file == "stderr":
                             search_file = stdout
+                        elif "@jobid@" in search_file:
+                            search_file = search_file.replace("@jobid@", config["general"]["jobid"])
                     if "method" in config[model]["check_error"][trigger]:
                         method = config[model]["check_error"][trigger]["method"]
                         if method not in known_methods:

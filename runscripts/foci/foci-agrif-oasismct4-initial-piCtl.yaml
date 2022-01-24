@@ -1,3 +1,6 @@
+# use preempt feature on glogin
+#computer:
+#   additional_flags: "--qos=preempt"
 general:
    use_venv: False
    verbose: False
@@ -5,11 +8,17 @@ general:
    version: "agrif_oasismct4"
    homedir: !ENV ${HOME}
 
-   compute_time: "00:35:00"
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-16T00:00:00"         # Final date of the experiment
+   # operational settings: yearly restarts
+   compute_time: "06:35:00"
+   initial_date: "1850-01-01T00:00:00"   
+   final_date: "1852-01-01T00:00:00"    
    postprocessing: 0
-   nday: 5 
+   nmonth: 12 
+   # test settings: 5 daily restarts
+   #compute_time: "00:35:00"
+   #initial_date: "1850-01-01T00:00:00"
+   #final_date: "1850-01-16T00:00:00" 
+   postprocessing: 0
    
    # machine specific setup 
    account: shk00018
@@ -22,25 +31,29 @@ foci:
 # until everything is finalized
 oasis3mct:
    input_dir: "/scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05_VIKING10/"
+   # test settings, write out coupling files
+   # export_mode_a2o: "EXPOUT"
 
 echam:
    scenario: "PI-CTRL"
    resolution: "T63"
+   # operational settings: yearly restarts
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   # test settings: 5 daily restarts
    restart_rate: ${general.nday}
    restart_unit: "days"
    nproca: 16
    nprocb: 12
    
 nemo:
-   #nest: NPAC10
+   # set your own agrif input directory
    #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
-   nest: VIKING10
-   nest1: viking10
-   #nest: INALT10x
+   nest1: VIKING10
+   #nest1: INALT10x
+   #nest1: NPAC10
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
-   restart_rate: ${general.nday}
-   restart_unit: "days"
    jpni: 36 
    jpnj: 24
    nproc: 864

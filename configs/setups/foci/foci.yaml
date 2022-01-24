@@ -278,6 +278,26 @@ echam:
             "[[foci_fields-->FIELD]]":
                 grid: atmo
 
+        # Postprocessing
+        choose_general.postprocessing:
+                True:
+                        workflow:
+                                next_run_triggered_by: tidy
+                                subjobs:
+                                        postprocessing:
+                                                batch_or_shell: shell
+                                                order_in_cluster: concurrent
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: tidy
+                                                script_dir: ${general.esm_function_dir}/setups/foci
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    echam_postprocessing.sh
+                                                    -r ${general.expid}
+                                                    -s ${start_date!syear}
+                                                    -e ${end_date!syear}"
+                                                nproc: 1
+
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
 
@@ -361,6 +381,27 @@ nemo:
         ini_restart_steps: ${general.ini_nemo_restart_steps}
 
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${nemo.time_step}))
+
+        # Postprocessing
+        choose_general.postprocessing:
+                True:
+                        workflow:
+                                next_run_triggered_by: tidy
+                                subjobs:
+                                        postprocessing:
+                                                batch_or_shell: shell
+                                                order_in_cluster: concurrent
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: tidy
+                                                script_dir: ${general.esm_function_dir}/setups/foci
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    nemo_postprocessing.sh -m 
+                                                    -r ${general.expid}
+                                                    -s ${start_date!syear}
+                                                    -e ${end_date!syear}"
+                                                nproc: 1
+
 
 xios:
         nproc: ${computer.partitions.compute.cores_per_node}

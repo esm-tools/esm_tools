@@ -171,7 +171,9 @@ while [[ $currdate -le $enddate ]] ; do
     laststamp=${currdate%??}
     stamps="$stamps $laststamp"
     #currdate=$(calc_date plus -M 1 $currdate)
-	 currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
+	 # 18930401 does not exist for the date function and leads to an error
+    [[ "$currdate" == "18930401" ]] && currdate="18930331"
+    currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
 done
 
 # Computation of expected years for concatenated output

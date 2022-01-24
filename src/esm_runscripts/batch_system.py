@@ -47,8 +47,8 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, runfile):
-        return self.bs.add_pre_launcher_lines(config, runfile)
+    def add_pre_launcher_lines(self, config, cluster, runfile):
+        return self.bs.add_pre_launcher_lines(config, cluster, runfile)
 
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
@@ -480,7 +480,7 @@ class batch_system:
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
                     if cluster in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, runfile
+                            config, cluster, runfile
                         )
 
                     for line in commands:

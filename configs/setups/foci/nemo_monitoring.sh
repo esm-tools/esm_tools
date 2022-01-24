@@ -110,7 +110,8 @@ if [[ "$(hostname)" =~ "nesh" ]] ; then
 	# only used if use_singularity=false
 	MINICONDA_HOME=~smomw235/miniconda3 
 	module load nco
-elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] ; then
+elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] || \ 
+ [[ "$(hostname)" =~ b?n* ]] || [[ "$(hostname)" =~ g?n* ]] ; then
    echo "`date` NOTE: This code runs on $(hostname)"
    sw_bind="--bind /sw:/sw"
    shome_bind="--bind /home/shkifmsw:/home/shkifmsw"
@@ -144,12 +145,7 @@ if $use_singularity ; then
 	module load singularity
 	# run monitoring from the singularity container
 	# TODO: currently the .sif files is expected in the cwd, this is not the best solution
-	if [[ ! -f mkexp-monitoring.sif ]] ; then
-   	print "mkexp-monitoring.sif not available in $(pwd)"
-	   print "Need to fetch singularity image from https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif"
-   	print "This only needs to be done once per simulation"
-   	curl -O https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif
-	fi
+   ln -sfv ${foci_input2}/SINGULARITY/mkexp-monitoring.sif .
 
 	input_bind="--bind ${foci_input2}:${foci_input2}" 
 

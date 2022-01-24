@@ -284,7 +284,7 @@ echam:
                         workflow:
                                 next_run_triggered_by: tidy
                                 subjobs:
-                                        postprocessing:
+                                        echam_postprocessing:
                                                 batch_or_shell: shell
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}
@@ -388,7 +388,7 @@ nemo:
                         workflow:
                                 next_run_triggered_by: tidy
                                 subjobs:
-                                        postprocessing:
+                                        nemo_postprocessing:
                                                 batch_or_shell: shell
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}

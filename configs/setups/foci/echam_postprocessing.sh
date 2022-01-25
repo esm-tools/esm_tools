@@ -75,7 +75,6 @@ if [[ ! -r $envfile ]] ; then
 else
 	source $envfile
 fi
-set -x
 #
 ###############################################################################
 # END OF USER INTERFACE

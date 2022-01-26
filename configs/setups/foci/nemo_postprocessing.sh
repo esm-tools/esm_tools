@@ -13,6 +13,7 @@ EXP_ID="test_experiment"        # change via -r
 startyear=1850                  # change via -s
 endyear=1850                    # change via -e
 envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
+run_monitoring="no"
 
 module load nco || module load NCO
 
@@ -34,7 +35,7 @@ max_jobs=12
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?d:r:s:e:p:x:" opt; do
+while getopts "h?md:r:s:e:p:x" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -45,6 +46,7 @@ while getopts "h?d:r:s:e:p:x:" opt; do
         echo "                   -s startyear                        (startyear, default is $startyear)"
         echo "                   -e endyear                          (endyear,   default is $endyear)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
+        echo "                   -m run nemo_monitoring.sh           "
         echo
         exit 0
         ;;
@@ -59,6 +61,8 @@ while getopts "h?d:r:s:e:p:x:" opt; do
     p)  basedir=$OPTARG
         ;;
     x)  envfile=$OPTARG
+        ;;
+    m)  run_monitoring="yes"
         ;;
     esac
 done
@@ -76,7 +80,8 @@ if [[ ! -r $envfile ]] ; then
 	echo
 	exit 1
 else
-	source $envfile
+  # module purge in envfile writes non-printable chars to log
+   source $envfile | tee
 fi
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
@@ -196,9 +201,6 @@ mkdir $post_dir
 #
 print 'NEMO netcdf4 conversion started'
 outmod=${DATA_DIR}/${ocemod}
-
-# reduce number of jobs to avoid memory issues
-max_jobs=4
 
 mkdir ${outmod}
 cd ${outmod}
@@ -368,6 +370,19 @@ else
 	print "mesh_mask.nc already available or"
 	print "mesh_mask_0000.nc missing"
 fi
+if [[ $(type -P nocscombinev2.x) ]] && [[ ! -f 1_mesh_mask.nc ]] && [[ -f 1_mesh_mask_0000.nc ]]; then
+	nocscombinev2.x -f 1_mesh_mask_0000.nc 
+	if [[ $? -eq 0 ]] && [[ -f 1_mesh_mask.nc ]]; then
+		print "nocscombinev2.x finished sucessfully"
+		rm 1_mesh_mask_????.nc
+	   test -d $DATA_DIR/fx || mkdir -p $DATA_DIR/fx
+		mv 1_mesh_mask.nc $DATA_DIR/fx/
+	fi
+else
+	print "nocscombinev2.x is missing or"
+	print "1_mesh_mask.nc already available or"
+	print "1_mesh_mask_0000.nc missing"
+fi
 print 'NEMO storing of static data finished'
 #
 # Epilogue
@@ -381,3 +396,9 @@ print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
 
+if [[ "$run_monitoring" == "yes" ]] ; then
+    print "will now run NEMO monitoring for $startdate-$enddate"
+   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+else
+   print "NEMO monitoring switched off, use -m to activate it"
+fi

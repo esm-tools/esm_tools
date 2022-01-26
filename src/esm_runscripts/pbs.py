@@ -204,7 +204,7 @@ class Pbs:
         ].replace("@components@", components).replace("@jobtype@", cluster)
 
     @staticmethod
-    def add_pre_launcher_lines(config, runfile):
+    def add_pre_launcher_lines(config, cluster, runfile):
         """
         Adds pre-launcher lines to the ``runfile``.
 
@@ -220,8 +220,10 @@ class Pbs:
         # This changes the name of the output stream to include the $PBS_JOBID. This
         # cannot be done in the header because PBS does not support its own variables
         # to be used there (at least in the ALEPH's version).
-        #runfile.write(f'qalter $PBS_JOBID -o {config["computer"]["thisrun_logfile"]}\n')
-        pass
+        thisrun_logfile = config["computer"]["thisrun_logfile"].replace(
+            "@jobtype@", cluster
+        )
+        runfile.write(f'qalter $PBS_JOBID -o {thisrun_logfile}\n')
 
     @staticmethod
     def write_het_par_wrappers(config):

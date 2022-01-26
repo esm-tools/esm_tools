@@ -43,8 +43,7 @@ nodes_flag: "--nodes=@nodes@"
 time_flag: "--time=${compute_time}"
 additional_flags: ""
 output_path: "${experiment_dir}/log/"
-#thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
-thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
@@ -102,7 +101,7 @@ check_error:
         "srun: error:" :
                 frequency: 30
                 method: "kill"
-                message: "SLURM ERROR: slurm endet with an error, exiting."
+                message: "SLURM ERROR: slurm ended with an error, exiting."
                 file: "stdout"
 
         "slurmstepd: error: execve():" :

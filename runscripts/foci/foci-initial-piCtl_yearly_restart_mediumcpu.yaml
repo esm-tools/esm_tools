@@ -1,11 +1,12 @@
+# nesh only
 # It is currently under investigation whether the extra
 # #SBATCH flags below improve model performance
 # Sebastian Wahl 05/2021
-#
-computer:
-   additional_flags:
-      - --mem=72000
-      - --constraint="cascade"
+# uncomment below if you run on nesh at CAU
+#computer:
+#   additional_flags:
+#      - --mem=72000
+#      - --constraint="cascade"
 
 general:
    use_venv: False
@@ -20,9 +21,11 @@ general:
    postprocessing: 0
    scenario: "PI-CTRL"
    nmonth: 12
+   clean_runs: 2
    
    # machine specific setup 
-   # account: shk00018
+   # nesh: comment account
+   account: shk00018
    base_dir: ${homedir}/esm/esm-experiments/
 
 foci:
@@ -38,9 +41,9 @@ echam:
 nemo:
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AOW"
-   restart_rate: ${general.nmonth}
-   restart_unit: "months"
    jpni: 16
    jpnj: 16
    nproc: 256
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+xios:
+   nproc: 12

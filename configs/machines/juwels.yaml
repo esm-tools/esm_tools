@@ -47,11 +47,11 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                #add_unset_vars:
-                                #        - "SLURM_DISTRIBUTION"
-                                #        - "SLURM_NTASKS"
-                                #        - "SLURM_NPROCS"
-                                #        - "SLURM_ARBITRARY_NODELIST"
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
 
 sh_interpreter: "/usr/bin/bash"
 
@@ -92,6 +92,28 @@ export_vars:
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
+
+   intel2020_ompi2020:
+      add_module_actions:
+        - "--force purge"
+        - "use /gpfs/software/juwels/otherstages"
+        - "load Stages/2020"
+        - "load Intel/2020.2.254-GCC-9.3.0"
+        - "load OpenMPI/4.1.0rc1"
+        - "load CMake/3.18.0"
+        - "load Python/3.8.5"
+        - "load imkl/2020.2.254"
+        - "load Perl/5.32.0"
+        - "load UCX/1.10.1"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
    intel2020_impi2020: #AWICM3, potentially used by Dima, if not delete this block
       add_module_actions:
@@ -184,6 +206,24 @@ choose_iolibraries:
          - "load netCDF netCDF-Fortran"
     awi_libs:
        choose_compiler_mpi:
+          intel2020_ompi2020:
+             add_export_vars:
+                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel2020_psmpi2020:
              add_export_vars:
                 IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111

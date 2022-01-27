@@ -175,6 +175,7 @@ class Slurm:
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
+                    f.write("if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n")
                     f.write("(( init = $PMI_RANK ))" + "\n")
                     f.write(
                         "(( index = init * "

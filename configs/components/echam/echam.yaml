@@ -52,7 +52,7 @@ compile_infos:
             branch: "ice"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
             comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
-            git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            git-repository: https://gitlab.awi.de/paleodyn/Models/echam6.git
           6.3.05p2-concurrent_radiation-paleodyn-hammoz:
             branch: "hammoz"
             clean_command: rm -rf src/echam/bin; make clean
@@ -62,7 +62,7 @@ compile_infos:
               ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps
               yaxt/tests/.deps; ./configure --with-coupler=oasis3-mct --with-fortran=intel
               FCFLAGS="-cpp -DHAMMOZ" INSTALL='/usr/bin/install -p'
-            git-repository: https://gitlab.awi.de/pgierz/echam6.git
+            git-repository: https://gitlab.awi.de/paleodyn/Models/echam6.git
           6.3.05p2-foci:
             branch: esm-tools
             git-repository: https://git.geomar.de/foci/src/echam.git
@@ -73,7 +73,7 @@ compile_infos:
             branch: "wiso"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
             comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
-            git-repository: "https://gitlab.awi.de/pgierz/echam6.git"
+            git-repository: "https://gitlab.awi.de/paleodyn/Models/echam6.git"
             destination: echam-6.3.05p2-wiso
         clean_command: ${defaults.clean_command}
         comp_command: ${defaults.comp_command}

@@ -12,8 +12,9 @@ accounting: true
 #compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2019_impi2019
-iolibraries: none
+compiler_mpi: intel2022_ompi2022
+iolibraries: awi_libs
+useMPI: intelmpi
 
 # slurm setup
 batch_system: slurm
@@ -92,6 +93,27 @@ export_vars:
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
+
+   intel2022_ompi2022:
+      add_module_actions:
+        - "--force purge"
+        - "use /gpfs/software/juwels/otherstages"
+        - "load Stages/2022"
+        - "load Intel/2021.4.0"
+        - "load OpenMPI/4.1.2"
+        - "load CMake/3.21.1"
+        - "load Python/3.9.6"
+        - "load imkl/2021.4.0"
+        - "load Perl/5.34.0"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
    intel2020_ompi2020:
       add_module_actions:
@@ -206,6 +228,24 @@ choose_iolibraries:
          - "load netCDF netCDF-Fortran"
     awi_libs:
        choose_compiler_mpi:
+          intel2022_ompi2022:
+             add_export_vars:
+                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel2020_ompi2020:
              add_export_vars:
                 IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920

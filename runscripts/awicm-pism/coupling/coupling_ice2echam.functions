@@ -20,7 +20,7 @@ ice2echam() {
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
         
         counter=0
-        COUNT_MAX=15
+        COUNT_MAX=30
         while [ ${counter} -lt ${COUNT_MAX} ]
         do
             echo "          * inside while loop "
@@ -1006,7 +1006,26 @@ set_glacial_mask_jsbach_update_restart_veg() {
 ## @fn update_land_runoff_select_glacial_discharge() 
 update_land_runoff_select_glacial_discharge() {
         echo; echo "                *   selecting glacial discharge from ice_file_for_atmosphere.nc"
-        cdo -s -selvar,${ice_mass_loss_varname} ${COUPLE_DIR}/ice_file_for_atmosphere.nc ${COUPLE_DIR}/ice_discharge.nc
+        if [[ "x${USE_ICEBERGS}" == "x1" ]]; then
+            counter=0
+            COUNT_MAX=15
+            while [ ${counter} -lt ${COUNT_MAX} ]
+            do
+                echo "          * inside while loop "
+                if [ -f ${COUPLE_DIR}/icb_mask.nc ]; then
+                    break
+                fi
+
+                echo; echo "        * File ${COUPLE_DIR}/icb_mask.nc not found. Waiting for 10 seconds ..."
+                sleep 10
+                counter=$((counter+1))
+            done
+            
+            years_to_seconds_divc_factor=3.15569e+07 #from coupling_pism2atmosphere.functions
+            cdo -s -sub -selvar,${ice_mass_loss_varname} ${COUPLE_DIR}/ice_file_for_atmosphere.nc -divc,${years_to_seconds_divc_factor} -selvar,${calving_mass_loss_varname} ${COUPLE_DIR}/icb_mask.nc ${COUPLE_DIR}/ice_discharge.nc
+        else
+            cdo -s -selvar,${ice_mass_loss_varname} ${COUPLE_DIR}/ice_file_for_atmosphere.nc ${COUPLE_DIR}/ice_discharge.nc
+        fi
 }
 
 
@@ -1020,6 +1039,7 @@ update_land_runoff_fill_missing() {
         # in the atmosphere, loss should be positive, gain should be negative)
         # PG: Fix for way too much water:
         # Divide by minus 1000; oasis gives m/s to FESOM, not kg/m2/s.
+        
         cdo -s mulc,-1 -divc,1000 -setmisstoc,0 $ifile $ofile
 }
 

@@ -2,7 +2,7 @@
 #SBATCH --partition=mpp
 #SBATCH --time=01:00:00
 #SBATCH --ntasks=360
-#SBATCH --output=/work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log/PI_ctrl_awiesm-2.1-wiso_awiesm_compute_20010101-20010131.log --error=/work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log/PI_ctrl_awiesm-2.1-wiso_awiesm_compute_20010101-20010131.log
+#SBATCH --output=/work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log/PI_ctrl_awiesm-2.1-wiso_awiesm_compute_20010101-20010131_%j.log --error=/work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log/PI_ctrl_awiesm-2.1-wiso_awiesm_compute_20010101-20010131_%j.log
 #SBATCH --job-name=PI_ctrl_awiesm-2.1-wiso
 #SBATCH --mail-type=NONE
 #SBATCH --exclusive
@@ -59,7 +59,7 @@ unset SLURM_MEM_PER_CPU
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 42407 - start >> /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log//PI_ctrl_awiesm-2.1-wiso_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 7634 - start >> /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log//PI_ctrl_awiesm-2.1-wiso_awiesm.log
 
 cd /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/run_20010101-20010131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -71,6 +71,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/scripts/
 esm_runscripts PI_ctrl_awiesm-2.1-wiso.yaml -e PI_ctrl_awiesm-2.1-wiso -t observe_compute -p ${process} -s 20010101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 42407 - done >> /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log//PI_ctrl_awiesm-2.1-wiso_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 7634 - done >> /work/ollie/mandresm/testing//run/awiesm//PI_ctrl_awiesm-2.1-wiso/log//PI_ctrl_awiesm-2.1-wiso_awiesm.log
 
 wait

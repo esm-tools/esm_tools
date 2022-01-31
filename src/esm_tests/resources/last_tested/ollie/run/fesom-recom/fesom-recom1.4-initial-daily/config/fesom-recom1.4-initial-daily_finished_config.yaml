@@ -19,7 +19,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            message: 'SLURM ERROR: slurm ended with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -94,7 +94,7 @@ computer:
     nothing: much
     notification_flag: --mail-type=NONE
     operating_system: linux-centos
-    output_flags: --output=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101.log --error=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101.log
+    output_flags: --output=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101_%j.log --error=/work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101_%j.log
     output_path: /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -123,7 +123,7 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101.log
+    thisrun_logfile: /work/ollie/mandresm/testing//run/fesom-recom//fesom-recom1.4-initial-daily/log/fesom-recom1.4-initial-daily_fesom-recom_@jobtype@_19580101-19580101_%j.log
     threads_per_core: 1
     time_flag: --time=00:10:00
     unset_vars:
@@ -1261,7 +1261,7 @@ general:
     - restart_in
     initial_date: '1958-01-01T00:00:00'
     inspect: null
-    jobid: 39530
+    jobid: 3431
     jobtype: prepcompute
     last_run_datestamp: 19571231-19571231
     last_run_in_chunk: false

@@ -425,6 +425,8 @@ file_movements:
             all_directions: copy
         waminfo_in:
             all_directions: copy
+        outdata: # TODO: ask GEOMAR if they are fine with this, otherwise we have to put it into awicm3.yaml
+            all_directions: move
 
 # TODO: expand comment
 massfixer: 2
@@ -644,7 +646,7 @@ outdata_in_work:
         MPP: MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        awi_cm3: awi3_atm*
+        atm: atm*
 
 outdata_sources:
         # old grib based output
@@ -654,7 +656,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        awi_cm3: awi3_atm*
+        atm: atm*
 
 
 #======================================================================================
@@ -687,7 +689,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-                        awi_cm3: awi_cm3
+                        atm: atm
         0:
                 outdata_files:
                         ICMGG: ICMGG

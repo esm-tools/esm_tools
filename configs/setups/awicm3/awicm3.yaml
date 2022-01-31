@@ -108,6 +108,7 @@ oifs:
                 "frontiers":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                 "frontiers-xios":
+                        with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                         add_namelist_changes:
                                 fort.4:

@@ -19,8 +19,6 @@ choose_version:
     branch: "2.1.0"
   2.1-wiso:
     branch: wiso
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
     add_restart_in_files:
         wiso_restart: wiso_restart
     add_restart_out_files:

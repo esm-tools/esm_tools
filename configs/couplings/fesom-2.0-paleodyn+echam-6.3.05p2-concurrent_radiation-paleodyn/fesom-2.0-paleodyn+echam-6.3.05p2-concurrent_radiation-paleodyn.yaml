@@ -1,7 +1,7 @@
 components:
 - echam-6.3.05p2-concurrent_radiation-paleodyn
 - fesom-2.0-paleodyn
-- oasis3mct-2.8
+- oasis3mct-2.8-paleodyn
 coupling_changes:
 - sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.0/CMakeLists.txt
 - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2-concurrent_radiation-paleodyn/config/mh-linux

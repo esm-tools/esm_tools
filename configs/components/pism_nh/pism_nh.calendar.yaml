@@ -1,0 +1,18 @@
+force_bootstrap_first_run: false
+calendar_type: 0
+current_year: ${current_date!syear}
+
+choose_general.run_number:
+    1:
+        choose_lresume:
+            false:
+                using_bootstrap: true
+                add_pism_command_line_opts:
+                    - "-bootstrap"
+            true:
+                choose_force_bootstrap_first_run:
+                    true:
+                        using_bootstrap: true
+                        add_pism_command_line_opts:
+                            - "-bootstrap"
+

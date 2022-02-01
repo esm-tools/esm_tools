@@ -51,7 +51,11 @@ general:
         available_versions:
         - agrif
         - '2.0'
+        - '2.1'
         choose_version:
+          '2.1':
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
           '2.0':
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
@@ -187,11 +191,10 @@ oifs:
         # A grid is wet points except lakes
         # L grid is wet points including lakes
         # R grid is dry points
-        foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain]
+        foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain, ATotEvap, ATotSnow, AIceEvap]
         foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
-                        A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, ATotSnow,
-                        AIceEvap, A_dQnsdT]
-        foci_fields_r: [A_Runoff] #, A_Calving]
+                        A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, A_dQnsdT]
+        foci_fields_r: [A_Runoff] #, A_Calving]        
                 
         coupling_fields:              
                 "[[foci_fields_a-->FIELD]]":
@@ -257,9 +260,10 @@ nemo:
                                 ln_rnf_sal: .false.  
                         namsbc_cpl:
                                 sn_rcv_rnf: ['coupled', 'no', '', '', '']
+                                sn_rcv_emp: ['conservative', 'no', '', '', '']
 
-        choose_runoff_method:
-                "new":
+        choose_general.runoff_method:
+                "EM21":
                         add_namelist_changes:
                                 namelist_cfg:
                                         namsbc_cpl:
@@ -274,7 +278,7 @@ nemo:
         resolution: ORCA05
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
         
-        # number of neighbours for runoff remapping (if runoff_method = new)
+        # number of neighbours for runoff remapping (if runoff_method = EM21)
         # 1 is ok for ORCA1, so 4 should be ok for ORCA05
         # Small number means lots of runoff in each few grid cells which could be unstable
         # Large number means low runoff in many grid cells which is stable, but less accurate
@@ -391,8 +395,8 @@ oasis3mct:
                         #- 'O_QsrIce:O_QnsIce:OTotSnow:OIceEvap:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:ATotSnow:AIceEvap:A_dQnsdT'
                         - 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
                         - 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
-                        - 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
-                        - 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
+                        #- 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
+                        #- 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
                         - 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
                 
                 # Coupled atm stress to ocean (non-conserving)
@@ -409,16 +413,19 @@ oasis3mct:
                         - 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
                         - 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
                         - 'OTotRain <--a2ogauswgtcn-- ATotRain'
+                        - 'OTotSnow <--a2ogauswgtcn-- ATotSnow'
+                        - 'OIceEvap <--a2ogauswgtcn-- AIceEvap'
+                        - 'OTotEvap <--a2ogauswgtcn-- ATotEvap'
 
         # new behaviour: locally conservative remapping of runoff
         #                and split runoff and Antarctic calving        
         # old behaviour: everything is runoff. remap to NEMO with bilinear
         choose_general.runoff_method:
-                'new':
-                        add_coupling_target_fields:
+                'EM21':
+                        add_coupling_target_fields: 
                                 rnrunoff:
                                         - 'O_Runoff <--r2oloccunif-- R_Runoff_oce'
-                                        - 'OCalving <--c2obilincn-- R_Calving_oce'
+                                        #- 'OCalving <--c2obilincn-- R_Calving_oce'
                         add_restart_in_files:
                                 rmp_c2o_RC: rmp_c2o_RC
                                 rmp_r2o_RC: rmp_r2o_RC

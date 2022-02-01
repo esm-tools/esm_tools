@@ -120,6 +120,7 @@ choose_compiler_mpi:
         - "load ParaStationMPI/5.4.7-1"
         - "load CMake"
         - "load Python/3.8.5"
+        - "load ASE/3.19.2-Python-3.8.5"
         - "load imkl/2020.2.254"
         #- "load Perl/5.32.0"
       add_export_vars:

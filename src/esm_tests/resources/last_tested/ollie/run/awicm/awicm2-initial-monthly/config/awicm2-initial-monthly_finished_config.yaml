@@ -19,7 +19,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            message: 'SLURM ERROR: slurm ended with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -94,7 +94,7 @@ computer:
     nothing: much
     notification_flag: --mail-type=NONE
     operating_system: linux-centos
-    output_flags: --output=/work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131.log --error=/work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131.log
+    output_flags: --output=/work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131_%j.log --error=/work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131_%j.log
     output_path: /work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -123,7 +123,7 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131.log
+    thisrun_logfile: /work/ollie/mandresm/testing//run/awicm//awicm2-initial-monthly/log/awicm2-initial-monthly_awicm_@jobtype@_20000101-20000131_%j.log
     threads_per_core: 1
     time_flag: --time=00:15:00
     unset_vars:
@@ -1643,7 +1643,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 43402
+    jobid: 9255
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false

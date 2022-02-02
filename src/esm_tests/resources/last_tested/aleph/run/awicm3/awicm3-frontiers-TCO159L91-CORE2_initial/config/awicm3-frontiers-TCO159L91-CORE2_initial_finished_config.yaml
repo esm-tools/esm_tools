@@ -11,6 +11,17 @@ computer:
     batch_system: pbs
     c++_lib: cray-c++-rts
     cc: cc
+    check_error:
+        Exiting due to errors. Application aborted:
+            file: /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_execution_20000101-20000101_@jobid@.log
+            frequency: 30
+            message: 'PBS ERROR: pbs ended with an error, exiting.'
+            method: kill
+        'exit signals: Killed':
+            file: /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_execution_20000101-20000101_@jobid@.log
+            frequency: 30
+            message: 'PBS ERROR: pbs ended with an error, exiting.'
+            method: kill
     cxx: CC
     debug_info:
         loaded_from_file:
@@ -78,7 +89,7 @@ computer:
     nodes_flag: -l nodes=@nodes@
     notification_flag: ''
     operating_system: SLES
-    output_flags: -j oe -o /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101.log
+    output_flags: -j oe -o /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101_$PBS_JOBID.log
     output_path: /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/
     partition: iccp
     partition_cpn: 40
@@ -103,11 +114,11 @@ computer:
     sh_interpreter: /bin/sh
     submit: qsub
     submitted: false
-    thisrun_logfile: /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101.log
+    thisrun_logfile: /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101_$PBS_JOBID.log
     threads_per_core: 1
     time_flag: -l walltime=00:30:00
     useMPI: cray_mpich
-    write_execution_log: '| tee /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_execution_20000101-20000101.log'
+    write_execution_log: '| tee /scratch/awi/mandresm/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_execution_20000101-20000101_$PBS_JOBID.log'
 debug_info:
     loaded_from_file:
     - /mnt/lustre/home/awiiccp/esm_tools/configs/.//setups/awicm3/awicm3.yaml
@@ -914,7 +925,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 139556
+    jobid: 283084
     jobtype: prepcompute
     last_run_datestamp: 19991231-19991231
     last_run_in_chunk: false
@@ -1902,6 +1913,7 @@ oifs:
                 - OIFS_CC=$CC
                 - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                iolibraries: geomar_libs
             glogin:
                 add_export_vars:
                 - LAPACK_LIB='-mkl=sequential'
@@ -1932,6 +1944,7 @@ oifs:
                 - OIFS_CC=$CC
                 - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                iolibraries: geomar_libs
             juwels:
                 add_export_vars:
                 - ESM_NETCDF_C_DIR=$NETCDFROOT
@@ -2899,6 +2912,7 @@ oifs:
                 - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                iolibraries: geomar_libs
             glogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2908,6 +2922,7 @@ oifs:
                 - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
+                iolibraries: geomar_libs
             juwels:
                 add_export_vars:
                 - OIFS_FFIXED=""

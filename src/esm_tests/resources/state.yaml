@@ -26,7 +26,7 @@ awicm3:
         run: true
       mistral:
         compilation: true
-        run: false
+        run: true
       ollie:
         compilation: true
         run: true

@@ -247,7 +247,6 @@ class IcebergCalving:
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         corr = disch_tot / sum(vol) 
-        #corr = area_tot / sum(x)
         
         x = x * corr
         
@@ -256,7 +255,6 @@ class IcebergCalving:
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         vol_sum_0 = sum(vol)
-        #x_sum_0 = sum(x)
         
         x = x[x>xmin]
         x = x[x<self.area_max]
@@ -266,9 +264,7 @@ class IcebergCalving:
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         vol_sum_1 = sum(vol)
-        #x_sum_1 = sum(x)
         corr = vol_sum_0 / vol_sum_1
-        #corr = x_sum_0 / x_sum_1
         x = x * corr
 
         x_tot = x
@@ -287,7 +283,6 @@ class IcebergCalving:
             thick[thick>self.thick_max] = self.thick_max
             vol = x_tot * thick
             corr = disch_tot / sum(vol)
-            #corr = area_tot / sum(x_tot)
             x_tot = x_tot * corr
             
         # correction with respect to iceberg volume and not iceberg area
@@ -295,7 +290,6 @@ class IcebergCalving:
 
         area = x_tot
         bins = np.digitize(area, self.bins, right=True)
-        print("LA DEBUG: thick = ", thick)
 
         #for a, b in zip(area, bins):
         #    vol = np.concatenate([vol, [a * self.thick[b]]])

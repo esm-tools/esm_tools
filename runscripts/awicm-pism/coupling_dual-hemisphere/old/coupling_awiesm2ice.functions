@@ -1,0 +1,5 @@
+#!/bin/ksh
+awiesm2ice() {
+    echam2ice
+    fesom2ice
+}

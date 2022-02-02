@@ -1,0 +1,163 @@
+general:
+    setup_name: "awiesm"
+    account: ba0989
+    compute_time: "00:55:00"
+    initial_date: "1938-01-01"
+    final_date: "2037-12-31"
+    base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+    nmonth: 0
+    nyear: 1
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+    #clean_old_rundirs_keep_every: 5
+    #clean_old_rundirs_except: 2
+
+awiesm:
+    version: "2.1"
+    postprocessing: true
+    scenario: "PALEO"
+    model_dir: "/home/a/a270124/awiesm-2.1"
+
+echam:
+    version: "6.3.05p2-concurrent_radiation-paleodyn"
+    restart_unit: "years"
+    nproca: 24 
+    nprocb: 24 # this alone has no effect, nprocb still set to 24 in namelist.echam
+    nprocar: 0 #switch off concurrent radiation, delete this line or switch to 24 to use concurrent radiation
+    nprocbr: 0 #switch off concurrent radiation, delete this line or switch to 18 to use concurrent radiation
+    npromar: 0
+    lresume: 1
+    use_transient_forcing: false
+    #transient_forcing_table: "/work/ollie/lackerma/PalModII/125-110ka_echam_forcing.tab" 
+    hosing_correction: true
+    disturbance: 1.00001
+    ini_parent_dir: "/work/ba0989/a270124/PalModII/experiments/PI_bootstrap/restart/echam/"
+    ini_parent_exp_id: "PI_bootstrap"
+    ini_parent_date: "19371231"
+    add_namelist_changes:
+        namelist.echam:
+            #dynctl:
+            #    enstdif: 1.001
+            parctl:
+                nproca: 24 #this does the trick
+                nprocb: 24 #this does the trick, nprocb is 18 in namelist.echam
+                nprocar: 0 #switch off concurrent radiation, delete this line or switch to 24 to use concurrent radiation
+                nprocbr: 0 #switch off concurrent radiation, delete this line or switch to 18 to use concurrent radiation
+            radctl:
+                # NOTE(PG): From Peter Köhler:
+#                co2vmr: 275.938E-06
+#                ch4vmr: 640.417E-09
+#                n2ovmr: 263.084E-09
+#                # NOTE(PG): From the Berger program:
+#                cecc: 0.040013
+#                cobld: 23.798000
+#                clonp: 127.14
+                lrad_async: False
+                yr_perp: remove_from_namelist
+            runctl:
+                l_orbvsop87: false
+                default_output: false
+            wisoctl:
+                lwiso_rerun: False
+                lwiso: False
+                nwiso: 0
+    
+    #add_input_sources:
+    #    gfw_atmo: "${couple_dir}/latest_gfw_atmo.nc"
+    
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_dual-ice2echam.functions
+                    script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: ice2echam
+                    env_preparation: env_echam.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: echam2ice
+                    env_preparation: env_echam.py
+                    run_only: last_run_in_chunk
+
+jsbach:
+    add_input_sources:
+        jsbach_1850: "/work/ba0989/a270124/PalModII/experiments//PI_bootstrap/couple//jsbach_init_file_1938-01-01T00:00:00-1942-12-31T00:00:00.nc"
+    lresume: 1
+    ini_parent_exp_id: "PI_bootstrap"
+    ini_parent_date: "19371231"
+    ini_parent_dir: "/work/ba0989/a270124/PalModII/experiments/PI_bootstrap/restart/jsbach/"
+
+hdmodel:
+    lresume: 1
+    ini_parent_exp_id: "PI_bootstrap"
+    ini_parent_date: "19371231"
+    ini_parent_dir: "/work/ba0989/a270124/PalModII/experiments/PI_bootstrap/restart/hdmodel/"
+
+oasis3mct:
+    lresume: 1
+    ini_parent_exp_id: "PI_bootstrap"
+    ini_parent_date: "19371231"
+    ini_parent_dir: "/work/ba0989/a270124/PalModII/experiments/PI_bootstrap/restart/oasis3mct/"
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/pool/data/AWICM/FESOM2"
+    mesh_dir: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/"
+    namelist_dir: "/work/ba0989/a270124/PalModII/experiments/work_RC12_wiso/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1
+    ini_parent_exp_id: "PI_bootstrap"
+    ini_parent_date: "19371231"
+    ini_parent_dir: "/work/ba0989/a270124/PalModII/experiments/PI_bootstrap/restart/fesom/"
+    use_icebergs: False
+    iceberg_dir: ""
+    #do_hosing:  True
+    add_namelist_changes:
+        namelist.config:
+            paths:
+                ClimateDataPath: "/pf/a/a270064/work/AWIESM2.1-EXP/hydrography/"
+                ForcingDataPath: remove_from_namelist
+                OpbndPath: remove_from_namelist
+                TideForcingPath: remove_from_namelist
+            run_config:
+                lwiso: False
+            geometry:
+                force_rotation: true 
+
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2fesom.functions
+                    script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: ice2fesom
+                    env_preparation: env_fesom.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_fesom2ice.functions
+                    script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                    call_function: fesom2ice
+                    env_preparation: env_fesom.py
+                    run_only: last_run_in_chunk

@@ -25,6 +25,7 @@ def prepare_environment(config):
             "POOL_DIR_jsbach": "/pool/data/",
             "POOL_DIR_echam": "/pool/data/",
             "MACHINE": config["computer"]["name"],
+            "USE_ICEBERGS": config["fesom"].get("use_icebergs", False),
             "MESH_PATH_FESOM": config["fesom"]["mesh_dir"],
             "HOSING_FILE_LANDICE_LOSS": config["fesom"].get("fwf_path", config["general"]["experiment_couple_dir"]),
             "HOSING_CORRECTION": int(config["echam"]["hosing_correction"]),

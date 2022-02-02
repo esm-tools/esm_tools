@@ -20,7 +20,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            message: 'SLURM ERROR: slurm ended with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -106,7 +106,7 @@ computer:
     name_flag: --job-name=echam6.3.04p1-initial-monthly
     nodes_flag: --nodes=@nodes@
     notification_flag: --mail-type=NONE
-    output_flags: --output=/work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131.log --error=/work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131.log
+    output_flags: --output=/work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131_%j.log --error=/work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131_%j.log
     output_path: /work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -137,7 +137,7 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131.log
+    thisrun_logfile: /work/ab0995/a270152/testing//run/echam//echam6.3.04p1-initial-monthly/log/echam6.3.04p1-initial-monthly_echam_@jobtype@_20000101-20000131_%j.log
     threads_per_core: 1
     time_flag: --time=00:15:00
     useMPI: intelmpi
@@ -1297,7 +1297,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 18981
+    jobid: 49017
     jobtype: prepcompute
     last_run_datestamp: 19991201-19991231
     last_run_in_chunk: false

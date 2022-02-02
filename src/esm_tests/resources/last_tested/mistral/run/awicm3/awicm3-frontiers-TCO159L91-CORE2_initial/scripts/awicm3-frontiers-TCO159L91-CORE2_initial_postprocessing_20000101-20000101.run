@@ -2,7 +2,7 @@
 #SBATCH --partition=compute
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
-#SBATCH --output=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log --error=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101.log
+#SBATCH --output=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101_%j.log --error=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_postprocessing_20000101-20000101_%j.log
 #SBATCH --job-name=awicm3-frontiers-TCO159L91-CORE2_initial
 #SBATCH --account=ab0995
 #SBATCH --mail-type=NONE
@@ -92,7 +92,7 @@ unset SLURM_ARBITRARY_NODELIST
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 33864160 - start >> /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log//awicm3-frontiers-TCO159L91-CORE2_initial_awicm3.log
+echo $(date +"%a %b  %e %T %Y") : postprocessing_oifs 1 2000-01-01T00:00:00 34370034 - start >> /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log//awicm3-frontiers-TCO159L91-CORE2_initial_awicm3.log
 
 cd /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/run_20000101-20000101/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=none /mnt/lustre01/pf/a/a270152/esm_tools/configs/.//setups/awicm3/postprocessing.sh /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/outdata/oifs/ 20000101 2>&1 &

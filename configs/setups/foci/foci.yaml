@@ -499,7 +499,7 @@ oasis3mct:
 
                         norestart: "T"
                         mct_version: "4.0"
-                        version: "4.0"
+                        version: "4.0-geomar"
 
                         export_mode_a2o: EXPORTED
 
@@ -538,7 +538,7 @@ oasis3mct:
 
                         norestart: "T"
                         mct_version: "4.0"
-                        version: "4.0"
+                        version: "4.0-geomar"
                         
                         export_mode_a2o: EXPORTED     
                          

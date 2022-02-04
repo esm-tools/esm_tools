@@ -832,9 +832,6 @@ coupling_fields:
         hydr_atm:
                 grid: atmo
 
-        "[[foci_fields-->FIELD]]":
-                grid: atmo
-
         co2_atmo:
                 grid: atmo
         co2c_atm:

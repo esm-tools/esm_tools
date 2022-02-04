@@ -76,10 +76,10 @@ def assemble_filename(filename, dirname, config):
     if filename.startswith("/"):
         return filename
     if filename.startswith(".") or dirname == "." or dirname == "./":
-        return os.path.join(["general"]["started_from"], filename)
+        return os.path.join(config["general"]["started_from"], filename)
     if dirname:
         return os.path.join(dirname, filename)
-    return os.path.join(["general"]["started_from"], filename)
+    return os.path.join(config["general"]["started_from"], filename)
 
 
 def export_string(environment_dict):

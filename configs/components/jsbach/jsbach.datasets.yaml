@@ -1,7 +1,10 @@
+hist_fold: hist_harvest
+hist_scenario: ssp370  # dataset to use for year > 2014
+
 input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
         "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
-        "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1976${jsbachnc_file_ending}.nc"
+        "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
 
         # FOCI specific input sources
         "cpools_foci": "${adj_input_dir}/cpools_${echam.resolution}${echam.ocean_resolution}_pdv0002_51251231.nc"
@@ -10,19 +13,103 @@ input_sources:
         "lctlib_foci": "${computer.pool_directories.focipool}/ECHAM6_GENERAL/JSBACH/input/lctlib_nlct21.def"
 
 forcing_sources:
-        "LU_1850": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc"
-        "LU_1950": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1950.nc"
+        # harvest
+        "LU_1850": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc"
+        "LU_1950": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1950.nc"
         "LU_HIST":
-                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc":
                         to: 1850
-                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 1851
+                        to: 2014
+                # HIST scenario will use this data beyond year 2014
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                        from: 2015
+        "LU_ssp126":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp126_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_ssp245":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp245_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_ssp534os":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp534os_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_ssp585":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp585_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        # landuse transitions
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
-
+        "LU_trans_hist":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            # For the transient land data use a similar fix like in HIST land use
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+        "LU_trans_ssp126":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp126${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_trans_ssp245":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp245${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_trans_ssp534os":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp534os${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
+        "LU_trans_ssp585":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                to: 2014
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp585${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 2015
+                to: 2299
 
 choose_dataset:
         r0007:
+                "hist_fold": "hist"
                 add_forcing_sources:
+                        "LU_RCP26":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/rcp26/LUH_harvest_${echam.resolution}_rcp26_@YEAR@.nc":
+                                        from: 2015
+                        "LU_RCP45":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/rcp45/LUH_harvest_${echam.resolution}_rcp45_@YEAR@.nc":
+                                        from: 2015
+                        "LU_RCP85":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/rcp85/LUH_harvest_${echam.resolution}_rcp85_@YEAR@.nc":
+                                        from: 2015
                         "cover_fract_HIST":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_1850.nc":
                                         to: 1850
@@ -41,47 +128,84 @@ choose_dataset:
                                         from: 1851
         r0010:
                 add_forcing_sources:
-                        "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc"
-                        "Ndepo_1950": "${input_dir}/${echam.resolution}/ndepo/Ndepo.1950.nc"
+                        "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
+                        "Ndepo_ssp126":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
+                                        from: 1850
+                                        to: 2099
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
+                        "Ndepo_ssp245":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
+                                        from: 1850
+                                        to: 2099
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
+                        "Ndepo_ssp534os":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
+                                        from: 1850
+                                        to: 2099
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
+                        "Ndepo_ssp585":
+                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585.nc": # nyear x nmonth
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
+                                        from: 1850
+                                        to: 2099
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_2099.nc": # 12 months
+                                        from: 2100
+                                        to: 2101
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
-                        "popdens":   "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc"
+                        "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
+                        "popdens_ssp1":
+                                #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp1_${echam.resolution}.nc": # nyear
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/T63/spitfire/population_density_ssp1_T63.nc": # see README.md in this dir
+                                        from: 1850
+                                        to: 2100
+                        "popdens_ssp2":
+                                #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp2_${echam.resolution}.nc": # nyear
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/T63/spitfire/population_density_ssp2_T63.nc": # see README.md in this dir
+                                        from: 1850
+                                        to: 2100
+                        "popdens_ssp5":
+                                #"${input_dir}/${echam.resolution}/spitfire/population_density_ssp5_${echam.resolution}.nc": # nyear
+                                "/work/ba1103/a270073/forcing/JSBACH/input/r0010/T63/spitfire/population_density_ssp5_T63.nc": # see README.md in this dir
+                                        from: 1850
+                                        to: 2100
                         "cover_fract_HIST":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 1850
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 1851
-
-                        "cover_fract_hist_scenario":
-                                "${cover_fract_dir}/cover_fract_11tiles_1850.nc":
-                                        to: 1850
-                                "${cover_fract_dir}/cover_fract_11tiles_@YEAR@.nc":
-                                        from: 1851
+                        "cover_fract_ssp126":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
-                                "${cover_fract_dir}/${echam.scenario}/cover_fract_11tiles_@YEAR@.nc":
+                                "${input_dir}/${echam.resolution}/land_use_maps/ssp126/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
-
-
-                        "LU_trans_hist_scenario": 
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": 
+                                        to: 2300
+                        "cover_fract_ssp245":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": 
+                                "${input_dir}/${echam.resolution}/land_use_maps/ssp245/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
-
-                        "LU_hist_scenario":
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
-                                        to: 1850
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                                        from: 1851
+                                        to: 2300
+                        "cover_fract_ssp534os":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                "${input_dir}/${echam.resolution}/land_use_maps/ssp534os/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
-
-                        "Ndepo_hist_scenario":
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
-                                        to: 1850
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
-                                        from: 1851
+                                        to: 2300
+                        "cover_fract_ssp585":
+                                "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
+                                "${input_dir}/${echam.resolution}/land_use_maps/ssp585/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
+                                        to: 2300
+

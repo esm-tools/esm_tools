@@ -385,6 +385,12 @@ coupling_fields:
                 grid: feom
         hydr_oce:
                 grid: feom
+        co2_feom:
+                grid: feom
+        co2c_oce:
+                grid: feom
+        w10w_oce:
+                grid: feom
 
 grids:
         feom:

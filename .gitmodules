@@ -2,4 +2,3 @@
 	path = src/esm_tests/resources
 	url = https://github.com/esm-tools/esm_tests_info
 	branch = release
-	update = merge

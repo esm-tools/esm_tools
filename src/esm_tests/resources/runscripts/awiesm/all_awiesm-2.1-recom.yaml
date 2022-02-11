@@ -2,7 +2,7 @@ general:
     account: !ENV ${ACCOUNT}
     setup_name: "awiesm"
     version: "2.1-recom"
-    compute_time: "00:29:00"
+    compute_time: "01:00:00"
     initial_date: "2001-01-01"
     final_date: "2001-03-01"
     base_dir: !ENV ${ESM_TESTING_DIR}
@@ -16,8 +16,8 @@ general:
         mistral:
             fr: True
             fesom_mesh: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/"
-            CDP: "/pf/a/a270108/fesom2_recom_config/input-for-awiesm/"
-            RDP: "/pf/a/a270108/fesom2_recom_config/input-for-awiesm/"
+            CDP: "/home/a/a270105/initial_files/"
+            RDP: "/home/a/a270105/initial_files/"
             jP: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
         ollie:
             fr: False

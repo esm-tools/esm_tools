@@ -31,10 +31,9 @@ def init_monitor_file(config):
         + called_from
         + "_"
         + config["general"]["run_datestamp"]
-        +
-        # "_" +
-        # str(config["general"]["jobid"]) +
-        ".log"
+        + "_"
+        + str(config["general"]["jobid"])
+        + ".log"
     )
     log_in_run = (
         config["general"]["thisrun_log_dir"]
@@ -43,10 +42,9 @@ def init_monitor_file(config):
         + config["general"]["setup_name"]
         + "_"
         + called_from
-        +
-        # "_" +
-        # str(config["general"]["jobid"]) +
-        ".log"
+        + "_"
+        + str(config["general"]["jobid"])
+        + ".log"
     )
 
     if os.path.isfile(exp_log_path):
@@ -107,8 +105,8 @@ def assemble_error_list(config):
         + config["general"]["setup_name"]
         + "_"
         + called_from
-        # + "_"
-        # + gconfig["jobid"]
+        + "_"
+        + gconfig["jobid"]
         + ".log"
     )
 
@@ -128,6 +126,8 @@ def assemble_error_list(config):
                         search_file = config[model]["check_error"][trigger]["file"]
                         if search_file == "stdout" or search_file == "stderr":
                             search_file = stdout
+                        elif "@jobid@" in search_file:
+                            search_file = search_file.replace("@jobid@", config["general"]["jobid"])
                     if "method" in config[model]["check_error"][trigger]:
                         method = config[model]["check_error"][trigger]["method"]
                         if method not in known_methods:

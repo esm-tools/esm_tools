@@ -129,7 +129,7 @@ class Slurm:
 
     ############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
 
-    def add_pre_launcher_lines(self, config, runfile):
+    def add_pre_launcher_lines(self, config, cluster, runfile):
         """
         Adds pre-launcher lines to the ``runfile``.
 

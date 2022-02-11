@@ -38,7 +38,7 @@ def install(package: str) -> None:
     if not package_name in installed_packages:
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        except OSError:  # PermissionDeniedError would be nicer...
+        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "--user", package]
             )

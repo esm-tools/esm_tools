@@ -49,7 +49,7 @@ awiesm:
     all_awiesm-2.1-recom:
       mistral:
         compilation: true
-        run: true
+        run: false
       ollie:
         compilation: true
         run: true

@@ -47,8 +47,8 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, runfile):
-        return self.bs.add_pre_launcher_lines(config, runfile)
+    def add_pre_launcher_lines(self, config, cluster, runfile):
+        return self.bs.add_pre_launcher_lines(config, cluster, runfile)
 
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
@@ -358,7 +358,9 @@ class batch_system:
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
                     commands.append(
-                        "time " + batch_system["execution_command"] + " 2>&1 &"
+                        "time "
+                        + batch_system["execution_command"]
+                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
@@ -368,7 +370,9 @@ class batch_system:
                         continue
                     if "execution_command" in config[model]:
                         commands.append(
-                            "time ./" + config[model]["execution_command"] + " 2>&1 &"
+                            "time ./"
+                            + config[model]["execution_command"]
+                            + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
                         )
         else:
             subjob_tasks = dataprocess.subjob_tasks(config, subjob, batch_or_shell)
@@ -466,7 +470,9 @@ class batch_system:
                         runfile.write(line + "\n")
 
                     # Add actual commands
-                    commands = batch_system.get_run_commands(config, subjob, batch_or_shell)
+                    commands = batch_system.get_run_commands(
+                        config, subjob, batch_or_shell
+                    )
                     # commands = clusterconf.get("data_task_list", [])
                     runfile.write("\n")
                     runfile.write(self.append_start_statement(config, subjob) + "\n")
@@ -474,7 +480,7 @@ class batch_system:
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
                     if cluster in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, runfile
+                            config, cluster, runfile
                         )
 
                     for line in commands:
@@ -596,7 +602,6 @@ class batch_system:
 
         return config
 
-
     @staticmethod
     def find_openmp(config):
         """
@@ -636,7 +641,7 @@ class batch_system:
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
                     "``choose_`` block to decice the case."
-                )
+                ),
             )
         # Set ``heterogeneous_parallelization`` false, overriding whatever the user
         # has defined for this variable to be
@@ -658,12 +663,13 @@ class batch_system:
                     True,
                 )
             # Set ``heterogeneous_parallelization`` true if needed
-            if (
-                int(omp_num_threads) > 1
-                and model in config["general"].get("valid_model_names", [])
+            if int(omp_num_threads) > 1 and model in config["general"].get(
+                "valid_model_names", []
             ):
                 config["general"]["heterogeneous_parallelization"] = True
-                config["computer"]["heterogeneous_parallelization"] = True  # dont like this
+                config["computer"][
+                    "heterogeneous_parallelization"
+                ] = True  # dont like this
                 if (
                     not config[model].get("nproc", False)
                     and not config[model].get("nproca", False)

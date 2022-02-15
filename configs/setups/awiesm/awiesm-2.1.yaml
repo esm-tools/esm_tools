@@ -211,8 +211,7 @@ fesom:
                 "2.1":
                         version: "2.1"
                         ALE_scheme: 'linfs'
-                "2.1-paleodyn-gamma":
-                        # FIXME(PG): ....does that make sense? Choose version sets the version???
+                "2.1-gamma":
                         version: "2.1-paleodyn-gamma"
                         ALE_scheme: 'zstar'
                 "2.1-wiso":

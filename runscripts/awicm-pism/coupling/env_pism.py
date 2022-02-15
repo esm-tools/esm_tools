@@ -30,7 +30,6 @@ def prepare_environment(config):
             #"MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": config["pism"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
             "DOMAIN_pism": config["pism"]["domain"],
             "RES_pism": config["pism"]["resolution"],
@@ -39,7 +38,9 @@ def prepare_environment(config):
             "DEBM_EXE": config["pism"]["debm_path"],
             "MY_OBLIQUITY": config["pism"]["debm_obl"], 
             "iterative_coupling_atmosphere_pism_regrid_method": "DOWNSCALE", 
-            #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
+            #fesom
+            "iter_coup_interact_method_oce2ice": config["pism"].get("oce2ice_method", "OCEANTEMPSALT"),
+            "PISM_OCEAN_PICO_BASINS_FILE": config["pism"].get("basin_file", "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc"),
 
             #"RESTART_DIR_pism": config["pism"]["experiment_restart_in_dir"],
             #"ice_bedrock_change_file": (

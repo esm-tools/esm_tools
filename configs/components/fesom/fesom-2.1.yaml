@@ -37,6 +37,19 @@ choose_version:
     add_coupling_fields:
         "[[wiso_fields-->FIELD]]":
             grid: feom
+  2.1-recom-par_tracers: # MA: for Kai testing ESM-Tools in Levante
+    branch: feature/par_tracers
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
+    destination: fesom-2.1-recom-par_traces
+
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:

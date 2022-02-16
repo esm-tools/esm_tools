@@ -26,7 +26,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm ended with an error, exiting.'
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -113,7 +113,7 @@ computer:
     name_flag: --job-name=awicm3-frontiers-TCO159L91-CORE2_initial
     nodes_flag: --nodes=@nodes@
     notification_flag: --mail-type=NONE
-    output_flags: --output=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101_%j.log --error=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101_%j.log
+    output_flags: --output=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101.log --error=/work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101.log
     output_path: /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -144,7 +144,7 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101_%j.log
+    thisrun_logfile: /work/ab0995/a270152/testing//run/awicm3//awicm3-frontiers-TCO159L91-CORE2_initial/log/awicm3-frontiers-TCO159L91-CORE2_initial_awicm3_@jobtype@_20000101-20000101.log
     threads_per_core: 1
     time_flag: --time=00:30:00
     unset_vars:
@@ -963,7 +963,7 @@ general:
     - restart_in
     initial_date: '2000-01-01T00:00:00'
     inspect: null
-    jobid: 20970
+    jobid: 1127
     jobtype: prepcompute
     last_run_datestamp: 19991231-19991231
     last_run_in_chunk: false
@@ -1939,7 +1939,6 @@ oifs:
                 - OIFS_CC=$CC
                 - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
-                iolibraries: geomar_libs
             glogin:
                 add_export_vars:
                 - LAPACK_LIB='-mkl=sequential'
@@ -1970,7 +1969,6 @@ oifs:
                 - OIFS_CC=$CC
                 - OIFS_CFLAGS="-fp-model precise -O1 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
                 - OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
-                iolibraries: geomar_libs
             juwels:
                 add_export_vars:
                 - ESM_NETCDF_C_DIR=$NETCDFROOT
@@ -2938,7 +2936,6 @@ oifs:
                 - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
-                iolibraries: geomar_libs
             glogin:
                 add_export_vars:
                 - OIFS_FFIXED=""
@@ -2948,7 +2945,6 @@ oifs:
                 - OMP_STACKSIZE=128M
                 add_module_actions:
                 - source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt
-                iolibraries: geomar_libs
             juwels:
                 add_export_vars:
                 - OIFS_FFIXED=""

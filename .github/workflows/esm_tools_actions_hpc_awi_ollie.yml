@@ -2,6 +2,22 @@ name: esm-tools Ollie
 
 # Reusuable part
 on:
+    workflow_dispatch:
+      inputs:
+        model_name:
+          required: True
+          type: choice
+          description: "Which model shall be tested?"
+          options:
+            - AWIESM
+            - AWICM
+            - ECHAM Standalone
+            - FESOM Standalone
+            - PISM Standalone
+        model_version:
+            required: True
+            type: string
+            description: "Which model version to be tested"
     workflow_call:
         inputs:
             model_name:

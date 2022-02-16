@@ -24,16 +24,18 @@ import colorama
 
 
 def save_pickle(obj, path):
-    with open(path, "wb") as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    try:
+        with open(path, "wb") as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    except OSError:
+        # Should be a logger.debug at some point
+        print(f"{path} was not writable, pickle file is not dumped")
 
 
 def load_pickle(path):
     if os.path.isfile(path):
         with open(path, "rb") as f:
             return pickle.load(f)
-    else:
-        return None
 
 
 def combine_components_yaml(parsed_args):
@@ -345,7 +347,8 @@ class setup_and_model_infos:
 
         elif "list_all_packages" in parsed_args:
             self.config = load_pickle(ESM_MASTER_PICKLE)
-
+            if self.config is None:  # PG: This occurs when the pickle file cannot be written in the above step
+                self.config, self.relevant_entries = combine_components_yaml(parsed_args)
         else:
             self.config, self.relevant_entries = combine_components_yaml(parsed_args)
             save_pickle(self.config, ESM_MASTER_PICKLE)

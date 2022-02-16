@@ -74,7 +74,7 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
     - name: Build Container
-      if: startsWidth(github.ref, 'refs/tags')
+      if: startsWith(github.ref, 'refs/tags')
       # You may pin to the exact commit or the version.
       # uses: macbre/push-to-ghcr@d45c4b8f5a72d7fe21f6b832c42d05c29356c840
       uses: macbre/push-to-ghcr@v8

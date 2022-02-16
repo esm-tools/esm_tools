@@ -11,4 +11,5 @@ WORKDIR /app
 COPY . .
 RUN python3 -m pip install .
 
-ENTRYPOINT ["./containerization/entrypoint.sh"]
+# Give the full path, just to be safe:
+ENTRYPOINT ["/app/containerization/entrypoint.sh"]

@@ -38,6 +38,16 @@ defaults:
     shell: bash -leo pipefail {0}
 
 jobs:
+    skip_ci:
+      runs-on: ubuntu-latest
+      # Map the output to the job's outputs
+      outputs:
+        canSkip: ${{ steps.check.outputs.canSkip }}
+      steps:
+        - id: check
+          uses: Legorooj/skip-ci@main
+          with:
+             pattern: (\[skip[\s\-](ci|actions|ga|model-comp)|(ci|actions|ga|model-comp)[\s\-]skip\])
     setup_version_matrix:
         runs-on: hpc_awi_ollie
         outputs:
@@ -52,7 +62,11 @@ jobs:
             - id: set-matrix
               run: echo "::set-output name=matrix::${{ env.VERSION }}"
     basic_compile_test:
-        needs: setup_version_matrix
+        needs: 
+          - setup_version_matrix
+          - skip_ci
+        # And only run the build if canSkip isn't 'true'.
+        if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
         runs-on: hpc_awi_ollie
         strategy:
             matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}

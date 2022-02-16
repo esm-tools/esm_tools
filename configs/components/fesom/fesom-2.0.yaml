@@ -257,6 +257,12 @@ choose_use_icebergs:
             outputs: 
                     [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
 
+            add_outdata_targets:
+                    buoys_track: "buoys_track.nc_${run_datestamp}"
+
+            add_outdata_sources:
+                    buoys_track: "buoys_track.nc"
+
             choose_use_icesheet_coupling:
                     true: 
                             choose_general.chunk_number:
@@ -279,7 +285,7 @@ choose_use_icebergs:
                             input_in_work:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
             
-                    false: 
+                    "*": 
                             iceberg_dir: "${ini_iceberg_dir}"
             
 

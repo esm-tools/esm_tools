@@ -71,3 +71,15 @@ You should now have the command line tools ``esm_master`` and ``esm_runscripts``
 You may have to add the installation path to your ``PATH`` variable::
 
     $ export PATH=~/.local/bin:$PATH
+    
+Installing the Containerized Version
+------------------------------------
+
+``esm-tools`` is also available for use with Docker and Singularity. To download it for Docker, you can use::
+
+    $ docker pull ghcr.io/esm-tools/esm_tools:latest
+    
+Or alternatively for Singularity::
+    
+    $ singularity pull docker://ghcr.io/esm-tools/esm_tools:latest
+

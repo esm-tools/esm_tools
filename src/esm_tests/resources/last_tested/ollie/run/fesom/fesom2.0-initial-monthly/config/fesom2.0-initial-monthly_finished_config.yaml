@@ -19,7 +19,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm ended with an error, exiting.'
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -94,7 +94,7 @@ computer:
     nothing: much
     notification_flag: --mail-type=NONE
     operating_system: linux-centos
-    output_flags: --output=/work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131_%j.log --error=/work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131_%j.log
+    output_flags: --output=/work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131.log --error=/work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131.log
     output_path: /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -123,7 +123,7 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131_%j.log
+    thisrun_logfile: /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_@jobtype@_20010101-20010131.log
     threads_per_core: 1
     time_flag: --time=00:08:00
     unset_vars:
@@ -160,7 +160,7 @@ fesom:
         fesom: /work/ollie/mandresm/testing//comp/fesom/fesom-2.0/bin/fesom.x
     bin_targets:
         fesom: /work/ollie/mandresm/testing/run/fesom/fesom2.0-initial-monthly/run_20010101-20010131/work/fesom
-    branch: 2.0.2
+    branch: master
     branchoff: false
     clean_command: rm -rf build CMakeCache.txt
     climate_data_dir: /work/ollie/pool/FESOM//hydrography/
@@ -656,7 +656,7 @@ general:
     - restart_in
     initial_date: '2001-01-01T00:00:00'
     inspect: null
-    jobid: 6073
+    jobid: 138533
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false

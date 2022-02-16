@@ -35,7 +35,7 @@
 
 &oce_tra
     use_momix = .true.
-    momix_lat = 70.0
+    momix_lat = -50.0
     momix_kv = 0.01
     use_instabmix = .true.
     instabmix_kv = 0.1

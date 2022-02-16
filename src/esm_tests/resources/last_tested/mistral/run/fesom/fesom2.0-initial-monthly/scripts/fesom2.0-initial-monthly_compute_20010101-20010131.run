@@ -2,7 +2,7 @@
 #SBATCH --partition=compute
 #SBATCH --time=00:08:00
 #SBATCH --ntasks=288
-#SBATCH --output=/work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_compute_20010101-20010131_%j.log --error=/work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_compute_20010101-20010131_%j.log
+#SBATCH --output=/work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_compute_20010101-20010131.log --error=/work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log/fesom2.0-initial-monthly_fesom_compute_20010101-20010131.log
 #SBATCH --job-name=fesom2.0-initial-monthly
 #SBATCH --account=ab0995
 #SBATCH --mail-type=NONE
@@ -74,7 +74,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 37766 - start >> /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 42573 - start >> /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
 
 cd /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/run_20010101-20010131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -86,6 +86,6 @@ process=$!
 cd /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/scripts/
 esm_runscripts fesom2.0-initial-monthly.yaml -e fesom2.0-initial-monthly -t observe_compute -p ${process} -s 20010101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 37766 - done >> /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 42573 - done >> /work/ab0995/a270152/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
 
 wait

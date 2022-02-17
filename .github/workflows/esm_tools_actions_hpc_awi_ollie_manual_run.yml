@@ -52,12 +52,18 @@ jobs:
             LANG: en_US.UTF-8
 
         steps:
+          - name: Load Modules
+            run: |
+              module load git
+              module load python3
+
           - name: Download Code
             uses: actions/checkout@v2
 
           - name: Add to the path
             run: |
               echo "$HOME/.local/bin" >> $GITHUB_PATH
+              echo "./.venv/bin" >> $GITHUB_PATH
 
           - name: Install esm-tools
             run: |

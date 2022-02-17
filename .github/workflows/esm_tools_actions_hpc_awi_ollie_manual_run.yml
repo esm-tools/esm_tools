@@ -2,20 +2,22 @@ name: esm-tools Ollie
 
 # Reusuable part
 on:
-    workflow_call:
-        inputs:
-            model_name:
-                required: True
-                type: string
-            model_version:
-                required: True
-                type: string
-        secrets:
-            dkrz-token:
-                required: True
-            awi-token:
-                required: True
-
+    workflow_dispatch:
+      inputs:
+        model_name:
+          required: True
+          type: choice
+          description: "Which model shall be tested?"
+          options:
+            - AWIESM
+            - AWICM
+            - ECHAM Standalone
+            - FESOM Standalone
+            - PISM Standalone
+        model_version:
+            required: True
+            type: string
+            description: "Which model version to be tested"
 
 defaults:
   run:
@@ -30,11 +32,11 @@ jobs:
             - name: Download Code
               uses: actions/checkout@v2
             - id: print_inputs
-              run: echo ${{inputs.model_version}}
+              run: echo ${{github.event.inputs.model_version}}
             - id: print_version_env
-              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{github.event.inputs.model_version}})"
             - id: set_version_env
-              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})" >> $GITHUB_ENV
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{github.event.inputs.model_version}})" >> $GITHUB_ENV
             - id: test-set-matrix
               run: echo "..set-output name=matrix..${{ env.VERSION }}"
             - id: set-matrix

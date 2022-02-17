@@ -73,6 +73,8 @@ jobs:
             run: |
               module load git
               module load python3
+              python3 -m venv .venv
+              source .venv/bin/activate
               ./install.sh
 
           - name: Create esmtoolsrc file

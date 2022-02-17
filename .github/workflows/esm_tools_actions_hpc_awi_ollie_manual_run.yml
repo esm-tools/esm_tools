@@ -1,4 +1,4 @@
-name: esm-tools Ollie
+name: 001 esm-tools Ollie (Manual Run)
 
 # Reusuable part
 on:
@@ -9,15 +9,15 @@ on:
           type: choice
           description: "Which model shall be tested?"
           options:
-            - AWIESM
-            - AWICM
-            - ECHAM Standalone
-            - FESOM Standalone
-            - PISM Standalone
+            - awiesm
+            - awicm
+            - echam
+            - fesom
+            - pism
         model_version:
             required: True
             type: string
-            description: "Which model version to be tested"
+            description: "Which model version to be tested (space seperated for more than one)"
 
 defaults:
   run:

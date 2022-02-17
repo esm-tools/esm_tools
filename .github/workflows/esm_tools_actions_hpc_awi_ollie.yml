@@ -45,6 +45,10 @@ jobs:
         steps:
             - name: Download Code
               uses: actions/checkout@v2
+            - id: print inputs
+              run: echo ${{inputs.model_version}}
+            - id: print_version_env
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
             - id: set_version_env
               run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})" >> $GITHUB_ENV
             - id: test-set-matrix
@@ -73,6 +77,8 @@ jobs:
             run: |
               module load git
               module load python3
+              python3 -m venv .venv
+              source .venv/bin/activate
               ./install.sh
 
           - name: Create esmtoolsrc file

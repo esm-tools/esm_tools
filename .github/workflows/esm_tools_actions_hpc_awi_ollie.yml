@@ -45,7 +45,7 @@ jobs:
         steps:
             - name: Download Code
               uses: actions/checkout@v2
-            - id: print inputs
+            - id: print_inputs
               run: echo ${{inputs.model_version}}
             - id: print_version_env
               run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"

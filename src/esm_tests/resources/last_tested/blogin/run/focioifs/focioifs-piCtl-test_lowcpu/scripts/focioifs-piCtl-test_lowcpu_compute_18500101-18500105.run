@@ -60,7 +60,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 97745 - start >> /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 264170 - start >> /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
 
 cd /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work/
 time srun --mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL --multi-prog hostfile_srun 2>&1 &
@@ -72,6 +72,6 @@ process=$!
 cd /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/scripts/
 esm_runscripts focioifs-piCtl-test_lowcpu.yaml -e focioifs-piCtl-test_lowcpu -t observe_compute -p ${process} -s 18500101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 97745 - done >> /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 1850-01-01T00:00:00 264170 - done >> /scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/log//focioifs-piCtl-test_lowcpu_focioifs.log
 
 wait

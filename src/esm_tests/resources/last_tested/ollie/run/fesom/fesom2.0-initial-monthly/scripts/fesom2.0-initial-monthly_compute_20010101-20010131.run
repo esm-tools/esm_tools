@@ -59,7 +59,7 @@ unset SLURM_MEM_PER_CPU
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 41052 - start >> /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 138533 - start >> /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
 
 cd /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/run_20010101-20010131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -71,6 +71,6 @@ process=$!
 cd /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/scripts/
 esm_runscripts fesom2.0-initial-monthly.yaml -e fesom2.0-initial-monthly -t observe_compute -p ${process} -s 20010101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 41052 - done >> /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 138533 - done >> /work/ollie/mandresm/testing//run/fesom//fesom2.0-initial-monthly/log//fesom2.0-initial-monthly_fesom.log
 
 wait

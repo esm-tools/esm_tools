@@ -108,6 +108,7 @@ oifs:
                 "frontiers":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                 "frontiers-xios":
+                        with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                         add_namelist_changes:
                                 fort.4:
@@ -164,7 +165,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel_2019a_psmpi2019
+                                compiler_mpi: intel2022_ompi2022
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:
@@ -180,7 +181,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel_2019a_psmpi2019
+                                compiler_mpi: intel2022_ompi2022
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:

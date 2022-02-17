@@ -1142,8 +1142,6 @@ general:
         verbose: false
     compute_time: 00:10:00
     coupled_setup: false
-    couplings:
-    - fesom-1.4+recom-2.0
     current_date: '1958-01-01T00:00:00'
     debug_info:
         loaded_from_file: /home/ollie/mandresm/esm_tools/configs/.//defaults/general.yaml
@@ -1261,7 +1259,7 @@ general:
     - restart_in
     initial_date: '1958-01-01T00:00:00'
     inspect: null
-    jobid: 39530
+    jobid: 135641
     jobtype: prepcompute
     last_run_datestamp: 19571231-19571231
     last_run_in_chunk: false

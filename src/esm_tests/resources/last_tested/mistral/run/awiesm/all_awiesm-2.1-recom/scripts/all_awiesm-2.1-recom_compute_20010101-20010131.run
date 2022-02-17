@@ -75,7 +75,7 @@ export ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
 ulimit -s unlimited
 # 3...2...1...Liftoff!
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 46017 - start >> /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 40574 - start >> /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
 
 cd /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/work/
 time srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun 2>&1 &
@@ -87,6 +87,6 @@ process=$!
 cd /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/scripts/
 esm_runscripts all_awiesm-2.1-recom.yaml -e all_awiesm-2.1-recom -t observe_compute -p ${process} -s 20010101 -r 1 -v  --open-run
 
-echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 46017 - done >> /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
+echo $(date +"%a %b  %e %T %Y") : compute 1 2001-01-01T00:00:00 40574 - done >> /work/ab0995/a270152/testing//run/awiesm//all_awiesm-2.1-recom/log//all_awiesm-2.1-recom_awiesm.log
 
 wait

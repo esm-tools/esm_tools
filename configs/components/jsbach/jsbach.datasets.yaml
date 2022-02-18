@@ -51,6 +51,7 @@ forcing_sources:
                 to: 2299
         # landuse transitions
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
+        "LU_trans_1850": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_1850.nc"
         "LU_trans_hist":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014

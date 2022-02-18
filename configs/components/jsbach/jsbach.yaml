@@ -75,7 +75,7 @@ choose_version:
                                         jsbach: jsbach_1850
                                 forcing_files:
                                         LU: LU_1850
-                                        LU_trans: LU_trans_none
+                                        LU_trans: LU_trans_1850
                                         Ndepo: Ndepo_1850
                                         a_nd_file: a_nd_file
                                         lightning: lightning

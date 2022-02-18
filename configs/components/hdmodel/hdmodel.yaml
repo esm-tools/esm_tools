@@ -24,6 +24,7 @@ input_files :
         rmp_hd: rmp_hd
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
+current_minus_dt_date: $(( ${current_date} - ${time_step}seconds ))
 
 input_in_work:
         hdpara: "hdpara.nc"
@@ -40,7 +41,8 @@ restart_in_in_work:
 
 restart_in_sources:
         #hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
-        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
+        #hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
+        hdrestart: restart_${parent_expid}_${current_minus_dt_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 restart_in_files:
         hdrestart: hdrestart

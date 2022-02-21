@@ -496,13 +496,16 @@ class Task:
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
                     else:
-                        subprocess.run(
+                        output = subprocess.run(
                             command_spl,
                             check=True,
+                            stderr=sys.stderr,
+                            stdout=sys.stdout,
                             shell=(
                                 command.startswith("./") and command.endswith(".sh")
                             ),
                         )
+                        
 
     def output(self):
         print()

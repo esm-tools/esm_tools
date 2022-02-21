@@ -104,13 +104,13 @@ jobs:
             run: |
               module load git
               module load python3
-              esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
+              esm_master comp-${{ github.event.inputs.model_name }}-${{ matrix.version }}
 
           - name: Run clean-${{ github.event.inputs.model_name }}-${{ matrix.version }}
             run: |
               module load git
               module load python3
-              esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
+              esm_master clean-${{ github.event.inputs.model_name }}-${{ matrix.version }}
 
           - name: Clean up
             if: ${{ always() }}

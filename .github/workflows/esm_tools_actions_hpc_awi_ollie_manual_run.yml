@@ -75,8 +75,8 @@ jobs:
 
           - name: Create esmtoolsrc file
             run: |
-                echo GITLAB_DKRZ_USER_NAME=${{ secrets.dkrz-token }} >> ${HOME}/.esmtoolsrc
-                echo SWREPO_AWI_USER_NAME=${{ secrets.awi-token }} >> ${HOME}/.esmtoolsrc
+                echo GITLAB_DKRZ_USER_NAME="abtci" >> ${HOME}/.esmtoolsrc
+                echo SWREPO_AWI_USER_NAME="abtci" >> ${HOME}/.esmtoolsrc
 
           - name: Run esm_master
             run: |

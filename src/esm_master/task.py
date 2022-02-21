@@ -298,6 +298,11 @@ class Task:
             if task.todo in ["get"]:
                 if task.package.command_list[task.todo] is not None:
                     for command in task.package.command_list[task.todo]:
+                        if os.environ.get("CI"):
+                            print("CI Mode! Using secrets for credentials")
+                            if command.startswith("git clone"):
+                               command = command.replace("gitlab.awi.de", os.environ.get("GITLAB_AWI_TOKEN", "")+"@gitlab.awi.de")
+                               command = command.replace("gitlab.dkrz.de", os.environ.get("GITLAB_DKRZ_TOKEN", "")+"@gitlat.dkrz.de")
                         command_list.append(command)
                         real_command_list.append(command)
 

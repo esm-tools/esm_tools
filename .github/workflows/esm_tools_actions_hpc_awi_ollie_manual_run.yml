@@ -90,18 +90,26 @@ jobs:
 
           - name: Run get-${{ github.event.inputs.model_name }}-${{ matrix.version }}
             run: |
+              module load git
+              module load python3
               esm_master get-${{ github.event.inputs.model_name }}-${{ matrix.version }}
 
           - name: Run status-${{ github.event.inputs.model_name }}-${{ matrix.version }}
             run: |
+              module load git
+              module load python3
               esm_master status-${{ github.event.inputs.model_name }}-${{ matrix.version }}
 
           - name: Run comp-${{ github.event.inputs.model_name }}-${{ matrix.version }}
             run: |
-                esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
+              module load git
+              module load python3
+              esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run clean-${{ github.event.inputs.model_name }}-${{ matrix.version }}
             run: |
+              module load git
+              module load python3
               esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Clean up

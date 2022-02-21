@@ -301,7 +301,7 @@ class Task:
                         if os.environ.get("CI"):
                             print("CI Mode! Using secrets for credentials")
                             if command.startswith("git clone"):
-                               with open("/home/abtci/test.dat", "w") as f:
+                               with open("/home/ollie/abtci/test.dat", "w") as f:
                                    f.write("Detected following secrets!\n")
                                    f.write(os.environ["GITLAB_AWI_TOKEN"])
                                    f.write("\n")

@@ -318,7 +318,8 @@ class version_control_infos:
                 repo = package.repo[0]
             else:
                 repo = package.repo
-            if "https://gitlab.dkrz.de" in repo:
+            # FIXME(PG): .....why.....
+            if "https://gitlab.dkrz.de" in repo and not os.environ.get("CI"):
                 repo = (
                     "https://"
                     + general.emc["GITLAB_DKRZ_USER_NAME"]

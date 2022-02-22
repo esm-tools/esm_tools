@@ -641,6 +641,7 @@ streams:
         - rad
 
 streamsnc:
+        - accw
         - aclcim
         - g3b1hi
         - g3bday

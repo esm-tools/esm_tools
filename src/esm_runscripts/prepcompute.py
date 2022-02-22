@@ -4,6 +4,13 @@ import shutil
 import subprocess
 import copy
 
+######################################
+# LA for icebergs
+from cdo import Cdo
+import glob
+import pandas as pd
+######################################
+
 import f90nml
 import six
 import yaml
@@ -230,7 +237,7 @@ def copy_files_to_thisrun(config):
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
     if "fesom" in config["general"]["valid_model_names"]:
         if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
-            if config["general"].get("run_number", 0) == 1:
+            if config["general"].get("run_number", 1) == 1:
                 if not os.path.isfile(
                     config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
                 ):
@@ -249,12 +256,69 @@ def copy_files_to_thisrun(config):
     return config
 
 
+def scale_icebergs(config):
+    if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
+        if config["general"]["run_number"] > 1 and not config["general"].get("iterative_coupling", False) and config["fesom"].get("use_icesheet_coupling", False) and config["fesom"].get("icb_pe_scale", False):
+            print("Scale icebergs according to P-E of previous year ...")
+            cdo = Cdo()
+            
+            hemisphere = config["fesom"].get("icb_hemi", "")
+
+            previous_year = int(config["general"]["current_date"].syear) - 1
+            files = glob.glob(config["echam"]["experiment_outdata_dir"] + "/*_" + str(previous_year) + "*.01_accw.nc")
+            ofile = os.path.join(config["general"]["experiment_couple_dir"] , "echam_" + hemisphere.lower() + "_total_p-e_over_glaciers_" + config["general"]["current_date"].syear + ".nc")
+            
+            if not files:
+                print("No echam output files found!")
+                exit
+           
+            print("LA DEBUG: files = ", files)
+            tmp1 = cdo.cat(input=files)
+            tmp2 = cdo.selcode("221", input="-timmean  %s"%(tmp1))
+            
+            if not os.path.isfile(os.path.join(config["general"]["experiment_couple_dir"] , "echam.gridarea.nc")):
+                cdo.gridarea(input=tmp2, output=os.path.join(config["general"]["experiment_couple_dir"] , "echam.gridarea.nc"))
+            
+            tmp3 = cdo.mul(input=[os.path.join(config["general"]["experiment_couple_dir"] , "echam.gridarea.nc"), tmp2])
+            
+            if hemisphere.lower() == "shem":
+                tmp4 = cdo.fldsum(input="-sellonlatbox,-180,180,-90,0 %s"%(tmp3))
+            elif hemisphere.lower() == "nhem":
+                tmp4 = cdo.fldsum(input="-sellonlatbox,-180,180,0,90 %s"%(tmp3))
+            else:
+                print("Wrong hemisphere given!")
+                exit
+            
+            seconds_in_year = 3600*24*365
+            kg_to_Gt = 1e-12
+            
+            tmp5 = cdo.mulc(str(seconds_in_year*kg_to_Gt), input=tmp4, output=ofile)
+            tmp, value = cdo.outputkey("value", input=tmp5)
+            value = float(value)
+            
+            length = pd.read_csv(os.path.join(config["fesom"]["thisrun_input_dir"], "icb_length.dat"), header=None)
+            height = pd.read_csv(os.path.join(config["fesom"]["thisrun_input_dir"], "icb_height.dat"), header=None)
+            scaling = pd.read_csv(os.path.join(config["fesom"]["thisrun_input_dir"], "icb_scaling.dat"), header=None)
+            
+            vol = length.values * length.values * height.values * scaling.values
+            vol_tot = vol.sum()
+            mass_tot = vol_tot * 910 / 1e12
+            
+            scale_icb_height = value / mass_tot
+            new_height = height * scale_icb_height
+            new_height.to_csv(os.path.join(config["fesom"]["thisrun_input_dir"], "icb_height.dat"), header=False, index=False)
+            print("Finished!")
+    return config
+        
+
+
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
         six.print_("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
+    config = scale_icebergs(config)
     return config
 
 

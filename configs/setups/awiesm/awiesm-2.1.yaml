@@ -21,12 +21,12 @@
 # fesom.ALE_scheme: controls the ALE scheme for fesom, possible values being ``linfs``
 #       and ``zstar``
 #
-# fesom/echam.wiso_code: controls choose_ blocks that are needed in case the source
+# general.wiso_code: controls choose_ blocks that are needed in case the source
 #       codes of FESOM and ECHAM include WISO, independently of whether the WISO is used
 #       or not. This variable should not be changed from the runscript as it is bound to
 #       the source code and version.
 #
-# fesom/echam.with_wiso: controls the choose_ blocks that trigger the necessary changes
+# general.with_wiso: controls the choose_ blocks that trigger the necessary changes
 #       in the namelists to activate/deactivate WISO, and therefore, it is meant to be
 #       edited in the runscript.
 
@@ -85,7 +85,7 @@ general:
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
 
         scenario: "PALEO"
-        variant: beta
+        variant: gamma
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -271,8 +271,7 @@ fesom:
         version_2_1: "$(( '2.1' in '${general.version}' ))"
         choose_version_2_1:
                 True:
-                        # NOTE: move potentially to AWIESM 2
-                        ## Settings for Gent/McWilliams based upon the selected ALE scheme.
+                        # Settings for Gent/McWilliams based upon the selected ALE scheme.
                         K_gm: 3000.0
                         K_hor: 3000.0
                         K_gm_max: 2000.0

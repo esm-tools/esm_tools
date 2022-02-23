@@ -12,6 +12,12 @@ def vprint(message, config):
         print(message)
 
 
+def print_datetime(config):
+    """prints the datetime of the operation if `verbose_line_numbers` option is True"""
+    if (config["general"].get("verbose_datetime_info", False)):
+        print(datetime.now(), flush=True)
+                
+
 def evaluate(config, job_type, recipe_name):
 
     # Check for a user defined compute recipe in the setup section of the

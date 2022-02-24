@@ -85,7 +85,6 @@ general:
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
 
         scenario: "PALEO"
-        variant: gamma
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -280,6 +279,7 @@ fesom:
                             linfs:
                                 K_gm: 5000.0
                                 K_hor: 5000.0
+                                K_gm_max: "remove_from_namelist"
                             zstar:
                                 K_gm_max: 2000.0
                                 K_hor: 3000.0
@@ -295,9 +295,6 @@ fesom:
                                 oce_tra:
                                     K_hor: ${K_hor}
 
-        choose_general.variant:
-            beta:
-                K_gm_max: "remove_from_namelist"
         leapyear: True
         asforcing: ECHAM5
 

@@ -49,6 +49,8 @@ choose_version:
         "[[wiso_fields-->FIELD]]":
             grid: feom
     destination: fesom-2.1-recom-par_traces
+    include_models:
+        - recom
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x

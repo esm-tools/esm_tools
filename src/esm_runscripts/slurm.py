@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 
+import esm_parser
 
 class Slurm:
     """
@@ -154,6 +155,20 @@ class Slurm:
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
+                elif (
+                        not config[model].get("execution_command")
+                        and not config[model].get("executable")
+                ):
+                    esm_parser.user_note(
+                        "Execution command",
+                        f"Execution command for ``{model}`` not found. This is okay " \
+                        "if this component has no binary to be called, but if it does" \
+                        " please make sure you specify either an ``executable`` " \
+                        f"or an ``execution_command`` variable in the ``{model}`` " \
+                        "of your configuration file.",
+                    )
+                    continue
+
                 command = "./" + config[model].get(
                     "execution_command", config[model]["executable"]
                 )
@@ -226,7 +241,13 @@ class Slurm:
         runfile.write("current_core=0" + "\n")
         runfile.write("current_core_mpi=0" + "\n")
         for model in config["general"]["valid_model_names"]:
-            if model != "oasis3mct":
+            if (
+                "oasis3mct" != model
+                and (
+                    config[model].get("execution_command")
+                    or config[model].get("executable")
+                )
+            ):
                 runfile.write(
                     "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
                 )

@@ -41,8 +41,8 @@ restart_in_in_work:
 
 restart_in_sources:
         #hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
-        #hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
-        hdrestart: restart_${parent_expid}_${current_minus_dt_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
+        hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
+        #hdrestart: restart_${parent_expid}_${current_minus_dt_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
 
 restart_in_files:
         hdrestart: hdrestart

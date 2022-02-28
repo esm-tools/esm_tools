@@ -4,13 +4,14 @@ general:
    homedir: !ENV ${HOME}
    
    setup_name: "focioifs"      
+   version: "2.1"
    resolution: "TCO95_ORCA05"
 
-   compute_time: "12:00:00"
+   compute_time: "01:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1950-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
 
-   nyear: 10
+   nyear: 1
    nmonth: 0
    nday: 0
    restart_rate: 1
@@ -20,11 +21,11 @@ general:
    postprocessing: True
   
    # machine specific setup 
-   account: shk00018
+   account: shkjocke
    base_dir: ${general.homedir}/esm/esm-experiments/
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-2.0
+   model_dir: ${general.homedir}/esm/models/focioifs-2.1
   
 oifs:
    version: "43r3"

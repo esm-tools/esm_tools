@@ -92,7 +92,6 @@ compile_infos:
         - 43r3-awicm-3.0
         - 43r3-awicm-frontiers
         - 43r3-awicm-frontiers-xios
-        - 43r3-awicm-deck
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -147,15 +146,6 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: true
-          43r3-awicm-deck:
-            requires:
-            - oasis3mct-4.0-oifsdeck
-            branch: awicm-3-deck-hotfix-1
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
-            destination: oifs-43r3
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make

@@ -24,7 +24,6 @@ available_versions:
 - '2.8'
 - '3.0'
 - '4.0'
-- 4.0-oifsdeck
 - 4.0-awicm-frontiers
 - 4.0-awicm-3.0
 choose_version:
@@ -41,8 +40,6 @@ choose_version:
     branch: awicm3-frontiers-freeze-candidate-1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
-  4.0-oifsdeck:
-    branch: oifs-deck
   ec-earth:
     branch: ec-earth-version
   foci:

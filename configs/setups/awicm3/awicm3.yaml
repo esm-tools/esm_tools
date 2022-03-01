@@ -384,6 +384,11 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
+        choose_general.version:
+                'frontiers-xios':
+                        add_process_ordering:
+                                - xios
+
         coupling_target_fields:
                 rstas.nc:
                         - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'

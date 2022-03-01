@@ -14,7 +14,7 @@ use_icebergs: False
 choose_version:
   '2.0':
     branch: 2.0.2
-    destination: '2.0'
+    destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git

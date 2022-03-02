@@ -170,6 +170,7 @@ ignore_sources:
         xios_out: xios*.out
         xios_err: xios*.err
         xios_int: xios_interpolation_weights*
+        xios_registry: xios_registry.bin
 
 bin_sources:
         server: ${bin_dir}/xios.x

@@ -73,12 +73,11 @@
 &oce_init3d
     n_ic3d = 8
     idlist = 1019, 1022, 1018, 1003, 1002, 1001, 1, 0
-    filelist = 'fe_pisces_opa_eq_init_3D_changed_name.nc', 'woa18_all_o00_01_mmol_fesom2.nc',
-               'woa13_all_i00_01_fesom2.nc', 'GLODAPv2.2016b.TAlk_fesom2_mmol_fix_z_Fillvalue.nc',
-               'GLODAPv2.2016b.TCO2_fesom2_mmol_fix_z_Fillvalue.nc', 'woa13_all_n00_01_fesom2.nc',
+    filelist = 'fe_pisces_opa_eq_init_3D_changed_name.nc', 'woa18_all_o00_01_fesom2.nc',
+               'woa13_all_i00_01_fesom2.nc', 'GLODAPv2.2016b.TAlk_fesom2_fix_z_Fillvalue.nc',
+               'GLODAPv2.2016b.TCO2_fesom2_fix_z_Fillvalue.nc', 'woa13_all_n00_01_fesom2.nc',
                'phc3.0_winter.nc', 'phc3.0_winter.nc'
-    varlist = 'Fe', 'oxygen_mmol', 'i_an', 'TAlk_mmol', 'TCO2_mmol', 'n_an',
-              'salt', 'temp'
+    varlist = 'Fe', 'o_an', 'i_an', 'TAlk', 'TCO2', 'n_an', 'salt', 'temp'
     t_insitu = .true.
 /
 

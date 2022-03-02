@@ -19,7 +19,7 @@ computer:
         'srun: error:':
             file: stdout
             frequency: 30
-            message: 'SLURM ERROR: slurm ended with an error, exiting.'
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
             method: kill
     choose_heterogeneous_parallelization: *id001
     config_files:
@@ -94,7 +94,7 @@ computer:
     nothing: much
     notification_flag: --mail-type=NONE
     operating_system: linux-centos
-    output_flags: --output=/work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131_%j.log --error=/work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131_%j.log
+    output_flags: --output=/work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131.log --error=/work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131.log
     output_path: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/
     overcommit_flag: ''
     overcommit_nodes: None
@@ -123,9 +123,9 @@ computer:
     submit: sbatch
     submitted: false
     tasks_flag: --ntasks=@tasks@
-    thisrun_logfile: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131_%j.log
+    thisrun_logfile: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/log/all_awiesm-2.1-recom_awiesm_@jobtype@_20010101-20010131.log
     threads_per_core: 1
-    time_flag: --time=01:00:00
+    time_flag: --time=00:29:00
     unset_vars:
     - SLURM_MEM_PER_NODE
     - SLURM_MEM_PER_CPU
@@ -1801,7 +1801,7 @@ general:
         update_filetypes: []
         use_venv: false
         verbose: false
-    compute_time: 01:00:00
+    compute_time: 00:29:00
     coupled_setup: true
     coupler: oasis3mct
     coupler_config_dir: /work/ollie/mandresm/testing//run/awiesm//all_awiesm-2.1-recom/run_20010101-20010131/config/oasis3mct/
@@ -1930,7 +1930,7 @@ general:
     initial_date: '2001-01-01T00:00:00'
     inspect: null
     jP: /work/ollie/dsidoren/input/fesom2.0/meshes/mesh_CORE2_finaltopo_mean/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc
-    jobid: 8126
+    jobid: 175623
     jobtype: prepcompute
     last_run_datestamp: 20001201-20001231
     last_run_in_chunk: false

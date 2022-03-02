@@ -1,0 +1,40 @@
+&forcing_exchange_coeff
+    ce_atm_oce = 0.00175
+    ch_atm_oce = 0.00175
+    cd_atm_oce = 0.001
+    ce_atm_ice = 0.00175
+    ch_atm_ice = 0.00175
+    cd_atm_ice = 0.0013
+/
+
+&forcing_source
+    wind_data_source = 'JRA55'
+    rad_data_source = 'JRA55'
+    precip_data_source = 'JRA55'
+    runoff_data_source = 'CORE2'
+    sss_data_source = 'CORE2'
+    wind_ttp_ind = 5
+    rad_ttp_ind = 5
+    precip_ttp_ind = 5
+    runoff_ttp_ind = 3
+    sss_ttp_ind = 4
+/
+
+&forcing_reso
+    forcing_grid = 'T319'
+    forcing_dx = 0.4
+    forcing_dy = 0.4
+    forcing_ni = 900
+    forcing_nj = 451
+/
+
+&forcing_bulk
+    aomip_drag_coeff = .true.
+    ncar_bulk_formulae = .true.
+/
+
+&land_ice
+    use_landice_water = .false.
+    landice_start_mon = 5
+    landice_end_mon = 10
+/

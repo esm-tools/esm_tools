@@ -1,0 +1,60 @@
+&oce_dyn
+    c_d = 0.0025
+    a_ver = 0.0001
+    laplacian = .false.
+    a_hor = 0.0
+    a_hor_max = 0.0
+    div_c = 0.5
+    leith_c = 0.05
+    tau_c = 0.0
+    smag_c = 0.0
+    biharmonic = .false.
+    abh0 = 0.0
+    scale_area = 5800000000.0
+    mom_adv = 2
+    free_slip = .false.
+    i_vert_visc = .true.
+    w_split = .false.
+    w_exp_max = 0.001
+    spp = .false.
+    fer_gm = .true.
+    k_gm = 3000.0
+    scaling_ferreira = .true.
+    scaling_rossby = .false.
+    scaling_resolution = .true.
+    scaling_fesom14 = .true.
+    redi = .true.
+    visc_sh_limit = 0.005
+    mix_scheme = 'KPP'
+    ricr = 0.3
+    concv = 1.6
+/
+
+&oce_tra
+    diff_sh_limit = 0.05
+    kv0_const = .false.
+    double_diffusion = .false.
+    k_ver = 1e-05
+    k_hor = 3000.0
+    surf_relax_t = 0.0
+    surf_relax_s = 0
+    balance_salt_water = .true.
+    clim_relax = 0.0
+    ref_sss_local = .true.
+    ref_sss = 34.0
+    i_vert_diff = .true.
+    tracer_adv = 2
+    num_tracers = 2
+    tracer_id = 0, 1
+/
+
+&oce_init3d
+    n_ic3d = 2
+    idlist = 1, 0
+    filelist = 'phc3.0_winter.nc', 'phc3.0_winter.nc'
+    varlist = 'salt', 'temp'
+/
+
+&boundary
+    restore_s_surf = 0
+/

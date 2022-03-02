@@ -1,0 +1,801 @@
+computer:
+    account: None
+    accounting: false
+    actual_script_dir: <--methods.script_dir--
+    additional_flags: ''
+    batch_system: slurm
+    cc: mpiicc
+    check_error:
+        'slurmstepd: error: execve():':
+            file: stdout
+            frequency: 600
+            message: 'SLURM ERROR: slurm probably didn''t find executable'
+            method: kill
+        'srun: error:':
+            file: stdout
+            frequency: 30
+            message: 'SLURM ERROR: slurm endet with an error, exiting.'
+            method: kill
+    config_files:
+        hostfile: hostfile_srun
+    cores_per_node: 36
+    cpu_bind: cores
+    cxx: mpiicpc
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//machines/ollie.yaml
+    debugger: None
+    debugger_flags_prelauncher: ''
+    exclusive_flag: --exclusive
+    execution_command: srun -l --kill-on-bad-exit=1 --cpu_bind=cores --multi-prog hostfile_srun
+    export_vars:
+        CC: mpiicc
+        CXX: mpiicpc
+        F77: '"mpiifort -mkl"'
+        FC: '"mpiifort -mkl"'
+        HDF5ROOT: $HDF5_ROOT
+        LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        LC_ALL: en_US.UTF-8
+        MPICC: mpiicc
+        MPIFC: mpiifort
+        MPIROOT: ${I_MPI_ROOT}/intel64
+        MPI_LIB: $(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')
+        NETCDFFROOT: $NETCDF_DIR
+        NETCDFROOT: $NETCDF_DIR
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        PATH: /work/ollie/jhegewal/sw/cmake/bin:$PATH
+        PERL5LIB: /usr/lib64/perl5
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
+    f77: '"mpiifort -mkl"'
+    fc: '"mpiifort -mkl"'
+    header_start: '#SBATCH'
+    heterogeneous_parallelization: false
+    hostname_list: DUMMY_HOST1 DUMMY_HOST2
+    hyper_flag: ''
+    jobtype: compute
+    launcher: srun
+    launcher_flags: -l --kill-on-bad-exit=1 --cpu_bind=cores
+    logical_cpus_per_core: 2
+    mail1: --mail-type=NONE
+    mail2: ''
+    mail_type: NONE
+    model: computer
+    module_actions:
+    - purge
+    - load cmake
+    - load udunits
+    - load gribapi/1.28.0
+    - unload intel.compiler
+    - load intel.compiler
+    - unload netcdf
+    - load hdf5
+    - load centoslibs cdo nco netcdf/4.6.2_intel
+    - load automake
+    - load python3/3.7.7_intel2020u2
+    - load git
+    - list
+    - unload intel.mpi
+    - load intel.mpi
+    mpicc: mpiicc
+    mpifc: mpiifort
+    name: ollie
+    name_flag: --job-name=fesom2.1-initial-monthly
+    nodes_flag: --nodes=@nodes@
+    nothing: much
+    notification_flag: --mail-type=NONE
+    operating_system: linux-centos
+    output_flags: --output=/work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//scripts/fesom2.1-initial-monthly_compute_20010101-20010131_%j.log --error=/work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//scripts/fesom2.1-initial-monthly_compute_20010101-20010131_%j.log
+    output_path: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//scripts/
+    overcommit_flag: ''
+    overcommit_nodes: None
+    overcommit_rule: ''
+    partition: mpp
+    partition_flag: --partition=mpp
+    pool_dir: /work/ollie/pool
+    pool_directories:
+        focipool: /dev/null
+        pool: /work/ollie/pool
+        projects: /work/ollie/projects
+    runtime_environment_changes:
+        add_export_vars:
+            ACCOUNT: None
+            ESM_TESTING_DIR: /work/ollie/mandresm/testing//run/fesom/
+            MODEL_DIR: /work/ollie/mandresm/testing//comp/fesom/fesom-2.1
+    script_name: <--methods.scriptname--
+    sh_interpreter: /usr/bin/bash
+    single_proc_submit_flag: --ntasks-per-node=1
+    submit: sbatch
+    submitted: false
+    tasks_flag: --ntasks=@tasks@
+    thisrun_logfile: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//scripts/fesom2.1-initial-monthly_compute_20010101-20010131_%j.log
+    threads_per_core: 1
+    time_flag: --time=00:08:00
+    useMPI: intelmpi
+debug_info:
+    loaded_from_file: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/scripts/fesom2.1-initial-monthly.yaml
+defaults:
+    clean_command: rm -rf build CMakeCache.txt
+    comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//defaults/download_and_compile.yaml
+fesom:
+    AOMIP_drag_coeff: false
+    Cd_atm_ice: 0.0012
+    Cd_atm_oce: 0.001
+    Ce_atm_ice: 0.00175
+    Ce_atm_oce: 0.00175
+    Ch_atm_ice: 0.00175
+    Ch_atm_oce: 0.00175
+    all_filetypes:
+    - analysis
+    - bin
+    - config
+    - couple
+    - forcing
+    - input
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    asforcing: JRA55
+    bin_dir: /work/ollie/mandresm/testing//comp/fesom/fesom-2.1/bin
+    bin_intermediate:
+        fesom: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/bin/fesom/fesom
+    bin_sources:
+        fesom: /work/ollie/mandresm/testing//comp/fesom/fesom-2.1/bin/fesom.x
+    bin_targets:
+        fesom: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/fesom
+    branch: master
+    branchoff: false
+    clean_command: rm -rf build CMakeCache.txt
+    climate_data_dir: /work/ollie/pool/../clidyn//FESOM2/hydrography/phc3.0/
+    comp_command: mkdir -p build; cd build; cmake ..;   make install -j `nproc --all`
+    comp_executable: fesom.x
+    compiletime_environment_changes:
+        add_export_vars:
+            taken2from: fesom2_compile
+        choose_computer.name:
+            juwels:
+                add_module_actions:
+                - unload ParaStationMPI
+                - load ParaStationMPI/5.4.4-1
+                - load netCDF-Fortran/4.4.5
+    config_intermediate:
+        config: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.config
+        cvmix: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.cvmix
+        fesom.clock: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/fesom.clock
+        forcing: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.forcing
+        ice: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.ice
+        icepack: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.icepack
+        io: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.io
+        oce: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/fesom/namelist.oce
+    config_sources:
+        config: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.config
+        cvmix: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.cvmix
+        fesom.clock: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/config/fesom//fesom.clock
+        forcing: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.forcing
+        ice: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.ice
+        icepack: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.icepack
+        io: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.io
+        oce: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1//namelist.oce
+    config_targets:
+        config: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.config
+        cvmix: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.cvmix
+        fesom.clock: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/fesom.clock
+        forcing: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.forcing
+        ice: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.ice
+        icepack: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.icepack
+        io: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.io
+        oce: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/namelist.oce
+    coupling_fields:
+        evap_oce:
+            grid: feom
+        heat_ico:
+            grid: feom
+        heat_oce:
+            grid: feom
+        heat_swo:
+            grid: feom
+        hydr_oce:
+            grid: feom
+        prec_oce:
+            grid: feom
+        sie_feom:
+            grid: feom
+        sit_feom:
+            grid: feom
+        snow_oce:
+            grid: feom
+        snt_feom:
+            grid: feom
+        sst_feom:
+            grid: feom
+        subl_oce:
+            grid: feom
+        taux_ico:
+            grid: feom
+        taux_oce:
+            grid: feom
+        tauy_ico:
+            grid: feom
+        tauy_oce:
+            grid: feom
+    create_config:
+        fesom.clock:
+        - <--append-- 0.0000000000000 1 2001
+        - <--append-- 0.0000000000000 1 2001
+    currentday: 1
+    daynew: 1
+    debug_info:
+        loaded_from_file:
+        - /home/ollie/mandresm/esm_tools/configs//components/fesom/fesom-2.1.yaml
+    destination: fesom-2.1
+    executable: fesom
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//analysis/fesom/
+    experiment_bin_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//bin/fesom/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//config/fesom/
+    experiment_couple_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//couple/fesom/
+    experiment_forcing_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//forcing/fesom/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//ignore/fesom/
+    experiment_input_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//input/fesom/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//log/fesom/
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//mon/fesom/
+    experiment_outdata_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//outdata/fesom/
+    experiment_restart_in_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//restart/fesom/
+    experiment_restart_out_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//restart/fesom/
+    experiment_viz_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//viz/fesom/
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    forcing_data_dir: /work/ollie/pool/../clidyn//forcing/
+    forcing_folder: /JRA55-do-v1.4.0/
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+    grids:
+        feom:
+            name: feom
+            number_of_overlapping_points: 0
+            nx: 126858
+            ny: 1
+            oasis_grid_type: U
+    humi_prefix: huss.
+    ini_data_dir: /work/ollie/pool/../clidyn//pool-data/
+    install_bins: bin/fesom.x
+    l_cloud: false
+    l_humi: true
+    l_mslp: false
+    l_prec: true
+    l_qlw: true
+    l_qsr: true
+    l_snow: true
+    l_tair: true
+    l_xwind: true
+    l_ywind: true
+    last_parent_date: '2000-12-31T23:00:00'
+    lasttime: 84600
+    leapyear: true
+    log_intermediate:
+        clock: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/log/fesom/fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/log/fesom/fesom.mesh.diag.nc
+    log_sources:
+        clock: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work//fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work//fesom.mesh.diag.nc
+    log_targets:
+        clock: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/log/fesom/fesom.clock
+        mesh_diag: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/log/fesom/fesom.mesh.diag.nc
+    lresume: false
+    mesh_base_dir: /work/ollie/pool/../clidyn//FESOM2/meshes/
+    mesh_dir: /work/ollie/pool/../clidyn//FESOM2/meshes//core2/
+    mesh_rotated: false
+    model: fesom
+    model_dir: /work/ollie/mandresm/testing//comp/fesom/fesom-2.1
+    mslp_prefix: psl.
+    namelist_changes:
+        namelist.config:
+            calendar:
+                include_fleapyear: true
+            clockinit:
+                daynew: 1
+                yearnew: 2001
+            paths:
+                ClimateDataPath: /work/ollie/pool/../clidyn//FESOM2/hydrography/phc3.0/
+                MeshPath: /work/ollie/pool/../clidyn//FESOM2/meshes//core2/
+                ResultPath: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work/
+            restart_log:
+                restart_length: 1
+                restart_length_unit: m
+            timestep:
+                run_length: 1
+                run_length_unit: m
+                step_per_day: 48
+        namelist.forcing:
+            forcing_bulk:
+                AOMIP_drag_coeff: false
+                ncar_bulk_formulae: true
+                ncar_bulk_z_shum: 10
+                ncar_bulk_z_tair: 10
+                ncar_bulk_z_wind: 10
+            forcing_exchange_coeff:
+                Cd_atm_ice: 0.0012
+                Cd_atm_oce: 0.001
+                Ce_atm_ice: 0.00175
+                Ce_atm_oce: 0.00175
+                Ch_atm_ice: 0.00175
+                Ch_atm_oce: 0.00175
+            nam_sbc:
+                l_cloud: false
+                l_humi: true
+                l_mslp: false
+                l_prec: true
+                l_qlw: true
+                l_qsr: true
+                l_snow: true
+                l_tair: true
+                l_xwind: true
+                l_ywind: true
+                nm_humi_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//huss.
+                nm_humi_var: huss
+                nm_mslp_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//psl.
+                nm_mslp_var: psl
+                nm_nc_freq: 1
+                nm_nc_idd: 1
+                nm_nc_imm: 1
+                nm_nc_iyear: 1900
+                nm_nc_tmid: 0
+                nm_prec_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//prra.
+                nm_prec_var: prra
+                nm_qlw_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//rlds.
+                nm_qlw_var: rlds
+                nm_qsr_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//rsds.
+                nm_qsr_var: rsds
+                nm_runoff_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//CORE2_runoff.nc
+                nm_snow_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//prsn.
+                nm_snow_var: prsn
+                nm_sss_data_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//PHC2_salx.nc
+                nm_tair_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//tas.
+                nm_tair_var: tas
+                nm_xwind_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//uas.
+                nm_xwind_var: uas
+                nm_ywind_file: /work/ollie/pool/../clidyn//forcing///JRA55-do-v1.4.0//vas.
+                nm_ywind_var: vas
+                runoff_data_source: CORE2
+                sss_data_source: CORE2
+    namelist_dir: /home/ollie/mandresm/esm_tools/namelists//fesom2/2.1/
+    namelists:
+    - namelist.config
+    - namelist.forcing
+    - namelist.oce
+    - namelist.ice
+    - namelist.io
+    - namelist.cvmix
+    - namelist.icepack
+    ncar_bulk_formulae: true
+    ncar_bulk_z_shum: 10
+    ncar_bulk_z_tair: 10
+    ncar_bulk_z_wind: 10
+    nm_humi_var: huss
+    nm_mslp_var: psl
+    nm_nc_freq: 1
+    nm_nc_idd: 1
+    nm_nc_imm: 1
+    nm_nc_iyear: 1900
+    nm_nc_tmid: 0
+    nm_prec_var: prra
+    nm_qlw_var: rlds
+    nm_qsr_var: rsds
+    nm_snow_var: prsn
+    nm_tair_var: tas
+    nm_xwind_var: uas
+    nm_ywind_var: vas
+    nproc: 288
+    nx: 126858
+    old_mesh_format: false
+    opbnd_dir: somepath
+    outdata_intermediate: {}
+    outdata_sources: {}
+    outdata_sources_wild_card:
+        fesom: '*.fesom.*.nc'
+    outdata_targets: {}
+    parent_date: '2000-12-31T23:30:00'
+    parent_expid: fesom2.1-initial-monthly
+    parent_restart_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//restart/fesom/
+    pool_dir: /work/ollie/pool/../clidyn/
+    post_processing: 0
+    prec_prefix: prra.
+    prev_date: '2000-12-31T23:30:00'
+    qlw_prefix: rlds.
+    qsr_prefix: rsds.
+    res: CORE2
+    resolution: CORE2
+    restart_first: 1
+    restart_flag: last
+    restart_in_in_workdir:
+        ice_restart: fesom.2000.ice.restart.nc
+        oce_restart: fesom.2000.oce.restart.nc
+    restart_out_in_workdir:
+        ice_restart: fesom.2001.ice.restart.nc
+        oce_restart: fesom.2001.oce.restart.nc
+    restart_out_intermediate:
+        ice_restart: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/restart/fesom/fesom.2001.ice.restart.nc
+        oce_restart: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/restart/fesom/fesom.2001.oce.restart.nc
+    restart_out_sources:
+        ice_restart: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work//fesom.2001.ice.restart.nc
+        oce_restart: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work//fesom.2001.oce.restart.nc
+    restart_out_targets:
+        ice_restart: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/restart/fesom/fesom.2001.ice.restart.nc
+        oce_restart: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/restart/fesom/fesom.2001.oce.restart.nc
+    restart_rate: 1
+    restart_unit: m
+    runoff_data_source: CORE2
+    runoff_file: CORE2_runoff.nc
+    runtime_environment_changes:
+        add_export_vars:
+            taken2from: fesom2_ru
+            takenfrom: fesom2_run
+        choose_computer.name:
+            juwels:
+                add_module_actions:
+                - unload ParaStationMPI
+                - load ParaStationMPI/5.4.4-1
+                - load netCDF-Fortran/4.4.5
+    setup_dir: /work/ollie/mandresm/testing//comp/fesom/fesom-2.1
+    snow_prefix: prsn.
+    sss_data_file: PHC2_salx.nc
+    sss_data_source: CORE2
+    startday: 1
+    starttime: 0
+    steps_per_day: 48
+    tair_prefix: tas.
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/analysis/fesom/
+    thisrun_bin_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/bin/fesom/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/config/fesom/
+    thisrun_couple_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/couple/fesom/
+    thisrun_forcing_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/forcing/fesom/
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/ignore/fesom/
+    thisrun_input_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/input/fesom/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/log/fesom/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/mon/fesom/
+    thisrun_outdata_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/outdata/fesom/
+    thisrun_restart_in_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/restart/fesom/
+    thisrun_restart_out_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/restart/fesom/
+    thisrun_viz_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/viz/fesom/
+    tide_forcing_dir: somepath
+    time_dimension: time
+    time_step: 1800
+    type: ocean
+    version: 2.1
+    with_part_format: false
+    xwind_prefix: uas.
+    yearnew: 2001
+    ywind_prefix: vas.
+general:
+    account: None
+    additional_files: []
+    all_filetypes:
+    - analysis
+    - config
+    - log
+    - mon
+    - scripts
+    - ignore
+    - unknown
+    - src
+    - work
+    all_model_filetypes:
+    - analysis
+    - bin
+    - config
+    - couple
+    - forcing
+    - input
+    - log
+    - mon
+    - outdata
+    - restart_in
+    - restart_out
+    - viz
+    - ignore
+    base_dir: /work/ollie/mandresm/testing//run/fesom/
+    batch: slurm
+    calendar: esm_calendar object with allowed leap years
+    check: false
+    command_line_config:
+        check: false
+        expid: fesom2.1-initial-monthly
+        inspect: null
+        jobtype: compute
+        last_jobtype: command_line
+        launcher_pid: -666
+        no_motd: true
+        original_command: fesom2.1-initial-monthly.yaml -e fesom2.1-initial-monthly --open-run --no-motd
+        profile: false
+        runscript_abspath: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/scripts/fesom2.1-initial-monthly.yaml
+        scriptname: fesom2.1-initial-monthly.yaml
+        started_from: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/scripts/
+        update: false
+        use_venv: false
+        verbose: false
+    compute_time: 00:08:00
+    config_intermediate:
+        batchhostfile: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/config/hostfile_srun
+    config_sources:
+        batchhostfile: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/scripts//hostfile_srun
+    config_targets:
+        batchhostfile: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/run_20010101-20010131/work/hostfile_srun
+    current_date: '2001-01-01T00:00:00'
+    debug_info:
+        loaded_from_file: /home/ollie/mandresm/esm_tools/configs//defaults/general.yaml
+    defaults.yaml:
+        debug_info:
+            loaded_from_file: /home/ollie/mandresm/esm_tools/configs//esm_software/esm_runscripts/defaults.yaml
+        per_model_defaults: {}
+    delta_date:
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    end_date: '2001-01-31T00:00:00'
+    esm_function_dir: FUNCTION_PATH
+    esm_namelist_dir: NAMELIST_PATH
+    esm_runscript_dir: RUNSCRIPT_PATH
+    experiment_analysis_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//analysis/
+    experiment_config_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//config/
+    experiment_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly/
+    experiment_ignore_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//ignore/
+    experiment_log_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//log/
+    experiment_log_file: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//log//fesom2.1-initial-monthly_fesom.log
+    experiment_mon_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//mon/
+    experiment_scripts_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//scripts/
+    experiment_src_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//src/
+    experiment_unknown_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//unknown/
+    expid: fesom2.1-initial-monthly
+    file_movements:
+        analysis:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        bin:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        config:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        couple:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        forcing:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        ignore:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        input:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        log:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        mon:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        outdata:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_in:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        restart_out:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        scripts:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        unknown:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+        viz:
+            exp_to_run: copy
+            init_to_exp: copy
+            run_to_work: copy
+            work_to_run: copy
+    final_date: '2001-03-31T00:00:00'
+    in_filetypes:
+    - scripts
+    - input
+    - forcing
+    - bin
+    - config
+    - restart_in
+    initial_date: '2001-01-01T00:00:00'
+    inspect: null
+    jobid: 69352
+    jobtype: compute
+    last_jobtype: command_line
+    last_run_datestamp: 20001201-20001231
+    last_start_date: '2000-12-01T00:00:00'
+    launcher_pid: -666
+    leapyear: true
+    models:
+    - fesom
+    nday: 0
+    next_date: '2001-02-01T00:00:00'
+    nhour: 0
+    nminute: 0
+    nmonth: 1
+    no_motd: true
+    nsecond: 0
+    nyear: 0
+    original_command: fesom2.1-initial-monthly.yaml -e fesom2.1-initial-monthly --open-run --no-motd
+    out_filetypes:
+    - analysis
+    - log
+    - mon
+    - scripts
+    - ignore
+    - unknown
+    - outdata
+    - restart_out
+    prev_date: '2000-12-31T00:00:00'
+    profile: false
+    relevant_filetypes:
+    - bin
+    - config
+    - forcing
+    - input
+    - restart_in
+    reset_calendar_to_last: false
+    reusable_filetypes:
+    - bin
+    - src
+    run_datestamp: 20010101-20010131
+    run_number: 1
+    runscript_abspath: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/scripts/fesom2.1-initial-monthly.yaml
+    runtime:
+    - 0
+    - 1
+    - 31
+    - 744
+    - 44640
+    - 2678400
+    scriptname: fesom2.1-initial-monthly.yaml
+    setup_name: fesom
+    standalone: true
+    start_date: '2001-01-01T00:00:00'
+    started_from: /work/ollie/mandresm/testing/run/fesom/fesom2.1-initial-monthly/scripts/
+    submitted: false
+    thisrun_analysis_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/analysis/
+    thisrun_config_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/config/
+    thisrun_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131
+    thisrun_ignore_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/ignore/
+    thisrun_log_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/log/
+    thisrun_mon_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/mon/
+    thisrun_scripts_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/scripts/
+    thisrun_src_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/src/
+    thisrun_unknown_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/unknown/
+    thisrun_work_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work/
+    total_runtime:
+    - 0
+    - 1
+    - 31
+    - 744
+    - 44640
+    - 2678400
+    update: false
+    use_database: false
+    use_venv: false
+    valid_model_names:
+    - fesom
+    valid_setup_names:
+    - computer
+    - general
+    verbose: false
+    work_dir: /work/ollie/mandresm/testing//run/fesom//fesom2.1-initial-monthly//run_20010101-20010131/work/

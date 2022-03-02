@@ -1,0 +1,219 @@
+&namrun
+    nn_no = 1
+    cn_exp = 'focioifs-piCtl-test_lowcpu'
+    nn_it000 = 1
+    nn_itend = 240
+    nn_date0 = 18500101
+    nn_leapy = 1
+    ln_rstart = .false.
+    nn_euler = 1
+    nn_rstctl = 2
+    cn_ocerst_in = 'focioifs-piCtl-test_lowcpu_00000000_restart_18491231'
+    cn_ocerst_indir = '/scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//'
+    cn_ocerst_out = 'restart_18500105'
+    cn_ocerst_outdir = '/scratch/usr/hbkmandr/testing//run/focioifs//focioifs-piCtl-test_lowcpu/run_18500101-18500105/work//'
+    nn_stock = 240
+    nn_write = 1460
+/
+
+&namcfg
+    cp_cfg = 'orca'
+    cp_cfz = ''
+    jp_cfg = 5
+    jpidta = 722
+    jpjdta = 511
+    jpkdta = 46
+    jpiglo = 722
+    jpjglo = 511
+    jperio = 6
+/
+
+&namzgr
+    cn_batmeter = 'bathy_meter.nc'
+/
+
+&namdom
+    nn_closea = 1
+    nn_msh = 1
+    rn_e3zps_min = 25.0
+    rn_e3zps_rat = 0.2
+    rn_rdt = 1800
+    rn_rdtmin = 2160.0
+    rn_rdtmax = 2160.0
+    ppglam0 = 999999.0
+    ppgphi0 = 999999.0
+    ppe1_deg = 999999.0
+    ppe2_deg = 999999.0
+    ppe1_m = 999999.0
+    ppe2_m = 999999.0
+    ppsur = 999999.0
+    ppa0 = 999999.0
+    ppa1 = 999999.0
+    ppkth = 23.563
+    ppacr = 9.0
+    ppdzmin = 6.0
+    pphmax = 5750.0
+    ldbletanh = .false.
+    ppa2 = 999999.0
+    ppkth2 = 999999.0
+    ppacr2 = 999999.0
+    cn_coordfile = 'coordinates.nc'
+/
+
+&namtsd
+    sn_tem = 'Levitus_p2.1_1m_01_12_Tpot_ORCA_R05', -1, 'votemper', .true.,
+             .true., 'yearly', ' ', ' ', ' '
+    sn_sal = 'Levitus_p2.1_1m_01_12_S_correc_ORCA_R05', -1, 'vosaline',
+             .true., .true., 'yearly', '', ' ', ' '
+    ln_tsd_init = .true.
+    ln_tsd_tradmp = .false.
+/
+
+&namsbc
+    nn_fsbc = 6
+    ln_blk_core = .false.
+    ln_cpl = .true.
+    ln_hosing = .false.
+    nn_ice_embd = 0
+    ln_rnf = .false.
+    ln_ssr = .false.
+    nn_fwb = 0
+/
+
+&namsbc_cpl
+    sn_snd_temp = 'oce and ice', 'no', '', '', ''
+    sn_snd_alb = 'none', 'no', '', '', ''
+    sn_snd_thick = 'ice and snow', 'no', '', '', ''
+    sn_snd_crt = 'oce only', 'no', 'spherical', 'eastward-northward', 'T'
+    sn_snd_co2 = 'none', 'no', '', '', ''
+    sn_rcv_w10m = 'none', 'no', '', '', ''
+    sn_rcv_taumod = 'none', 'no', '', '', ''
+    sn_rcv_tau = 'oce and ice', 'no', 'spherical', 'eastward-northward',
+                 'T'
+    sn_rcv_dqnsdt = 'coupled', 'no', '', '', ''
+    sn_rcv_qsr = 'conservative', 'no', '', '', ''
+    sn_rcv_qns = 'conservative', 'no', '', '', ''
+    sn_rcv_emp = 'kcm_lim_2', 'no', '', '', ''
+    sn_rcv_rnf = 'coupled', 'no', '', '', ''
+    sn_rcv_cal = 'none', 'no', '', '', ''
+    sn_rcv_co2 = 'none', 'no', '', '', ''
+/
+
+&namsbc_sas
+    ln_3d_uve = .false.
+/
+
+&namtra_qsr
+    nn_chldta = 0
+/
+
+&namsbc_isf
+    ln_conserve = .false.
+/
+
+&namlbc
+    rn_shlat = 0.0
+/
+
+&nambfr
+    nn_bfr = 2
+    rn_bfrz0 = 0.003
+    ln_bfr2d = .true.
+    cn_bfrfile = 'orca05_bfr_coef-G70.nc'
+/
+
+&nambbc
+    ln_trabbc = .false.
+    nn_geoflx = 0
+/
+
+&nameos
+    nn_eos = 0
+    ln_usect = .false.
+/
+
+&namtra_adv_mle
+    ln_mle = .false.
+/
+
+&namtra_ldf
+    rn_aeiv_0 = 1000.0
+    rn_aht_0 = 600.0
+    ln_gmmask = .false.
+    cn_gmmask_file = 'GM_O05_lev42n40s.nc'
+    cn_gmmask_var = 'SPATIAL_GM'
+/
+
+&namtra_dmp
+    ln_tradmp = .false.
+    cn_resto = ''
+/
+
+&namdyn_hpg
+    ln_hpg_zps = .false.
+    ln_hpg_sco = .true.
+    ln_dynhpg_imp = .false.
+/
+
+&namdyn_ldf
+    ln_dynldf_lap = .false.
+    ln_dynldf_bilap = .true.
+    rn_ahm_0_lap = 0.0
+    rn_ahm_0_blp = -600000000000.0
+/
+
+&namzdf
+    rn_avm0 = 0.0001
+    rn_avt0 = 1e-05
+    nn_havtb = 1
+    nn_evdm = 1
+    rn_avevd = 10.0
+/
+
+&namzdf_tke
+    rn_ebb = 60
+    rn_bshear = 1e-20
+    nn_mxl = 3
+    rn_mxl0 = 0.01
+/
+
+&namzdf_gls
+    rn_emin = 1e-06
+    rn_clim_galp = 0.53
+/
+
+&namzdf_tmx
+    ln_tmx_itf = .false.
+/
+
+&namsol
+    nn_ichol = 1
+    rn_eps = 0.0001
+    nn_nmax = 2800
+    rn_sor = 1.973
+/
+
+&nammpp
+    ln_nnogather = .true.
+    jpni = 8
+    jpnj = 4
+    jpnij = 32
+/
+
+&namnc4
+    nn_nchunks_k = 46
+    ln_nc4zip = .false.
+/
+
+&namptr
+    cn_subbasins = 'orca05_subbasins_3.6.nc'
+/
+
+&namsbc_rnf
+    ln_rnf_mouth = .false.
+    rn_hrnf = 15
+    rn_rfact = 1
+    ln_rnf_depth = .false.
+    ln_rnf_tem = .false.
+    ln_rnf_sal = .false.
+/

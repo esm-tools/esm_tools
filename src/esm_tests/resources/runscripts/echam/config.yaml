@@ -1,0 +1,19 @@
+comp:
+        actual:
+                files:
+                    - "bin/echam6"
+        check: {}
+run:
+        actual:
+                errors:
+                    - "MISSING FILES"
+                files:
+                    - "outdata/echam/echam*"
+                    - "outdata/jsbach/echam*"
+                    - "restart/echam/restart_*nc"
+                    - "restart/jsbach/restart_*nc"
+                    - "restart/hdmodel/restart_*nc"
+        check: {}
+computers:
+        - ollie
+        - mistral

@@ -113,9 +113,6 @@ choose_runoff_method:
                 add_coupling_fields:
                         "[[runoff_fields_send-->FIELD]]":
                                 grid: rnfo
-        'awicm3-deck':
-                runoff_fields_recv: [R_Runoff_atm]
-                runoff_fields_send: [R_Runoff_oce]
         'awicm3-default':
                 runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
                 runoff_fields_send: [R_Runoff_oce,R_Calving_oce]

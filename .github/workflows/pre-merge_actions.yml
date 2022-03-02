@@ -93,10 +93,7 @@ jobs:
                 contains(steps.vars.outputs.current_branch, 'feat/') ||
                 contains(steps.vars.outputs.current_branch, 'feature/')
               ) &&
-              (
-                !contains(steps.vars.outputs.current_branch, 'fix/') ||
-                !contains(github.event.comment.body, '#patch')
-              )
+              !contains(github.event.comment.body, '#patch')
             )
           )
           }}

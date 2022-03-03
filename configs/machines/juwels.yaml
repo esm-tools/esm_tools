@@ -249,10 +249,11 @@ choose_iolibraries:
        add_module_actions:
          - "load netCDF netCDF-Fortran"
     awi_libs:
+       project: !ENV ${PROJECT_ID}
        choose_compiler_mpi:
           intel2022_ompi2022:
              add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
+                IO_LIB_ROOT: /p/project/${project}/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                 SZIPROOT: $IO_LIB_ROOT
@@ -267,10 +268,10 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+                PATH: $PATH:$IO_LIB_ROOT/bin #:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel2020_ompi2020:
              add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
+                IO_LIB_ROOT: /p/project/${project}/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                 SZIPROOT: $IO_LIB_ROOT
@@ -285,10 +286,10 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+                PATH: $PATH:$IO_LIB_ROOT/bin #:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel2020_psmpi2020:
              add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
+                IO_LIB_ROOT: /p/project/${project}/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                 SZIPROOT: $IO_LIB_ROOT
@@ -303,10 +304,10 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+                PATH: $PATH:$IO_LIB_ROOT/bin #:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
           intel_2019a_psmpi2019:
              add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
+                IO_LIB_ROOT: /p/project/${project}/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
                 LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                 SZIPROOT: $IO_LIB_ROOT
@@ -321,7 +322,7 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+                PATH: $PATH:$IO_LIB_ROOT/bin #:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
     geomar_libs:
        choose_compiler_mpi:
           intel2019_impi2019:

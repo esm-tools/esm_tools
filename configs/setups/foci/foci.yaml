@@ -36,6 +36,7 @@ general:
         
         available_versions:
         - default
+        - fs
         - default_oasismct4
         - agrif 
         - agrif_oasismct4 
@@ -43,6 +44,9 @@ general:
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          fs:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS+echam-6.3.05p2-foci
           default_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
@@ -118,6 +122,8 @@ echam:
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
+                fs:
+                        version: "6.3.05p2-foci"
                 default_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
                 agrif:
@@ -145,6 +151,9 @@ echam:
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/echam6/"
+
+        # some datamath for to be able to change the coupling step easily
+        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${echam.time_step}))
 
         # TODO: document this crazy ECHAM6 restart math
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
@@ -196,6 +205,17 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
+                                putocean: 
+                                        - ${echam.coupling_freq_in_steps}
+                                        - 'steps'
+                                        - 'exact'
+                                        - -${echam.time_step}
+                                getocean: 
+                                        - ${echam.coupling_freq_in_steps}
+                                        - 'steps'
+                                        - 'exact'
+                                        - 0 
+
                                 lcouple: .true.
                                 # if lresume = true, dt_start is removed from namelist
                                 # see echam.yaml because if dt_start = dt_resume a
@@ -347,6 +367,19 @@ jsbach:
                              npools_foci: npools_foci
                              fpc_foci: fpc_foci
 
+        namelist_changes:
+                namelist.jsbach:
+                        hydrology_ctl:
+                                puthd: 
+                                        - ${echam.coupling_freq_in_steps}
+                                        - 'steps'
+                                        - 'exact'
+                                        - -${echam.time_step}
+                                gethd: 
+                                        - ${echam.coupling_freq_in_steps}
+                                        - 'steps'
+                                        - 'exact'
+                                        - 0 
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
 
@@ -371,6 +404,8 @@ nemo:
         choose_general.version:
                 default:
                         version: "ORCA05_LIM2_KCM_AOW"
+                fs:
+                        version: "ORCA05_LIM2_KCM_AOW_FS"
                 agrif:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
                 agrif_oasismct4:
@@ -442,6 +477,33 @@ oasis3mct:
         #export_mode_a2o: EXPORTED
         choose_general.version:
                 default:
+                        version: "foci"
+                        export_mode_a2o: EXPORTED     
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                fs:
                         version: "foci"
                         export_mode_a2o: EXPORTED     
 

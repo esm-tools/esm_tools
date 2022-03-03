@@ -9,7 +9,7 @@
         type="multiple_file"
         format="netcdf4"
         par_access="collective"
-        name="awi3_atm"
+        name="atm"
         split_freq="1y">
 
         <file
@@ -163,7 +163,7 @@
         type="multiple_file"
         format="netcdf4"
         par_access="collective"
-        name="awi3_atm_remapped"
+        name="atm_remapped"
         split_freq="1y">
 
         <file

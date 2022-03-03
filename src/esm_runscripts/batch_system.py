@@ -636,8 +636,8 @@ class batch_system:
                 (
                     "Since version 6.0, ``heterogeneous_parallelization`` variable "
                     "defined by the user is ignored, and instead its value is "
-                    "set to true if any ``omp_num_threads`` exists in the model's "
-                    "sections. To get rid of this warning, remove "
+                    "set to true if any ``omp_num_threads`` in the model's sections "
+                    "is larger than 1. To get rid of this error, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
                     "``choose_`` block to decice the case."

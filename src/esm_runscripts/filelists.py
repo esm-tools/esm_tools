@@ -331,42 +331,20 @@ def target_subfolders(config):
                                 descr
                             ] = filename.replace("*", source_filename)
                         elif "/" in filename:
+                            # Return the correct target name
+                            target_name = get_target_name_from_wildcard(
+                                config, model, filename, filetype, descr
+                            )
                             config[model][filetype + "_targets"][descr] = (
                                 "/".join(filename.split("/")[:-1])
                                 + "/"
-                                + source_filename.split("/")[-1]
+                                + target_name
                             )
                         else:
-                            # Get the general description of the filename
-                            gen_descr = descr.split("_glob_")[0]
-                            # Load the wild cards from source and target and split them
-                            # at the *
-                            wild_card_source_all = config[model][
-                                f"{filetype}_sources_wild_card"
-                            ]
-                            wild_card_source = wild_card_source_all[gen_descr].split(
-                                "*"
-                            )
-                            wild_card_target = filename.split("*")
-                            # Check for syntax mistakes
-                            if len(wild_card_target) != len(wild_card_source):
-                                esm_parser.user_error(
-                                    "Wild card",
-                                    (
-                                        "The wild card pattern of the source "
-                                        + f"{wild_card_source} does not match with the "
-                                        + f"target {wild_card_target}. Make sure the "
-                                        + f"that the number of * are the same in both "
-                                        + f"sources and targets."
-                                    ),
-                                )
-                            # Loop through the pieces of the wild cards to create
-                            # the correct target name by substituting in the source
-                            # name
-                            target_name = source_filename
-                            for wcs, wct in zip(wild_card_source, wild_card_target):
-                                target_name = target_name.replace(wcs, wct)
                             # Return the correct target name
+                            target_name = get_target_name_from_wildcard(
+                                config, model, filename, filetype, descr
+                            )
                             config[model][filetype + "_targets"][descr] = target_name
                     elif filename.endswith("/"):
                         source_filename = os.path.basename(
@@ -377,6 +355,89 @@ def target_subfolders(config):
                         )
 
     return config
+
+
+def get_target_name_from_wildcard(config, model, filename, filetype, descr):
+    """
+    Given a taget ``filename`` path containing a wildcard (``*``), and the ``descr``
+    key to an specific file (i.e. the one that points to the actual specific file),
+    returns the ``target_name`` basename for that specific file, taking care of
+    changing the name from source to target, if both are compatible (same number of
+    ``*``).
+
+    For example::
+      filename = "<new_name>.*.nc"
+      model = "fesom"
+      filetype = "restart_in"
+      config["fesom"]["restart_in_sources_wild_card"] = "<old_name>.*.nc"
+      config["fesom"]["restart_in_sources"]["<restart_file>_glob_1"] = "<old_name>.temp.nc"
+
+    Then the outcome will be substitutting ``temp`` into the ``*`` of ``filename``::
+      target_name = "<new_name>.temp.nc"
+
+    Note:: MA: This is very poorly generalized and too specific to the current use.
+    I volunteer myself to clean the ``filelists.py``, and make this method more
+    general.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+    model : str
+        Target component/model
+    filename : str
+        Target path, with or without wildcards
+    filetype : str
+        Target file type
+    descr : str
+        Key pointing at the specific file, which target name needs to be constructed
+
+    Returns
+    -------
+    targer_name : str
+        Basename of the specific target file associated to the ``descr`` key
+
+    Raises
+    ------
+    user_error : esm_parser.user_error
+        If source and target wildcard patterns do not match (different number of ``*``
+        in the patterns), raises a user friendly error
+    """
+
+    source_filename = os.path.basename(config[model][filetype + "_sources"][descr])
+    target_filename = os.path.basename(filename)
+
+    # Get the general description of the filename
+    gen_descr = descr.split("_glob_")[0]
+    # Load the wild cards from source and target and split them
+    # at the *
+    wild_card_source_all = config[model][
+        f"{filetype}_sources_wild_card"
+    ]
+    wild_card_source = wild_card_source_all[gen_descr].split(
+        "*"
+    )
+    wild_card_target = target_filename.split("*")
+    # Check for syntax mistakes
+    if len(wild_card_target) != len(wild_card_source):
+        esm_parser.user_error(
+            "Wild card",
+            (
+                "The wild card pattern of the source "
+                + f"{wild_card_source} does not match with the "
+                + f"target {wild_card_target}. Make sure the "
+                + f"that the number of * are the same in both "
+                + f"sources and targets."
+            ),
+        )
+    # Loop through the pieces of the wild cards to create
+    # the correct target name by substituting in the source
+    # name
+    target_name = source_filename
+    for wcs, wct in zip(wild_card_source, wild_card_target):
+        target_name = target_name.replace(wcs, wct)
+
+    return target_name
 
 
 def complete_restart_in(config):

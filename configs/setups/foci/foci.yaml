@@ -91,7 +91,8 @@ echam:
           iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2022_psmpi2022
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
@@ -103,9 +104,10 @@ echam:
           iolibraries: geomar_libs
           choose_computer.name:
              juwels:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
+                compiler_mpi: intel2022_psmpi2022
+                #compiler_mpi: intel2019_impi2019
+                #add_module_actions:
+                #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
              blogin:
                 compiler_mpi: intel2019_impi2019
                 add_module_actions:

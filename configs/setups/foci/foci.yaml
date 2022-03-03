@@ -36,12 +36,16 @@ general:
         
         available_versions:
         - default
+        - default_oasismct4
         - agrif 
         - agrif_oasismct4 
         choose_version:
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          default_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
@@ -116,6 +120,8 @@ echam:
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
+                default_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
                 agrif:
                         version: "6.3.05p2-foci"
                 agrif_oasismct4:
@@ -491,11 +497,50 @@ oasis3mct:
                               - 'OIceEvap <--conserv2-- AIceEvap' 
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
+                default_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              #- 'AIceFrac <--bilinear_average-- OIceFrac'
+                              #- 'A_SSTSST <--bilinear_average-- O_SSTSST'
+                              #- 'A_TepIce <--bilinear_average-- O_TepIce'
+                              #- 'A_IceTck <--bilinear_average-- O_IceTck'
+                              #- 'A_SnwTck <--bilinear_average-- O_SnwTck'
+                              #- 'A_OCurx1 <--bilinear_average-- O_OCurx1'
+                              #- 'A_OCury1 <--bilinear_average-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--gauswgt-- ATotSnow'
+                              - 'OIceEvap <--gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+
                 agrif_oasismct4:
 
                         norestart: "T"
                         mct_version: "4.0"
-                        version: "4.0"
+                        version: "4.0-geomar"
                         
                         export_mode_a2o: EXPORTED     
                          

@@ -886,6 +886,7 @@ restart_out_sources:
 ############## output files:
 
 outdata_sources:
+         3h: "*${expid}_3h_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
          6h: "*${expid}_6h_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
          1d: "*${expid}_1d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
          5d: "*${expid}_5d_${start_date!syear!smonth!sday}_${end_date_m1!syear!smonth!sday}_*.nc"
@@ -904,7 +905,7 @@ log_sources:
 ##########################  coupling stuff
 
 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
-opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, O_dQnsdT]
+opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
 
 agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 
                 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
@@ -918,7 +919,7 @@ coupling_fields:
                 grid: opac
 
 choose_runoff_method:
-        "new":
+        "EM21":
                 ornf_fields: [O_Runoff]
                 ocal_fields: [OCalving]
                 agr1_r_fields: [1_O_Runoff]

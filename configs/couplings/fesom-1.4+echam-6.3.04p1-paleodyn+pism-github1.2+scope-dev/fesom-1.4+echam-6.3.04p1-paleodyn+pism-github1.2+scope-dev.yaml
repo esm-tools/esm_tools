@@ -1,7 +1,7 @@
 components:
 - echam-6.3.04p1-paleodyn
 - fesom-1.4
-- oasis3mct-2.8
+- oasis3mct-2.8-paleodyn
 - pism-github1.2
 - scope-dev
 coupling_changes:

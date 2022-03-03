@@ -21,7 +21,6 @@ general:
         - 'master'
         - 'frontiers'
         - 'frontiers-xios'
-        - 'deck'
         choose_version:
           v3.0:
             couplings:
@@ -39,9 +38,6 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
-          deck:
-            couplings:
-            - fesom-2.0+oifs-43r3
 
         version: "v3.0"
         scenario: "piControl"
@@ -108,6 +104,7 @@ oifs:
                 "frontiers":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                 "frontiers-xios":
+                        with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
                         add_namelist_changes:
                                 fort.4:
@@ -119,8 +116,6 @@ oifs:
                                                 NIO_SERV_METHOD: 2
                                                 NMSG_LEVEL_CLIENT: 0
                                                 NMSG_LEVEL_SERVER: 1
-                "deck":
-                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/deck
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -164,7 +159,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel_2019a_psmpi2019
+                                compiler_mpi: intel2022_ompi2022
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:
@@ -180,7 +175,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel_2019a_psmpi2019
+                                compiler_mpi: intel2022_ompi2022
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:
@@ -281,20 +276,6 @@ fesom:
                 "frontiers-xios":
                         model_tag: "frontiers"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/frontiers/"
-                "deck":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/deck/"
-                        add_namelist_changes:
-                                namelist.cvmix:
-                                        param_kpp:
-                                                kpp_kv0: 5e-2
-                        compiletime_environment_changes:
-                                choose_computer.name:
-                                        mistral:
-                                                add_export_vars:
-                                                        branch_deck: d4139d9
-                                        "*":
-                                                add_export_vars:
-                                                        branch_deck: juwels_chunk_io
 
         remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
                 - restart_length
@@ -327,7 +308,7 @@ fesom:
 
 
 # It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
-# By default this option is turned off, and thus the follwing two lines are commented out.                                               
+# By default this option is turned off, and thus the follwing two lines are commented out.
 # further_reading:
 #       - fesom/fesom.io.yaml
 
@@ -344,11 +325,7 @@ rnfmap:
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
         time_step: ${oasis3mct.coupling_time_step}
 
-        choose_general.version:
-                "deck":
-                        runoff_method: awicm3-deck
-                "*":
-                        runoff_method: awicm3-default
+        runoff_method: awicm3-default
 
         coupling_fields:
                 "[[runoff_fields_send-->FIELD]]":
@@ -408,41 +385,20 @@ oasis3mct:
 
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.version:
-                'deck':
-                        coupling_target_fields:
-                                rstas.nc:
-                                        - 'heat_oce:heat_swo <--bicubic_glb-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--bicubic_glb-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--bicubic_gss-- A_Q_ice'
-                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm <--bicubic-- A_Runoff'
-                                        - 'hydr_oce <--gauswgt_c-- R_Runoff_oce'
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                 'frontiers-xios':
-                        coupling_target_fields:
-                                rstas.nc:
-                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
-                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                         add_process_ordering:
                                 - xios
-                '*':
-                        coupling_target_fields:
-                                rstas.nc:
-                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
-                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+
+        coupling_target_fields:
+                rstas.nc:
+                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                rstos.nc:
+                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
         coupling_directions:
                 'atma->feom':

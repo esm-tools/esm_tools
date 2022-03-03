@@ -7,10 +7,7 @@ Ten Steps to a Running Model
     $ export PATH=$PATH:~/.local/bin
     $ export LC_ALL=en_US.UTF-8
     $ export LANG=en_US.UTF-8
-    
-   If you are installing esm_tools on the Juwels HPC system, also add the following line to to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-    $ export PROJECT_ID=$(for i in $(id -Gn $whoami);do echo "  - $i" ;done | grep chhb | head -1 | cut -c 5-10)
 
 2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
 

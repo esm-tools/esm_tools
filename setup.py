@@ -44,7 +44,7 @@ test_requirements = ["pyfakefs"]
 setup(
     author="Dirk Barbi",
     author_email="dirk.barbi@awi.de",
-    python_requires=">=3.6",
+    python_requires=">=3.6, <3.10",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",

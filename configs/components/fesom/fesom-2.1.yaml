@@ -12,6 +12,9 @@ clean_command: ${defaults.clean_command}
 # LA these are both iceberg related
 use_icebergs: False                 # turns on icebergs
 use_icesheet_coupling: False        # initializes new icebergs every restart
+# MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
+# below) whose source code contains the icebergs implementation
+icb_code: False
 
 choose_version:
   2.1-unstable:
@@ -115,9 +118,6 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
-        icb_restart_ISM: icb_restart_ISM
-
 restart_in_in_workdir:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
@@ -134,8 +134,6 @@ restart_in_sources:
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
-        icb_restart_ISM: icb_restart_ISM
 restart_out_in_workdir:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
@@ -156,8 +154,13 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-            outputs: 
-                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, ibfwe, ibfwl, ibfwb, ibfwbv, ibhf]
+
+            add_restart_in_files:
+                icb_restart: icb_restart
+                icb_restart_ISM: icb_restart_ISM
+            add_restart_out_files:
+                icb_restart: icb_restart
+                icb_restart_ISM: icb_restart_ISM
 
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
@@ -166,13 +169,13 @@ choose_use_icebergs:
                     buoys_track: "buoys_track.nc"
 
             choose_use_icesheet_coupling:
-                    true: 
+                    true:
                             choose_general.chunk_number:
                                     1:
                                             iceberg_dir: "${ini_iceberg_dir}"
                                     "*":
                                             iceberg_dir: "${general.experiment_couple_dir}"
-            
+
                             choose_general.run_number:
                                     1:
                                             input_sources:
@@ -180,16 +183,16 @@ choose_use_icebergs:
                                     "*":
                                             input_sources:
                                                     num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
-            
+
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
-            
+
                             input_in_work:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
-            
-                    "*": 
+
+                    "*":
                             iceberg_dir: "${ini_iceberg_dir}"
-            
+
 
             input_in_work:
                     longitude: "icb_longitude.dat"
@@ -211,11 +214,6 @@ choose_use_icebergs:
                     length: "length"
                     height: "height"
                     scaling: "scaling"
-        
-        False:
-            outputs: 
-                    [Av, Bo, Kv, MLD1, MLD2, N2, Redi_K, a_ice, alpha, atmice_x, atmice_y, atmoce_x, atmoce_y, beta, bolus_u, bolus_v, bolus_w, evap, fer_C, fer_K, fh, fw, hbl, iceoce_x, iceoce_y, m_ice, m_snow, prec, reso, runoff, salt, slope_x, slope_y, slope_z, snow, ssh, sss, sst, temp, tx_sur, ty_sur, u, uice, v, vice, vve, w, h2o16, h2o18, hDo16, h2o16_ice, h2o18_ice, hDo16_ice, www1, www2, www3, iii1, iii2, iii3]
-            
 
 log_files:
         clock: clock
@@ -321,13 +319,15 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
-add_namelist_changes:
-    namelist.config:
-        icebergs:
-            use_icebergs: "${use_icebergs}"
-            use_icesheet_coupling: "${use_icesheet_coupling}"
-            steps_per_ib_step: 8
-            ib_num: 1
+icb_code:
+    True:
+        add_namelist_changes:
+            namelist.config:
+                icebergs:
+                    use_icebergs: "${use_icebergs}"
+                    use_icesheet_coupling: "${use_icesheet_coupling}"
+                    steps_per_ib_step: 8
+                    ib_num: 1
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

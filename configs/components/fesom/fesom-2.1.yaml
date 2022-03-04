@@ -319,7 +319,7 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
-icb_code:
+choose_icb_code:
     True:
         add_namelist_changes:
             namelist.config:

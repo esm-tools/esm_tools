@@ -12,7 +12,7 @@ clean_command: ${defaults.clean_command}
 choose_version:
   '2.0':
     branch: 2.0.2
-    destination: '2.0'
+    destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
@@ -45,14 +45,6 @@ choose_version:
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-  2.0-jio:
-    branch: juwels_chunk_io
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0

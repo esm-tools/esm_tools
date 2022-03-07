@@ -67,11 +67,13 @@ jobs:
       - name: bump patch
         if: ${{
           (
-            contains(steps.vars.outputs.current_branch, 'fix/') ||
-            contains(github.event.comment.body, '#patch')
-          ) &&
-          !contains(steps.vars.outputs.current_branch, 'feat/') &&
-          !contains(steps.vars.outputs.current_branch, 'feature/')
+            contains(github.event.comment.body, '#patch') ||
+            (
+              contains(steps.vars.outputs.current_branch, 'fix/') &&
+              !contains(steps.vars.outputs.current_branch, 'feat/') &&
+              !contains(steps.vars.outputs.current_branch, 'feature/')
+            )
+          )
           }}
         uses: jaumann/github-bumpversion-action@master
         env:
@@ -82,11 +84,18 @@ jobs:
       - name: bump feature
         if: ${{
           (
-            contains(steps.vars.outputs.current_branch, 'feat/') ||
-            contains(steps.vars.outputs.current_branch, 'feature/') ||
-            contains(github.event.comment.body, '#minor')
-          ) &&
-          !contains(steps.vars.outputs.current_branch, 'fix/')
+            (
+              contains(github.event.comment.body, '#minor') &&
+              !contains(github.event.comment.body, '#patch')
+            ) ||
+            (
+              (
+                contains(steps.vars.outputs.current_branch, 'feat/') ||
+                contains(steps.vars.outputs.current_branch, 'feature/')
+              ) &&
+              !contains(github.event.comment.body, '#patch')
+            )
+          )
           }}
         uses: jaumann/github-bumpversion-action@master
         env:
@@ -97,9 +106,8 @@ jobs:
       - name: bump major
         if: ${{
           contains(github.event.comment.body, '#major') &&
-          !contains(steps.vars.outputs.current_branch, 'fix/') &&
-          !contains(steps.vars.outputs.current_branch, 'feat/') &&
-          !contains(steps.vars.outputs.current_branch, 'feature/')
+          !contains(github.event.comment.body, '#patch') &&
+          !contains(github.event.comment.body, '#minor')
           }}
         uses: jaumann/github-bumpversion-action@master
         env:

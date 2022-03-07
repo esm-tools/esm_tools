@@ -22,6 +22,19 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-gamma:
+    branch: paleodyn/awiesm-2.1-gamma
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+        icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+        icb_restart: icb_restart
+        icb_restart_ISM: icb_restart_ISM
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
   2.1-wiso:
     branch: wiso
     add_restart_in_files:
@@ -154,14 +167,6 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-
-            add_restart_in_files:
-                icb_restart: icb_restart
-                icb_restart_ISM: icb_restart_ISM
-            add_restart_out_files:
-                icb_restart: icb_restart
-                icb_restart_ISM: icb_restart_ISM
-
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
 

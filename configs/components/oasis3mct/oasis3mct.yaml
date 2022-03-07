@@ -30,7 +30,7 @@ available_versions:
 choose_version:
   '2.8-paleodyn':
     branch: '2.8'
-    git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct
+    git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
   '2.8':
     branch: '2.8'
   '3.0':

@@ -61,6 +61,7 @@ general:
         available_versions:
         - '2.1'
         - '2.1-wiso'
+        - '2.1-gamma'
         - '2.1-recom'
         choose_version:
           '2.1':
@@ -72,6 +73,12 @@ general:
           '2.1-wiso':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso
+            wiso_code: true
+            with_wiso: true
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+          '2.1-gamma':
+            couplings:
+            - fesom-2.1-gamma+echam-6.3.05p2-wiso
             wiso_code: true
             with_wiso: true
             fesom_Dflags: "-DFESOM_COUPLED=ON"

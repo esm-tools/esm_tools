@@ -1,4 +1,4 @@
-ollie:
+kh:
         login_nodes:
                 - 'ollie0'
                 - 'ollie1'
@@ -10,8 +10,16 @@ mistral:
         post_nodes: 'mistralpp*'
 
 levante:
+
+# kh 15.02.22 not really used yet
         login_nodes: ''
-        compute_nodes: '^l[A-Za-z0-9]+\.hpc\.dkrz\.de$'
+
+# kh 15.02.22 probably soon
+#        compute_nodes: '^l[A-Za-z0-9]+\.hpc\.dkrz\.de$'
+
+# kh 15.02.22 at the moment
+        compute_nodes: '^l[A-Za-z0-9]+\.atos\.local$'
+
         post_nodes: ''
 
 juwels:

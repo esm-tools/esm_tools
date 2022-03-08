@@ -106,9 +106,10 @@ def main_flow(parsed_args, target):
     user_task.execute(ignore_errors)  # env)
 
     database = database_actions.database_entry(
-        user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR
+        complete_config, user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR
     )
-    database.connection.close()
+    if database:
+        database.connection.close()
 
     if not parsed_args["keep"]:
         user_task.cleanup_script()

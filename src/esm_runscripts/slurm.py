@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 
+import esm_parser
 
 class Slurm:
     """
@@ -154,6 +155,20 @@ class Slurm:
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
+                elif (
+                        not config[model].get("execution_command")
+                        and not config[model].get("executable")
+                ):
+                    esm_parser.user_note(
+                        "Execution command",
+                        f"Execution command for ``{model}`` not found. This is okay " \
+                        "if this component has no binary to be called, but if it does" \
+                        " please make sure you specify either an ``executable`` " \
+                        f"or an ``execution_command`` variable in the ``{model}`` " \
+                        "of your configuration file.",
+                    )
+                    continue
+
                 command = "./" + config[model].get(
                     "execution_command", config[model]["executable"]
                 )
@@ -175,7 +190,8 @@ class Slurm:
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
-                    f.write("(( init = " + str(start_core) + " + $1 ))" + "\n")
+                    f.write("if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n")
+                    f.write("(( init = $PMI_RANK ))" + "\n")
                     f.write(
                         "(( index = init * "
                         + str(config[model].get("omp_num_threads", 1))
@@ -201,7 +217,7 @@ class Slurm:
                         + "\n"
                     )
                 os.chmod(scriptfolder + progname, 0o755)
-                execution_command_het_par = f"prog_{model}.sh %o %t"
+                execution_command_het_par = f"prog_{model}.sh"
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config
 
@@ -226,7 +242,13 @@ class Slurm:
         runfile.write("current_core=0" + "\n")
         runfile.write("current_core_mpi=0" + "\n")
         for model in config["general"]["valid_model_names"]:
-            if model != "oasis3mct":
+            if (
+                "oasis3mct" != model
+                and (
+                    config[model].get("execution_command")
+                    or config[model].get("executable")
+                )
+            ):
                 runfile.write(
                     "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
                 )

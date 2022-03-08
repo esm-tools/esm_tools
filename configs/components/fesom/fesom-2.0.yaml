@@ -119,7 +119,12 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
-        - namelist.cvmix
+
+# kh 21.02.22 orig (disabled for a special test)
+#        - namelist.cvmix
+
+# kh 21.02.22 special test only
+        - namelist.recom
 
 
 choose_asforcing:

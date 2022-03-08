@@ -55,7 +55,19 @@ add_choose_heterogeneous_parallelization:
 
 choose_launcher:
         srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+
+# kh 24.02.22 orig
+#               launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+
+# kh 24.02.22 --cpu-freq=high simplifies fair comparisons of benchmark results
+#               launcher_flags: "-l --cpu-freq=high --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+
+# kh 07.03.22 --mpi=pmi2 is required for Intel MPI on Levante (used here for first tests for the sake of simplicity)
+#               launcher_flags: "--mpi=pmi2 -l --cpu-freq=high --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+
+# kh 07.03.22 --mpi=pmi2 must not be used for Open-MPI on Levante. The distinction should be automatically made elsewhere when the current value for useMPI in levante.yaml is known.
+                launcher_flags: "-l --cpu-freq=high --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+
                 execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"

@@ -58,17 +58,23 @@ class Slurm:
         return os.environ.get("SLURM_JOB_ID")
 
     def prepare_launcher(self, config, cluster):
+        # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
+
+        if config["computer"].get("heterogeneous_parallelization", False):
+            # Prepare heterogeneous parallelization call
+            config["general"]["batch"].hetjobs_launcher_lines(config, cluster)
         else:
+            # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
 
-        hostfile_in_work = (
-            config["general"]["work_dir"] + "/" + os.path.basename(self.path)
-        )
-        shutil.copyfile(self.path, hostfile_in_work)
+            hostfile_in_work = (
+                config["general"]["work_dir"] + "/" + os.path.basename(self.path)
+            )
+            shutil.copyfile(self.path, hostfile_in_work)
 
         return config
 
@@ -143,11 +149,80 @@ class Slurm:
             File wrapper object for writing of the lines
             (``runfile.write("<your_line_here>")``).
         """
+        pass
+        #if config["computer"].get("heterogeneous_parallelization", False):
+        #    self.add_hostlist_file_gen_lines(config, runfile)
+
+    @staticmethod
+    def het_par_flags(config, cluster, all_values):
         if config["computer"].get("heterogeneous_parallelization", False):
-            self.add_hostlist_file_gen_lines(config, runfile)
+            this_batch_system = config["computer"]
+            nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
+            partition_flag = this_batch_system["partition_flag"].split("=")[0]
+            # Delete nodes_flag for adding the correct hetjob ones at the end of the
+            # header
+            all_values_new = []
+            for val in all_values:
+                 if nodes_flag not in val and partition_flag not in val:
+                    all_values_new.append(val)
+            all_values = all_values_new
+            # Loop through the models to add the node flags
+            for model in config["general"]["valid_model_names"]:
+                ######## LINES DUPLICATED IN batch_system.py ##########################
+                if "nproc" in config[model]:
+                    # Total number of PEs (MPI-ranks) (e.g. aprun -n)
+                    nproc = config[model]["nproc"]
+                    # Cores per node
+                    # cores_per_node = config["computer"]["cores_per_node"]
+                    if cluster == "compute":
+                        cores_per_node = config["computer"]["partitions"]["compute"][
+                            "cores_per_node"
+                        ]
+                    else:
+                        cores_per_node = config["computer"]["partitions"]["pp"][
+                            "cores_per_node"
+                        ]
+                    # Get the OMP number of threads
+                    omp_num_threads = config[model].get("omp_num_threads", 1)
+                    # CPUs per MPI-rank (e.g. aprun -d)n
+                    cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
+                    # Check for CPUs and OpenMP threads
+                    if omp_num_threads > cpus_per_proc:
+                        esm_parser.user_error(
+                            "OpenMP configuration",
+                            (
+                                "The number of OpenMP threads cannot be larger than the number"
+                                + "of CPUs per MPI task requested. Your values:\n"
+                                + f"    {model}.omp_num_threads: {omp_num_threads}\n"
+                                + f"    {model}.cpus_per_proc: {cpus_per_proc}\n"
+                            ),
+                        )
+                    # Number of nodes needed
+                    nodes = int(nproc * cpus_per_proc / cores_per_node) + (
+                        (nproc * cpus_per_proc) % cores_per_node > 0
+                    )
+                    # PEs (MPI-ranks) per compute node (e.g. aprun -N)
+                    nproc_per_node = int(nproc / nodes)
+                elif "nproca" in config[model] and "procb" in config[model]:
+                    esm_parser.user_error(
+                        "nproc", "nproca and nprocb not supported yet"
+                    )
+                else:
+                    nodes = None
+                #######################################################################
+                if nodes:
+                    all_values.append(f"{nodes_flag}={nodes}")
+                    all_values.append(this_batch_system["partition_flag"])
+                    all_values.append("packjob")
+
+        return all_values[:-1]
 
     @staticmethod
     def write_het_par_wrappers(config):
+        return config
+
+    @staticmethod
+    def write_het_par_wrappers_old(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
 
         scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"

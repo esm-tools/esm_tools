@@ -37,7 +37,7 @@ def install(package: str) -> None:
     installed_packages = esm_plugin_manager.find_installed_plugins()
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "--user", package]

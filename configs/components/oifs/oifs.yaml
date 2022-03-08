@@ -92,7 +92,6 @@ compile_infos:
         - 43r3-awicm-3.0
         - 43r3-awicm-frontiers
         - 43r3-awicm-frontiers-xios
-        - 43r3-awicm-deck
         - 43r3
         - 40r1-foci
         - 43r3-foci
@@ -147,15 +146,6 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: true
-          43r3-awicm-deck:
-            requires:
-            - oasis3mct-4.0-oifsdeck
-            branch: awicm-3-deck-hotfix-1
-            comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-              -v -j8 -f oifs.cfg; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
-            destination: oifs-43r3
           43r3:
             branch: oifs-deck
             comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
@@ -425,6 +415,8 @@ file_movements:
             all_directions: copy
         waminfo_in:
             all_directions: copy
+        outdata: # TODO: ask GEOMAR if they are fine with this, otherwise we have to put it into awicm3.yaml
+            all_directions: move
 
 # TODO: expand comment
 massfixer: 2
@@ -644,7 +636,7 @@ outdata_in_work:
         MPP: MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        awi_cm3: awi_cm3*
+        atm: atm*
 
 outdata_sources:
         # old grib based output
@@ -653,8 +645,8 @@ outdata_sources:
         ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
         MPP: ${out_date_folder}/MPP*
         # XIOS output
-        oifsnc: ${out_date_folder}/${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        awi_cm3: ${out_date_folder}/awi_cm3*
+        oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+        atm: atm*
 
 
 #======================================================================================
@@ -687,7 +679,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-                        awi_cm3: awi_cm3
+                        atm: atm
         0:
                 outdata_files:
                         ICMGG: ICMGG

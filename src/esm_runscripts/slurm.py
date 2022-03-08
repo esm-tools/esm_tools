@@ -190,7 +190,8 @@ class Slurm:
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
-                    f.write("(( init = " + str(start_core) + " + $1 ))" + "\n")
+                    f.write("if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n")
+                    f.write("(( init = $PMI_RANK ))" + "\n")
                     f.write(
                         "(( index = init * "
                         + str(config[model].get("omp_num_threads", 1))
@@ -216,7 +217,7 @@ class Slurm:
                         + "\n"
                     )
                 os.chmod(scriptfolder + progname, 0o755)
-                execution_command_het_par = f"prog_{model}.sh %o %t"
+                execution_command_het_par = f"prog_{model}.sh"
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config
 

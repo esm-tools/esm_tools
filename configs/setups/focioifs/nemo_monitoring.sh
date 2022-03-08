@@ -214,7 +214,7 @@ for f in $frequency ; do
 				ofile=''
 				if [[ "$firstfile" == "$lastfile" ]]; then
 					cp -pv $firstfile $targetdir/
-					ofile=${targetdir}/$(basename $firstfile)
+					ofile=$firstfile
 				else
 					rm -fv ${targetdir}/${run}_${f}_*_${var}.nc
 					ofile=${targetdir}/${run}_${f}_${startdate}_${enddate}_${var}.nc

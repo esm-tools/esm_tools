@@ -118,6 +118,18 @@ choose_general.setup_name:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
+              fs: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+              default_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
               agrif: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
                  add_config_files:
@@ -170,6 +182,7 @@ ignore_sources:
         xios_out: xios*.out
         xios_err: xios*.err
         xios_int: xios_interpolation_weights*
+        xios_registry: xios_registry.bin
 
 bin_sources:
         server: ${bin_dir}/xios.x

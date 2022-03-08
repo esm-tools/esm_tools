@@ -41,19 +41,23 @@ accounting: true
 jobtype: compute
 sh_interpreter: "/bin/bash"
 
-
 partition: compute
 
 choose_partition:
+# kh 15.02.22 orig mistral
+#        "compute":
+#                partition_name: "compute"
+#                partition_cpn: 24
+#        "compute2":
+#                partition_name: "compute2"
+#                partition_cpn: 36
+#        "compute,compute2":
+#                partition_name: "compute,compute2"
+#                partition_cpn: 72#
+
         "compute":
                 partition_name: "compute"
-                partition_cpn: 24
-        "compute2":
-                partition_name: "compute2"
-                partition_cpn: 36
-        "compute,compute2":
-                partition_name: "compute,compute2"
-                partition_cpn: 72
+                partition_cpn: 128
 
 partitions:
         compute:
@@ -63,13 +67,14 @@ partitions:
                 name: ${computer.partition_name}
                 cores_per_node: ${computer.partition_cpn}
 
-
 logical_cpus_per_core: 2
 
 threads_per_core: 1
 
 pool_directories:
         pool: "/pool/data"
+
+# kh 15.02.22 todo
         focipool: "/work/bb0519/foci_input2"
 
 pool_dir:  "/pool/data"
@@ -77,17 +82,33 @@ pool_dir:  "/pool/data"
 #
 #
 
-useMPI: intelmpi
+# kh 15.02.22 orig mistral, not preferred on levante (at the moment)
+#useMPI: intelmpi
+
+# kh 15.02.22 preferred on levante (at the moment)
+useMPI: openmpi
+
 module_actions:
+# kh 15.02.22 orig mistral (still listed for reference purposes)
+#        - "purge"
+#        - "unload netcdf_c"
+#        - "unload intel intelmpi"
+#        - "load python3/2021.01-gcc-9.1.0"
+#        - "load cmake/3.13.3"
+#        - "load autoconf/2.69"
+#        - "load nco"
+#        - "load cdo"
+#        - "load gcc/4.8.2"#
+
         - "purge"
-        - "unload netcdf_c"
-        - "unload intel intelmpi"
-        - "load python3/2021.01-gcc-9.1.0"
-        - "load cmake/3.13.3"
-        - "load autoconf/2.69"
-        - "load nco"
-        - "load cdo"
-        - "load gcc/4.8.2"
+        - "load git/2.31.1-gcc-11.2.0"
+        - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
+        - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
+
+# kh 04.03.22 load explicitly for the MPI environment
+#       - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
+#       - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
+
 
 export_vars:
         #########################################################################
@@ -95,6 +116,13 @@ export_vars:
         #########################################################################
         #
         LC_ALL: en_US.UTF-8
+
+# kh 21.02.22 support for cpu model dependent compiler options
+        #########################################################################
+        # CPU Settings
+        #########################################################################
+        # 
+        CPU_MODEL: AMD_EPYC_ZEN3
 
         #########################################################################
         # Compiler Settings
@@ -110,6 +138,8 @@ export_vars:
         # MPI Settings
         #########################################################################
         #
+
+# kh 15.02.22 todo: check
         MPIROOT: "\"$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
         MPI_LIB: "\"$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
@@ -123,7 +153,13 @@ export_vars:
         # NOTE(JK): Using wrong combination of HDF5, netCDF-C and netCDF-F libs can lead to
         #           undefined symbol: __intel_skx_avx512_memcpy
         #           This combination was recommended by DKRZ support
-        HDF5ROOT: /sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/
+
+# kh 15.02.22 orig mistral
+#        HDF5ROOT: /sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+        HDF5ROOT: todo
+
         HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
         # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
         #           Moved to PISM yamls, but doesn't show up??
@@ -135,8 +171,15 @@ export_vars:
         #
         # NOTE(PG): Is it intentional to have different netcdf_fortran and
         # netcdf_c versions?
-        NETCDFFROOT: /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/
-        NETCDFROOT: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/
+
+# kh 17.02.22 orig mistral
+#        NETCDFFROOT: /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-parallel-impi-intel14/
+#        NETCDFROOT: /sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+        NETCDFFROOT: todo
+        NETCDFROOT:  todo
+
         # NOTE(PG): The next lines are moved to echam.yaml, and only active for:
         # A) mistral
         # and
@@ -147,21 +190,40 @@ export_vars:
         # - "NETCDFROOT=/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-parallel-impi-intel14/"
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
         NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-        NETCDF_CXX_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include
+
+# kh 17.02.22 orig mistral
+#        NETCDF_CXX_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+        NETCDF_CXX_INCLUDE_DIRECTORIES: todo
 
         #########################################################################
         # Linear Algebra (LAPACK)
         #########################################################################
         #
         LAPACK_LIB: "'-mkl=sequential'"
-        LAPACK_LIB_DEFAULT: "'-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+
+# kh 17.02. orig mistral
+#        LAPACK_LIB_DEFAULT: "'-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+#        LAPACK_LIB_DEFAULT: "'-L/sw/rhel6-x64/intel/intel-18.0.1/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'"
 
         #########################################################################
         # General Software (Perl, usw.)
         #########################################################################
         #
+
+# kh 17.02.22 orig mistral, not yet tested on levante (but should work)
         PERL5LIB: /usr/lib64/perl5
-        SZIPROOT: /sw/rhel6-x64/sys/libaec-0.3.2-gcc48
+
+# kh 17.02.22 orig mistral
+#        SZIPROOT: /sw/rhel6-x64/sys/libaec-0.3.2-gcc48
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+        SZIPROOT: todo
+
+# kh 17.02.22 orig mistral, not yet tested on levante (but should work)
         ZLIBROOT: /usr
 
         #########################################################################
@@ -179,110 +241,174 @@ export_vars:
         #
         LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
         # avoid GLIBCXX_3.4.15 not found error
-        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
+
+# kh 01.03.22 current philosophy on levante regarding the modules concept is to avoid LD_LIBRARY_PATH as far as possible to make everything clearer
+
+# kh 17.02.22 orig mistral
+#        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
+
+# kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+#       LD_LIBRARY_PATH[(1)]: ...
+
         # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
         # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+
+# kh 17.02.22 currently required to use mkl
+        LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+
+# kh 07.03.22 currently required to use Intel MPI
+        LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
 
         ################################################
         # This needs to be moved into OIFS
         # MPI environent variables important at runtime
-        I_MPI_FABRICS: shm:dapl
-        I_MPI_FALLBACK: disable
-        I_MPI_SLURM_EXT: 1
-        I_MPI_LARGE_SCALE_THRESHOLD: 8192
-        I_MPI_DYNAMIC_CONNECTION: 1
 
-        DAPL_NETWORK_NODES: $SLURM_NNODES
-        DAPL_NETWORK_PPN: $SLURM_NTASKS_PER_NODE
-        DAPL_WR_MAX: 500
+# kh 17.02.22 orig mistral
+#        I_MPI_FABRICS: shm:dapl
+#        I_MPI_FALLBACK: disable
+#        I_MPI_SLURM_EXT: 1
+#        I_MPI_LARGE_SCALE_THRESHOLD: 8192
+#        I_MPI_DYNAMIC_CONNECTION: 1
 
-        OMPI_MCA_pml: cm
-        OMPI_MCA_mtl: mxm
-        OMPI_MCA_coll: ^ghc
-        OMPI_MCA_mtl_mxm_np: 0
+#        DAPL_NETWORK_NODES: $SLURM_NNODES
+#        DAPL_NETWORK_PPN: $SLURM_NTASKS_PER_NODE
+#        DAPL_WR_MAX: 500
 
-        MXM_RDMA_PORTS: mlx5_0:1
-        MXM_LOG_LEVEL: FATAL
+#        OMPI_MCA_pml: cm
+#        OMPI_MCA_mtl: mxm
+#        OMPI_MCA_coll: ^ghc
+#        OMPI_MCA_mtl_mxm_np: 0
+
+#        MXM_RDMA_PORTS: mlx5_0:1
+#        MXM_LOG_LEVEL: FATAL
+
+# kh 07.03.22
+        I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
+        I_MPI_PMI: pmi2
+        FI_PROVIDER: mlx
+        I_MPI_OFI_PROVIDER: mlx
+        I_MPI_FABRICS: shm:ofi
+
+#       I_MPI_HYDRA_BOOTSTRAP: slurm
+#       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
+
+# kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
+        OMPI_MCA_btl: self
+        OMPI_MCA_coll: "^ml"
+        OMPI_MCA_coll_hcoll_enable: "1"
+        OMPI_MCA_io: "romio321"
+        OMPI_MCA_osc: "pt2pt"
+        OMPI_MCA_pml: "ucx"
+        HCOLL_ENABLE_MCAST_ALL: "1"
+        HCOLL_MAIN_IB: mlx5_0:1
+        UCX_IB_ADDR_TYPE: ib_global
+        UCX_NET_DEVICES: mlx5_0:1
+        UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
+        UCX_UNIFIED_MODE: y
+
         ################################################
 
 choose_useMPI:
-        intelmpi:
+       intelmpi:
+
+# kh 17.02.22 orig mistral
+#                add_module_actions:
+#                        - "unload intel intelmpi"
+#                        - "load intel/18.0.4 intelmpi/2018.5.288"
+#                        - "load libtool/2.4.6"
+#                        - "load automake/1.14.1"
+
                 add_module_actions:
-                        - "unload intel intelmpi"
-                        - "load intel/18.0.4 intelmpi/2018.5.288"
-                        - "load libtool/2.4.6"
-                        - "load automake/1.14.1"
+                        - "load intel-oneapi-mpi/2021.5.0-intel-2021.5.0"
+                        - "load netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
+                        - "load netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
+
                 fc: mpiifort
                 f77: mpiifort
                 mpifc: mpiifort
                 cc: mpiicc
                 cxx: mpiicpc
 
+# kh 17.02.22 orig mistral, not used on levante
+#        intel18_bullxmpi:
+#                add_module_actions:
+#                        - "unload intel intelmpi"
+#                        - "load intel/18.0.4"
+#                        - "load libtool/2.4.6"
+#                        - "load autoconf/2.69"
+#                        - "load automake/1.14.1"
+#                        - "load bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
+#                fc: mpif90
+#                f77: mpif90
+#                mpifc: mpif90
+#                cc: mpicc
+#                cxx: mpicxx
 
-        intel18_bullxmpi:
+# kh 17.02.22 orig mistral, not used on levante
+#        intelmpi17:
+#                add_module_actions:
+#                        - "unload intel intelmpi"
+#                        - "load intel/17.0.6 intelmpi/2017.3.196"
+#                fc: mpiifort
+#                f77: mpiifort
+#                mpifc: mpiifort
+#                cc: mpiicc
+#                cxx: mpiicpc
+#                add_export_vars:
+#                        LAPACK_LIB_DEFAULT: '-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
+
+       openmpi:
                 add_module_actions:
-                        - "unload intel intelmpi"
-                        - "load intel/18.0.4"
-                        - "load libtool/2.4.6"
-                        - "load autoconf/2.69"
-                        - "load automake/1.14.1"
-                        - "load bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
+
+# kh 17.02.22 orig mistral
+#                        - "load intel/18.0.4"
+#                        - "unload cmake"
+#                        - "load cmake"
+#                        - "load openmpi/2.0.2p2_hpcx-intel14"
+#                        - "unload netcdf"
+#                        - "load netcdf_c/4.3.2-gcc48"
+
+                        - "load openmpi/4.1.2-intel-2021.5.0"
+                        - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
+                        - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
+
+                        
+# kh 17.02.22 orig mistral
+#               add_export_vars:
+#                        I_MPI_SLURM_EXT: 0
+
+#                        MXM_LOG_LEVEL: ERROR
+#                        I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY: 0
+#                        I_MPI_HARD_FINALIZE: 1
+#                        I_MPI_ADJUST_GATHER: 1 # do not use =3 (Shumilin's algorithm)
+
+#                        HDF5ROOT: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
+#                        HDF5_C_INCLUDE_DIRECTORIES: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-intel14/include"
+#                        NETCDFFROOT: "/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
+#                        NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48"
+
+
                 fc: mpif90
                 f77: mpif90
                 mpifc: mpif90
                 cc: mpicc
                 cxx: mpicxx
 
-        intelmpi17:
-                add_module_actions:
-                        - "unload intel intelmpi"
-                        - "load intel/17.0.6 intelmpi/2017.3.196"
-                fc: mpiifort
-                f77: mpiifort
-                mpifc: mpiifort
-                cc: mpiicc
-                cxx: mpiicpc
-                add_export_vars:
-                        LAPACK_LIB_DEFAULT: '-L/sw/rhel6-x64/intel/intel-17.0.6/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential'
-        openmpi:
-                add_module_actions:
-                        - "load intel/18.0.4"
-                        - "unload cmake"
-                        - "load cmake"
-                        - "load openmpi/2.0.2p2_hpcx-intel14"
-                        - "unload netcdf"
-                        - "load netcdf_c/4.3.2-gcc48"
-                add_export_vars:
-                        I_MPI_SLURM_EXT: 0
+# kh 17.02.22 orig mistral
+#                remove_computer.export_vars: [MPIROOT, MPI_LIB, DAPL_NETWORK_NODES, DAPL_NETWORK_PPN, DAPL_WR_MAX, OMPI_MCA_pml, OMPI_MCA_mtl, OMPI_MCA_coll, OMPI_MCA_mtl_mxm_np, MXM_RDMA_PORTS]
 
-                        MXM_LOG_LEVEL: ERROR
-                        I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY: 0
-                        I_MPI_HARD_FINALIZE: 1
-                        I_MPI_ADJUST_GATHER: 1 # do not use =3 (Shumilin's algorithm)
-
-                        HDF5ROOT: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48"
-                        HDF5_C_INCLUDE_DIRECTORIES: "/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-intel14/include"
-                        NETCDFFROOT: "/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-intel14"
-                        NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48"
-
-                fc: mpif90
-                f77: mpif90
-                mpifc: mpif90
-                cc: mpicc
-                cxx: mpicxx
-                remove_computer.export_vars: [MPIROOT, MPI_LIB, DAPL_NETWORK_NODES, DAPL_NETWORK_PPN, DAPL_WR_MAX, OMPI_MCA_pml, OMPI_MCA_mtl, OMPI_MCA_coll, OMPI_MCA_mtl_mxm_np, MXM_RDMA_PORTS]
-
-        bullxmpi:
-                add_module_actions:
-                        - "load mxm/3.4.3082"
-                        - "load fca/2.5.2431"
-                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
-                add_export_vars:
-                        FC: mpif90
-                        F77: mpif90
-                        MPIFC: mpif90
-                        CC: mpicc
-                        CXX: mpicxx
+# kh 17.02.22 orig mistral, not used on levante
+#        bullxmpi:
+#                add_module_actions:
+#                        - "load mxm/3.4.3082"
+#                        - "load fca/2.5.2431"
+#                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
+#                add_export_vars:
+#                        FC: mpif90
+#                        F77: mpif90
+#                        MPIFC: mpif90
+#                        CC: mpicc
+#                        CXX: mpicxx
 
 
 further_reading:

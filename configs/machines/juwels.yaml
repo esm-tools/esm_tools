@@ -21,6 +21,7 @@ batch_system: slurm
 logical_cpus_per_core: 2
 threads_per_core: 1
 launcher_flags: "-l "
+hetjob_flag: "?" # either hetjob or packjob
 
 # set default for hyperthreading_flag
 hyperthreading_flag: ""

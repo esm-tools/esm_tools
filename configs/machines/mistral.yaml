@@ -35,6 +35,7 @@ choose_use_hyperthreading:
                                         - "SLURM_ARBITRARY_NODELIST"
 
 accounting: true
+hetjob_flag: packjob
 
 "batch_system": "slurm"
 

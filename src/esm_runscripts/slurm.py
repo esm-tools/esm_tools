@@ -213,7 +213,7 @@ class Slurm:
                 if nodes:
                     all_values.append(f"{nodes_flag}={nodes}")
                     all_values.append(this_batch_system["partition_flag"])
-                    all_values.append("packjob")
+                    all_values.append(this_batch_system["hetjob_flag"])
 
         return all_values[:-1]
 

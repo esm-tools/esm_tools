@@ -49,6 +49,8 @@ choose_heterogeneous_parallelization:
                         - "SLURM_NPROCS"
                         - "SLURM_ARBITRARY_NODELIST"
 
+hetjob_flag: packjob
+
 unset_vars:
         - "SLURM_MEM_PER_NODE"
         - "SLURM_MEM_PER_CPU"

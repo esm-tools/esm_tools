@@ -60,8 +60,12 @@ choose_launcher:
                             --cpus-per-task=@cpus_per_proc@
                             --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
                         execution_command: "${debugger_flags_prelauncher}
-                            ${launcher} -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} \\\n    @components@"
-                        launcher_comp_sep: "\\\n\  : "
+                            ${launcher} -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} \\\n@components@"
+                        launcher_comp_sep: " \\\n:"
+                        add_export_vars:
+                            I_MPI_STATS: ipm
+                            I_MPI_STATS_FILE: prof_mpi.dat
+                            I_MPI_SLURM_EXT: 0
                     false:
                         cpu_bind: "cores"
                         launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
@@ -105,6 +109,9 @@ choose_SLURM_NNODES:
 config_files:
         # don't change the name at the moment, it's currently hardcoded in esm_runscripts/slurm.py
         hostfile: hostfile_srun
+
+add_ignore_files:
+        prof_mpi: prof_mpi.dat
 
 check_error:
         "srun: error:" :

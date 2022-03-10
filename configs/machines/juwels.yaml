@@ -322,6 +322,7 @@ choose_iolibraries:
             intel2022_psmpi2022:
                 add_export_vars:
                     IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
+                    PSMPIFLAGS: '"-lrt -lm -ldl"'
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"

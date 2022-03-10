@@ -47,25 +47,27 @@ thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${gener
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+add_choose_heterogeneous_parallelization:
+        true:
+                cpu_bind: "none"
+                srun_launcher_flags: "
+                    --nodes=@nnodes@
+                    --ntasks=@nproc@
+                    --ntasks-per-node=@nproc_per_node@
+                    --cpus-per-task=@cpus_per_proc@
+                    --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
+                srun_execution_command: "${debugger_flags_prelauncher}
+                    ${launcher} -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} \\\n@components@"
+                launcher_comp_sep: " \\\n:"
+        false:
+                cpu_bind: "cores"
+                srun_launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 choose_launcher:
         srun:
-                add_choose_heterogeneous_parallelization:
-                    true:
-                        cpu_bind: "none"
-                        launcher_flags: "
-                            --nodes=@nnodes@
-                            --ntasks=@nproc@
-                            --ntasks-per-node=@nproc_per_node@
-                            --cpus-per-task=@cpus_per_proc@
-                            --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
-                        execution_command: "${debugger_flags_prelauncher}
-                            ${launcher} -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} \\\n@components@"
-                        launcher_comp_sep: " \\\n:"
-                    false:
-                        cpu_bind: "cores"
-                        launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
-                        execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+                launcher_flags: ${srun_launcher_flags}
+                execution_command: ${srun_execution_command}
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
                 execution_command: "echo mpiexec.hydra as launcher not yet available"

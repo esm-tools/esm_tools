@@ -770,7 +770,7 @@ class batch_system:
             substituted in the tags.
         """
         launcher = config["computer"]["launcher"]
-        launcher_flags = config["computer"]["launcher_flags"]
+        launcher_flags = config["computer"]["launcher_flags_per_component"]
         if "nproc" in config[model]:
             # aprun flags commented following the conventions in p. 14 of the ALEPH ppt
             # manual day_1.session_2.advanced_use_of_aprun.ppt

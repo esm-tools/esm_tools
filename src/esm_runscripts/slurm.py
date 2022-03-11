@@ -214,8 +214,11 @@ class Slurm:
                     all_values.append(f"{nodes_flag}={nodes}")
                     all_values.append(this_batch_system["partition_flag"])
                     all_values.append(this_batch_system["hetjob_flag"])
+            # Remove the last hetjob_flag
+            if all_values[-1] == this_batch_system["hetjob_flag"]:
+                all_values = all_values[:-1]
 
-        return all_values[:-1]
+        return all_values
 
     @staticmethod
     def write_het_par_wrappers(config):

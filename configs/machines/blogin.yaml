@@ -16,6 +16,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -27,6 +30,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -60,7 +66,7 @@ partitions:
 logical_cpus_per_core: 2
 
 threads_per_core: 1
-hetjob_flag: "?" # either hetjob or packjob
+hetjob_flag: packjob
 
 pool_directories:
         pool: "/scratch/usr/hbkawi"
@@ -216,7 +222,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

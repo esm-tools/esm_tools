@@ -16,6 +16,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -27,6 +30,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -60,7 +66,7 @@ partitions:
 logical_cpus_per_core: 2
 
 threads_per_core: 1
-hetjob_flag: "?" # either hetjob or packjob
+hetjob_flag: packjob
 
 pool_directories:
         pool: "/scratch/usr/hbkawi"
@@ -97,7 +103,20 @@ export_vars:
    #SLURM_CPU_BIND: none
 
 choose_compiler_mpi:
-
+   intel2021_impi2021:
+      add_module_actions:
+         - "load intel/2021.2"
+         - "load impi/2021.2"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+   
    intel2019_impi2019:
       add_module_actions:
          - "load intel/19.0.5"
@@ -139,6 +158,25 @@ choose_iolibraries:
 
     geomar_libs:
        choose_compiler_mpi:
+          intel2021_impi2021:
+             add_export_vars:
+                IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
           intel2019_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
@@ -184,7 +222,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

@@ -53,9 +53,9 @@ class Pbs:
         """
         return os.environ.get("PBS_JOBID")
 
-    def prepare_launcher(config, cluster):
-        config["general"]["batch"].hetjobs_launcher_lines(config, cluster)
-        
+    def prepare_launcher(self, config, cluster):
+        config["general"]["batch"].het_par_launcher_lines(config, cluster)
+
     @staticmethod
     def add_pre_launcher_lines(config, cluster, runfile):
         """
@@ -85,6 +85,13 @@ class Pbs:
                 f"Skipping the het-par wrapper as it is not needed for {config['computer']['batch_system']}"
             )
         return config
+
+    @staticmethod
+    def het_par_headings(config, cluster, all_values):
+        """
+        Heterogeneous parallelization headings are not needed for PBS.
+        """
+        return all_values
 
     @staticmethod
     def get_job_state(jobid):

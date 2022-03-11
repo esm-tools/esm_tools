@@ -66,7 +66,7 @@ class Slurm:
 
         if config["computer"].get("heterogeneous_parallelization", False):
             # Prepare heterogeneous parallelization call
-            config["general"]["batch"].hetjobs_launcher_lines(config, cluster)
+            config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
             # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
@@ -150,80 +150,65 @@ class Slurm:
             (``runfile.write("<your_line_here>")``).
         """
         pass
+        # TODO: remove it once it's not needed anymore (substituted by packjob)
         #if config["computer"].get("heterogeneous_parallelization", False):
         #    self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
-    def het_par_flags(config, cluster, all_values):
+    def het_par_headers(config, cluster, headers):
+        """
+        Modifies the list of ``headers`` to include the ``packjob``/``hetjob`` logic
+        for heterogeneous parallelization in SLURM.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        cluster : str
+            Type of job cluster.
+        headers : list
+            List of headers for the ``.run`` file.
+
+        Returns
+        -------
+        headers : list
+            List of headers for the ``.run`` file, with the necessary modifications
+            for heterogeneous parallelization in SLURM.
+        """
+        # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
         if config["computer"].get("heterogeneous_parallelization", False):
             this_batch_system = config["computer"]
+            # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
             partition_flag = this_batch_system["partition_flag"].split("=")[0]
-            # Delete nodes_flag for adding the correct hetjob ones at the end of the
-            # header
-            all_values_new = []
-            for val in all_values:
+            # Delete ``nodes_flag`` and ``partition_flag`` from the ``headers``. Those
+            # will be added at the end of the headers for each component
+            headers_new = []
+            for val in headers:
                  if nodes_flag not in val and partition_flag not in val:
-                    all_values_new.append(val)
-            all_values = all_values_new
-            # Loop through the models to add the node flags
+                    headers_new.append(val)
+            headers = headers_new
+            # Loop through the models to add the respective component headers (nodes
+            # and partitions)
             for model in config["general"]["valid_model_names"]:
-                ######## LINES DUPLICATED IN batch_system.py ##########################
-                if "nproc" in config[model]:
-                    # Total number of PEs (MPI-ranks) (e.g. aprun -n)
-                    nproc = config[model]["nproc"]
-                    # Cores per node
-                    # cores_per_node = config["computer"]["cores_per_node"]
-                    if cluster == "compute":
-                        cores_per_node = config["computer"]["partitions"]["compute"][
-                            "cores_per_node"
-                        ]
-                    else:
-                        cores_per_node = config["computer"]["partitions"]["pp"][
-                            "cores_per_node"
-                        ]
-                    # Get the OMP number of threads
-                    omp_num_threads = config[model].get("omp_num_threads", 1)
-                    # CPUs per MPI-rank (e.g. aprun -d)n
-                    cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
-                    # Check for CPUs and OpenMP threads
-                    if omp_num_threads > cpus_per_proc:
-                        esm_parser.user_error(
-                            "OpenMP configuration",
-                            (
-                                "The number of OpenMP threads cannot be larger than the number"
-                                + "of CPUs per MPI task requested. Your values:\n"
-                                + f"    {model}.omp_num_threads: {omp_num_threads}\n"
-                                + f"    {model}.cpus_per_proc: {cpus_per_proc}\n"
-                            ),
-                        )
-                    # Number of nodes needed
-                    nodes = int(nproc * cpus_per_proc / cores_per_node) + (
-                        (nproc * cpus_per_proc) % cores_per_node > 0
-                    )
-                    # PEs (MPI-ranks) per compute node (e.g. aprun -N)
-                    nproc_per_node = int(nproc / nodes)
-                elif "nproca" in config[model] and "procb" in config[model]:
-                    esm_parser.user_error(
-                        "nproc", "nproca and nprocb not supported yet"
-                    )
-                else:
-                    nodes = None
-                #######################################################################
+                nodes = config[model].get("nodes")
                 if nodes:
-                    all_values.append(f"{nodes_flag}={nodes}")
-                    all_values.append(this_batch_system["partition_flag"])
-                    all_values.append(this_batch_system["hetjob_flag"])
+                    headers.append(f"{nodes_flag}={nodes}")
+                    headers.append(this_batch_system["partition_flag"])
+                    headers.append(this_batch_system["hetjob_flag"])
             # Remove the last hetjob_flag
-            if all_values[-1] == this_batch_system["hetjob_flag"]:
-                all_values = all_values[:-1]
+            if headers[-1] == this_batch_system["hetjob_flag"]:
+                headers = headers[:-1]
 
-        return all_values
+        return headers
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers(config):
         return config
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers_old(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
@@ -299,6 +284,7 @@ class Slurm:
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def add_hostlist_file_gen_lines(config, runfile):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]

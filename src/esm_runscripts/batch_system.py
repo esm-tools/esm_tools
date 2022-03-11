@@ -50,13 +50,12 @@ class batch_system:
     def add_pre_launcher_lines(self, config, cluster, runfile):
         return self.bs.add_pre_launcher_lines(config, cluster, runfile)
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
 
-    def het_par_flags(self, config, cluster, all_values_flat):
-        return self.bs.het_par_flags(config, cluster, all_values_flat)
-
-    # methods that actually do something
+    def het_par_headers(self, config, cluster, all_values_flat):
+        return self.bs.het_par_headers(config, cluster, all_values_flat)
 
     def prepare_launcher(self, config, cluster):
         self.bs.prepare_launcher(config, cluster)
@@ -155,7 +154,9 @@ class batch_system:
             elif isinstance(value, list):
                 all_values_flat.extend(value)
 
-        all_values_flat = config["general"]["batch"].het_par_flags(
+        # Call the ``het_par_headers`` method to calculate the heterogeneous
+        # parallelization flags, if necessary
+        all_values_flat = config["general"]["batch"].het_par_headers(
             config, cluster, all_values_flat
         )
 
@@ -448,9 +449,12 @@ class batch_system:
 
                 config = batch_system.calculate_requirements(config, cluster)
                 if cluster in reserved_jobtypes:
+                    # TODO: remove it once it's not needed anymore (substituted by packjob)
                     config = config["general"]["batch"].write_het_par_wrappers(config)
-                header = batch_system.get_batch_header(config, cluster)
+                # Prepare launcher
                 config = config["general"]["batch"].prepare_launcher(config, cluster)
+                # Initiate the header
+                header = batch_system.get_batch_header(config, cluster)
 
                 for line in header:
                     runfile.write(line + "\n")
@@ -673,10 +677,9 @@ class batch_system:
             if int(omp_num_threads) > 1 and model in config["general"].get(
                 "valid_model_names", []
             ):
-                config["general"]["heterogeneous_parallelization"] = True
                 config["computer"][
                     "heterogeneous_parallelization"
-                ] = True  # dont like this
+                ] = True
                 if (
                     not config[model].get("nproc", False)
                     and not config[model].get("nproca", False)
@@ -685,7 +688,7 @@ class batch_system:
                     config[model]["nproc"] = 1
         return config
 
-    def hetjobs_launcher_lines(self, config, cluster):
+    def het_par_launcher_lines(self, config, cluster):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
@@ -698,6 +701,7 @@ class batch_system:
             Configuration dictionary containing information about the experiment and
             experiment directory.
         cluster : str
+            Type of job cluster.
         """
         component_lines = []
         # Read in the separator to be used in between component calls in the job
@@ -762,6 +766,7 @@ class batch_system:
         model : str
             Component for which the flags are to be calculated.
         cluster : str
+            Type of job cluster.
 
         Returns
         -------
@@ -771,25 +776,26 @@ class batch_system:
         """
         launcher = config["computer"]["launcher"]
         launcher_flags = config["computer"]["launcher_flags_per_component"]
+        # Cores per node
+        # cores_per_node = config["computer"]["cores_per_node"]
+        if cluster == "compute":
+            cores_per_node = config["computer"]["partitions"]["compute"][
+                "cores_per_node"
+            ]
+        else:
+            cores_per_node = config["computer"]["partitions"]["pp"][
+                "cores_per_node"
+            ]
+        # Get the OMP number of threads
+        omp_num_threads = config[model].get("omp_num_threads", 1)
+
         if "nproc" in config[model]:
             # aprun flags commented following the conventions in p. 14 of the ALEPH ppt
             # manual day_1.session_2.advanced_use_of_aprun.ppt
 
             # Total number of PEs (MPI-ranks) (e.g. aprun -n)
             nproc = config[model]["nproc"]
-            # Cores per node
-            # cores_per_node = config["computer"]["cores_per_node"]
-            if cluster == "compute":
-                cores_per_node = config["computer"]["partitions"]["compute"][
-                    "cores_per_node"
-                ]
-            else:
-                cores_per_node = config["computer"]["partitions"]["pp"][
-                    "cores_per_node"
-                ]
-            # Get the OMP number of threads
-            omp_num_threads = config[model].get("omp_num_threads", 1)
-            # CPUs per MPI-rank (e.g. aprun -d)n
+            # CPUs per MPI-rank (e.g. aprun -d)
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
             if omp_num_threads > cpus_per_proc:
@@ -802,16 +808,25 @@ class batch_system:
                         + f"    {model}.cpus_per_proc: {cpus_per_proc}\n"
                     ),
                 )
-            # Number of nodes needed
-            nodes = int(nproc * cpus_per_proc / cores_per_node) + (
-                (nproc * cpus_per_proc) % cores_per_node > 0
-            )
-            # PEs (MPI-ranks) per compute node (e.g. aprun -N)
-            nproc_per_node = int(nproc / nodes)
         elif "nproca" in config[model] and "procb" in config[model]:
-            esm_parser.user_error(
-                "nproc", "nproca and nprocb not supported yet"
-            )
+            # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
+            if omp_num_threads > 1:
+                esm_parser.user_note(
+                    "nproc",
+                    "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
+                )
+            nproc = config[model]["nproca"] * config[model]["nprocb"]
+            cpus_per_proc = 1
+            omp_num_threads = 1
+
+        # Number of nodes needed
+        nodes = int(nproc * cpus_per_proc / cores_per_node) + (
+            (nproc * cpus_per_proc) % cores_per_node > 0
+        )
+        config[model]["nodes"] = nodes
+
+        # PEs (MPI-ranks) per compute node (e.g. aprun -N)
+        nproc_per_node = int(nproc / nodes)
 
         # Replace tags in the laucher flags
         replacement_tags = [

@@ -10,9 +10,9 @@ mistral:
         post_nodes: 'mistralpp*'
 
 levante:
-        login_nodes: ''
-        compute_nodes: '^l[A-Za-z0-9]+\.hpc\.dkrz\.de$'
-        post_nodes: ''
+        login_nodes: 'levante*'
+        compute_nodes: '^l[A-Za-z0-9]+\.atos\.local$'
+#        post_nodes: ''
 
 juwels:
         #login_nodes: '^juwels[0-9][0-9]\.ib.juwels.fzj.de'

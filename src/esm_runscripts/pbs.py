@@ -78,6 +78,7 @@ class Pbs:
         )
         runfile.write(f'qalter $PBS_JOBID -o {thisrun_logfile}\n')
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers(config):
         if config["general"].get("verbose", False):
@@ -87,7 +88,7 @@ class Pbs:
         return config
 
     @staticmethod
-    def het_par_headings(config, cluster, all_values):
+    def het_par_headers(config, cluster, all_values):
         """
         Heterogeneous parallelization headings are not needed for PBS.
         """

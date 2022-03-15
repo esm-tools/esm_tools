@@ -65,7 +65,7 @@ general:
         choose_version:
           '2.1':
             couplings:
-            - fesom-2.0-paleodyn+echam-6.3.05p2-concurrent_radiation-paleodyn
+            - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
             wiso_code: false
             with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON"
@@ -115,7 +115,7 @@ echam:
                 - sic
         choose_general.version:
                 "2.1":
-                        version: "6.3.05p2-concurrent_radiation-paleodyn"
+                        version: "6.3.05p2-wiso" # TODO: to be change to 6.3.05p2-awiesm-2.1
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
                 "2.1-recom":
@@ -193,7 +193,7 @@ jsbach:
 
 
 fesom:
-        version: "2.1"
+        version: "2.1-awiesm-2.1"
         comp_command: "
                 mkdir -p build;
                 cd build;
@@ -208,7 +208,7 @@ fesom:
                 "2.0":
                         version: "2.0"
                 "2.1":
-                        version: "2.1"
+                        version: "2.1-awiesm-2.1"
                         ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-wiso":
                         version: "2.1-wiso"

@@ -17,6 +17,15 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-awiesm-2.1:
+    branch: "awiesm-2.1"
+    add_restart_in_files:
+        wiso_restart: wiso_restart
+    add_restart_out_files:
+        wiso_restart: wiso_restart
+    add_coupling_fields:
+        "[[wiso_fields-->FIELD]]":
+            grid: feom
   2.1-wiso:
     branch: wiso
     add_restart_in_files:

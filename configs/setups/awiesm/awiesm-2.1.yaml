@@ -115,7 +115,7 @@ echam:
                 - sic
         choose_general.version:
                 "2.1":
-                        version: "6.3.05p2-wiso" # TODO: to be change to 6.3.05p2-awiesm-2.1
+                        version: "6.3.05p2-awiesm-2.1" 
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
                 "2.1-recom":

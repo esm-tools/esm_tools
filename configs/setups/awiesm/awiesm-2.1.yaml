@@ -220,6 +220,9 @@ fesom:
                 "2.1-wiso":
                         version: "2.1-wiso"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+                "2.1-gamma":
+                        version: "2.1-gamma"
+                        ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-recom":
                         version: "2.1-recom"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.

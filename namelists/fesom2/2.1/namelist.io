@@ -42,5 +42,4 @@ io_list =  'sst       ',1, 'm', 4,
            'bolus_u   ',1, 'y', 4,
            'bolus_v   ',1, 'y', 4,
            'bolus_w   ',1, 'y', 4,
-           'icb       ',1, 'm', 4,
 /

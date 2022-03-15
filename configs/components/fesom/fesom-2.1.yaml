@@ -31,6 +31,7 @@ choose_version:
     add_coupling_fields:
         "[[wiso_fields-->FIELD]]":
             grid: feom
+    icb_code: True
   2.1-wiso:
     branch: wiso
     add_restart_in_files:
@@ -177,6 +178,11 @@ choose_use_icebergs:
 
             add_outdata_sources:
                     buoys_track: "buoys_track.nc"
+
+            add_namelist_changes:
+                    namelist.io:
+                            nml_list:
+                                    io_list(:): ["icb", "1", "m", 4]
 
             choose_use_icesheet_coupling:
                     true:

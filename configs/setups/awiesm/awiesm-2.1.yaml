@@ -106,6 +106,7 @@ echam:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
+        namelist_type: "production"
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
         model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
@@ -116,6 +117,8 @@ echam:
         choose_general.version:
                 "2.1":
                         version: "6.3.05p2-awiesm-2.1" 
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
                 "2.1-recom":

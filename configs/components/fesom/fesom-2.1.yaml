@@ -63,9 +63,7 @@ pool_dir: "${computer.pool_directories.pool}"
 
 choose_computer.name:
     ollie:
-        pool_dir: "${computer.pool_directories.pool}/FESOM/"
-        climate_data_dir: "${pool_dir}/hydrography/"
-        forcing_data_dir: "${computer.pool_directories.projects}/clidyn/forcing/"
+        pool_dir: "${computer.pool_directories.pool}/../clidyn/"
     mistral:
         pool_dir: "${computer.pool_directories.pool}/AWICM/"
         climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"

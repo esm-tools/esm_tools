@@ -1971,8 +1971,11 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
             # If the substituted variable is not a list, and there is either a
             # preceding (``prefix``) or following (``suffix``) string, then add up
             # the parts, making sure that other variables (``${}``) are also
-            # substituted
-            if type(var_result) not in [list] and (prefix or suffix):
+            # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
+            if (
+                (not isinstance(var_result, list) and (prefix or suffix)) or
+                (isinstance(var_result, dict) and "NONE_YET" in var_result)
+            ):
                 prefix, var_result, more_rest = (
                     str(prefix),
                     str(var_result),

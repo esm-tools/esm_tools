@@ -271,7 +271,7 @@ choose_iolibraries:
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-            PATH: $PATH:$IO_LIB_ROOT/bin #:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+            PATH: $IO_LIB_ROOT/bin/:$PATH
 
         choose_compiler_mpi:
             intel2022_ompi2022:

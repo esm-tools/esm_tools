@@ -106,11 +106,8 @@ choose_lresume:
                                 pavariables:
                                         recom_restart: false
 
-config_files:
-        recom:  recom
-
 config_sources:
-        recom:  "${namelist_dir}/namelist.recom"
+        "namelist.recom":  "${namelist_dir}/namelist.recom"
 #        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 restart_name: ""

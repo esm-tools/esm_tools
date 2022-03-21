@@ -28,9 +28,62 @@ class SimulationSetup(object):
             command_line_config, user_config
         )
 
-        self.config = config_initialization.complete_config_from_user_config(
-            user_config
+        # check required fields before initialization
+        if "version" in user_config["general"]:
+            version = str(user_config["general"]["version"])
+        else:
+            setup_name = user_config["general"]["setup_name"]
+
+            if "version" in user_config[setup_name.replace("_standalone", "")]:
+                version = str(user_config[setup_name.replace("_standalone", "")]["version"])
+            else:
+                version = "DEFAULT"
+
+        # Instantiate the config object and add default values
+        self.config = esm_parser.ConfigSetup(
+            user_config["general"]["setup_name"].replace("_standalone", ""),
+            version,
+            user_config,
         )
+
+        self.config = config_initialization.add_esm_runscripts_defaults_to_config(self.config)
+
+        self.config["computer"]["jobtype"] = self.config["general"]["jobtype"]
+        self.config["general"]["experiment_dir"] = (
+            f"{self.config['general']['base_dir']}/{self.config['general']['expid']}"
+        )
+
+        # Check if the 'account' variable is needed and missing
+        if self.config["computer"].get("accounting", False):
+            if "account" not in self.config["general"]:
+                esm_parser.user_error(
+                    "Missing account info",
+                    f"You cannot run simulations in '{config['computer']['name']}' "
+                    "without providing an 'account' variable in the 'general' section, whose "
+                    "value refers to the project where the computing resources are to be "
+                    "taken from. Please, add the following to your runscript:\n\n"
+                    "general:\n\taccount: <the_account_to_be_used>",
+                )
+
+
+
+        if "verbose" not in self.config["general"]:
+            self.config["general"]["verbose"] = False
+
+        self.config["general"]["reset_calendar_to_last"] = False
+
+        if self.config["general"].get("inspect"):
+            self.config["general"]["jobtype"] = "inspect"
+
+            if self.config["general"].get("inspect") not in [
+                "workflow",
+                "overview",
+                "config",
+            ]:
+                self.config["general"]["reset_calendar_to_last"] = True
+
+        # add the user runscript content
+        self.config['general']['runscript_content'] = user_config
 
         self.config = config_initialization.save_command_line_config(
             self.config, command_line_config
@@ -43,6 +96,7 @@ class SimulationSetup(object):
 
         # esm_parser.pprint_config(self.config)
         # sys.exit(0)
+
 
     def __call__(self, kill_after_submit=True):
         # Trigger inspect functionalities
@@ -102,18 +156,19 @@ class SimulationSetup(object):
 
         return self.config["general"].get("experiment_over", False)
 
+
     #########################     OBSERVE      #############################################################
-
     def observe(self):
-
         from . import observe
 
         self.config = observe.run_job(self.config)
+
 
     def assembler(self):
         from . import assembler
 
         self.config = assembler.run_job(self.config)
+
 
     ###################################     TIDY      #############################################################
     def tidy(self):
@@ -138,12 +193,14 @@ class SimulationSetup(object):
 
         self.config = tidy.run_job(self.config)
 
+
     ###################################     INSPECT      #############################################################
     def inspect(self):
         from . import inspect
 
         print(f"Inspecting {self.config['general']['experiment_dir']}")
         self.config = inspect.run_job(self.config)
+
 
     ###################################     PREPCOMPUTE      #############################################################
     def prepcompute(self):
@@ -160,8 +217,8 @@ class SimulationSetup(object):
 
         self.config = prepcompute.run_job(self.config)
 
-    ###################################     VIZ     #############################################################
 
+    ###################################     VIZ     #############################################################
     def viz(self):
         """
         Starts the Viz job.

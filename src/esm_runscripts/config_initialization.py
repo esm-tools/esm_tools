@@ -43,27 +43,6 @@ def init_first_user_config(command_line_config, user_config):
     return user_config
 
 
-def complete_config_from_user_config(user_config):
-    config = get_total_config_from_user_config(user_config)
-
-    if "verbose" not in config["general"]:
-        config["general"]["verbose"] = False
-
-    config["general"]["reset_calendar_to_last"] = False
-
-    if config["general"].get("inspect"):
-        config["general"]["jobtype"] = "inspect"
-
-        if config["general"].get("inspect") not in [
-            "workflow",
-            "overview",
-            "config",
-        ]:
-            config["general"]["reset_calendar_to_last"] = True
-
-    return config
-
-
 def save_command_line_config(config, command_line_config):
     if command_line_config:
         config["general"]["command_line_config"] = command_line_config
@@ -107,47 +86,8 @@ def get_user_config_from_command_line(command_line_config):
     user_config["general"].update(command_line_config)
     if deupdate_use_venv:
         user_config["general"]["use_venv"] = user_use_venv
+
     return user_config
-
-
-def get_total_config_from_user_config(user_config):
-
-    if "version" in user_config["general"]:
-        version = str(user_config["general"]["version"])
-    else:
-        setup_name = user_config["general"]["setup_name"]
-
-        if "version" in user_config[setup_name.replace("_standalone", "")]:
-            version = str(user_config[setup_name.replace("_standalone", "")]["version"])
-        else:
-            version = "DEFAULT"
-
-    config = esm_parser.ConfigSetup(
-        user_config["general"]["setup_name"].replace("_standalone", ""),
-        version,
-        user_config,
-    )
-
-    config = add_esm_runscripts_defaults_to_config(config)
-
-    config["computer"]["jobtype"] = config["general"]["jobtype"]
-    config["general"]["experiment_dir"] = (
-        config["general"]["base_dir"] + "/" + config["general"]["expid"]
-    )
-
-    # Check if the 'account' variable is needed and missing
-    if config["computer"].get("accounting", False):
-        if "account" not in config["general"]:
-            esm_parser.user_error(
-                "Missing account info",
-                f"You cannot run simulations in '{config['computer']['name']}' "
-                "without providing an 'account' variable in the 'general' section, whose "
-                "value refers to the project where the computing resources are to be "
-                "taken from. Please, add the following to your runscript:\n\n"
-                "general:\n\taccount: <the_account_to_be_used>",
-            )
-
-    return config
 
 
 def add_esm_runscripts_defaults_to_config(config):

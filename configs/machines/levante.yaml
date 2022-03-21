@@ -154,6 +154,8 @@ export_vars:
         #           undefined symbol: __intel_skx_avx512_memcpy
         #           This combination was recommended by DKRZ support
 
+        # Variable for OpenIFS I/O libraries
+        IO_LIB_ROOT: ""
 # kh 15.02.22 orig mistral
 #        HDF5ROOT: /sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/
 
@@ -195,7 +197,8 @@ export_vars:
 #        NETCDF_CXX_INCLUDE_DIRECTORIES: /sw/rhel6-x64/netcdf/netcdf_cxx-4.2.1-gcc48/include
 
 # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
-        NETCDF_CXX_INCLUDE_DIRECTORIES: todo
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 
         #########################################################################
         # Linear Algebra (LAPACK)

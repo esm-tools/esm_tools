@@ -126,8 +126,6 @@ choose_compiler_mpi:
         - "load Python/3.9.6"
         - "load imkl/2021.4.0"
         - "load Perl/5.34.0"
-        - "load NCO/5.0.3"
-        - "load CDO/2.0.2"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -271,7 +269,7 @@ choose_iolibraries:
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-            PATH: $IO_LIB_ROOT/bin/:$PATH
+            PATH: $IO_LIB_ROOT/bin:$PATH
 
         choose_compiler_mpi:
             intel2022_ompi2022:

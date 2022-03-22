@@ -1490,13 +1490,13 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             choices_available[ckey] = cval
 
     # Are choices all booleans?
-    choices_bool = True
+    all_choices_are_bool = True
     for ckey in choices_available:
-        choices_bool &= isinstance(ckey, bool)
+        all_choices_are_bool &= isinstance(ckey, bool)
     # If the choices are booleans and the ``choice`` is a string, try to transform the
     # string in an integer (that will be able to select a choice from the boolean
     # choices)
-    if choices_bool and isinstance(choice, str):
+    if all_choices_are_bool and isinstance(choice, str):
         if choice == "0" or choice == "1":
             choice = int(choice)
 

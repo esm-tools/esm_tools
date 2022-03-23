@@ -11,6 +11,9 @@ clean_command: ${defaults.clean_command}
 
 use_icebergs: False
 
+with_wiso: false
+wiso_code: false
+
 choose_version:
   2.1-unstable:
     branch: master
@@ -19,34 +22,16 @@ choose_version:
     branch: "2.1.0"
   2.1-awiesm-2.1:
     branch: "2.1-awiesm-2.1"
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
     destination: "fesom-2.1"
+    wiso_code: true
   2.1-wiso:
     branch: wiso
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
+    wiso_code: true
   2.1-recom:
     branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    wiso_code: true
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -413,6 +398,24 @@ wiso_fields:
         - i1_oce
         - i2_oce
         - i3_oce
+
+choose_wiso_code:
+        True:
+                add_namelist_changes:
+                        namelist.config:
+                                run_config:
+                                        lwiso: "${with_wiso}"
+
+choose_with_wiso:
+        True:
+                add_restart_in_files:
+                        wiso_restart: wiso_restart
+                add_restart_out_files:
+                        wiso_restart: wiso_restart
+                add_coupling_fields:
+                        "[[wiso_fields-->FIELD]]":
+                                grid: feom
+
 
 grids:
         feom:

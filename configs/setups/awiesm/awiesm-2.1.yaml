@@ -66,23 +66,19 @@ general:
           '2.1':
             couplings:
             - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
-            wiso_code: false
-            with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-wiso':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso
-            wiso_code: true
-            with_wiso: true
             fesom_Dflags: "-DFESOM_COUPLED=ON"
           '2.1-recom':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso+recom-2.0
             add_include_models:
             - recom
-            wiso_code: true
-            with_wiso: false
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+
+        with_wiso: false
 
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -108,17 +104,16 @@ echam:
                                 lcouple: .true.
         namelist_type: "production"
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         ocean_resolution: "${fesom.resolution}"
         remove_forcing_files:
                 - sst
                 - sic
+        with_wiso: ${general.with_wiso}
         choose_general.version:
                 "2.1":
-                        version: "6.3.05p2-awiesm-2.1" 
+                        version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
-                        model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
                 "2.1-recom":
@@ -156,16 +151,7 @@ echam:
         add_test1:
             test3: false
 
-        choose_general.wiso_code:
-                True:
-                        lwiso: "${general.with_wiso}"
-                        choose_general.with_wiso:
-                                True:
-                                        nwiso: 3
-                                        lwiso_rerun: ${lresume}
-                                False:
-                                        nwiso: 0
-                                        lwiso_rerun: False
+
 
 
 #########################################################################################
@@ -203,6 +189,7 @@ fesom:
                 cmake ${general.fesom_Dflags} ..;
                 make install -j `nproc --all`"
 
+        with_wiso: ${general.with_wiso}
         choose_general.version:
                 "1.1":
                         version: "1.4"
@@ -213,12 +200,14 @@ fesom:
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+                        namelist_dir: ${fesom.model_dir}/config/
                 "2.1-wiso":
                         version: "2.1-wiso"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-recom":
                         version: "2.1-recom"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+
                         num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
                         add_config_sources:
@@ -235,19 +224,6 @@ fesom:
                                         oce_tra:
                                                 num_tracers: "${num_tracers}"
                         wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
-        choose_general.wiso_code:
-                True:
-                        add_namelist_changes:
-                                namelist.config:
-                                        run_config:
-                                                lwiso: "${general.with_wiso}"
-
-        choose_general.with_wiso:
-                True:
-                        add_restart_in_files:
-                                wiso_restart: wiso_restart
-                        add_restart_out_files:
-                                wiso_restart: wiso_restart
 
 
         choose_general.resolution:

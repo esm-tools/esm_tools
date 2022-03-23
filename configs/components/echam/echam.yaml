@@ -158,9 +158,8 @@ choose_switch:
 # choice
 #
 
-lwiso_rerun: False
-lwiso: False
-nwiso: 0
+with_wiso: false
+wiso_code: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -199,6 +198,11 @@ choose_resolution:
                 _ny: 192
 
 choose_version:
+        6.3.05p2-awiesm-2.1:
+                # TODO MA: this problably needs much more stuff from the wiso version
+                wiso_code: true
+                repo_tag: not_applicable
+                dataset: r0007
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
@@ -257,6 +261,7 @@ choose_version:
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
+                wiso_code: true
                 choose_computer.name:
                     mistral:
                         add_compiletime_environment_changes:
@@ -278,10 +283,6 @@ choose_version:
                                         default_output: True
                                 radctl:
                                         lrad_async: "${lrad_async}"
-                                wisoctl:
-                                        lwiso_rerun: "${lwiso_rerun}"
-                                        lwiso: "${lwiso}"
-                                        nwiso: "${nwiso}"
                 add_streams:
                         - wiso
                         - accw_wiso
@@ -299,13 +300,6 @@ choose_version:
                         "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
                 restart_out_sources:
                         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
-                choose_general.with_wiso:
-                        True:
-                                add_coupling_fields:
-                                        "[[wiso_fields-->FIELD]]":
-                                                grid: atmo
-                        "*":
-                                no_wiso_coupling_fields: "var from echam.yaml, choose_general.with_wiso"
 
 
         6.3.05p2-concurrent_radiation:
@@ -518,6 +512,26 @@ choose_yr_perp_off:
                                         yr_perp: "remove_from_namelist"
                                 runctl:
                                         l_orbsvop87: ".false."
+
+choose_wiso_code:
+        True:
+                lwiso: "${with_wiso}"
+                add_namelist_changes:
+                        namelist.echam:
+                                wisoctl:
+                                        lwiso_rerun: "${lwiso_rerun}"
+                                        lwiso: "${lwiso}"
+                                        nwiso: "${nwiso}"
+                choose_with_wiso:
+                        True:
+                                nwiso: 3
+                                lwiso_rerun: ${lresume}
+                                add_coupling_fields:
+                                        "[[wiso_fields-->FIELD]]":
+                                                grid: atmo
+                        False:
+                                nwiso: 0
+                                lwiso_rerun: False
 
 
 bin_files:

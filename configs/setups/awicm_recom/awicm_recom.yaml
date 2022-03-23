@@ -130,10 +130,32 @@ fesom:
 
         leapyear: True
         asforcing: ECHAM5
-
-
-
-
+        
+        # output fields
+        12_step_outputs: []
+        
+        daily_outputs: []
+        
+        monthly_outputs: ['volo', 'thetaoga', 'tso', 'tos', 'thetao', 'soga', 
+        'sos', 'so', 'rho', 'zos', 'mlotst', 'omldamax', 'virtual_salt', 'relax_salt', 
+        'siarean', 'siareas', 'siextentn', 'siextents', 'sivoln', 'sivols', 
+        'sisnconc', 'rsdo', 'hfds', 'wnet', 'evap', 'runoff', 'thdgr', 'thdgrsn', 
+        'lwrd', 'olat', 'olwout', 'osen', 'shum', 'tair', 'PAR', 'NPPn', 'NPPd', 
+        'GPPn', 'GPPd', 'aCO2', 'CO2y', 'CO2f', 'pCO2s', 'dpCO2s', 'O2f', 'aFe', 'aN']
+        
+        yearly_outputs: ['evs', 'fsitherm', 'opottemptend', 'pbo', 'prlq', 'prsn',
+        'sidmassevapsubl', 'sidmasssi', 'sidmassth', 'sidmasstranx', 'sidmasstrany', 
+        'sifllatstop', 'sisnmass', 'sisnthick', 'sispeed', 'sivol', 'u2o', 'uo',
+        'uso', 'uto', 'v2o', 'vo', 'vso', 'vto', 'w2o', 'wfo', 'wo', 'wso', 'wto',
+        'zossq', 'uhice', 'uhsnow', 'urho', 'uv', 'vhice', 'vhsnow', 'vrho', 
+        'uwind', 'vwind', 'w10w', 'sic', 'sistrxdtop', 'sistrxubot', 'sistrydtop', 
+        'sistryubot', 'sithick', 'sitimefrac', 'siu', 'siv', 'tauuo', 'tauvo', 
+        'flice', 'bgc01', 'bgc02', 'bgc03', 'bgc04', 'bgc05', 'bgc06', 'bgc07',
+        'bgc08', 'bgc09', 'bgc10', 'bgc11', 'bgc12', 'bgc13', 'bgc14', 'bgc15',
+        'bgc16', 'bgc17', 'bgc18', 'bgc19', 'bgc20', 'bgc21', 'bgc22', 'diags3d01', 
+        'diags3d02', 'Hp', 'denb', 'NNAn', 'NNAd', 'Kw', 'alphaCO2', 'GNAn', 
+        'GNAd', 'rDIN', 'rDON', 'rDOC', 'rDSi', 'benN', 'benC', 'benSi', 
+        'benCalc']
 
 
 #########################################################################################

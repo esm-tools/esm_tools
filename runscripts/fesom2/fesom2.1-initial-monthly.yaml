@@ -1,0 +1,20 @@
+general:
+        account: <your_project_account>
+        setup_name: fesom
+        compute_time: "00:08:00"
+        initial_date: '2001-01-01'
+        final_date: '2001-03-31'
+        base_dir: !ENV ${ESM_TESTING_DIR}
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+fesom:
+        version: 2.1 
+        model_dir: <the_location_of_your_model>
+        res: CORE2
+        lresume: 0
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm' 
+        post_processing: 0

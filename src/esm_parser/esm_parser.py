@@ -1490,13 +1490,13 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             choices_available[ckey] = cval
 
     # Are choices all booleans?
-    choices_bool = True
+    all_choices_are_bool = True
     for ckey in choices_available:
-        choices_bool &= isinstance(ckey, bool)
+        all_choices_are_bool &= isinstance(ckey, bool)
     # If the choices are booleans and the ``choice`` is a string, try to transform the
-    # try to transform the string in an integer (that will be able to select a choice
-    # from the boolean choices
-    if choices_bool and isinstance(choice, str):
+    # string in an integer (that will be able to select a choice from the boolean
+    # choices)
+    if all_choices_are_bool and isinstance(choice, str):
         if choice == "0" or choice == "1":
             choice = int(choice)
 
@@ -1971,8 +1971,11 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
             # If the substituted variable is not a list, and there is either a
             # preceding (``prefix``) or following (``suffix``) string, then add up
             # the parts, making sure that other variables (``${}``) are also
-            # substituted
-            if type(var_result) not in [list] and (prefix or suffix):
+            # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
+            if (
+                (not isinstance(var_result, list) and (prefix or suffix)) or
+                (isinstance(var_result, dict) and "NONE_YET" in var_result)
+            ):
                 prefix, var_result, more_rest = (
                     str(prefix),
                     str(var_result),

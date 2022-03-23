@@ -244,182 +244,85 @@ choose_compiler_mpi:
 
 choose_iolibraries:
 
+    # DEFAULT LIBS
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
          - "load netCDF netCDF-Fortran"
+
+    # AWI LIBS
     awi_libs:
-       choose_compiler_mpi:
-          intel2022_ompi2022:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+        add_export_vars:
+            PROJECT_ID: '$(for i in $(id -Gn $whoami);do echo "  - $i" ;done | grep chhb | head -1 | cut -c 5-10)'
+            IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+            LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
+            SZIPROOT: $IO_LIB_ROOT
+            HDF5ROOT: $IO_LIB_ROOT
+            HDF5_ROOT: $HDF5ROOT
+            NETCDFROOT: $IO_LIB_ROOT
+            NETCDFFROOT: $IO_LIB_ROOT
+            ECCODESROOT: $IO_LIB_ROOT
 
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
-          intel2020_ompi2020:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+            HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+            PATH: $IO_LIB_ROOT/bin:$PATH
 
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
+        choose_compiler_mpi:
+            intel2022_ompi2022:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
+            intel2020_ompi2020:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
+            intel2020_psmpi2020:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
+            intel_2019a_psmpi2019:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
 
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
-          intel2020_psmpi2020:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
-          intel_2019a_psmpi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/chhb19/streffing1/software/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                PATH:  $IO_LIB_ROOT/bin:/p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+    # GEOMAR LIBS
     geomar_libs:
-       choose_compiler_mpi:
-          intel2019_impi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+        add_export_vars:
+            IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+            PATH: $IO_LIB_ROOT/bin:$PATH
+            LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
+            SZIPROOT: $IO_LIB_ROOT
+            HDF5ROOT: $IO_LIB_ROOT
+            HDF5_ROOT: $HDF5ROOT
+            NETCDFROOT: $IO_LIB_ROOT
+            NETCDFFROOT: $IO_LIB_ROOT
+            ECCODESROOT: $IO_LIB_ROOT
 
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+            HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
-          intel2020_impi2020:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_impi2019.8.254_20210427
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+        choose_compiler_mpi:
+            intel2019_impi2019:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
+            intel2020_impi2020:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_impi2019.8.254_20210427
+            intel_2019a_psmpi2019:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113
+            intel2020_psmpi2020:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
+            intel2022_psmpi2022:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
+                    PSMPIFLAGS: '"-lrt -lm -ldl"'
 
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-          intel_2019a_psmpi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-          intel2020_psmpi2020:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-          intel2022_psmpi2022:
-             add_export_vars:
-                IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222 
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-                PSMPIFLAGS: '"-lrt -lm -ldl"'
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-       #add_export_vars:
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"
 cc: "$CC"

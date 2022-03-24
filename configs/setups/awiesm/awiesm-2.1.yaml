@@ -241,13 +241,18 @@ fesom:
                 T63_REF:
                         nproc: 128
 
-        opbnd_dir: ""
-        tide_forcing_dir: ""
-        forcing_data_dir: ""
+        opbnd_dir: "remove_from_namelist"
+        tide_forcing_dir: "remove_from_namelist"
+        forcing_data_dir: "remove_from_namelist"
         model_dir: ${general.model_dir}/${fesom.destination}
         setup_dir: ${general.model_dir}
 
         namelist_changes:
+                namelist.config:
+                        paths:
+                                OpbndPath: "${opbnd_dir}"
+                                TideForcingPath: "${tide_forcing_dir}"
+                                ForcingDataPath: "${forcing_data_dir}"
                 namelist.oce:
                         oce_tra:
                                 surf_relax_s: 0.0

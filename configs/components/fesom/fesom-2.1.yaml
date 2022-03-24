@@ -343,7 +343,6 @@ choose_icb_code:
                     use_icebergs: "${use_icebergs}"
                     use_icesheet_coupling: "${use_icesheet_coupling}"
                     steps_per_ib_step: 8
-                    ib_num: 1
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

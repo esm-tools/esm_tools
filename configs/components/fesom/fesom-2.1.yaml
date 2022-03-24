@@ -29,16 +29,7 @@ choose_version:
     branch: "2.1-awiesm-2.1"
     destination: "fesom-2.1"
     wiso_code: true
-  2.1-gamma:
-    branch: paleodyn/awiesm-2.1-gamma
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
-    icb_code: True
+    icb_code: true
   2.1-wiso:
     branch: wiso
     wiso_code: true

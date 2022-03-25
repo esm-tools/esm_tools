@@ -31,3 +31,15 @@ jobs:
           model_name: awiesm
           # versions to test as a space seperated list
           model_version: "2.1 2.1-wiso 2.1-recom"
+    test-job: 
+        matrix:
+          job_id:
+            - pi
+            - bootstrap
+            - pi-wiso
+            - pi-pico
+            - pi-wiso-pico
+        name: Test Run for AWIESM (Ollie) 
+        run: |
+          echo "Starting SLURM mini test for ${{matrix.job_id}}"
+          ls runscripts/CI/awiesm/${matrix.job_id}.yaml

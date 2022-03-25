@@ -2,6 +2,12 @@ name: Tests for AWIESM
 
 on:
     workflow_dispatch:  # Allow manual trigger
+        inputs:
+          verbose:
+            description: Run in verbose mode
+            required: True
+            default: True
+            type: boolean
     push:
         paths:
             - '!docs/**'

@@ -67,10 +67,6 @@ jobs:
           - name: Download Code
             uses: actions/checkout@v2
 
-          - name: Add to the path
-            run: |
-              echo "$HOME/.local/bin" >> $GITHUB_PATH
-
           - name: Install esm-tools
             run: |
               module load git
@@ -87,26 +83,40 @@ jobs:
 
           - name: Run esm_master
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_master
 
           - name: Run esm_plugins
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_plugins
 
           - name: Run get-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_master get-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run status-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_master status-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run comp-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
-                esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
+              esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run clean-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
+              # QUESTION(PG): If we do run tests, do we still need this part?
+              # Won't that erase the actual binaries??
               esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Clean up

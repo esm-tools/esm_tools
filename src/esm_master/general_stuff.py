@@ -325,6 +325,10 @@ class version_control_infos:
                         "gitlab.awi.de",
                         f"{os.environ['GITLAB_AWI_USER_NAME']}@gitlab.awi.de",
                     )
+                elif "swrepo1.awi.de" in repo:
+                    print(
+                        f"swrepo1.awi.de is decommisioned, please consider correcting {repo}"
+                    )
                 elif "gitlab.dkrz.de" in repo:
                     repo = repo.replace(
                         "gitlab.dkrz.de",
@@ -334,7 +338,9 @@ class version_control_infos:
                     print("No token needed for github.com repositories!")
                 else:
                     print(f"Sorry, no CI token defined for {repo}")
-                    sys.exit(1)
+                    if os.environ.get("esm_tools_pedantic"):
+                        print("Pedantic mode is on, exiting instead of warning only!")
+                        sys.exit(1)
             elif "https://gitlab.dkrz.de" in repo:
                 repo = (
                     "https://"

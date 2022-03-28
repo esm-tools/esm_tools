@@ -319,7 +319,6 @@ class version_control_infos:
             else:
                 repo = package.repo
             if os.environ.get("CI"):
-                print(os.environ.keys())
                 if "gitlab.awi.de" in repo:
                     repo = repo.replace(
                         "gitlab.awi.de",

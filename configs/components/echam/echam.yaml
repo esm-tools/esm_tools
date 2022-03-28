@@ -202,6 +202,7 @@ choose_version:
         6.3.05p2-awiesm-2.1:
                 # TODO MA: this problably needs much more stuff from the wiso version
                 wiso_code: true
+                concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
         6.3.04p1:
@@ -231,18 +232,7 @@ choose_version:
                 lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation-paleodyn:
-                choose_computer.name:
-                    mistral:
-                        compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                test1:
-                    test2: true
+                concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:
@@ -251,59 +241,19 @@ choose_version:
                         namelist.echam:
                                 runctl:
                                         npromar: "${npromar}"
-                                parctl:
-
-# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
-#                                       nprocrad: "${nprocrad}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 radctl:
-                                        lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
                 wiso_code: true
-                choose_computer.name:
-                    mistral:
-                        add_compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        add_runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                concurrent_radiation_code: true
                 add_namelist_changes:
                         namelist.echam:
-                                parctl:
-                                        nproca: "${nproca}"
-                                        nprocb: "${nprocb}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 runctl:
                                         default_output: True
-                                radctl:
-                                        lrad_async: "${lrad_async}"
-                add_streams:
-                        - wiso
-                        - accw_wiso
-                        - sf_wiso
-                        - rad
-                add_forcing_files:
-                        ozonea: piozonea
-                        ozoneb: piozoneb
-                        ozonec: piozonec
-                add_forcing_in_work:
-                        ozonea: "ozon1988"
-                        ozoneb: "ozon1989"
-                        ozonec: "ozon1990"
-                restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
-                restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
-
 
         6.3.05p2-concurrent_radiation:
+                concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:
@@ -312,14 +262,7 @@ choose_version:
                         namelist.echam:
                                 runctl:
                                         npromar: "${npromar}"
-                                parctl:
-
-# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
-#                                       nprocrad: "${nprocrad}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 radctl:
-                                        lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
 # kh 30.04.20 parameter values below (nprocar..lrestart_from_old) would supersed corresponding parameter values
@@ -332,6 +275,31 @@ choose_version:
 #               npromar: 8
 #               lrad_async: true
 #               lrestart_from_old: false
+
+choose_concurrent_radiation_code:
+        True:
+                choose_computer.name:
+                    mistral:
+                        compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+        "*":
+                from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
+
 
 choose_scenario:
         "PI-CTRL":
@@ -530,6 +498,23 @@ choose_wiso_code:
                                 add_coupling_fields:
                                         "[[wiso_fields-->FIELD]]":
                                                 grid: atmo
+                                add_streams:
+                                        - wiso
+                                        - accw_wiso
+                                        - sf_wiso
+                                        - rad
+
+                                # The following lines take care of the renaming of the
+                                # ozon files, and their copying
+                                add_forcing_files:
+                                        ozonea: piozonea
+                                        ozoneb: piozoneb
+                                        ozonec: piozonec
+                                add_forcing_in_work:
+                                        ozonea: "ozon1988"
+                                        ozoneb: "ozon1989"
+                                        ozonec: "ozon1990"
+
                         False:
                                 nwiso: 0
                                 lwiso_rerun: False

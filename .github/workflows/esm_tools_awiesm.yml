@@ -46,6 +46,7 @@ jobs:
         env:
             LC_ALL: en_US.UTF-8
             LANG: en_US.UTF-8
+            SBATCH_WAIT: 1  
         strategy:
           matrix:
             job_id:
@@ -59,3 +60,7 @@ jobs:
             run: |
                echo "Starting SLURM mini test for ${{matrix.job_id}}"
                ls runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml
+               esm_runscripts runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml -e ${{matrix.job_id}} -c
+               # FIXME: A potential problem with SBATCH_WAIT is that since the
+               # jobs start each other, the "waiting" job hangs until all 3 months are finished.
+               esm_runscripts runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml -e ${{matrix.job_id}}

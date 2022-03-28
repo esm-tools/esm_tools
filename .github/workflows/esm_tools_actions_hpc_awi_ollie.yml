@@ -97,6 +97,7 @@ jobs:
             run: |
               echo "$HOME/.local/bin" >> $GITHUB_PATH
               source .venv/bin/activate
+              module load git
               esm_master get-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run status-${{ inputs.model_name }}-${{ matrix.version }}

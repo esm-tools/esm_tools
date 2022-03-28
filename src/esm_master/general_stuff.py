@@ -319,10 +319,17 @@ class version_control_infos:
             else:
                 repo = package.repo
             if os.environ.get("CI"):
+                print(os.environ.keys())
                 if "gitlab.awi.de" in repo:
-                    repo = repo.replace("gitlab.awi.de", f"{os.environ['GITLAB_AWI_TOKEN']}@gitlab.awi.de")
+                    repo = repo.replace(
+                        "gitlab.awi.de",
+                        f"{os.environ['GITLAB_AWI_TOKEN']}@gitlab.awi.de",
+                    )
                 elif "gitlab.dkrz.de" in repo:
-                    repo = repo.replace("gitlab.dkrz.de", f"{os.environ['GITLAB_DKRZ_TOKEN']}@gitlab.dkrz.de")
+                    repo = repo.replace(
+                        "gitlab.dkrz.de",
+                        f"{os.environ['GITLAB_DKRZ_TOKEN']}@gitlab.dkrz.de",
+                    )
                 else:
                     print(f"Sorry, no CI token defined for {repo}")
                     sys.exit(1)

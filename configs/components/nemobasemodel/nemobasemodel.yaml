@@ -3,7 +3,34 @@ available_versions:
 - 3.6.3.x
 - 3.6ogcm
 - 3.6foci
+- 4.0.6 
+- 4.0.6foci
+
 choose_version:
+  4.0.6:
+    archfile: ESMTOOLS_generic_intel
+    branch: v4.0.6
+    git-repository: https://git.geomar.de/joakim-kjellsson/nemo4.git
+    comp_command: export NEMO_TOPLEVEL=${model_dir}; export XIOS_TOPLEVEL=${model_dir}/../xios; 
+                  ./makenemo -n ${nemo.version} -m ${archfile} -r GYRE_XIOS_v4 -j 24 ; cp -p cfgs/${nemo.version}/BLD/bin/nemo.exe cfgs/${nemo.version}/BLD/bin/oceanx
+    clean_command: cd cfgs;
+                   ./makenemo -n ${nemo.version} -m ${archfile} clean;
+                   cd ..
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+    destination: nemo-${nemo.version}
+    
+  4.0.6foci:
+    archfile: ESMTOOLS_generic_oasis_intel 
+    branch: v4.0.6 
+    git-repository: https://git.geomar.de/joakim-kjellsson/nemo4.git 
+    comp_command: export NEMO_TOPLEVEL=${model_dir}; cd cfgs; cp ${nemo.version}/cfg.inc cfg.txt; 
+                  ./makenemo -n ${nemo.version} -m ${archfile} -j 24 ; cp -p ${nemo.version}/BLD/bin/nemo.exe ${nemo.version}/BLD/bin/oceanx
+    clean_command: cd cfgs;
+                   cp ${nemo.version}/cfg.inc cfg.txt;
+                   ./makenemo -n ${nemo.version} -m ${archfile} clean;
+                   cd ..
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+    
   3.6.3.x:
     # TODO: the archfile ESMTOOLS_generic_intel is not yet available in 
     # NEMOGCM.git, hence it won't work at the moment

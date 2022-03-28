@@ -30,7 +30,7 @@ jobs:
         # If @commit_or_branch is ommited, github actions will break!
         # For now, I tie it to release, but there might be better ways of doing
         # that, see for instance here: https://tinyurl.com/4x6h373j
-        uses: "esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@release"
+        uses: "esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@feat/awiesm_final"
         secrets:
           dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
           awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
@@ -49,11 +49,11 @@ jobs:
         strategy:
           matrix:
             job_id:
+              - icebergs
               - pi
-              - bootstrap
-              - pi-wiso
-              - pi-pico
-              - pi-wiso-pico
+              - pico
+              - wiso-pico
+              - wiso
         steps: 
           - name: Run ${{matrix.job_id}} CI Job for AWIESM
             run: |

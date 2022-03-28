@@ -27,6 +27,7 @@ compile_infos:
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
             comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.awi.de/paleodyn/Models/echam6.git"
+            # model_dir: echam-6.3.05p2
             destination: echam-6.3.05p2
           6.3.02p4:
             install_bins: src/bin/echam6

@@ -7,7 +7,7 @@ general:
     base_dir: "${general.project_base}/experiments"
     nmonth: 1
     nyear: 0
-    with_wiso: False
+    with_pico: True
     use_venv: False
     clean_old_rundirs_except: 2
     clean_old_rundirs_keep_every: 25

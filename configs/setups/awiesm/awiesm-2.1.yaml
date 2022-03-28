@@ -4,8 +4,8 @@
 #
 # This file includes the presets for the following versions of AWIESM-2.1:
 # - awiesm-2.1: standard version
-#       + echam branch: concurrent_radiation
-#       + fesom branch: 2.1.0
+#       + echam branch: 6.3.05p2-awiesm-2.1
+#       + fesom branch: 2.1-awiesm-2.1
 # - awiesm-2.1-wiso: Xiaoxu Shi and Martin Werner's version with WISO
 #       + echam branch: wiso
 #       + fesom branch: wiso
@@ -79,6 +79,8 @@ general:
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
 
         with_wiso: false
+        with_pico: false
+        with_icebergs: false
 
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -104,7 +106,8 @@ echam:
                                 lcouple: .true.
         namelist_type: "production"
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
+        # FIXME(PG): This might cause problems...
+        # model_dir: ${general.model_dir}/echam-${echam.version}
         setup_dir: ${general.model_dir}
         ocean_resolution: "${fesom.resolution}"
         remove_forcing_files:
@@ -115,6 +118,12 @@ echam:
                 "2.1":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        # NOTE(PG): This is needed since we give a different
+                        # "destination" at the echam level. Not pretty, but, it
+                        # works.
+                        # FIXME: Destination not found??
+                        #model_dir: ${general.model_dir}/${echam.destination}
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
                 "2.1-recom":
@@ -194,6 +203,20 @@ fesom:
                 make install -j `nproc --all`"
 
         with_wiso: ${general.with_wiso}
+        with_pico: ${general.with_pico}
+        choose_with_pico:
+          True:
+            add_forcing_files:
+              pico_forcing: temp_salt_default
+            add_forcing_sources:
+              # FIXME(PG): Needs to be in a pool somewhere...
+              temp_salt_default: ${general.project_base}/nonstandard_forcings/pico/test.dat
+            add_namelist_changes:
+              namelist.forcing:
+                pico:
+                  use_pico: True
+          "*":
+            not_used_pico: ""
         choose_general.version:
                 "1.1":
                         version: "1.4"
@@ -203,8 +226,7 @@ fesom:
                         version: "2.0"
                 "2.1":
                         version: "2.1-awiesm-2.1"
-                        ALE_scheme: 'linfs' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
-                        namelist_dir: ${fesom.model_dir}/config/
+                        ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
                 "2.1-wiso":
                         version: "2.1-wiso"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.

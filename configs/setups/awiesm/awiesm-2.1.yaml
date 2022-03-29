@@ -310,9 +310,9 @@ fesom:
                                     K_hor: ${K_hor}
 
         leapyear: True
-        asforcing: ECHAM5
+        # asforcing: ECHAM5
 
-        remove_namelist_changes: [namelist.forcing]
+        # remove_namelist_changes: [namelist.forcing]
 
 #########################################################################################
 

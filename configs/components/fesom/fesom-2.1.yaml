@@ -406,12 +406,12 @@ config_files:
         io:      io
 
 # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-#       cvmix:   cvmix
-#       icepack: icepack
+        cvmix:   cvmix
+        icepack: icepack
 
 # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
-        recom:   recom
-        io.recom.ciso: io.recom.ciso
+#      recom:   recom
+#      io.recom.ciso: io.recom.ciso
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"

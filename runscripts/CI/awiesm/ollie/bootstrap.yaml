@@ -8,6 +8,7 @@ general:
     nmonth: 0
     nyear: 1
     with_wiso: False
+    with_bootstrap: True
     use_venv: False
     clean_old_rundirs_except: 2
     clean_old_rundirs_keep_every: 25
@@ -33,15 +34,6 @@ echam:
     add_input_sources:
         jansurf: "${project_base}/nonstandard_forcings/bootstrap_files/initial_unit24.nc"
         target_orography: "${project_base}/nonstandard_forcings/bootstrap_files/target_unit24.nc"
-    add_input_files:
-            target_orography: target_orography
-    add_input_in_work:
-            target_orography: target_orography_echam6.nc
-    namelist_changes:
-            namelist.echam:
-                    submodelctl:
-                        lupdate_orog: True
-
 
 jsbach:
     input_sources:

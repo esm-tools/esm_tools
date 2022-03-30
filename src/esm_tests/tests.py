@@ -622,6 +622,7 @@ def check(info, mode, model, version, out, script, v):
                         f"{user_info['test_dir']}/{sp}",
                         sp,
                         ignore_lines,
+                        info["rm_user_info"],
                     )
                     success += identical
                     # Update state dictionaries
@@ -755,9 +756,19 @@ def extract_namelists(s_config_yaml):
 #######################################################################################
 # OUTPUT
 #######################################################################################
-def print_diff(sscript, tscript, name, ignore_lines):
+def print_diff(sscript, tscript, name, ignore_lines, rm_user):
     script_s = open(sscript).readlines()
     script_t = open(tscript).readlines()
+
+    # Substitute user lines in target string
+    new_script_t = []
+    for line in script_t:
+        for key, string in rm_user.items():
+            if not string:
+                continue
+            line = line.replace(string, f"<{key}>")
+        new_script_t.append(line)
+    script_t = new_script_t
 
     # Check for ignored lines
     new_script_s = []
@@ -881,22 +892,23 @@ def save_files(info, user_choice):
                         info, cfile, v, this_test_dir
                     )
                     for sp, sp_t in zip(subpaths_source, subpaths_target):
-                        if os.path.isfile(f"{last_tested_dir}/{sp_t}"):
+                        target_path = f"{last_tested_dir}/{this_computer}/{sp_t}" 
+                        if os.path.isfile(target_path):
                             logger.debug(
-                                f"\t'{sp_t}' file in '{last_tested_dir}' will be overwritten"
+                                f"\t'{sp_t}' file in '{last_tested_dir}/{this_computer}' will be overwritten"
                             )
-                        if not os.path.isdir(
-                            os.path.dirname(f"{last_tested_dir}/{this_computer}/{sp_t}")
-                        ):
-                            os.makedirs(
-                                os.path.dirname(
-                                    f"{last_tested_dir}/{this_computer}/{sp_t}"
-                                )
-                            )
-                        shutil.copy2(
-                            f"{user_info['test_dir']}/{sp}",
-                            f"{last_tested_dir}/{this_computer}/{sp_t}",
-                        )
+                        if not os.path.isdir(os.path.dirname(target_path)):
+                            os.makedirs(os.path.dirname(target_path))
+                        shutil.copy2(f"{user_info['test_dir']}/{sp}", target_path)
+
+                        # Modify lines containing user-specific information
+                        for key, string in info["rm_user_info"].items():
+                            if not string:
+                                continue
+                            with open(target_path) as f:
+                                stext = f.read().replace(string, f"<{key}>")
+                            with open(target_path, "w") as f:
+                                f.write(stext)
     # Load current state
     with open(get_state_yaml_path(), "r") as st:
         current_state = yaml.load(st, Loader=yaml.FullLoader)

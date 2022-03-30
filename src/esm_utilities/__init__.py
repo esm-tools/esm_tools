@@ -2,4 +2,4 @@
 
 __author__ = """Paul Gierz"""
 __email__ = "pgierz@awi.de"
-__version__ = "6.3.2"
+__version__ = "6.3.7"

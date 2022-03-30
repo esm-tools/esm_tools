@@ -127,8 +127,10 @@ echam:
                         model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.1-wiso":
                         version: "6.3.05p2-wiso"
+                        model_dir: ${general.model_dir}/echam-${echam.version}
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
+                        model_dir: ${general.model_dir}/echam-${echam.version}
                         wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
@@ -214,19 +216,7 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
-        choose_with_pico:
-          True:
-            add_forcing_files:
-              pico_forcing: temp_salt_default
-            add_forcing_sources:
-              # FIXME(PG): Needs to be in a pool somewhere...
-              temp_salt_default: ${general.project_base}/nonstandard_forcings/pico/test.dat
-            add_namelist_changes:
-              namelist.forcing:
-                pico:
-                  use_pico: True
-          "*":
-            not_used_pico: ""
+
         choose_general.version:
                 "1.1":
                         version: "1.4"
@@ -237,6 +227,7 @@ fesom:
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
+                        namelist_dir: ${fesom.model_dir}/config/
                 "2.1-wiso":
                         version: "2.1-wiso"
                         ALE_scheme: 'zstar' # NOTE(PG): This should probably be overriden in the AWIESM 2.x yaml or in the user runscript.
@@ -291,6 +282,22 @@ fesom:
                         boundary:
                                 restore_s_surf: 0.0
 
+        # with_pico switch
+        choose_with_pico:
+          True:
+            add_forcing_files:
+              pico_forcing: temp_salt_default
+            add_forcing_sources:
+              # FIXME(PG): Needs to be in a pool somewhere...
+              temp_salt_default: ${general.project_base}/nonstandard_forcings/pico/test.dat
+            add_namelist_changes:
+              namelist.forcing:
+                pico:
+                  use_pico: True
+          "*":
+            not_used_pico: ""
+
+        # ALE_scheme switch
         version_2_1: "$(( '2.1' in '${general.version}' ))"
         choose_version_2_1:
                 True:

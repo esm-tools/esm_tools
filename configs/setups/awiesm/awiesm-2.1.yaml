@@ -81,6 +81,7 @@ general:
         with_wiso: false
         with_pico: false
         with_icebergs: false
+        with_bootstrap: false
 
         scenario: "PALEO"
         resolution: ${echam.resolution}_${fesom.resolution}
@@ -161,8 +162,17 @@ echam:
                 OASIS3MCT_FC_LIB: "$(pwd)/lib/"
                 OASIS3MCTROOT: "$(pwd)/oasis/"
                 configure_opts: '--with-coupler=oasis3-mct'
-        add_test1:
-            test3: false
+
+        choose_general.with_bootstrap:
+                True:
+                        add_input_files:
+                                target_orography: target_orography
+                        add_input_in_work:
+                                target_orography: target_orography_echam6.nc
+                        add_namelist_changes:
+                                namelist.echam:
+                                        submodelctl:
+                                            lupdate_orog: True
 
 
 

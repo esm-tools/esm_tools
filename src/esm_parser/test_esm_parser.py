@@ -42,23 +42,58 @@ DUMMY_CONFIG_SIMPLE = {
     },
 }
 
+DOUBLE_VARIABLE_CONFIG = {
+    "general": {
+        "foo": "bar",
+        "baz": "qux",
+        "quux": "corge",
+    },
+    "model_A": {
+        "foo": "bar_too",
+        "baz": "${general.foo}_${model_A.foo}",
+    },
+}
+
 
 @pytest.fixture
-def prepare_config():
+def prepare_dummy_config_simple():
     config = esm_parser.EsmConfig(config=DUMMY_CONFIG_SIMPLE)
     parser = esm_parser.EsmParser()
     return config, parser
 
 
-def test_find_variables(prepare_config):
-    config, parser = prepare_config
+@pytest.fixture
+def prepare_double_variable_config():
+    config = esm_parser.EsmConfig(config=DOUBLE_VARIABLE_CONFIG)
+    parser = esm_parser.EsmParser()
+    return config, parser
+
+
+def test_find_variables(prepare_dummy_config_simple):
+    config, parser = prepare_dummy_config_simple
     variables = parser.find_variables(config)
     for variable in variables:
-        assert variable.should_resolve_from == dpath.util.get(
+        assert variable.should_resolve_from in dpath.util.get(
             DUMMY_CONFIG_SIMPLE, str(variable.address), separator="."
         )
 
 
-def test_resolve_variable(prepare_config):
-    config, parser = prepare_config
-    variable = esm_parser.ConfigVariable(name="foo", address="general.foo", value="bar")
+def test_find_multiple_variables(prepare_double_variable_config):
+    config, parser = prepare_double_variable_config
+    variables = parser.find_variables(config)
+    assert len(variables) == 2
+    for variable in variables:
+        assert variable.name == "baz"
+
+
+def test_resolve_variable(prepare_dummy_config_simple):
+    config, parser = prepare_dummy_config_simple
+    variable = esm_parser.ConfigVariable(
+        name="baz",
+        address=esm_parser.ConfigAddress("model_A.baz"),
+        should_resolve_from="general.foo",
+    )
+    assert variable.is_resolved is False
+    parser.resolve_variable(config, variable)
+    assert variable.is_resolved is True
+    assert variable.value == "bar"

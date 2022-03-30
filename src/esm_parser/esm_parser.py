@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import pathlib
+import re
 from collections import UserDict
 from dataclasses import dataclass, field
 from typing import Any, List
 
 import dpath.util
+from loguru import logger
 from ruamel.yaml import YAML
 
 
@@ -15,10 +17,13 @@ class ConfigAddress:
     path: str = ""
     """Path to the config value."""
 
+    sep: str = "."
+    """The separator used to separate the path components."""
+
     @property
     def parts(self) -> List[str]:
         """List of parts of the path."""
-        return self.path.split(".")
+        return self.path.split(self.sep)
 
     def __str__(self):
         return self.path
@@ -45,10 +50,28 @@ class ConfigVariable:
     value: Any = "unresolved"
     is_resolved: bool = False
     resolved_from: ConfigAddress = ConfigAddress()
-    should_resolve_from: Any = "Unknown"
+    # NOTE(PG): Should this maybe be a ConfigAddress instead?
+    should_resolve_from: str = "Unknown"
     dependencies: List[Any] = field(default_factory=list)
+    start_mark: str = "${"
+    end_mark: str = "}"
+    sep_mark: str = "."
 
-    def __str__(self):
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def value_clean_marks(self) -> str:
+        """Remove the start and end marks from the variable's ``value`` attribute."""
+        return self.value.replace(self.start_mark, "").replace(self.end_mark, "")
+
+    def should_resolve_from_clean_marks(self) -> str:
+        """Remove the start and end marks from the variable's ``should_resolve_from`` attribute."""
+        return self.should_resolve_from.replace(self.start_mark, "").replace(
+            self.end_mark, ""
+        )
+
+    @property
+    def resolution_info(self) -> str:
         if self.is_resolved:
             return f"{self.name} = {self.value} (defined at {self.address}, resolved from {self.resolved_from})"
         return f"{self.name} = {self.value} (defined at {self.address}, wants value of {self.should_resolve_from})"
@@ -123,11 +146,10 @@ class EsmParser:
     def __init__(self):
         pass
 
+    @staticmethod
     def resolve_variable(
-        self,
         config: EsmConfig,
         variable: ConfigVariable,
-        separator: str = ".",
     ) -> ConfigVariable:
         """Resolve a variable
 
@@ -137,9 +159,6 @@ class EsmParser:
             The configuration to resolve the variable in
         variable : ConfigVariable
             The variable to resolve
-        separator : str
-            The separator to use when resolving the variable, defaults to
-            ``.``.
 
         Returns
         -------
@@ -148,13 +167,17 @@ class EsmParser:
         """
         if variable.is_resolved:
             return variable
-        value = dpath.util.get(config, variable.address, separator=separator)
+        value = dpath.util.get(
+            config,
+            variable.should_resolve_from_clean_marks(),
+            separator=variable.sep_mark,
+        )
         variable.value = value
         variable.is_resolved = True
         return variable
 
+    @staticmethod
     def find_variables(
-        self,
         config: EsmConfig,
         variable_start: str = "${",
         variable_end: str = "}",
@@ -188,8 +211,7 @@ class EsmParser:
         def _filter_variable(value):
             """Filter function for in value side of key/value pair"""
             if isinstance(value, str):
-                if variable_start in value and variable_end in value:
-                    return True
+                return variable_start in value and variable_end in value
             return False
 
         variables = []
@@ -201,13 +223,22 @@ class EsmParser:
             yielded=True,
         )
         for result in search_results:
-            print(result)
-            variables.append(
-                ConfigVariable(
-                    name=result[0].split(variable_separator)[-1],
-                    address=ConfigAddress(result[0]),
-                    should_resolve_from=result[1],
-                    is_resolved=False,
+            logger.debug(f"Full result: {result}")
+            re_pattern = re.escape(variable_start) + r"(.*?)" + re.escape(variable_end)
+            logger.debug(rf"Pattern to search with: {re_pattern}")
+            logger.debug(f"Result: {result[1]}")
+            regex_results = re.findall(re_pattern, result[1])
+            logger.debug(regex_results)
+            for regex_result in regex_results:
+                variables.append(
+                    ConfigVariable(
+                        name=result[0].split(variable_separator)[-1],
+                        address=ConfigAddress(result[0]),
+                        should_resolve_from=regex_result,
+                        is_resolved=False,
+                        start_mark=variable_start,
+                        end_mark=variable_end,
+                        sep_mark=variable_separator,
+                    )
                 )
-            )
         return variables

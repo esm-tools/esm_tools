@@ -318,7 +318,29 @@ class version_control_infos:
                 repo = package.repo[0]
             else:
                 repo = package.repo
-            if "https://gitlab.dkrz.de" in repo:
+            if os.environ.get("CI"):
+                if "gitlab.awi.de" in repo:
+                    repo = repo.replace(
+                        "gitlab.awi.de",
+                        f"{os.environ['GITLAB_AWI_USER_NAME']}@gitlab.awi.de",
+                    )
+                elif "swrepo1.awi.de" in repo:
+                    print(
+                        f"swrepo1.awi.de is decommisioned, please consider correcting {repo}"
+                    )
+                elif "gitlab.dkrz.de" in repo:
+                    repo = repo.replace(
+                        "gitlab.dkrz.de",
+                        f"{os.environ['GITLAB_DKRZ_USER_NAME']}@gitlab.dkrz.de",
+                    )
+                elif "github.com" in repo:
+                    print("No token needed for github.com repositories!")
+                else:
+                    print(f"Sorry, no CI token defined for {repo}")
+                    if os.environ.get("esm_tools_pedantic"):
+                        print("Pedantic mode is on, exiting instead of warning only!")
+                        sys.exit(1)
+            elif "https://gitlab.dkrz.de" in repo:
                 repo = (
                     "https://"
                     + general.emc["GITLAB_DKRZ_USER_NAME"]

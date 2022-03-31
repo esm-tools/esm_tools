@@ -314,7 +314,10 @@ fesom:
                 pico:
                   use_pico: True
           "*":
-            not_used_pico: ""
+            add_namelist_changes:
+              namelist.forcing:
+                pico:
+                  use_pico: False
 
         # ALE_scheme switch
         # -----------------

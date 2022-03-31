@@ -215,10 +215,10 @@ def model_env_into_computer(config):
                     model0 = env_vars[key][1]
                     while True:
                         # Warn the user about the overwriting of the variable
-                        user_note("Environment conflict", f"In '{model0}':")
-                        pprint_config({key: env_vars[key][0]})
+                        esm_parser.user_note("Environment conflict", f"In '{model0}':")
+                        esm_parser.pprint_config({key: env_vars[key][0]})
                         logging.info("\nIn '" + model + "':")
-                        pprint_config({key: value})
+                        esm_parser.pprint_config({key: value})
                         # Ask the user how to proceed if it is not a `tidy job
                         if not config["general"]["jobtype"] == "tidy":
                             user_answer = input(
@@ -241,7 +241,7 @@ def model_env_into_computer(config):
                         # If the user selects ``n`` raise a user error with recommendations
                         elif user_answer == "n":
                             config[model]["env_overwrite"] = False
-                            user_error(
+                            esm_parser.user_error(
                                 "Environment conflict",
                                 "You were not happy with the environment variable "
                                 + f"'{key}' in '{model0}' being overwritten by the same "

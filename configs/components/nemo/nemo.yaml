@@ -19,27 +19,37 @@ available_versions:
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
-- GYRE_XIOS_v4
+- GYRE_PISCES
 
 choose_version:
+
   GYRE_XIOS:
     requires:
     - xios-2.5_r1910_ogcm
-    - nemobasemodel-3.6ogcm
+    - nemobasemodel-3.6ogcm_test
     resolution: R4
-  GYRE_XIOS_v4:
+
+  GYRE_PISCES:
+
     requires:
-    - xios-2.5_r1910_ogcm
-    - nemobasemodel-4.0.6
-    branch: master
-    clone_destination: nemo-${nemo.version}/cfgs/${nemo.version}
-    destination: nemo-${nemo.version} #/cfgs/${nemo.version}
-    git-repository: https://github.com/joakimkjellsson/GYRE.git
+    - xios-trunk
+    - nemobasemodel-4.2.x
     namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
+
+    use_tracer: true 
+    
     add_input_sources:
         namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-    generation: "4.0"
-    resolution: R4
+        namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
+        namelist_pisces_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_pisces_ref
+        namelist_pisces_cfg: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/namelist_pisces_cfg
+    add_input_files:
+       namelist_top_ref: namelist_top_ref
+       namelist_pisces_ref: namelist_pisces_ref
+       namelist_pisces_cfg: namelist_pisces_cfg
+
+    generation: "4.2"
+    resolution: "R4"
     
   ORCA05_LIM2_FOCI_AGRIF_AOW:
     requires:
@@ -376,16 +386,16 @@ choose_version:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
   
-  ORCA05_SI3_FOCI_FS_AOW:
-    requires:
-    - nemobasemodel-4.0.6foci
-    branch: esm-tools
-    destination: nemo-${nemo.version}/cfgs/${nemo.version}
-    git-repository: https://github.com/joakimkjellsson/ORCA05_SI3_FOCI_FS_AOW
-    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
-    add_input_sources:
-        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-    generation: "4.0"
+  #ORCA05_SI3_FOCI_FS_AOW:
+  #  requires:
+  #  - nemobasemodel-4.2.xfoci
+  #  branch: esm-tools
+  #  destination: nemo-${nemo.version}/cfgs/${nemo.version}
+  #  git-repository: https://github.com/joakimkjellsson/ORCA05_SI3_FOCI_FS_AOW
+  #  namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
+  #  add_input_sources:
+  #      namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+  #  generation: "4.2"
 
   # NEMO standalone setup
   ORCA05_LIM2_NEMO_JRA55_test:
@@ -640,10 +650,10 @@ namelist_changes:
                 namtsd:                                                
                         #ln_tsd_tradmp: ${ln_tsd_tradmp} 
                         ln_tsd_init: ${ln_tsd_init} 
-                namdom:
+                #namdom:
                         #nn_closea: 1
                         #nn_msh: ${nn_msh} 
-                        rn_rdt: ${time_step}
+                        #rn_rdt: ${time_step}
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
@@ -651,9 +661,11 @@ namelist_changes:
                         jpnj: ${jpnj}
 
 choose_generation:
-        "4.0": 
+        "4.2": 
                 add_namelist_changes:
                         namelist_cfg:
+                                namdom:
+                                        rn_dt: ${time_step}
                                 namcfg:
                                         ln_closea: '.false.'
                                 namtsd: 
@@ -664,6 +676,7 @@ choose_generation:
                                 namdom:
                                         nn_closea: 1
                                         nn_msh: ${nn_msh}
+                                        rn_rdt: ${time_step}
                                 nammpp:
                                         jpnij: ${nproc}
                                 namtsd: 
@@ -742,7 +755,7 @@ choose_resolution:
         R4:
                 free_surface: no_option 
                 use_lim2: false 
-                use_tracer: false
+                #use_tracer: false
                 coupling_freq_in_steps: 1
                 _nx: 32
                 _ny: 22
@@ -756,7 +769,7 @@ choose_resolution:
                                                         ln_tsd_init: '.false.' 
                                                 nameos:
                                                         ln_useCT: '.false.'
-                        "4.0":
+                        "4.2":
                                 add_namelist_changes:
                                         namelist_cfg:
                                                 namtsd:

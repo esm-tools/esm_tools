@@ -322,15 +322,11 @@ fesom:
         # ALE_scheme switch
         # -----------------
         # Settings for Gent/McWilliams based upon the selected ALE scheme.
-        K_gm: 3000.0
-        K_hor: 3000.0
-        K_gm_max: 2000.0
-
         choose_ALE_scheme:
             linfs:
-                K_gm: 5000.0
-                K_hor: 5000.0
                 K_gm_max: "remove_from_namelist"
+                K_hor: 5000.0
+                K_gm: 5000.0
             zstar:
                 K_gm_max: 2000.0
                 K_hor: 3000.0

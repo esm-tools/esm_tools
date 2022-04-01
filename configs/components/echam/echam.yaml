@@ -687,7 +687,7 @@ streamsnc:
         - scm
         - ma
         - surf
-        - cfddiag
+        - cfdiag
         - aeropt
         - co2
         - tdiag

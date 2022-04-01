@@ -570,6 +570,7 @@ ln_tsd_init: true
 ln_limini: true 
 ln_limini_agrif: false
 nn_msh: 1
+ln_meshmask: true
 # will be set to 0 if lresume = true and run_number=1
 # i.e. restart from another run
 nn_rstctl: 2
@@ -650,10 +651,6 @@ namelist_changes:
                 namtsd:                                                
                         #ln_tsd_tradmp: ${ln_tsd_tradmp} 
                         ln_tsd_init: ${ln_tsd_init} 
-                #namdom:
-                        #nn_closea: 1
-                        #nn_msh: ${nn_msh} 
-                        #rn_rdt: ${time_step}
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
@@ -666,6 +663,7 @@ choose_generation:
                         namelist_cfg:
                                 namdom:
                                         rn_dt: ${time_step}
+                                        ln_meshmask: ${ln_meshmask}
                                 namcfg:
                                         ln_closea: '.false.'
                                 namtsd: 
@@ -716,6 +714,7 @@ choose_lresume:
                 ln_limini_agrif: false
                 ln_tsd_init: false
                 nn_msh: 0
+                ln_meshmask: false
                                         
                 choose_general.run_number:
                         1:

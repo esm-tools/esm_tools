@@ -1,2 +1,7 @@
-nothing:
-        - so far
+get_command: "svn co ${define_options} ${define_revision} ${repository}"
+update_command: "svn update"
+status_command: "svn status"
+log_command: "svn log"
+
+define_options: "${repo_options}"
+define_revision: "-r ${revision}"

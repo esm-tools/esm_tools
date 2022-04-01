@@ -3,6 +3,7 @@
 
 # DEFAULT VALUES
 model: nemo
+generation: "3.6"
 executable:     oceanx
 version: GYRE_XIOS
 include_models:
@@ -18,12 +19,38 @@ available_versions:
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
+- GYRE_PISCES
 
 choose_version:
+
   GYRE_XIOS:
     requires:
     - xios-2.5_r1910_ogcm
-    - nemobasemodel-3.6ogcm
+    - nemobasemodel-3.6ogcm_test
+    resolution: R4
+
+  GYRE_PISCES:
+
+    requires:
+    - xios-trunk
+    - nemobasemodel-4.2.x
+    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
+
+    use_tracer: true 
+    
+    add_input_sources:
+        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
+        namelist_pisces_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_pisces_ref
+        namelist_pisces_cfg: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/namelist_pisces_cfg
+    add_input_files:
+       namelist_top_ref: namelist_top_ref
+       namelist_pisces_ref: namelist_pisces_ref
+       namelist_pisces_cfg: namelist_pisces_cfg
+
+    generation: "4.2"
+    resolution: "R4"
+    
   ORCA05_LIM2_FOCI_AGRIF_AOW:
     requires:
     # seb-wahl: comment xios below if used with OIFS which also uses XIOS which causes XIOS
@@ -358,6 +385,17 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+  
+  #ORCA05_SI3_FOCI_FS_AOW:
+  #  requires:
+  #  - nemobasemodel-4.2.xfoci
+  #  branch: esm-tools
+  #  destination: nemo-${nemo.version}/cfgs/${nemo.version}
+  #  git-repository: https://github.com/joakimkjellsson/ORCA05_SI3_FOCI_FS_AOW
+  #  namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
+  #  add_input_sources:
+  #      namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+  #  generation: "4.2"
 
   # NEMO standalone setup
   ORCA05_LIM2_NEMO_JRA55_test:
@@ -532,6 +570,7 @@ ln_tsd_init: true
 ln_limini: true 
 ln_limini_agrif: false
 nn_msh: 1
+ln_meshmask: true
 # will be set to 0 if lresume = true and run_number=1
 # i.e. restart from another run
 nn_rstctl: 2
@@ -544,6 +583,7 @@ ln_trcdta: true
 pool_dir: ${computer.pool_directories.focipool}
 input_dir: ${pool_dir}/NEMO_${resolution}/input/${resolution}
 namelist_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+
 model_dir: ${general.model_dir}/nemo-${nemo.version}
 setup_dir: ${general.model_dir}
 bin_dir: ${setup_dir}/bin
@@ -609,18 +649,38 @@ namelist_changes:
                         nn_rstctl: ${nn_rstctl} 
                         ln_rstart: ${nemo.lresume}
                 namtsd:                                                
-                        ln_tsd_tradmp: ${ln_tsd_tradmp} 
+                        #ln_tsd_tradmp: ${ln_tsd_tradmp} 
                         ln_tsd_init: ${ln_tsd_init} 
-                namdom:
-                        nn_closea: 1
-                        nn_msh: ${nn_msh} 
-                        rn_rdt: ${time_step}
                 namsbc:
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
                         jpni: ${jpni}
                         jpnj: ${jpnj}
-                        jpnij: ${nproc}
+
+choose_generation:
+        "4.2": 
+                add_namelist_changes:
+                        namelist_cfg:
+                                namdom:
+                                        rn_dt: ${time_step}
+                                        ln_meshmask: ${ln_meshmask}
+                                namcfg:
+                                        ln_closea: '.false.'
+                                namtsd: 
+                                        ln_tsd_dmp: ${ln_tsd_tradmp}
+        "3.6":
+                add_namelist_changes:
+                        namelist_cfg:
+                                namdom:
+                                        nn_closea: 1
+                                        nn_msh: ${nn_msh}
+                                        rn_rdt: ${time_step}
+                                nammpp:
+                                        jpnij: ${nproc}
+                                namtsd: 
+                                        ln_tsd_tradmp: ${ln_tsd_tradmp}
+                
+
 choose_leapyear:
         False:
               nn_leapy: 1 
@@ -654,6 +714,7 @@ choose_lresume:
                 ln_limini_agrif: false
                 ln_tsd_init: false
                 nn_msh: 0
+                ln_meshmask: false
                                         
                 choose_general.run_number:
                         1:
@@ -690,21 +751,29 @@ choose_resolution:
                         subbasins: subbasins
                         coef-G70: coef-G70
 
-        GYRE:
+        R4:
                 free_surface: no_option 
                 use_lim2: false 
-                use_tracer: false
+                #use_tracer: false
                 coupling_freq_in_steps: 1
                 _nx: 32
                 _ny: 22
-                time_step: 7200
-                add_namelist_changes:
-                   namelist_cfg:
-                      namtsd:                                                
-                        ln_tsd_tradmp: '.false.' 
-                        ln_tsd_init: '.false.' 
-                      nameos:
-                        ln_useCT: '.false.'
+                time_step: 600
+                choose_generation:
+                        "3.6":
+                                add_namelist_changes:
+                                        namelist_cfg: 
+                                                namtsd: 
+                                                        ln_tsd_tradmp: '.false.' 
+                                                        ln_tsd_init: '.false.' 
+                                                nameos:
+                                                        ln_useCT: '.false.'
+                        "4.2":
+                                add_namelist_changes:
+                                        namelist_cfg:
+                                                namtsd:
+                                                        ln_tsd_init: '.false.'
+                                                        ln_tsd_dmp: '.false.'
                 input_files:
                         namelist_ref: namelist_ref
                 config_files:        

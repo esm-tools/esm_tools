@@ -37,7 +37,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
-def sh(inp_str, env_vars=[]):
+def sh(inp_str, env_vars=[], verbose=False):
     """
     Runs a ``shell`` command specified in ``inp_str``, exporting the environment vars
     in ``env_vars``.
@@ -64,6 +64,9 @@ def sh(inp_str, env_vars=[]):
         inp_str, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
     )
     out = p.communicate()[0].decode("utf-8")
+    if verbose:
+        print(inp_str)
+        print(out)
     return out
 
 

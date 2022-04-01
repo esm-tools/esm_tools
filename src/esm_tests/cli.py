@@ -8,9 +8,10 @@ import argparse
 from loguru import logger
 
 from .initialization import *
-from .tests import *
-from .test_utilities import *
 from .read_shipped_data import *
+from .repos import *
+from .test_utilities import *
+from .tests import *
 
 import os
 import sys
@@ -112,6 +113,9 @@ def main():
         determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
     )
 
+    # Update ``resources``
+    update_resources_submodule(info)
+
     # Predefined for later
     user_scripts = dict(comp={}, run={})
 
@@ -123,6 +127,12 @@ def main():
 
     # Get user info for testing
     info = user_config(info)
+
+    # User-specific Info to remove from the files ``last_tested`` files
+    info["rm_user_info"] = {
+        "ACCOUNT": info["user"]["account"],
+        "TEST_DIR": info["user"]["test_dir"],
+    }
 
     # Define lines to be ignored during comparison
     try:

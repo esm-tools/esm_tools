@@ -1,4 +1,14 @@
-import git
+import os
+
+from .test_utilities import sh
+
+def update_resources_submodule(info, verbose=True):
+    """
+    Initiates and updates the module ``esm_tests_info``.
+    """
+    os.chdir(info["script_dir"])
+    sh("git submodule init", verbose=verbose)
+    sh("git submodule update", verbose=verbose)
 
 def info_repo():
     """
@@ -21,3 +31,4 @@ def checkout_info():
 def commit_info_changes():
     """
     commits
+    """

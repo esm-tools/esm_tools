@@ -214,7 +214,6 @@ def copy_files_to_thisrun(config):
         and config["general"]["chunk_number"] > 1
     ):
         if "files_to_wait_for" in config["general"]:
-            # MA: this changes might give problems. TODO: check before merging
             for file_base in config['general'].get('files_to_wait_for'):
                 file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:

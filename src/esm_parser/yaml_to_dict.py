@@ -4,6 +4,7 @@ import sys
 
 import yaml
 from loguru import logger
+from ruamel.yaml import YAML
 
 import esm_parser
 
@@ -178,7 +179,14 @@ def yaml_file_to_dict(filepath):
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
                 # Actually load the file
-                yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
+                yaml_from_ruamel = YAML()
+                import pdb
+
+                pdb.set_trace()
+                yaml_load = yaml_from_ruamel.load(yaml_file)
+                print(yaml_load)
+                pdb.set_trace()
+                # yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)
                 check_changes_duplicates(yaml_load, filepath + extension)

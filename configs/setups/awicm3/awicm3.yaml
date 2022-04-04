@@ -182,7 +182,7 @@ oifs:
                                 iolibraries: geomar_libs
 
         res_level: ${resolution}${levels}
-        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
+        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
 
         coupling_fields:
                 "[[awicm3_fields-->FIELD]]":

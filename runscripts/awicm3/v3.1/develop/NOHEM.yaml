@@ -2,8 +2,8 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "frontiers-xios"
-    account: "hhb20"
-    compute_time: "24:00:00"
+    account: "hhb19"
+    compute_time: "00:30:00"
     initial_date: "2000-01-01"
     final_date: "2050-01-01"
     base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
@@ -26,6 +26,13 @@ fesom:
     lresume: false
     time_step: 2400
     nproc: 432
+    add_namelist_changes:
+        namelist.ice:
+            ice_therm:
+                albi: 0.6
+                albim: 0.43
+
+                    
 
 oifs:
     resolution: "TCO95"

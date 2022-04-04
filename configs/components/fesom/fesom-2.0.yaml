@@ -373,6 +373,10 @@ coupling_fields:
                 grid: feom
         snt_feom:
                 grid: feom
+        u_feom:
+                grid: feom
+        v_feom:
+                grid: feom
         taux_oce:
                 grid: feom
         tauy_oce:

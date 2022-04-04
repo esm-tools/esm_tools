@@ -43,6 +43,10 @@ oasis3mct:
     time_step: 7200
     use_lucia: true
 
+rnfmap:
+    input_sources:
+        runoff_maps: "/p/project/chhb19/streffing1/input/runoff-mapper/runoff_maps_CORE2_new.nc"
+
 xios:
     with_model: oifs
     nproc: 2

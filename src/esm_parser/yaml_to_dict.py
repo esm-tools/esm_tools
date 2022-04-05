@@ -146,6 +146,28 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
+
+def add_origin_metadata(my_dict, filename):
+    for key, value in my_dict.items():
+        if isinstance(value, dict):
+            add_origin_metadata(value, filename)
+        # FIXME LISTS
+        import ipdb
+        ipdb.set_trace()
+        setattr(key.lc, "filename", filename)
+
+
+def add_origin_comments(my_dict):
+    for key, value in my_dict.items():
+        if isinstance(value, dict):
+            add_origin_comments(value)
+        # FIXME LISTS
+        try:
+            my_dict[key].yaml_add_eol_comment(my_dict[key].filename)
+        except AttributeError:
+            print(value, key)
+
+
 def yaml_file_to_dict(filepath):
     """
     Given a yaml file, returns a corresponding dictionary.
@@ -180,12 +202,17 @@ def yaml_file_to_dict(filepath):
                 yaml_file.seek(0, 0)
                 # Actually load the file
                 yaml_from_ruamel = YAML()
-                import pdb
+                import ipdb
 
-                pdb.set_trace()
                 yaml_load = yaml_from_ruamel.load(yaml_file)
+                ipdb.set_trace()
+                add_origin_metadata(yaml_load, yaml_file)
                 print(yaml_load)
-                pdb.set_trace()
+                add_origin_comments(yaml_load)
+                with open("foo.yaml","w") as f:
+                    yaml_from_ruamel.dump(yaml_load, f)
+                ipdb.set_trace()
+
                 # yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)

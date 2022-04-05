@@ -3,7 +3,6 @@ from datetime import datetime
 
 import esm_parser
 import esm_plugin_manager
-import esm_rcfile
 import esm_tools
 
 
@@ -28,7 +27,7 @@ def evaluate(config, job_type, recipe_name):
         )
         sys.exit(1)
 
-    FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
+    FUNCTION_PATH = esm_tools.get_config_filepath(".")
 
     ###########################################################################################
     # LA: hotfix for non-matching python paths

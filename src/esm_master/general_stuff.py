@@ -1,7 +1,6 @@
 import os
 import sys
 import esm_tools
-import esm_rcfile
 import esm_parser
 
 
@@ -9,32 +8,17 @@ import esm_parser
 ##################################### globals ########################################
 ######################################################################################
 
-FUNCTION_PATH = esm_rcfile.get_rc_entry("FUNCTION_PATH", default="/dev/null")
 ESM_MASTER_DIR = os.getenv("PWD")
 
-# PG: COMPONENTS_YAML is now built out of multiple small ones
-# COMPONENTS_YAML = FUNCTION_PATH + "/esm_master/setups2models.yaml"
-if not FUNCTION_PATH.startswith("/dev/null"):
-    COMPONENTS_DIR = FUNCTION_PATH + "/components/"
-    SETUPS_DIR = FUNCTION_PATH + "/setups/"
-    COUPLINGS_DIR = FUNCTION_PATH + "/couplings/"
-    DEFAULTS_DIR = FUNCTION_PATH + "/defaults/"
-    ESM_SOFTWARE_DIR = FUNCTION_PATH + "/esm_software/"
-    CONFIG_YAML = FUNCTION_PATH + "/esm_software/esm_master/esm_master.yaml"
-    VCS_FOLDER = FUNCTION_PATH + "/other_software/vcs/"
-# Else case covers if user has removed FUNCTION_PATH from rcfile:
-else:
-    COMPONENTS_DIR = esm_tools.get_config_filepath("/components/")
-    SETUPS_DIR = esm_tools.get_config_filepath("/setups/")
-    COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
-    DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
-    ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
-    CONFIG_YAML = esm_tools.get_config_filepath(
-        "/esm_software/esm_master/esm_master.yaml"
-    )
-    VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
-
-OVERALL_CONF_FILE = esm_rcfile.rcfile
+COMPONENTS_DIR = esm_tools.get_config_filepath("/components/")
+SETUPS_DIR = esm_tools.get_config_filepath("/setups/")
+COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
+DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
+ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
+CONFIG_YAML = esm_tools.get_config_filepath(
+    "/esm_software/esm_master/esm_master.yaml"
+)
+VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
 
 ESM_MASTER_PICKLE = ESM_SOFTWARE_DIR + "/esm_master/esm_master.pkl"
 
@@ -143,65 +127,6 @@ class GeneralInfos:
 
         if parsed_args.get("verbose", False):
             self.output()
-
-    def read_and_update_conf_files(self):
-        """
-        Reads and updates the `ESM-Tools` configuration files.
-
-        Loops through the configuration files ``OVERALL_CONF_FILE``
-        (i.e. ``~/.esmtoolsrc``) and includes the variables defined there into the
-        ``emc`` dictionary. If the ``basic_infos`` specified inside ``self.config``
-        (read from the ``CONFIG_YAML``, e.g. ``esm_master.yaml``) is not complete
-        it asks for the user input to complete the ``OVERALL_CONF_FILE``
-        (i.e. ``~/.esmtoolsrc``).
-
-        Returns
-        -------
-        emc : dict
-            A dictionary including the `ESM-Tools` configuration variables (i.e.
-            contained in ``~/.esmtoolsrc``).
-        """
-        complete = True
-        emc = {}
-        # Loop through the esm_tools configuration files (i.e. ``esmtoolsrc``)
-        for conffile in [OVERALL_CONF_FILE]:
-            # Check if the file exists, and load the elements in ``emc``
-            if os.path.isfile(conffile):
-                with open(conffile) as myfile:
-                    for line in myfile:
-                        # PG: Could be simpler: just line.split("=")
-                        name, var = line.partition("=")[::2]
-                        emc[name.strip()] = var.strip()
-        # If ``basic_infos`` exists inside the ``esm_master.yaml``
-        if "basic_infos" in self.config.keys():
-            # Iterate through the ``basic_info`` keys (i.e. ``GITLAB_DKRZ_USER_NAME``)
-            for basic_info in self.config["basic_infos"]:
-                # Store ``question`` and ``default``
-                question = self.config["basic_infos"][basic_info]["question"]
-                default = self.config["basic_infos"][basic_info]["default"]
-                # If the key was not provided by the ``esm_tools`` configuration file
-                # then ask for user input using the ``question`` and ``default`` answer
-                if not basic_info in emc.keys():
-                    if complete:
-                        print("The configuration files are incomplete or non-existent.")
-                        print(
-                            "Please answer the following questions to configure esm-tools:"
-                        )
-                        print("(Hit enter to accept default values.)")
-                        complete = False
-                    user_input = input(question + " (default = " + default + "): ")
-                    # If the ``user_input`` is empty define it using the ``default``
-                    if user_input.strip() == "":
-                        user_input = default
-                    # Add ``basic_info`` to ``emc``
-                    emc.update({basic_info.strip(): user_input.strip()})
-        # If the esm_tools configuration files were not complete rewrite them to include
-        # the information provided by the user as ``user_input``
-        if not complete:
-            with open(OVERALL_CONF_FILE, "w") as new_conf_file:
-                for oldentry in emc.keys():
-                    new_conf_file.write(oldentry + "=" + emc[oldentry] + "\n")
-        return emc
 
     def get_meta_command(self):
         """

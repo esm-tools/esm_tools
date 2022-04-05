@@ -10,7 +10,6 @@ import re
 import sys
 
 import esm_parser
-from esm_rcfile import FUNCTION_PATH
 
 ######################################################################################
 ########################### class "environment_infos" ################################
@@ -129,12 +128,6 @@ class EnvironmentInfos:
         modelconfig : dict
             Information compiled from the `yaml` files for this specific component.
         """
-
-        if not modelconfig:
-            print("Should not happen anymore...")
-            modelconfig = esm_parser.yaml_file_to_dict(
-                FUNCTION_PATH + "/" + model + "/" + model
-            )
 
         # Merge whatever is relevant to this environment operation (either compile or
         # run) to ``environment_changes``, taking care of solving possible ``choose_``

@@ -12,7 +12,6 @@ from colorama import Fore, Back, Style, init
 import esm_tools
 import esm_calendar
 import esm_parser
-import esm_rcfile
 import esm_runscripts
 
 from .batch_system import batch_system
@@ -342,11 +341,6 @@ def _write_finalized_config(config):
 
     # format for the other ESM data structures
     EsmConfigDumper.add_representer(
-        esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str,
-    )
-
-    EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
@@ -530,12 +524,12 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_rcfile.EsmToolsDir("FUNCTION_PATH"))
+        print("Copying standard yamls from: ", esm_tools.get_config_filepath(".")))
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         print(
             "Copying standard namelists from: ",
-            esm_rcfile.EsmToolsDir("NAMELIST_PATH"),
+            esm_tools.get_namelist_filepath("."),
         )
         esm_tools.copy_namelist_folder(namelists_dir)
 

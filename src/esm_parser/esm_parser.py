@@ -107,19 +107,12 @@ CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
 # NOTE: For very strange reasons, DATE_MARKER ends up being unicode in py2, not a string...
 DATE_MARKER = str(">>>THIS_IS_A_DATE<<<")
 
-
-import esm_rcfile
-
-
-FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
-SETUP_PATH = FUNCTION_PATH + "/setups"
-DEFAULTS_DIR = FUNCTION_PATH + "/defaults"
-COMPONENT_PATH = FUNCTION_PATH + "/components"
-
-
-esm_function_dir = FUNCTION_PATH
-esm_namelist_dir = esm_rcfile.EsmToolsDir("NAMELIST_PATH")
-esm_runscript_dir = esm_rcfile.EsmToolsDir("RUNSCRIPT_PATH")
+CONFIG_PATH = esm_tools.get_config_filepath(".")
+SETUP_PATH = CONFIG_PATH + "/setups"
+DEFAULTS_DIR = CONFIG_PATH + "/defaults"
+COMPONENT_PATH = CONFIG_PATH + "/components"
+NAMELIST_DIR = esm_tools.get_namelist_filepath(".")
+RUNSCRIPT_DIR = esm_tools.get_runscript_filepath(",")
 
 gray_list = [
     r"choose_lresume",
@@ -183,9 +176,9 @@ def look_for_file(model, item, all_config=None):
     possible_paths = [
         f"{SETUP_PATH}/{model}/{item}",
         f"{COMPONENT_PATH}/{model}/{item}",
-        f"{FUNCTION_PATH}/esm_software/{model}/{item}",
-        f"{FUNCTION_PATH}/other_software/{model}/{item}",
-        f"{FUNCTION_PATH}/{model}/{item}",
+        f"{CONFIG_PATH}/esm_software/{model}/{item}",
+        f"{CONFIG_PATH}/other_software/{model}/{item}",
+        f"{CONFIG_PATH}/{model}/{item}",
         f"{runscript_path}/{item}",
         f"{os.getcwd()}/{item}",  # last resort: look at the CWD if others fail
     ]
@@ -2266,26 +2259,26 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
-    all_computers = yaml_file_to_dict(FUNCTION_PATH + "/machines/all_machines.yaml")
+    all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
     for this_computer in all_computers:
         for computer_pattern in all_computers[this_computer].values():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                    return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                        return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
     logging.warning(
         "The yaml file for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
     logging.warning("Continuing with generic settings...")
-    return FUNCTION_PATH + "/machines/generic.yaml"
+    return CONFIG_PATH + "/machines/generic.yaml"
 
     # raise FileNotFoundError(
     #    "The yaml file for this computer (%s) could not be determined!"
@@ -2943,9 +2936,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         setup_config["general"].update(
             {
-                "esm_function_dir": esm_function_dir,
-                "esm_namelist_dir": esm_namelist_dir,
-                "esm_runscript_dir": esm_runscript_dir,
+                "esm_function_dir": CONFIG_PATH,
+                "esm_namelist_dir": NAMELIST_DIR,
+                "esm_runscript_dir": RUNSCRIPT_DIR,
                 "expid": "test",
             }
         )

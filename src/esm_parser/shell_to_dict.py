@@ -19,10 +19,6 @@ import six
 # Imports from this module
 from .yaml_to_dict import *
 
-
-from esm_rcfile import FUNCTION_PATH
-
-
 def mini_recursive_run_func(config, func):
     func(config)
     for key, value in six.iteritems(config):
@@ -122,7 +118,9 @@ def ShellscriptToUserConfig(runscript_path):
     os.remove("cleaned_runscript")
     diffs = list(set(env_after) - set(env_before))
 
-    known_setups_and_models = os.listdir(FUNCTION_PATH)
+    # seb-wahl: we can savely set this to any value as the shellscript 
+    # is not supported anymore anyhow.
+    known_setups_and_models = "unset_as_shell_feature_is_not_supported_anymore" 
     user_config = {}
     logging.debug(diffs)
     solved_diffs = []
@@ -150,7 +148,6 @@ def ShellscriptToUserConfig(runscript_path):
 
     solved_diffs = []
     deprecated_diffs = [
-        "FUNCTION_PATH",
         "FPATH",
         "machine_name",
         "ESM_USE_C_CALENDAR",

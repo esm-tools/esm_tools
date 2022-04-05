@@ -121,7 +121,6 @@ class GeneralInfos:
 
         # Parses the ``esm_master.yaml`` configuration file
         self.config = esm_parser.yaml_file_to_dict(CONFIG_YAML)
-        self.emc = self.read_and_update_conf_files()
         self.meta_todos, self.meta_command_order = self.get_meta_command()
         self.display_kinds = self.get_display_kinds()
 
@@ -154,8 +153,6 @@ class GeneralInfos:
 
     def output(self):
         print()
-        for key in self.emc:
-            print(key + ": " + str(self.emc[key]))
         print("Meta commands: ")
         for key in self.meta_command_order:
             print("    " + key + ": " + str(self.meta_command_order[key]))
@@ -265,13 +262,7 @@ class version_control_infos:
                     if os.environ.get("esm_tools_pedantic"):
                         print("Pedantic mode is on, exiting instead of warning only!")
                         sys.exit(1)
-            elif "https://gitlab.dkrz.de" in repo:
-                repo = (
-                    "https://"
-                    + general.emc["GITLAB_DKRZ_USER_NAME"]
-                    + "@"
-                    + repo.replace("https://", "")
-                )
+
             raw_command = raw_command.replace("${repository}", repo)
             if todo == "get":
                 if package.repo_type == "curl":

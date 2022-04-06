@@ -71,6 +71,8 @@ iolibraries: system_libs
 module_actions:
         - "purge"
         - "load git/2.31.1-gcc-11.2.0"
+        - "load cdo/2.0.5-gcc-11.2.0"
+        - "load nco/5.0.6-gcc-11.2.0"
 
 export_vars:
         # Locale Settings
@@ -169,6 +171,7 @@ choose_iolibraries:
         # it's used by other models it stays in mistral.yaml for now
         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
+        LD_LIBRARY_PATH: "$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH"
         # Since the LD_LIBRARY_PATH modifies linking, this block probably needs
         # to be at the end!!
         LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH

@@ -33,5 +33,12 @@ pool_dir:  "/path/not/set/for/generic/yaml/"
 module_actions:
    - "load something"
 
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "unset"
+cc: "unset"
+mpifc: "unset"
+mpicc: "unset"
+cxx: "unset"
+
 further_reading:
         - batch_system/slurm.yaml

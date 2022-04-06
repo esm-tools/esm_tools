@@ -276,6 +276,17 @@ choose_version:
 #               lrad_async: true
 #               lrestart_from_old: false
 
+choose_computer.name:
+        levante:
+                add_runtime_environment_changes:
+                        add_export_vars:
+                                OMPI_MCA_btl: self  # This one
+                                OMPI_MCA_coll: "^ml" # This one
+                                OMPI_MCA_coll_hcoll_enable: "1" # This one
+                                OMPI_MCA_io: "romio321"  # This one
+                                OMPI_MCA_osc: "pt2pt" # This one
+                                OMPI_MCA_pml: "ucx"  # This one
+
 choose_concurrent_radiation_code:
         True:
                 choose_computer.name:

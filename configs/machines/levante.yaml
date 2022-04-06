@@ -86,22 +86,18 @@ export_vars:
         I_MPI_OFI_PROVIDER: mlx
         I_MPI_FABRICS: shm:ofi
 
-#       I_MPI_HYDRA_BOOTSTRAP: slurm
-#       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
+#       I_MPI_HYDRA_BOOTSTRAP: slurm #       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
 
 # kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
-        OMPI_MCA_btl: self
-        OMPI_MCA_coll: "^ml"
-        OMPI_MCA_coll_hcoll_enable: "1"
-        OMPI_MCA_io: "romio321"
-        OMPI_MCA_osc: "pt2pt"
-        OMPI_MCA_pml: "ucx"
         HCOLL_ENABLE_MCAST_ALL: "1"
         HCOLL_MAIN_IB: mlx5_0:1
         UCX_IB_ADDR_TYPE: ib_global
         UCX_NET_DEVICES: mlx5_0:1
         UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
         UCX_UNIFIED_MODE: y
+
+
+
 
 choose_compiler_mpi:
        intel2022_impi2021:
@@ -122,6 +118,7 @@ choose_compiler_mpi:
        intel2022_openmpi:
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
+                        - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
                         - "load openmpi/4.1.2-intel-2021.5.0"
 
                 add_export_vars:
@@ -146,16 +143,15 @@ choose_iolibraries:
             add_module_actions:
                - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
                - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
+               - "load hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0"
 
       add_export_vars:
-        HDF5ROOT: todo
+        # NOTE: Could be set by the module
+        HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
         HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
-        # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake.
-        #           Moved to PISM yamls, but doesn't show up??
         HDF5_ROOT: $HDF5ROOT
-        # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
-        NETCDFFROOT: todo
-        NETCDFROOT:  todo
+        NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
+        NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu 
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
         NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
@@ -166,7 +162,7 @@ choose_iolibraries:
         #
         LAPACK_LIB: "'-mkl=sequential'"
 
-        SZIPROOT: todo
+        # SZIPROOT: todo
         ZLIBROOT: /usr
 
         # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
@@ -178,7 +174,9 @@ choose_iolibraries:
         LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
         # avoid GLIBCXX_3.4.15 not found error
 
-        # kh 01.03.22 current philosophy on levante regarding the modules concept is to avoid LD_LIBRARY_PATH as far as possible to make everything clearer
+        # kh 01.03.22 current philosophy on levante regarding the modules
+        # concept is to avoid LD_LIBRARY_PATH as far as possible to make
+        # everything clearer
 
         # kh 17.02.22 orig mistral
         #        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
@@ -190,10 +188,34 @@ choose_iolibraries:
         # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 
         # kh 17.02.22 currently required to use mkl
-        LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+        # LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
         # kh 07.03.22 currently required to use Intel MPI
-        LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
+        # LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
+        LD_LIBRARY_PATH: "$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH"
+   # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
+   awi_paleodyn_libs:
+      choose_compiler_mpi:
+          intel2022_openmpi:
+             add_export_vars:
+                IO_LIB_ROOT: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0/
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH:/sw/spack-levante/openblas-0.3.18-mzclcq/include:/sw/spack-levante/nvhpc-21.11-5dvdc4/Linux_x86_64/21.11/compilers/include
+
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
+
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'           
+                # kh 07.03.22 currently required to use Intel MPI
+                LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
 
    geomar_libs:
       choose_compiler_mpi:

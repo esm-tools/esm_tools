@@ -153,7 +153,10 @@ echam:
                         nproca: 24
                         nprocb: 24
 
-        add_compiletime_environment_changes:
+        environment_changes:
+                # Only relevant for Levante:
+                iolibraries: system_libs
+        compiletime_environment_changes:
             add_export_vars:
                 # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
                 OIFS_OASIS_BASE: '$(pwd)/oasis'

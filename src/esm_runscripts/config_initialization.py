@@ -151,7 +151,7 @@ def get_total_config_from_user_config(user_config):
 
 
 def add_esm_runscripts_defaults_to_config(config):
-    path_to_file = esm_tools.get_runscript_filepath(".") + "/esm_software/esm_runscripts/defaults.yaml"
+    path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
     config = distribute_per_model_defaults(config)

@@ -3,6 +3,7 @@
 #hyper_flag: "--cpus-per-task=1"
 additional_flags: "--mem=0"
 
+name: generic
 accounting: true
 
 "batch_system": "slurm"
@@ -29,8 +30,10 @@ logical_cpus_per_core: 2
 threads_per_core: 1
 
 pool_directories:
+        focipool: "/scratch/usr/shkifmsw/foci_input2"
         pool: "/pool/data"
 
+pool_dir:  "/scratch/usr/hbkawi"
 
 # standard environment setup
 #

@@ -107,12 +107,12 @@ CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
 # NOTE: For very strange reasons, DATE_MARKER ends up being unicode in py2, not a string...
 DATE_MARKER = str(">>>THIS_IS_A_DATE<<<")
 
-CONFIG_PATH = esm_tools.get_config_filepath(".")
+CONFIG_PATH = esm_tools.get_config_filepath()
 SETUP_PATH = CONFIG_PATH + "/setups"
 DEFAULTS_DIR = CONFIG_PATH + "/defaults"
 COMPONENT_PATH = CONFIG_PATH + "/components"
-NAMELIST_DIR = esm_tools.get_namelist_filepath(".")
-RUNSCRIPT_DIR = esm_tools.get_runscript_filepath(",")
+NAMELIST_DIR = esm_tools.get_namelist_filepath()
+RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
 
 gray_list = [
     r"choose_lresume",

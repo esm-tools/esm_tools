@@ -40,6 +40,7 @@ accounting: true
 
 jobtype: compute
 sh_interpreter: "/bin/bash"
+hetjob_flag: hetjob
 
 partition: compute
 
@@ -155,7 +156,7 @@ export_vars:
         #           This combination was recommended by DKRZ support
 
         # Variable for OpenIFS I/O libraries
-        IO_LIB_ROOT: ""
+        IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0/"
 # kh 15.02.22 orig mistral
 #        HDF5ROOT: /sw/rhel6-x64/hdf5/hdf5-1.8.14-parallel-impi-intel14/
 

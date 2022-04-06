@@ -50,7 +50,7 @@ general:
 
         choose_computer.name:
                 levante:
-                        pool_dir: ""
+                        pool_dir: "/work/ab0246/from_Mistral/ab0246/a270092/input"
                 mistral:
                         pool_dir: "/work/ab0246/a270092/input"
                 ollie:

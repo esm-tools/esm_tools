@@ -144,7 +144,7 @@ class batch_system:
                     all_flags.append(flag)
 
         # some items in `all_values` list might be lists, so flatten it
-        all_values = [this_batch_system[flag] for flag in all_flags]
+        all_values = [this_batch_system.get(flag,None) for flag in all_flags]
         all_values_flat = []
         for value in all_values:
             if isinstance(value, str):
@@ -156,7 +156,8 @@ class batch_system:
         for value in all_values_flat:
             for (tag, repl) in replacement_tags:
                 value = value.replace(tag, str(repl))
-            header.append(this_batch_system["header_start"] + " " + value)
+            if this_batch_system.get("header_start",None) is not None:
+                header.append(this_batch_system["header_start"] + " " + value)
 
         return header
 

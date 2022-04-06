@@ -85,13 +85,8 @@ def get_user_config_from_command_line(command_line_config):
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
     except SystemExit as sysexit:
         sys.exit(sysexit)
-    except esm_parser.EsmConfigFileError as error:
-        raise error
     except:
-        # use the full absolute path instead of CWD
-        user_config = esm_parser.initialize_from_shell_script(
-            command_line_config["runscript_abspath"]
-        )
+        raise("An error occurred reading the config file from the command line") 
 
     # NOTE(PG): I really really don't like this. But I also don't want to
     # re-introduce black/white lists

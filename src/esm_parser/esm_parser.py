@@ -82,7 +82,6 @@ import yaml
 import six
 
 # functions reading in dict from file
-from .shell_to_dict import *
 from .yaml_to_dict import *
 
 # Date class
@@ -210,33 +209,6 @@ def look_for_file(model, item, all_config=None):
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
-
-
-def shell_file_to_dict(filepath):
-    """
-    Generates a ~`ConfigSetup` from an old shell script.
-
-    See also ~`ShellscriptToUserConfig`
-
-    Parameters
-    ----------
-    filepath : str
-        The file to load
-
-    Returns
-    -------
-    ConfigSetup :
-        The parsed config.
-    """
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
-
-
-def initialize_from_shell_script(filepath):
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
 
 
 def initialize_from_yaml(filepath):

@@ -174,12 +174,30 @@ choose_iolibraries:
         # it's used by other models it stays in mistral.yaml for now
         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
-        LD_LIBRARY_PATH[(1)]: "$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH:$MKLROOT/lib/intel64"
+        LD_LIBRARY_PATH: "$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH"
+        # Since the LD_LIBRARY_PATH modifies linking, this block probably needs
+        # to be at the end!!
+        LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
+        # avoid GLIBCXX_3.4.15 not found error
+
+        # kh 01.03.22 current philosophy on levante regarding the modules
+        # concept is to avoid LD_LIBRARY_PATH as far as possible to make
+        # everything clearer
+
+        # kh 17.02.22 orig mistral
+        #        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
+
+        # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+        #       LD_LIBRARY_PATH[(1)]: ...
+
+        # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
+        # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+
+        # kh 17.02.22 currently required to use mkl
+        LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
         # kh 07.03.22 currently required to use Intel MPI
-        # deactivated as we use openMPI
-        # LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
-
+        LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
    # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
    awi_paleodyn_libs:
       choose_compiler_mpi:
@@ -224,7 +242,7 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'           
-# kh 07.03.22 currently required to use Intel MPI
+                # kh 07.03.22 currently required to use Intel MPI
                 LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
 
 fc: "$FC"

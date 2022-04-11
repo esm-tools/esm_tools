@@ -220,18 +220,6 @@ choose_version:
                 lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation-paleodyn:
-                choose_computer.name:
-                    mistral:
-                        compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                test1:
-                    test2: true
                 repo_tag: not_applicable
                 dataset: r0007
                 add_streams:
@@ -327,6 +315,42 @@ choose_version:
 #               npromar: 8
 #               lrad_async: true
 #               lrestart_from_old: false
+
+choose_computer.name:
+        levante:
+                add_runtime_environment_changes:
+                        add_export_vars:
+                                OMPI_MCA_btl: self  # This one
+                                OMPI_MCA_coll: "^ml" # This one
+                                OMPI_MCA_coll_hcoll_enable: "1" # This one
+                                OMPI_MCA_io: "romio321"  # This one
+                                OMPI_MCA_osc: "pt2pt" # This one
+                                OMPI_MCA_pml: "ucx"  # This one
+
+choose_concurrent_radiation_code:
+        True:
+                choose_computer.name:
+                    mistral:
+                        compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+        "*":
+                from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
+
 
 choose_scenario:
         "PI-CTRL":

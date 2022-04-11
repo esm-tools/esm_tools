@@ -66,6 +66,7 @@ unset_vars:
 useMPI: intelmpi
 
 module_actions:
+        - "source /etc/profile.d/modules.sh"
         - "purge"
         - "load cmake"
         - "load udunits"

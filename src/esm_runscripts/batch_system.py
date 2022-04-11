@@ -448,8 +448,11 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                if cluster in reserved_jobtypes:
-                    # TODO: remove it once it's not needed anymore (substituted by packjob)
+                # TODO: remove it once it's not needed anymore (substituted by packjob)
+                if (
+                    cluster in reserved_jobtypes
+                    and config["computer"].get("taskset", False)
+                ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 # Prepare launcher
                 config = config["general"]["batch"].prepare_launcher(config, cluster)

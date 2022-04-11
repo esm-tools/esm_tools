@@ -64,7 +64,10 @@ class Slurm:
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
 
-        if config["computer"].get("heterogeneous_parallelization", False):
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("taskset", False)
+        ):
             # Prepare heterogeneous parallelization call
             config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
@@ -149,10 +152,11 @@ class Slurm:
             File wrapper object for writing of the lines
             (``runfile.write("<your_line_here>")``).
         """
-        pass
+
         # TODO: remove it once it's not needed anymore (substituted by packjob)
-        #if config["computer"].get("heterogeneous_parallelization", False):
-        #    self.add_hostlist_file_gen_lines(config, runfile)
+        if config["computer"].get("heterogeneous_parallelization", False):
+            if config["computer"].get("taskset", False):
+                self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
     def het_par_headers(config, cluster, headers):
@@ -206,11 +210,6 @@ class Slurm:
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers(config):
-        return config
-
-    # TODO: remove it once it's not needed anymore (substituted by packjob)
-    @staticmethod
-    def write_het_par_wrappers_old(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
 
         scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"

@@ -47,9 +47,17 @@ thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${gener
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+taskset: false
+
 add_choose_heterogeneous_parallelization:
-        true:
-                cpu_bind: "none"
+    true:
+        cpu_bind: "none"
+        choose_taskset:
+            # Support for old taskset heterogeneous parallelization approach
+            true:
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+            # Support for new packjob heterogeneous parallelization approach
+            false:
                 launcher_flags_per_component: "
                     --nodes=@nnodes@
                     --ntasks=@nproc@
@@ -58,9 +66,9 @@ add_choose_heterogeneous_parallelization:
                     --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
                 srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
                 launcher_comp_sep: " \\\n:"
-        false:
-                cpu_bind: "cores"
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+    false:
+        cpu_bind: "cores"
+        srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
 
 choose_launcher:
         srun:

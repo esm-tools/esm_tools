@@ -744,9 +744,8 @@ def extract_namelists(s_config_yaml):
         namelists_component = config[component].get("namelists", [])
         for nml in namelists_component:
             config_sources = config[component].get("config_sources", {})
-            if (
-                nml in config_sources
-                or any([nml in x for x in config_sources.values()])
+            if nml in config_sources or any(
+                [nml in x for x in config_sources.values()]
             ):
                 namelists.append(nml)
 
@@ -892,7 +891,7 @@ def save_files(info, user_choice):
                         info, cfile, v, this_test_dir
                     )
                     for sp, sp_t in zip(subpaths_source, subpaths_target):
-                        target_path = f"{last_tested_dir}/{this_computer}/{sp_t}" 
+                        target_path = f"{last_tested_dir}/{this_computer}/{sp_t}"
                         if os.path.isfile(target_path):
                             logger.debug(
                                 f"\t'{sp_t}' file in '{last_tested_dir}/{this_computer}' will be overwritten"

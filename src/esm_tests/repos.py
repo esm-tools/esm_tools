@@ -27,7 +27,8 @@ def update_resources_submodule(info, verbose=True):
             sh(f"git checkout {resources_branch}")
             sh("git pull")
         except:
-            logger.warning(f"Pull of {resoureces_branch} branch not possible")
+            logger.error(f"Pull of {resources_branch} branch not possible")
+            sys.exit(1)
 
 
 def info_repo():

@@ -104,6 +104,10 @@ export_vars:
 
 choose_compiler_mpi:
        intel2022_impi2021:
+                # ESM-Tools vars necessary for ``system_libs`` case
+                mod_netcdf_c: netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
+                mod_netcdf_f: netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
+                mod_hdf5: hdf5/1.12.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
                         - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
@@ -120,6 +124,10 @@ choose_compiler_mpi:
                         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
        intel2022_openmpi:
+                # ESM-Tools vars necessary for ``system_libs`` case
+                mod_netcdf_c: netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
+                mod_netcdf_f: netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
+                mod_hdf5: hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
                         - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
@@ -139,18 +147,13 @@ choose_compiler_mpi:
 
 choose_iolibraries:
     system_libs:
-        add_choose_compiler_mpi:
-            intel2022_impi2021:
-                add_module_actions:
-                    - "load netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
-                    - "load netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
-            intel2022_openmpi:
-                add_module_actions:
-                    - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
-                    - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
-                    - "load hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0"
+        add_module_actions:
+            - "load ${mod_netcdf_c}"
+            - "load ${mod_netcdf_f}"
+            - "load ${mod_hdf5}"
 
         add_export_vars:
+            IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
             # NOTE: Could be set by the module
             HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
@@ -160,6 +163,7 @@ choose_iolibraries:
             NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
             # flags required for ECHAM6 (and possibly other models)
             # compilation with cmake if parastationMPI or openMPI is used
             # contact seb-wahl for details

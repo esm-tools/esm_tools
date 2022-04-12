@@ -181,7 +181,10 @@ class Slurm:
             for heterogeneous parallelization in SLURM.
         """
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
-        if config["computer"].get("heterogeneous_parallelization", False):
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("taskset", False)
+        ):
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
@@ -234,9 +237,9 @@ class Slurm:
                 command = "./" + config[model].get(
                     "execution_command", config[model]["executable"]
                 )
-                scriptname = "script_" + model + ".ksh"
+                scriptname = "script_" + model + ".sh"
                 with open(scriptfolder + scriptname, "w") as f:
-                    f.write("#!/bin/ksh" + "\n")
+                    f.write("#!/bin/sh" + "\n")
                     f.write(
                         "export OMP_NUM_THREADS="
                         + str(config[model].get("omp_num_threads", 1))
@@ -275,7 +278,7 @@ class Slurm:
                         + str(config[model].get("omp_num_threads", 1))
                         + " - 1)) ./script_"
                         + model
-                        + ".ksh"
+                        + ".sh"
                         + "\n"
                     )
                 os.chmod(scriptfolder + progname, 0o755)

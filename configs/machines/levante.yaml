@@ -37,7 +37,7 @@ choose_use_hyperthreading:
 accounting: true
 
 batch_system: "slurm"
-hetjob_flag: packjob
+hetjob_flag: hetjob
 jobtype: compute
 sh_interpreter: "/bin/bash"
 partition: compute

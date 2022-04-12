@@ -139,7 +139,7 @@ choose_compiler_mpi:
 
 choose_iolibraries:
     system_libs:
-        choose_compiler_mpi:
+        add_choose_compiler_mpi:
             intel2022_impi2021:
                 add_module_actions:
                     - "load netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"

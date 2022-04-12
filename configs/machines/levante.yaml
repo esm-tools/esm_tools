@@ -101,6 +101,17 @@ export_vars:
         UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
         UCX_UNIFIED_MODE: y
 
+# Variables needed exclusively during runtime
+# NOTE: runtime_environment_changes does not work from the machine files
+choose_general.run_or_compile:
+    runtime:
+        add_export_vars:
+            OMPI_MCA_btl: self
+            OMPI_MCA_coll: "^ml"
+            OMPI_MCA_coll_hcoll_enable: "1"
+            OMPI_MCA_io: "romio321"
+            OMPI_MCA_osc: "pt2pt"
+            OMPI_MCA_pml: "ucx"
 
 choose_compiler_mpi:
        intel2022_impi2021:

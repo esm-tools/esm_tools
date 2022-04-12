@@ -166,6 +166,7 @@ def model_env_into_computer(config):
 
     # Get which type of changes are to be applied to the environment
     run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
+    config["general"]["run_or_compile"] = run_or_compile
     thesechanges = run_or_compile + "_environment_changes"
     # List the component names
     models = config.get("general", {}).get("models", [])

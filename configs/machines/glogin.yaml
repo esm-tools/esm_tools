@@ -127,6 +127,23 @@ choose_compiler_mpi:
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+   # intel19.0.3 is 20% faster on glogin with FOCI
+   intel2019_3_impi2019_3:
+      add_module_actions:
+         - "load intel/19.0.3"
+         - "load impi/2019.3"
+      add_export_vars:
+         FC: ifort
+         F77: ifort
+         MPIFC: mpiifort
+         #FCFLAGS: -free
+         CC: icc
+         MPICC: mpiicc
+         CXX: icpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+
    intel2019_ompi:
       add_module_actions:
          - "load intel/19.0.5"
@@ -180,6 +197,10 @@ choose_iolibraries:
           intel2019_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+
+          intel2019_3_impi2019_3:
+             add_export_vars:
+                IO_LIB_ROOT: /home/shkifmsw/sw/libraries/TARGETS/HLRN4/IntelMPI/19.0.3.2019.3 
 
           intel2019_ompi:
              add_export_vars:

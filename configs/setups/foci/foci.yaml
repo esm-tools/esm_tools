@@ -96,7 +96,8 @@ echam:
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
-                compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_3_impi2019_3
              nesh:
                 compiler_mpi: intel2019_impi2019
 
@@ -113,7 +114,8 @@ echam:
                 add_module_actions:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              glogin:
-                compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_3_impi2019_3
                 add_module_actions:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
@@ -207,6 +209,7 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
+                                nproma: 32
                                 putocean: 
                                         - ${echam.coupling_freq_in_steps}
                                         - 'steps'

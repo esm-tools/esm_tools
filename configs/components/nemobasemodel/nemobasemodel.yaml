@@ -25,7 +25,7 @@ choose_version:
     git-repository: https://git.geomar.de/NEMO/NEMOGCM.git
   3.6foci:
     archfile: ESMTOOLS_generic_oasis_intel
-    branch: esm-tools
+    branch: esm-tools-autotools
     git-repository: https://git.geomar.de/foci/src/nemo.git
   3.6foci_agrif:
     archfile: ESMTOOLS_generic_oasis_intel_agrif

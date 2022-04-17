@@ -2,7 +2,7 @@
 
 name: levante
 #hyper_flag: "--cpus-per-task=1"
-#additional_flags: "--mem=0" # TODO@Sebastian: why was this line commented out?
+#additional_flags: ["--mem=0"] # TODO@Sebastian: why was this line commented out?
 account: None
 
 use_hyperthreading: False

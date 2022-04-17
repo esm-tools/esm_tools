@@ -2,7 +2,7 @@
 
 name: mistral
 #hyper_flag: "--cpus-per-task=1"
-additional_flags: "--mem=0"
+additional_flags: ["--mem=0"]
 account: None
 
 use_hyperthreading: False

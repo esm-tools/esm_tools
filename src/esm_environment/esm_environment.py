@@ -85,8 +85,6 @@ class EnvironmentInfos:
             for model in complete_config:
                 self.apply_config_changes(run_or_compile, complete_config, model)
 
-        # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
-        # self.add_esm_var()
         # Define the environment commands for the script
         self.commands = self.get_shell_commands()
 
@@ -479,7 +477,7 @@ class EnvironmentInfos:
                     environment.append(f"module {action}")
         # Add an empty string as a newline:
         environment.append("")
-        if self.config.get("export_vars", None) is not None:
+        if self.config.get("export_vars") is not None:
             for var in self.config["export_vars"]:
                 # If export_vars is a dictionary
                 if isinstance(self.config["export_vars"], dict):
@@ -515,7 +513,7 @@ class EnvironmentInfos:
                     environment.append("export {str(var)}")
         environment.append("")
         # Write the unset commands
-        if self.config.get("unset_vars", None) is not None:
+        if self.config.get("unset_vars") is not None:
             for var in self.config["unset_vars"]:
                 environment.append(f"unset {var}")
 

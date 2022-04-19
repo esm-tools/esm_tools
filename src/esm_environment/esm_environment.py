@@ -469,7 +469,7 @@ class EnvironmentInfos:
 
         environment = []
         # Write module actions
-        if self.config.get("module_actions", None) is not None:
+        if self.config.get("module_actions") is not None:
             for action in self.config["module_actions"]:
                 # seb-wahl: workaround to allow source ... to be added to the batch header
                 # until a proper solution is available. Required with FOCI

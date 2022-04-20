@@ -99,7 +99,6 @@ forcing_sources:
                         to: 1850
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
-                        # to: 2008
                         to: 2014
                 # HIST scenario does not have data beyond 2014 so this one will be used
                 "/pool/data/ECHAM6/input/r0008/${resolution}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc":

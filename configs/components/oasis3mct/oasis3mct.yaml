@@ -19,6 +19,7 @@ version: '2.8'
 
 available_versions:
 - foci
+- foci_autotools
 - fociagrif
 - ec-earth
 - '2.8'
@@ -50,6 +51,13 @@ choose_version:
   foci:
     branch: oasis3mct2.8-foci
     git-repository: https://git.geomar.de/foci/src/oasis3mct.git
+  foci_autotools:
+    git-repository: https://git.geomar.de/foci/src/oasis3mct.git
+    branch: master
+    clean_command: make clean
+    comp_command: ./configure --prefix=$(pwd)/../ CFLAGS="-O2 -DgFortran -std=gnu99" FCFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" FFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" ;
+               make -j `nproc --all`; make install -j `nproc --all`;
+    install_libs: ''
   fociagrif:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git

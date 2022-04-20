@@ -13,6 +13,7 @@ runoff_method: "old"
 
 available_versions:
 - ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_KCM_AOW_autotools
 - ORCA05_LIM2_KCM_AOW_FS
 - ORCA05_LIM2_FOCI_AGRIF_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
@@ -311,6 +312,25 @@ choose_version:
     branch: master
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       cn_batmeter: bathy_meter 
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
+  ORCA05_LIM2_KCM_AOW_autotools:
+    requires:
+    #- xios-2.0_r982
+    - nemobasemodel-3.6foci_autotools
+    branch: master_autotools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
 
     add_input_files:
        # init and (if used) damping data

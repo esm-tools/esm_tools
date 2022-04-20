@@ -22,6 +22,7 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- 2.0_r982_autotools
 - trunk
 - trunk_oasis
 - "2.5"
@@ -35,6 +36,10 @@ choose_version:
   2.0_r982:
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
+  2.0_r982_autotools:
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: esm-tools-autotools
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
@@ -129,6 +134,12 @@ choose_general.setup_name:
         foci:
            choose_general.version:
               default: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+              default_autotools: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
                  add_config_files:
                     domain_def: domain_def

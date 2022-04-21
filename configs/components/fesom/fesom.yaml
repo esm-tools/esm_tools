@@ -53,6 +53,7 @@ restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
+yearly_outputs_start: 1 # Year in which the yearly output starts to be saved
 
 time_step: 1800
 resolution: CORE2
@@ -242,8 +243,6 @@ choose_branchoff:
                 yearnew: "${initial_date!syear}"
 
 
-
-
 bin_sources:
         fesom: "${bin_dir}/${executable}"
 
@@ -262,26 +261,45 @@ config_sources:
         diag:    "${namelist_dir}/namelist.diag"
 
 
+# default output of fesom
+# all default variables of fesom/fesom_cpl/output_scheduler/OutputSchedulerManager.cpp:defaultSchedules() must occur here
+#yearly_outputs: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]
+#monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]
+#daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
+#12_step_outputs: [tso]
+yearly_outputs: [evs,fsitherm,lwrd,olat,olwout,opottemptend,osen,pbo,prlq,prsn,relax_salt,rho,rsdo,shum,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,sivol,sivoln,sivols,soga,tair,thdgr,thdgrsn,thetaoga,tso,u2o,uhice,uhsnow,urho,uso,uto,uv,uwind,v2o,vhice,vhsnow,virtual_salt,volo,vrho,vso,vto,vwind,w2o,wfo,wso,wto,zossq]
+monthly_outputs: [evap,flice,hfds,mlotst,omldamax,runoff,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,uo,vo,wnet,wo,zos]
+daily_outputs: []
+12_step_outputs: []
 
-yearly_outputs: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]
-
-monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]
-
-daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
-
-12_step_outputs: [tso]
-
-ignore_files:
-        gf: gf
-        chloro: chloro
-
-ignore_in_work:
-        gf: goodfile
-        chloro: Chl_Sweeney.dat
-
-ignore_sources:
-        gf: goodfile
-        chloro: Chl_Sweeney.dat
+# env variable `AWI_FESOM_YAML` is used by fesom/fesom_cpl/output_scheduler and
+# its value can be checked in finished_config.yaml:
+runtime_environment_changes:
+        add_export_vars:
+                AWI_FESOM_YAML: 
+                        output_schedules:
+                                -
+                                        vars: [restart]
+                                        unit: ${restart_unit}
+                                        first: ${restart_first}
+                                        rate: ${restart_rate}
+                                -
+                                        vars: ${yearly_outputs}
+                                        unit: y
+                                        first: ${yearly_outputs_start}
+                                        rate: 1
+                                -
+                                        vars: ${monthly_outputs}
+                                        unit: m
+                                        rate: 1
+                                -
+                                        vars: ${daily_outputs}
+                                        unit: d
+                                        rate: 1
+                                -
+                                        vars: ${12_step_outputs}
+                                        unit: s
+                                        rate: 12
 
 outdata_files:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT
@@ -297,6 +315,18 @@ outdata_sources:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+ignore_files:
+        gf: gf
+        chloro: chloro
+
+ignore_in_work:
+        gf: goodfile
+        chloro: Chl_Sweeney.dat
+
+ignore_sources:
+        gf: goodfile
+        chloro: Chl_Sweeney.dat
 
 compiletime_environment_changes:
         add_export_vars:
@@ -316,37 +346,6 @@ choose_computer.name:
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
                                 - "takenfrom='fesom1'"
 
-runtime_environment_changes:
-        add_export_vars:
-                AWI_FESOM_YAML:
-                        output_schedules:
-                                -
-                                        vars: [restart]
-                                        unit: ${restart_unit}
-                                        first: ${restart_first}
-                                        rate: ${restart_rate}
-                                -
-                                        vars: ${monthly_outputs}
-                                        unit: m
-                                        rate: 1
-                                -
-                                        vars: ${daily_outputs}
-                                        unit: d
-                                        rate: 1
-                                -
-                                        vars: ${12_step_outputs}
-                                        unit: s
-                                        rate: 12
-                                -
-                                        vars: ${yearly_outputs}
-                                        unit: y
-                                        first: 1000
-                                        rate: 1
-
-
-
-
-
 coupling_fields:
         sst_feom:
                 grid: feom
@@ -354,13 +353,8 @@ coupling_fields:
                 grid: feom
         sie_feom:
                 grid: feom
-        snt_feom:
+        snt_feom: # snow temp
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:

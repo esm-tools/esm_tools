@@ -71,7 +71,8 @@ choose_scenario:
                 currentCO2cycle: "${current_CO2_cycle}"
 
 
-namelist_dir: "${esm_namelist_dir}/${model}"
+#namelist_dir: "${esm_namelist_dir}/${model}"
+namelist_dir: "${general.model_dir}/recom/"
 
 namelists:
         - namelist.recom
@@ -106,7 +107,7 @@ config_files:
         recom:  recom
 
 config_sources:
-        recom:  "${namelist_dir}/namelist.recom"
+        recom: "${namelist_dir}/namelist.recom"
 #        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 restart_name: ""
@@ -129,27 +130,21 @@ restart_out_in_work:
 restart_out_sources:
         bio_restart: fesom.${end_date!syear}.bio.nc
 
-
-yearly_outputs: []
-
-monthly_outputs: [diags3d01,diags3d02,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPPd,GPPn,GPPd,NNAn,NNAd,GNAn,GNAd,benCalc,benSi,benC,benN,denb,aN,aFe,Hp,CO2f,dpCO2s,pCO2s,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,slp,age01,Kw,alphaCO2,O2f]
-
-daily_outputs: []
-
-12_step_outputs: []
-
+# default output of recom
+# `monthly_outputs` and others must be defined in the respective setup yamls 
+# which use recom, e.g. fesom-recom.yaml or awicm_recom.yaml
 outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
+        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT
+        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT
+        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT
 outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
 choose_computer.name:
         blogin:

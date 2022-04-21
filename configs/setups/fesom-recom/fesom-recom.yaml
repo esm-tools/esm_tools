@@ -57,8 +57,6 @@ fesom:
         output_unit: "${restart_unit}"
         leapyear: false
 
-        yearly_outputs_start: 1     # Year in which the yearly output starts to be saved
-
         opbnd_dir: ""
         tide_forcing_dir: ""
 
@@ -127,40 +125,40 @@ fesom:
                                 limit_salinity: false
                                 salinity_min: 5.0
 
-
-        yearly_outputs: [evs,fsitherm,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uso,uto,v2o,volo,vso,vto,w2o,wfo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
-
-        monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
-
-        daily_outputs: []
-        12_step_outputs: []
-
-
+        # env variable `AWI_FESOM_YAML` is used by fesom/fesom_cpl/output_scheduler and
+        # its value can be checked in finished_config.yaml:
         runtime_environment_changes:
                 add_export_vars:
                         AWI_FESOM_YAML:
                                 output_schedules:
+                                        # fesom part (defaults defined in fesom.yaml):
                                         -
                                                 vars: [restart]
-                                                unit: ${restart_unit}
-                                                first: ${restart_first}
-                                                rate: ${restart_rate}
+                                                unit: ${fesom.restart_unit}
+                                                first: ${fesom.restart_first}
+                                                rate: ${fesom.restart_rate}
                                         -
-                                                vars: ${monthly_outputs}
+                                                vars: ${fesom.yearly_outputs}
+                                                unit: y
+                                                first: ${fesom.yearly_outputs_start}
+                                                rate: 1
+                                        -
+                                                vars: ${fesom.monthly_outputs}
                                                 unit: m
                                                 rate: 1
                                         -
-                                                vars: ${daily_outputs}
+                                                vars: ${fesom.daily_outputs}
                                                 unit: d
                                                 rate: 1
                                         -
-                                                vars: ${12_step_outputs}
+                                                vars: ${fesom.12_step_outputs}
                                                 unit: s
                                                 rate: 12
+                                        # recom part (defaults defined in e.g. fesom-recom.yaml or awicm_recom.yaml):
                                         -
-                                                vars: ${yearly_outputs}
+                                                vars: ${recom.yearly_outputs}
                                                 unit: y
-                                                first: ${yearly_outputs_start}
+                                                first: ${fesom.yearly_outputs_start}
                                                 rate: 1
                                         -
                                                 vars: ${recom.monthly_outputs}
@@ -174,12 +172,6 @@ fesom:
                                                 vars: ${recom.12_step_outputs}
                                                 unit: s
                                                 rate: 12
-                                        -
-                                                vars: ${recom.yearly_outputs}
-                                                unit: y
-                                                first: ${recom.yearly_outputs_start}
-                                                rate: 1
-
 
         choose_lresume:
                 true:
@@ -204,9 +196,7 @@ recom:
         model_dir: "${general.model_dir}/recom/"
         setup_dir: "${general.model_dir}"
 
-        yearly_outputs_start: 1             # Year in which the yearly output starts to be saved
         time_step: "${fesom.time_step}"
-
 
         choose_lresume:
                 true:
@@ -215,3 +205,15 @@ recom:
                                         ini_parent_exp_id: "${general.ini_parent_exp_id}"
                                         ini_restart_dir: "${general.ini_restart_dir}/recom/"
                                         ini_parent_date: "${prev_date}"
+
+        # namelist.recom and associated output for offline setup (fesom+recom):
+        # --> bgc_num = 28, diags3d_num = 20
+        config_sources:
+                recom: "${namelist_dir}/namelist.recom"
+        add_config_in_work:
+                recom: "namelist.recom"
+        yearly_outputs: []
+        monthly_outputs: [aCO2,aFe,age01,alphaCO2,aN,benC,benCalc,benN,benSi,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,bgc23,bgc24,bgc25,bgc26,bgc27,bgc28,CO2f,CO2y,denb,diags3d01,diags3d02,diags3d03,diags3d04,diags3d05,diags3d06,diags3d07,diags3d08,diags3d09,diags3d10,diags3d11,diags3d12,diags3d13,diags3d14,diags3d15,diags3d16,diags3d17,diags3d18,diags3d19,diags3d20,dpCO2s,GNAd,GNAn,GPPd,GPPn,Hp,Kw,NNAd,NNAn,NPPd,NPPn,O2f,PAR,pCO2s,rDIN,rDOC,rDON,rDSi,slp,virtual_alk,virtual_dfe,virtual_dic,virtual_din,virtual_dsi,virtual_oxy,w10w]
+        daily_outputs: []
+        12_step_outputs: []
+

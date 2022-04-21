@@ -130,33 +130,69 @@ fesom:
 
         leapyear: True
         asforcing: ECHAM5
-        
-        # output fields
-        12_step_outputs: []
-        
-        daily_outputs: []
-        
-        monthly_outputs: ['volo', 'thetaoga', 'tso', 'tos', 'thetao', 'soga', 
-        'sos', 'so', 'rho', 'zos', 'mlotst', 'omldamax', 'virtual_salt', 'relax_salt', 
-        'siarean', 'siareas', 'siextentn', 'siextents', 'sivoln', 'sivols', 
-        'sisnconc', 'rsdo', 'hfds', 'wnet', 'evap', 'runoff', 'thdgr', 'thdgrsn', 
-        'lwrd', 'olat', 'olwout', 'osen', 'shum', 'tair', 'PAR', 'NPPn', 'NPPd', 
-        'GPPn', 'GPPd', 'aCO2', 'CO2y', 'CO2f', 'pCO2s', 'dpCO2s', 'O2f', 'aFe', 'aN']
-        
-        yearly_outputs: ['evs', 'fsitherm', 'opottemptend', 'pbo', 'prlq', 'prsn',
-        'sidmassevapsubl', 'sidmasssi', 'sidmassth', 'sidmasstranx', 'sidmasstrany', 
-        'sifllatstop', 'sisnmass', 'sisnthick', 'sispeed', 'sivol', 'u2o', 'uo',
-        'uso', 'uto', 'v2o', 'vo', 'vso', 'vto', 'w2o', 'wfo', 'wo', 'wso', 'wto',
-        'zossq', 'uhice', 'uhsnow', 'urho', 'uv', 'vhice', 'vhsnow', 'vrho', 
-        'uwind', 'vwind', 'w10w', 'sic', 'sistrxdtop', 'sistrxubot', 'sistrydtop', 
-        'sistryubot', 'sithick', 'sitimefrac', 'siu', 'siv', 'tauuo', 'tauvo', 
-        'flice', 'bgc01', 'bgc02', 'bgc03', 'bgc04', 'bgc05', 'bgc06', 'bgc07',
-        'bgc08', 'bgc09', 'bgc10', 'bgc11', 'bgc12', 'bgc13', 'bgc14', 'bgc15',
-        'bgc16', 'bgc17', 'bgc18', 'bgc19', 'bgc20', 'bgc21', 'bgc22', 'diags3d01', 
-        'diags3d02', 'Hp', 'denb', 'NNAn', 'NNAd', 'Kw', 'alphaCO2', 'GNAn', 
-        'GNAd', 'rDIN', 'rDON', 'rDOC', 'rDSi', 'benN', 'benC', 'benSi', 
-        'benCalc']
 
+        # env variable `AWI_FESOM_YAML` is used by fesom/fesom_cpl/output_scheduler and
+        # its value can be checked in finished_config.yaml:
+        runtime_environment_changes:
+                add_export_vars:
+                        AWI_FESOM_YAML:
+                                output_schedules:
+                                        # fesom part (defaults defined in fesom.yaml):
+                                        -
+                                                vars: [restart]
+                                                unit: ${fesom.restart_unit}
+                                                first: ${fesom.restart_first}
+                                                rate: ${fesom.restart_rate}
+                                        -
+                                                vars: ${fesom.yearly_outputs}
+                                                unit: y
+                                                first: ${fesom.yearly_outputs_start}
+                                                rate: 1
+                                        -
+                                                vars: ${fesom.monthly_outputs}
+                                                unit: m
+                                                rate: 1
+                                        -
+                                                vars: ${fesom.daily_outputs}
+                                                unit: d
+                                                rate: 1
+                                        -
+                                                vars: ${fesom.12_step_outputs}
+                                                unit: s
+                                                rate: 12
+                                        # recom part (defaults defined in e.g. fesom-recom.yaml or awicm_recom.yaml):
+                                        -
+                                                vars: ${recom.yearly_outputs}
+                                                unit: y
+                                                first: ${fesom.yearly_outputs_start}
+                                                rate: 1
+                                        -
+                                                vars: ${recom.monthly_outputs}
+                                                unit: m
+                                                rate: 1
+                                        -
+                                                vars: ${recom.daily_outputs}
+                                                unit: d
+                                                rate: 1
+                                        -
+                                                vars: ${recom.12_step_outputs}
+                                                unit: s
+                                                rate: 12
+
+
+#########################################################################################
+
+recom:
+        # namelist.recom and associated output for coupled setup (fesom+recom+echam):
+        # --> bgc_num = 22, diags3d_num = 2
+        config_sources:
+                recom: "${namelist_dir}/namelist.recom_co2_coupling"
+        add_config_in_work:
+                recom: "namelist.recom"
+        yearly_outputs: []
+        monthly_outputs: [aCO2,aFe,age01,alphaCO2,aN,benC,benCalc,benN,benSi,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,CO2f,CO2y,denb,diags3d01,diags3d02,dpCO2s,GNAd,GNAn,GPPd,GPPn,Hp,Kw,NNAd,NNAn,NPPd,NPPn,O2f,PAR,pCO2s,rDIN,rDOC,rDON,rDSi,slp,virtual_alk,virtual_dfe,virtual_dic,virtual_din,virtual_dsi,virtual_oxy,w10w]
+        daily_outputs: []
+        12_step_outputs: []
 
 #########################################################################################
 

@@ -240,27 +240,31 @@ choose_iolibraries:
                     LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
 
     geomar_libs:
-        choose_compiler_mpi:
+       add_export_vars:
+          IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+          PATH: $IO_LIB_ROOT/bin:$PATH
+          LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+          SZIPROOT: $IO_LIB_ROOT
+          HDF5ROOT: $IO_LIB_ROOT
+          HDF5_ROOT: $HDF5ROOT
+          NETCDFROOT: $IO_LIB_ROOT
+          NETCDFFROOT: $IO_LIB_ROOT
+          ECCODESROOT: $IO_LIB_ROOT
+
+          HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+          NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+          NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+          NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+          OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+       choose_compiler_mpi:
             intel2022_impi2021:
                 add_export_vars:
                     IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_impi2021.5.0_20220318/ 
-                    PATH: $IO_LIB_ROOT/bin:$PATH
-                    LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                    SZIPROOT: $IO_LIB_ROOT
-                    HDF5ROOT: $IO_LIB_ROOT
-                    HDF5_ROOT: $HDF5ROOT
-                    NETCDFROOT: $IO_LIB_ROOT
-                    NETCDFFROOT: $IO_LIB_ROOT
-                    ECCODESROOT: $IO_LIB_ROOT
-
-                    HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                    NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                    NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'           
                     # kh 07.03.22 currently required to use Intel MPI
                     LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
+            intel2022_openmpi:
+                    IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_ompi4.1.2_20220420 
 
 fc: "$FC"
 cc: "$CC"
@@ -268,7 +272,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "-l" # --distribution=block:cyclic"
+launcher_flags: "-l --distribution=plane=128 --cpu-bind=cores"
 
 further_reading:
         - batch_system/slurm.yaml

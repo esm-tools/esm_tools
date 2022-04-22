@@ -193,7 +193,12 @@ class batch_system:
 
                 if "nproc" in config[model]:
                     print(f"nproc: {config[model]['nproc']}")
-                    config[model]["tasks"] = config[model]["nproc"]
+
+                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
+                    # (used for FESOM-REcoM tracer loop parallelization (MPI based))
+                    mpi_num_groups = config[model].get("mpi_num_groups", 1)
+
+                    config[model]["tasks"] = config[model]["nproc"] * mpi_num_groups
 
                     # cores_per_node = config['computer']['cores_per_node']
 

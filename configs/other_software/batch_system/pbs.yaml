@@ -46,8 +46,8 @@ name_flag: "-N ${expid}"
 
 choose_launcher:
         aprun:
-                launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
-                        env OMP_NUM_THREADS=@omp_num_threads@"
+                launcher_flags_per_component: "-n @nproc@ -N @nproc_per_node@
+                        -d @cpus_per_proc@ env OMP_NUM_THREADS=@omp_num_threads@"
                 launcher_comp_sep: "\\\n         : "
 
 choose_debugger:

@@ -94,6 +94,10 @@ echam:
         compiletime_environment_changes:
           iolibraries: geomar_libs
           choose_computer.name:
+             levante:
+                #compiler_mpi: intel2022_impi2021
+                compiler_mpi: intel2022_openmpi 
+                iolibraries: system_libs 
              juwels:
                 #compiler_mpi: intel2019_impi2019
                 compiler_mpi: intel2022_psmpi2022
@@ -107,6 +111,10 @@ echam:
         runtime_environment_changes:
           iolibraries: geomar_libs
           choose_computer.name:
+             levante:
+                #compiler_mpi: intel2022_impi2021
+                compiler_mpi: intel2022_openmpi 
+                iolibraries: system_libs 
              juwels:
                 compiler_mpi: intel2022_psmpi2022
                 #compiler_mpi: intel2019_impi2019

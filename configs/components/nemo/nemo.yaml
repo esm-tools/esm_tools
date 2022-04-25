@@ -22,6 +22,7 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ;
 
 archfile: ESMTOOLS_generic_oasis_intel
 
+
 destination: ${version}
 install_bins: BLD/bin/oceanx
 
@@ -47,6 +48,21 @@ choose_version:
 
   GYRE_PISCES:
 
+    # this should work but it does not if you run 
+    # the setting below are ignored
+    # if set on the root level of this file, and infinite loop 
+    # occurs if esm_master comp-foci-default/nemo is executed
+    # the enviornment_changes thing seems to be a mess,
+    # see also comment in foci.yaml section echam:
+    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
+    #environment_changes:
+#    choose_computer.name:
+#       glogin:
+#          compiler_mpi: intel2019_impi2019_nemo4
+#          iolibraries: geomar_libs 
+#       blogin:
+#           compiler_mpi: intel2019_impi2019_nemo4
+#           iolibraries: geomar_libs 
     requires:
     - xios-trunk
     - nemobasemodel-4.2.x

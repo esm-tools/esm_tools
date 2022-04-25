@@ -11,8 +11,24 @@ include_models:
 
 runoff_method: "old"
 
+clean_command: cp cfg.inc ../cfg.txt; cd ../
+   ./makenemo -n ${nemo.version} -m ${archfile} clean;
+   cd ..
+
+comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ; cd ../ ;
+  ./makenemo -n ${version} -m ${archfile} -j 24; cp -p ${version}/BLD/bin/nemo.exe
+  ${version}/BLD/bin/oceanx ;
+  cd ..
+
+archfile: ESMTOOLS_generic_oasis_intel
+
+
+destination: ${version}
+install_bins: BLD/bin/oceanx
+
 available_versions:
 - ORCA05_LIM2_KCM_AOW
+- ORCA05_LIM2_KCM_AOW_autotools
 - ORCA05_LIM2_KCM_AOW_FS
 - ORCA05_LIM2_FOCI_AGRIF_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4
@@ -27,13 +43,39 @@ choose_version:
     requires:
     - xios-2.5_r1910_ogcm
     - nemobasemodel-3.6ogcm_test
+    archfile: ESMTOOLS_generic_intel
     resolution: R4
 
   GYRE_PISCES:
 
+    # this should work but it does not if you run 
+    # the setting below are ignored
+    # if set on the root level of this file, and infinite loop 
+    # occurs if esm_master comp-foci-default/nemo is executed
+    # the enviornment_changes thing seems to be a mess,
+    # see also comment in foci.yaml section echam:
+    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
+    #environment_changes:
+#    choose_computer.name:
+#       glogin:
+#          compiler_mpi: intel2019_impi2019_nemo4
+#          iolibraries: geomar_libs 
+#       blogin:
+#           compiler_mpi: intel2019_impi2019_nemo4
+#           iolibraries: geomar_libs 
     requires:
     - xios-trunk
     - nemobasemodel-4.2.x
+
+    # TODO: include arch repo as separate component
+    comp_command: export NEMO_TOPLEVEL=${model_dir} ; export XIOS_TOPLEVEL=${model_dir}/../xios; 
+                  test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
+                  ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${nemo.version}/BLD/bin/oceanx
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
+    archfile: ESMTOOLS_generic_intel
+    destination: nemo-${nemo.version}
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+
     namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
 
     use_tracer: true 
@@ -323,6 +365,24 @@ choose_version:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
 
+  ORCA05_LIM2_KCM_AOW_autotools:
+    requires:
+    - nemobasemodel-3.6foci_autotools
+    branch: master_autotools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       cn_batmeter: bathy_meter 
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
   ORCA05_LIM2_KCM_AOW_FS:
     requires:
     #- xios-2.0_r982
@@ -365,9 +425,6 @@ choose_version:
 
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
-    # seb-wahl: workaround if used with OIFS which also uses XIOS which causes XIOS
-    # to be cloned and compiled twice, need to file an issue
-    #- xios-2.5_r1910
     - nemobasemodel-3.6foci
     branch: esm-tools
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
@@ -403,7 +460,8 @@ choose_version:
     - xios-2.5_r1910_ogcm
     - nemobasemodel-3.6ogcm_test
     branch: master 
-    destination: nemo-${nemo.version}
+    archfile: ESMTOOLS_generic_intel
+    #destination: nemo-${nemo.version}
     # clone destination is a workaround implemented into esm_master for the fact that 
     # "destination" is used as both the target directory for a "git clone ... destination"
     # and the top level direcotory.
@@ -413,6 +471,15 @@ choose_version:
     #since not all FOCI testes have access the original repository
     #git-repository: https://git.geomar.de/cmip6-omip/GEOMAR05.CORE-cycle6.git
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    comp_command: export NEMO_TOPLEVEL=${model_dir} ; 
+      if ! test -f ARCH/arch-${archfile}.fcm ; then cp CONFIG/${version}/EXP00/arch-${archfile}.fcm ARCH/; fi; 
+      cd CONFIG ; 
+      cp ${version}/cfg.inc cfg.txt; 
+      ./makenemo -n ${version} -m ${archfile} -j 24 ; 
+      cp -p ${version}/BLD/bin/nemo.exe ${version}/BLD/bin/oceanx ; cd ../ ;
+
+    clean_command: cd CONFIG ; ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean ; cd ../ 
 
     # override hardcoded path to runoff forcing
     add_namelist_changes:
@@ -520,10 +587,6 @@ choose_version:
           "${jra55_runoff_dir}/sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc":
              from: 1958
              to: 1960
-
-
-clean_command: echo Cleaning is handled by nemobasemodel.yaml; cd ../../ 
-comp_command: echo Compilation is handled by nemobasemodel.yaml 
 
 metadata:
         Organization: Nucleus for European Modelling of the Ocean

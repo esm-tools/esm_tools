@@ -85,6 +85,9 @@ class EnvironmentInfos:
             for model in complete_config:
                 self.apply_config_changes(run_or_compile, complete_config, model)
 
+        # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
+        self.add_esm_var()
+
         # Define the environment commands for the script
         self.commands = self.get_shell_commands()
 

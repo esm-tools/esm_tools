@@ -45,7 +45,7 @@ oifs:
    resolution: TCO95
    levels: L91
    lresume: 0
-   nproc: 287
+   nproc: 575
    use_ocean_currents: 0
 
 oasis3mct:
@@ -55,9 +55,9 @@ oasis3mct:
       
 nemo:
    resolution: "ORCA05"
-   jpni: 24
+   jpni: 32
    jpnj: 18
-   nproc: 432
+   nproc: 576
    
 rnfmap:
    nproc: 1

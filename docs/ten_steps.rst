@@ -21,19 +21,17 @@ Ten Steps to a Running Model
      $ ./install.sh
 
    This should install the python packages of ESM-Tools. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
-   Also, a new file called ``~/.esmtoolsrc`` is added to your ``HOME``, which contains some very few details about the installation.
 
-5. Run ``esm_master`` once and answer the questions to setup the tool completely. You should see a long list of available targets if everything works. Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
+5. Run ``esm_master`` once. You should see a long list of available targets if everything works.
 
 6. Go to the toplevel folder into which you want to install your model codes, and run ``esm_master install-``, followed by the name and the version of the model you want to install. As an example, if we want to install FESOM2::
 
-    $ mkdir ../model_codes
-    $ cd ../model_codes
+    $ cd /some/folder/you/wish/to/work/in
+    $ mkdir model_codes
+    $ cd model_codes
     $ esm_master install-fesom-2.0
 
   You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access (:ref:`Supported_Models:Supported Models`). Feel free to contact us if you don't know who the model developers are.
-
-.. note:: An error may occur in case you have performed a fresh install of` ESM-Tools` version 5 after having version 4 installed. In this known error, ``esm_master`` crashes with a ``FileNotFoundError`` with regard to ``esm_master.yaml``. Try to fix this by updating your ~/.esmtoolsrc, removing lines that define paths for runscripts, namelists, and functions. Then try again (``RUNSCRIPT_PATH``, ``NAMELIST_PATH`` and ``FUNCTION_PATH``).
 
 7. Check if the installation process worked; if so, you should find the model executable in the subfolder ``bin`` of the model folder. E.g.::
 
@@ -41,10 +39,10 @@ Ten Steps to a Running Model
 
 8. Go back to the ``esm_tools`` folder, and pick a sample runscript from the ``runscripts`` subfolder. These examples are very short and can be easily adapted. Pick one that is for the model you want to run, and maybe already adapted to the HPC system you are working on. Make sure to adapt the paths to your personal settings, e.g. ``model_dir``, ``base_dir`` etc.::
 
-    $ cd ../esm_tools/runscripts/fesom2
+    $ cd <PATH TO ESM TOOLS>/esm_tools/runscripts/fesom2
     $ (your_favourite_editor) fesom2-ollie-initial-monthly.yaml
 
-   Notice that the examples exist with the endings ``.run`` and ``.yaml``. It doesn't matter what you pick. The files ending in ``.run`` are looking more like conventional shell scripts that you might be better used to, the ``.yaml``-files are written as yaml configuration files, which makes things much nicer and more elegant to write down. We strongly encourage you to give the ``yaml``-version a try.
+   Notice that the examples exist with the endings ``.yaml``.
 
 9. Run a check of the simulation to see if all needed files are found, and everything works as expected::
 

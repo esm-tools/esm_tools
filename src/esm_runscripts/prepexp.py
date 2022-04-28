@@ -4,7 +4,6 @@ import subprocess
 import copy
 import pathlib
 
-import esm_rcfile
 import six
 import yaml
 from esm_calendar import Date
@@ -61,7 +60,7 @@ def copy_tools_to_thisrun(config):
     # Paths inside the experiment directory where esm_tools and namelists
     # are copied to. Those are not functional but a reference to what was
     # the original state when the experiment was firstly started
-    tools_dir = scriptsdir + "/esm_tools/functions"
+    tools_dir = scriptsdir + "/esm_tools/configs"
     namelists_dir = scriptsdir + "/esm_tools/namelists"
 
     if config["general"]["verbose"]:
@@ -80,13 +79,10 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_rcfile.EsmToolsDir("FUNCTION_PATH"))
+        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print(
-            "Copying standard namelists from: ",
-            esm_rcfile.EsmToolsDir("NAMELIST_PATH"),
-        )
+        print("Copying standard namelists from: ",esm_tools.get_namelist_filepath())
         esm_tools.copy_namelist_folder(namelists_dir)
 
     # check for recursive creation of the file tree. This prevents the risk of

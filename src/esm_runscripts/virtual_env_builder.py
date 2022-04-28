@@ -15,7 +15,6 @@ esm_tools_modules = [
     "esm_environment",
     "esm_master",
     "esm_parser",
-    "esm_rcfile",
     "esm_runscripts",
     "esm_tools",
     "esm_plugin_manager",

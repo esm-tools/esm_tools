@@ -564,7 +564,10 @@ class EsmConfigFileError(Exception):
         # Message to return
         if len(report) == 0:
             # If no tabs are found print the original error message
-            print("\n\n\n" + yaml_error)
+            try:
+                print("\n\n\n" + yaml_error)
+            except:
+                self.message = ("\n\n A syntax error has been found in "+fpath+"\n")
         else:
             # If tabs are found print the report
             self.message = (

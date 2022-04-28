@@ -363,14 +363,14 @@ def copy_runscript_folder(dest_path):
 
 
 @caller_wrapper
-def get_namelist_filepath(namelist):
+def get_namelist_filepath(namelist=""):
     if EDITABLE_INSTALL:
         return _get_namelist_filepath_editable_install(namelist)
     return _get_namelist_filepath_standard_install(namelist)
 
 
 @caller_wrapper
-def get_config_filepath(config):
+def get_config_filepath(config=""):
     if EDITABLE_INSTALL:
         cpath = _get_config_filepath_editable_install(config)
     else:
@@ -379,7 +379,7 @@ def get_config_filepath(config):
 
 
 @caller_wrapper
-def get_runscript_filepath(runscript):
+def get_runscript_filepath(runscript=""):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)

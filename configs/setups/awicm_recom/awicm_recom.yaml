@@ -181,6 +181,9 @@ fesom:
 #########################################################################################
 
 recom:
+    # NOTE: look at README.md for description of the namelists
+    namelist_dir: "${esm_namelist_dir}/${model}/awicm_recom/"
+
     # namelist.recom and associated output for coupled setup (fesom+recom+echam):
     # --> bgc_num = 22, diags3d_num = 2
     config_sources:

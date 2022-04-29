@@ -52,6 +52,8 @@ choose_version:
 # kh 08.03.22 todo: merge conflict (if enabled)
 #   include_models:
 #       - recom
+# YY: 29.04.22 to compile wiso code
+    wiso_code: true
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x

@@ -318,8 +318,10 @@ choose_computer.name:
                         #add_module_actions:
                         #        - "load ${computer.mod_netcdf_cxx}"
                         add_export_vars:
-                                - "NETCDF_DIR=${computer.netcdf_cxx_root}"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                                NETCDF_DIR: ${computer.netcdf_cxx_root}
+                                NETCDF_CXX_INCLUDE_DIRECTORIES: ${netcdf_cxx_root}/include
+                                NETCDF_CXX_LIBRARIES: ${netcdf_cxx_root}/lib
+                                LD_LIBRARY_PATH[(10)]: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
 
 runtime_environment_changes:
         add_export_vars:

@@ -181,8 +181,8 @@ choose_iolibraries:
             NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
             NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-            NETCDF_CXX_INCLUDE_DIRECTORIES: ${netcdf_cxx_root}/include
-            NETCDF_CXX_LIBRARIES: ${netcdf_cxx_root}/lib
+            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
             # flags required for ECHAM6 (and possibly other models)
             # compilation with cmake if parastationMPI or openMPI is used
             # contact seb-wahl for details

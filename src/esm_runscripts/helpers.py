@@ -42,7 +42,7 @@ def evaluate(config, job_type, recipe_name):
         sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
     ###########################################################################################
 
-    recipe = FUNCTION_PATH + "esm_software/esm_runscripts/esm_runscripts.yaml"
+    recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
     need_to_parse_recipe = True
     plugins_bare = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_plugins.yaml"
     need_to_parse_plugins = True

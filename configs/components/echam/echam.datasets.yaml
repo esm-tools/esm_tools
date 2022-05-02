@@ -55,7 +55,7 @@ forcing_sources:
                         to: 2000
 
         # volcanic
-        "histvolcanir":
+        "histvolcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1850.nc":
                         to: 1850
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_@YEAR@.nc":

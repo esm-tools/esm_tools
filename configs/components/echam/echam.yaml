@@ -392,6 +392,7 @@ choose_scenario:
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
+                add_input_files:
                         MAC-SP: MAC-SP
         SSP126:
                 greenhouse_dir: "${input_dir}"
@@ -446,7 +447,7 @@ choose_scenario:
                         aerofin: rcp26aerofin
                         ozone: rcp26ozone
                         greenhouse: rcp26greenh
-                        volcanir: histvolcanir
+                        volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
                 add_input_files:
@@ -459,7 +460,7 @@ choose_scenario:
                         aerofin: rcp45aerofin
                         ozone: rcp45ozone
                         greenhouse: rcp45greenh
-                        volcanir: histvolcanir
+                        volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
                 add_input_files:
@@ -604,7 +605,7 @@ forcing_in_work:
         aerofarir: "aero_farir_@YEAR@.nc"
         ozone: "ozon@YEAR@"
         greenhouse: "greenhouse_gases.nc"
-        volcanir: "strat_aerosol_ir_@YEAR@.nc"
+        volcir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
         swflux: "swflux_@YEAR@.nc"
         "MAC-SP": "MAC-SP.nc"
@@ -640,7 +641,7 @@ forcing_additional_information:
                 - need_2years_before
                 - need_2years_after
         # deniz: added these 3 variables. They were present in the esm-tools r4
-        volcanir:
+        volcir:
                 - need_year_before
                 - need_year_after
                 - need_2years_before

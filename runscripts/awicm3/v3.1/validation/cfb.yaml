@@ -1,0 +1,68 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "frontiers"
+    account: "hhb20"
+    compute_time: "00:55:00"
+    initial_date: "1990-01-01"
+    final_date: "1990-02-01"
+    base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 1
+    nyear: 0
+
+awicm3:
+    postprocessing: false
+    model_dir: "/p/project/chhb19/${user}/model_codes/${general.setup_name}-${general.version}/"
+    pool_dir: "/p/project/chhb19/jstreffi/input/"
+
+fesom:
+    resolution: "DART"
+    pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
+    mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/dart/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: true
+    ini_parent_exp_id: "D00"
+    ini_parent_date: "1989-12-31"
+    ini_parent_dir: "/p/project/chhb19/streffing1/input/fesom2/restart/DART/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /p/project/chhb19/streffing1/input/fesom2/restart/DART/fesom.1989.oce.restart/*.nc
+                par_ice_restart: /p/project/chhb19/streffing1/input/fesom2/restart/DART/fesom.1989.ice.restart/*.nc
+    namelist_changes:
+        namelist.config:
+            machine:
+                n_levels: 2
+                n_part: [80, 72]
+        namelist.oce:
+            oce_dyn:
+                redi: ".false."
+        namelist.ice:
+            ice_therm:
+                albsn: 0.81
+                albsnm: 0.77
+                albi: 0.78
+                albim: 0.70
+    namelist_dir: "/p/project/chhb19/semmler1/esm_tools/namelists/fesom2/awicm3/DART/"
+    time_step: 240
+    nproc: 4320
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 900
+    nproc: 1200
+    omp_num_threads: 2
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    use_lucia: true
+

@@ -1,40 +1,40 @@
-# RECOM YAML CONFIGURATION FILE
-#
-
+# =============================================================================
+# RECOM (Regulated Ecosystem Model) YAML CONFIGURATION FILE
+# =============================================================================
 model: recom
 branch: master
 version: '2.0'
 
 available_versions:
-  - '2.0'
-  - 2.0-r
-  - 2.0-recom-awicm
+    - '2.0'
+    - 2.0-r
+    - 2.0-recom-awicm
 choose_version:
-  '2.0':
-    branch: oxygen
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
-    branch: recom-update
-  2.0-recom-awicm:
+    '2.0':
+        branch: oxygen
+    2.0-r:
+        # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
+        branch: recom-update
+    2.0-recom-awicm:
     branch: oxygen
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
 destination: recom
 git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
 install_libs:
-  - build/librecom.a
+    - build/librecom.a
 
 metadata:
-        Institute: AWI
-        Description:
-                REcoM (Regulated Ecosystem Model) is an ecosystem and biogeochemistry model.
-        Authors: Judith Hauck, Ozgur Gurses
-        Publications:
-                - "Seasonally different carbon flux changes in the Southern Ocean in response to the southern annular mode <https://doi.org/10.1002/2013GB004600>"
-                - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
-        License:
-                Please make sure you have a licence to use REcoM. In case you are unsure,
-                please contact redmine...
+    Institute: AWI
+    Description:
+        REcoM (Regulated Ecosystem Model) is an ecosystem and biogeochemistry model.
+    Authors: Judith Hauck, Ozgur Gurses
+    Publications:
+        - "Seasonally different carbon flux changes in the Southern Ocean in response to the southern annular mode <https://doi.org/10.1002/2013GB004600>"
+        - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
+    License:
+        Please make sure you have a licence to use REcoM. In case you are unsure,
+        please contact redmine...
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -45,113 +45,118 @@ scenario: "preindustrial"
 time_step: 1800
 
 choose_scenario:
-        preindustrial:
-                constant_CO2: true
-                REcoM_PI: true
-                CO2_for_spinup: 278
-                firstyearoffesomcycle: "${general.initial_date!syear}"
-                lastyearoffesomcycle: "${general.final_date!syear}"
-                numofCO2cycles: 1
-                currentCO2cycle: 1
-        modern:
-                constant_CO2: true
-                REcoM_PI: false
-                CO2_for_spinup: 400
-                firstyearoffesomcycle: "${general.initial_date!syear}"
-                lastyearoffesomcycle: "${general.final_date!syear}"
-                numofCO2cycles: 1
-                currentCO2cycle: 1
-        historical:
-                constant_CO2: false
-                REcoM_PI: true
-                CO2_for_spinup: "0"
-                firstyearoffesomcycle: "${f_year_fesom_cycle}"
-                lastyearoffesomcycle: "${l_year_fesom_cycle}"
-                numofCO2cycles: "${num_CO2_cycles}"
-                currentCO2cycle: "${current_CO2_cycle}"
+    preindustrial:
+        constant_CO2: true
+        REcoM_PI: true
+        CO2_for_spinup: 278
+        firstyearoffesomcycle: "${general.initial_date!syear}"
+        lastyearoffesomcycle: "${general.final_date!syear}"
+        numofCO2cycles: 1
+        currentCO2cycle: 1
+    modern:
+        constant_CO2: true
+        REcoM_PI: false
+        CO2_for_spinup: 400
+        firstyearoffesomcycle: "${general.initial_date!syear}"
+        lastyearoffesomcycle: "${general.final_date!syear}"
+        numofCO2cycles: 1
+        currentCO2cycle: 1
+    historical:
+        constant_CO2: false
+        REcoM_PI: true
+        CO2_for_spinup: "0"
+        firstyearoffesomcycle: "${f_year_fesom_cycle}"
+        lastyearoffesomcycle: "${l_year_fesom_cycle}"
+        numofCO2cycles: "${num_CO2_cycles}"
+        currentCO2cycle: "${current_CO2_cycle}"
 
 
 #namelist_dir: "${esm_namelist_dir}/${model}"
 namelist_dir: "${general.model_dir}/recom/"
 
 namelists:
-        - namelist.recom
+    - namelist.recom
 
 namelist_changes:
-        namelist.recom:
-                pavariables:
-                        REcoMDataPath: "${data_path}"
-                        constant_CO2: "${constant_CO2}"
-                        firstyearoffesomcycle: "${firstyearoffesomcycle}"
-                        lastyearoffesomcycle: "${lastyearoffesomcycle}"
-                        numofCO2cycles: "${numofCO2cycles}"
-                        currentCO2cycle: "${currentCO2cycle}"
-                        REcoM_PI: "${REcoM_PI}"
-                paco2_flux_param:
-                        CO2_for_spinup: "${CO2_for_spinup}"
+    namelist.recom:
+        pavariables:
+            REcoMDataPath: "${data_path}"
+            constant_CO2: "${constant_CO2}"
+            firstyearoffesomcycle: "${firstyearoffesomcycle}"
+            lastyearoffesomcycle: "${lastyearoffesomcycle}"
+            numofCO2cycles: "${numofCO2cycles}"
+            currentCO2cycle: "${currentCO2cycle}"
+            REcoM_PI: "${REcoM_PI}"
+        paco2_flux_param:
+            CO2_for_spinup: "${CO2_for_spinup}"
 
 
 choose_lresume:
-        true:
-                add_namelist_changes:
-                        namelist.recom:
-                                pavariables:
-                                        recom_restart: true
-        false:
-                add_namelist_changes:
-                        namelist.recom:
-                                pavariables:
-                                        recom_restart: false
+    true:
+        add_namelist_changes:
+            namelist.recom:
+                pavariables:
+                    recom_restart: true
+    false:
+        add_namelist_changes:
+            namelist.recom:
+                pavariables:
+                    recom_restart: false
 
 config_files:
-        recom:  recom
+    recom:  recom
 
 config_sources:
-        recom: "${namelist_dir}/namelist.recom"
-#        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+    recom: "${namelist_dir}/namelist.recom"
+    # io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 restart_name: ""
 
 restart_in_files:
-        bio_restart: bio_restart
+    bio_restart: bio_restart
 
 restart_in_in_work:
-        bio_restart: fesom.${parent_date!syear}.bio.${restart_name}nc
+    bio_restart: fesom.${parent_date!syear}.bio.${restart_name}nc
 
 restart_in_sources:
-        bio_restart: fesom.${parent_date!syear}.bio.nc
+    bio_restart: fesom.${parent_date!syear}.bio.nc
 
 restart_out_files:
-        bio_restart: bio_restart
+    bio_restart: bio_restart
 
 restart_out_in_work:
-        bio_restart: fesom.${end_date!syear}.bio.${restart_name}nc
+    bio_restart: fesom.${end_date!syear}.bio.${restart_name}nc
 
 restart_out_sources:
-        bio_restart: fesom.${end_date!syear}.bio.nc
+    bio_restart: fesom.${end_date!syear}.bio.nc
+
+# NOTE: The commented part will be taken care of in the FESOM yaml file since
+#       Recom is a library of Fesom
+# TODO: remove the commented part after tests are passed
+# Deniz
 
 # default output of recom
 # `monthly_outputs` and others must be defined in the respective setup yamls 
 # which use recom, e.g. fesom-recom.yaml or awicm_recom.yaml
-outdata_files:
-        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT
-outdata_in_work:
-        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-outdata_sources:
-        "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+# outdata_files:
+        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT
+        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT
+        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT
+# outdata_in_work:
+        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+# outdata_sources:
+        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
 choose_computer.name:
-        blogin:
-                add_compiletime_environment_changes:
-                        add_export_vars:
-                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+    blogin:
+        add_compiletime_environment_changes:
+            add_export_vars:
+                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
 

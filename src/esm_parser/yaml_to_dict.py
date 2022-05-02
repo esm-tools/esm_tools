@@ -275,6 +275,8 @@ def check_changes_duplicates(yamldict_all, fpath):
     for yamldict in yamldict_all.values():
         # Check if any <variable>_changes or add_<variable> exists, if not, return
         # Perform the check only for the dictionary objects
+        changes_list = []
+        add_list = []
         if isinstance(yamldict, dict):
             changes_list = esm_parser.find_key(
                 yamldict, "_changes", "add_", paths2finds=[], sep=","

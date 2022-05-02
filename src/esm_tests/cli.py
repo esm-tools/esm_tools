@@ -123,13 +123,14 @@ def main():
     info["repo_update"] = args["update"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    info["last_tested_dir"] = get_last_tested_dir()
     info["this_computer"] = (
         determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
     )
 
     # Update ``resources``
     update_resources_submodule(info)
+
+    info["last_tested_dir"] = get_last_tested_dir()
 
     # Predefined for later
     user_scripts = dict(comp={}, run={})

@@ -1,14 +1,19 @@
 import os
+import questionary
 
 from loguru import logger
 
 from .test_utilities import sh
+from esm_parser import user_error
 
 
 def update_resources_submodule(info, verbose=True):
     """
     Initiates and updates the module ``esm_tests_info``.
     """
+
+    check_resources(info, verbose)
+
     if info["repo_update"]:
         resources_branch = "release"
         text = f"Updating the resources repo with '{resources_branch}' branch"
@@ -30,6 +35,33 @@ def update_resources_submodule(info, verbose=True):
             logger.error(f"Pull of {resources_branch} branch not possible")
             sys.exit(1)
 
+def check_resources(info, verbose=True):
+    resources_folder = f"{info['script_dir']}/resources/"
+    dir_resources = os.listdir(resources_folder)
+    if not (
+        "last_tested" in dir_resources
+        and "runscripts" in dir_resources
+        and not info.get("repo_update", False)
+    ):
+        install_resources = questionary.select(
+            "The resources submodule for esm_tests is not installed yet (i.e. the"
+            f"{resources_folder} folder does not include the last_tested or the "
+            "runscripts folder). Would you like to install the submodule now?",
+            choices=[
+                "Yes, install esm_tests resources submodule!",
+                "No",
+            ]
+        ).ask()
+        if "Yes" in install_resources:
+            info["repo_update"] = True
+        if "No" in install_resources:
+            user_error(
+                "Missing resources for ESM-Tests",
+                "ESM-Tests needs the esm_tests_info submodule. Please, run "
+                "``esm_tests -u`` or accept the installation of the submodule in the "
+                "previous questionary."
+            )
+        print()
 
 def info_repo():
     """

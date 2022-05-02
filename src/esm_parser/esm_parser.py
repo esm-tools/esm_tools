@@ -82,7 +82,6 @@ import yaml
 import six
 
 # functions reading in dict from file
-from .shell_to_dict import *
 from .yaml_to_dict import *
 
 # Date class
@@ -107,19 +106,12 @@ CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
 # NOTE: For very strange reasons, DATE_MARKER ends up being unicode in py2, not a string...
 DATE_MARKER = str(">>>THIS_IS_A_DATE<<<")
 
-
-import esm_rcfile
-
-
-FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
-SETUP_PATH = FUNCTION_PATH + "/setups"
-DEFAULTS_DIR = FUNCTION_PATH + "/defaults"
-COMPONENT_PATH = FUNCTION_PATH + "/components"
-
-
-esm_function_dir = FUNCTION_PATH
-esm_namelist_dir = esm_rcfile.EsmToolsDir("NAMELIST_PATH")
-esm_runscript_dir = esm_rcfile.EsmToolsDir("RUNSCRIPT_PATH")
+CONFIG_PATH = esm_tools.get_config_filepath()
+SETUP_PATH = CONFIG_PATH + "/setups"
+DEFAULTS_DIR = CONFIG_PATH + "/defaults"
+COMPONENT_PATH = CONFIG_PATH + "/components"
+NAMELIST_DIR = esm_tools.get_namelist_filepath()
+RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
 
 gray_list = [
     r"choose_lresume",
@@ -183,9 +175,9 @@ def look_for_file(model, item, all_config=None):
     possible_paths = [
         f"{SETUP_PATH}/{model}/{item}",
         f"{COMPONENT_PATH}/{model}/{item}",
-        f"{FUNCTION_PATH}/esm_software/{model}/{item}",
-        f"{FUNCTION_PATH}/other_software/{model}/{item}",
-        f"{FUNCTION_PATH}/{model}/{item}",
+        f"{CONFIG_PATH}/esm_software/{model}/{item}",
+        f"{CONFIG_PATH}/other_software/{model}/{item}",
+        f"{CONFIG_PATH}/{model}/{item}",
         f"{runscript_path}/{item}",
         f"{os.getcwd()}/{item}",  # last resort: look at the CWD if others fail
     ]
@@ -217,33 +209,6 @@ def look_for_file(model, item, all_config=None):
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
-
-
-def shell_file_to_dict(filepath):
-    """
-    Generates a ~`ConfigSetup` from an old shell script.
-
-    See also ~`ShellscriptToUserConfig`
-
-    Parameters
-    ----------
-    filepath : str
-        The file to load
-
-    Returns
-    -------
-    ConfigSetup :
-        The parsed config.
-    """
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
-
-
-def initialize_from_shell_script(filepath):
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
 
 
 def initialize_from_yaml(filepath):
@@ -1489,6 +1454,17 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         else:
             choices_available[ckey] = cval
 
+    # Are choices all booleans?
+    all_choices_are_bool = True
+    for ckey in choices_available:
+        all_choices_are_bool &= isinstance(ckey, bool)
+    # If the choices are booleans and the ``choice`` is a string, try to transform the
+    # string in an integer (that will be able to select a choice from the boolean
+    # choices)
+    if all_choices_are_bool and isinstance(choice, str):
+        if choice == "0" or choice == "1":
+            choice = int(choice)
+
     # Resolve the choose variables
     if choice in choices_available:
         for update_key, update_value in six.iteritems(
@@ -1926,8 +1902,8 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     if not tree[-1]:
         tree = tree[:-1]
     if isinstance(raw_str, str) and "${" in raw_str:
-        ok_part, rest = raw_str.split("${", 1)
-        var, new_raw = rest.split("}", 1)
+        prefix, rest = raw_str.split("${", 1)
+        var, suffix = rest.split("}", 1)
         if ((determine_regex_list_match(var, white_or_black_list)) != isblacklist) and (
             not determine_regex_list_match(var, constant_blacklist)
         ):
@@ -1943,7 +1919,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
                         isblacklist,
                     )
 
-                if "$((" in var_result:
+                if isinstance(var_result, str) and "$((" in var_result:
                     var_result = do_math_in_entry(tree, var_result, full_config)
 
             if var_attrs:
@@ -1957,26 +1933,30 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
                     rentry.append(str(getattr(entry, attr)))
                 var_result = "".join(rentry)
 
-            # if var_result:
-            # BUG/FIXME: Note that this means that we **always** will get
-            # back a string if a variable is replaced!
-            if type(var_result) not in [list]:
-                ok_part, var_result, more_rest = (
-                    str(ok_part),
+            # If the substituted variable is not a list, and there is either a
+            # preceding (``prefix``) or following (``suffix``) string, then add up
+            # the parts, making sure that other variables (``${}``) are also
+            # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
+            if (
+                (not isinstance(var_result, list) and (prefix or suffix)) or
+                (isinstance(var_result, dict) and "NONE_YET" in var_result)
+            ):
+                prefix, var_result, more_rest = (
+                    str(prefix),
                     str(var_result),
-                    str(new_raw),
+                    str(suffix),
                 )
 
-                if "${" in ok_part + var_result + more_rest:
+                if "${" in prefix + var_result + more_rest:
                     raw_str = find_variable(
                         tree,
-                        ok_part + var_result + more_rest,
+                        prefix + var_result + more_rest,
                         full_config,
                         white_or_black_list,
                         isblacklist,
                     )
                 else:
-                    raw_str = ok_part + var_result + more_rest
+                    raw_str = prefix + var_result + more_rest
 
             else:
                 return var_result
@@ -2039,9 +2019,10 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     Notes
     -----
     Internal variable definitions in this function; based upon the example:
-    prefix_[[streams-->STREAM]]_postfix
+    prefix_[[streams-->STREAM]]_suffix
 
-    + ``ok_part``: ``prefix_``
+    + ``prefix``: ``prefix_``
+    + ``suffix``: ``_suffix``
     + ``actual_list``: ``streams-->STREAM``
     + ``key_in_list``: ``streams``
     + ``value_in_list``: ``STREAM``
@@ -2054,8 +2035,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
         if isinstance(lhs, str) and lhs:
             if list_fence in lhs:
                 return_dict = {}
-                ok_part, rest = lhs.split(list_fence, 1)
-                actual_list, new_raw = rest.split(list_end, 1)
+                prefix, rest = lhs.split(list_fence, 1)
+                actual_list, suffix = rest.split(list_end, 1)
                 key_in_list, value_in_list = actual_list.split("-->", 1)
                 # PG: THIS NEEDS TO BE OFF!!!
                 # if isblacklist and not determine_regex_list_match(
@@ -2154,7 +2135,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     keys_of_rhs_dict = list(rhs)
                     for replacement_key in entries_of_key:
                         inner_replacement_dict = replacement_dict[
-                            ok_part + replacement_key + new_raw
+                            prefix + replacement_key + suffix
                         ] = {}
                         for rhs_key in keys_of_rhs_dict:
                             entry = rhs[rhs_key]
@@ -2175,7 +2156,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                 )
                     return_dict2 = replacement_dict
 
-                if list_fence in new_raw:
+                if list_fence in suffix:
                     for key, value in six.iteritems(return_dict2):
                         return_dict.update(
                             list_to_multikey(
@@ -2193,8 +2174,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
 
         if isinstance(rhs, str) and list_fence in rhs:
             rhs_list = []
-            ok_part, rest = rhs.split(list_fence, 1)
-            actual_list, new_raw = rest.split(list_end, 1)
+            prefix, rest = rhs.split(list_fence, 1)
+            actual_list, suffix = rest.split(list_end, 1)
             # seb-wahl: check if a [[ ...]] entry in the string parsed contains
             # '-->' to avoid a crash if a shell command such as 'if [[ ...]]; then' is parsed
             if "-->" in actual_list:
@@ -2219,7 +2200,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                 #            value_in_list, str(entry)
                 #        )
                 #    )
-            if list_fence in new_raw:
+            if list_fence in suffix:
                 out_list = []
                 for rhs_listitem in rhs_list:
                     out_list += list_to_multikey(
@@ -2250,26 +2231,26 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
-    all_computers = yaml_file_to_dict(FUNCTION_PATH + "/machines/all_machines.yaml")
+    all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
     for this_computer in all_computers:
         for computer_pattern in all_computers[this_computer].values():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                    return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                        return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
     logging.warning(
         "The yaml file for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
     logging.warning("Continuing with generic settings...")
-    return FUNCTION_PATH + "/machines/generic.yaml"
+    return CONFIG_PATH + "/machines/generic.yaml"
 
     # raise FileNotFoundError(
     #    "The yaml file for this computer (%s) could not be determined!"
@@ -2927,9 +2908,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         setup_config["general"].update(
             {
-                "esm_function_dir": esm_function_dir,
-                "esm_namelist_dir": esm_namelist_dir,
-                "esm_runscript_dir": esm_runscript_dir,
+                "esm_function_dir": CONFIG_PATH,
+                "esm_namelist_dir": NAMELIST_DIR,
+                "esm_runscript_dir": RUNSCRIPT_DIR,
                 "expid": "test",
             }
         )

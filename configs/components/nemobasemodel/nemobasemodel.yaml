@@ -1,9 +1,22 @@
-
 available_versions:
 - 3.6.3.x
-- 3.6ogcm
+- 3.6ogcm_test
 - 3.6foci
+- 4.2.x 
+
 choose_version:
+  4.2.x:
+    archfile: ESMTOOLS_generic_intel
+    branch: branch_4.2
+    git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git 
+    # TODO: include arch repo as separate component
+    comp_command: export NEMO_TOPLEVEL=${model_dir}; export XIOS_TOPLEVEL=${model_dir}/../xios; 
+                  test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
+                  ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} -j 24 ; cp -p cfgs/${nemo.version}/BLD/bin/nemo.exe cfgs/${nemo.version}/BLD/bin/oceanx
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+    destination: nemo-${nemo.version}
+    
   3.6.3.x:
     # TODO: the archfile ESMTOOLS_generic_intel is not yet available in 
     # NEMOGCM.git, hence it won't work at the moment

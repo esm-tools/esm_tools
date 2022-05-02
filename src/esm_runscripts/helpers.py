@@ -3,7 +3,6 @@ from datetime import datetime
 
 import esm_parser
 import esm_plugin_manager
-import esm_rcfile
 import esm_tools
 
 
@@ -34,7 +33,7 @@ def evaluate(config, job_type, recipe_name):
         )
         sys.exit(1)
 
-    FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
+    FUNCTION_PATH = esm_tools.get_config_filepath()
 
     ###########################################################################################
     # LA: hotfix for non-matching python paths
@@ -49,7 +48,7 @@ def evaluate(config, job_type, recipe_name):
         sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
     ###########################################################################################
 
-    recipe = FUNCTION_PATH + "esm_software/esm_runscripts/esm_runscripts.yaml"
+    recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
     need_to_parse_recipe = True
     plugins_bare = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_plugins.yaml"
     need_to_parse_plugins = True

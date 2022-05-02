@@ -12,7 +12,6 @@ import stat
 import esm_tools
 import esm_calendar
 import esm_parser
-import esm_rcfile
 import esm_runscripts
 
 from .batch_system import batch_system
@@ -208,13 +207,14 @@ def copy_files_to_thisrun(config):
         six.print_("- You will be informed about missing files")
 
     counter = 0
-    count_max = 30
+    count_max = 90
     if (
-        config["general"].get("iterative_coupling")
+        config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
         if "files_to_wait_for" in config["general"]:
-            for file in config["general"].get("files_to_wait_for"):
+            for file_base in config['general'].get('files_to_wait_for'):
+                file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
@@ -224,6 +224,20 @@ def copy_files_to_thisrun(config):
                         six.print_("Waiting for file: ", file)
                         six.print_("Sleep for 10 seconds...")
                         time.sleep(10)
+
+    # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
+    if "fesom" in config["general"]["valid_model_names"]:
+        if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
+            if config["general"].get("run_number", 0) == 1:
+                if not os.path.isfile(
+                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
+                ):
+                    with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
+                        f.write("0")
+            else:
+                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["experiment_restart_in_dir"], "iceberg.restart.ISM")))
+                with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
+                    f.write(str(num_lines))
 
     log_used_files(config)
 
@@ -295,11 +309,6 @@ def _write_finalized_config(config):
     EsmConfigDumper.add_representer(batch_system, batch_system_representer)
 
     # format for the other ESM data structures
-    EsmConfigDumper.add_representer(
-        esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str,
-    )
-
     EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )

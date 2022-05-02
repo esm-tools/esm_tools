@@ -1,0 +1,907 @@
+&parctl
+	nproca=24
+	nprocb=18
+/
+&runctl
+	!the-following-come-from-mkexp:
+	lfractional_mask=.false.
+	rerun_filetype=4
+	putdata=1,'months','last',0
+	nproma=8
+	lcouple=.true.
+	lcouple_co2=.true.
+	default_output=.false.
+	l_orbvsop87=.false.
+	ltdiag=.true.
+	!from-here-use-esm-runscripts-branch-develop-defaults-which-were-not-set-by-mkexp-above
+	putrerun=12,'months','first',0
+	getocean=1,'days','last',0
+	putocean=1,'days','last',0
+	NPROMA=72
+	OUT_FILETYPE=1!grib:usegribthatthehamburgcmorscriptswork
+	!OUT_FILETYPE=2!netcdf
+	OUT_ZTYPE=0
+	LTIMER=.false.
+	LMIDATM=.true.
+	!LHD=.true.
+	!LIPCC=.true.
+	LAMIP=.false.
+	TRIGFILES=1,'months','first',0
+	!lmeltpond=.false.
+	!debugs:
+	!LDEBUGEV=.true.
+	!ldebugio=.true.
+	!ldebugmem=.true.
+	!ldebugs=.true.
+	out_expname=historical
+	dt_stop=1851,01,01
+	dt_resume=1850,01,01
+	lresume=.true.
+	out_datapath='/work/ba0989/a270077/CMIP6_PMIP4/a270073/CMIP6/CMIP_PMIP/dynveg_false/historical/work//'
+	delta_time=450
+/
+&cfdiagctl
+	locfdiag = .true.
+/
+&submdiagctl
+	vphysc_lpost = .false.
+/
+&submodelctl
+	lmethox = .true.
+	lco2 = .false.
+/
+&radctl
+	iaero = 8
+	io3 = 4
+	isolrad = 1
+	ico2 = 4
+	ighg = 1
+	icfc = 4
+	ich4 = 4
+	in2o = 4
+	ldiag_aeropt = .true.
+/
+
+! the following differ from the mkexp:
+&co2ctl
+	LCO2_SCENARIO = .true. ! read CO2 from scenario; default=false
+/
+&dynctl
+	ENSTDIF = 1. ! default=1.0
+/
+
+! the following namelist entries are based on 'cmip6_total.config' from
+! /work/bk0988/k204212/cmip6/mpiesm-1.2.01-release/run/standard_options/cmip6_total.config
+! Wed Oct 23 08:55:40 2019
+
+&mvstreamctl ! 'default spm glm g3bm'
+	filetag = 'echam'
+	source = 'sp', 'gl', 'g3b'
+/
+&mvstreamctl ! 'default co2m'
+	filetag = 'co2'
+	source = 'co2'
+/
+&mvstreamctl ! 'default surfm'
+	filetag = 'surf'
+	source = 'surf'
+/
+&mvstreamctl ! 'default tracerm'
+	filetag = 'tracer'
+	source = 'tracer'
+/
+&mvstreamctl ! 'default jsbachm'
+	filetag = 'jsbach'
+	source = 'jsbach'
+/
+&mvstreamctl ! 'default landm'
+	filetag = 'land'
+	source = 'land'
+/
+&mvstreamctl ! 'default vegm'
+	filetag = 'veg'
+	source = 'veg'
+/
+&mvstreamctl ! 'default yassom'
+	filetag = 'yasso'
+	source = 'yasso'
+/
+&set_stream ! 'default jsbach'
+	stream = 'jsbach'
+	lpost = 0
+/
+&set_stream ! 'default land'
+	stream = 'land'
+	lpost = 0
+/
+&set_stream ! 'default veg'
+	stream = 'veg'
+	lpost = 0
+/
+&set_stream ! 'default yasso'
+	stream = 'yasso'
+	lpost = 0
+/
+&set_stream ! 'scm'
+	stream = 'scm'
+	lpost = 0
+/
+&mvstreamctl ! 'cmip6 aeropt3hrpt'
+	filetag = 'aeropt3hrpt'
+	source = 'aeropt'
+	target = '*3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'tau_aero_550:inst>tau_aero_550_pt=11',
+	'omega_aero_550:inst>omega_aero_550_pt=12',
+	'g_aero_550:inst>g_aero_550_pt=13'
+/
+&set_stream ! 'cmip6 aeropt3hrpt'
+	stream = 'aeropt3hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 afteraeropt3hrpt'
+	filetag = 'aeropt3hrpt'
+	source = 'g3b'
+	target = '*afteraeropt3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'aps:inst>aps_pt=134'
+/
+&set_stream ! 'cmip6 g3bafteraeropt3hrpt'
+	stream = 'g3bafteraeropt3hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 cfdiag3hrpt'
+	filetag = 'cfdiag3hrpt'
+	source = 'cfdiag'
+	target = '*3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'irsucs:inst>irsucs_pt=6'
+/
+&set_stream ! 'cmip6 cfdiag3hrpt'
+	stream = 'cfdiag3hrpt'
+	lrerun = 0
+/
+&set_stream_element ! 'cmip6 cfdiag3hrpt irsucs_pt'
+	stream = 'cfdiag3hrpt'
+	name = 'irsucs_pt'
+	code = 6
+	lpost = 1
+/
+&mvstreamctl ! 'cmip6 aftercfdiag3hrpt'
+	filetag = 'cfdiag3hrpt'
+	source = 'g3b'
+	target = '*aftercfdiag3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'aps:inst>aps_pt=134'
+/
+&set_stream ! 'cmip6 g3baftercfdiag3hrpt'
+	stream = 'g3baftercfdiag3hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 echam3hr'
+	filetag = 'echam3hr'
+	source = 'sp', 'g3b'
+	target = '*3hr'
+	interval = 3, 'hours', 'last', 0
+	variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
+	'aprs_na:mean>aprs=144', 'aps:mean>aps=134',
+	'sraf0_na:mean>sraf0=187', 'srad0d_na:mean>srad0d=184',
+	'tradsu_na:mean>tradsu=205', 'trafs_na:mean>trafs=186',
+	'sradsu_na:mean>sradsu=204', 'srads_na:mean>srads=176',
+	'qvi_na:mean>qvi=230', 'trad0_na:mean>trad0=179',
+	'srad0u_na:mean>srad0u=203', 'aclcov_na:mean>aclcov=164',
+	'ahfl_na:mean>ahfl=147', 'ahfs_na:mean>ahfs=146',
+	'rsuscs_na:mean>rsuscs=51', 'traf0_na:mean>traf0=188',
+	'wind10_na:mean>wind10=171', 'rsdscs_na:mean>rsdscs=50',
+	'xlvi_na:mean>xlvi=231', 'xivi_na:mean>xivi=150',
+	'trads_na:mean>trads=177', 'u10:mean>u10=165',
+	'v10:mean>v10=166', 'geosp:mean>geosp=129', 'st:mean>st=130',
+	'lsp:mean>lsp=152'
+/
+&set_stream ! 'cmip6 sp3hr'
+	stream = 'sp3hr'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3b3hr'
+	stream = 'g3b3hr'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 echam3hrpt'
+	filetag = 'echam3hrpt'
+	source = 'sp', 'gl', 'g3b'
+	target = '*3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'rsuscs_na:inst>rsuscs_pt=53', 'aps:inst>aps_pt=134',
+	'temp2:inst>temp2_pt=167', 'v10:inst>v10_pt=166',
+	'q2m:inst>q2m_pt=54', 'u10:inst>u10_pt=165',
+	'st:inst>st_pt=130', 'tsurf_na:inst>tsurf_pt=169',
+	'q:inst>q_pt=133', 'albedo_vis_dif:inst>albedo_vis_dif_pt=81',
+	'albedo_nir_dif:inst>albedo_nir_dif_pt=82',
+	'albedo_nir_dir:inst>albedo_nir_dir_pt=80',
+	'albedo_vis_dir:inst>albedo_vis_dir_pt=79',
+	'srad0d_na:inst>srad0d_pt=184', 'ao3:inst>ao3_pt=236',
+	'geosp:inst>geosp_pt=129', 'lsp:inst>lsp_pt=152',
+	'svo:inst>svo_pt=138', 'sd:inst>sd_pt=155'
+/
+&set_stream ! 'cmip6 sp3hrpt'
+	stream = 'sp3hrpt'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 gl3hrpt'
+	stream = 'gl3hrpt'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3b3hrpt'
+	stream = 'g3b3hrpt'
+	lrerun = 0
+/
+&set_stream_element ! 'cmip6 g3b3hrpt srad0d_pt'
+	stream = 'g3b3hrpt'
+	name = 'srad0d_pt'
+	code = 184
+	lpost = 1
+/
+&set_stream_element ! 'cmip6 g3b3hrpt tsurf_pt'
+	stream = 'g3b3hrpt'
+	name = 'tsurf_pt'
+	code = 169
+	lpost = 1
+/
+&mvstreamctl ! 'cmip6 echam6hr'
+	filetag = 'echam6hr'
+	source = 'sp', 'gl', 'g3b'
+	target = '*6hr'
+	interval = 6, 'hours', 'last', 0
+	variables = 'aprl_na:mean>aprl=142', 'aprc_na:mean>aprc=143',
+	'rh2m:mean>rh2m=55', 'u10:mean>u10=165', 'temp2:mean>temp2=167',
+	'geosp:mean>geosp=129', 'st:mean>st=130', 'q:mean>q=133',
+	'lsp:mean>lsp=152', 'sd:mean>sd=155', 'v10:mean>v10=166',
+	'svo:mean>svo=138', 'aps:mean>aps=134'
+/
+&set_stream ! 'cmip6 sp6hr'
+	stream = 'sp6hr'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 gl6hr'
+	stream = 'gl6hr'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3b6hr'
+	stream = 'g3b6hr'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 echam6hrpt'
+	filetag = 'echam6hrpt'
+	source = 'sp', 'gl', 'g3b'
+	target = '*6hrpt'
+	interval = 6, 'hours', 'last', 0
+	variables = 'q2m:inst>q2m_pt=54', 'geosp:inst>geosp_pt=129',
+	'st:inst>st_pt=130', 'q:inst>q_pt=133', 'aps:inst>aps_pt=134',
+	'svo:inst>svo_pt=138', 'sn:inst>sn_pt=141',
+	'u10:inst>u10_pt=165', 'v10:inst>v10_pt=166',
+	'temp2:inst>temp2_pt=167', 'tsurf_na:inst>tsurf_pt=169',
+	'wind10_na:inst>wind10_pt=171', 'lsp:inst>lsp_pt=152',
+	'sd:inst>sd_pt=155', 'tsi:inst>tsi_pt=102',
+	'tsw:inst>tsw_pt=103', 'ws:inst>ws_pt=140', 'xl:inst>xl_pt=153',
+	'xi:inst>xi_pt=154', 'wl:inst>wl_pt=193',
+	'seaice:inst>seaice_pt=210', 'siced:inst>siced_pt=211',
+	'sni:inst>sni_pt=214', 'tslm1:inst>tslm1_pt=139'
+/
+&set_stream ! 'cmip6 sp6hrpt'
+	stream = 'sp6hrpt'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 gl6hrpt'
+	stream = 'gl6hrpt'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3b6hrpt'
+	stream = 'g3b6hrpt'
+	lrerun = 0
+/
+&set_stream_element ! 'cmip6 g3b6hrpt wind10_pt'
+	stream = 'g3b6hrpt'
+	name = 'wind10_pt'
+	code = 171
+	lpost = 1
+/
+&set_stream_element ! 'cmip6 g3b6hrpt tsurf_pt'
+	stream = 'g3b6hrpt'
+	name = 'tsurf_pt'
+	code = 169
+	lpost = 1
+/
+&mvstreamctl ! 'cmip6 aeroptday'
+	filetag = 'aeroptday'
+	source = 'aeropt'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'tau_aero_550:mean>tau_aero_550=11'
+/
+&set_stream ! 'cmip6 aeroptday'
+	stream = 'aeroptday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 cfdiagday'
+	filetag = 'cfdiagday'
+	source = 'cfdiag'
+	target = 'cfdiagday'
+	interval = 1, 'days', 'last', 0
+	variables = 'mc:mean>mc=9'
+/
+&set_stream ! 'cmip6 cfdiagday'
+	stream = 'cfdiagday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 aftercfdiagday'
+	filetag = 'cfdiagday'
+	source = 'g3b'
+	target = '*aftercfdiagday'
+	interval = 1, 'days', 'last', 0
+	variables = 'aps:mean>aps=134'
+/
+&set_stream ! 'cmip6 g3baftercfdiagday'
+	stream = 'g3baftercfdiagday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 echamday'
+	filetag = 'echamday'
+	source = 'sp', 'gl', 'g3b'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'tsi:mean>tsi=102', 'qvi_na:mean>qvi=230',
+	'xlvi_na:mean>xlvi=231', 'srad0d_na:mean>srad0d=184',
+	'srad0u_na:mean>srad0u=203', 'traf0_na:mean>traf0=188',
+	'rsuscs_na:mean>rsuscs=51', 'aclcov_na:mean>aclcov=164',
+	'ahfl_na:mean>ahfl=147', 'trads_na:mean>trads=177',
+	'srads_na:mean>srads=176', 'ustr_na:mean>ustr=180',
+	'vstr_na:mean>vstr=181', 'ahfs_na:mean>ahfs=146',
+	'aprs_na:mean>aprs=144', 'aprc_na:mean>aprc=143',
+	'aprl_na:mean>aprl=142', 'tradsu_na:mean>tradsu=205',
+	'trad0_na:mean>trad0=179', 'wind10_na:mean>wind10=171',
+	'rsdscs_na:mean>rsdscs=50', 'tsurf_na:mean>tsurf=169',
+	'xivi_na:mean>xivi=150', 'sraf0_na:mean>sraf0=187',
+	'trafs_na:mean>trafs=186', 'sradsu_na:mean>sradsu=204',
+	'aclc:mean>aclcac=223', 'u10:mean>u10=165', 'v10:mean>v10=166',
+	'xl:mean>xl=153', 'ws:mean>ws=140', 'aps:mean>aps=134',
+	'dew2:mean>dew2=168', 'rh2m:mean>rh2m=55', 'q2m:mean>q2m=54',
+	'temp2:mean>temp2=167', 'q:mean>q=133', 'st:mean>st=130',
+	'svo:mean>svo=138', 'sd:mean>sd=155', 'relhum:mean>relhum=157',
+	'lsp:mean>lsp=152', 'geosp:mean>geosp=129', 'sn:mean>sn=141',
+	'xi:mean>xi=154', 'topmax:mean>topmax=217'
+/
+&set_stream ! 'cmip6 spday'
+	stream = 'spday'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 glday'
+	stream = 'glday'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3bday'
+	stream = 'g3bday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 g3bdaymax'
+	filetag = 'echamdaymax'
+	source = 'g3b'
+	target = 'g3bdaymax'
+	interval = 1, 'days', 'last', 0
+	variables = 'wind10_na:max>wimax=216', 'temp2:max>t2max=201',
+	'ao3:max>ao3_max=236', 'rh2m:max>rh2m_max=55'
+/
+&set_stream ! 'cmip6 g3bdaymax'
+	stream = 'g3bdaymax'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 g3bdaymin'
+	filetag = 'echamdaymin'
+	source = 'g3b'
+	target = 'g3bdaymin'
+	interval = 1, 'days', 'last', 0
+	variables = 'rh2m:min>rh2m_min=55', 'temp2:min>t2min=202'
+/
+&set_stream ! 'cmip6 g3bdaymin'
+	stream = 'g3bdaymin'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 tdiagday'
+	filetag = 'tdiagday'
+	source = 'tdiag'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'dudt_hines:mean>dudt_hines=13', 'dudt_sso:mean>dudt_sso=14'
+/
+&set_stream ! 'cmip6 tdiagday'
+	stream = 'tdiagday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 aeroptmon'
+	filetag = 'aeroptmon'
+	source = 'aeropt'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'tau_aero_550:mean>tau_aero_550=11',
+	'omega_aero_550:mean>omega_aero_550=12'
+/
+&set_stream ! 'cmip6 aeroptmon'
+	stream = 'aeroptmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 cfdiagmon'
+	filetag = 'cfdiagmon'
+	source = 'cfdiag'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'mc:mean>mc=9', 'dmc:mean>dmc=12', 'mcd:mean>mcd=11',
+	'mcu:mean>mcu=10', 'irld:mean>rld=3', 'irldcs:mean>rldcs=7',
+	'irlu:mean>rlu=1', 'irlucs:mean>rlucs=5', 'irsd:mean>rsd=4',
+	'irsu:mean>rsu=2', 'irsucs:mean>rsucs=6', 'smc:mean>smc=13'
+/
+&set_stream ! 'cmip6 cfdiagmon'
+	stream = 'cfdiagmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 aftercfdiagmon'
+	filetag = 'cfdiagmon'
+	source = 'g3b'
+	target = '*aftercfdiagmon'
+	interval = 1, 'months', 'last', 0
+	variables = 'aps:mean>aps=134'
+/
+&set_stream ! 'cmip6 g3baftercfdiagmon'
+	stream = 'g3baftercfdiagmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 co2mon'
+	filetag = 'co2mon'
+	source = 'co2'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'co2_burden:mean>co2_burden=8',
+	'co2_flx_anthro:mean>co2_flx_anthro=20',
+	'co2_flx_land:mean>co2_flx_land=6',
+	'co2_flx_lcc:mean>co2_flx_lcc=24',
+	'co2_flx_harvest:mean>co2_flx_harvest=25',
+	'co2_flux:mean>co2_flux=5',
+	'co2_flx_ocean:mean>co2_flx_ocean=7'
+/
+&set_stream ! 'cmip6 co2mon'
+	stream = 'co2mon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 echammon'
+	filetag = 'echammon'
+	source = 'sp', 'gl', 'g3b'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'tsi:mean>tsi=102', 'aprs_na:mean>aprs=144',
+	'aprc_na:mean>aprc=143', 'aprl_na:mean>aprl=142',
+	'qvi_na:mean>qvi=230', 'trad0_na:mean>trad0=179',
+	'srad0u_na:mean>srad0u=203', 'aclc:mean>aclcac=223',
+	'xivi_na:mean>xivi=150', 'aclcov_na:mean>aclcov=164',
+	'xlvi_na:mean>xlvi=231', 'ahfl_na:mean>ahfl=147',
+	'ahfs_na:mean>ahfs=146', 'tradsu_na:mean>tradsu=205',
+	'sradsu_na:mean>sradsu=204', 'rsuscs_na:mean>rsuscs=51',
+	'wind10_na:mean>wind10=171', 'trafs_na:mean>trafs=186',
+	'traf0_na:mean>traf0=188', 'tsurf_na:mean>tsurf=169',
+	'rsdscs_na:mean>rsdscs=50', 'evap_na:mean>evap=182',
+	'srad0d_na:mean>srad0d=184', 'trads_na:mean>trads=177',
+	'srads_na:mean>srads=176', 'rsdsiac:mean>rsdsiac=56',
+	'rldsiac:mean>rldsiac=60', 'friac:mean>friac=97',
+	'ahfsiac:mean>ahfsiac=119', 'ahfliac:mean>ahfliac=110',
+	'rsusiac:mean>rsusiac=58', 'rlusiac:mean>rlusiac=62',
+	'sraf0_na:mean>sraf0=187', 'q:mean>q=133', 'xi:mean>xi=154',
+	'u10:mean>u10=165', 'v10:mean>v10=166',
+	'topmax:mean>topmax=217', 'xl:mean>xl=153',
+	'temp2:mean>temp2=167', 'aps:mean>aps=134', 'q2m:mean>q2m=54',
+	'rh2m:mean>rh2m=55', 'ustr_na:mean>ustr=180',
+	'vstr_na:mean>vstr=181', 'dew2:mean>dew2=168',
+	'relhum:mean>relhum=157', 'svo:mean>svo=138', 'sd:mean>sd=155',
+	'lsp:mean>lsp=152', 'st:mean>st=130', 'geosp:mean>geosp=129',
+	'sn:mean>sn=141', 'ao3:mean>ao3=236'
+/
+&set_stream ! 'cmip6 spmon'
+	stream = 'spmon'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 glmon'
+	stream = 'glmon'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 g3bmon'
+	stream = 'g3bmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 tdiagmon'
+	filetag = 'tdiagmon'
+	source = 'tdiag'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'dtdt_rheat_sw:mean>dtdt_rheat_sw=62',
+	'dtdt_hines:mean>dtdt_hines=3',
+	'dtdt_cucall:mean>dtdt_cucall=5', 'dtdt_sso:mean>dtdt_sso=4',
+	'dtdt_cloud:mean>dtdt_cloud=6', 'dtdt_vdiff:mean>dtdt_vdiff=1',
+	'dtdt_rheat_lw:mean>dtdt_rheat_lw=72',
+	'dqdt_cucall:mean>dqdt_cucall=35',
+	'dqdt_vdiff:mean>dqdt_vdiff=31',
+	'dqdt_cloud:mean>dqdt_cloud=36',
+	'dvdt_hines:mean>dvdt_hines=23',
+	'dudt_hines:mean>dudt_hines=13', 'dudt_sso:mean>dudt_sso=14',
+	'dvdt_sso:mean>dvdt_sso=24'
+/
+&set_stream ! 'cmip6 tdiagmon'
+	stream = 'tdiagmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 aftertdiagmon'
+	filetag = 'tdiagmon'
+	source = 'g3b', 'sp', 'gl'
+	target = '*aftertdiagmon'
+	interval = 1, 'months', 'last', 0
+	variables = 'aps:mean>aps=134', 'q:mean>q=133', 'st:mean>st=130',
+	'geosp:mean>geosp=129', 'lsp:mean>lsp=152'
+/
+&set_stream ! 'cmip6 g3baftertdiagmon'
+	stream = 'g3baftertdiagmon'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 spaftertdiagmon'
+	stream = 'spaftertdiagmon'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 glaftertdiagmon'
+	stream = 'glaftertdiagmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 jsbach3hrpt'
+	filetag = 'jsbach3hrpt'
+	source = 'jsbach'
+	target = '*3hrpt'
+	interval = 3, 'hours', 'last', 0
+	variables = 'layer_moisture:inst>layer_moisture_pt=84'
+/
+&set_stream ! 'cmip6 jsbach3hrpt'
+	stream = 'jsbach3hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 jsbach6hrpt'
+	filetag = 'jsbach6hrpt'
+	source = 'jsbach'
+	target = '*6hrpt'
+	interval = 6, 'hours', 'last', 0
+	variables = 'layer_moisture:inst>layer_moisture_pt=84'
+/
+&set_stream ! 'cmip6 jsbach6hrpt'
+	stream = 'jsbach6hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 land6hrpt'
+	filetag = 'land6hrpt'
+	source = 'land'
+	target = '*6hrpt'
+	interval = 6, 'hours', 'last', 0
+	variables = 'soil_temperature:inst>soil_temperature_pt=68'
+/
+&set_stream ! 'cmip6 land6hrpt'
+	stream = 'land6hrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 jsbachday'
+	filetag = 'jsbachday'
+	source = 'jsbach'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'layer_moisture:mean>layer_moisture=84',
+	'box_veg_ratio:mean>box_veg_ratio=24'
+/
+&set_stream ! 'cmip6 jsbachday'
+	stream = 'jsbachday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 landday'
+	filetag = 'landday'
+	source = 'land'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'lai:mean>lai=107', 'soil_temperature:mean>soil_temperature=68',
+	'bare_soil_evaporation:mean>bare_soil_evaporation=79',
+	'evapotranspiration:mean>evapotranspiration=44',
+	'snow_evaporation:mean>snow_evaporation=80',
+	'snow_depth_canopy:mean>snow_depth_canopy=109',
+	'surface_radiative_temp:mean>surface_radiative_temp=36',
+	'transpiration:mean>transpiration=76',
+	'snow_fract:mean>snow_fract=60', 'par_acc:mean>par_acc=149',
+	'apar_acc:mean>apar_acc=148'
+/
+&set_stream ! 'cmip6 landday'
+	stream = 'landday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 surfday'
+	filetag = 'jsbachday'
+	source = 'surf'
+	target = '*day'
+	interval = 1, 'days', 'last', 0
+	variables = 'zchl:mean>zchl=56'
+/
+&set_stream ! 'cmip6 surfday'
+	stream = 'surfday'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 jsbachmon'
+	filetag = 'jsbachmon'
+	source = 'jsbach'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'CO2_emission_harvest:mean>CO2_emission_harvest=163',
+	'cover_fract:mean>cover_fract=12',
+	'layer_moisture:mean>layer_moisture=84',
+	'veg_ratio_max:mean>veg_ratio_max_mean=20'
+/
+&set_stream ! 'cmip6 jsbachmon'
+	stream = 'jsbachmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 landmon'
+	filetag = 'landmon'
+	source = 'land'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'lai:mean>lai=107', 'snow_fract:mean>snow_fract=60',
+	'soil_temperature:mean>soil_temperature=68'
+/
+&set_stream ! 'cmip6 landmon'
+	stream = 'landmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 surfmon'
+	filetag = 'jsbachmon'
+	source = 'surf'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'pahfli>ahfliac=110', 'pahfsi>ahfsiac=119'
+/
+&set_stream ! 'cmip6 surfmon'
+	stream = 'surfmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 vegmon'
+	source = 'veg'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'boxC_litter_green_bg:mean>boxC_litter_green_bg=163',
+	'LAI_yDayMean:mean>LAI_yDayMean=165',
+	'box_Cflx_crop_harvest_2_atm:mean>box_Cflx_crop_harvest_2_atm=211',
+	'boxC_flux_onSite_2_atmos_LCC:mean>boxC_flux_onSite_2_atmos_LCC=236',
+	'boxC_flux_paper_2_atmos_LCC:mean>boxC_flux_paper_2_atmos_LCC=238',
+	'boxC_flux_construction_2_atmos_LCC:mean>boxC_flux_construction_2_atmos_LCC=239',
+	'box_Cpools_total:mean>box_Cpools_total=176',
+	'boxC_flux_2_onSite_LCC:mean>boxC_flux_2_onSite_LCC=228',
+	'boxC_flux_2_paper_LCC:mean>boxC_flux_2_paper_LCC=230',
+	'boxC_flux_2_construction_LCC:mean>boxC_flux_2_construction_LCC=231',
+	'box_Cflx_2_crop_harvest:mean>box_Cflx_2_crop_harvest=158',
+	'LCC_flux_box_C2atmos:mean>LCC_flux_box_C2atmos=82',
+	'box_Cflux_herbivory_2_atm:mean>box_Cflux_herbivory_2_atm=143',
+	'box_soil_respiration:mean>box_soil_respiration=170',
+	'box_NPP_act_yDayMean:mean>box_NPP_act_yDayMean=178',
+	'boxC_paper_LCC:mean>boxC_paper_LCC=220',
+	'boxC_onSite_LCC:mean>boxC_onSite_LCC=218',
+	'boxC_construction_LCC:mean>boxC_construction_LCC=221',
+	'boxC_crop_harvest:mean>boxC_crop_harvest=225',
+	'boxC_green:mean>boxC_green=160',
+	'boxC_woods:mean>boxC_woods=161',
+	'boxC_reserve:mean>boxC_reserve=162',
+	'box_GPP_yDayMean:mean>box_GPP_yDayMean=173',
+	'burned_YC_acid_ag_wood:mean>burned_YC_acid_ag_wood=43',
+	'box_fire_CO2_flux_2_atmos:mean>box_fire_CO2_flux_2_atmos=56',
+	'dist_nitrogen_2_atmos:mean>dist_nitrogen_2_atmos=62',
+	'boxC_flux_paper_2_atmos_harvest:mean>boxC_flux_paper_2_atmos_harvest=246',
+	'boxC_flux_construction_2_atmos_harvest:mean>boxC_flux_construction_2_atmos_harvest=247',
+	'boxC_flux_2_onSite_harvest:mean>boxC_flux_2_onSite_harvest=249',
+	'boxC_flux_onsite_2_atmos_harvest:mean>boxC_flux_onsite_2_atmos_harvest=251',
+	'boxC_flux_2_paper_harvest:mean>boxC_flux_2_paper_harvest=242',
+	'boxC_flux_2_construction_harvest:mean>boxC_flux_2_construction_harvest=243',
+	'boxC_construction_harvest:mean>boxC_construction_harvest=223',
+	'boxC_onSite_harvest:mean>boxC_onSite_harvest=224',
+	'boxC_paper_harvest:mean>boxC_paper_harvest=222'
+/
+&set_stream ! 'cmip6 vegmon'
+	stream = 'vegmon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 yassomon'
+	source = 'yasso'
+	target = '*mon'
+	interval = 1, 'months', 'last', 0
+	variables = 'boxYC_acid_ag1:mean>boxYC_acid_ag1=31',
+	'boxYC_acid_ag2:mean>boxYC_acid_ag2=41',
+	'boxYC_acid_bg1:mean>boxYC_acid_bg1=32',
+	'boxYC_acid_bg2:mean>boxYC_acid_bg2=42',
+	'boxYC_ethanol_ag1:mean>boxYC_ethanol_ag1=35',
+	'boxYC_ethanol_ag2:mean>boxYC_ethanol_ag2=45',
+	'boxYC_ethanol_bg1:mean>boxYC_ethanol_bg1=36',
+	'boxYC_ethanol_bg2:mean>boxYC_ethanol_bg2=46',
+	'boxYC_humus_1:mean>boxYC_humus_1=39',
+	'boxYC_humus_2:mean>boxYC_humus_2=49',
+	'boxYC_nonsoluble_ag1:mean>boxYC_nonsoluble_ag1=37',
+	'boxYC_nonsoluble_ag2:mean>boxYC_nonsoluble_ag2=47',
+	'boxYC_nonsoluble_bg1:mean>boxYC_nonsoluble_bg1=38',
+	'boxYC_nonsoluble_bg2:mean>boxYC_nonsoluble_bg2=48',
+	'boxYC_water_ag1:mean>boxYC_water_ag1=33',
+	'boxYC_water_ag2:mean>boxYC_water_ag2=43',
+	'boxYC_water_bg1:mean>boxYC_water_bg1=34',
+	'boxYC_water_bg2:mean>boxYC_water_bg2=44'
+/
+&set_stream ! 'cmip6 yassomon'
+	stream = 'yassomon'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 jsbachyrpt'
+	filetag = 'jsbachyrpt'
+	source = 'jsbach'
+	target = '*yrpt'
+	interval = 1, 'years', 'last', 0
+	variables = 'cover_fract:inst>cover_fract_pt=12',
+	'veg_ratio_max:inst>veg_ratio_max_pt=20'
+/
+&set_stream ! 'cmip6 jsbachyrpt'
+	stream = 'jsbachyrpt'
+	lrerun = 0
+/
+&set_stream_element ! 'cmip6 jsbachyrpt veg_ratio_max_pt'
+	stream = 'jsbachyrpt'
+	name = 'veg_ratio_max_pt'
+	code = 20
+	lpost = 1
+/
+&mvstreamctl ! 'cmip6 jsbachyr'
+	filetag = 'jsbachyr'
+	source = 'jsbach'
+	target = '*yr'
+	interval = 1, 'years', 'last', 0
+	variables = 'cover_fract:mean>cover_fract=12',
+	'veg_ratio_max:mean>veg_ratio_max_mean=20'
+/
+&set_stream ! 'cmip6 jsbachyr'
+	stream = 'jsbachyr'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 landyr'
+	filetag = 'landyr'
+	source = 'land'
+	target = '*yr'
+	interval = 1, 'years', 'last', 0
+	variables = 'snow_fract:mean>snow_fract=60'
+/
+&set_stream ! 'cmip6 landyr'
+	stream = 'landyr'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 vegyrpt'
+	filetag = 'vegyrpt'
+	source = 'veg'
+	target = '*yrpt'
+	interval = 1, 'years', 'last', 0
+	variables = 'boxC_construction_LCC:inst>boxC_construction_LCC_pt=221',
+	'boxC_crop_harvest:inst>boxC_crop_harvest_pt=225',
+	'boxC_onSite_LCC:inst>boxC_onSite_LCC_pt=218',
+	'boxC_paper_LCC:inst>boxC_paper_LCC_pt=220',
+	'boxC_reserve:inst>boxC_reserve_pt=162',
+	'boxC_woods:inst>boxC_woods_pt=161',
+	'boxC_green:inst>boxC_green_pt=160',
+	'boxC_paper_harvest:inst>boxC_paper_harvest_pt=222',
+	'boxC_construction_harvest:inst>boxC_construction_harvest_pt=223',
+	'boxC_onSite_harvest:inst>boxC_onSite_harvest_pt=224'
+/
+&set_stream ! 'cmip6 vegyrpt'
+	stream = 'vegyrpt'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 yassoyrpt'
+	source = 'yasso'
+	target = '*yrpt'
+	interval = 1, 'years', 'last', 0
+	variables = 'boxYC_acid_ag1:inst>boxYC_acid_ag1_pt=31',
+	'boxYC_acid_ag2:inst>boxYC_acid_ag2_pt=41',
+	'boxYC_acid_bg1:inst>boxYC_acid_bg1_pt=32',
+	'boxYC_acid_bg2:inst>boxYC_acid_bg2_pt=42',
+	'boxYC_ethanol_ag1:inst>boxYC_ethanol_ag1_pt=35',
+	'boxYC_ethanol_ag2:inst>boxYC_ethanol_ag2_pt=45',
+	'boxYC_ethanol_bg1:inst>boxYC_ethanol_bg1_pt=36',
+	'boxYC_ethanol_bg2:inst>boxYC_ethanol_bg2_pt=46',
+	'boxYC_humus_1:inst>boxYC_humus_1_pt=39',
+	'boxYC_humus_2:inst>boxYC_humus_2_pt=49',
+	'boxYC_nonsoluble_ag1:inst>boxYC_nonsoluble_ag1_pt=37',
+	'boxYC_nonsoluble_ag2:inst>boxYC_nonsoluble_ag2_pt=47',
+	'boxYC_nonsoluble_bg1:inst>boxYC_nonsoluble_bg1_pt=38',
+	'boxYC_nonsoluble_bg2:inst>boxYC_nonsoluble_bg2_pt=48',
+	'boxYC_water_ag1:inst>boxYC_water_ag1_pt=33',
+	'boxYC_water_ag2:inst>boxYC_water_ag2_pt=43',
+	'boxYC_water_bg1:inst>boxYC_water_bg1_pt=34',
+	'boxYC_water_bg2:inst>boxYC_water_bg2_pt=44'
+/
+&set_stream ! 'cmip6 yassoyrpt'
+	stream = 'yassoyrpt'
+	lrerun = 0
+/
+&set_stream ! 'cmip6 accw'
+	stream = 'accw'
+	interval = 3, 'hours', 'last', 0
+/
+&set_stream ! 'cmip6 aeropt'
+	stream = 'aeropt'
+	! interval = 1, days, last, 0
+	lpost = 0
+/
+&set_stream ! 'cmip6 co2'
+	stream = 'co2'
+	interval = 1, 'months', 'last', 0
+/
+&set_stream ! 'cmip6 land'
+	stream = 'land'
+	interval = 1, 'days', 'last', 0
+/
+&set_stream ! 'cmip6 veg'
+	stream = 'veg'
+	interval = 1, 'months', 'last', 0
+/
+&set_stream ! 'cmip6 ma'
+	stream = 'ma'
+	lpost = 1
+/
+&mvstreamctl ! 'cmip6 g3bjsb'
+	filetag = 'jsbalone'
+	source = 'g3b'
+	target = 'g3bjsb'
+	interval = 1, 'days', 'last', 0
+	variables = 'aprl_na > aprl=142', 'aprc_na > aprc=143',
+	'srafs_na > srafs=185', 'srads_na > srads=176',
+	'sradsu_na > sradsu=204', 'trads_na > trads=177',
+	'tradsu_na > tradsu=205'
+/
+&set_stream ! 'cmip6 g3bjsb'
+	stream = 'g3bjsb'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 landjsb'
+	filetag = 'jsbalone'
+	source = 'land'
+	target = 'landjsb'
+	interval = 1, 'days', 'last', 0
+	variables = 'qair_lal > surface_qair=91', 'tair:max > tair_max=104',
+	'tair:min > tair_min=105', 'wind_lal > wind_lal_acc=106'
+/
+&set_stream ! 'cmip6 landjsb'
+	stream = 'landjsb'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 vegcba'
+	filetag = 'cbalance'
+	source = 'veg'
+	target = 'vegcba'
+	interval = 1, 'days', 'last', 0
+	variables = 'bio_exist:inst', 'LAI_yDayMean:inst', 'NPP_yDayMean:inst',
+	'topSoilTemp_yDayMean:inst', 'alpha_yDayMean:inst',
+	'drainage_yDayMean:inst', 'ave_npp5:inst',
+	'prev_day_max_wind10:inst', 'rel_hum_air_yDay:inst',
+	'max_wind10:inst', 'prev_day_temp_max:inst',
+	'prev_day_temp_min:inst', 'prev_day_precip_mean:inst',
+	'prev_day_mean_wind10:inst'
+/
+&set_stream ! 'cmip6 vegcba'
+	stream = 'vegcba'
+	lrerun = 0
+/
+&mvstreamctl ! 'cmip6 yassocba'
+	filetag = 'cbalance'
+	source = 'yasso'
+	target = 'yassocba'
+	interval = 1, 'days', 'last', 0
+	variables = 'pseudo_temp_yDay:inst', 'pseudo_precip_yDay:inst'
+/
+&set_stream ! 'cmip6 yassocba'
+	stream = 'yassocba'
+	lrerun = 0
+/
+

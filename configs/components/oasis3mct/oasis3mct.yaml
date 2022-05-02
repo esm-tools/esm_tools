@@ -24,25 +24,27 @@ available_versions:
 - '2.8'
 - '3.0'
 - '4.0'
-- 4.0-oifsdeck
-- 4.0-awicm-frontiers
-- 4.0-awicm-3.0
+- '4.0-geomar'
+- '4.0-oifsdeck'
+- '4.0-awicm-frontiers'
+- '4.0-awicm-3.0'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8'
-    git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct
+    git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
   '2.8':
     branch: '2.8'
   '3.0':
     branch: '3.0'
   '4.0':
     branch: '4.0'
+  4.0-geomar:
+    git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
+    branch: '4.0'
   4.0-awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
-  4.0-oifsdeck:
-    branch: oifs-deck
   ec-earth:
     branch: ec-earth-version
   foci:

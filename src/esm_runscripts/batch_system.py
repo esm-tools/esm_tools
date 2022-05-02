@@ -144,7 +144,7 @@ class batch_system:
                     all_flags.append(flag)
 
         # some items in `all_values` list might be lists, so flatten it
-        all_values = [this_batch_system[flag] for flag in all_flags]
+        all_values = [this_batch_system.get(flag) for flag in all_flags]
         all_values_flat = []
         for value in all_values:
             if isinstance(value, str):
@@ -156,7 +156,8 @@ class batch_system:
         for value in all_values_flat:
             for (tag, repl) in replacement_tags:
                 value = value.replace(tag, str(repl))
-            header.append(this_batch_system["header_start"] + " " + value)
+            if this_batch_system.get("header_start") is not None:
+                header.append(this_batch_system["header_start"] + " " + value)
 
         return header
 
@@ -636,8 +637,8 @@ class batch_system:
                 (
                     "Since version 6.0, ``heterogeneous_parallelization`` variable "
                     "defined by the user is ignored, and instead its value is "
-                    "set to true if any ``omp_num_threads`` exists in the model's "
-                    "sections. To get rid of this warning, remove "
+                    "set to true if any ``omp_num_threads`` in the model's sections "
+                    "is larger than 1. To get rid of this error, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
                     "``choose_`` block to decice the case."

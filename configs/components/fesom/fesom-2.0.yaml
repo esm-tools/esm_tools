@@ -9,11 +9,10 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-use_icebergs: False
-
 choose_version:
   '2.0':
     branch: 2.0.2
+    destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
@@ -46,14 +45,6 @@ choose_version:
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-  2.0-jio:
-    branch: juwels_chunk_io
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
@@ -153,10 +144,10 @@ restart_in_files:
         ice_restart: ice_restart
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
+
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -164,7 +155,6 @@ restart_in_in_work:
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -177,18 +167,18 @@ restart_out_files:
         par_ice_restart: par_ice_restart
         fesom_raw_restart_info: fesom_raw_restart_info
         fesom_raw_restart: fesom_raw_restart
+
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -199,38 +189,6 @@ outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
         fesom: "*.fesom.*.nc"
-
-choose_use_icebergs:
-        True:
-            ib_num_old: 0
-            ib_num_new: 0
-
-            add_restart_in_files:
-                    icb_restart: icb_restart
-
-            add_restart_out_files:
-                    icb_restart: icb_restart
-
-            input_in_work:
-                    longitude: "icb_longitude.dat"
-                    latitude: "icb_latitude.dat"
-                    length: "icb_length.dat"
-                    height: "icb_height.dat"
-                    scaling: "icb_scaling.dat"
-
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
-                    latitude: "latitude"
-                    length: "length"
-                    height: "height"
-                    scaling: "scaling"
 
 log_files:
         clock: clock

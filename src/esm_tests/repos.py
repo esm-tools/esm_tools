@@ -43,18 +43,14 @@ def check_resources(info, verbose=True):
         and "runscripts" in dir_resources
         and not info.get("repo_update", False)
     ):
-        install_resources = questionary.select(
-            "The resources submodule for esm_tests is not installed yet (i.e. the"
+        install_resources = questionary.confirm(
+            "The resources submodule for esm_tests is not installed yet (i.e. the "
             f"{resources_folder} folder does not include the last_tested or the "
             "runscripts folder). Would you like to install the submodule now?",
-            choices=[
-                "Yes, install esm_tests resources submodule!",
-                "No",
-            ]
         ).ask()
-        if "Yes" in install_resources:
+        if install_resources:
             info["repo_update"] = True
-        if "No" in install_resources:
+        else:
             user_error(
                 "Missing resources for ESM-Tests",
                 "ESM-Tests needs the esm_tests_info submodule. Please, run "

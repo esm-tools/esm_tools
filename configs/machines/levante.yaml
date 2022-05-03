@@ -72,7 +72,6 @@ iolibraries: system_libs
 
 module_actions:
         - "purge"
-        - "load gcc/11.2.0-gcc-11.2.0"
         - "load git/2.31.1-gcc-11.2.0"
         - "load cdo/2.0.5-gcc-11.2.0"
         - "load nco/5.0.6-gcc-11.2.0"
@@ -102,7 +101,7 @@ export_vars:
         UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
         UCX_UNIFIED_MODE: y
 
-        HDF5_LIB: '"-lhdf5_fortran -lhdf5hl_fortran -lhdf5_hl -lhdf5 -lz"'
+        HDF5_LIB: '"-lhdf5_fortran -lhdf5_hl_fortran -lhdf5_hl -lhdf5 -lz"'
 
         #ECHAM_FFLAGS: '"-O3 -fp-model source -qoverride-limits -assume realloc_lhs -align array64byte -no-prec-sqrt -no-prec-div -fast-transcendentals -m64 -march=core-avx2 -mtune=core-avx2 -fma -ip -pc64"'
 
@@ -202,14 +201,14 @@ choose_iolibraries:
             PERL5LIB: /usr/lib64/perl5
 
             LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
+
             # avoid GLIBCXX_3.4.15 not found error
+            # MA: This solves nothing for AWICM3
+            #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
 
             # kh 01.03.22 current philosophy on levante regarding the modules
             # concept is to avoid LD_LIBRARY_PATH as far as possible to make
             # everything clearer
-
-            # kh 17.02.22 orig mistral
-            #        LD_LIBRARY_PATH[(1)]: /sw/rhel6-x64/gcc/gcc-4.8.2/lib64:$LD_LIBRARY_PATH
 
             # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
             #       LD_LIBRARY_PATH[(1)]: ...

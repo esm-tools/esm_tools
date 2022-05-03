@@ -2,7 +2,7 @@
 
 __author__ = """Miguel Andres-Martinez"""
 __email__ = "miguel.andres-martinez@awi.de"
-__version__ = "6.6.3"
+__version__ = "6.6.5"
 
 from .initialization import *
 from .tests import *

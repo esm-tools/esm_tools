@@ -1,8 +1,8 @@
 import os
 import sys
-import esm_tools
-import esm_parser
 
+import esm_parser
+import esm_tools
 
 ######################################################################################
 ##################################### globals ########################################
@@ -15,9 +15,7 @@ SETUPS_DIR = esm_tools.get_config_filepath("/setups/")
 COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
 DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
 ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
-CONFIG_YAML = esm_tools.get_config_filepath(
-    "/esm_software/esm_master/esm_master.yaml"
-)
+CONFIG_YAML = esm_tools.get_config_filepath("/esm_software/esm_master/esm_master.yaml")
 VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
 
 ESM_MASTER_PICKLE = ESM_SOFTWARE_DIR + "/esm_master/esm_master.pkl"
@@ -251,15 +249,19 @@ class version_control_infos:
                         f"swrepo1.awi.de is decommisioned, please consider correcting {repo}"
                     )
                 elif "gitlab.dkrz.de" in repo:
-                    repo = repo.replace(
-                        "gitlab.dkrz.de",
-                        f"{os.environ['GITLAB_DKRZ_USER_NAME']}@gitlab.dkrz.de",
-                    )
+                    # NOTE(PG): Empty string as return value to ensure that the f-string works nicely
+                    dkrz_user = os.environ.get("GITLAB_DKRZ_USER_NAME", "")
+                    if dkrz_user:
+                        dkrz_user += "@"
+                    repo = repo.replace("gitlab.dkrz.de", f"{dkrz_user}gitlab.dkrz.de")
                 elif "github.com" in repo:
                     print("No token needed for github.com repositories!")
                 else:
                     print(f"Sorry, no CI token defined for {repo}")
-                    if os.environ.get("esm_tools_pedantic"):
+                    # FIXME(PG): We should come up with a sensible convention for this:
+                    if os.environ.get("esm_tools_pedantic") or os.environ.get(
+                        "ESM_TOOLS_PEDANTIC"
+                    ):
                         print("Pedantic mode is on, exiting instead of warning only!")
                         sys.exit(1)
 

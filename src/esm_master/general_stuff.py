@@ -240,14 +240,19 @@ class version_control_infos:
                 repo = package.repo
             if os.environ.get("CI"):
                 if "gitlab.awi.de" in repo:
-                    repo = repo.replace(
-                        "gitlab.awi.de",
-                        f"{os.environ['GITLAB_AWI_USER_NAME']}@gitlab.awi.de",
-                    )
+                    awi_user = os.environ.get("GITLAB_AWI_USER_NAME", "")
+                    if awi_user:
+                        awi_user += "@"
+                    repo = repo.replace("gitlab.awi.de", f"{awi_user}gitlab.dkrz.de")
                 elif "swrepo1.awi.de" in repo:
                     print(
                         f"swrepo1.awi.de is decommisioned, please consider correcting {repo}"
                     )
+                    if os.environ.get("esm_tools_pedantic") or os.environ.get(
+                        "ESM_TOOLS_PEDANTIC"
+                    ):
+                        print("Pedantic mode is on, exiting instead of warning only!")
+                        sys.exit(1)
                 elif "gitlab.dkrz.de" in repo:
                     # NOTE(PG): Empty string as return value to ensure that the f-string works nicely
                     dkrz_user = os.environ.get("GITLAB_DKRZ_USER_NAME", "")

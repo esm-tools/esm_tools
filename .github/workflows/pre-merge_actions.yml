@@ -75,7 +75,7 @@ jobs:
             )
           )
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
@@ -97,7 +97,7 @@ jobs:
             )
           )
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: minor
@@ -109,7 +109,7 @@ jobs:
           !contains(github.event.comment.body, '#patch') &&
           !contains(github.event.comment.body, '#minor')
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: major
@@ -122,7 +122,7 @@ jobs:
           !contains(steps.vars.outputs.current_branch, 'fix/') &&
           !contains(github.event.comment.body, '#major')
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
         

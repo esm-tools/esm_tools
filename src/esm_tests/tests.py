@@ -622,6 +622,7 @@ def check(info, mode, model, version, out, script, v):
                         f"{user_info['test_dir']}/{sp}",
                         sp,
                         ignore_lines,
+                        info["rm_user_info"],
                     )
                     success += identical
                     # Update state dictionaries
@@ -743,9 +744,8 @@ def extract_namelists(s_config_yaml):
         namelists_component = config[component].get("namelists", [])
         for nml in namelists_component:
             config_sources = config[component].get("config_sources", {})
-            if (
-                nml in config_sources
-                or any([nml in x for x in config_sources.values()])
+            if nml in config_sources or any(
+                [nml in x for x in config_sources.values()]
             ):
                 namelists.append(nml)
 
@@ -755,9 +755,19 @@ def extract_namelists(s_config_yaml):
 #######################################################################################
 # OUTPUT
 #######################################################################################
-def print_diff(sscript, tscript, name, ignore_lines):
+def print_diff(sscript, tscript, name, ignore_lines, rm_user):
     script_s = open(sscript).readlines()
     script_t = open(tscript).readlines()
+
+    # Substitute user lines in target string
+    new_script_t = []
+    for line in script_t:
+        for key, string in rm_user.items():
+            if not string:
+                continue
+            line = line.replace(string, f"<{key}>")
+        new_script_t.append(line)
+    script_t = new_script_t
 
     # Check for ignored lines
     new_script_s = []
@@ -881,22 +891,23 @@ def save_files(info, user_choice):
                         info, cfile, v, this_test_dir
                     )
                     for sp, sp_t in zip(subpaths_source, subpaths_target):
-                        if os.path.isfile(f"{last_tested_dir}/{sp_t}"):
+                        target_path = f"{last_tested_dir}/{this_computer}/{sp_t}"
+                        if os.path.isfile(target_path):
                             logger.debug(
-                                f"\t'{sp_t}' file in '{last_tested_dir}' will be overwritten"
+                                f"\t'{sp_t}' file in '{last_tested_dir}/{this_computer}' will be overwritten"
                             )
-                        if not os.path.isdir(
-                            os.path.dirname(f"{last_tested_dir}/{this_computer}/{sp_t}")
-                        ):
-                            os.makedirs(
-                                os.path.dirname(
-                                    f"{last_tested_dir}/{this_computer}/{sp_t}"
-                                )
-                            )
-                        shutil.copy2(
-                            f"{user_info['test_dir']}/{sp}",
-                            f"{last_tested_dir}/{this_computer}/{sp_t}",
-                        )
+                        if not os.path.isdir(os.path.dirname(target_path)):
+                            os.makedirs(os.path.dirname(target_path))
+                        shutil.copy2(f"{user_info['test_dir']}/{sp}", target_path)
+
+                        # Modify lines containing user-specific information
+                        for key, string in info["rm_user_info"].items():
+                            if not string:
+                                continue
+                            with open(target_path) as f:
+                                stext = f.read().replace(string, f"<{key}>")
+                            with open(target_path, "w") as f:
+                                f.write(stext)
     # Load current state
     with open(get_state_yaml_path(), "r") as st:
         current_state = yaml.load(st, Loader=yaml.FullLoader)
@@ -928,14 +939,22 @@ def print_results(results, info):
             for script, computers in scripts.items():
                 logger.info(f"        {bp}{colorama.Fore.WHITE}{script}:")
                 for computer, data in computers.items():
-                    if data["compilation"]:
-                        compilation = f"{colorama.Fore.GREEN}compiles"
+                    text = data["compilation"]
+                    if "compiles" == text:
+                        text_color = colorama.Fore.GREEN
+                    elif "differ" in text:
+                        text_color = colorama.Fore.YELLOW
                     else:
-                        compilation = f"{colorama.Fore.RED}compilation failed"
-                    if data["run"]:
-                        run = f"{colorama.Fore.GREEN}runs"
+                        text_color = colorama.Fore.RED
+                    compilation = f"{text_color}{text}"
+                    text = data["run"]
+                    if "runs" == text:
+                        text_color = colorama.Fore.GREEN
+                    elif "differ" in text:
+                        text_color = colorama.Fore.YELLOW
                     else:
-                        run = f"{colorama.Fore.RED}run failed"
+                        text_color = colorama.Fore.RED
+                    run = f"{text_color}{text}"
                     logger.info(
                         f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
                     )
@@ -955,17 +974,26 @@ def format_results(info):
             results[model][version] = results[model].get(version, {})
             results[model][version][script] = results[model][version].get(script, {})
             state = v["state"]
-            compilation = (
-                state["comp"]
-                and state.get("comp_files", True)
-                and state.get("comp_files_identical", True)
-            )
-            run = (
-                state.get("run_finished", True)
-                and state.get("run_files", True)
-                and state["submission"]
-                and state.get("submission_files_identical", True)
-            )
+            compilation = "compiles"
+
+            if not state.get("comp_files_identical", True):
+                compilation = "comp files differ"
+            if not state.get("comp_files", True):
+                compilation = "comp files not found"
+            if not state["comp"]:
+                compilation = "compilation failed"
+
+            run = "runs"
+
+            if not state.get("submission_files_identical", True):
+                run = "run files differ"
+            if not state["submission"]:
+                run = "submission failed"
+            if not state.get("run_files", True):
+                run = "run files not found"
+            if not state.get("run_finished", True):
+                run = "run failed"
+
             results[model][version][script][info["this_computer"]] = {
                 "compilation": compilation,
                 "run": run,

@@ -8,9 +8,10 @@ import argparse
 from loguru import logger
 
 from .initialization import *
-from .tests import *
-from .test_utilities import *
 from .read_shipped_data import *
+from .repos import *
+from .test_utilities import *
+from .tests import *
 
 import os
 import sys
@@ -24,6 +25,12 @@ def main():
         filter={"": "WARNING", "esm_tests": "DEBUG"},
         format="<level>{message}</level>",
     )
+
+    logger.info("")
+    logger.info("Welcome to ESM-Tests!")
+    logger.info("=====================")
+    logger.info("")
+
     if os.environ.get("CI", False):
         logger.add(
             "out.log",
@@ -47,6 +54,14 @@ def main():
         default=False,
         help="Check mode on (does not compile or run, but produces some files that can "
         + "be compared to previous existing files in 'last_tested' folder)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-u",
+        "--update",
+        default=False,
+        help="Updates the resources with the release branch, including runscripts"
+        + "and last_tested files",
         action="store_true",
     )
     parser.add_argument(
@@ -105,12 +120,17 @@ def main():
     # info["keep_run_folders"] = args["keep"]
     info["hold"] = args["hold"]
     info["bulletpoints"] = args["bulletpoints"]
+    info["repo_update"] = args["update"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    info["last_tested_dir"] = get_last_tested_dir()
     info["this_computer"] = (
         determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
     )
+
+    # Update ``resources``
+    update_resources_submodule(info)
+
+    info["last_tested_dir"] = get_last_tested_dir()
 
     # Predefined for later
     user_scripts = dict(comp={}, run={})
@@ -123,6 +143,12 @@ def main():
 
     # Get user info for testing
     info = user_config(info)
+
+    # User-specific Info to remove from the files ``last_tested`` files
+    info["rm_user_info"] = {
+        "ACCOUNT": info["user"]["account"],
+        "TEST_DIR": info["user"]["test_dir"],
+    }
 
     # Define lines to be ignored during comparison
     try:

@@ -464,10 +464,10 @@ class oasis:
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
             print(thesefiles, flush=True)
             for thisfile in thesefiles:
-                print("cdo showtime " + thisfile + " 2>/dev/null | wc -w", flush=True)
+                print("cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w", flush=True)
                 lasttimestep = (
                     subprocess.check_output(
-                        "cdo showtime " + thisfile + " 2>/dev/null | wc -w", shell=True
+                        "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w", shell=True
                     )
                     .decode("utf-8")
                     .rstrip()

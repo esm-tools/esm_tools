@@ -551,6 +551,11 @@ oasis3mct:
 
 
 computer:
+        # Activates the taskset approach for heterogeneous parallelization, by default
+        # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+        # problems)
+        taskset: true
+
         choose_computer.name:
                 blogin:
                         compiler_mpi: intel2019_ompi

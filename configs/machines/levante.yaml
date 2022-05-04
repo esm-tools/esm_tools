@@ -101,10 +101,6 @@ export_vars:
         UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
         UCX_UNIFIED_MODE: y
 
-        HDF5_LIB: '"-lhdf5_fortran -lhdf5_hl_fortran -lhdf5_hl -lhdf5 -lz"'
-
-        #ECHAM_FFLAGS: '"-O3 -fp-model source -qoverride-limits -assume realloc_lhs -align array64byte -no-prec-sqrt -no-prec-div -fast-transcendentals -m64 -march=core-avx2 -mtune=core-avx2 -fma -ip -pc64"'
-
 # Variables needed exclusively during runtime
 # NOTE: runtime_environment_changes does not work from the machine files
 choose_general.run_or_compile:
@@ -279,7 +275,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "-l --distribution=plane=128 --cpu-bind=cores"
+launcher_flags: "-l --distribution=plane=128 --cpu-bind=${cpu_bind}"
 
 further_reading:
         - batch_system/slurm.yaml

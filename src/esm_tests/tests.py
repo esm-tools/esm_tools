@@ -939,14 +939,22 @@ def print_results(results, info):
             for script, computers in scripts.items():
                 logger.info(f"        {bp}{colorama.Fore.WHITE}{script}:")
                 for computer, data in computers.items():
-                    if data["compilation"]:
-                        compilation = f"{colorama.Fore.GREEN}compiles"
+                    text = data["compilation"]
+                    if "compiles" == text:
+                        text_color = colorama.Fore.GREEN
+                    elif "differ" in text:
+                        text_color = colorama.Fore.YELLOW
                     else:
-                        compilation = f"{colorama.Fore.RED}compilation failed"
-                    if data["run"]:
-                        run = f"{colorama.Fore.GREEN}runs"
+                        text_color = colorama.Fore.RED
+                    compilation = f"{text_color}{text}"
+                    text = data["run"]
+                    if "runs" == text:
+                        text_color = colorama.Fore.GREEN
+                    elif "differ" in text:
+                        text_color = colorama.Fore.YELLOW
                     else:
-                        run = f"{colorama.Fore.RED}run failed"
+                        text_color = colorama.Fore.RED
+                    run = f"{text_color}{text}"
                     logger.info(
                         f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
                     )
@@ -966,17 +974,26 @@ def format_results(info):
             results[model][version] = results[model].get(version, {})
             results[model][version][script] = results[model][version].get(script, {})
             state = v["state"]
-            compilation = (
-                state["comp"]
-                and state.get("comp_files", True)
-                and state.get("comp_files_identical", True)
-            )
-            run = (
-                state.get("run_finished", True)
-                and state.get("run_files", True)
-                and state["submission"]
-                and state.get("submission_files_identical", True)
-            )
+            compilation = "compiles"
+
+            if not state.get("comp_files_identical", True):
+                compilation = "comp files differ"
+            if not state.get("comp_files", True):
+                compilation = "comp files not found"
+            if not state["comp"]:
+                compilation = "compilation failed"
+
+            run = "runs"
+
+            if not state.get("submission_files_identical", True):
+                run = "run files differ"
+            if not state["submission"]:
+                run = "submission failed"
+            if not state.get("run_files", True):
+                run = "run files not found"
+            if not state.get("run_finished", True):
+                run = "run failed"
+
             results[model][version][script][info["this_computer"]] = {
                 "compilation": compilation,
                 "run": run,

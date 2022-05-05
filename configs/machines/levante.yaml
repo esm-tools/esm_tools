@@ -140,7 +140,6 @@ choose_compiler_mpi:
                 mod_netcdf_c: netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
                 mod_netcdf_f: netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
                 mod_hdf5: hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0
-                mod_netcdf_cxx: netcdf-cxx/4.2-openmpi-4.1.2-intel-2021.5.0
                 netcdf_cxx_root: /work/ab0995/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0 #/sw/spack-levante/netcdf-cxx-4.2-selbph
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"

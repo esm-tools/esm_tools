@@ -52,11 +52,16 @@ general:
         - agrif
         - '2.0'
         - '2.1'
+        - '2.1-O12'
         choose_version:
           '2.1':
             runoff_method: "EM21"
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci21
+          '2.1-O12':
+            runoff_method: "EM21"
+            couplings:
+            - nemo-ORCA12_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci21
           '2.0':
             runoff_method: "old"
             couplings:
@@ -186,6 +191,8 @@ oifs:
         choose_general.resolution:
                 TCO95_ORCA05:
                         nproc: 279
+                TCO95_ORCA12:
+                        nproc: 287
 
         # split fields to A, R and L grid
         # A grid is wet points except lakes
@@ -236,11 +243,19 @@ oifs:
 
 nemo:
         
-        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
-        # This does not seem to do anything
+        # For 2.1-O12 we choose ORCA12 config for NEMO
         choose_general.version:
+                "2.1-O12":
+                        version: "ORCA12_LIM2_KCM_AOW_FS_OASISMCT4"
+                        resolution: ORCA12
+                # dont this this does anything, but keep it for safety
                 default:
                         version: "3.6foci"
+                "*":
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        resolution: ORCA05
+                        
+                
         
         #file_movements:
         #        input:
@@ -248,6 +263,10 @@ nemo:
         
         choose_general.resolution:
                 TCO95_ORCA05:
+                        nproca: 24
+                        nprocb: 20
+                # Joakim: Need to find good choice for ORCA12
+                TCO95_ORCA12:
                         nproca: 24
                         nprocb: 20
 
@@ -280,7 +299,7 @@ nemo:
                                         namsbc_cpl:
                                                 sn_rcv_rnf: ['coupled', 'no', '', '', '']
 
-        resolution: ORCA05
+        
         coupling_freq: "$(( ${time_step} / ${nemo.time_step} ))"
         
         # number of neighbours for runoff remapping (if runoff_method = EM21)

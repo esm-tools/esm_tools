@@ -318,6 +318,26 @@ choose_version:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
 
+  ORCA12_LIM2_KCM_AOW_FS_OASISMCT4:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+
+    free_surface: nonlinear
+
+    add_input_files:
+       # init and (if used) damping data
+       sn_tem: sn_tem_EN4_ORCA12
+       sn_sal: sn_sal_EN4_ORCA12
+       ice_init: ice_init_kkg36f13h
+       cn_batmeter: bathy_meter 
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
   # NEMO standalone setup
   ORCA05_LIM2_NEMO_JRA55_test:
     requires:
@@ -648,6 +668,22 @@ choose_resolution:
                         coordinates: coordinates
                         subbasins: subbasins
                         coef-G70: coef-G70
+                add_input_sources:
+                        subbasins: ${input_dir}/orca05_subbasins_3.6.nc 
+        
+        ORCA12:
+                _nx: 4322
+                _ny: 3059
+                time_step: 300
+                
+                input_files:
+                        namelist_ref: namelist_ref
+                        namelist_ice_ref: namelist_ice_ref
+                        namelist_top_ref: namelist_top_ref
+                        coordinates: coordinates
+                        subbasins: subbasins
+                add_input_sources:
+                        subbasins: ${input_dir}/ORCA0083_basinmsk_fullarctic.nc
 
         GYRE:
                 free_surface: no_option 
@@ -779,7 +815,7 @@ input_sources:
         # grids and coefficients
         bathy_meter: ${input_dir}/bathy_meter.nc
         coordinates: ${input_dir}/coordinates.nc
-        subbasins: ${input_dir}/orca05_subbasins_3.6.nc
+        #subbasins: ${input_dir}/orca05_subbasins_3.6.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
         reshape_jra_orca05_bicub: ${input_dir}/reshape_jra_bicub__3.6.0_ORCA05_Kv1.0.0.nc 
         reshape_jra_orca05_bilin: ${input_dir}/reshape_jra_bilin__3.6.0_ORCA05_Kv1.0.0.nc
@@ -787,8 +823,10 @@ input_sources:
         # inital data
         sn_tem_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_Tpot_ORCA_R05.nc
         sn_tem_woa13_omip: ${input_dir}/woa13_decav_ptemp_OMIPinit__3.6.0_ORCA05.L46_Kv1.0.0.nc
+        sn_tem_EN4_ORCA12: ${input_dir}/EN.4.2.2.f.analysis.c14.195001_ORCA12_L75_TS.nc    
         sn_sal_levitus: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05.nc
         sn_sal_woa13_omip: ${input_dir}/woa13_decav_salt_OMIPinit__3.6.0_ORCA05.L46_Kv1.0.0.nc
+        sn_sal_EN4_ORCA12: ${input_dir}/EN.4.2.2.f.analysis.c14.195001_ORCA12_L75_TS.nc 
         ice_init_kkg36f13h: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
         ice_init_orca05: ${input_dir}/Ice_initialization__3.6.0_ORCA05_Kv1.0.0.nc
 

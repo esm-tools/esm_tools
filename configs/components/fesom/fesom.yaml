@@ -315,9 +315,6 @@ choose_computer.name:
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
         levante:
                 add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/11.2.0-gcc-11.2.0"
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}
                                 NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include

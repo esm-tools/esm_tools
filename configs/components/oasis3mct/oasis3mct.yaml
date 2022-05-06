@@ -190,3 +190,6 @@ ignore_sources:
 #               algorithm:
 #
 #
+
+further_reading:
+    - oasis3mct/oasis3mct.env.yaml

@@ -307,8 +307,8 @@ nemo:
         # Small number means lots of runoff in each few grid cells which could be unstable
         # Large number means low runoff in many grid cells which is stable, but less accurate
         # Needs tuning for each NEMO resolution
-        loccunif_nb: 4
-        
+        loccunif_nb: 4        
+
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
 
@@ -407,6 +407,16 @@ oasis3mct:
 
         coupling_time_step: 10800
         export_mode: EXPORTED
+        
+        choose_general.resolution:
+                TCO95_ORCA05:
+                        # Default values (probably ok if grids similar)
+                        nb_of_neighbours_a2o: 9
+                        weight_a2o: 2.0
+                TCO95_ORCA12:
+                        # Suggested by Eric Maisonnave for Tco95 -> VIKING10
+                        nb_of_neighbours_a2o: 15
+                        weight_a2o: 0.1
         
         coupling_target_fields:
                 # Coupling ocean fields to atm
@@ -715,7 +725,7 @@ oasis3mct:
                                         search_bin: latitude
                                         nb_of_neighbours: ${nemo.loccunif_nb}
                                 - mapping:
-                                        mapname: rmp_rnfm_to_opac_LOCCUNIF_${nemo.resolution}.nc 
+                                        mapname: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc 
                                         map_regrid_on: dst
                 
                 # Remapping for calving
@@ -739,7 +749,7 @@ oasis3mct:
                                         search_bin: latitude
                                         nb_of_search_bins: 40
                                 - mapping:
-                                        mapname: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
+                                        mapname: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
                                         map_regrid_on: dst
                         postprocessing:
                                 conserv:
@@ -752,8 +762,8 @@ oasis3mct:
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 9
-                                        weight: 2.0
+                                        nb_of_neighbours: ${nb_of_neighbours_a2o}
+                                        weight: ${weight_a2o}
                                 - mapping:
                                         mapname: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
@@ -765,8 +775,8 @@ oasis3mct:
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 9                                        
-                                        weight: 2.0
+                                        nb_of_neighbours: ${nb_of_neighbours_a2o}
+                                        weight: ${weight_a2o}
                                 - mapping:
                                         mapname: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                                         map_regrid_on: src
@@ -954,7 +964,8 @@ oasis3mct:
                 rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
-                rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
+                #rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
+                rmp_c2o_RC: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
                 
                 # These four are for AGRIF-OpenIFS remapping
                 rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_BILINEAR_${nemo.resolution}.nc
@@ -983,7 +994,8 @@ oasis3mct:
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
-                rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
+                #rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
+                rmp_c2o_RC: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 
@@ -1034,7 +1046,8 @@ oasis3mct:
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
-                rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
+                #rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc 
+                rmp_c2o_RC: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 
@@ -1068,7 +1081,8 @@ oasis3mct:
                 #rmp_r2f_RF: rmp_rnfo_to_rnfo_GAUSWGT_${nemo.resolution}.nc
                 rmp_r2f_RF: rmp_rnfo_to_rnfo_BILINEAR_${nemo.resolution}.nc
                 rmp_r2o_RC: rmp_rnfm_to_opac_LOCCUNIF_${nemo.loccunif_nb}_${nemo.resolution}.nc
-                rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
+                #rmp_c2o_RC: rmp_rnfs_to_opaa_BILINEAR_${nemo.resolution}.nc
+                rmp_c2o_RC: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
                 rmp_a2o_LT: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                 rmp_a2o_AC: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
                 

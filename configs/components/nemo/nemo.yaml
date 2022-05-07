@@ -331,7 +331,7 @@ choose_version:
        # init and (if used) damping data
        sn_tem: sn_tem_EN4_ORCA12
        sn_sal: sn_sal_EN4_ORCA12
-       ice_init: ice_init_kkg36f13h
+       ice_init: ice_init_orca12
        cn_batmeter: bathy_meter 
 
     input_in_work:
@@ -829,6 +829,7 @@ input_sources:
         sn_sal_EN4_ORCA12: ${input_dir}/EN.4.2.2.f.analysis.c14.195001_ORCA12_L75_TS.nc 
         ice_init_kkg36f13h: ${input_dir}/Ice_initialization_KKG36F13H-R.nc
         ice_init_orca05: ${input_dir}/Ice_initialization__3.6.0_ORCA05_Kv1.0.0.nc
+        ice_init_orca12: ${input_dir}/Ice_initialization_ORCA12.nc 
 
         # restoring data / mask
         sn_sss_phc21_woa98: ${input_dir}/Levitus_p2.1_1m_01_12_S_correc_ORCA_R05_SSS_EB.nc

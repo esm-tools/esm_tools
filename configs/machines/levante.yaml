@@ -82,6 +82,7 @@ export_vars:
 
         # kh 21.02.22 support for cpu model dependent compiler options
         CPU_MODEL: AMD_EPYC_ZEN3
+        FESOM_PLATFORM_STRATEGY: levante.dkrz.de
 
 # kh 07.03.22
         I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so

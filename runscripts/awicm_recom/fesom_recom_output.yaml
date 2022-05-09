@@ -1,0 +1,155 @@
+# ===
+# Custom output streams of FESOM and RECOM
+# ===
+12_step_outputs: []
+daily_outputs: []
+monthly_outputs:
+    - aCO2
+    - aFe
+    - aN
+    - CO2y
+    - CO2f
+    - dpCO2s
+    - evap
+    - GPPd
+    - GPPn
+    - hfds # net heat flux
+    - lwrd # if fesom-standalone
+    - mlotst # mld by density thr
+    - NPPd
+    - NPPn
+    - O2f
+    - olat # if fesom-standalone
+    - olwout # if fesom-standalone
+    - omldamax # mld by mixing scheme
+    - osen # if fesom-standalone
+    - PAR
+    - pCO2s
+    - relax_salt # if namelist.oce:&boundary:restore_s_surf != 0
+    - rho
+    - rsdo # shortwave down
+    - runoff
+    - shum # if fesom-standalone
+    - siarean
+    - siareas
+    - sic
+    - siextentn
+    - siextents
+    - sisnconc
+    - sivoln
+    - sivols
+    - so
+    - soga
+    - sos
+    - tair # if fesom-standalone
+    - thdgr
+    - thdgrsn 
+    - thetao
+    - thetaoga
+    - tos
+    - tso # snapshot
+    - virtual_salt
+    - virtual_alk
+    - virtual_dic
+    - virtual_din
+    - virtual_dsi
+    - virtual_dfe
+    - virtual_oxy
+    - volo
+    - wnet
+    - zos
+yearly_outputs:
+    - alphaCO2
+    - benC
+    - benCalc
+    - benN
+    - benSi
+    - bgc01
+    - bgc02
+    - bgc03
+    - bgc04
+    - bgc05
+    - bgc06 # phytoplankton chl
+    - bgc07
+    - bgc08
+    - bgc09
+    - bgc10
+    - bgc11
+    - bgc12
+    - bgc13
+    - bgc14
+    - bgc15 # diatom chlorophyll
+    - bgc16
+    - bgc17
+    - bgc18
+    - bgc19
+    - bgc20
+    - bgc21
+    - bgc22
+    - denb
+    - diags3d01
+    - diags3d02
+    - evs
+    - flice
+    - fsitherm
+    - GNAd
+    - GNAn
+    - Hp
+    - Kw
+    - NNAd
+    - NNAn
+    - opottemptend
+    - pbo
+    - prlq
+    - prsn
+    - rDIN
+    - rDOC
+    - rDON
+    - rDSi
+    - sidmassevapsubl
+    - sidmasssi
+    - sidmassth
+    - sidmasstranx
+    - sidmasstrany
+    - sifllatstop 
+    - sisnmass 
+    - sisnthick
+    - sispeed
+    - sistrxdtop
+    - sistrxubot
+    - sistrydtop
+    - sistryubot
+    - sithick
+    - sitimefrac
+    - siu
+    - siv
+    - sivol
+    - sob
+    - sossq
+    - tauuo
+    - tauvo
+    - u2o
+    - uhice
+    - uhsnow
+    - uo
+    - urho
+    - uso
+    - uto
+    - uv
+    - uwind
+    - v2o
+    - vhice
+    - vhsnow
+    - vo
+    - vrho
+    - vso
+    - vto
+    - vwind
+    - w10w
+    - w2o
+    - wfo
+    - wo
+    - wso
+    - wto
+    - zossq
+

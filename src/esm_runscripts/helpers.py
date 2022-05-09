@@ -11,6 +11,7 @@ def vprint(message, config):
         print(message)
 
 
+# TODO: to be replaced by loguru. WIP (deniz)
 def print_datetime(config):
     """prints the datetime of the operation if `verbose_line_numbers` option is True"""
     if (config["general"].get("verbose_datetime_info", False)):

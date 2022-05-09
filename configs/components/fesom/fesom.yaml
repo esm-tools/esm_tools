@@ -23,7 +23,7 @@ available_versions:
 choose_version:
   '1.4-recom-awicm':
     destination: fesom-1.4
-    branch: co2_coupling
+    branch: fesom_recom_1.4_master
   '1.4-recom-mocsy-slp':
     branch: fesom-recom-mocsy-slp
     destination: fesom-1.4

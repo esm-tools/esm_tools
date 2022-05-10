@@ -55,6 +55,58 @@ choose_version:
 # YY: 29.04.22 to compile wiso code
     wiso_code: true
 
+# MA: changes specific to PAR-TRACERS go here so they don't destroy other working versions of FESOM-2.1)
+# TODO: remove this block when PAR-TRACERS is generalized!
+par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
+choose_fesom.par_tracers:
+    True:
+        # kh 21.02.22 use uppercase here
+        forcing_data_dir: "${pool_dir}/FORCING/"
+        # kh 21.02.22
+        asforcing: CORE2
+        namelists:
+                - namelist.config
+                - namelist.forcing
+                - namelist.oce
+                - namelist.ice
+                - namelist.io
+        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
+        #       - namelist.cvmix
+        #       - namelist.icepack
+        # kh 14.04.22 last used for core2 resolution on levante
+        # kh 19.04.22 disable for haralds's tests
+        nproc: 1024
+        # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
+        remove_fesom.namelist_changes.namelist.forcing.nam_sbc:
+            - nm_xwind_file
+            - nm_ywind_file
+            - nm_humi_file
+            - nm_qsr_file
+            - nm_qlw_file
+            - nm_tair_file
+            - nm_prec_file
+            - nm_snow_file
+            - nm_mslp_file
+            - nm_runoff_file
+            - nm_sss_data_file
+        config_files:
+                config:  config
+                forcing: forcing
+                ice:     ice
+                oce:     oce
+                io:      io
+        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
+        #       cvmix:   cvmix
+        #       icepack: icepack
+        # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
+                recom:   recom
+                io.recom.ciso: io.recom.ciso
+        # kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
+        add_config_sources:
+                recom:   "${namelist_dir}/namelist.recom"
+                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+#-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
+
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -95,13 +147,7 @@ choose_computer.name:
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
-
-# kh 21.02.22 orig
-#forcing_data_dir: "${pool_dir}/forcing/"
-
-# kh 21.02.22 use uppercase here
-forcing_data_dir: "${pool_dir}/FORCING/"
-
+forcing_data_dir: "${pool_dir}/forcing/"
 mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
@@ -111,11 +157,7 @@ tide_forcing_dir: "somepath"
 
 steps_per_day: "$(( 86400 / ${time_step} ))"
 
-# kh 21.02.22 orig
-#asforcing: JRA55
-
-# kh 21.02.22
-asforcing: CORE2
+asforcing: JRA55
 
 namelists:
         - namelist.config
@@ -123,31 +165,16 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+        - namelist.cvmix
+        - namelist.icepack
 
-# kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-#       - namelist.cvmix
-#       - namelist.icepack
+
 
 choose_resolution:
         CORE2:
                 nx: 126858
                 mesh_dir: "${fesom.mesh_base_dir}/core2/"
-
-# kh 21.02.22 orig                
-#               nproc: 288
-
-# kh 24.02.22 does not really match on levante
-#               nproc: 36
-
-# kh 24.02.22
-#               nproc: 32
-
-# kh 01.03.22 last used for pi-mesh resolution on levante
-#               nproc: 128
-
-# kh 14.04.22 last used for core2 resolution on levante
-# kh 19.04.22 disable for haralds's tests
-                nproc: 1024
+                nproc: 288
         pi:
                 nx: 3140
                 mesh_dir: "${fesom.mesh_base_dir}/pi/"
@@ -322,17 +349,15 @@ namelist_changes:
                         ncar_bulk_z_shum: ${ncar_bulk_z_shum}
 
                 nam_sbc:
-                
-# kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
-#                        nm_xwind_file: "${forcing_data_dir}/${forcing_folder}/${xwind_prefix}"
-#                        nm_ywind_file: "${forcing_data_dir}/${forcing_folder}/${ywind_prefix}"
-#                        nm_humi_file: "${forcing_data_dir}/${forcing_folder}/${humi_prefix}"
-#                        nm_qsr_file: "${forcing_data_dir}/${forcing_folder}/${qsr_prefix}"
-#                        nm_qlw_file: "${forcing_data_dir}/${forcing_folder}/${qlw_prefix}"
-#                        nm_tair_file: "${forcing_data_dir}/${forcing_folder}/${tair_prefix}"
-#                        nm_prec_file: "${forcing_data_dir}/${forcing_folder}/${prec_prefix}"
-#                        nm_snow_file: "${forcing_data_dir}/${forcing_folder}/${snow_prefix}"
-#                        nm_mslp_file: "${forcing_data_dir}/${forcing_folder}/${mslp_prefix}"
+                        nm_xwind_file: "${forcing_data_dir}/${forcing_folder}/${xwind_prefix}"
+                        nm_ywind_file: "${forcing_data_dir}/${forcing_folder}/${ywind_prefix}"
+                        nm_humi_file: "${forcing_data_dir}/${forcing_folder}/${humi_prefix}"
+                        nm_qsr_file: "${forcing_data_dir}/${forcing_folder}/${qsr_prefix}"
+                        nm_qlw_file: "${forcing_data_dir}/${forcing_folder}/${qlw_prefix}"
+                        nm_tair_file: "${forcing_data_dir}/${forcing_folder}/${tair_prefix}"
+                        nm_prec_file: "${forcing_data_dir}/${forcing_folder}/${prec_prefix}"
+                        nm_snow_file: "${forcing_data_dir}/${forcing_folder}/${snow_prefix}"
+                        nm_mslp_file: "${forcing_data_dir}/${forcing_folder}/${mslp_prefix}"
 
                         nm_xwind_var: ${nm_xwind_var}
                         nm_ywind_var: ${nm_ywind_var}
@@ -360,9 +385,8 @@ namelist_changes:
                         l_cloud: ${l_cloud}
                         l_snow: ${l_snow}
 
-# kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
-#                        nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
-#                        nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+                        nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
+                        nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
@@ -411,14 +435,8 @@ config_files:
         ice:     ice
         oce:     oce
         io:      io
-
-# kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-#       cvmix:   cvmix
-#       icepack: icepack
-
-# kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
-        recom:   recom
-        io.recom.ciso: io.recom.ciso
+        cvmix:   cvmix
+        icepack: icepack
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -428,10 +446,6 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         cvmix:   "${namelist_dir}/namelist.cvmix"
         icepack: "${namelist_dir}/namelist.icepack"
-
-# kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
-        recom:   "${namelist_dir}/namelist.recom"
-        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
 compiletime_environment_changes:
         add_export_vars:

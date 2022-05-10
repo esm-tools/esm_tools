@@ -17,8 +17,12 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                add_export_vars:
-                                        I_MPI_SLURM_EXT: 0
+                                choose_taskset:
+                                    False:
+                                        add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    "*":
+                                        taskset_chs: ""
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -30,8 +34,12 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                add_export_vars:
-                                        I_MPI_SLURM_EXT: 0
+                                choose_taskset:
+                                    False:
+                                        add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    "*":
+                                        taskset_chs: ""
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"

@@ -43,8 +43,12 @@ submitted: false
 hyper_flag: "" # No hyperthreading on ollie
 choose_heterogeneous_parallelization:
         True:
-                add_export_vars:
-                        I_MPI_SLURM_EXT: 0
+                choose_taskset:
+                    False:
+                        add_export_vars:
+                            I_MPI_SLURM_EXT: 0
+                    "*":
+                        taskset_chs: ""
                 add_unset_vars:
                         - "SLURM_DISTRIBUTION"
                         - "SLURM_NTASKS"

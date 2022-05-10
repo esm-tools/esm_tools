@@ -275,6 +275,8 @@ def check_changes_duplicates(yamldict_all, fpath):
     for yamldict in yamldict_all.values():
         # Check if any <variable>_changes or add_<variable> exists, if not, return
         # Perform the check only for the dictionary objects
+        changes_list = []
+        add_list = []
         if isinstance(yamldict, dict):
             changes_list = esm_parser.find_key(
                 yamldict, "_changes", "add_", paths2finds=[], sep=","
@@ -564,7 +566,10 @@ class EsmConfigFileError(Exception):
         # Message to return
         if len(report) == 0:
             # If no tabs are found print the original error message
-            print("\n\n\n" + yaml_error)
+            try:
+                print("\n\n\n" + yaml_error)
+            except:
+                self.message = ("\n\n A syntax error has been found in "+fpath+"\n")
         else:
             # If tabs are found print the report
             self.message = (

@@ -16,7 +16,7 @@ choose_version:
         # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
         branch: recom-update
     2.0-recom-awicm:
-    branch: oxygen
+        branch: oxygen
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
 destination: recom

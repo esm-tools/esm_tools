@@ -13,7 +13,8 @@ import pyfesom2 as pf
 
 class IcebergCalving:
     def __init__(self, ifile, mesh_path, icb_path, basin_file, 
-                latest_restart_file="", abg=[0,0,0]):
+                latest_restart_file="", abg=[0,0,0],
+                scaling_factor=[1, 1, 1, 1, 1, 1]):
         # PISM section
         self.ifile = ifile
         self.icb_path = icb_path
@@ -23,7 +24,7 @@ class IcebergCalving:
         self.elem2d_file = os.path.join(mesh_path, "elem2d.out")
         self.latest_restart_file = latest_restart_file
         self.abg = abg
-        self.name_of_discharge = "tendency_of_ice_amount_due_to_calving"
+        self.name_of_discharge = "tendency_of_ice_amount_due_to_discharge" #"tendency_of_ice_amount_due_to_calving"
         self.rho_ice = 920
         #self.bins = [0.01, 0.1, 1, 10, 100, 1000]
         #self.weights_area = [0.0005, 0.0005, 0.008, 0.025, 0.074, 0.893]
@@ -37,7 +38,8 @@ class IcebergCalving:
         self.area_max = 400           #[km2]
         self.min_disch_in_cell = 0.0   #[kg m-2 year-1]
         #self.scaling_factor = np.array([1000, 100, 10, 1, 1, 1])
-        self.scaling_factor = np.array([1, 1, 1, 1, 1, 1])
+        self.scaling_factor = np.array(scaling_factor)
+        print("LA DEBUG: scaling_factor = ", self.scaling_factor)
         self.thick = np.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
         self.thick_max = 0.25
         self.depth = self.thick * 7/8
@@ -286,10 +288,6 @@ class IcebergCalving:
         vrs = powerlaw.Power_Law(xmin=xmin, xmax=self.area_max, parameters=[a]).generate_random(N)
 
         x = vrs
-        if sum(x) == 0.0:
-            print(" * sum(x) = ", sum(x))
-            return pd.DataFrame(columns=['area', 'volume', 'bin'])
-
         corr = area_tot / sum(x)
         
         x = x * corr
@@ -312,6 +310,9 @@ class IcebergCalving:
         
         x = x[x>xmin]
         x = x[x<self.area_max]
+        if sum(x) == 0:
+            print(" * no icebegs")
+            return pd.DataFrame()
         
         # correction with respect to iceberg volume and not iceberg area
         thick = x**(1/2)
@@ -333,6 +334,9 @@ class IcebergCalving:
             x = x[x>xmin]
             x = x[x<self.area_max]
             x_tot = np.concatenate([x_tot, x])
+            if sum(x_tot) == 0:
+                print(" * no icebegs")
+                return pd.DataFrame()
         
             # correction with respect to iceberg volume and not iceberg area
             thick = x_tot**(1/2)

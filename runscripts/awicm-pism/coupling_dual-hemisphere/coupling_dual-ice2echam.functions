@@ -17,7 +17,7 @@ ice2echam() {
         ice2echam_1st
         wait
         for FILE in "echam6_new_orography_before_calnoro.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
-            cdo -s sellonlatbox,-180,180,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
+            cdo -s sellonlatbox,0,360,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
             ncecat ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
             ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
         done
@@ -26,7 +26,7 @@ ice2echam() {
         ice2echam_1st
         wait
         for FILE in "echam6_new_orography_before_calnoro.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
-            cdo -s sellonlatbox,-180,180,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
+            cdo -s sellonlatbox,0,360,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
             ncecat ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
             ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
         

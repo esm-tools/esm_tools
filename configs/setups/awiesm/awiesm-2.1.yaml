@@ -47,6 +47,7 @@ general:
             - "report_missing_files"
             - "_write_finalized_config"
             - "database_entry"
+            #- "update_icebergs"
 
         model: awiesm
 

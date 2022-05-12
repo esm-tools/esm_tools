@@ -123,6 +123,9 @@ def work_through_recipe(recipe, plugins, config):
         pdb.set_trace()
     recipes = recipe["recipe"]
     for index, workitem in enumerate(recipes, start=1):
+        if workitem=="update_icebergs":
+            print("LA DEBUG: workitem=", workitem)
+            print("LA DEBUG: plugins[workitem]=", plugins[workitem])
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
             message = (

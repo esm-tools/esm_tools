@@ -4,6 +4,7 @@ __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
 __version__ = "6.0.6"
 
+from .icb_apply_distribution_functions import *
 from .sim_objects import *
 from .batch_system import *
 from .database import *

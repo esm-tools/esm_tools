@@ -8,22 +8,17 @@ import sys
 import os
 import math
 from tqdm import tqdm
-import pyfesom2 as pf
-#from icb_helper import *
+import icb_helper as icbh
 
 class IcebergCalving:
-    def __init__(self, ifile, mesh_path, icb_path, basin_file, 
-                latest_restart_file="", abg=[0,0,0]):
+    def __init__(self, ifile, mesh_path, icb_path, basin_file):
         # PISM section
         self.ifile = ifile
         self.icb_path = icb_path
         self.basin_file = basin_file
-        self.mesh_path = mesh_path
         self.nod2d_file = os.path.join(mesh_path, "nod2d.out")
         self.elem2d_file = os.path.join(mesh_path, "elem2d.out")
-        self.latest_restart_file = latest_restart_file
-        self.abg = abg
-        self.name_of_discharge = "tendency_of_ice_amount_due_to_calving"
+        self.name_of_discharge = "tendency_of_ice_amount_due_to_calving" #"tendency_of_ice_mass_due_to_discharge"
         self.rho_ice = 920
         #self.bins = [0.01, 0.1, 1, 10, 100, 1000]
         #self.weights_area = [0.0005, 0.0005, 0.008, 0.025, 0.074, 0.893]
@@ -34,9 +29,8 @@ class IcebergCalving:
         self.weights_dist = [0.75, 0.175, 0.05, 0.02, 0.005]
         self.area_mean = [0.01, 0.1, 1, 10, 100]
         self.area_min = 0.01             #[km2]
-        self.area_max = 400           #[km2]
+        self.area_max = 10000           #[km2]
         self.min_disch_in_cell = 0.0   #[kg m-2 year-1]
-        #self.scaling_factor = np.array([1000, 100, 10, 1, 1, 1])
         self.scaling_factor = np.array([1, 1, 1, 1, 1, 1])
         self.thick = np.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
         self.thick_max = 0.25
@@ -45,23 +39,17 @@ class IcebergCalving:
 
         self._read_pism_file()
         self._get_pism_resolution()
+        #self._write_icb_mask()
         self._convert_to_kg_m2_year1()
         self._get_coords()
         self._read_basins_file()
 
         # FESOM section
-        self._read_mesh()
         self._read_nod2d_file()
         self._read_elem2d_file()
-        if not self.latest_restart_file=="":
-            print("LA DEUBG: Latest_restart_file found. Check for full FESOM cells")
-            self._get_full_cells()
-        else:
-            self.full_elems = []
 
     def create_dataframe(self):
         self._get_data()
-        self._write_icb_mask()
         self._find_basins()
         self._find_FESOM_elem()
 
@@ -75,41 +63,21 @@ class IcebergCalving:
 
         elem_tmp = []
         neigh_tmp = []
-        
-        # iterate over basins
         for b in self.df.groupby("basin"):
-
-            # get all FESOM elements nearest to discharge location within this basin 
-            # every element shall occur only once
             elem_tmp.append(b[1]["elems"].unique())
             n=[]
             for x in elem_tmp[-1]:
-                
-                # get all neighbouring elements for each FESOM element
-                # every above found FESOM element is associated with a list of neighbouring elements
                 n.append(self._get_FESOM_neighbours(x))
-                
-                ################################################   
-                #tmp = self._get_FESOM_neighbours(x)
-                #m=[]
-                #for y in tmp:
-                #    m = m + self._get_FESOM_neighbours(y)
-                #n.append(np.unique(m))
-                ################################################
             neigh_tmp.append(n)
-        
+
         self.df_agg["elems"] = elem_tmp
         self.df_agg["neigh."] = neigh_tmp
 
     def _set_min_disch_in_cell(self, min_disch_in_cell):
         self.min_disch_in_cell = min_disch_in_cell
 
-    def _read_mesh(self):
-        self.mesh = pf.load_mesh(self.mesh_path, self.abg)
-
     def _read_pism_file(self):
-        print(" * open latest discharge file: ", self.ifile)
-        self.fl = xr.open_dataset(self.ifile, decode_times=False).squeeze()
+        self.fl = xr.open_dataset(self.ifile).squeeze()
         self.disch_field = self.fl.get(self.name_of_discharge)
         self.disch_units = self.disch_field.units
 
@@ -133,13 +101,7 @@ class IcebergCalving:
         self.data = data[~np.isnan(data)]
 
     def _write_icb_mask(self): 
-        tmp = self.disch_field.where(self.disch_field < self.min_disch_in_cell).fillna(0) 
-        #tmp = xr.DataArray(self.disch_field.where(self.disch_field < self.min_disch_in_cell).squeeze(), 
-        #        coords={
-        #        "x": self.fl.x.values, 
-        #        "y": self.fl.y.values}, 
-        #        dims=["x", "y"], name=self.name_of_discharge)
-        tmp.to_netcdf(os.path.join(self.icb_path, "icb_mask.nc"))
+        self.data.to_netcdf(os.path.join(self.icb_path, "icb_mask.nc"))
 
     def _get_coords(self):
         lon_bnds = self.fl.lon_bnds.where(self.disch_field < self.min_disch_in_cell, drop=True)
@@ -164,7 +126,7 @@ class IcebergCalving:
         self.lats = lats
 
     def _read_basins_file(self):
-        fl = xr.open_dataset(self.basin_file, decode_times=False)
+        fl = xr.open_dataset(self.basin_file)
         if "basin" in fl:
             self.basins = fl.squeeze().basin
         elif "basins" in fl:
@@ -198,21 +160,6 @@ class IcebergCalving:
     def _read_elem2d_file(self):
         self.elem2d = pd.read_csv(self.elem2d_file, header=0, names=["nod1", "nod2", "nod3"], sep='\s+')
 
-    def _get_full_cells(self):
-        df = pd.read_csv(self.latest_restart_file, header=None, delim_whitespace=True)
-        df_group  = df[[1,2,18]].groupby(18)
-        full_elems_tmp = []
-
-        for felem in df_group:
-            ai = felem[1][1] * felem[1][2]
-            af = self.mesh.voltri[felem[0]-1]
-            if ai.sum() >= af:
-                print("*** FESOM element is full: ", felem[0])
-                print(" element area = ", af)
-                print(" iceberg area = ", ai)
-                full_elems_tmp.append(felem[0])
-        self.full_elems = full_elems_tmp
-
     def _find_FESOM_elem(self):
         points = []
         indices = []
@@ -227,7 +174,7 @@ class IcebergCalving:
         
         with tqdm(total=len(self.lons), file=sys.stdout, desc='find FESOM elements') as pbar:
             for lon, lat in zip(self.lons, self.lats):
-                tmp, ind = PointTriangle_distance(lon, lat, 
+                tmp, ind = icbh.PointTriangle_distance(lon, lat, 
                                                 np.array(lon1), np.array(lat1), 
                                                 np.array(lon2), np.array(lat2), 
                                                 np.array(lon3), np.array(lat3))
@@ -281,25 +228,25 @@ class IcebergCalving:
         # with corresponding share. 
    
         N = int(area_tot / median)
+        print("LA DEBUG: N = ", N)
+        if N == 0.0:
+            return pd.DataFrame([])
 
         # generates random variates of power law distribution
         vrs = powerlaw.Power_Law(xmin=xmin, xmax=self.area_max, parameters=[a]).generate_random(N)
 
         x = vrs
-        if sum(x) == 0.0:
-            print(" * sum(x) = ", sum(x))
-            return pd.DataFrame(columns=['area', 'volume', 'bin'])
-
         corr = area_tot / sum(x)
         
         x = x * corr
 
         # correction with respect to iceberg volume and not iceberg area
         thick = x**(1/2)
+        print("LA DEBUG: min(x) = ", min(x))
+        print("LA DEBUG: thick = ", thick[thick<self.thick_max])
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         corr = disch_tot / sum(vol) 
-        #corr = area_tot / sum(x)
         
         x = x * corr
         
@@ -308,7 +255,6 @@ class IcebergCalving:
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         vol_sum_0 = sum(vol)
-        #x_sum_0 = sum(x)
         
         x = x[x>xmin]
         x = x[x<self.area_max]
@@ -318,9 +264,7 @@ class IcebergCalving:
         thick[thick>self.thick_max] = self.thick_max
         vol = x * thick
         vol_sum_1 = sum(vol)
-        #x_sum_1 = sum(x)
         corr = vol_sum_0 / vol_sum_1
-        #corr = x_sum_0 / x_sum_1
         x = x * corr
 
         x_tot = x
@@ -339,7 +283,6 @@ class IcebergCalving:
             thick[thick>self.thick_max] = self.thick_max
             vol = x_tot * thick
             corr = disch_tot / sum(vol)
-            #corr = area_tot / sum(x_tot)
             x_tot = x_tot * corr
             
         # correction with respect to iceberg volume and not iceberg area
@@ -353,6 +296,7 @@ class IcebergCalving:
 
         # create data frame with iceberg elements: area, volume, bin
         ib_elems = pd.DataFrame({"area": area, 
+                                "thick": thick,
                                 "volume": vol,
                                 "bin": np.digitize(area, self.bins, right=True)})
        
@@ -509,6 +453,7 @@ class IcebergCalving:
                     # get mean of each chunk
                     chunks_mean_area = np.array([chunk.area.mean(axis=0) for chunk in chunks])
                     chunks_mean_volume = np.array([chunk.volume.mean(axis=0) for chunk in chunks])
+                    chunks_mean_thick = np.array([chunk.thick.mean(axis=0) for chunk in chunks])
     
                     # check if arrays are initialized
                     if not 'length' in locals():
@@ -574,7 +519,7 @@ class IcebergCalving:
                 # create icebergs for basin [m3]
                 ib_tmp = self._create_icebergs_within_basin(b)
                 if ib_tmp.empty:
-                    break
+                    continue
                 ib_elems = self._scale_icebergs(ib_tmp)
 
                 # make list of fesom elements and it's neighbours
@@ -584,9 +529,8 @@ class IcebergCalving:
                 felems = list(set(felems))
   
                 ##############################################################
-                # exclude coastal nodes (and full cells)
-                elems_to_drop = self.full_elems
-                
+                # exclude coastal nodes
+                elems_to_drop = []
                 for felem in felems:
                     nodes = self.elem2d.iloc[felem].values
                     coastal = False
@@ -635,14 +579,12 @@ class IcebergCalving:
                                 ib_elems_loc = pd.DataFrame({"length": [ib_elem.length], 
                                                             "depth": [ib_elem.depth],
                                                             "scaling": [ib_elem.scaling],
-                                                            "lon": [lon], "lat": [lat],
-                                                            "felem": [felem]})
+                                                            "lon": [lon], "lat": [lat]})
                             else:
                                 ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": [ib_elem.length], 
                                                                                     "depth": [ib_elem.depth],
                                                                                     "scaling": [ib_elem.scaling],
-                                                                                    "lon": [lon], "lat": [lat],
-                                                                                    "felem": [felem]})])
+                                                                                    "lon": [lon], "lat": [lat]})])
                             pbar.update(1)
                 pbar.update(1)
    
@@ -652,59 +594,3 @@ class IcebergCalving:
             np.savetxt(os.path.join(self.icb_path, "LENGTH.dat"), ib_elems_loc.length.values * 1e3)
             np.savetxt(os.path.join(self.icb_path, "HEIGHT.dat"), ib_elems_loc.depth.values * 1e3)
             np.savetxt(os.path.join(self.icb_path, "SCALING.dat"), ib_elems_loc.scaling.values)
-            np.savetxt(os.path.join(self.icb_path, "FELEM.dat"), ib_elems_loc.felem.values)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-    def to_dict(self):
-        return {'x': self.x, 'y': self.y}
-
-
-# https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
-def sign(p1, p2, p3):
-    return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
-
-def PointInTriangle(pt, v1, v2, v3):
-    d1 = sign(pt, v1, v2)
-    d2 = sign(pt, v2, v3)
-    d3 = sign(pt, v3, v1)
-
-    has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
-    has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
-
-    return not (has_neg and has_pos)
-
-def PointTriangle_distance(lon0, lat0, lon1, lat1, lon2, lat2, lon3, lat3):
-    d1 = ne.evaluate('(lon1 - lon0)**2 + (lat1 - lat0)**2')
-    d2 = ne.evaluate('(lon2 - lon0)**2 + (lat2 - lat0)**2')
-    d3 = ne.evaluate('(lon3 - lon0)**2 + (lat3 - lat0)**2')
-    
-    dis = d1+d2+d3
-    ind = np.where(dis == np.amin(dis))
-   
-    p1 = point(lon1[ind], lat1[ind])
-    p2 = point(lon2[ind], lat2[ind])
-    p3 = point(lon3[ind], lat3[ind])
-
-    return [p1, p2, p3], ind[0][0]

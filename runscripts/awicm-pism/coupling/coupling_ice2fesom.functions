@@ -245,9 +245,9 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             python ${FUNCTION_PATH}/utils/rotate_mesh.py ${MESH_DIR_fesom} ${COUPLE_DIR}
             cp ${MESH_DIR_fesom}/elem2d.out ${COUPLE_DIR}/elem2d.out
         fi
-        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR} ${BASIN_FILE}
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR} ${BASIN_FILE} ${COUPLE_DIR}/../restart/fesom/iceberg.restart
     else
-        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR} ${BASIN_FILE}
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR} ${BASIN_FILE} ${COUPLE_DIR}/../restart/fesom/iceberg.restart
     fi
 
     echo; echo "    * Finished iceberg generation"

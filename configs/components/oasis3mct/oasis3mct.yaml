@@ -70,6 +70,14 @@ install_libs:
 # this could be _19900101-19901231 for example
 oasis_date_stamp: ""
 
+#
+# some default settings for remapping
+# GAUSWGT with 9 neighbours and weight 2.0
+# is fine when resolutions are similar
+#
+nb_of_neighbours_a2o: 9
+weight_a2o: 2.0
+
 log_files:
         nout: nout
         debug_r1: debug_r1

@@ -269,6 +269,7 @@ nemo:
                 TCO95_ORCA12:
                         nproca: 24
                         nprocb: 20
+                        loccunif_nb: 144
 
         namelist_changes:
                 namelist_cfg:

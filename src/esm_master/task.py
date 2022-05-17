@@ -435,7 +435,7 @@ class Task:
                 print(
                     "Missing folder "
                     + folder
-                    + " detected. Please run 'make get-"
+                    + " detected. Please run 'esm_master install-"
                     + self.package.raw_name
                     + "' first."
                 )

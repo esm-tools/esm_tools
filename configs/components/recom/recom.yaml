@@ -90,7 +90,6 @@ namelist_changes:
         paco2_flux_param:
             CO2_for_spinup: "${CO2_for_spinup}"
 
-
 choose_lresume:
     true:
         add_namelist_changes:
@@ -130,26 +129,7 @@ restart_out_in_work:
 restart_out_sources:
     bio_restart: fesom.${end_date!syear}.bio.nc
 
-# NOTE: The commented part will be taken care of in the FESOM yaml file since
-#       Recom is a library of Fesom
-# TODO: remove the commented part after tests are passed
-# Deniz
-
-# default output of recom
-# `monthly_outputs` and others must be defined in the respective setup yamls 
-# which use recom, e.g. fesom-recom.yaml or awicm_recom.yaml
-# outdata_files:
-        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT
-        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT
-        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT
-# outdata_in_work:
-        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-# outdata_sources:
-        # "[[recom.yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+# default output of component `recom-2.0` is defined in configs/components/fesom.yaml
 
 choose_computer.name:
     blogin:

@@ -78,7 +78,6 @@ core:
                         - "database_entry"
 
                 batch_system:
-                        #- "calculate_requirements"
                         - "write_simple_runscript"
                         - "write_env"
                         - "find_openmp"

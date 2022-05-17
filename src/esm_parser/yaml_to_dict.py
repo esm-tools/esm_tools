@@ -6,9 +6,90 @@ import yaml
 from loguru import logger
 from ruamel.yaml import YAML
 
+import ipdb
 import esm_parser
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
+
+
+def add_origin_comments(
+    yaml_dict, fpath, lc_info=None, comment_func=None, recursion_level=0, debug=False
+):
+    """
+    Adds the comments from the yaml file to the yaml_dict.
+
+    Parameters
+    ----------
+    yaml_dict : dict
+        Dictionary containing the yaml file
+    fpath : str
+        Path to the yaml file
+    lc_info : dict
+        Dictionary containing the line and column information
+    comment_func : callable
+        Function to be called to add the comment to the yaml_dict
+    recursion_level : int
+        Recursion level of the function. Used for debugging
+    """
+    if debug:
+        print(f"{lc_info=}, {comment_func=}, {recursion_level=}")
+    if lc_info is None:
+        try:
+            assert hasattr(yaml_dict, "lc")
+        except AttributeError:
+            for attr in dir(yaml_dict):
+                if debug:
+                    print(f"{attr} {type(attr)}")
+    else:
+        if debug:
+            print(id(lc_info))
+    for key in yaml_dict.keys():
+        if isinstance(yaml_dict[key], dict):
+            if debug:
+                print(
+                    f"Enter recursion {recursion_level} for {yaml_dict[key]}: {type(yaml_dict[key])}"
+                )
+            add_origin_comments(
+                yaml_dict[key],
+                fpath,
+                lc_info=yaml_dict[key].lc,
+                comment_func=yaml_dict[key].yaml_add_eol_comment,
+                recursion_level=recursion_level + 1,
+            )
+        else:
+            if debug:
+                print("Type of yaml_dict is {}".format(type(yaml_dict)))
+                print("Type of key is {}".format(type(yaml_dict[key])))
+            try:
+                if comment_func is None:
+                    yaml_dict[key].yaml_add_eol_comment(
+                        f"ESM_ORIGIN: {fpath}:{yaml_dict[key].lc.value(key)}",
+                        key,
+                    )
+                else:
+                    if debug:
+                        print(f"Using {comment_func=}")
+                    comment_func(f"ESM_ORIGIN: {fpath}:{lc_info.value(key)}", key)
+            except KeyError:
+                if debug:
+                    print(f"Key {key} not found in {yaml_dict}")
+                    ipdb.set_trace()
+            except AttributeError:
+                try:
+                    yaml_dict.yaml_add_eol_comment(
+                        f"ESM_ORIGIN: {fpath}:{lc_info.value(key)}", key
+                    )
+                except AttributeError:
+                    try:
+                        yaml_dict.yaml_add_eol_comment(
+                            f"ESM_ORIGIN: {fpath}:{yaml_dict.lc.value(key)}", key
+                        )
+                    except Exception as e:
+                        print(e)
+                        if debug:
+                            print(f"{yaml_dict[key]} {type(yaml_dict[key])}")
+                        ipdb.set_trace()
+                        raise
 
 
 class EsmConfigFileError(Exception):
@@ -146,28 +227,6 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
-
-def add_origin_metadata(my_dict, filename):
-    for key, value in my_dict.items():
-        if isinstance(value, dict):
-            add_origin_metadata(value, filename)
-        # FIXME LISTS
-        import ipdb
-        ipdb.set_trace()
-        setattr(key.lc, "filename", filename)
-
-
-def add_origin_comments(my_dict):
-    for key, value in my_dict.items():
-        if isinstance(value, dict):
-            add_origin_comments(value)
-        # FIXME LISTS
-        try:
-            my_dict[key].yaml_add_eol_comment(my_dict[key].filename)
-        except AttributeError:
-            print(value, key)
-
-
 def yaml_file_to_dict(filepath):
     """
     Given a yaml file, returns a corresponding dictionary.
@@ -202,17 +261,20 @@ def yaml_file_to_dict(filepath):
                 yaml_file.seek(0, 0)
                 # Actually load the file
                 yaml_from_ruamel = YAML()
-                import ipdb
 
                 yaml_load = yaml_from_ruamel.load(yaml_file)
-                ipdb.set_trace()
-                add_origin_metadata(yaml_load, yaml_file)
-                print(yaml_load)
-                add_origin_comments(yaml_load)
-                with open("foo.yaml","w") as f:
-                    yaml_from_ruamel.dump(yaml_load, f)
-                ipdb.set_trace()
+                try:
+                    add_origin_comments(yaml_load, yaml_file.name)
+                    print("Added comments to {}".format(yaml_file.name))
+                except:  # BAD IDEA!!!!
+                    print(f"Unable to add comments to {yaml_file.name}")
+                    import ipdb
 
+                    ipdb.set_trace()
+                    add_origin_comments(yaml_load, yaml_file.name, debug=True)
+                    ipdb.set_trace()
+
+                return yaml_load
                 # yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)

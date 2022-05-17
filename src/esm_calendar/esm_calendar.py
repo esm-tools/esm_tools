@@ -42,6 +42,7 @@ def date_range(start_date, stop_date, frequency):
 
 
 class Dateformat(object):
+    yaml_tag = "!Dateformat"
     datesep = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
     timesep = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
     dtsep = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
@@ -96,6 +97,7 @@ class Calendar(object):
         (considering leapyears)
     """
 
+    yaml_tag = "!esm_calendar"
     timeunits = ["years", "months", "days", "hours", "minutes", "seconds"]
     monthnames = [
         "Jan",
@@ -259,6 +261,12 @@ class Date(object):
     Methods
     -------
     """
+
+    yaml_tag = "!esm_date"
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return dumper.represent_mapping(cls.yaml_tag, data.__dict__)
 
     def __init__(self, indate, calendar=Calendar()):
         printhours = True

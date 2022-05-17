@@ -219,9 +219,14 @@ def reuse_sources(config):
     return config
 
 
+
+
 def choose_needed_files(config):
     # aim of this function is to only take those files specified in fileytype_files
     # (if exists), and then remove filetype_files
+    import pprint
+
+    print = pprint.pprint
 
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
@@ -239,11 +244,10 @@ def choose_needed_files(config):
                         + filetype
                         + " of model "
                         + model,
-                        flush=True,
                     )
-                    print(config[model][filetype + "_files"], flush=True)
-                    print(config[model][filetype + "_sources"], flush=True)
-                    print(datetime.datetime.now(), flush=True)
+                    print(config[model][filetype + "_files"],)
+                    print(config[model][filetype + "_sources"],)
+                    print(datetime.datetime.now(),)
                     sys.exit(-1)
                 new_sources.update({categ: config[model][filetype + "_sources"][name]})
 

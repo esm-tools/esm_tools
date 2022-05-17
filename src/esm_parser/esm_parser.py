@@ -268,7 +268,7 @@ def complete_config(user_config):
     while True:
         for model in list(user_config):
             if "further_reading" in user_config[model]:
-                if type(user_config[model]["further_reading"]) == list:
+                if isinstance(user_config[model]["further_reading"], list):
                     for additional_file in user_config[model]["further_reading"]:
                         if (
                             not additional_file
@@ -277,7 +277,7 @@ def complete_config(user_config):
                             user_config["general"]["additional_files"].append(
                                 additional_file
                             )
-                elif type(user_config[model]["further_reading"]) == str:
+                elif isinstance(user_config[model]["further_reading"], str):
                     additional_file = user_config[model]["further_reading"]
                     if (
                         not additional_file
@@ -503,7 +503,7 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     if attach_key in config:
         attach_value = config[attach_key]
         del config[attach_key]
-        if type(attach_value) == str:
+        if isinstance(attach_value, str):
             attach_value = [attach_value]
         for attach_value in attach_value:
             try:
@@ -831,10 +831,10 @@ def remove_entries_from_chapter(config, remove_chapter, remove_entries):
 def add_entries_from_chapter(config, add_chapter, add_entries):
     my_entries = copy.deepcopy(add_entries)
     if add_chapter in config:
-        if type(config[add_chapter]) == list:
+        if isinstance(config[add_chapter], list):
             for entry in my_entries:
                 config[add_chapter].append(entry)
-        elif type(config[add_chapter]) == dict:
+        elif isinstance(config[add_chapter], dict):
             # MA: I'm not supper happy about the resolve_nested_adds implementation
             dict_merge(
                 config[add_chapter],
@@ -1789,6 +1789,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     else:
         do_func_for = []
 
+    do_func_for = tuple(do_func_for)
+
     # Python 2/3 error in YAML parser, bad workaround:
     if six.PY2:
         if isinstance(right, unicode):
@@ -1809,7 +1811,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             right.update({returned_key: old_value})
 
     # logger.debug("right is a %s!", type(right))
-    if type(right) in do_func_for:
+    if isinstance(right, do_func_for):
         if isinstance(right, dict):
             keys = list(right)
             for key in keys:
@@ -1849,7 +1851,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 extremely undesirable way of solving this
                 Miguels fault
             """
-            if type(item) == str and "[[" in item and func == list_to_multikey:
+            if isinstance(item, str) and "[[" in item and func == list_to_multikey:
                 newright += new_item
             else:
                 newright.append(new_item)
@@ -1944,7 +1946,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
         ):
             var_result, var_attrs = actually_find_variable(tree, var, full_config)
 
-            if type(var_result) == str:
+            if isinstance(var_result, str):
                 if "${" in var_result:
                     var_result = find_variable(
                         tree,
@@ -2297,6 +2299,10 @@ def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     entry = rhs
+    if "list_1" in str(entry):
+        print(entry)
+        import pdb
+        pdb.set_trace()
     if isinstance(entry, Date):
         return entry
     if "${" in str(entry):
@@ -2385,7 +2391,7 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if type(result) == list:
+        if isinstance(result, list):
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
@@ -2421,15 +2427,25 @@ def marked_date_to_date_object(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and lhs is not "update":
         # if isinstance(entry, str) and DATE_MARKER in entry and "<--" not in entry:
         while DATE_MARKER in entry and "${" not in entry:
+            import copy
+            original_entry = copy.deepcopy(entry)
             entry = entry.replace(DATE_MARKER, "")
             if "!" in entry:
                 actual_date, date_attr = entry.split("!", 1)
             else:
                 actual_date, date_attr = entry, None
-            entry = Date(actual_date, config["general"]["calendar"])
+            try:
+                entry = Date(actual_date, config["general"]["calendar"])
+            except ValueError:
+                import ipdb
+                print(original_entry)
+                print(lhs)
+                print(actual_date)
+                print(config["general"]["calendar"])
+                ipdb.set_trace()
             if date_attr:
                 rentry = []
                 for attr in date_attr.split("!"):
@@ -2457,7 +2473,7 @@ def perform_actions(tree, rhs, config):
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    if type(entry) == str:
+    if isinstance(entry, str):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
@@ -2516,7 +2532,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2525,9 +2541,9 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return True
-    elif type(value) == str:
+    elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
             return True
     return False
@@ -2802,6 +2818,8 @@ def user_error(error_type, error_text, exit_code=1):
 class GeneralConfig(dict):  # pragma: no cover
     """All configs do this!"""
 
+    yaml_tag = u"!GeneralConfig"
+
     def __init__(self, model, version, user_config):
         super(dict, self).__init__()
 
@@ -2828,7 +2846,7 @@ class GeneralConfig(dict):  # pragma: no cover
         self._config_init(user_config)
         for k, v in six.iteritems(self.config):
             self.__setitem__(k, v)
-        del self.config
+        #del self.config
 
     def _config_init(self, user_config):
         raise NotImplementedError(

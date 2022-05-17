@@ -3,10 +3,12 @@ import time
 import shutil
 import subprocess
 import copy
+import sys
 
 import f90nml
 import six
 import yaml
+import ipdb
 import stat
 
 import esm_tools
@@ -248,6 +250,7 @@ def _write_finalized_config(config):
     ----------
     config : esm-tools config object
     """
+    print("Starting to dump config...")
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -304,9 +307,7 @@ def _write_finalized_config(config):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
@@ -324,7 +325,71 @@ def _write_finalized_config(config):
             config_final, Dumper=EsmConfigDumper, width=10000, indent=4
         )  # PrevRunInfo
         config_file.write(out)
+    with open(config_file_path + ".comments", "w") as config_file:
+        from ruamel.yaml import YAML
+
+        print(
+            f"Dumping extra commented info to {config_file_path.replace('.yaml', '.yaml.comments')}"
+        )
+        ruamel_yaml = YAML()
+        ruamel_yaml.register_class(esm_calendar.esm_calendar.Calendar)
+        ruamel_yaml.register_class(esm_calendar.esm_calendar.Dateformat)
+        ruamel_yaml.register_class(f90nml.namelist.Namelist)
+        ruamel_yaml.register_class(batch_system)
+        ruamel_yaml.register_class(esm_runscripts.slurm.Slurm)
+        ruamel_yaml.register_class(esm_runscripts.coupler.coupler_class)
+        ruamel_yaml.register_class(esm_runscripts.oasis.oasis)
+        ruamel_yaml.register_class(esm_calendar.esm_calendar.Date)
+        try:
+            ruamel_yaml.dump(config_final.config, config_file)
+            print("Didn't crash")
+        except Exception as original_exception:
+            try_to_dump(config_final.config)
+            print("Crashed! :-(")
+            print(list(config_final.config.keys()))
+            for key, value in config_final.config.items():
+                print(f"{key}: {type(value)}")
+                try:
+                    with open(config_file_path + f".{key}.comments", "a") as f:
+                        ruamel_yaml.dump(value, f)
+                        print(f"Debug dump to file {f.name}")
+                        print(value)
+                except Exception as e:
+                    print(e)
+                    raise original_exception
+            ipdb.set_trace()
+    print("Finished dumping config")
     return config
+
+
+def try_to_dump(config_final, address=None, print_me=False):
+    if address is None:
+        address = ["toplevel"]
+    for key, value in config_final.items():
+        if isinstance(value, dict):
+            try_to_dump(value, address + [str(key)], print_me=print_me)
+        try:
+            with open("_".join(address) + ".yaml", "a") as f:
+                from ruamel.yaml import YAML
+
+                ruamel_yaml = YAML()
+                ruamel_yaml.register_class(esm_calendar.esm_calendar.Calendar)
+                ruamel_yaml.register_class(esm_calendar.esm_calendar.Dateformat)
+                ruamel_yaml.register_class(f90nml.namelist.Namelist)
+                ruamel_yaml.register_class(batch_system)
+                ruamel_yaml.register_class(esm_runscripts.slurm.Slurm)
+                ruamel_yaml.register_class(esm_runscripts.coupler.coupler_class)
+                ruamel_yaml.register_class(esm_runscripts.oasis.oasis)
+                ruamel_yaml.register_class(esm_calendar.esm_calendar.Date)
+                ruamel_yaml.dump(value, f)
+                if print_me:
+                    ruamel_yaml.dump(value, sys.stdout)
+                print(f"Dumped to {f.name}")
+        except Exception as e:
+            print("Problem dumping: ", ".".join(address) + "." + str(key), type(value))
+            import ipdb
+
+            ipdb.set_trace()
 
 
 def _show_simulation_info(config):

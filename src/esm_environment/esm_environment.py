@@ -49,6 +49,8 @@ class EnvironmentInfos:
         will loop through all the available keys in ``complete_config``.
     """
 
+    yaml_tag = "!EnvironmentInfos"
+
     def __init__(self, run_or_compile, complete_config=None, model=None):
         # Ensure local copy of complete config to avoid mutating it... (facepalm)
         complete_config = copy.deepcopy(complete_config)

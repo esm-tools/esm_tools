@@ -36,7 +36,13 @@ def mini_resolve_variable_date_file(date_file, config):
                         )
                         print(f"date_file = {date_file}")
                         sys.exit(1)
-        date_file = pre + answer + post
+        try:
+            date_file = pre + answer + post
+        except TypeError:
+            print(f"We need to do a string conversion here: {answer}")
+            print(f"{answer=}")
+            print(f"str(answer) = {str(answer)}")
+            date_file = pre + str(answer) + post
     return date_file
 
 

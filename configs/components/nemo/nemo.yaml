@@ -357,6 +357,11 @@ choose_version:
           #namdyn_ldf:
           #   rn_ahm_0_blp: -2.4e10
           #   rn_ahm_m_blp: -8.e9
+       
+       namelist_ice_cfg:
+          namicedyn:
+             ahi0: 200  # reduce horizontal eddy diffusivity coefficient for sea-ice [m2/s]
+             telast: 120 # timescale for elastic EVP waves
 
   # NEMO standalone setup
   ORCA05_LIM2_NEMO_JRA55_test:
@@ -763,6 +768,8 @@ choose_levels:
       add_namelist_changes:
          namelist_cfg:
             namdom:
+               # very important to set hmin to -10 or lower
+               rn_hmin: -10 
                rn_e3zps_min: 25.0
                rn_e3zps_rat: 0.2
                ppsur: -3958.951371276829 

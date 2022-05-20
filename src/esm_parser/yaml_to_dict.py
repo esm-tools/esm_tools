@@ -61,7 +61,7 @@ def str_to_bool(string):
     str_to_bool('false') -> False
     str_to_bool('0') -> False
     """
-    truthy_values = ['true', '1']
+    truthy_values = ["true", "1"]
     return string.lower() in truthy_values
 
 
@@ -87,7 +87,12 @@ def node_to_value(node):
 
     # eg. 'tag:yaml.org,2002:int'
     tag = node.tag.split(":")[-1]
-    tag_to_constructor_map = {'int': int, 'float': float, 'str': str, 'bool': str_to_bool}
+    tag_to_constructor_map = {
+        "int": int,
+        "float": float,
+        "str": str,
+        "bool": str_to_bool,
+    }
     constructor = tag_to_constructor_map.get(tag, None)
     if constructor is None:
         raise TypeError(f"{tag} can not be used as a constructor")
@@ -96,7 +101,7 @@ def node_to_value(node):
 
 def flatten_yaml_sequence(sequence):
     """Recursively flatten a YAML sequence and return a generator.
-    
+
     Parameters
     ----------
     sequence : yaml.SequenceNode)
@@ -271,9 +276,9 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
-    #TODO: (Deniz): replace with a ESM-Tools loader
+    # TODO: (Deniz): replace with a ESM-Tools loader
     loader = create_env_loader()
-    #TODO
+    # TODO
     loader.add_constructor(ESM_FLATTEN_TAG, flat_sequence_constructor)
 
     for extension in YAML_AUTO_EXTENSIONS:
@@ -641,7 +646,7 @@ def check_duplicates(src):
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, map_constructor
     )
     new_loader = create_env_loader(loader=PreserveDuplicatesLoader)
-    #TODO: (Deniz): replace with a ESM-Tools loader
+    # TODO: (Deniz): replace with a ESM-Tools loader
     new_loader.add_constructor(ESM_FLATTEN_TAG, flat_sequence_constructor)
     return yaml.load(src, Loader=new_loader)
 
@@ -677,7 +682,7 @@ class EsmConfigFileError(Exception):
             try:
                 print("\n\n\n" + yaml_error)
             except:
-                self.message = ("\n\n A syntax error has been found in "+fpath+"\n")
+                self.message = "\n\n A syntax error has been found in " + fpath + "\n"
         else:
             # If tabs are found print the report
             self.message = (

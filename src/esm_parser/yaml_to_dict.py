@@ -9,6 +9,12 @@ import esm_parser
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
 
+# ===
+# Extra tags to extend the basic YAML capabilities
+# ===
+# makes the lists flat after merging
+ESM_FLATTEN_TAG = "!esm-flatten"
+
 
 class EsmConfigFileError(Exception):
     """
@@ -49,6 +55,101 @@ class EsmConfigFileError(Exception):
         super().__init__(self.message)
 
 
+def str_to_bool(string):
+    """Handy function to cast strings to bools. Eg.
+    bool('false') -> True
+    str_to_bool('false') -> False
+    str_to_bool('0') -> False
+    """
+    truthy_values = ['true', '1']
+    return string.lower() in truthy_values
+
+
+def node_to_value(node):
+    """Converts a PyYAML node to its corresponding value
+
+    Parameters
+    ----------
+    node : yaml.Node
+
+    Returns
+    -------
+    Any supported Python scalar data type (eg. int, float, bool)
+
+    Raises
+    ------
+    TypeError
+        - When input is not a PyYAML node
+        - When type to cast is not supported
+    """
+    if not isinstance(node, yaml.Node):
+        raise TypeError(f"{node} ({type(node).__qualname__}) is not a YAML Node object")
+
+    # eg. 'tag:yaml.org,2002:int'
+    tag = node.tag.split(":")[-1]
+    tag_to_constructor_map = {'int': int, 'float': float, 'str': str, 'bool': str_to_bool}
+    constructor = tag_to_constructor_map.get(tag, None)
+    if constructor is None:
+        raise TypeError(f"{tag} can not be used as a constructor")
+    return constructor(node.value)
+
+
+def flatten_yaml_sequence(sequence):
+    """Recursively flatten a YAML sequence and return a generator.
+    
+    Parameters
+    ----------
+    sequence : yaml.SequenceNode)
+        (unflat) list to be processed
+
+    Yields
+    ------
+    node_to_value : yaml.ScalarNode
+        YAML node that is casted to its corresponding Python type
+
+    Raises
+    ------
+    TypeError
+        When the items are not the instances of yaml.SequenceNode or yaml.ScalarNode
+    """
+    if isinstance(sequence, yaml.ScalarNode):
+        yield node_to_value(sequence.value)
+
+    # LBYL type checks
+    if isinstance(sequence, yaml.MappingNode):
+        # I am sure that someone will try to flatten a dictionary instead
+        # of a list
+        err_type = "Type Error"
+        msg = "Dictionaries can not be flattened. Only lists (aka arrays, sequences)"
+        esm_parser.user_error(err_type, msg)
+
+    if not isinstance(sequence, yaml.SequenceNode):
+        raise TypeError(f"Unable to flatten the type: {type(sequence)}")
+
+    # Recursively loop over a SequenceNode
+    for item in sequence.value:
+        if isinstance(item, yaml.SequenceNode):
+            yield from flatten_yaml_sequence(item)
+
+        elif isinstance(item, yaml.ScalarNode):
+            yield node_to_value(item)
+
+        else:
+            raise TypeError(f"{ESM_FLATTEN_TAG} can only take scalar nodes, not {item}")
+
+
+# Handling of the ESM_FLATTEN_TAG (!esm-flatten)
+def flat_sequence_constructor(loader, node):
+    """Will be called when `ESM_FLATTEN_TAG` is encountered"""
+    # Take the node that contains ESM_FLATTEN_TAG and convert the generator
+    # to a list
+    return list(flatten_yaml_sequence(node))
+
+
+# TODO (19/5/2022), Deniz:
+# - I think we need to rename this loader to something better: Eg. esm_yaml_loader to make it more general.
+# - Some of the function can be moved out to make it shorter
+# --------
 # This next part is stolen here:
 # https://medium.com/swlh/python-yaml-configuration-with-environment-variables-parsing-77930f4273ac
 # Deniz: unfortunately this example as well as the other examples and even
@@ -142,6 +243,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
         return value
 
     loader.add_constructor(tag, constructor_env_variables)
+
     return loader
 
 
@@ -169,7 +271,11 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
+    #TODO: (Deniz): replace with a ESM-Tools loader
     loader = create_env_loader()
+    #TODO
+    loader.add_constructor(ESM_FLATTEN_TAG, flat_sequence_constructor)
+
     for extension in YAML_AUTO_EXTENSIONS:
         try:
             with open(filepath + extension) as yaml_file:
@@ -535,6 +641,8 @@ def check_duplicates(src):
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, map_constructor
     )
     new_loader = create_env_loader(loader=PreserveDuplicatesLoader)
+    #TODO: (Deniz): replace with a ESM-Tools loader
+    new_loader.add_constructor(ESM_FLATTEN_TAG, flat_sequence_constructor)
     return yaml.load(src, Loader=new_loader)
 
 

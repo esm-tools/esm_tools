@@ -196,7 +196,7 @@ choose_iolibraries:
             # kh 17.02.22 orig mistral, not yet tested on levante (but should work)
             PERL5LIB: /usr/lib64/perl5
 
-            LD_LIBRARY_PATH[(0)]: $NETCDFROOT/lib:$NETCDFFROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH
 
             # avoid GLIBCXX_3.4.15 not found error
             # MA: This solves nothing for AWICM3

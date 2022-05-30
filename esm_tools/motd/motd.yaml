@@ -113,3 +113,27 @@ release6.0:
             - and many others...\n\n"
         action: DELAY(1)
         announcement: true
+
+release6.7:
+        package: "esm_tools"
+        versions: "<6.7.0"
+        message: "\x1b[1m\x1b[96mSUPPORT FOR LEVANTE\x1b[0m\n
+
+            We are very happy to announce that \x1b[96mLevante HPC\x1b[0m from \x1b[96mDKRZ\x1b[0m is now supported in\n
+            release \x1b[96m6.7\x1b[0m of \x1b[1m\x1b[96mESM-Tools\x1b[0m!\n
+
+            Many models needed changes in the CMake files to work optimally with the\n
+            AMD-processor architecture in this new system. Here you can find a list of\n
+            models and versions supported:\n
+            \t\x1b[35mhttps://github.com/esm-tools/esm_tools/discussions/663\x1b[0m\n
+
+            If the model you are aiming to use is not in that list, please add a comment\n
+            to the discussion in the link, stating the model's name, version, branches...\n
+            and \x1b[35mcontact the model developers\x1b[0m for them to do the necessary\n
+            changes in the CMake files.\n
+
+            To upgrade to version \x1b[96m6.7\x1b[0m follow these simple steps:\n
+            \x1b[96m1.\x1b[0m \x1b[35mcd <YOUR_PATH>/esm_tools\x1b[0m\n
+            \x1b[96m2.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+        action: DELAY(1)
+        announcement: true

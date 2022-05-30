@@ -210,8 +210,9 @@ def yaml_file_to_dict(filepath):
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
             raise EsmConfigFileError(filepath + extension, yaml_error)
         except Exception as error:
-            print("Something else went wrong")
-            print(f"Serious issue with {filepath}, goodbye...")
+            esm_parser.user_error(
+                "Yaml syntax",
+                f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}")
             logger.exception(error)
             sys.exit()
     raise FileNotFoundError(

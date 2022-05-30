@@ -20,7 +20,7 @@ general:
    hours: 0
   
    # machine specific setup 
-   #account: shk00018
+   account: bb0519
    base_dir: ${homedir}/esm/esm-experiments/
 
 focioifs:
@@ -51,6 +51,7 @@ oifs:
 oasis3mct:
    norestart: F
    use_lucia: True
+   ini_parent_dir: ${oifs.pool_dir}/OASIS3_OPENIFS43R3-TCO95_ORCA05/
       
 nemo:
    resolution: "ORCA05"

@@ -60,6 +60,7 @@ choose_version:
 par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
 choose_fesom.par_tracers:
     True:
+        namelist_dir: "${model_dir}/config/"
         # kh 21.02.22 use uppercase here
         forcing_data_dir: "${pool_dir}/FORCING/"
         # kh 21.02.22

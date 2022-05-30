@@ -11,8 +11,9 @@ general:
 fesom:
         version: 2.0
         model_dir: <your_model_dir_here>
-        pool_dir: "/work/ollie/pool/FESOM/"
-        mesh_dir: "/work/ollie/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        pool_dir: "/pool/data/AWICM/FESOM2/"
+        mesh_dir: "/pool/data/AWICM/FESOM2/MESHES/CORE2/"
+        forcing_data_dir: "${pool_dir}/FORCING/"
         res: CORE2
         lresume: 0
         restart_rate: 1

@@ -181,8 +181,8 @@ choose_computer.partitions.compute.cores_per_node:
                 nproca: 24
                 nprocb: 24
         128:
-                nproca: 32
-                nprocb: 32
+                nproca: 16
+                nprocb: 16
 
 choose_resolution:
         T63:

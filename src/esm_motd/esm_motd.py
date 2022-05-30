@@ -218,11 +218,11 @@ def check_all_esm_packages():
 
 if __name__ == "__main__":
     mypackage = "esm_tools"
-    myversion = "1.0"
+    myversion = "1.0.0"
 
     motd = MessageOfTheDayHandler()
     # Uncomment the following lines For testing using the local motd.yaml
-    # local_motd = f"{esm_tools._get_real_dir_from_pth_file('')}/motd/motd.yaml"
+    # print(local_motd)
     # with open(local_motd, "r") as motdfile:
     #    motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
     motd.motd_handler(mypackage, myversion)

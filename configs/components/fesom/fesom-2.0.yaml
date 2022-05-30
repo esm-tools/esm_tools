@@ -110,7 +110,16 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+
+# FIXME(KH, PG): This will need to be put in correctly.
+# NOTE(PG): For awiesm test on levante --> cvmix namelist back in, recom namelist out!
+# kh 21.02.22 orig (disabled for a special test)
         - namelist.cvmix
+# kh 21.02.22 orig (disabled for a special test)
+#        - namelist.cvmix
+
+# kh 21.02.22 special test only
+#        - namelist.recom
 
 
 choose_asforcing:

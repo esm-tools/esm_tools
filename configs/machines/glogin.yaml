@@ -16,6 +16,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -27,6 +30,9 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -60,6 +66,7 @@ partitions:
 logical_cpus_per_core: 2
 
 threads_per_core: 1
+hetjob_flag: packjob
 
 pool_directories:
         pool: "/scratch/usr/hbkawi"
@@ -177,6 +184,10 @@ choose_iolibraries:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
 
+          intel2021_impi2021:
+             add_export_vars:
+                IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
+
           intel2019_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
@@ -192,7 +203,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

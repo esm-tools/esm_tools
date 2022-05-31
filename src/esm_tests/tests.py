@@ -801,7 +801,7 @@ def print_diff(sscript, tscript, name, ignore_lines, rm_user):
             differences += line
             pdifferences += f"\t\t{line}"
 
-        logger.info(f"\n\tDifferences in {name}:\n{pdifferences}\n")
+        logger.info(f"\n\tDifferences in \x1b[35m{name}:\x1b[0m\n{pdifferences}\n")
         # input("Press enter to continue...")
         identical = False
 
@@ -884,6 +884,7 @@ def save_files(info, user_choice):
                 elif mode == "run":
                     this_compare_files = compare_files_run
                     subfolder = f"{script}"
+                    save_exp_date(info, model, script)
                 this_test_dir = f"{mode}/{model}/{subfolder}/"
                 # Loop through comparefiles
                 for cfile in this_compare_files:
@@ -918,6 +919,17 @@ def save_files(info, user_choice):
     with open(get_state_yaml_path(), "w") as st:
         state = yaml.dump(current_state)
         st.write(state)
+
+
+def save_exp_date(info, model, script):
+    user_info = info["user"]
+    if info["actually_run"]:
+        exp_time = os.path.getmtime(f"{user_info['test_dir']}/run/{model}/{script}")
+        exp_human_time = time.strftime("%d-%m-%Y", time.gmtime(exp_time))
+        this_script = info["scripts"][model][script]
+        success = True
+        #if all(this_script["state"].values()):
+        this_script["date"] = exp_human_time
 
 
 def print_results(results, info):
@@ -955,8 +967,13 @@ def print_results(results, info):
                     else:
                         text_color = colorama.Fore.RED
                     run = f"{text_color}{text}"
+                    if data.get("date"):
+                        text_color = colorama.Fore.WHITE
+                        date = f"\t{text_color}{data['date']}"
+                    else:
+                        date = ""
                     logger.info(
-                        f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
+                        f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}{date}"
                     )
     logger.info(f"{colorama.Fore.WHITE}")
     logger.info("")
@@ -994,9 +1011,12 @@ def format_results(info):
             if not state.get("run_finished", True):
                 run = "run failed"
 
+            date = info["scripts"][model][script].get("date")
+
             results[model][version][script][info["this_computer"]] = {
                 "compilation": compilation,
                 "run": run,
+                "date": date,
             }
 
     return results

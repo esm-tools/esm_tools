@@ -49,6 +49,8 @@ general:
         reusable_filetypes: [input, bin, src]
 
         choose_computer.name:
+                levante:
+                        pool_dir: "/work/ab0246/from_Mistral/ab0246/a270092/input"
                 mistral:
                         pool_dir: "/work/ab0246/a270092/input"
                 ollie:
@@ -164,6 +166,8 @@ oifs:
                                 iolibraries: geomar_libs
                         glogin:
                                 iolibraries: geomar_libs
+                        levante:
+                                iolibraries: system_libs
                 add_export_vars:
                         # Turn on FESOM coupling
                         FESOM_USE_CPLNG: '"active"'
@@ -180,6 +184,8 @@ oifs:
                                 iolibraries: geomar_libs
                         glogin:
                                 iolibraries: geomar_libs
+                        levante:
+                                iolibraries: system_libs
 
         res_level: ${resolution}${levels}
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo]
@@ -545,8 +551,15 @@ oasis3mct:
 
 
 computer:
+        # Activates the taskset approach for heterogeneous parallelization, by default
+        # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+        # problems)
+        taskset: true
+
         choose_computer.name:
                 blogin:
                         compiler_mpi: intel2019_ompi
                 glogin:
                         compiler_mpi: intel2019_ompi
+                levante:
+                        compiler_mpi: intel2022_openmpi

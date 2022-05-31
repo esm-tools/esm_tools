@@ -378,6 +378,7 @@ def run_test(info):
         # Loop through models and scripts
         for model, script in submitted:
             v = scripts_info[model][script]
+            version = v["version"]
             progress = round(subc / total_sub * 100, 1)
             exp_dir = f"{user_info['test_dir']}/run/{model}/{script}/"
             exp_dir_log = f"{exp_dir}/log/"
@@ -587,6 +588,7 @@ def check(info, mode, model, version, out, script, v):
         files_checked = exist_files(
             config_test.get(test_type, {}).get("files", []),
             f"{user_info['test_dir']}/{mode}/{model}/{subfolder}",
+            version,
         )
         v["state"][f"{mode}_files"] = files_checked
         success = success and files_checked
@@ -641,17 +643,29 @@ def check(info, mode, model, version, out, script, v):
     return success
 
 
-def exist_files(files, path):
+def exist_files(files, path, version):
     files_checked = True
     for f in files:
-        if "*" in f:
-            listing = glob.glob(f"{path}/{f}")
+        exception_list = []
+        if " [" in f and f[-1]=="]":
+            exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", f)
+            if len(exception_list) > 1:
+                raise Exception("You should only have one list per file")
+            exception_list = [x.replace(" ", "") for x in exception_list[0].split(",")]
+        if " except " in f and version in exception_list:
+            continue
+        elif " in " in f and not version in exception_list:
+            continue
+        else:
+            f_path = f.split(" ")[0]
+        if "*" in f_path:
+            listing = glob.glob(f"{path}/{f_path}")
             if len(listing) == 0:
-                logger.error(f"\t\tNo files following the pattern '{f}' were created!")
+                logger.error(f"\t\tNo files following the pattern '{f_path}' were created!")
                 files_checked = False
         else:
-            if not os.path.isfile(f"{path}/{f}"):
-                logger.error(f"\t\t'{f}' does not exist!")
+            if not os.path.isfile(f"{path}/{f_path}"):
+                logger.error(f"\t\t'{f_path}' does not exist!")
                 files_checked = False
     return files_checked
 

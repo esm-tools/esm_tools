@@ -109,9 +109,10 @@ export_vars:
         CRAYPE_LINK_TYPE: dynamic
 
 label_format: '"[@MODEL@]%l:"'
-launcher_flags: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
+launcher_flags_per_component: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
         env OMP_NUM_THREADS=@omp_num_threads@
         env PMI_LABEL_ERROUT_FORMAT=${label_format}"
+launcher_flags: ${launcher_flags_per_component}
 
 further_reading:
         - batch_system/pbs.yaml

@@ -32,4 +32,4 @@ jobs:
         ./install.sh
     - name: run esm_tests
       run: |
-        esm_tests -cn
+        yes Y | esm_tests -cn

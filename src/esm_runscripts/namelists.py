@@ -169,6 +169,7 @@ class Namelist:
             namelist, change_chapter, key = remove
             logging.debug("Removing from %s: %s, %s", namelist, change_chapter, key)
             if key in mconfig["namelists"][namelist].get(change_chapter, {}):
+                print(mconfig["namelists"][namelist][change_chapter])
                 del mconfig["namelists"][namelist][change_chapter][key]
             elif "%" in key:
                 namvar, prop = key.split("%")
@@ -497,7 +498,7 @@ class Namelist:
                 elif config["general"]["check"]:
                     # MA: Get the number of icebergs from the path for check runs where the file is not
                     # available (e.g. CI in GitHub)
-                    ib_num_new = int([x for x in config["fesom"].get("iceberg_dir").split("/") if len(x)>0][-1].split("_")[-1]) 
+                    ib_num_new = int([x for x in config["fesom"].get("iceberg_dir").split("/") if len(x)>0][-1].split("_")[-1])
                 else:
                     user_error(
                         "Iceberg file missing",

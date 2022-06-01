@@ -30,8 +30,11 @@ def user_config(info):
     """
     # If user info is not needed return None
     if info["ignore_user_info"]:
-        info["user"] = None
-        return info
+        info["user"] = {
+            "account": None,
+            "test_dir": f"{os.getcwd()}/automatic_testing/",
+        }
+        return
 
     # Check for user configuration file
     user_config = f"{info['script_dir']}/user_config.yaml"
@@ -85,8 +88,6 @@ def user_config(info):
     yprint(user_info)
 
     info["user"] = user_info
-
-    return info
 
 
 def get_scripts(info):

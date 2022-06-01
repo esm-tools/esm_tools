@@ -71,13 +71,12 @@ def main():
         help="Delete previous tests",
         action="store_true",
     )
-    # parser.add_argument(
-    #    "-k",
-    #    "--keep",
-    #    default=False,
-    #    help="Keep run_, outdata and restart folders for runs",
-    #    action="store_true",
-    # )
+    parser.add_argument(
+        "-m",
+        "--machine",
+        default=False,
+        help="Produce the configuration files for a give MACHINE for comparison with the last_tested files",
+    )
     parser.add_argument(
         "-s",
         "--save",
@@ -123,9 +122,12 @@ def main():
     info["repo_update"] = args["update"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    info["this_computer"] = (
-        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
-    )
+    if args["machine"]:
+        info["this_computer"] = args["machine"]
+    else:
+        info["this_computer"] = (
+            determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
+        )
 
     # Update ``resources``
     update_resources_submodule(info)
@@ -142,7 +144,7 @@ def main():
         sys.exit(1)
 
     # Get user info for testing
-    info = user_config(info)
+    user_config(info)
 
     # User-specific Info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {

@@ -30,6 +30,6 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-    - name: run esm_master
+    - name: run esm_tests
       run: |
-        esm_master
+        esm_tests -cn

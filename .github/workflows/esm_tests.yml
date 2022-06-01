@@ -30,9 +30,6 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-    - name: update esm_tests resources
-      run: |
-        Y | esm_tests -u
     - name: run esm_tests
       run: |
-        esm_tests -cn
+        yes Y | esm_tests -cn

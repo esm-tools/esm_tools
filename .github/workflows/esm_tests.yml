@@ -30,13 +30,6 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-    - name: Run Pytest
-      run: |
-        pip install pytest
-        pytest -v .
-    - name: run esm_master first time
-      run: |
-        yes Y | esm_master
-    - name: run esm_master second time
+    - name: run esm_master
       run: |
         esm_master

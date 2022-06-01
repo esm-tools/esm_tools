@@ -169,7 +169,6 @@ class Namelist:
             namelist, change_chapter, key = remove
             logging.debug("Removing from %s: %s, %s", namelist, change_chapter, key)
             if key in mconfig["namelists"][namelist].get(change_chapter, {}):
-                print(mconfig["namelists"][namelist][change_chapter])
                 del mconfig["namelists"][namelist][change_chapter][key]
             elif "%" in key:
                 namvar, prop = key.split("%")

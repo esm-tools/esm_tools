@@ -153,7 +153,7 @@ def main():
     }
 
     if info["in_github"]:
-        info["rm_user_info"]["HOME_DIR"] = "/__w"
+        info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
 
     # Define lines to be ignored during comparison
     try:

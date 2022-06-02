@@ -114,8 +114,10 @@ def copy_comp_files4check_runs(script, script_info, target_dir):
     files4check_dir = (
         f"{os.path.dirname(script_info['path'])}/comp_files4check_runs/{script}"
     )
+    logger.info(f"{os.path.dirname(script_info['path'])}/comp_files4check_runs/{script}")
     if os.path.isdir(files4check_dir):
         source_dir = f"{files4check_dir}/{os.listdir(files4check_dir)[0]}"
+        logger.info(source_dir)
         combine_folders(source_dir, target_dir)
 
 

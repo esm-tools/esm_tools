@@ -34,7 +34,7 @@ choose_version:
     branch: wiso
     wiso_code: true
   2.1-recom:
-    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    branch: awiesm2-recom-wiso-mass # MA: We will need a new branch for Martin Butzin changes
     wiso_code: true
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git

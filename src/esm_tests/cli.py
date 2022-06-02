@@ -146,6 +146,10 @@ def main():
     # Get user info for testing
     user_config(info)
 
+    print("**********************************")
+    print(os.path.expanduser('~'))
+    print("**********************************")
+
     # User-specific Info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {
         "ACCOUNT": info["user"]["account"],

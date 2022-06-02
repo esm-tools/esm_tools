@@ -146,9 +146,9 @@ def main():
     # Get user info for testing
     user_config(info)
 
-    print("**********************************")
-    print(os.path.expanduser('~'))
-    print("**********************************")
+    logger.info("**********************************")
+    logger.info(os.path.expanduser('~'))
+    logger.info("**********************************")
 
     # User-specific Info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {

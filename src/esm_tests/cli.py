@@ -150,6 +150,7 @@ def main():
     info["rm_user_info"] = {
         "ACCOUNT": info["user"]["account"],
         "TEST_DIR": info["user"]["test_dir"],
+        "HOME_DIR": f"{os.path.expanduser('~')}",
     }
 
     # Define lines to be ignored during comparison

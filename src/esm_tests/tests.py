@@ -620,6 +620,7 @@ def check(info, mode, model, version, out, script, v):
                 if os.path.isfile(f"{last_tested_dir}/{this_computer}/{sp_t}"):
                     # Check if files are identical
                     identical, differences = print_diff(
+                        info,
                         f"{last_tested_dir}/{this_computer}/{sp_t}",
                         f"{user_info['test_dir']}/{sp}",
                         sp,
@@ -769,9 +770,13 @@ def extract_namelists(s_config_yaml):
 #######################################################################################
 # OUTPUT
 #######################################################################################
-def print_diff(sscript, tscript, name, ignore_lines, rm_user):
+def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
     script_s = open(sscript).readlines()
     script_t = open(tscript).readlines()
+
+    # Delete dictionaries to be ignored from the finished_config.yaml
+    if "finished_config.yaml" in tscript:
+        script_t = del_ignore_dicts(info, script_t)
 
     # Substitute user lines in target string
     new_script_t = []
@@ -820,6 +825,33 @@ def print_diff(sscript, tscript, name, ignore_lines, rm_user):
         identical = False
 
     return identical, differences
+
+
+def del_ignore_dicts(info, yaml_file):
+    new_yaml_file = []
+    indentation_level_key = 0
+    dict_key_found = False
+    in_dict = False
+    for line in yaml_file:
+        indentation_level = len(line) - len(line.lstrip(" "))
+        if dict_key_found:
+            in_dict = indentation_level > indentation_level_key
+            in_dict |= (
+                indentation_level == indentation_level_key
+                and line.replace(" ", "")[0:1] == "- ")
+            if not in_dict:
+                dict_key_found = False
+        dict_key_in_line = False
+        for ig_key in info["ignore"]["finished_config_dicts"]:
+            dict_key_in_line |= f"{ig_key}:" in line
+        if dict_key_in_line:
+            dict_key_found = True
+            indentation_level_key = indentation_level
+        elif in_dict:
+            pass
+        else:
+            new_yaml_file.append(line)
+    return new_yaml_file
 
 
 def save_files(info, user_choice):
@@ -923,16 +955,27 @@ def save_files(info, user_choice):
                                 stext = f.read().replace(string, f"<{key}>")
                             with open(target_path, "w") as f:
                                 f.write(stext)
-    # Load current state
-    with open(get_state_yaml_path(), "r") as st:
-        current_state = yaml.load(st, Loader=yaml.FullLoader)
-    # Update with this results
-    results = format_results(info)
-    current_state = deep_update(current_state, results)
-    current_state = sort_dict(current_state)
-    with open(get_state_yaml_path(), "w") as st:
-        state = yaml.dump(current_state)
-        st.write(state)
+
+                        # If check run and file is the ``finished_config.yaml``
+                        if not info["actually_run"] and "finished_config.yaml" in target_path:
+                            with open(target_path) as f:
+                                yaml_file = f.readlines()
+                            # Delete dictionaries to be ignored
+                            yaml_file = del_ignore_dicts(info, yaml_file)
+                            with open(target_path, "w") as f:
+                                f.write("".join(yaml_file))
+
+    if info["actually_compile"] and info["actually_run"]:
+        # Load current state
+        with open(get_state_yaml_path(), "r") as st:
+            current_state = yaml.load(st, Loader=yaml.FullLoader)
+        # Update with this results
+        results = format_results(info)
+        current_state = deep_update(current_state, results)
+        current_state = sort_dict(current_state)
+        with open(get_state_yaml_path(), "w") as st:
+            state = yaml.dump(current_state)
+            st.write(state)
 
 
 def save_exp_date(info, model, script):
@@ -968,6 +1011,8 @@ def print_results(results, info):
                     text = data["compilation"]
                     if "compiles" == text:
                         text_color = colorama.Fore.GREEN
+                    elif "identical" in text and not info["actually_compile"]:
+                        text_color = colorama.Fore.GREEN
                     elif "differ" in text:
                         text_color = colorama.Fore.YELLOW
                     else:
@@ -975,6 +1020,8 @@ def print_results(results, info):
                     compilation = f"{text_color}{text}"
                     text = data["run"]
                     if "runs" == text:
+                        text_color = colorama.Fore.GREEN
+                    elif "identical" in text and not info["actually_run"]:
                         text_color = colorama.Fore.GREEN
                     elif "differ" in text:
                         text_color = colorama.Fore.YELLOW
@@ -994,6 +1041,10 @@ def print_results(results, info):
 
 
 def format_results(info):
+    # Load current state
+    with open(get_state_yaml_path(), "r") as st:
+        current_state = yaml.load(st, Loader=yaml.FullLoader)
+
     scripts_info = info["scripts"]
     results = {}
     for model, scripts in scripts_info.items():
@@ -1005,7 +1056,11 @@ def format_results(info):
             results[model][version] = results[model].get(version, {})
             results[model][version][script] = results[model][version].get(script, {})
             state = v["state"]
-            compilation = "compiles"
+
+            if info["actually_compile"]:
+                compilation = "compiles"
+            else:
+                compilation = "comp files identical"
 
             if not state.get("comp_files_identical", True):
                 compilation = "comp files differ"
@@ -1014,7 +1069,10 @@ def format_results(info):
             if not state["comp"]:
                 compilation = "compilation failed"
 
-            run = "runs"
+            if info["actually_run"]:
+                run = "runs"
+            else:
+                run = "run files identical"
 
             if not state.get("submission_files_identical", True):
                 run = "run files differ"

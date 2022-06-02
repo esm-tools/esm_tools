@@ -72,12 +72,6 @@ def main():
         action="store_true",
     )
     parser.add_argument(
-        "-m",
-        "--machine",
-        default=False,
-        help="Produce the configuration files for a give MACHINE for comparison with the last_tested files",
-    )
-    parser.add_argument(
         "-s",
         "--save",
         default="Not defined",
@@ -104,6 +98,13 @@ def main():
         help="bullet points for printing the results",
         action="store_true",
     )
+    parser.add_argument(
+        "-g",
+        "--github",
+        default=False,
+        help="use this flag when running in GitHub servers",
+        action="store_true",
+    )
 
     args = vars(parser.parse_args())
 
@@ -120,14 +121,12 @@ def main():
     info["hold"] = args["hold"]
     info["bulletpoints"] = args["bulletpoints"]
     info["repo_update"] = args["update"]
+    info["in_github"] = args["github"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    if args["machine"]:
-        info["this_computer"] = args["machine"]
-    else:
-        info["this_computer"] = (
-            determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
-        )
+    info["this_computer"] = (
+        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
+    )
 
     # Update ``resources``
     update_resources_submodule(info)
@@ -146,16 +145,15 @@ def main():
     # Get user info for testing
     user_config(info)
 
-    logger.info("**********************************")
-    logger.info(os.path.expanduser('~'))
-    logger.info("**********************************")
-
     # User-specific Info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {
         "ACCOUNT": info["user"]["account"],
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",
     }
+
+    if info["in_github"]:
+        info["rm_user_info"]["HOME_DIR"] = "/__w/"
 
     # Define lines to be ignored during comparison
     try:

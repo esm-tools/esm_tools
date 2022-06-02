@@ -8,7 +8,11 @@ choose_version:
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 clean_command: ${defaults.clean_command}
-comp_command: ""
+comp_command: "
+    <command1>;
+    <command2>;
+    <command3>;
+    "
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"

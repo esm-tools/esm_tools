@@ -793,7 +793,7 @@ def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
     for line in script_s:
         ignore_this = False
         for iline in ignore_lines:
-            if iline in line:
+            if re.search(iline, line):
                 ignore_this = True
         if not ignore_this:
             new_script_s.append(line)
@@ -802,7 +802,7 @@ def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
     for line in script_t:
         ignore_this = False
         for iline in ignore_lines:
-            if iline in line:
+            if re.search(iline, line):
                 ignore_this = True
         if not ignore_this:
             new_script_t.append(line)
@@ -843,7 +843,7 @@ def del_ignore_dicts(info, yaml_file):
                 dict_key_found = False
         dict_key_in_line = False
         for ig_key in info["ignore"]["finished_config_dicts"]:
-            dict_key_in_line |= f"{ig_key}:" in line
+            dict_key_in_line |= bool(re.search(f"{ig_key}:", line))
         if dict_key_in_line:
             dict_key_found = True
             indentation_level_key = indentation_level

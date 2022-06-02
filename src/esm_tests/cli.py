@@ -167,7 +167,7 @@ def main():
     if info["in_github"]:
         info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
         # Ignore the globbing variables
-        info["ignore"]["finished_config"].expand("_glob_[1-9]*: ")
+        info["ignore"]["finished_config"].append("_glob_[1-9]*: ")
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")

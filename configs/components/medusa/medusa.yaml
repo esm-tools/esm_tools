@@ -1,0 +1,19 @@
+model: medusa
+branch: main
+version: '2.0'
+
+choose_version: 
+    '2.0':
+      branch: main
+
+git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
+clean_command: ${defaults.clean_command}
+comp_command: ""
+
+model_dir: "NONE"
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+data_path: ""
+
+
+

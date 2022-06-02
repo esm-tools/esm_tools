@@ -105,6 +105,14 @@ def main():
         help="use this flag when running in GitHub servers",
         action="store_true",
     )
+    parser.add_argument(
+        "-e",
+        "--system-exit-on-errors",
+        default=False,
+        help="trigger a system exit on errors or file differences so that GitHub actions can "
+        + "catch that as a failing test",
+        action="store_true",
+    )
 
     args = vars(parser.parse_args())
 
@@ -122,6 +130,7 @@ def main():
     info["bulletpoints"] = args["bulletpoints"]
     info["repo_update"] = args["update"]
     info["in_github"] = args["github"]
+    info["system_exit_on_errors"] = args["system_exit_on_errors"]
 
     info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
     info["this_computer"] = (
@@ -190,7 +199,30 @@ def main():
     run_test(info)
 
     # Print results
-    print_results(format_results(info), info)
+    results = format_results(info)
+    print_results(results, info)
+
+    # Exit if something is not perfect
+    if info["system_exit_on_errors"]:
+        all_tests_passed = True
+        if info["actually_compile"]:
+            comp_perfect = "comp files identical"
+        else:
+            comp_perfect = "compiles"
+        if info["actually_run"]:
+            run_perfect = "run files identical"
+        else:
+            run_perfect = "runs"
+        for model, versions in results.items():
+            for version, scripts in versions.items():
+                for script, computers in scripts.items():
+                    for computer, data in computers.items():
+                        if data["compilation"]!=comp_perfect:
+                            all_tests_passed = False
+                        if data["run"]!=run_perfect:
+                            all_tests_passed = False
+        if not all_tests_passed:
+            sys.exit("Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions")
 
     # Save files
     if save_flag == "Not defined":

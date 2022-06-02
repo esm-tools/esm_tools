@@ -152,9 +152,6 @@ def main():
         "HOME_DIR": f"{os.path.expanduser('~')}",
     }
 
-    if info["in_github"]:
-        info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
-
     # Define lines to be ignored during comparison
     try:
         info["ignore"] = get_ignore_compare_yaml()
@@ -165,6 +162,12 @@ def main():
             print(f)
         print(e)
         raise
+
+    # Special actions for running from GitHub servers
+    if info["in_github"]:
+        info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
+        # Ignore the globbing variables
+        info["ignore"]["finished_config"].expand("_glob_[1-9]*: ")
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")

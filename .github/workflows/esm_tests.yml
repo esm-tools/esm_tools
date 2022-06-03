@@ -5,7 +5,7 @@
 name: esm_tests
 
 # Triggers the workflow on a push or a pull
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   ollie:

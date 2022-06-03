@@ -17,7 +17,7 @@ requirements = [
     "colorama",
     "coloredlogs",
     "emoji",
-    "f90nml==1.3.1",
+    "f90nml",
     "gfw-creator",
     "gitpython",
     "loguru",

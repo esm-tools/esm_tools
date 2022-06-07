@@ -492,16 +492,17 @@ class Namelist:
                     ib_num_old = 0
 
                 print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                if os.path.isfile(config["fesom"].get("iceberg_dir") + "/LON.dat"):
+                iceberg_dir = config["fesom"].get("iceberg_dir", None)
+                if os.path.isfile(iceberg_dir + "/LON.dat"):
                     ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
                 elif config["general"]["check"]:
                     # MA: Get the number of icebergs from the path for check runs where the file is not
                     # available (e.g. CI in GitHub)
-                    ib_num_new = int([x for x in config["fesom"].get("iceberg_dir").split("/") if len(x)>0][-1].split("_")[-1])
+                    ib_num_new = int([x for x in iceberg_dir.split("/") if len(x)>0][-1].split("_")[-1])
                 else:
                     user_error(
                         "Iceberg file missing",
-                        f'File ``{config["fesom"].get("iceberg_dir")+"/LON.dat"}`` does not exist.'
+                        f'File ``{iceberg_dir}{"/LON.dat"}`` does not exist.'
                     )
                 icebergs["ib_num"] = ib_num_old + ib_num_new
                 nml["icebergs"] = icebergs

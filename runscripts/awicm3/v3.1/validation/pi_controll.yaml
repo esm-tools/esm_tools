@@ -32,6 +32,12 @@ fesom:
             ice_therm:
                 albi: 0.6
                 albim: 0.43
+        namelist.oce:
+            oce_dyn:
+                SPP: true
+            oce_tra:
+                use_momix: false
+
 
 oifs:
     resolution: "TCO95"

@@ -3,13 +3,13 @@ general:
     setup_name: "awicm3"
     version: "frontiers-xios"
     account: "esmtst"
-    compute_time: "06:00:00"
+    compute_time: "00:10:00"
     initial_date: "2000-01-01"
-    final_date: "2050-01-01"
+    final_date: "2000-02-01"
     base_dir: "/p/scratch/chhb20/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
-    nmonth: 0
-    nyear: 10
+    nmonth: 1
+    nyear: 0
     install_esm_tools_branch: awi-cm3.1_testruns
 
 awicm3:
@@ -21,26 +21,44 @@ fesom:
     resolution: "CORE2"
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
-    restart_rate: 10
-    restart_unit: "y"
-    restart_first: 10
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 864
+    nproc: 432
+    namelist_dir: "${model_dir}/config/"
+    add_namelists:
+        - namelist.tra
+        - namelist.dyn
+    add_config_sources:
+        tra:     "${namelist_dir}/namelist.tra"
+        dyn:     "${namelist_dir}/namelist.dyn"
+    add_config_in_work:
+        tra:     "namelist.tra"
+        dyn:     "namelist.dyn"
+    add_config_files:
+        tra:     tra
+        dyn:     dyn
     add_namelist_changes:
+        namelist.oce:
+            oce_dyn:
+                SPP: true
+        namelist.tra:
+            tracer_phys:
+                surf_relax_s: 0.0
+                use_momix: false
+            #tracer_list:
+            #    nml_tracer_list: 1, 'MFCT', 'QR4C', 'FCT ', 0.0, 1.0, 2, 'MFCT', 'QR4C','FCT ', 0.0, 1.0
         namelist.ice:
             ice_therm:
                 albi: 0.6
                 albim: 0.43
-        namelist.oce:
-            oce_dyn:
-                SPP: true
-            oce_tra:
-                use_momix: false
         namelist.config:
+            restart_log: 
+                logfile_outfreq: 3
             ale_def:
-                which_ale: "zstar"
-
+                which_ALE: 'zstar'
 
 oifs:
     resolution: "TCO95"
@@ -51,7 +69,7 @@ oifs:
     lresume: false
     time_step: 3600
     nproc: 360
-    omp_num_threads: 6
+    omp_num_threads: 1
     add_namelist_changes:
         fort.4:
             NAEPHY:

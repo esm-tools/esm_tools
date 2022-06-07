@@ -36,7 +36,7 @@ fesom:
             oce_dyn:
                 SPP: true
             oce_tra:
-                use_momix: false
+                use_momix: true
         namelist.config:
             ale_def:
                 which_ale: "zstar"

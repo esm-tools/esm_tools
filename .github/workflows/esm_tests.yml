@@ -1,41 +1,17 @@
 # ESM-Tests in check mode for all computers
 # =========================================
-# Some comments here
 
 name: esm_tests
 
-# Called from other workflows
-on:
-  workflow_call:
-    inputs:
-      computer:
-        required: true
-        type: string
+# Triggers the workflow on a push or a pull
+on: [pull_request]
 
 jobs:
-  computer:
-    name: ${{ inputs.computer }}
-    # Containers must run in Linux based operating systems
-    runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
-    env:
-      LC_ALL: en_US.UTF-8
-      LANG: en_US.UTF-8
-    container:
-      image: koldunovn/esm_test:latest
-      options: --hostname ${{ inputs.computer }}
-
-    # Service containers to run with `gfortran_ubuntu`
-    steps:
-    # NK: this changes working directory to fesom2
-    - uses: actions/checkout@v2
-
-    - name: add to the path
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-    - name: install esm-tools
-      run: |
-        ./install.sh
-    - name: run esm_tests
-      run: |
-        yes Y | esm_tests -cnge -s False
+  ollie:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: ollie1
+  levante:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: levante1

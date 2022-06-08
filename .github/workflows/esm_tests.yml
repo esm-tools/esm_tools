@@ -4,11 +4,17 @@
 
 name: esm_tests
 
-# Triggers the workflow on a push or a pull
-on: [pull_request]
+# Called from other workflows
+on:
+  workflow_call:
+    inputs:
+      computer:
+        required: true
+        type: string
 
 jobs:
-  ollie:
+  computer:
+    name: ${{ inputs.computer }}
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
@@ -17,7 +23,7 @@ jobs:
       LANG: en_US.UTF-8
     container:
       image: koldunovn/esm_test:latest
-      options: --hostname ollie1
+      options: --hostname ${{ inputs.computer }}
 
     # Service containers to run with `gfortran_ubuntu`
     steps:

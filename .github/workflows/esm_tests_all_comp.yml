@@ -1,0 +1,14 @@
+# ESM-Tests in check mode for all computers
+# =========================================
+# Some comments here
+
+name: esm_tests_all_comp
+
+# Triggers the workflow on a push or a pull
+on: [pull_request]
+
+jobs:
+  ollie:
+    uses: ./.github/workflows/esm_tests.yml
+    with:
+        computer: ollie1

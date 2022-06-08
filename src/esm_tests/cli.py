@@ -206,13 +206,13 @@ def main():
     if info["system_exit_on_errors"]:
         all_tests_passed = True
         if info["actually_compile"]:
-            comp_perfect = "comp files identical"
-        else:
             comp_perfect = "compiles"
-        if info["actually_run"]:
-            run_perfect = "run files identical"
         else:
+            comp_perfect = "comp files identical"
+        if info["actually_run"]:
             run_perfect = "runs"
+        else:
+            run_perfect = "run files identical"
         for model, versions in results.items():
             for version, scripts in versions.items():
                 for script, computers in scripts.items():

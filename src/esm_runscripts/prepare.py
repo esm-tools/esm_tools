@@ -4,7 +4,9 @@ import os
 import sys
 
 import esm_parser
+import yaml
 from esm_calendar import Calendar, Date
+from loguru import logger
 
 from . import batch_system, helpers
 
@@ -669,6 +671,46 @@ def set_parent_info(config):
             config[model]["parent_restart_dir"] = config[model][
                 "experiment_restart_in_dir"
             ]
+    return config
+
+
+def add_vcs_info(config):
+    """
+    Adds version control system information in a plain text yaml file under the
+    experiment log directory for both the models and the esm-tools.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration
+    """
+    exp_vcs_info_file = (
+        f"{config['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    )
+    logger.debug("Experiment information is being stored for usage under:")
+    logger.debug(f">>> {exp_vcs_info_file}")
+    vcs_versions = {}
+    all_models = config.get("general", {}).get("models", [])
+    for model in all_models:
+        model_dir = config[model]["model_dir"]
+        if helpers.is_git_repo(model_dir):
+            try:
+                vcs_versions[model] = helpers.get_git_hash
+            except helpers.GitDirtyError:
+                vcs_versions[model] = "unknown (dirty repo detected)"
+
+    # NOTE(PG): There is no good way to get the repo directory from the config,
+    # this may at least be a good start:
+    esm_tools_repo = config.get("general", {}).get("esm_function_dir")
+    if esm_tools_repo is not None:
+        vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
+    with open(exp_vcs_info_file, "w") as f:
+        yaml.dump(vcs_versions, f)
     return config
 
 

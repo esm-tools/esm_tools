@@ -4,6 +4,7 @@ from datetime import datetime
 import esm_parser
 import esm_plugin_manager
 import esm_tools
+import git
 
 
 def vprint(message, config):
@@ -295,3 +296,60 @@ class SmartSink:
         """
         self.path = path
         self.write_log(self.log_record, "w")
+
+
+################################################################################
+# Git Checks of esm-tools
+#
+# NOTE(PG): These functions would likely be better as a separate file
+
+
+def is_git_repo(path):
+    """
+    Determines whether or not a directory is a git repository.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The location to check
+
+    Returns
+    bool :
+        True or False, depending on if the location is a git directory
+    """
+    try:
+        git.Repo(path).git_dir
+        return True
+    except git.exc.InvalidGitRepositoryError:
+        return False
+
+
+class GitDirtyError(git.exc.GitError):
+    """Thrown if the git repository is dirty"""
+
+
+def get_git_hash(path):
+    """
+    Gets the commit has of a git directory stored at ``path``
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        Path to determine the git hash for
+
+    Returns
+    -------
+    githash : str
+        The commit has the repository is currently on
+
+    Raises
+    ------
+    GitDirtyError :
+       Raised if the repo is "dirty"; thus meaning that the hash is not meaningful
+    """
+    repo = git.Repo(path)
+    if repo.is_dirty():
+        raise GitDirtyError(
+            f"Your repo at {path} is dirty, thus the git hash is not meaningful!"
+        )
+    return repo.git.rev_parse(repo.head, short=True)

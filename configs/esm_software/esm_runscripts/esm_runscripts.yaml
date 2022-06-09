@@ -25,6 +25,7 @@ choose_job_type:
                         - "_add_all_folders"
                         - "set_prev_date"
                         - "set_parent_info"
+                        - "add_vcs_info"
                         - "finalize_config"
                         - "assemble_workflow"
                         - "restore_protected_last_minute_changes"

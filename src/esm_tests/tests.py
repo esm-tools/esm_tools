@@ -383,6 +383,12 @@ def run_test(info):
             exp_dir = f"{user_info['test_dir']}/run/{model}/{script}/"
             exp_dir_log = f"{exp_dir}/log/"
             nmodels_success = 1
+            with open(f"{exp_dir}/run.out", "r") as so:
+                submission_out = so.read()
+            if "ERROR:" in submission_out:
+                subc, finished_runs, success = experiment_state_action(
+                    info, "Submission failed!", False, v, finished_runs, cc, subc, model, script, version, progress
+                )
             # Search through the ``_compute_`` files for a string that indicates that
             # the run has finished
             for f in os.listdir(exp_dir_log):
@@ -394,22 +400,8 @@ def run_test(info):
                         # should have been created
                         if "Reached the end of the simulation, quitting" in observe_out:
                             if nmodels_success == v["nmodels_iterative_coupling"]:
-                                logger.info(
-                                    f"\tRUN FINISHED ({progress}%) {model}/{script}"
-                                )
-                                logger.info(f"\t\tSuccess!")
-                                finished_runs.append(cc)
-                                subc += 1
-                                v["state"]["run_finished"] = True
-                                # Run a check for run finished
-                                success = check(
-                                    info,
-                                    "run",
-                                    model,
-                                    version,
-                                    "",
-                                    script,
-                                    v,
+                                subc, finished_runs, success = experiment_state_action(
+                                    info, "Success!", True, v, finished_runs, cc, subc, model, script, version, progress
                                 )
                             else:
                                 nmodels_success += 1
@@ -417,22 +409,8 @@ def run_test(info):
                         # ``False`` and run a check for files that should have been
                         # created anyway
                         elif "ERROR:" in observe_out:
-                            logger.info(
-                                f"\tRUN FINISHED ({progress}%) {model}/{script}"
-                            )
-                            logger.error(f"\t\tSimulation crashed!")
-                            finished_runs.append(cc)
-                            subc += 1
-                            v["state"]["run_finished"] = False
-                            # Run a check for run finished
-                            success = check(
-                                info,
-                                "run",
-                                model,
-                                version,
-                                "",
-                                script,
-                                v,
+                            subc, finished_runs, success = experiment_state_action(
+                                info, "Simulation crashed!", False, v, finished_runs, cc, subc, model, script, version, progress
                             )
             # if not info["keep_run_folders"]:
             #    folders_to_remove = [
@@ -471,6 +449,21 @@ def run_test(info):
         # Wait 30 seconds to check again the state of the submitted tests
         if len(submitted) > 0:
             time.sleep(30)
+
+
+def experiment_state_action(info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress):
+    logger.info(f"\tRUN FINISHED ({progress}%) {model}/{script}")
+    if no_err:
+        logger.info(f"\t\tSuccess!")
+    else:
+        logger.error(f"\t\t{message}")
+    finished_runs.append(cc)
+    subc += 1
+    v["state"]["run_finished"] = no_err
+    # Run a check for run finished
+    success = check(info, "run", model, version, "", script, v)
+
+    return subc, finished_runs, success
 
 
 #######################################################################################
@@ -705,6 +698,8 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                 # Make sure we always take the first run
                 cfiles.sort()
                 num = 0
+                if len(cfiles)==0:
+                    break
                 if os.path.islink(
                     f"{user_info['test_dir']}/{cf_path}/{cfiles[num].split('/')[-1]}"
                 ):
@@ -716,18 +711,19 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         s_config_yaml, _ = get_rel_paths_compare_files(
             info, "finished_config", v, this_test_dir
         )
-        namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
-        ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
-        ldir.sort()
-        for f in ldir:
-            # Take the first run directory
-            if "run_" in f:
-                cf_path = f"{this_test_dir}/{f}/work/"
-                for n in namelists:
-                    if not os.path.isfile(f"{user_info['test_dir']}/{cf_path}/{n}"):
-                        logger.debug(f"'{cf_path}/{n}' does not exist!")
-                    subpaths.append(f"{cf_path}/{n}")
-                break
+        if len(s_config_yaml)>0:
+            namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
+            ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
+            ldir.sort()
+            for f in ldir:
+                # Take the first run directory
+                if "run_" in f:
+                    cf_path = f"{this_test_dir}/{f}/work/"
+                    for n in namelists:
+                        if not os.path.isfile(f"{user_info['test_dir']}/{cf_path}/{n}"):
+                            logger.debug(f"'{cf_path}/{n}' does not exist!")
+                        subpaths.append(f"{cf_path}/{n}")
+                    break
     else:
         subpaths = [f"{this_test_dir}/{cfile}"]
 

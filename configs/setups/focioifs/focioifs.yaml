@@ -261,15 +261,16 @@ nemo:
         #        input:
         #                all_directions: link
         
-        choose_general.resolution:
-                TCO95_ORCA05:
+        choose_resolution:
+                ORCA05:
                         nproca: 24
                         nprocb: 20
+                        loccunif: 4
                 # Joakim: Need to find good choice for ORCA12
-                TCO95_ORCA12:
+                ORCA12:
                         nproca: 24
                         nprocb: 20
-                        loccunif_nb: 144
+                        loccunif_nb: 288
 
         namelist_changes:
                 namelist_cfg:
@@ -308,7 +309,7 @@ nemo:
         # Small number means lots of runoff in each few grid cells which could be unstable
         # Large number means low runoff in many grid cells which is stable, but less accurate
         # Needs tuning for each NEMO resolution
-        loccunif_nb: 4        
+        #loccunif_nb: 4        
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}

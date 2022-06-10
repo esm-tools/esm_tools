@@ -156,9 +156,9 @@ def main():
 
     # User-specific Info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {
-        "ACCOUNT": info["user"]["account"],
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",
+        "ACCOUNT": info["user"]["account"],
     }
 
     # Define lines to be ignored during comparison

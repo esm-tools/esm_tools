@@ -3046,7 +3046,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         Version error : esm_parser.user_error
             If something goes wrong with the user's version choices
         """
-        if setup_config["general"].get("standalone"):
+        if (
+            setup_config["general"].get("standalone")
+            and setup_config["general"].get("run_or_compile", "")=="runtime"
+        ):
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
             version_in_runscript_model = user_config[model_name].get("version")

@@ -689,8 +689,10 @@ def add_vcs_info(config):
     config : dict
         The experiment configuration
     """
+    import pdb
+    pdb.set_trace()
     exp_vcs_info_file = (
-        f"{config['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+        f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
     )
     logger.debug("Experiment information is being stored for usage under:")
     logger.debug(f">>> {exp_vcs_info_file}")
@@ -709,8 +711,10 @@ def add_vcs_info(config):
     esm_tools_repo = config.get("general", {}).get("esm_function_dir")
     if esm_tools_repo is not None:
         vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
+    pdb.set_trace()
     with open(exp_vcs_info_file, "w") as f:
         yaml.dump(vcs_versions, f)
+    pdb.set_trace()
     return config
 
 

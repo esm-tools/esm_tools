@@ -13,6 +13,7 @@ core:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
+                        - "add_vcs_info"
 
                 prepexp:
                         - "_create_setup_folders"

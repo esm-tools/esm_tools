@@ -45,6 +45,7 @@ general:
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
+            - "add_vcs_info"
             - "_write_finalized_config"
             - "database_entry"
 

@@ -2905,6 +2905,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         del self.config
 
+        self.check_user_defined_versions(user_config, setup_config)
+
         setup_config["general"].update(
             {
                 "esm_function_dir": CONFIG_PATH,
@@ -3021,6 +3023,43 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # pprint_config(self.config)
         # sys.exit(0)
+
+    def check_user_defined_versions(self, user_config, setup_config):
+        """
+        When running a standalone model, checks whether the users has define the
+        variable ``version`` in more than one section and if that's the case
+        throws and error. If ``version`` is only defined in the ``general`` section
+        it creates a ``version`` with the same value in the model section, ensuring
+        that the user can arbitrarily define ``version`` in either ``general`` or
+        ``<model>`` sections.
+
+        Parameters
+        ----------
+        user_config : dict
+            Experiment configuration defined by the user (e.g. runscript)
+        setup_config : dict
+            Experiment configuration defined by the default ESM-Tools configuration
+            files (``<PATH>/esm_tools/configs/``)
+
+        Raises
+        ------
+        Version error : esm_parser.user_error
+            If something goes wrong with the user's version choices
+        """
+        if setup_config["general"].get("standalone"):
+            version_in_runscript_general = user_config["general"].get("version")
+            model_name = user_config["general"]["setup_name"]
+            version_in_runscript_model = user_config[model_name].get("version")
+            if version_in_runscript_general and version_in_runscript_model:
+                user_error(
+                    "Version",
+                    "You have defined the ``version`` variable both in the "
+                    f"``general`` and ``{model_name}`` sections of your runscript. "
+                    "This is not supported for ``standalone`` simulations. Please "
+                    "define ``only one version`` in one of the two sections."
+                )
+            elif version_in_runscript_general and not version_in_runscript_model:
+                user_config[model_name]["version"] = version_in_runscript_general
 
     def finalize(self):
         self.run_recursive_functions(self)

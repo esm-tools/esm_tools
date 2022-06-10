@@ -262,7 +262,7 @@ choose_scenario_type:
                         popdens: popdens
 
 
-choose_echam.version:
+choose_echam.with_wiso:
         6.3.05p2-wiso:
                 restart_in_sources:
                         "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
@@ -270,6 +270,8 @@ choose_echam.version:
                         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
                 add_streams:
                         - js_wiso
+                        - la_wiso
+                        - sf_wiso
 
 input_files:
         "lctlib": "lctlib"

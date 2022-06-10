@@ -263,7 +263,7 @@ choose_scenario_type:
 
 
 choose_echam.with_wiso:
-        6.3.05p2-wiso:
+        True:
                 restart_in_sources:
                         "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
                 restart_out_sources:

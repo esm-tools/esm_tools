@@ -514,7 +514,6 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
-                                        - sf_wiso
 
                                 # The following lines take care of the renaming of the
                                 # ozon files, and their copying

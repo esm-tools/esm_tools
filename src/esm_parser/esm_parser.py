@@ -3024,7 +3024,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # pprint_config(self.config)
         # sys.exit(0)
 
-    def check_user_defined_versions(self, user_config, setup_config):
+    def check_user_defined_versions(self, user_config={}, setup_config={}):
         """
         When running a standalone model, checks whether the users has define the
         variable ``version`` in more than one section and if that's the case
@@ -3041,14 +3041,16 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             Experiment configuration defined by the default ESM-Tools configuration
             files (``<PATH>/esm_tools/configs/``)
 
-        Raises
+        Errors
         ------
         Version error : esm_parser.user_error
             If something goes wrong with the user's version choices
         """
+        if "general" in self:
+            user_config = setup_config = self
         if (
             setup_config["general"].get("standalone")
-            and setup_config["general"].get("run_or_compile", "")=="runtime"
+            and user_config["general"].get("run_or_compile", "runtime")=="runtime"
         ):
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]

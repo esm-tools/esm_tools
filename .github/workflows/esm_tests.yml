@@ -23,3 +23,7 @@ jobs:
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
         computer: elogin1
+  blogin:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: blogin1

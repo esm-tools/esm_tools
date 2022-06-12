@@ -637,6 +637,39 @@ def check(info, mode, model, version, out, script, v):
     return success
 
 
+def check_perfect(info, results):
+    """
+    Exits if something is not perfect in the ``results``, to trigger a failted test
+    in GitHub Actions.
+
+    Parameters
+    ----------
+    info : dict
+        Dictionary with the general info about the tests.
+    results : dict
+        Dictionary containing the results of the testing.
+    """
+    all_tests_passed = True
+    if info["actually_compile"]:
+        comp_perfect = "compiles"
+    else:
+        comp_perfect = "comp files identical"
+    if info["actually_run"]:
+        run_perfect = "runs"
+    else:
+        run_perfect = "run files identical"
+    for model, versions in results.items():
+        for version, scripts in versions.items():
+            for script, computers in scripts.items():
+                for computer, data in computers.items():
+                    if data["compilation"]!=comp_perfect:
+                        all_tests_passed = False
+                    if data["run"]!=run_perfect:
+                        all_tests_passed = False
+    if not all_tests_passed:
+        sys.exit("Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions")
+
+
 def exist_files(files, path, version):
     files_checked = True
     for f in files:

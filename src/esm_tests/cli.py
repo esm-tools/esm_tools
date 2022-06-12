@@ -125,7 +125,6 @@ def main():
     info["ignore_user_info"] = args["no_user"]
     info["actually_compile"] = not args["check"]
     info["actually_run"] = not args["check"]
-    # info["keep_run_folders"] = args["keep"]
     info["hold"] = args["hold"]
     info["bulletpoints"] = args["bulletpoints"]
     info["repo_update"] = args["update"]
@@ -202,27 +201,9 @@ def main():
     results = format_results(info)
     print_results(results, info)
 
-    # Exit if something is not perfect
+    # Check if all tests passed
     if info["system_exit_on_errors"]:
-        all_tests_passed = True
-        if info["actually_compile"]:
-            comp_perfect = "compiles"
-        else:
-            comp_perfect = "comp files identical"
-        if info["actually_run"]:
-            run_perfect = "runs"
-        else:
-            run_perfect = "run files identical"
-        for model, versions in results.items():
-            for version, scripts in versions.items():
-                for script, computers in scripts.items():
-                    for computer, data in computers.items():
-                        if data["compilation"]!=comp_perfect:
-                            all_tests_passed = False
-                        if data["run"]!=run_perfect:
-                            all_tests_passed = False
-        if not all_tests_passed:
-            sys.exit("Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions")
+        check_perfect(info, results)
 
     # Save files
     if save_flag == "Not defined":

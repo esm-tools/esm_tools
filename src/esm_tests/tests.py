@@ -891,6 +891,7 @@ def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
         for key, string in rm_user.items():
             if not string:
                 continue
+            line = line.replace(f"{info['mnt']}{string}", f"<{key}>")
             line = line.replace(string, f"<{key}>")
         new_script_t.append(line)
     script_t = new_script_t
@@ -1059,7 +1060,10 @@ def save_files(info, user_choice):
                             if not string:
                                 continue
                             with open(target_path) as f:
-                                stext = f.read().replace(string, f"<{key}>")
+                                stext = f.read().replace(
+                                    f"{info['mnt']}{string}", f"<{key}>"
+                                )
+                                stext = stext.replace(string, f"<{key}>")
                             with open(target_path, "w") as f:
                                 f.write(stext)
 

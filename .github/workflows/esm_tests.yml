@@ -15,3 +15,11 @@ jobs:
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
         computer: levante1
+  juwels:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: jwlogin01.juwels
+  aleph:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: elogin1

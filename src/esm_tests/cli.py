@@ -154,6 +154,10 @@ def main():
     user_config(info)
 
     # User-specific Info to remove from the files ``last_tested`` files
+    info["mnt"] = ""
+    pwd = os.getcwd()
+    if pwd.startswith("/mnt/lustre"):
+        info["mnt"] = "/".join(pwd.split("/")[:3])
     info["rm_user_info"] = {
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",

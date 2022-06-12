@@ -3041,10 +3041,11 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             Experiment configuration defined by the default ESM-Tools configuration
             files (``<PATH>/esm_tools/configs/``)
 
-        Errors
-        ------
+        Notes
+        -----
         Version error : esm_parser.user_error
-            If something goes wrong with the user's version choices
+            If something goes wrong with the user's version choices it exits the code
+            with a ``esm_parser.user_error``
         """
         if "general" in self:
             user_config = setup_config = self

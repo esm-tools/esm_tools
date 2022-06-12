@@ -953,7 +953,7 @@ def save_files(info, user_choice):
                                 f.write(stext)
 
                         # If check run and file is the ``finished_config.yaml``
-                        if not info["actually_run"] and "finished_config.yaml" in target_path:
+                        if "finished_config.yaml" in target_path:
                             with open(target_path) as f:
                                 yaml_file = f.readlines()
                             # Delete dictionaries to be ignored

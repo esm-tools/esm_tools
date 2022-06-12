@@ -993,6 +993,11 @@ def print_results(results, info):
     else:
         bp = ""
 
+    if info["in_github"]:
+        first_tab = "|   "
+    else:
+        first_tab = "    "
+
     logger.info("")
     logger.info("")
     logger.info(f"{bs}RESULTS{be}")
@@ -1000,9 +1005,9 @@ def print_results(results, info):
     for model, versions in results.items():
         logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
         for version, scripts in versions.items():
-            logger.info(f"    {bp}{colorama.Fore.MAGENTA}{version}:")
+            logger.info(f"{first_tab}{bp}{colorama.Fore.MAGENTA}{version}:")
             for script, computers in scripts.items():
-                logger.info(f"        {bp}{colorama.Fore.WHITE}{script}:")
+                logger.info(f"{first_tab}    {bp}{colorama.Fore.WHITE}{script}:")
                 for computer, data in computers.items():
                     text = data["compilation"]
                     if "compiles" == text:
@@ -1030,7 +1035,7 @@ def print_results(results, info):
                     else:
                         date = ""
                     logger.info(
-                        f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}{date}"
+                        f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}{date}"
                     )
     logger.info(f"{colorama.Fore.WHITE}")
     logger.info("")

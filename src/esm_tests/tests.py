@@ -29,65 +29,65 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
     in each ``resources/runscripts/<model>`` folder.
 """
 
-
-class Comparison:
-    """Compares two ESM Tools files"""
-
-    def __init__(self, test_file, truth_file):
-        """
-        Parameters
-        ----------
-        test_file : str
-            str representation (already opened and read in) of the file (e.g.
-            run file, compilatoin script, namelist) which you want to check
-        truth_file : str
-            str representation of the file which is known to be a valid truth.
-        """
-        self.test_file = test_file
-        self.truth_file = truth_file
-
-    @classmethod
-    def from_filepaths(cls, test_file, truth_file):
-        with open(test_file, "r") as f1:
-            test_file = f1.read()
-        with open(test_file, "r") as f2:
-            truth_file = f2.read()
-        return cls(test_file, truth_file)
-
-    @classmethod
-    def from_test_filepath_and_pkg(cls, test_file, truth_file):
-        """
-        Given a test filepath, and a relative truth path, return a new Comparison.
-
-        For the relative truth path, we are reading from the package. So,
-        assuming you want to use the following as your truth:
-
-        >>> truth_file = "ollie/run/awicm/awicm2-initial-monthly/scripts/awicm2-initial-monthly_compute_20000101 -20000131.run"
-
-        This would check the run file for a run of awicm using a awicm2
-        initialization with monthly restarts which is run on the ollie HPC.
-        """
-        # get last tested (Truth)
-        with open(test_file, "r") as f:
-            test_file = f1.read()
-        truth_file = read_shipped_data.get_last_tested(truth_file)
-        return cls(test_file, truth_file)
-
-
-class CompileFileComparison(Comparison):
-    pass
-
-
-class SadFileComparison(Comparison):
-    pass
-
-
-class FinishedESMConfigComparison(Comparison):
-    pass
-
-
-def NamelistsComparison(Comparison):
-    pass
+# Coded by @pgierz, but not finished, therefore commented.
+#class Comparison:
+#    """Compares two ESM Tools files"""
+#
+#    def __init__(self, test_file, truth_file):
+#        """
+#        Parameters
+#        ----------
+#        test_file : str
+#            str representation (already opened and read in) of the file (e.g.
+#            run file, compilatoin script, namelist) which you want to check
+#        truth_file : str
+#            str representation of the file which is known to be a valid truth.
+#        """
+#        self.test_file = test_file
+#        self.truth_file = truth_file
+#
+#    @classmethod
+#    def from_filepaths(cls, test_file, truth_file):
+#        with open(test_file, "r") as f1:
+#            test_file = f1.read()
+#        with open(test_file, "r") as f2:
+#            truth_file = f2.read()
+#        return cls(test_file, truth_file)
+#
+#    @classmethod
+#    def from_test_filepath_and_pkg(cls, test_file, truth_file):
+#        """
+#        Given a test filepath, and a relative truth path, return a new Comparison.
+#
+#        For the relative truth path, we are reading from the package. So,
+#        assuming you want to use the following as your truth:
+#
+#        >>> truth_file = "ollie/run/awicm/awicm2-initial-monthly/scripts/awicm2-initial-monthly_compute_20000101 -20000131.run"
+#
+#        This would check the run file for a run of awicm using a awicm2
+#        initialization with monthly restarts which is run on the ollie HPC.
+#        """
+#        # get last tested (Truth)
+#        with open(test_file, "r") as f:
+#            test_file = f1.read()
+#        truth_file = read_shipped_data.get_last_tested(truth_file)
+#        return cls(test_file, truth_file)
+#
+#
+#class CompileFileComparison(Comparison):
+#    pass
+#
+#
+#class SadFileComparison(Comparison):
+#    pass
+#
+#
+#class FinishedESMConfigComparison(Comparison):
+#    pass
+#
+#
+#def NamelistsComparison(Comparison):
+#    pass
 
 
 #######################################################################################
@@ -412,21 +412,6 @@ def run_test(info):
                             subc, finished_runs, success = experiment_state_action(
                                 info, "Simulation crashed!", False, v, finished_runs, cc, subc, model, script, version, progress
                             )
-            # if not info["keep_run_folders"]:
-            #    folders_to_remove = [
-            #        "run_",
-            #        "restart",
-            #        "outdata",
-            #        "input",
-            #        "forcing",
-            #        "unknown",
-            #    ]
-            #    logger.debug(f"\t\tDeleting {folders_to_remove}")
-            #    for folder in os.listdir(exp_dir):
-            #        for fr in folders_to_remove:
-            #            if fr in folder:
-            #                shutil.rmtree(f"{exp_dir}/{folder}")
-            #                continue
 
             # Update the testing index for the next iteration
             cc += 1
@@ -449,21 +434,6 @@ def run_test(info):
         # Wait 30 seconds to check again the state of the submitted tests
         if len(submitted) > 0:
             time.sleep(30)
-
-
-def experiment_state_action(info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress):
-    logger.info(f"\tRUN FINISHED ({progress}%) {model}/{script}")
-    if no_err:
-        logger.info(f"\t\tSuccess!")
-    else:
-        logger.error(f"\t\t{message}")
-    finished_runs.append(cc)
-    subc += 1
-    v["state"]["run_finished"] = no_err
-    # Run a check for run finished
-    success = check(info, "run", model, version, "", script, v)
-
-    return subc, finished_runs, success
 
 
 #######################################################################################
@@ -637,6 +607,58 @@ def check(info, mode, model, version, out, script, v):
     return success
 
 
+def experiment_state_action(info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress):
+    """
+    Triggers checks for finished runs and reports their state.
+
+    Parameters
+    ----------
+    info : dict
+        Dictionary that contains the testing info
+    message : str
+        Message to report about the state
+    no_err : bool
+        Boolean indicating whether errors occur (``False``) or not (``True``)
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    finished_runs : list
+        List of indexes for runs finished
+    cc : int
+        Run counter
+    subc : int
+        Counter for subruns
+    model : str
+        Model for which the check is run
+    script : str
+        Name of the script to be checked
+    version : str
+        Version of the model for which the check is run
+    progress : float
+        Percentage of the progress
+
+    Returns
+    -------
+    subc : int
+        Counter for subruns
+    finished_runs : list
+        List of indexes for runs finished
+    success : bool
+        Boolean indicating the success of the run
+    """
+    logger.info(f"\tRUN FINISHED ({progress}%) {model}/{script}")
+    if no_err:
+        logger.info(f"\t\t{message}")
+    else:
+        logger.error(f"\t\t{message}")
+    finished_runs.append(cc)
+    subc += 1
+    v["state"]["run_finished"] = no_err
+    # Run a check for run finished
+    success = check(info, "run", model, version, "", script, v)
+
+    return subc, finished_runs, success
+
+
 def check_perfect(info, results):
     """
     Exits if something is not perfect in the ``results``, to trigger a failted test
@@ -671,33 +693,89 @@ def check_perfect(info, results):
 
 
 def exist_files(files, path, version):
+    """
+    Checks whether the required files defined in
+    ``resources/runscripts/<model>/config.yaml`` are present or not and sets the state
+    if the ``files_check`` ``True`` (exist) or ``False`` (do not exist) depending on
+    that.
+
+    Each element of the list of files in the ``config.yaml`` can contain the following
+    special functionalities:
+    - ``*``: to trigger a wildcard evaluation
+    - ``except [<list of versions>]``: do not check this file for the versions inside
+      the ``[]``
+    - ``in [<list of versions>]``: check this file only for the versions inside the
+      ``[]``
+
+    Parameters
+    ----------
+    files : list
+        List of files to be checked, extracted from the ``config.yaml``
+    path : str
+        Path of the experiment
+    version : str
+        Version of the model
+    """
     files_checked = True
+    # Loop through files
     for f in files:
         exception_list = []
+        # Get the commands inside the ``[]``
         if " [" in f and f[-1]=="]":
             exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", f)
             if len(exception_list) > 1:
                 raise Exception("You should only have one list per file")
             exception_list = [x.replace(" ", "") for x in exception_list[0].split(",")]
+
+        # Command's logic
         if " except " in f and version in exception_list:
             continue
         elif " in " in f and not version in exception_list:
             continue
         else:
             f_path = f.split(" ")[0]
+
+        # Check for files with wildcards
         if "*" in f_path:
             listing = glob.glob(f"{path}/{f_path}")
             if len(listing) == 0:
                 logger.error(f"\t\tNo files following the pattern '{f_path}' were created!")
                 files_checked = False
+        # Check for files without wildcards
         else:
             if not os.path.isfile(f"{path}/{f_path}"):
                 logger.error(f"\t\t'{f_path}' does not exist!")
                 files_checked = False
+
     return files_checked
 
 
+#######################################################################################
+# UTILITIES
+#######################################################################################
 def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
+    """
+    Returns the relative paths of the files in ``last_tested`` the corresponding ones
+    in the current experiment.
+
+    Parameters
+    ----------
+    info : dict
+        Dictionary that contains the testing info
+    cfile : str
+        Name of the current file
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    this_test_dir : str
+        Path of the current experiment
+
+    Returns
+    -------
+    subpaths_source : list
+        Relative paths of the file in the current experiment
+    subpaths_target : list
+        Relative paths of the file in the ``last_tested`` folder
+    """
     # Load relevant variables from ``info``
     user_info = info["user"]
     # Initialize ``subpaths`` list

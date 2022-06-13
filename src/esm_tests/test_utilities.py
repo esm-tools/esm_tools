@@ -145,3 +145,32 @@ def combine_folders(source_dir, target_dir):
         # Check if the source path is a file, it it is copy the file into the target
         if os.path.isfile(source_dir):
             shutil.copy2(source_dir, target_dir)
+
+
+def clean_computer_specific_paths(path):
+    """
+    Given a path or a string, perform computer-specific path cleanups
+
+    Parameters
+    ----------
+    path : str
+        Path or string to be cleaned
+
+    Returns
+    -------
+    path : str
+        Cleaned path
+    """
+
+    clean = []
+    this_path = os.getcwd()
+
+    # Add the `/mnt/lustre.*/` string to clean
+    if this_path.startswith("/mnt/lustre"):
+        clean.append( "/".join(this_path.split("/")[:3]))
+
+    # Do the cleaning
+    for cl in clean:
+        path = path.replace(cl, "")
+
+    return path

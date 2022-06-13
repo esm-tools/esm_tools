@@ -147,30 +147,32 @@ def combine_folders(source_dir, target_dir):
             shutil.copy2(source_dir, target_dir)
 
 
-def clean_computer_specific_paths(path):
+def clean_user_specific_info(info, str2clean):
     """
-    Given a path or a string, perform computer-specific path cleanups
+    Given a string, perform user- and computer-specific cleanups.
 
     Parameters
     ----------
-    path : str
-        Path or string to be cleaned
+    str2clean : str
+        String to be cleaned
 
     Returns
     -------
-    path : str
-        Cleaned path
+    str2clean : str
+        Cleaned string
     """
 
-    clean = []
     this_path = os.getcwd()
 
     # Add the `/mnt/lustre.*/` string to clean
     if this_path.startswith("/mnt/lustre"):
-        clean.append( "/".join(this_path.split("/")[:3]))
+        mnt =  "/".join(this_path.split("/")[:3])
 
     # Do the cleaning
-    for cl in clean:
-        path = path.replace(cl, "")
+    for key, string in info["rm_user_info"].items():
+        if not string:
+            continue
+        str2clean = str2clean.replace(f"{mnt}{string}", f"<{key}>")
+        str2clean = str2clean.replace(string, f"<{key}>")
 
-    return path
+    return str2clean

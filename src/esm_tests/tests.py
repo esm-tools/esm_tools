@@ -588,7 +588,6 @@ def check(info, mode, model, version, out, script, v):
                         f"{user_info['test_dir']}/{sp}",
                         sp,
                         ignore_lines,
-                        info["rm_user_info"],
                     )
                     success += identical
                     # Update state dictionaries
@@ -877,7 +876,7 @@ def extract_namelists(s_config_yaml):
 #######################################################################################
 # OUTPUT
 #######################################################################################
-def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
+def print_diff(info, sscript, tscript, name, ignore_lines):
     script_s = open(sscript).readlines()
     script_t = open(tscript).readlines()
 
@@ -886,15 +885,7 @@ def print_diff(info, sscript, tscript, name, ignore_lines, rm_user):
         script_t = del_ignore_dicts(info, script_t)
 
     # Substitute user lines in target string
-    new_script_t = []
-    for line in script_t:
-        for key, string in rm_user.items():
-            if not string:
-                continue
-            line = clean_computer_specific_paths(line)
-            line = line.replace(string, f"<{key}>")
-        new_script_t.append(line)
-    script_t = new_script_t
+    script_t = clean_user_specific_info(info, script_t)
 
     # Check for ignored lines
     new_script_s = []
@@ -1056,15 +1047,9 @@ def save_files(info, user_choice):
                         shutil.copy2(f"{user_info['test_dir']}/{sp}", target_path)
 
                         # Modify lines containing user-specific information
-                        for key, string in info["rm_user_info"].items():
-                            if not string:
-                                continue
-                            with open(target_path) as f:
-                                stext = clean_computer_specific_paths(f.read())
-                                )
-                                stext = stext.replace(string, f"<{key}>")
-                            with open(target_path, "w") as f:
-                                f.write(stext)
+                        with open(target_path, "w") as f:
+                            stext = clean_user_specific_info(info, f.read())
+                            f.write(stext)
 
                         # If check run and file is the ``finished_config.yaml``
                         if "finished_config.yaml" in target_path:

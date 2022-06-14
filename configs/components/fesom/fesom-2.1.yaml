@@ -48,7 +48,11 @@ choose_version:
     branch: awiesm2-recom-parallel
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    destination: fesom-2.1-recom-par_tracers_mpi
+
+# kh 09.06.22 esm_runscripts expects namelist files in directory .../fesom-2.1/config/... for setups awiesm-2.1-recom*
+# todo: check if there is something to do regarding namelists handling when using version 2.1-recom-par_tracers_mpi standalone
+#   destination: fesom-2.1-recom-par_tracers_mpi
+
 # kh 08.03.22 todo: merge conflict (if enabled)
 #   include_models:
 #       - recom

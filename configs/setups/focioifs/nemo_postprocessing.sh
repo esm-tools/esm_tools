@@ -207,7 +207,7 @@ cd ${outmod}
 mkdir nc3
 
 filetags="${OCEAN_FILE_TAGS}"
-steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
+steps="${EXP_ID}_1h ${EXP_ID}_3h ${EXP_ID}_6h ${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1h 1_${EXP_ID}_3h 1_${EXP_ID}_6h 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
 tchunk=1; zchunk=1; ychunk=100; xchunk=100
 
 echo 0 > $post_dir/status

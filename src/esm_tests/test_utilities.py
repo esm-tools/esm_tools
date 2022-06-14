@@ -170,6 +170,7 @@ def clean_user_specific_info(info, str2clean):
         clean_str = [clean_str]
 
     # Add the `/mnt/lustre.*/` string to clean
+    mnt = ""
     if this_path.startswith("/mnt/lustre"):
         mnt =  "/".join(this_path.split("/")[:3])
 

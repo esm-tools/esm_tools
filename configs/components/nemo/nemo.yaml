@@ -357,6 +357,13 @@ choose_version:
           #namdyn_ldf:
           #   rn_ahm_0_blp: -2.4e10
           #   rn_ahm_m_blp: -8.e9
+          namsbc_rnf:
+             sn_cnf: ['rnf_cal_msk', 0, 'rnfmsk', .false., .true., 'yearly', '', '', '']
+             cn_dir: './' 
+             ln_rnf_mouth: '.true.'
+             rn_hrnf: 15.
+             rn_avt_rnf: 1e-3
+             rn_rfact: 1.0
        
        namelist_ice_cfg:
           namicedyn:
@@ -708,8 +715,10 @@ choose_resolution:
                         namelist_top_ref: namelist_top_ref
                         coordinates: coordinates
                         subbasins: subbasins
+                        rnfmask: rnfmask          
                 add_input_sources:
                         subbasins: ${input_dir}/ORCA0083_basinmsk_fullarctic.nc
+                        rnfmask: ${input_dir}/rnf_cal_msk.nc
 
         GYRE:
                 free_surface: no_option 

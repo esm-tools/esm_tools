@@ -14,7 +14,6 @@ import warnings
 import f90nml
 import six
 
-from esm_parser import user_error
 
 class Namelist:
     """Methods for dealing with FORTRAN namelists"""
@@ -492,14 +491,7 @@ class Namelist:
                     ib_num_old = 0
 
                 print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                iceberg_dir = config["fesom"].get("iceberg_dir", None)
-                if os.path.isfile(iceberg_dir + "/LON.dat"):
-                    ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
-                else:
-                    user_error(
-                        "Iceberg file missing",
-                        f'File ``{iceberg_dir}{"/LON.dat"}`` does not exist.'
-                    )
+                ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
                 icebergs["ib_num"] = ib_num_old + ib_num_new
                 nml["icebergs"] = icebergs
         return config

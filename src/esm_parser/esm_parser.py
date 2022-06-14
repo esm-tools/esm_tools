@@ -3055,7 +3055,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         ):
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
-            version_in_runscript_model = user_config[model_name].get("version")
+            version_in_runscript_model = user_config.get(model_name, {}).get("version")
             if version_in_runscript_general and version_in_runscript_model:
                 user_error(
                     "Version",
@@ -3065,7 +3065,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     "define ``only one version`` in one of the two sections."
                 )
             elif version_in_runscript_general and not version_in_runscript_model:
-                user_config[model_name]["version"] = version_in_runscript_general
+                if model_name in user_config:
+                    user_config[model_name]["version"] = version_in_runscript_general
 
     def finalize(self):
         self.run_recursive_functions(self)

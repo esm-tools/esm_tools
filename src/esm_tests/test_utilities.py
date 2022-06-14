@@ -163,16 +163,30 @@ def clean_user_specific_info(info, str2clean):
     """
 
     this_path = os.getcwd()
+    clean_str = str2clean
+
+    # Transform into a list if necessary
+    if isinstance(str2clean, str):
+        clean_str = [clean_str]
 
     # Add the `/mnt/lustre.*/` string to clean
     if this_path.startswith("/mnt/lustre"):
         mnt =  "/".join(this_path.split("/")[:3])
 
     # Do the cleaning
-    for key, string in info["rm_user_info"].items():
-        if not string:
-            continue
-        str2clean = str2clean.replace(f"{mnt}{string}", f"<{key}>")
-        str2clean = str2clean.replace(string, f"<{key}>")
+    new_clean_str = []
+    for line in clean_str:
+        for key, string in info["rm_user_info"].items():
+            if not string:
+                continue
+            line = line.replace(f"{mnt}{string}", f"<{key}>")
+            line = line.replace(string, f"<{key}>")
+        new_clean_str.append(line)
+    clean_str = new_clean_str
+
+    if isinstance(str2clean, str):
+        str2clean = clean_str[0]
+    else:
+        str2clean = clean_str
 
     return str2clean

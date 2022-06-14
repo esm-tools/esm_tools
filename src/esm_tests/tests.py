@@ -1047,8 +1047,9 @@ def save_files(info, user_choice):
                         shutil.copy2(f"{user_info['test_dir']}/{sp}", target_path)
 
                         # Modify lines containing user-specific information
-                        with open(target_path, "w") as f:
+                        with open(target_path) as f:
                             stext = clean_user_specific_info(info, f.read())
+                        with open(target_path, "w") as f:
                             f.write(stext)
 
                         # If check run and file is the ``finished_config.yaml``

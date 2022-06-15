@@ -63,6 +63,7 @@ class Info(dict):
 
         Returns
         -------
+         Returns a tuple with the following entries:
         save_flag : str
             It's value can be ``true``, ``True``, ``false``, ``False``, or
             ``Not defined``.

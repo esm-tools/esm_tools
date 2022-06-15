@@ -2,7 +2,12 @@ import collections.abc
 import os
 import shutil
 import subprocess
+import sys
+import urllib
+import urllib.request
 import yaml
+
+import esm_tests
 
 from loguru import logger
 
@@ -195,3 +200,43 @@ def clean_user_specific_info(info, str2clean):
         str2clean = clean_str
 
     return str2clean
+
+
+def print_state_online(info={}):
+    """
+    Returns the state of the tested models obtained directly from the repository online.
+    This method is aimed to be used externally from ``esm_tests`` (i.e. throw the
+    ``esm_tools --test-state`` command).
+
+    Parameters
+    ----------
+    info : dict
+        Info containing the testing info. In this case not all the keys are needed.
+        If not provided, defines the ``info`` keys needed.
+    """
+
+    url = "https://raw.githubusercontent.com/esm-tools/esm_tests_info/main/state.yaml"
+    try:
+        current_state = urllib.request.urlopen(url)
+    except urllib.error.HTTPError:
+        print(f"HTTP Error: Connection to file {url} containing update messages could not be established")
+        print("    The test state cannot be reported")
+        return
+
+    if not info:
+        info = {
+            "in_github": False,
+            "actually_compile": False,
+            "actually_run": False,
+        }
+
+    # Logger
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        filter={"": "WARNING", "esm_tests": "DEBUG"},
+        format="<level>{message}</level>",
+    )
+
+    state = yaml.load(current_state, Loader=yaml.FullLoader)
+    esm_tests.tests.print_results(state, info)

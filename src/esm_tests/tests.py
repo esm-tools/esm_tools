@@ -484,6 +484,13 @@ def check(info, mode, model, version, out, script, v):
     with open(f"{os.path.dirname(v['path'])}/config.yaml", "r") as c:
         config_test = yaml.load(c, Loader=yaml.FullLoader)
 
+    # Build the ignore_dict based on the general, model and script specific ignores
+    ignore_dict = copy.deepcopy(info["ignore"])
+    model_ignore = config_test.get("ignore_compare", {}).get("all", {})
+    deep_update(ignore_dict, model_ignore, extend_lists=True)
+    script_ignore = config_test.get("ignore_compare", {}).get(script, {})
+    deep_update(ignore_dict, script_ignore, extend_lists=True)
+
     # There are 3 modes: comp, submission and run, and 2 config_modes: comp and run.
     # This is because submission shares a lot of operations with run so they are in the
     # same config_mode group
@@ -568,7 +575,7 @@ def check(info, mode, model, version, out, script, v):
     # Loop through the files to be compared
     for cfile in this_compare_files:
         # Load lines to be ignored
-        ignore_lines = info["ignore"].get(cfile, [])
+        ignore_lines = ignore_dict.get(cfile, [])
         # Get relative paths of the files to be compared
         subpaths_source, subpaths_target = get_rel_paths_compare_files(
             info, cfile, v, this_test_dir

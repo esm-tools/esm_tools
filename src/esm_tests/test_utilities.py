@@ -70,7 +70,7 @@ def sh(inp_str, env_vars=[], verbose=False):
     return out
 
 
-def deep_update(d, u):
+def deep_update(d, u, extend_lists=False):
     """
     Recursively merge dictionary ``u`` into dictionary ``d``. Values of ``u`` win
     always over those of ``d``.
@@ -81,6 +81,8 @@ def deep_update(d, u):
         Dictionary in which the merge happens.
     u : dict
         Dictionary that updates ``d``.
+    extend_lists : bool
+        If ``True`` extend lists, if ``False`` rewrite them.
 
     Returns
     -------
@@ -90,6 +92,8 @@ def deep_update(d, u):
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = deep_update(d.get(k, {}), v)
+        elif isinstance(v, list) and isinstance(d[k], list) and extend_lists:
+            d[k].extend(v)
         else:
             d[k] = v
 

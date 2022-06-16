@@ -863,11 +863,26 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
 
 
 def extract_namelists(s_config_yaml):
+    """
+    Searches for the names of the namelists in the ``s_config_yaml`` (i.e.
+    ``*_finished_config.yaml``)
+
+    Parameters
+    ----------
+    s_config_yaml : str
+        Path to the ``*finished_config.yaml`` file.
+
+    Returns
+    -------
+    namelists : list
+        List of namelist names associated to this experiment.
+    """
     # Read config file
     with open(s_config_yaml, "r") as c:
         config = yaml.load(c, Loader=yaml.FullLoader)
 
     namelists = []
+    # Loop through the components to find the namelists
     for component in config.keys():
         namelists_component = config[component].get("namelists", [])
         for nml in namelists_component:
@@ -876,6 +891,10 @@ def extract_namelists(s_config_yaml):
                 [nml in x for x in config_sources.values()]
             ):
                 namelists.append(nml)
+
+    # Adds OASIS ``namcouple``
+    if "oasis3mct" in config:
+        namelists.append("namcouple")
 
     return namelists
 

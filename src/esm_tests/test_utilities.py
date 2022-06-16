@@ -1,5 +1,7 @@
 import collections.abc
+import glob
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -210,7 +212,7 @@ def print_state_online(info={}):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Info containing the testing info. In this case not all the keys are needed.
         If not provided, defines the ``info`` keys needed.
     """
@@ -240,3 +242,165 @@ def print_state_online(info={}):
 
     state = yaml.load(current_state, Loader=yaml.FullLoader)
     esm_tests.tests.print_results(state, info)
+
+
+def sort_dict(dict_to_sort):
+    """
+    Sorts the keys of the ``dict_to_sort`` dictionary recursively.
+
+    Parameters
+    ----------
+    dict_to_sort : dict
+        Dictionary to be sorted.
+
+    Returns
+    -------
+    dict_to_sort : dict
+        Dictionary sorted.
+    """
+    if isinstance(dict_to_sort, dict):
+        dict_to_sort = {key: dict_to_sort[key] for key in sorted(dict_to_sort.keys())}
+        for key, value in dict_to_sort.items():
+            dict_to_sort[key] = sort_dict(value)
+
+    return dict_to_sort
+
+
+def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
+    """
+    Returns the relative paths of the files in ``last_tested`` the corresponding ones
+    in the current experiment.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info
+    cfile : str
+        Name of the current file
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    this_test_dir : str
+        Path of the current experiment
+
+    Returns
+    -------
+    subpaths_source : list
+        Relative paths of the file in the current experiment
+    subpaths_target : list
+        Relative paths of the file in the ``last_tested`` folder
+    """
+    # Load relevant variables from ``info``
+    user_info = info["user"]
+    # Initialize ``subpaths`` list
+    subpaths = []
+    # If the file type is ``comp-``, append all the files that match that string to
+    # ``subpaths``
+    if cfile == "comp-":
+        for f in os.listdir(f"{user_info['test_dir']}/{this_test_dir}"):
+            if cfile in f:
+                subpaths.append(f"{this_test_dir}/{f}")
+        if len(subpaths) == 0:
+            logger.error("\t\tNo 'comp-*.sh' file found!")
+    # If the file type matches ``.run`` or ``finished_config``, append all the files
+    # that match that string to ``subpaths``. These files are taken always from the
+    # first ``run_`` folder so that a check test and an actual test files are
+    # comparable
+    elif cfile in [".run", "finished_config"]:
+        files_to_folders = {".run": "scripts", "finished_config": "config"}
+        ctype = files_to_folders[cfile]
+        ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
+        ldir.sort()
+        for f in ldir:
+            # Take the first run directory
+            if "run_" in f:
+                cf_path = f"{this_test_dir}/{f}/{ctype}/"
+                cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/*{cfile}*")
+                # If not found, try in the general directory
+                if len(cfiles) == 0:
+                    cf_path = f"{this_test_dir}/{ctype}/"
+                    cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/*{cfile}*")
+                # Make sure we always take the first run
+                cfiles.sort()
+                num = 0
+                if len(cfiles)==0:
+                    break
+                if os.path.islink(
+                    f"{user_info['test_dir']}/{cf_path}/{cfiles[num].split('/')[-1]}"
+                ):
+                    num = 1
+                subpaths.append(f"{cf_path}/{cfiles[num].split('/')[-1]}")
+                break
+    elif cfile == "namelists":
+        # Get path of the finished_config
+        s_config_yaml, _ = get_rel_paths_compare_files(
+            info, "finished_config", v, this_test_dir
+        )
+        if len(s_config_yaml)>0:
+            namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
+            ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
+            ldir.sort()
+            for f in ldir:
+                # Take the first run directory
+                if "run_" in f:
+                    cf_path = f"{this_test_dir}/{f}/work/"
+                    for n in namelists:
+                        if not os.path.isfile(f"{user_info['test_dir']}/{cf_path}/{n}"):
+                            logger.debug(f"'{cf_path}/{n}' does not exist!")
+                        subpaths.append(f"{cf_path}/{n}")
+                    break
+    else:
+        subpaths = [f"{this_test_dir}/{cfile}"]
+
+    # Remove run directory from the targets
+    subpaths_source = subpaths
+    subpaths_target = []
+    datestamp_format = re.compile(r"_[\d]{8}-[\d]{8}$")
+    for sp in subpaths:
+        sp_t = ""
+        pieces = sp.split("/")
+        for p in pieces:
+            if "run_" not in p:
+                sp_t += f"/{p}"
+        # Remove the datestamp
+        if datestamp_format.findall(sp_t):
+            sp_t = sp_t.replace(datestamp_format.findall(sp_t)[0], "")
+        subpaths_target.append(sp_t)
+
+    return subpaths_source, subpaths_target
+
+
+def extract_namelists(s_config_yaml):
+    """
+    Searches for the names of the namelists in the ``s_config_yaml`` (i.e.
+    ``*_finished_config.yaml``)
+
+    Parameters
+    ----------
+    s_config_yaml : str
+        Path to the ``*finished_config.yaml`` file.
+
+    Returns
+    -------
+    namelists : list
+        List of namelist names associated to this experiment.
+    """
+    # Read config file
+    with open(s_config_yaml, "r") as c:
+        config = yaml.load(c, Loader=yaml.FullLoader)
+
+    namelists = []
+    # Loop through the components to find the namelists
+    for component in config.keys():
+        namelists_component = config[component].get("namelists", [])
+        for nml in namelists_component:
+            config_sources = config[component].get("config_sources", {})
+            if nml in config_sources or any(
+                [nml in x for x in config_sources.values()]
+            ):
+                namelists.append(nml)
+
+    # Adds OASIS ``namcouple``
+    if "oasis3mct" in config:
+        namelists.append("namcouple")
+
+    return namelists

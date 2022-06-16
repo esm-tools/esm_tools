@@ -20,12 +20,12 @@ def user_config(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info, including the user defined options.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but with a nested ``user`` dictionary.
     """
     # If user info is not needed return None
@@ -109,12 +109,12 @@ def get_scripts(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but with a nested ``scripts`` dictionary.
     """
     for key, value in info.items():
@@ -203,12 +203,12 @@ def read_info_from_rs(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but but including the new information from the runscripts.
     """
     scripts_info = info["scripts"]
@@ -256,7 +256,7 @@ def del_prev_tests(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
     """
     scripts_info = info["scripts"]

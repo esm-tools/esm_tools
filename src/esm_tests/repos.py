@@ -13,7 +13,7 @@ def update_resources_submodule(info, verbose=True):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary with the general info about the tests.
     verbose : bool
         Verbose option.
@@ -50,7 +50,7 @@ def check_resources(info, verbose=True):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary with the general info about the tests.
     verbose : bool
         Verbose option.

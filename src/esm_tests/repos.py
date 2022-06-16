@@ -42,6 +42,7 @@ def update_resources_submodule(info, verbose=True):
             logger.error(f"Pull of {resources_branch} branch not possible")
             sys.exit(1)
 
+
 def check_resources(info, verbose=True):
     """
     Check if the submodule ``resources`` (``esm_tests_info``) is installed yet, and if
@@ -80,9 +81,10 @@ def check_resources(info, verbose=True):
                 "Missing resources for ESM-Tests",
                 "ESM-Tests needs the esm_tests_info submodule. Please, run "
                 "``esm_tests -u`` or accept the installation of the submodule in the "
-                "previous questionary."
+                "previous questionary.",
             )
         print()
+
 
 def info_repo():
     """

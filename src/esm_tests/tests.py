@@ -28,7 +28,7 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
 """
 
 # Coded by @pgierz, but not finished, therefore commented.
-#class Comparison:
+# class Comparison:
 #    """Compares two ESM Tools files"""
 #
 #    def __init__(self, test_file, truth_file):
@@ -72,19 +72,19 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
 #        return cls(test_file, truth_file)
 #
 #
-#class CompileFileComparison(Comparison):
+# class CompileFileComparison(Comparison):
 #    pass
 #
 #
-#class SadFileComparison(Comparison):
+# class SadFileComparison(Comparison):
 #    pass
 #
 #
-#class FinishedESMConfigComparison(Comparison):
+# class FinishedESMConfigComparison(Comparison):
 #    pass
 #
 #
-#def NamelistsComparison(Comparison):
+# def NamelistsComparison(Comparison):
 #    pass
 
 
@@ -385,7 +385,17 @@ def run_test(info):
                 submission_out = so.read()
             if "ERROR:" in submission_out:
                 subc, finished_runs, success = experiment_state_action(
-                    info, "Submission failed!", False, v, finished_runs, cc, subc, model, script, version, progress
+                    info,
+                    "Submission failed!",
+                    False,
+                    v,
+                    finished_runs,
+                    cc,
+                    subc,
+                    model,
+                    script,
+                    version,
+                    progress,
                 )
             # Search through the ``_compute_`` files for a string that indicates that
             # the run has finished
@@ -399,7 +409,17 @@ def run_test(info):
                         if "Reached the end of the simulation, quitting" in observe_out:
                             if nmodels_success == v["nmodels_iterative_coupling"]:
                                 subc, finished_runs, success = experiment_state_action(
-                                    info, "Success!", True, v, finished_runs, cc, subc, model, script, version, progress
+                                    info,
+                                    "Success!",
+                                    True,
+                                    v,
+                                    finished_runs,
+                                    cc,
+                                    subc,
+                                    model,
+                                    script,
+                                    version,
+                                    progress,
                                 )
                             else:
                                 nmodels_success += 1
@@ -408,7 +428,17 @@ def run_test(info):
                         # created anyway
                         elif "ERROR:" in observe_out:
                             subc, finished_runs, success = experiment_state_action(
-                                info, "Simulation crashed!", False, v, finished_runs, cc, subc, model, script, version, progress
+                                info,
+                                "Simulation crashed!",
+                                False,
+                                v,
+                                finished_runs,
+                                cc,
+                                subc,
+                                model,
+                                script,
+                                version,
+                                progress,
                             )
 
             # Update the testing index for the next iteration
@@ -611,7 +641,9 @@ def check(info, mode, model, version, out, script, v):
     return success
 
 
-def experiment_state_action(info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress):
+def experiment_state_action(
+    info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress
+):
     """
     Triggers checks for finished runs and reports their state.
 
@@ -688,12 +720,14 @@ def check_perfect(info, results):
         for version, scripts in versions.items():
             for script, computers in scripts.items():
                 for computer, data in computers.items():
-                    if data["compilation"]!=comp_perfect:
+                    if data["compilation"] != comp_perfect:
                         all_tests_passed = False
-                    if data["run"]!=run_perfect:
+                    if data["run"] != run_perfect:
                         all_tests_passed = False
     if not all_tests_passed:
-        sys.exit("Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions")
+        sys.exit(
+            "Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions"
+        )
 
 
 def exist_files(files, path, version):
@@ -725,7 +759,7 @@ def exist_files(files, path, version):
     for f in files:
         exception_list = []
         # Get the commands inside the ``[]``
-        if " [" in f and f[-1]=="]":
+        if " [" in f and f[-1] == "]":
             exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", f)
             if len(exception_list) > 1:
                 raise Exception("You should only have one list per file")
@@ -743,7 +777,9 @@ def exist_files(files, path, version):
         if "*" in f_path:
             listing = glob.glob(f"{path}/{f_path}")
             if len(listing) == 0:
-                logger.error(f"\t\tNo files following the pattern '{f_path}' were created!")
+                logger.error(
+                    f"\t\tNo files following the pattern '{f_path}' were created!"
+                )
                 files_checked = False
         # Check for files without wildcards
         else:

@@ -17,6 +17,7 @@ from .tests import *
 import os
 import sys
 
+
 def main():
     # Logger
     logger.remove()

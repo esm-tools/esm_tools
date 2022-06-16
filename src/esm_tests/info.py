@@ -1,6 +1,7 @@
 import argparse
 import os
 
+
 class Info(dict):
     """
     Dictionary subclass that contains all the information about the tests. The
@@ -52,10 +53,10 @@ class Info(dict):
 
     """
 
-
     def __init__(self):
-        self["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-
+        self["script_dir"] = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "."
+        )
 
     def argparse(self):
         """
@@ -74,7 +75,9 @@ class Info(dict):
             If ``True`` deletes the comp and experiment files before running the tests.
         """
 
-        parser = argparse.ArgumentParser(description="Automatic testing for ESM-Tools devs")
+        parser = argparse.ArgumentParser(
+            description="Automatic testing for ESM-Tools devs"
+        )
         parser.add_argument(
             "-n",
             "--no-user",

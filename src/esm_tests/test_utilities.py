@@ -183,7 +183,7 @@ def clean_user_specific_info(info, str2clean):
     # Add the `/mnt/lustre.*/` string to clean
     mnt = ""
     if this_path.startswith("/mnt/lustre"):
-        mnt =  "/".join(this_path.split("/")[:3])
+        mnt = "/".join(this_path.split("/")[:3])
 
     # Do the cleaning
     new_clean_str = []
@@ -221,7 +221,9 @@ def print_state_online(info={}):
     try:
         current_state = urllib.request.urlopen(url)
     except urllib.error.HTTPError:
-        print(f"HTTP Error: Connection to file {url} containing update messages could not be established")
+        print(
+            f"HTTP Error: Connection to file {url} containing update messages could not be established"
+        )
         print("    The test state cannot be reported")
         return
 
@@ -322,7 +324,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                 # Make sure we always take the first run
                 cfiles.sort()
                 num = 0
-                if len(cfiles)==0:
+                if len(cfiles) == 0:
                     break
                 if os.path.islink(
                     f"{user_info['test_dir']}/{cf_path}/{cfiles[num].split('/')[-1]}"
@@ -335,7 +337,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         s_config_yaml, _ = get_rel_paths_compare_files(
             info, "finished_config", v, this_test_dir
         )
-        if len(s_config_yaml)>0:
+        if len(s_config_yaml) > 0:
             namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
             ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
             ldir.sort()

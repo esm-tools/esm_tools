@@ -19,6 +19,7 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
 
+
 def print_diff(info, sfile, tfile, name, ignore_lines):
     """
     Prints the differences between two equivalent configuration files.
@@ -116,7 +117,8 @@ def del_ignore_dicts(info, yaml_file):
             in_dict = indentation_level > indentation_level_key
             in_dict |= (
                 indentation_level == indentation_level_key
-                and line.replace(" ", "")[0:1] == "- ")
+                and line.replace(" ", "")[0:1] == "- "
+            )
             if not in_dict:
                 dict_key_found = False
         # Reset dict_key_in_line

@@ -1,3 +1,5 @@
+# MEDUSA-2.0 YAML CONFIGURATION FILE
+#
 model: medusa
 branch: main
 version: '2.0'
@@ -7,17 +9,29 @@ choose_version:
       branch: main
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
-clean_command: ${defaults.clean_command}
-comp_command: "
-    <command1>;
-    <command2>;
-    <command3>;
-    "
 
-model_dir: "NONE"
-setup_dir: "${model_dir}"
-bin_dir: "${setup_dir}/bin"
+#YY: directory for code and libraries
+base_dir: "/work/ab0995/a270105/esm_code/medusa-2.0" 
+#YY: directory of medusa code
+model_dir: "${base_dir}/medmbm/trunk4mcg"
+#YY: directory of application
+setup_dir: "${model_dir}/apps/medusa_recom_awiesm"
+#YY: directory of executables
+bin_dir: "${model_dir}/work"
+#YY: fesom.mesh.diag.nc needed for medusa
 data_path: ""
 
-
+clean_command: ${defaults.clean_command}
+comp_command: "
+    cd ${base_dir};
+    mkdir -p lib;
+    mkdir -p include;
+    cd ${base_dir}/libthdyct/trunk;
+    make;
+    mv libthdyct.a ${base_dir}/lib;
+    cd ${base_dir}/muxml/trunk/src;
+    make libmodmxm.a;
+    mv libmodmxm.a ${base_dir}/lib;
+    cp modmxm.h *.mod ${base_dir}/include;
+    "
 

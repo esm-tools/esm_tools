@@ -2728,7 +2728,7 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
+def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
     """
     Notify the user about something. In the future this should also write in the log.
 
@@ -2740,12 +2740,15 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
         Text clarifying the note.
     """
     reset_s = colorama.Style.RESET_ALL
-    note_text = re.sub("``([^`]*)``", f"{color}\\1{reset_s}", note_text)
+    for dsymbol in dsymbols:
+        note_text = re.sub(
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+        )
     print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")
 
 
-def user_error(error_type, error_text, exit_code=1):
+def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
     """
     User-friendly error using ``sys.exit()`` instead of an ``Exception``.
 
@@ -2759,11 +2762,11 @@ def user_error(error_type, error_text, exit_code=1):
         The exit code to send back to the parent process (default to 1)
     """
     error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED)
+    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
     sys.exit(exit_code)
 
 
-class GeneralConfig(dict):  # pragma: no cover
+class GeneralConfig(dict):  # pra:vsplgma: no cover
     """All configs do this!"""
 
     def __init__(self, model, version, user_config):

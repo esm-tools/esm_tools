@@ -459,13 +459,13 @@ oasis3mct:
                 
                 # Couple atm fluxes to ocean (conserving)
                 atmflx: 
-                        #- 'O_QsrMix:O_QnsMix:OTotRain <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain'
-                        - 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
-                        - 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
-                        - 'OTotRain <--a2ogauswgtcn-- ATotRain'
-                        - 'OTotSnow <--a2ogauswgtcn-- ATotSnow'
-                        - 'OIceEvap <--a2ogauswgtcn-- AIceEvap'
-                        - 'OTotEvap <--a2ogauswgtcn-- ATotEvap'
+                        - 'O_QsrMix:O_QnsMix:OTotRain:OTotSnow:OIceEvap:OTotEvap <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:AIceEvap:ATotEvap'
+                        #- 'O_QsrMix <--a2ogauswgtcn-- A_QsrMix'
+                        #- 'O_QnsMix <--a2ogauswgtcn-- A_QnsMix'
+                        #- 'OTotRain <--a2ogauswgtcn-- ATotRain'
+                        #- 'OTotSnow <--a2ogauswgtcn-- ATotSnow'
+                        #- 'OIceEvap <--a2ogauswgtcn-- AIceEvap'
+                        #- 'OTotEvap <--a2ogauswgtcn-- ATotEvap'
          
         choose_general.version:
                 agrif:

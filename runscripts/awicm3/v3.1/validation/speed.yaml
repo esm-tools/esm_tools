@@ -3,13 +3,13 @@ general:
     setup_name: "awicm3"
     version: "frontiers-xios"
     account: "esmtst"
-    compute_time: "08:00:00"
-    initial_date: "1850-01-01"
-    final_date: "2010-01-01"
+    compute_time: "00:10:00"
+    initial_date: "1350-01-01"
+    final_date: "1350-02-01"
     base_dir: "/p/scratch/chhb20/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
-    nmonth: 0
-    nyear: 20
+    nmonth: 1
+    nyear: 0
     install_esm_tools_branch: awi-cm3.1_testruns
 
 awicm3:
@@ -21,19 +21,10 @@ fesom:
     resolution: "CORE2"
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
-    restart_rate: 20
-    restart_unit: "y"
-    restart_first: 20
-    lresume: true
-    ini_parent_exp_id: "D00"
-    ini_parent_date: "1849-12-31"
-    ini_parent_dir: "//p/scratch/chhb20/streffing1/runtime/awicm3-frontiers-xios/Spinup_SPP/restart/fesom/"
-    choose_general.run_number:
-        1:
-            restart_in_sources:
-                par_oce_restart: /p/scratch/chhb20/streffing1/runtime/awicm3-frontiers-xios/Spinup_SPP/restart/fesom/fesom.1849.oce.restart/*.nc
-                par_ice_restart: /p/scratch/chhb20/streffing1/runtime/awicm3-frontiers-xios/Spinup_SPP/restart/fesom/fesom.1849.ice.restart/*.nc
-
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: false
     time_step: 2400
     nproc: 432
     add_namelist_changes:
@@ -64,7 +55,7 @@ oifs:
                 LECURR: true
             NAERAD:
                 NSOLARSPECTRUM: "1"
-                NCMIPFIXYR: "0"
+                NCMIPFIXYR: "1850"
 rnfmap:
     input_sources:
         runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}_new.nc

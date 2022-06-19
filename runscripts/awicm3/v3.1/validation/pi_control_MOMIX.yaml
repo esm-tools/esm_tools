@@ -3,7 +3,7 @@ general:
     setup_name: "awicm3"
     version: "frontiers-xios"
     account: "esmtst"
-    compute_time: "06:00:00"
+    compute_time: "08:00:00"
     initial_date: "1850-01-01"
     final_date: "2010-01-01"
     base_dir: "/p/scratch/chhb20/${user}/runtime/${general.setup_name}-${general.version}/"

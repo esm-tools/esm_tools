@@ -28,6 +28,7 @@ available_versions:
 - '4.0-oifsdeck'
 - '4.0-awicm-frontiers'
 - '4.0-awicm-3.0'
+- '4.0-awicm-3.1'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8'
@@ -43,6 +44,8 @@ choose_version:
     branch: '4.0'
   4.0-awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
+  4.0-awicm-3.1:
+    branch: tags/awicm-3.1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
   ec-earth:

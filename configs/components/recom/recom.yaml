@@ -36,6 +36,7 @@ metadata:
         Please make sure you have a licence to use REcoM. In case you are unsure,
         please contact redmine...
 
+model_dir: "NONE"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 data_path: ""

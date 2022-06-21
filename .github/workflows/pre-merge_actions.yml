@@ -38,7 +38,6 @@ jobs:
         run: |
           git config --global user.name "${GITHUB_ACTOR}";
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       # Checkout PR-branch (I could not find an easier way to do this and it seems
       # many people are struggling with the same problem when your event is triggered
@@ -76,7 +75,7 @@ jobs:
             )
           )
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
@@ -98,7 +97,7 @@ jobs:
             )
           )
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: minor
@@ -110,7 +109,7 @@ jobs:
           !contains(github.event.comment.body, '#patch') &&
           !contains(github.event.comment.body, '#minor')
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: major
@@ -123,7 +122,7 @@ jobs:
           !contains(steps.vars.outputs.current_branch, 'fix/') &&
           !contains(github.event.comment.body, '#major')
           }}
-        uses: jaumann/github-bumpversion-action@master
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
         

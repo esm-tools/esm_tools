@@ -343,7 +343,13 @@ choose_computer.name:
                                 - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
                                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
-                                - "takenfrom='fesom1'"
+        levante:
+                add_compiletime_environment_changes:
+                        add_export_vars:
+                                NETCDF_DIR: ${computer.netcdf_cxx_root}
+                                NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include
+                                NETCDF_CXX_LIBRARIES: ${computer.netcdf_cxx_root}/lib
+                                LD_LIBRARY_PATH[(10)]: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
 
 coupling_fields:
         sst_feom:

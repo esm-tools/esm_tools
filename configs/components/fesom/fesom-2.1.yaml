@@ -34,10 +34,59 @@ choose_version:
     branch: wiso
     wiso_code: true
   2.1-recom:
-    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    branch: awiesm2-recom-wiso-mass # MA: We will need a new branch for Martin Butzin changes
     wiso_code: true
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
+  2.1-recom-par_tracers: # MA: for Kai testing ESM-Tools in Levante
+    branch: feature/par_tracers
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    destination: fesom-2.1-recom-par_tracers
+
+  2.1-recom-par_tracers_mpi: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
+    branch: awiesm2-recom-parallel
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    destination: fesom-2.1-recom-par_tracers_mpi
+# kh 08.03.22 todo: merge conflict (if enabled)
+#   include_models:
+#       - recom
+# YY: 29.04.22 to compile wiso code
+    wiso_code: true
+
+# MA: changes specific to PAR-TRACERS go here so they don't destroy other working versions of FESOM-2.1)
+# TODO: remove this block when PAR-TRACERS is generalized!
+par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
+choose_fesom.par_tracers:
+    True:
+        namelist_dir: "${model_dir}/config/"
+        # kh 21.02.22 use uppercase here
+        forcing_data_dir: "${pool_dir}/FORCING/"
+        # kh 21.02.22
+        asforcing: CORE2
+        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
+        remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
+        # kh 14.04.22 last used for core2 resolution on levante
+        # kh 19.04.22 disable for haralds's tests
+        nproc: 1024
+        # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
+        remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
+            nm_xwind_file, nm_ywind_file, nm_humi_file, nm_qsr_file, nm_qlw_file,
+            nm_tair_file, nm_prec_file, nm_snow_file, nm_mslp_file, nm_runoff_file,
+            nm_sss_data_file]
+        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
+        remove_fesom.config_files: [cvmix, icepack]
+        # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
+        add_config_files:
+                recom:   recom
+                io.recom.ciso: io.recom.ciso
+        # kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
+        add_config_sources:
+                recom:   "${namelist_dir}/namelist.recom"
+                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+#-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
+
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -74,6 +123,11 @@ choose_computer.name:
             add_module_actions:
                 - "unload gcc"
                 - "load gcc/4.8.2"
+    levante:
+        pool_dir: "${computer.pool_directories.pool}/AWICM/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+        forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
+        mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"

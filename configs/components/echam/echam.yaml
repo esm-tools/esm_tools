@@ -171,20 +171,24 @@ nprocb: 24
 lrad_async: false
 lrestart_from_old: false
 
+choose_computer.partitions.compute.cores_per_node:
+        24:
+                nproca: 24
+                nprocb: 24
+
+        36:
+                nproca: 24
+                nprocb: 24
+        128:
+                nproca: 16
+                nprocb: 16
+
 choose_resolution:
         T63:
                 levels: "L47"
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.partitions.compute.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 24
-
-                        36:
-                                nproca: 24
-                                nprocb: 24
 
         T31:
                 levels: "L19"
@@ -274,6 +278,7 @@ choose_version:
 #               npromar: 8
 #               lrad_async: true
 #               lrestart_from_old: false
+
 
 choose_concurrent_radiation_code:
         True:

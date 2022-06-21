@@ -29,21 +29,6 @@ Some of the ``esm_tools`` components are hosted in the gitlab.dkrz.de servers. T
 
 .. include:: ../README.rst
 
-Configuration
--------------
-
-If you have installed ``esm_tools`` you need to configure it before the first use to setup the hidden file ``$HOME/.esmtoolsrc`` correctly. This configuration will set required user information that are needed by both ``esm_master`` and ``esm_runscripts`` to work correctly. Such information are your user accounts on the different software repositories, your account on the machines you want to compute on, and some basic settings for the esm_runscripts.
-
-To configure esm_master you should run the executable::
-
-$ esm_master
-
-Running it for the first time after installation, you will be asked to type in your user settings. This interactive configuration includes the following steps::
-
-$ Please enter your username for gitlab.dkrz.de (default: anonymous)
-$ Please enter your username for swrepo1.awi.de (default: anonymous)
-
-Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
 
 Upgrade ESM-Tools
 -----------------

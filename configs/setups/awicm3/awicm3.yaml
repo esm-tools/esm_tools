@@ -58,8 +58,6 @@ general:
 
         choose_computer.name:
                 levante:
-                        pool_dir: "/work/ab0246/from_Mistral/ab0246/a270092/input"
-                mistral:
                         pool_dir: "/work/ab0246/a270092/input"
                 ollie:
                         pool_dir: "/work/ollie/jstreffi/input"
@@ -418,12 +416,15 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
-
+        rstos_file_name: "rstos"
+        rstas_file_name: "rstas"
         choose_general.version:
                 'frontiers-xios':
                         add_process_ordering:
                                 - xios
                 'v3.1':
+                        rstos_file_name: 'rstos_uv'
+                        rstas_file_name: 'rstas_uv'
                         add_process_ordering:
                                 - xios
                         add_coupling_target_fields:
@@ -560,17 +561,10 @@ oasis3mct:
                         load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
-                                        choose_version:
-                                                'v3.1':
-                                                        add_restart_in_sources:
-                                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                                rstas.nc: ${input_dir}/${fesom.nproc}/rstas_uv.nc
-                                                                rstos.nc: ${input_dir}/${fesom.nproc}/rstos_uv.nc
-                                                '*':
-                                                        add_restart_in_sources:
-                                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                                rstas.nc: ${input_dir}/${fesom.nproc}/rstas.nc
-                                                                rstos.nc: ${input_dir}/${fesom.nproc}/rstos.nc
+                                        add_restart_in_sources:
+                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

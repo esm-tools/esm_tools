@@ -3,6 +3,8 @@
 name: generic
 accounting: false
 
+
+hetjob_flag: "?" # either hetjob or packjob
 batch_system: "slurm"
 
 jobtype: compute

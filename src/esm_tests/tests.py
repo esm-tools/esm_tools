@@ -383,7 +383,7 @@ def run_test(info):
             nmodels_success = 1
             with open(f"{exp_dir}/run.out", "r") as so:
                 submission_out = so.read()
-            if "ERROR:" in submission_out:
+            if "ERROR:" in submission_out or not v["state"].get("submission", False):
                 subc, finished_runs, success = experiment_state_action(
                     info,
                     "Submission failed!",

@@ -215,7 +215,6 @@ read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
 post_processing: 0
-use_ocean_currents: 0
 pextra: 0
 dr_hook_ignore_signals: -1
 
@@ -773,19 +772,6 @@ choose_wam:
 #======================================================================================
 # OTHER CONFIGS AND SWITCHES
 #======================================================================================
-
-# For coupled setups we can use ocean currents
-choose_use_ocean_currents:
-        1:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".true."
-        0:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".false."
 
 ##
 ## mass conservation / mass fixer

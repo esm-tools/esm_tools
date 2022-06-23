@@ -45,7 +45,7 @@ choose_version:
   4.0-awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
   4.0-awicm-3.1:
-    branch: tags/awicm-3.1
+    branch: awicm-3.1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
   ec-earth:

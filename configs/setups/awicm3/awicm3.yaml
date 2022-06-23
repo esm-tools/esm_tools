@@ -380,7 +380,7 @@ rnfmap:
 # Settings for OASIS
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis_experimental/
+        pool_dir: ${general.pool_dir}/oasis/
         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
         mct_version: 4.0
         norestart: "F"
@@ -416,12 +416,12 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
-        rstos_file_name: "rstos"
-        rstas_file_name: "rstas"
         choose_general.version:
                 'frontiers-xios':
                         add_process_ordering:
                                 - xios
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
                 'v3.1':
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
@@ -430,6 +430,9 @@ oasis3mct:
                         add_coupling_target_fields:
                                 add_rstos.nc:
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                '*':
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
 
         coupling_target_fields:
                 rstas.nc:

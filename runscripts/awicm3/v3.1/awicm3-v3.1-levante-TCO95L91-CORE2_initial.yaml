@@ -7,8 +7,8 @@ general:
     initial_date: "2000-01-01"
     final_date: "2000-02-01"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 0
-    nmonth: 1
+    nday: 1
+    nmonth: 0
     nyear: 0
 
 computer:
@@ -23,11 +23,11 @@ fesom:
     pool_dir: "/work/ab0246/a270092/input/fesom2/"
     mesh_dir: "${pool_dir}/core2/"
     restart_rate: 1
-    restart_unit: "m"
+    restart_unit: "d"
     restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 768
+    nproc: 384
 
 oifs:
     resolution: "TCO95"
@@ -38,7 +38,7 @@ oifs:
     lresume: false
     time_step: 3600
     nproc: 384
-    omp_num_threads: 8
+    omp_num_threads: 1
 
 rnfmap:
     omp_num_threads: 128

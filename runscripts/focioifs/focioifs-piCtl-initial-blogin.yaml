@@ -29,7 +29,7 @@ focioifs:
 oifs:
    version: "43r3"
    with_xios: True
-   scenario: "piControl"
+   scenario: "historical"   
    mip: "cmip6"
    pool_dir: /scratch/projects/shk00018/foci_input2/
    input_dir: "${pool_dir}/openifs_cy43_tco95/"
@@ -52,10 +52,11 @@ oifs:
    perturb: 0
    sclct_switch: 2
 
-   #add_namelist_changes:
-   #    fort.4:
-   #        NAMGFL:
-   #            NMFDIAGLEV: 2
+   add_namelist_changes:
+       fort.4:
+           NAERAD:
+               NCMIPFIXYR: 1950
+               LSOLAR1950: ".true."
 
 oasis3mct:
    norestart: F

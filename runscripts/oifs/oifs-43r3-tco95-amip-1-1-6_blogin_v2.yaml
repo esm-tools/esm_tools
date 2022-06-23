@@ -8,7 +8,7 @@ general:
         account: shk00018
         initial_date: "1979-01-01T00:00:00"
         final_date: "2015-01-01T00:00:00"
-        model_dir: /home/shkjocke/esm/models/oifs-43r3-v1/
+        model_dir: /home/shkjocke/esm/models/oifs-43r3-v2/
         base_dir: /scratch/usr/shkjocke/esm-experiments/
         nyear: 1
         nmonth: 0
@@ -40,26 +40,28 @@ oifs:
         nproc: 288
         omp_num_threads: 1
         perturb: 0
-        #solarspectrum: 1 #only works with 43r3v2
         ensemble_id: 1
         restart_type: eternal
         
-        # For prognostic O3 (Cariolle scheme) set
-        # YO3_NL%LGP to true (O3 advection)
-        # LEO3CH to true (for chem scheme)
-        # LEPO3RA to true (for use in rad scheme)
-        # NGHGRAD to 20 (so prog overwrites climatology)
-        add_namelist_changes:
-            fort.4:
-                NAMGFL:
-                   YO3_NL%LGP: '.true.'
-                NAEPHY:
-                   LEO3CH: '.true.'
-                NAERAD:
-                   LEPO3RA: '.true.'
-                   LCMIP6O3: '.false.'
-                   LEO3VAR: '.false.'  
-                   NGHGRAD: 20
+        # Only for 43r3-v2
+        solarspectrum: 1
+        o3_scheme: cmip6
+        
+        # For CMIP6 O3 we set 
+        # LCMIP6O3 to true
+        # LEO3VAR to true
+        # LEPO3RA to false (otherwise prognostic O3 is used)
+        #add_namelist_changes:
+        #    fort.4:
+        #        NAMGFL:
+        #           YO3_NL%LGP: '.true.'
+        #        NAEPHY:
+        #           LEO3CH: '.true.'
+        #        NAERAD:
+        #           LEPO3RA: '.false.'
+        #           LCMIP6O3: '.true.'
+        #           LEO3VAR: '.true.'  
+        #           NGHGRAD: 21
         
 xios:
         # Precip and 2t every time step + 3hr + 6hrPLev + 1 day PV + monthly

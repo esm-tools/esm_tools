@@ -412,6 +412,7 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
+
         choose_general.version:
                 'frontiers-xios':
                         add_process_ordering:
@@ -419,6 +420,9 @@ oasis3mct:
                 'v3.1':
                         add_process_ordering:
                                 - xios
+                        add_coupling_target_fields:
+                                add_rstos.nc:
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
 
         coupling_target_fields:
                 rstas.nc:
@@ -428,15 +432,9 @@ oasis3mct:
                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
-                choose_version:
-                        'v3.1':
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                rstos.nc:
+                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
-                        '*':
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
         coupling_directions:
                 'atma->feom':

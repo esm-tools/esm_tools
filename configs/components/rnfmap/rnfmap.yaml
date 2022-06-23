@@ -22,6 +22,9 @@ available_versions:
 - awicm-frontiers
 - focioifs
 - focioifs1
+
+runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
+
 choose_version:
   ec-earth:
     branch: esm-tools
@@ -34,6 +37,7 @@ choose_version:
   awicm-3.1:
     branch: awicm3-frontiers-freeze-candidate-1
     destination: rnfmap
+    runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:
@@ -93,11 +97,7 @@ input_in_work:
         runoff_maps: runoff_maps.nc
 
 input_sources:
-        choose_version:
-                'awicm-3.1':               
-                        runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}_new.nc
-                '*':
-                        runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}.nc
+        runoff_maps: ${runoff_file}
 
 coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":

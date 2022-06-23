@@ -42,9 +42,4 @@ oasis3mct:
     time_step: 7200
     use_lucia: true
 
-xios:
-    with_model: oifs
-    nproc: 7
-    omp_num_threads: 36
-
 

@@ -45,7 +45,8 @@ choose_version:
     destination: fesom-2.1-recom-par_tracers
 
   2.1-recom-par_tracers_mpi: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
-    branch: awiesm2-recom-parallel
+    branch: awiesm2-recom-mpi # merged with awiesm2-recom-wiso-mass
+#    branch: awiesm2-recom-parallel # old version of awiesm2-recom-wiso-mass + tracer parallelisation
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
 

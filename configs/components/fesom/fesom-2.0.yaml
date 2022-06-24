@@ -30,7 +30,12 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-5
+    branch: AWI-CM_v3.0
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-awicm-3.1:
+    branch: AWI-CM_v3.1
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -346,6 +351,10 @@ coupling_fields:
         sie_feom:
                 grid: feom
         snt_feom:
+                grid: feom
+        u_feom:
+                grid: feom
+        v_feom:
                 grid: feom
         taux_oce:
                 grid: feom

@@ -34,7 +34,7 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 180
+    nproc: 36
     omp_num_threads: 1
 
 oasis3mct:

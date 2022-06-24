@@ -459,9 +459,6 @@ class oasis:
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""
         # Loop through the fields and their corresponding models and exes
-        os.system(
-            "cdo -v"
-        )
         for field, model, exe in zip(all_fields, models, exes):
             print(field + "-" + model, flush=True)
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")

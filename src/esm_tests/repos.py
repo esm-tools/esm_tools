@@ -10,6 +10,13 @@ from esm_parser import user_error
 def update_resources_submodule(info, verbose=True):
     """
     Initiates and updates the module ``esm_tests_info``.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary with the general info about the tests.
+    verbose : bool
+        Verbose option.
     """
 
     check_resources(info, verbose)
@@ -35,7 +42,26 @@ def update_resources_submodule(info, verbose=True):
             logger.error(f"Pull of {resources_branch} branch not possible")
             sys.exit(1)
 
+
 def check_resources(info, verbose=True):
+    """
+    Check if the submodule ``resources`` (``esm_tests_info``) is installed yet, and if
+    not, asks the user whether it needs to install it or not. If the user wants to
+    install it sets ``info["repo_update"] = True``.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary with the general info about the tests.
+    verbose : bool
+        Verbose option.
+
+    Notes
+    -----
+    Missing resources for ESM-Tests error : esm_parser.user_error
+        Returns an ``esm_parser.user_error`` if the user decides not to install the
+        submodule.
+    """
     resources_folder = f"{info['script_dir']}/resources/"
     dir_resources = os.listdir(resources_folder)
     if not (
@@ -55,9 +81,10 @@ def check_resources(info, verbose=True):
                 "Missing resources for ESM-Tests",
                 "ESM-Tests needs the esm_tests_info submodule. Please, run "
                 "``esm_tests -u`` or accept the installation of the submodule in the "
-                "previous questionary."
+                "previous questionary.",
             )
         print()
+
 
 def info_repo():
     """

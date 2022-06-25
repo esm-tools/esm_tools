@@ -135,7 +135,8 @@ def comp_test(info):
                 comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            logger.info(f"\tCOMPILING ({progress}%) {model}-{version}:")
+            title = f"COMPILING ({progress}%) {model}-{version}"
+            logger.info("\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
             if not os.path.isdir(general_model_dir):
@@ -262,6 +263,7 @@ def comp_test(info):
             success = check(info, "comp", model, version, out, script, v)
             if success:
                 logger.info("\t\tSuccess!")
+            logger.info(f'\t\t{info["group_output"]["endg"]}')
 
 
 def run_test(info):
@@ -301,7 +303,8 @@ def run_test(info):
             general_run_dir = f"{user_info['test_dir']}/run/{model}/"
             run_dir = f"{general_run_dir}/{script}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            logger.info(f"\tSUBMITTING ({progress}%) {model}/{script}:")
+            title = f"SUBMITTING ({progress}%) {model}/{script}"
+            logger.info(f"\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
             if not os.path.isdir(general_run_dir):
@@ -358,6 +361,8 @@ def run_test(info):
 
             # Check submission
             success = check(info, "submission", model, version, out, script, v)
+
+            logger.info(f'\t\t{info["group_output"]["endg"]}')
 
     # Check if simulations are finished
     total_sub = len(submitted)

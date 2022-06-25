@@ -114,6 +114,7 @@ def comp_test(info):
 
     # Set the counter to 0
     c = 0
+    logger.info("")
     # Loop through the models and their scripts
     for model, scripts in scripts_info.items():
         if model == "general":
@@ -135,7 +136,7 @@ def comp_test(info):
                 comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            title = f"COMPILING ({progress}%) {model}-{version}"
+            title = f"COMPILING ({progress}%) {bs}{model}-{version}{be}"
             logger.info("\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
@@ -303,7 +304,7 @@ def run_test(info):
             general_run_dir = f"{user_info['test_dir']}/run/{model}/"
             run_dir = f"{general_run_dir}/{script}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            title = f"SUBMITTING ({progress}%) {model}/{script}"
+            title = f"SUBMITTING ({progress}%) {bs}{model}/{script}{be}"
             logger.info(f"\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
@@ -467,6 +468,8 @@ def run_test(info):
         # Wait 30 seconds to check again the state of the submitted tests
         if len(submitted) > 0:
             time.sleep(30)
+
+    logger.info("")
 
 
 #######################################################################################

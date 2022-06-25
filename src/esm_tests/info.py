@@ -167,7 +167,7 @@ class Info(dict):
         self["system_exit_on_errors"] = args["system_exit_on_errors"]
 
         if self["in_github"]:
-            self["group_output"] = {"startg": "::group::{{{0}}}", "endg": "::endgroup::"}
+            self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}
         else:
             self["group_output"] = {"startg": "{0}", "endg": ""}
 

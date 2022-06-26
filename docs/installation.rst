@@ -16,6 +16,24 @@ $ git clone https://github.com/esm-tools/esm_tools.git
 
 This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines, etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
 
+Installing in an encapuslated environment
+-----------------------------------------
+
+Based on an alternative installation procedure, that provides an esm-tools installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of esm-tools alongside each other. These different installations do not impact each others' configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific esm-tools version that you install. There is no dependency on configurations outside the installation directory of a specific esm-tools version, mitigating the potential for side effects if another version of esm tools is installed in parallel. To install esm-tools as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of direnv, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of esm-tools will be installed, and installing the the esm-tools via pip.
+The commands to be executed are (note comments for further explanation)::
+
+    $ curl -sfL https://direnv.net/install.sh | bash # install direnv if not yet done - this enables encapsulation and parallel use of different esm-tools versions
+    $ mkdir esm_tools_v6.1.10 #adjust version number as appropriate
+    $ cd esm_tools_v6.1.10/
+      #create .envrc (e.g. via direnv edit .) and add information matching the result of the cat command below
+    $ cat .envrc
+      module load python3
+      layout python
+      module load gcc
+    $ pip install -U pip wheel
+    $ pip install esm-tools
+
+
 Accessing components in DKRZ server
 -----------------------------------
 

@@ -1,0 +1,11 @@
+# Triggers ESM-Tests for PRs
+# ==========================
+
+name: esm_tests
+
+# Triggers the workflow on a push or a pull
+on: [pull_request]
+
+jobs:
+  esm_tests:
+    uses: ./.github/workflows/esm_tests_computers.yml

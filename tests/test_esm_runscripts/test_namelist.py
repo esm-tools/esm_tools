@@ -22,9 +22,17 @@ echam:
     namelists:
         - "namelist.echam"
 """
-TEST_NML_PATH = (
-    "namelists/echam/6.3.05p2-concurrent_radiation-paleodyn/PI-CTRL/namelist.echam"
-)
+TEST_NML = """
+&section1
+var1=1
+var2=2
+/
+
+&section2
+var3=3
+var4=4
+/
+"""
 
 
 class Capturing(list):
@@ -50,7 +58,8 @@ class TestNamelist(unittest.TestCase):
         self._thisrun_config_dir = tempfile.mkdtemp()
         self.mconfig["thisrun_config_dir"] = self._thisrun_config_dir
         self._thisrun_namelist_path = os.path.join(self._thisrun_config_dir, self._nml_name)
-        shutil.copy2(TEST_NML_PATH, self._thisrun_namelist_path)
+        with open(self._thisrun_namelist_path, "w") as f:
+            f.write(TEST_NML)
 
     def tearDown(self):
         shutil.rmtree(self._thisrun_config_dir)
@@ -58,7 +67,6 @@ class TestNamelist(unittest.TestCase):
     def test_nmls_load(self):
         """Tests whether namelists can be loaded correctly"""
         config = namelists.Namelist.nmls_load(self.mconfig)
-        print(config)
         assert config
 
     def test_nmls_syntax(self):
@@ -78,6 +86,4 @@ class TestNamelist(unittest.TestCase):
 
         # error needs to exist as the namelist has incorrect syntax
         assert isinstance(error, SystemExit)
-        for line in output:
-            print(line)
         assert any(["ERROR: Namelist format" in line for line in output])

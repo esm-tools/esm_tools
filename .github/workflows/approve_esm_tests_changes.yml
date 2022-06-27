@@ -11,6 +11,7 @@ name: approve esm_tests changes
 on:
   issue_comment:
     types: [created]
+    branch: CI/automate_esm_tests_info_update #remove this later
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

@@ -139,11 +139,11 @@ jobs:
           secrets:
             PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       # Merge PR-branch into `develop`
-      - name: merge into develop
-        run: |
-          echo ${{ steps.vars.outputs.current_branch }};
-          git checkout develop;
-          git merge ${{ steps.vars.outputs.current_branch }};
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+      # - name: merge into develop
+      #   run: |
+      #     echo ${{ steps.vars.outputs.current_branch }};
+      #     git checkout develop;
+      #     git merge ${{ steps.vars.outputs.current_branch }};
+      #     git push
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  

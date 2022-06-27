@@ -27,6 +27,33 @@ jobs:
 
     # Sequence of tasks that will be executed as part of the job
     steps:
-      - uses: ./.github/workflows/esm_tests.yml
-        env:
-          UPDATE_ESM_TESTS_INFO: True
+      - ollie:
+          uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          with:
+            computer: ollie1
+            update_esm_tests_info: true
+            test_flags: -cng -s True
+      - levante:
+          uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          with:
+            computer: levante1
+            update_esm_tests_info: true
+            test_flags: -cng -s True
+      - juwels:
+          uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          with:
+            computer: jwlogin01.juwels
+            update_esm_tests_info: true
+            test_flags: -cng -s True
+      - aleph:
+          uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          with:
+            computer: elogin1
+            update_esm_tests_info: true
+            test_flags: -cng -s True
+      - blogin:
+          uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          with:
+            computer: blogin1
+            update_esm_tests_info: true
+            test_flags: -cng -s True

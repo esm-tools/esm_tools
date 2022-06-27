@@ -2766,7 +2766,7 @@ def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
     sys.exit(exit_code)
 
 
-class GeneralConfig(dict):  # pra:vsplgma: no cover
+class GeneralConfig(dict):  # pragma: no cover
     """All configs do this!"""
 
     def __init__(self, model, version, user_config):

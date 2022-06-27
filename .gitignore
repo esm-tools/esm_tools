@@ -9,6 +9,10 @@ dummy_script.sh
 # pkl files, deniz
 *.pkl
 
+# direnv files
+.envrc
+.direnv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

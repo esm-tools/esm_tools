@@ -131,7 +131,13 @@ jobs:
         run: |
           git push;
           git push --tags
-          
+      - name: Call Publish
+        run: |
+          # FIXME: Once this works, we need to change the @ to release, or a
+          # specific commit
+          uses: "esm-tools/esm_tools/.github/workflows/esm_tools_publish@fix/pypi_publish"  
+          secrets:
+            PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       # Merge PR-branch into `develop`
       - name: merge into develop
         run: |

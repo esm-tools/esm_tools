@@ -10,7 +10,7 @@ on:
       update_esm_tests_info:
         type: boolean
         default: False
-  pull_requiest:
+  pull_request:
     inputs:
       update_esm_tests_info:
         type: boolean

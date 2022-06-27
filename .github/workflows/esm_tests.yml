@@ -1,7 +1,7 @@
 # ESM-Tests in check mode for all computers
 # =========================================
 
-name: esm_tests_computers
+name: esm_tests
 
 # Triggers the workflow on a push or a pull
 on:
@@ -11,10 +11,8 @@ on:
         type: boolean
         default: False
   pull_request:
-    inputs:
-      update_esm_tests_info:
-        type: boolean
-        default: False
+    type:
+      - edited
 
 jobs:
   ollie:

@@ -28,3 +28,5 @@ jobs:
     # Sequence of tasks that will be executed as part of the job
     steps:
       - uses: ./.github/workflows/esm_tests.yml
+        env:
+          UPDATE_ESM_TESTS_INFO: True

@@ -5,14 +5,16 @@ name: esm_tests
 
 # Triggers the workflow on a push or a pull
 on:
-  workflow_call:
-    inputs:
-      update_esm_tests_info:
-        type: boolean
-        default: False
-  pull_request:
-    type:
-      - edited
+  - workflow_call:
+      inputs:
+        update_esm_tests_info:
+          type: boolean
+          default: False
+  - pull_request:
+      inputs:
+        update_esm_tests_info:
+          type: boolean
+          default: False
 
 jobs:
   ollie:

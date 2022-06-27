@@ -10,6 +10,9 @@ on:
       computer:
         required: true
         type: string
+      update_esm_tests_info:
+        type: boolean
+        default: false
 
 jobs:
   computer:

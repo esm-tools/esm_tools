@@ -108,6 +108,7 @@ forcing_sources:
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
         
+        "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
         # TODO: years are different
         # ozone
         "histozone":
@@ -120,6 +121,16 @@ forcing_sources:
                 "/pool/data/ECHAM6/input/r0008/${resolution}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc":
                         from: 2015
 
+        # TODO: came from release
+        "ozone_hist_scenario":
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
+                        to: 1850
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        from: 1851
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
+                        from: 2015
+
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
@@ -127,7 +138,7 @@ forcing_sources:
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
-        # these are missing in release
+        # TODO: these are missing in release
         "ssp126ozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014

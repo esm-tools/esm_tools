@@ -9,6 +9,7 @@ input_sources:
         "tslclim": "${input_dir}/${resolution}/${resolution}_TSLCLIM.nc"
         "vgratclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VGRATCLIM.nc"
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
+        # TODO: these are missing in release
         "MAC-SP": "${input_dir}/MAC-SP.nc"
         "MAC-SP_ssp126": "${input_dir}/MAC-SP_ssp126.nc"
         "MAC-SP_ssp245": "${input_dir}/MAC-SP_ssp245.nc"
@@ -22,6 +23,7 @@ forcing_sources:
                 "${forcing_dir}/amip/${resolution}_amipsst_@YEAR@.nc":
                         from: 1870
                         to: 2016
+
         "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"
 
         # sic
@@ -29,24 +31,28 @@ forcing_sources:
                 "${forcing_dir}/amip/${resolution}_amipsic_@YEAR@.nc":
                         from: 1870
                         to: 2016
+
         "pisic": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sic_1880-2379.nc"
 
         # aero
         "piaerocoarse": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc"
         "piaerofarir": "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc"
         "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
+
         "histaerocoarse": 
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc":
                 to: 1864
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa_@YEAR@.nc":
                 from: 1865
                 to: 2000
+
         "histaerofarir": 
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc":
                 to: 1864
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa_@YEAR@.nc":
                 from: 1865
                 to: 2000
+
         "histaerofin":
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
                         to: 1864
@@ -63,6 +69,7 @@ forcing_sources:
                         to: 2014
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2014.nc":
                         from: 2015
+
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
@@ -71,7 +78,14 @@ forcing_sources:
                         to: 2014
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2014.nc":
                         from: 2015
-        
+
+        "1950volcir":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1950.nc"
+
+        "1950volcsw":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"        
+
+        # TODO: greenhouse files differ
         # greenhouse
         "histgreenh": 
                 "${greenhouse_dir}/greenhouse_historical.nc":
@@ -81,6 +95,7 @@ forcing_sources:
                         from: 2014
                         to: 2014
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
+        # these files are missing in release
         "ssp126greenh": "${greenhouse_dir}/greenhouse_ssp126.nc"
         "ssp245greenh": "${greenhouse_dir}/greenhouse_ssp245.nc"
         "ssp534osgreenh": "${greenhouse_dir}/greenhouse_ssp534os.nc"
@@ -93,6 +108,7 @@ forcing_sources:
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
         
+        # TODO: years are different
         # ozone
         "histozone":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
@@ -103,9 +119,15 @@ forcing_sources:
                 # HIST scenario does not have data beyond 2014 so this one will be used
                 "/pool/data/ECHAM6/input/r0008/${resolution}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc":
                         from: 2015
+
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozonea": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+
+        # these are missing in release
         "ssp126ozone": 
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         to: 2014
@@ -143,6 +165,17 @@ forcing_sources:
                         from: 2100
                         to: 2102
 
+        # TODO: these came from release
+        # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
+        "MAC-SP": "${input_dir}/MAC-SP.nc"
+
+        "MAC-SP_hist_scenario":
+                 "${input_dir}/MAC-SP.nc":
+                         to: 2014
+                 "${input_dir}/MAC-SP_${scenario}.nc":
+                         from: 2015
+
+# TODO: These are absent in release. Do we still need it?
 choose_dataset:
         r0004:
                 forcing_sources:

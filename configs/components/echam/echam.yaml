@@ -701,12 +701,12 @@ forcing_additional_information:
                 - need_2years_before
                 - need_2years_after
         # deniz: added these 3 variables. They were present in the esm-tools r4
-        volcir:
+        volcsw:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        volcsw:
+        volcir:
                 - need_year_before
                 - need_year_after
                 - need_2years_before

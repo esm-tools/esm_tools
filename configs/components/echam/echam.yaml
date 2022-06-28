@@ -4,8 +4,6 @@ model: echam
 repository: https://gitlab.dkrz.de/modular_esm/echam6
 type: atmosphere
 
-
-
 compile_infos:
         available_versions:
         - 6.3.05p2
@@ -87,8 +85,6 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
         install_bins: src/echam/bin/echam6
 
-
-
 metadata:
         Institute: MPI-Met
         Description:
@@ -108,12 +104,11 @@ include_models:
         - jsbach
         - hdmodel
 
-
-
 executable: echam6
 version: 6.3.04p1
 resolution: T63
 scenario: "PI-CTRL"
+scenario_type: ${scenario}
 postprocessing_stream: 'BOT ATM LOG'
 yr_perp_off: false
 transient_advance_forcing: false
@@ -137,9 +132,9 @@ restart_rate: 1
 restart_unit: "months"
 restart_firstlast: "first"
 
-
+# ===
 # default directories
-
+# ===
 #model_dir: "${general.esm_master.dir}/echam-${version}"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -148,7 +143,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario_type}"
 
 switch: 1
 value : "echam default"
@@ -304,6 +299,14 @@ choose_concurrent_radiation_code:
         "*":
                 from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
 
+# If general.with_wiso exists, take it from that section
+choose_general.with_wiso:
+        True:
+                with_wiso: True
+        False:
+                with_wiso: False
+        "*":
+                from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 choose_scenario:
         "PI-CTRL":
@@ -342,7 +345,8 @@ choose_scenario:
                         aerofarir: piaerofarir
                         ozone: 1850ozone
         1950:
-                forcing_filslurm_cronjob.loges:
+                forcing_files:
+                        # TODO: there are many things in release
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
@@ -372,6 +376,28 @@ choose_scenario:
                         swflux: histswflux
                 add_input_files:
                         MAC-SP: MAC-SP
+
+        # TODO: came from release
+        # TODO: explain
+        ssp585:
+                scenario_type: cmip6
+
+        ssp370:
+                scenario_type: cmip6
+
+        ssp126:
+                scenario_type: cmip6
+
+        ssp245:
+                scenario_type: cmip6
+
+        ssp534os:
+                scenario_type: cmip6
+
+        cmip6hist:
+                scenario_type: cmip6
+
+        # TODO: SSP*'s are not present in release
         SSP126:
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
@@ -462,6 +488,27 @@ choose_scenario:
                         swflux: histswflux
                         MAC-SP: MAC-SP_hist_scenario
 
+# TODO: came from release
+choose_scenario_type:
+        cmip6:
+                greenhouse_dir: "${forcing_dir}"
+                forcing_files:
+                        aerocoarse_1849: piaerocoarse
+                        aerocoarse_1850: piaerocoarse
+                        aerocoarse_1851: piaerocoarse
+                        aerofarir_1849: piaerofarir
+                        aerofarir_1850: piaerofarir
+                        aerofarir_1851: piaerofarir
+                        aerofin_1849: piaerofin
+                        aerofin_1850: piaerofin
+                        aerofin_1851: piaerofin
+                        ozone: ozone_hist_scenario
+                        greenhouse: greenhouse_hist_scenario 
+                        volcir: histvolcir
+                        volcsw: histvolcsw
+                        swflux: histswflux
+                        MAC-SP: MAC-SP_hist_scenario
+
 choose_lresume:
         False:
                 restart_in_modifications:
@@ -475,8 +522,6 @@ choose_lresume:
                         namelist.echam:
                                 runctl:
                                         dt_start: "remove_from_namelist"
-
-
 
 choose_CO2:
         '*':
@@ -548,6 +593,7 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
+                                        # TODO: these two are missing in release
                                         - sf_wiso
                                         - rad
 
@@ -565,7 +611,6 @@ choose_wiso_code:
                         False:
                                 nwiso: 0
                                 lwiso_rerun: False
-
 
 bin_files:
         "echam_bin": "echam_bin"
@@ -697,6 +742,7 @@ streamsnc:
         - jsbid
         - sp6h
         - spim
+        # TODO: the rest is absent in release
         - sp
         - gl
         - g3b
@@ -707,12 +753,10 @@ streamsnc:
         - aeropt
         - co2
         - tdiag
-        
 
-          #prev_date: 18500101
+#prev_date: 18500101
+
 # BUG: PG Why do we need lists here?
-
-
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
@@ -731,7 +775,6 @@ ignore_in_work:
         "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
 
-
 outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
@@ -743,6 +786,9 @@ outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
         "[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.nc
+        #"[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*_STREAM
+        #"[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*_STREAM.codes
+        #"[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}_STREAM.nc
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM
@@ -763,7 +809,6 @@ restart_out_sources:
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
-
 log_files:
         atmout: atmout
         stderr: stderr
@@ -781,7 +826,6 @@ log_in_work:
 
 namelists:
         - "namelist.echam"
-
 
 namelist_changes:
         namelist.echam:
@@ -848,6 +892,7 @@ coupling_fields:
         hydr_atm:
                 grid: atmo
 
+        # TODO: absent in release
         co2_atmo:
                 grid: atmo
         co2c_atm:
@@ -862,8 +907,6 @@ grids:
                 ny: "${_ny}"
                 oasis_grid_type: "D"
                 number_of_overlapping_points: 0 # oasis P-value
-
-
 
 # Configuration Files:
 config_sources:
@@ -880,9 +923,6 @@ check_error:
                 #message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
                 #file: "${general.work_dir}/atmout"
                 #frequency: 90
-
-
-
 
 further_reading:
         - echam/echam.datasets.yaml

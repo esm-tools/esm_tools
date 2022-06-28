@@ -49,7 +49,7 @@ general:
 #########################################################################################
 
 fesom:
-        version: "1.4-recom-mocsy-slp"
+        version: "1.4-recom"
         model_dir: "${general.model_dir}/fesom-${fesom.version}/"
         setup_dir: "${general.model_dir}"
 
@@ -62,7 +62,6 @@ fesom:
 
         asforcing: CORE2
         asforcing_wind_rad_precip: JRA55
-
 
         namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.config:
@@ -81,8 +80,6 @@ fesom:
                                 diag_oce_Kv: "remove_from_namelist"
                                 diag_mesh: "remove_from_namelist"
                 namelist.forcing:
-                        forcing_exchange_coeff:
-                                Cd_atm_ice: 1.3e-3
                         forcing_source:
                                 wind_data_source: "${asforcing_wind_rad_precip}"
                                 rad_data_source: "${asforcing_wind_rad_precip}"
@@ -93,85 +90,11 @@ fesom:
                                 runoff_ttp_ind: 3
                         forcing_reso:
                                 forcing_grid: 'T319'    #'T62','T319', 'other'
-                                forcing_dx: 0.4         #degree; from here required for 'other'
-                                forcing_dy: 0.4
-                                forcing_ni: 900         #number of grid points
-                                forcing_nj: 451
                         forcing_bulk:
                                 AOMIP_drag_coeff: true
-                namelist.ice:
-                        ice_stress:
-                                Pstar: 27500.0          #23000. 27500. 30000.
-                                c_pressure: 15.0        #20.0
-                        ice_fric:
-                                Cd_oce_ice: 1.0e-2      #5.5e-3  3.0e-3  !Qiang ab 1964
-                        ice_rheology:
-                                evp_rheol_steps: 300
-                        ice_scheme:
-                                ice_gamma_fct: 0.05
-                        ice_therm:
-                                Sice: 5.0
-                                h0: 0.6
                 namelist.oce:
                         viscdiff:
-                                Kh0: 800.0
-                                brine_rejection_param: false
-                        oce_scheme:
-                                gamma_fct: 0.4
-                        age_tracer:
-                                use_age_tracer: true
-                                age_tracer_start_year: "${age_tracer_sy}"
-                        tracer_cutoff:
-                                limit_salinity: false
-                                salinity_min: 5.0
-
-        # env variable `AWI_FESOM_YAML` is used by fesom/fesom_cpl/output_scheduler and
-        # its value can be checked in finished_config.yaml:
-        runtime_environment_changes:
-                add_export_vars:
-                        AWI_FESOM_YAML:
-                                output_schedules:
-                                        # fesom part (defaults defined in fesom.yaml):
-                                        -
-                                                vars: [restart]
-                                                unit: ${fesom.restart_unit}
-                                                first: ${fesom.restart_first}
-                                                rate: ${fesom.restart_rate}
-                                        -
-                                                vars: ${fesom.yearly_outputs}
-                                                unit: y
-                                                first: ${fesom.yearly_outputs_start}
-                                                rate: 1
-                                        -
-                                                vars: ${fesom.monthly_outputs}
-                                                unit: m
-                                                rate: 1
-                                        -
-                                                vars: ${fesom.daily_outputs}
-                                                unit: d
-                                                rate: 1
-                                        -
-                                                vars: ${fesom.12_step_outputs}
-                                                unit: s
-                                                rate: 12
-                                        # recom part (defaults defined in e.g. fesom-recom.yaml or awicm_recom.yaml):
-                                        -
-                                                vars: ${recom.yearly_outputs}
-                                                unit: y
-                                                first: ${fesom.yearly_outputs_start}
-                                                rate: 1
-                                        -
-                                                vars: ${recom.monthly_outputs}
-                                                unit: m
-                                                rate: 1
-                                        -
-                                                vars: ${recom.daily_outputs}
-                                                unit: d
-                                                rate: 1
-                                        -
-                                                vars: ${recom.12_step_outputs}
-                                                unit: s
-                                                rate: 12
+                                Kh0: 800.0 # default for setup with recom involved
 
         choose_lresume:
                 true:
@@ -206,14 +129,9 @@ recom:
                                         ini_restart_dir: "${general.ini_restart_dir}/recom/"
                                         ini_parent_date: "${prev_date}"
 
-        # namelist.recom and associated output for offline setup (fesom+recom):
-        # --> bgc_num = 28, diags3d_num = 20
+        # setup-specific namelist.recom 
         config_sources:
                 recom: "${namelist_dir}/namelist.recom"
         add_config_in_work:
                 recom: "namelist.recom"
-        yearly_outputs: []
-        monthly_outputs: [aCO2,aFe,age01,alphaCO2,aN,benC,benCalc,benN,benSi,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,bgc23,bgc24,bgc25,bgc26,bgc27,bgc28,CO2f,CO2y,denb,diags3d01,diags3d02,diags3d03,diags3d04,diags3d05,diags3d06,diags3d07,diags3d08,diags3d09,diags3d10,diags3d11,diags3d12,diags3d13,diags3d14,diags3d15,diags3d16,diags3d17,diags3d18,diags3d19,diags3d20,dpCO2s,GNAd,GNAn,GPPd,GPPn,Hp,Kw,NNAd,NNAn,NPPd,NPPn,O2f,PAR,pCO2s,rDIN,rDOC,rDON,rDSi,slp,virtual_alk,virtual_dfe,virtual_dic,virtual_din,virtual_dsi,virtual_oxy,w10w]
-        daily_outputs: []
-        12_step_outputs: []
 

@@ -4,7 +4,7 @@
 
 # first, import the output fields for FESOM and RECOM. Eg. yearly_outputs,
 # monthly_outputs, daily_outputs, 12_step_outputs
-further_reading: awicm_recom/awicm_recom_outputs.yaml
+#further_reading: awicm_recom/awicm_recom_outputs.yaml
 
 general:
     model: awicm_recom
@@ -130,39 +130,11 @@ fesom:
         namelist.oce:
             boundary:
                 restore_s_surf: 0.0
+            viscdiff:
+                Kh0: 800.0 # default for setup with recom involved
 
     leapyear: True
     asforcing: ECHAM5
-
-    # env variable `AWI_FESOM_YAML` is used by fesom/fesom_cpl/output_scheduler and
-    # its value can be checked in finished_config.yaml:
-    runtime_environment_changes:
-        add_export_vars:
-            AWI_FESOM_YAML:
-                output_schedules:
-                    # fesom part (defaults defined in fesom.yaml):
-                    -
-                        vars: [restart]
-                        unit: ${fesom.restart_unit}
-                        first: ${fesom.restart_first}
-                        rate: ${fesom.restart_rate}
-                    -
-                        vars: ${fesom.yearly_outputs}
-                        unit: y
-                        first: ${fesom.yearly_outputs_start}
-                        rate: 1
-                    -
-                        vars: ${fesom.monthly_outputs}
-                        unit: m
-                        rate: 1
-                    -
-                        vars: ${fesom.daily_outputs}
-                        unit: d
-                        rate: 1
-                    -
-                        vars: ${fesom.12_step_outputs}
-                        unit: s
-                        rate: 12
 
 ###############################################################################
 
@@ -170,8 +142,7 @@ recom:
     # NOTE: look at README.md for description of the namelists
     namelist_dir: "${esm_namelist_dir}/${model}/awicm_recom/"
 
-    # namelist.recom and associated output for coupled setup (fesom+recom+echam):
-    # --> bgc_num = 22, diags3d_num = 2
+    # setup-specific namelist.recom 
     config_sources:
         recom: "${namelist_dir}/namelist.recom_co2_coupling"
     add_config_in_work:

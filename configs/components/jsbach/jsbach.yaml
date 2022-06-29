@@ -491,8 +491,8 @@ outdata_sources:
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
 outdata_in_work:
-        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM
-        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear!smonth}.${start_date!sday}_STREAM.codes
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
 restart_in_files:
         "[[streams-->STREAM]]": STREAM

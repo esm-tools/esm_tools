@@ -363,20 +363,28 @@ choose_scenario:
                         # aerofin: histaerofin
                         sst: amipsst
                         sic: amipsic
-                        # deniz TODO: explain
-                        aerocoarse_kinne_1850: piaerocoarse   # deniz: added these
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
+                        # TODO: removed kinne_1850 aerosol files
+                        aerocoarse_1849: piaerocoarse
+                        aerocoarse_1850: piaerocoarse
+                        aerocoarse_1851: piaerocoarse
+                        aerofarir_1849: piaerofarir
+                        aerofarir_1850: piaerofarir
+                        aerofarir_1851: piaerofarir
+                        aerofin_1849: piaerofin
+                        aerofin_1850: piaerofin
+                        aerofin_1851: piaerofin
                         ozone: histozone
                         greenhouse: histgreenh
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                add_input_files:
+                # add_input_files:  # commented out to make it a forcing
+                # TODO: remove after it passes the test
                         MAC-SP: MAC-SP
 
         # TODO: came from release
-        # TODO: explain
+        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+        # under the choose_scenario_type block
         ssp585:
                 scenario_type: cmip6
 
@@ -637,10 +645,6 @@ input_in_work:
 forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
-        # deniz: TODO: write comment
-        aerocoarse_kinne_1850: "aero_coarse_@YEAR_1850@.nc"
-        aerofarir_kinne_1850: "aero_farir_@YEAR_1850@.nc"
-        aerofin_kinne_1850: "aero_fine_@YEAR_1850@.nc"
         # ok this is another crazy ECHAM6 speciality
         # every year the background aerosol files for 1849 to 1851 
         # need to be linked to the same file for historical/scenario runs
@@ -666,15 +670,6 @@ forcing_in_work:
         "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
-        aerocoarse_kinne_1850:       # deniz: added these 3 file types
-                - need_year_before
-                - need_year_after
-        aerofarir_kinne_1850:
-                - need_year_before
-                - need_year_after
-        aerofin_kinne_1850:
-                - need_year_before
-                - need_year_after
         aerocoarse:
                 - need_year_before
                 - need_year_after

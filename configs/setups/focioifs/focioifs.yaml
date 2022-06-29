@@ -423,14 +423,14 @@ oasis3mct:
         coupling_target_fields:
                 # Coupling ocean fields to atm
                 sstocean:
-                        #- 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
-                        - 'AIceFrac <--o2agauswgt-- OIceFrac'
-                        - 'A_SSTSST <--o2agauswgt-- O_SSTSST'
-                        - 'A_TepIce <--o2agauswgt-- O_TepIce'
-                        - 'A_IceTck <--o2agauswgt-- O_IceTck'
-                        - 'A_SnwTck <--o2agauswgt-- O_SnwTck'
-                        - 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
-                        - 'A_OCury1 <--o2agauswgt-- O_OCury1'
+                        - 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
+                        #- 'AIceFrac <--o2agauswgt-- OIceFrac'
+                        #- 'A_SSTSST <--o2agauswgt-- O_SSTSST'
+                        #- 'A_TepIce <--o2agauswgt-- O_TepIce'
+                        #- 'A_IceTck <--o2agauswgt-- O_IceTck'
+                        #- 'A_SnwTck <--o2agauswgt-- O_SnwTck'
+                        #- 'A_OCurx1 <--o2agauswgt-- O_OCurx1'
+                        #- 'A_OCury1 <--o2agauswgt-- O_OCury1'
 
                 # Couple HTESSEL runoff to river routing
                 rnfatm:
@@ -442,20 +442,20 @@ oasis3mct:
                 
                 # Couple atm fluxes to ocean (non-conserving)
                 flxatmos:
-                        #- 'O_QsrIce:O_QnsIce:OTotSnow:OIceEvap:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:ATotSnow:AIceEvap:A_dQnsdT'
-                        - 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
-                        - 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
+                        - 'O_QsrIce:O_QnsIce:O_dQnsdT <--a2ogauswgtnc-- A_QsrIce:A_QnsIce:A_dQnsdT'
+                        #- 'O_QsrIce <--a2ogauswgtnc-- A_QsrIce'
+                        #- 'O_QnsIce <--a2ogauswgtnc-- A_QnsIce'
                         #- 'OTotSnow <--a2ogauswgtnc-- ATotSnow'
                         #- 'OIceEvap <--a2ogauswgtnc-- AIceEvap'
-                        - 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
+                        #- 'O_dQnsdT <--a2ogauswgtnc-- A_dQnsdT'
                 
                 # Coupled atm stress to ocean (non-conserving)
                 atmtau:         
-                        #- 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
-                        - 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
-                        - 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
-                        - 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
-                        - 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
+                        - 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--a2ogauswgtnc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                        #- 'O_OTaux1 <--a2ogauswgtnc-- A_OTaux1'
+                        #- 'O_OTauy1 <--a2ogauswgtnc-- A_OTauy1'
+                        #- 'O_ITaux1 <--a2ogauswgtnc-- A_ITaux1'
+                        #- 'O_ITauy1 <--a2ogauswgtnc-- A_ITauy1'
                 
                 # Couple atm fluxes to ocean (conserving)
                 atmflx: 

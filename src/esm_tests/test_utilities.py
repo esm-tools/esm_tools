@@ -217,7 +217,7 @@ def print_state_online(info={}):
         If not provided, defines the ``info`` keys needed.
     """
 
-    url = "https://raw.githubusercontent.com/esm-tools/esm_tests_info/main/state.yaml"
+    url = "https://raw.githubusercontent.com/esm-tools/esm_tests_info/release/state.yaml"
     try:
         current_state = urllib.request.urlopen(url)
     except urllib.error.HTTPError:

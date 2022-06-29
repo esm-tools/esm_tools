@@ -13,7 +13,7 @@ general:
 
    nyear: 0
    nmonth: 0
-   nday: 1
+   nday: 5
    restart_rate: 1
    restart_unit: days 
    hours: 0
@@ -103,9 +103,9 @@ nemo:
    add_namelist_changes:
        namelist_cfg:           
            namsbc:
-               nn_fsbc: 60
+               nn_fsbc: 1
            namsbc_rnf:
-               rn_rfact: 1.0 
+               rn_rfact: 1.067 
            namtra_ldf:
                rn_aht_0: 125
                rn_aht_m: 125

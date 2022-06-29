@@ -8,8 +8,8 @@ general:
    resolution: "TCO95_ORCA12"
 
    compute_time: "12:00:00"
-   initial_date: "1950-01-11T00:00:00"       # Initial exp. date
-   final_date: "1950-01-16T00:00:00"         # Final date of the experiment
+   initial_date: "1950-01-16T00:00:00"       # Initial exp. date
+   final_date: "1950-01-21T00:00:00"         # Final date of the experiment
 
    nyear: 0
    nmonth: 0
@@ -25,11 +25,11 @@ general:
    base_dir: ${general.homedir}/esm/esm-experiments/
    
    lresume: True
-   ini_parent_exp_id: "FOCI_BJK012"
-   ini_string_parent_date: "1950-01-11"
-   ini_nemo_restart_steps: 3600
+   ini_parent_exp_id: "FOCI_BJK013"
+   ini_string_parent_date: "1950-01-16"
+   ini_nemo_restart_steps: 2160
    ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
-   oasis_date_stamp: "_19500106-19500110"
+   oasis_date_stamp: "_19500111-19500115"
    # with the eternal restart feature, the complete yaml of the previous run needs to be available:
    prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml" #${oasis_date_stamp}"
 
@@ -97,14 +97,14 @@ nemo:
    jpni: 60
    jpnj: 32
    nproc: 1429
-   time_step: 200
+   time_step: 300
    input_dir: "/scratch/projects/shk00018/ORCA12/"
    add_namelist_changes:
        namelist_cfg:           
            namsbc:
                nn_fsbc: 1
            namsbc_rnf:
-               rn_rfact: 1.067
+               rn_rfact: 1.0 
            namtra_ldf:
                rn_aht_0: 125
                rn_aht_m: 125

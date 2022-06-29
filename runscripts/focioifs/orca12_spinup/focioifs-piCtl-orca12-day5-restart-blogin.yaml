@@ -13,7 +13,7 @@ general:
 
    nyear: 0
    nmonth: 0
-   nday: 1
+   nday: 5
    restart_rate: 1
    restart_unit: days 
    hours: 0
@@ -25,13 +25,13 @@ general:
    base_dir: ${general.homedir}/esm/esm-experiments/
    
    lresume: True
-   ini_parent_exp_id: "FOCI_BJK006"
+   ini_parent_exp_id: "FOCI_BJK011"
    ini_string_parent_date: "1950-01-06"
    ini_nemo_restart_steps: 7200
    ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
-   oasis_date_stamp: "_19500105-19500105"
+   oasis_date_stamp: "_19500101-19500105"
    # with the eternal restart feature, the complete yaml of the previous run needs to be available:
-   prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
+   prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml" #${oasis_date_stamp}"
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.1-O12
@@ -102,9 +102,11 @@ nemo:
    add_namelist_changes:
        namelist_cfg:           
            namsbc:
-               nn_fsbc: 15
+               # seems important to have fsbc=1
+               # likely to keep LIM stable
+               nn_fsbc: 1
            namsbc_rnf:
-               rn_rfact: 1.0 
+               rn_rfact: 1.067 
            namtra_ldf:
                rn_aht_0: 125
                rn_aht_m: 125

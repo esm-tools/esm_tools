@@ -25,30 +25,7 @@ forcing_sources:
                 # HIST scenario will use this data beyond year 2014
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 2015
-        "LU_ssp126":
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                to: 2014
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp126_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                from: 2015
-                to: 2299
-        "LU_ssp245":
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                to: 2014
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp245_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                from: 2015
-                to: 2299
-        "LU_ssp534os":
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                to: 2014
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp534os_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                from: 2015
-                to: 2299
-        "LU_ssp585":
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                to: 2014
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp585_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                from: 2015
-                to: 2299
+
         # landuse transitions
         "LU_trans_none": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_${echam.resolution}.nc"
         "LU_trans_hist":

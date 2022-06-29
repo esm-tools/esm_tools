@@ -87,20 +87,19 @@ forcing_sources:
 
         # TODO: greenhouse files differ
         # greenhouse
-        "histgreenh": 
-                "${greenhouse_dir}/greenhouse_historical.nc":
-                        from: 1
-                        to: 2013
-                "/work/ba1103/a270073/data/ECHAM6/input/r0007/greenhouse_historical.nc": # see README.md in this dir
-                        from: 2014
-                        to: 2014
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
         # these files are missing in release
         "ssp126greenh": "${greenhouse_dir}/greenhouse_ssp126.nc"
         "ssp245greenh": "${greenhouse_dir}/greenhouse_ssp245.nc"
+        "ssp370greenh": "${greenhouse_dir}/greenhouse_ssp370.nc"
         "ssp534osgreenh": "${greenhouse_dir}/greenhouse_ssp534os.nc"
         "ssp585greenh": "${greenhouse_dir}/greenhouse_ssp585.nc"
-        
+        #"histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        "histgreenh": "${ssp370greenh}" # - use any SSP file for the historical scenario to have GHG values for year 2015, 
+                                        #   necessary for Echams year+1 interpolation for last historical year 2014
+                                        # - all historical years <= 2014 are identical throughout all SSP GHG files 
+                                        # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
+                                        #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
         # radiation
         "histswflux":
                 "${input_dir}/solar_irradiance/swflux_14band_1850.nc":

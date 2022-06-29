@@ -162,3 +162,20 @@ choose_dataset:
                                         from: 2015
                                         to: 2300
 
+                        "LU_hist_scenario":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 2015
+
+                        "Ndepo_hist_scenario":
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
+                                        from: 2015

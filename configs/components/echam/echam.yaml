@@ -593,7 +593,6 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
-                                        # TODO: these two are missing in release
                                         - sf_wiso
                                         - rad
 

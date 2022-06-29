@@ -306,16 +306,6 @@ choose_general.with_wiso:
         "*":
                 from_general_with_wiso_choose: <NOT_SPECIFIED>
 
-# If general.with_wiso exists, take it from that section
-choose_general.with_wiso:
-        True:
-                with_wiso: True
-        False:
-                with_wiso: False
-        "*":
-                from_general_with_wiso_choose: <NOT_SPECIFIED>
-
-
 choose_scenario:
         "PI-CTRL":
                 forcing_files:

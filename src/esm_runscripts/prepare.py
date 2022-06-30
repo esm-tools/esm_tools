@@ -729,3 +729,59 @@ def set_logfile(config):
         "experiment_log_file", log_file_path
     )
     return config
+
+
+def check_config_for_warnings_errors(config):
+
+    triggers = {"error": {"note_function": esm_parser.user_error}}
+
+    # Find conditions to warn (avoid warning more than once)
+    last_jobtype = config["general"].get("last_jobtype", "")
+    isresubmitted = last_jobtype == config["general"]["jobtype"]
+    isinteractive = config["general"].get("isinteractive", "")
+
+    # Only warn if it is an interactive session or while submitted
+    if not isresubmitted or isinteractive:
+        triggers["warning"] = {"note_function": esm_parser.user_note}
+
+    for trigger, trigger_info in triggers.items():
+        warn_error(config, trigger, trigger_info["note_function"])
+
+    return config
+
+def warn_error(config, trigger, note_function):
+    import esm_motd
+    import esm_tools
+
+    if trigger=="warning":
+        sufix_name = " WARNING"
+    else:
+        sufix_name = ""
+
+    for key, value in config.items():
+        if trigger in value:
+            actions = value[trigger]
+            for action_name, action_info in actions.items():
+                version_condition = action_info.get("esm_tools_version", ">0.0.0")
+                if esm_motd.MessageOfTheDayHandler.check_valid_version({}, esm_tools.__version__, version_condition):
+                    note_function(f"{action_name}{sufix_name}", action_info.get("message", ""))
+
+                    if (
+                        trigger=="warning"
+                        and config["general"].get("isinteractive")
+                        and action_info.get("ask_user_to_continue", False)
+                        and not config["general"].get("ignore_config_warnings", False)
+                    ):
+                        user_reply = ""
+                        while user_reply != "y" or user_reply != "n":
+                            user_reply = input(
+                                "Do you want to continue (set "
+                                "general.ignore_config_warnings: False to avoid "
+                                "quesitoning)? (y/n): "
+                            )
+                            if user_reply=="y":
+                                break
+                            elif user_reply=="n":
+                                sys.exit(1)
+                            else:
+                                print(f'"{user_reply}" is not a valid option.')

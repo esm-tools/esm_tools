@@ -4,6 +4,7 @@ import os
 import sys
 
 import esm_parser
+import esm_utilities
 from esm_calendar import Calendar, Date
 
 from . import batch_system, helpers
@@ -750,8 +751,6 @@ def check_config_for_warnings_errors(config):
     return config
 
 def warn_error(config, trigger, note_function):
-    import esm_motd
-    import esm_tools
 
     if trigger=="warning":
         sufix_name = f" WARNING"
@@ -763,7 +762,7 @@ def warn_error(config, trigger, note_function):
             actions = value[trigger]
             for action_name, action_info in actions.items():
                 version_condition = action_info.get("esm_tools_version", ">0.0.0")
-                if esm_motd.MessageOfTheDayHandler.check_valid_version({}, esm_tools.__version__, version_condition):
+                if esm_utilities.check_valid_version(version_condition):
                     note_function(
                         f"{action_name}{sufix_name}",
                         f'Section: ``{section}``\n\n{action_info.get("message", "")}'

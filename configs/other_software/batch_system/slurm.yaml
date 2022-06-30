@@ -58,7 +58,10 @@ add_choose_heterogeneous_parallelization:
                 srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
             # Support for new packjob heterogeneous parallelization approach
             false:
+
+ # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
                 launcher_flags_per_component: "
+                    --hint=nomultithread
                     --nodes=@nnodes@
                     --ntasks=@nproc@
                     --ntasks-per-node=@nproc_per_node@

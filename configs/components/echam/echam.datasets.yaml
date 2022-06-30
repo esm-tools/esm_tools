@@ -56,6 +56,7 @@ forcing_sources:
                         to: 2000
 
         # volcanic
+        # TODO: important: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
         "histvolcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1850.nc":
                         to: 1850
@@ -65,6 +66,7 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2014.nc":
                         from: 2015
 
+        # TODO: important: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
@@ -109,23 +111,13 @@ forcing_sources:
         "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
         # TODO: years are different
         # ozone
-        "histozone":
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
-                        to: 1850
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
-                        from: 1851
-                        to: 2014
-                # HIST scenario does not have data beyond 2014 so this one will be used
-                "/pool/data/ECHAM6/input/r0008/${resolution}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc":
-                        from: 2015
-
-        # TODO: came from release
         "ozone_hist_scenario":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
                         to: 1850
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
+                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
                         from: 2015
 
@@ -149,10 +141,12 @@ forcing_sources:
                          from: 2015
 
 # TODO: These are absent in release. Do we still need it?
+# TODO: replace these
 choose_dataset:
         r0004:
                 forcing_sources:
                         # ozone
+                        # deniz: histozone is replaced by ozone_hist_scenario to remove duplicates
                         "histozone":
                                 "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc":
                                         to: 1850

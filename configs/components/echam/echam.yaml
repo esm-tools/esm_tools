@@ -373,7 +373,7 @@ choose_scenario:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: histozone
+                        ozone: ozone_hist_scenario
                         greenhouse: histgreenh
                         volcir: histvolcir
                         volcsw: histvolcsw

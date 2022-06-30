@@ -39,7 +39,7 @@ fesom:
 
 recom:
     data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
-    scenario: "preindustrial"
+    scenario: "PI-CTRL"
     # restart options:
     lresume: "${general.lresume}"
 

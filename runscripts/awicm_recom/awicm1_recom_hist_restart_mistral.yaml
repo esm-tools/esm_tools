@@ -87,7 +87,7 @@ fesom:
                 Kh0: 800.0
 
 recom:
-    scenario: "historical"
+    scenario: "${general.scenario}"
     lresume: "${general.lresume}"
     ini_parent_dir: "${general.ini_parent_dir}/recom/"
     ini_parent_exp_id: "${general.ini_parent_exp_id}"

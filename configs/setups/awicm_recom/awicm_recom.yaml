@@ -145,8 +145,9 @@ fesom:
 recom:
     # NOTE: look at README.md for description of the namelists
     namelist_dir: "${esm_namelist_dir}/${model}/awicm_recom/"
+    scenario: "${general.scenario}"
 
-    # setup-specific namelist.recom 
+    # setup-specific namelist.recom
     config_sources:
         recom: "${namelist_dir}/namelist.recom_co2_coupling"
     add_config_in_work:

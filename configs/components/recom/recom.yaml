@@ -41,12 +41,12 @@ setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 data_path: ""
 
-scenario: "preindustrial"
+scenario: "PI-CTRL"
 
 time_step: 1800
 
 choose_scenario:
-        preindustrial:
+        PI-CTRL:
                 constant_CO2: true
                 REcoM_PI: true
                 CO2_for_spinup: 278
@@ -62,7 +62,7 @@ choose_scenario:
                 lastyearoffesomcycle: "${general.final_date!syear}"
                 numofCO2cycles: 1
                 currentCO2cycle: 1
-        historical:
+        HIST:
                 constant_CO2: false
                 REcoM_PI: true
                 CO2_for_spinup: "0"

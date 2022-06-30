@@ -754,17 +754,20 @@ def warn_error(config, trigger, note_function):
     import esm_tools
 
     if trigger=="warning":
-        sufix_name = " WARNING"
+        sufix_name = f" WARNING"
     else:
-        sufix_name = ""
+        sufix_name = f""
 
-    for key, value in config.items():
+    for section, value in config.items():
         if trigger in value:
             actions = value[trigger]
             for action_name, action_info in actions.items():
                 version_condition = action_info.get("esm_tools_version", ">0.0.0")
                 if esm_motd.MessageOfTheDayHandler.check_valid_version({}, esm_tools.__version__, version_condition):
-                    note_function(f"{action_name}{sufix_name}", action_info.get("message", ""))
+                    note_function(
+                        f"{action_name}{sufix_name}",
+                        f'Section: ``{section}``\n\n{action_info.get("message", "")}'
+                    )
 
                     if (
                         trigger=="warning"

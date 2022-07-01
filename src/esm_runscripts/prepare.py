@@ -775,7 +775,7 @@ def check_config_for_warnings_errors(config):
 
 def warn_error(config, trigger, note_function):
     """
-    Checks the ``sections`` of the ``config`` for a given ``trigber`` (``"error"`` or
+    Checks the ``sections`` of the ``config`` for a given ``trigger`` (``"error"`` or
     ``"warning"``), and if found, returns the ``error`` or ``warning`` using
     ``note_functon`` (``user_error`` or ``user_note`` respectively). Errors always halt
     the core with ``sys.exit(1)``. Warnings only halt the code to ask the user for

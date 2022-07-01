@@ -83,6 +83,7 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"        
 
         # greenhouse
+        # TODO: currently only r0008 contains the greenhouse_ssp* files
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "greenhouse_hist_scenario":
                 "${greenhouse_dir}/greenhouse_historical.nc":
@@ -128,7 +129,7 @@ forcing_sources:
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
-        # TODO: these (SSP ozone) are missing in release -> removed
+        # DONE: these (SSP ozone) are missing in release -> removed. TODO: remove this comment later
 
         # TODO: these came from release
         # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014

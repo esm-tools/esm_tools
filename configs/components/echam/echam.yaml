@@ -403,52 +403,6 @@ choose_scenario:
         cmip6hist:
                 scenario_type: cmip6
 
-        # TODO: SSP*'s are not present in release
-        SSP126:
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_kinne_1850: piaerocoarse
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
-                        ozone: ssp126ozone
-                        greenhouse: ssp126greenh
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP_ssp126
-        SSP245:
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_kinne_1850: piaerocoarse
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
-                        ozone: ssp245ozone
-                        greenhouse: ssp245greenh
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP_ssp245
-        SSP534OS:
-                pool_dir: "/mnt/lustre02/work/bb0519/foci_input2/ECHAM6" # forcing files not in default pool yet
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_kinne_1850: piaerocoarse
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
-                        ozone: ssp534osozone
-                        greenhouse: ssp534osgreenh
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP_ssp534os
-        SSP585:
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_kinne_1850: piaerocoarse
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
-                        ozone: ssp585ozone
-                        greenhouse: ssp585greenh
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP_ssp585
         RCP26:
                 greenhouse_dir: "${forcing_dir}"
                 forcing_files:

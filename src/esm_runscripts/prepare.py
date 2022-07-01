@@ -786,6 +786,7 @@ def warn_error(config, trigger, note_function):
 
     The syntax in the yaml files for triggering warnings or errors is as follows:
     .. code-block:: yaml
+
        warning/error:
            <name>: # Name for the specific warning or error
                message: "the message of the warning/error"
@@ -795,6 +796,7 @@ def warn_error(config, trigger, note_function):
     Example
     -------
     .. code-block:: yaml
+
        recom:
            choose_scenario:
                HIST:
@@ -810,6 +812,7 @@ def warn_error(config, trigger, note_function):
     If you then define `recom.scenario: hist` instead of `HIST` then you'll get the
     following:
     .. code-block::
+
        wrong scenario type WARNING
        ---------------------------
        Section: recom

@@ -915,8 +915,8 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
 
-Error-handling warnings syntax
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Error-handling and warning syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This syntax allows for error-handling and raising of warnings from the configuration
 files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
@@ -925,7 +925,9 @@ words ``error`` or ``warning`` respectively (if more than one error/warning is p
 in the section of your file, use ``add_error/warning`` to combine them).
 
 The syntax in the yaml files for triggering warnings or errors is as follows:
+
 .. code-block:: yaml
+
    warning/error:
        <name>: # Name for the specific warning or error
            message: "the message of the warning/error"
@@ -942,7 +944,9 @@ The syntax in the yaml files for triggering warnings or errors is as follows:
   without asking
 
 **Example**
+
 .. code-block:: yaml
+
    recom:
        choose_scenario:
            HIST:
@@ -957,7 +961,9 @@ The syntax in the yaml files for triggering warnings or errors is as follows:
 
 If you then define `recom.scenario: hist` instead of `HIST` then you'll get the
 following:
+
 .. code-block::
+
    wrong scenario type WARNING
    ---------------------------
    Section: recom

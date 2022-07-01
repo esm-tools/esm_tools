@@ -104,7 +104,7 @@ def logfile_stats(logfile_to_read):
     return df
 
 
-def check_valid_version(versionrange, version=False):
+def check_valid_version(versionrange, version=""):
     """
     Returns ``True`` if the ``version`` provided matches the condition of
     ``versionrange``.

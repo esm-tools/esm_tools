@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import questionary
 import sys
 
 import esm_parser
@@ -774,16 +775,10 @@ def warn_error(config, trigger, note_function):
                         and action_info.get("ask_user_to_continue", False)
                         and not config["general"].get("ignore_config_warnings", False)
                     ):
-                        user_reply = ""
-                        while user_reply != "y" or user_reply != "n":
-                            user_reply = input(
-                                "Do you want to continue (set "
-                                "general.ignore_config_warnings: False to avoid "
-                                "quesitoning)? (y/n): "
-                            )
-                            if user_reply=="y":
-                                break
-                            elif user_reply=="n":
-                                sys.exit(1)
-                            else:
-                                print(f'"{user_reply}" is not a valid option.')
+                        proceed = questionary.confirm(
+                            "Do you want to continue (set "
+                            "general.ignore_config_warnings: False to avoid "
+                            "quesitoning)?"
+                        ).ask()
+                        if not proceed:
+                            sys.exit(1)

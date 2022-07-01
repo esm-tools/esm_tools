@@ -809,7 +809,7 @@ def warn_error(config, trigger, note_function):
                            message: "The scenario you specified (``${recom.scenario}``) is not supported!"
                            ask_user_to_continue: True
 
-    If you then define `recom.scenario: hist` instead of `HIST` then you'll get the
+    If you then define ``recom.scenario: hist`` instead of ``HIST`` then you'll get the
     following:
     .. code-block::
 

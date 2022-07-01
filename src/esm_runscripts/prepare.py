@@ -734,7 +734,28 @@ def set_logfile(config):
 
 
 def check_config_for_warnings_errors(config):
+    """
+    Wrapper method to call ``warn_error`` from the `ESM-Tools` recipes. Loops through
+    the trigger variables to call ``warn_error``, only including ``warning`` in the
+    ``triggers`` if it is an interactive session (i.e. user just submitted a job), or
+    if it's not a resubmission (to avoid displaying the warning twice).
 
+    .. note:: use this in the recipe after the ``choose_`` blocks are resolved,
+       otherwise, warnings and errors nested in the ``choose_`` blocks won't be
+       reached.
+
+    Parameters
+    ----------
+    config : dict, esm_parser.ConfigSetup
+            ConfigSetup object containing the information of the current simulation
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+            ConfigSetup object containing the information of the current simulation
+    """
+
+    # Initialize the trigger variables (i.e. ``error`` and ``warning``))
     triggers = {"error": {"note_function": esm_parser.user_error}}
 
     # Find conditions to warn (avoid warning more than once)
@@ -746,29 +767,93 @@ def check_config_for_warnings_errors(config):
     if not isresubmitted or isinteractive:
         triggers["warning"] = {"note_function": esm_parser.user_note}
 
+    # Loop through the triggers
     for trigger, trigger_info in triggers.items():
         warn_error(config, trigger, trigger_info["note_function"])
 
     return config
 
 def warn_error(config, trigger, note_function):
+    """
+    Checks the ``sections`` of the ``config`` for a given ``trigber`` (``"error"`` or
+    ``"warning"``), and if found, returns the ``error`` or ``warning`` using
+    ``note_functon`` (``user_error`` or ``user_note`` respectively). Errors always halt
+    the core with ``sys.exit(1)``. Warnings only halt the code to ask the user for
+    continuation if the job is interactive, it is specified inside the warning as
+    ``ask_user_to_continue: True`` and the user has not called ``esm_runscripts`` with
+    the ``--ignore-config-warnings`` or defined ``general.ignore_config_warnings: True``
+    in their runscript.
 
+    The syntax in the yaml files for triggering warnings or errors is as follows:
+    .. code-block:: yaml
+       warning/error:
+           <name>: # Name for the specific warning or error
+               message: "the message of the warning/error"
+               esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
+               ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
+
+    Example
+    -------
+    .. code-block:: yaml
+       recom:
+           choose_scenario:
+               HIST:
+                   [ ... ]
+               PI-CTRL:
+                   [ ... ]
+               "*":
+                   add_warning:
+                       "wrong scenario type":
+                           message: "The scenario you specified (``${recom.scenario}``) is not supported!"
+                           ask_user_to_continue: True
+
+    If you then define `recom.scenario: hist` instead of `HIST` then you'll get the
+    following:
+    .. code-block::
+       wrong scenario type WARNING
+       ---------------------------
+       Section: recom
+
+       Wrong scenario, scenario hist does not exist
+
+       ? Do you want to continue (set general.ignore_config_warnings: False to avoid quesitoning)?
+
+    Parameters
+    ----------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+    trigger : string
+        ``error`` or ``warning``
+    note_function : esm_parser.user_error, esm_parser.user_note
+        Method to report the note
+    """
+    # Sufixes for the warning special case
     if trigger=="warning":
         sufix_name = f" WARNING"
     else:
         sufix_name = f""
 
+    # Loop through the sections (e.g. ``general``, ``<model>``, ``computer``, ...)
     for section, value in config.items():
+        # If the trigger is found output the warnings or errors
         if trigger in value:
             actions = value[trigger]
+            # Loop through the warnings or errors
             for action_name, action_info in actions.items():
+                # Check if the version condition for the error/warning is met
                 version_condition = action_info.get("esm_tools_version", ">0.0.0")
                 if esm_utilities.check_valid_version(version_condition):
+                    # Call the ``note_function`` (``user_error`` for errors,
+                    # ``user_note`` for warnings))
                     note_function(
                         f"{action_name}{sufix_name}",
                         f'Section: ``{section}``\n\n{action_info.get("message", "")}'
                     )
 
+                    # Check if the warning should halt execution and ask the user if
+                    # if is an interactive session, the warning info specifies that i
+                    # needs to halt, and the user has not defined the
+                    # ``--ignore-config-warnings`` flag in the ``esm_runscripts`` call
                     if (
                         trigger=="warning"
                         and config["general"].get("isinteractive")

@@ -17,6 +17,7 @@ import esm_parser
 import esm_tools
 
 from . import helpers
+from . import config_control
 
 
 def rename_sources_to_targets(config):
@@ -1317,6 +1318,7 @@ def get_movement(config, model, categ, filetype, source, target):
 
 
 def assemble(config):
+    config_control.check_configuration_consistency(config)
     config = complete_all_file_movements(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)

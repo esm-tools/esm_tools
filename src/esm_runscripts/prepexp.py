@@ -168,9 +168,12 @@ def copy_tools_to_thisrun(config):
         new_command = " ".join(new_command_list)
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
-        # prevent continuous addition of --no-motd
-        if not "--no-motd" in restart_command:
-            restart_command += " --no-motd "
+        # Add non-interaction flags
+        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        for ni_flag in non_interaction_flags:
+            # prevent continuous addition of ``ni_flag``
+            if ni_flag not in restart_command:
+                restart_command += f" {ni_flag} "
 
         if config["general"]["verbose"]:
             print(restart_command)

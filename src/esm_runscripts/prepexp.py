@@ -172,7 +172,7 @@ def copy_tools_to_thisrun(config):
         non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
         for ni_flag in non_interaction_flags:
             # prevent continuous addition of ``ni_flag``
-            if not ni_flag in restart_command:
+            if ni_flag not in restart_command:
                 restart_command += f" {ni_flag} "
 
         if config["general"]["verbose"]:

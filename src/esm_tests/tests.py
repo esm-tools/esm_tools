@@ -282,6 +282,7 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
+    run_errors = ["ERROR:", "slurmstepd: error: *** STEP"]
 
     # Set the counter to 0
     c = 0
@@ -432,7 +433,7 @@ def run_test(info):
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway
-                        elif "ERROR:" in observe_out:
+                        elif any([run_error in observe_out for run_error in run_errors]):
                             subc, finished_runs, success = experiment_state_action(
                                 info,
                                 "Simulation crashed!",

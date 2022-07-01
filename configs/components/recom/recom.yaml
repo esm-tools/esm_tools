@@ -70,6 +70,25 @@ choose_scenario:
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
                 numofCO2cycles: "${num_CO2_cycles}"
                 currentCO2cycle: "${current_CO2_cycle}"
+        "*":
+                constant_CO2: ""
+                REcoM_PI: ""
+                CO2_for_spinup: ""
+                firstyearoffesomcycle: ""
+                lastyearoffesomcycle: ""
+                numofCO2cycles: ""
+                currentCO2cycle: ""
+                add_warning:
+                    "wrong scenario type":
+                        message: "
+                            The ``scenario`` you specified (``${recom.scenario}``) is
+                            not supported! The following ``recom`` variables will be
+                            defined as ``empty`` unless you defined them in your
+                            runscript:
+                            \n- constant_CO2\n- REcoM_PI\n- CO2_for_spinup
+                            \n- firstyearoffesomcycle\n- lastyearoffesomcycle
+                            \n- numofCO2cycles\n- currentCO2cycle"
+                        ask_user_to_continue: True
 
 
 #namelist_dir: "${esm_namelist_dir}/${model}"

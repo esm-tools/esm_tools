@@ -934,12 +934,12 @@ The syntax in the yaml files for triggering warnings or errors is as follows:
            esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
            ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
 
-- ``<name>``: what is displayed on the title of the error/warning
-- ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
+* ``<name>``: what is displayed on the title of the error/warning
+* ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
   variables here (``${<variable>}``)
-- ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
+* ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
   versions
-- ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
+* ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
   after displaying the warning. Only works for warnings as errors halt the simulation
   without asking
 

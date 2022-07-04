@@ -4,7 +4,7 @@ import urllib.request
 from time import sleep
 
 import esm_parser
-import semver
+import esm_utilities
 import yaml
 
 import esm_tools
@@ -40,62 +40,6 @@ class MessageOfTheDayHandler:
             return
         self.database_connected = True
         self.message_dict = yaml.load(self.motdfile, Loader=yaml.FullLoader)
-
-    def check_valid_version(self, version, versionrange):
-        """
-        Returns ``True`` if the ``version`` provided matches the condition of
-        ``versionrange``.
-
-        Parameters
-        ----------
-        version : str
-            String specifying the version number with the format ``X.Y.Z``.
-        versionrange : str
-            Condition for the version range, expressed as a comparison operator
-            followed by a version number in the format ``X.Y.Z``.
-
-        Returns
-        -------
-        True, False : bool
-            ``True`` if the condition is met, ``False`` if not.
-        """
-        version = semver.VersionInfo.parse(version)
-
-        if versionrange.startswith("<="):
-            operator = version.__le__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("<=", "").strip()
-            )
-        if versionrange.startswith("<"):
-            operator = version.__lt__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("<", "").strip()
-            )
-        elif versionrange.startswith(">="):
-            operator = version.__ge__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace(">=", "").strip()
-            )
-        elif versionrange.startswith(">"):
-            operator = version.__gt__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace(">", "").strip()
-            )
-        elif versionrange.startswith("=="):
-            operator = version.__eq__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("==", "").strip()
-            )
-        elif versionrange.startswith("!="):
-            operator = version.__ne__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("!=", "").strip()
-            )
-        else:
-            raise MessageOfTheDayError(
-                f"Unknown version range specified: {versionrange}"
-            )
-        return operator(other_version)
 
     def action_finder(self, action):
         """
@@ -170,8 +114,8 @@ class MessageOfTheDayHandler:
             # the version condition is met display the MOTD
             if self.message_dict[message][
                 "package"
-            ] == mypackage and self.check_valid_version(
-                myversion, self.message_dict[message]["versions"]
+            ] == mypackage and esm_utilities.check_valid_version(
+                self.message_dict[message]["versions"], version=myversion
             ):
                 print(
                     "************************************************************************************"

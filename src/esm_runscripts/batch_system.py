@@ -530,6 +530,8 @@ class batch_system:
                     + " -r "
                     + str(config["general"]["run_number"])
                     + " -v "
+                    + " --last-jobtype "
+                    + config["general"]["jobtype"]
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[

@@ -139,6 +139,7 @@ early_choose_vars = ["include_models", "version", "omp_num_threads"]
 if six.PY2:  # pragma: no cover
     FileNotFoundError = IOError
 
+
 def flatten_nested_lists(lst):
     """Recursively flattens an arbitrarily nested list and yields a generator
 
@@ -146,13 +147,13 @@ def flatten_nested_lists(lst):
     --------
     >>> list(flatten_nested_lists( [[1,2,3]] ))
     [1, 2, 3]
-    
+
     >>> list(flatten_nested_lists( [1,2,3, [4,5,6], "foo"] ))
     [1, 2, 3, 4, 5, 6, 'foo']
-    
+
     >>> list(flatten_nested_lists( [[1,2,3], [4,5,6], [7,8,9]] ))
     [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    
+
     >>> list(flatten_nested_lists( [[1,2,3], {"foo": "bar"}] ))
     [1, 2, 3, {'foo': 'bar'}]
     """
@@ -1471,7 +1472,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         user_error(
             "choose_ block",
             "``choose_`` blocks need to be defined as ``dictionaries``. Currently, "
-            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``"
+            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``",
         )
     for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
         if (
@@ -1496,9 +1497,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
-        for update_key, update_value in six.iteritems(
-            choices_available[choice]
-        ):
+        for update_key, update_value in six.iteritems(choices_available[choice]):
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
@@ -1968,9 +1967,8 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
             # preceding (``prefix``) or following (``suffix``) string, then add up
             # the parts, making sure that other variables (``${}``) are also
             # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
-            if (
-                (not isinstance(var_result, list) and (prefix or suffix)) or
-                (isinstance(var_result, dict) and "NONE_YET" in var_result)
+            if (not isinstance(var_result, list) and (prefix or suffix)) or (
+                isinstance(var_result, dict) and "NONE_YET" in var_result
             ):
                 prefix, var_result, more_rest = (
                     str(prefix),
@@ -3085,7 +3083,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             user_config = setup_config = self
         if (
             setup_config["general"].get("standalone")
-            and user_config["general"].get("run_or_compile", "runtime")=="runtime"
+            and user_config["general"].get("run_or_compile", "runtime") == "runtime"
         ):
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
@@ -3096,7 +3094,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     "You have defined the ``version`` variable both in the "
                     f"``general`` and ``{model_name}`` sections of your runscript. "
                     "This is not supported for ``standalone`` simulations. Please "
-                    "define ``only one version`` in one of the two sections."
+                    "define ``only one version`` in one of the two sections.",
                 )
             elif version_in_runscript_general and not version_in_runscript_model:
                 if model_name in user_config:

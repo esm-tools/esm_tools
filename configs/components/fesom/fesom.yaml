@@ -23,6 +23,9 @@ choose_version:
   '1.4-recom-awicm':
     branch: fesom_recom_1.4_master
     destination: fesom-1.4
+    # when coupled with Recom append the recom variables
+    add_yearly_outputs:
+        - "${recom_yearly_outputs}"
     add_monthly_outputs:
         - ${recom_monthly_outputs}
     add_daily_outputs:
@@ -40,7 +43,9 @@ choose_version:
     destination: fesom-1.4
     # TODO: check these lines and ask Chris
     # TODO: check branches
-    yearly_outputs: $(( "${fesom_yearly_outputs}" + "${recom_yearly_outputs}" ))
+    # when coupled with Recom append the recom variables
+    add_yearly_outputs:
+        - "${recom_yearly_outputs}"
     add_monthly_outputs:
         - "${recom_monthly_outputs}"
     add_daily_outputs:

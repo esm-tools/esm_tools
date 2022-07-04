@@ -6,46 +6,23 @@ version: "1.4"
 type: ocean
 
 available_versions:
-- '1.4'
-- '1.4-esm_interface'
-- '1.4-recom'
-- '1.4-recom-awicm'
-- '1.4-recom-mocsy-slp'
-- '2.0'
 - '2.0-o'
+- '1.4-esm_interface'
+- '1.4'
+- '1.4-recom'
+- '1.4-recom-mocsy-slp'
 - '2.0-paleodyn'
+- '1.4-recom-awicm'
+- '2.0'
 - '2.0-r' # OG: temporarily here
-- '2.1'
 - '2.1-recom'
 - '2.1-wiso'
+- '2.1'
 
 choose_version:
-  '1.4-esm_interface':
-    branch: using_esm-interface
-    destination: fesom-1.4
-  '1.4-recom':
-    branch: master
-    destination: fesom-1.4
-    #add_yearly_outputs:
-    #    - "${recom_yearly_outputs}"
-    #yearly_outputs:
-    #  "[[fesom_yearly_outputs-->OUTPUT]]": OUTPUT
-    #  "[[recom_yearly_outputs-->OUTPUT]]": OUTPUT
-    #yearly_outputs: 
-    #    - *fesom_yearly_outputs
-    #    - *recom_yearly_outputs
-    yearly_outputs: $(( "${fesom_yearly_outputs}" + "${recom_yearly_outputs}" ))
-    add_monthly_outputs:
-        - "${recom_monthly_outputs}"
-    add_daily_outputs:
-        - "${recom_daily_outputs}"
-    add_12_step_outputs:
-        - "${recom_12_step_outputs}"
   '1.4-recom-awicm':
     branch: fesom_recom_1.4_master
     destination: fesom-1.4
-    #add_yearly_outputs:
-    #    - ${recom_yearly_outputs}
     add_monthly_outputs:
         - ${recom_monthly_outputs}
     add_daily_outputs:
@@ -55,6 +32,21 @@ choose_version:
   '1.4-recom-mocsy-slp':
     branch: fesom-recom-mocsy-slp
     destination: fesom-1.4
+  '1.4-esm_interface':
+    branch: using_esm-interface
+    destination: fesom-1.4
+  '1.4-recom':
+    branch: master
+    destination: fesom-1.4
+    # TODO: check these lines and ask Chris
+    # TODO: check branches
+    yearly_outputs: $(( "${fesom_yearly_outputs}" + "${recom_yearly_outputs}" ))
+    add_monthly_outputs:
+        - "${recom_monthly_outputs}"
+    add_daily_outputs:
+        - "${recom_daily_outputs}"
+    add_12_step_outputs:
+        - "${recom_12_step_outputs}"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
@@ -291,7 +283,7 @@ config_sources:
 # - please keep alphabetic order
 # - a custom variable list (of all involved models, e.g. fesom or fesom AND recom) can be provided in the runscript via `further_reading` in the fesom section
 # - todo: if fesom1:namelist.oce:use_age_tracer=.true. --> age01, age02, ... must be added to `fesom_*_outputs`-lists
-fesom_yearly_outputs: &fesom_yearly_outputs [flice,fsitherm,opottemptend,pbo,relax_salt,rho,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sistrxdtop,sistrxubot,sistrydtop,sistryubot,thdgr,thdgrsn,u2o,uhice,uhsnow,urho,uso,uto,uv,v2o,vhice,vhsnow,virtual_salt,volo,vrho,vso,vto,w2o,wfo,wso,wto,zossq]
+fesom_yearly_outputs: [flice,fsitherm,opottemptend,pbo,relax_salt,rho,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sistrxdtop,sistrxubot,sistrydtop,sistryubot,thdgr,thdgrsn,u2o,uhice,uhsnow,urho,uso,uto,uv,v2o,vhice,vhsnow,virtual_salt,volo,vrho,vso,vto,w2o,wfo,wso,wto,zossq]
 fesom_monthly_outputs: [evap,evs,hfds,lwrd,mlotst,olat,olwout,omldamax,osen,prlq,prsn,rsdo,runoff,shum,siarean,siareas,sic,siextentn,siextents,sithick,sitimefrac,siu,siv,sivol,sivoln,sivols,so,soga,sos,tair,tauuo,tauvo,thetao,thetaoga,tos,tso,uo,uwind,vo,vwind,wnet,wo,zos]
 fesom_daily_outputs: []
 fesom_12_step_outputs: []

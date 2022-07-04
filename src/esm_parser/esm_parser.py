@@ -71,11 +71,11 @@ import socket
 import subprocess
 import sys
 import warnings
-import numpy
 
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
+import numpy
 import coloredlogs
 import colorama
 import yaml
@@ -138,6 +138,32 @@ early_choose_vars = ["include_models", "version", "omp_num_threads"]
 # Ensure FileNotFoundError exists:
 if six.PY2:  # pragma: no cover
     FileNotFoundError = IOError
+
+def flatten_nested_lists(lst):
+    """Recursively flattens an arbitrarily nested list and yields a generator
+
+    Examples
+    --------
+    >>> list(flatten_nested_lists( [[1,2,3]] ))
+    [1, 2, 3]
+    
+    >>> list(flatten_nested_lists( [1,2,3, [4,5,6], "foo"] ))
+    [1, 2, 3, 4, 5, 6, 'foo']
+    
+    >>> list(flatten_nested_lists( [[1,2,3], [4,5,6], [7,8,9]] ))
+    [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    
+    >>> list(flatten_nested_lists( [[1,2,3], {"foo": "bar"}] ))
+    [1, 2, 3, {'foo': 'bar'}]
+    """
+    # Traverse the list and return the scalar item. If the item is a list, then
+    # enter recursion
+    for item in lst:
+        if isinstance(item, list):
+            for subitem in flatten_nested_lists(item):
+                yield subitem
+        else:
+            yield item
 
 
 def look_for_file(model, item, all_config=None):
@@ -1038,7 +1064,10 @@ def add_entry_to_chapter(
                     add_chapter.split(".")[-1].replace("add_", "")
                 ]
                 # Add the entries
-                mod_list += add_entries
+                if isinstance(add_entries, list):
+                    mod_list.extend(list(flatten_nested_lists(add_entries)))
+                else:
+                    mod_list.append(add_entries)
                 # Remove duplicates
                 mod_list_no_dupl = []
                 for el in mod_list:
@@ -1816,6 +1845,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             """
             if type(item) == str and "[[" in item and func == list_to_multikey:
                 newright += new_item
+            elif isinstance(new_item, list):
+                newright.extend(new_item)
             else:
                 newright.append(new_item)
         right = newright

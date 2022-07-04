@@ -1042,7 +1042,7 @@ def add_entry_to_chapter(
 
     # Eg. add_general.mylist -> mylist
     chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
-    if chapter_to_add in target_config[model_to_add_to]:
+    if chapter_to_add not in target_config[model_to_add_to]:
         target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
         if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
@@ -1061,7 +1061,7 @@ def add_entry_to_chapter(
                 mod_list_no_dupl = []
                 for el in mod_list:
                     if not isinstance(el, (dict, tuple, list)):
-                        if not el in mod_list_no_dupl:
+                        if el not in mod_list_no_dupl:
                             mod_list_no_dupl.append(el)
                     else:
                         mod_list_no_dupl.append(el)

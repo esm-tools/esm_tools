@@ -23,7 +23,6 @@ choose_version:
             - benCalc
             - benN
             - benSi
-            - bgc21
             - calcdiss
             - calcif3d
             - denb
@@ -134,7 +133,6 @@ choose_version:
         # 1. variable names are case sensitive
         # 2. please keep alphabetic order
         yearly_outputs:
-            - testvar
             - AGGdia3d
             - AGGphy3d
             - alphaCO2
@@ -142,7 +140,6 @@ choose_version:
             - benCalc
             - benN
             - benSi
-            - bgc21
             - calcdiss
             - calcif3d
             - denb

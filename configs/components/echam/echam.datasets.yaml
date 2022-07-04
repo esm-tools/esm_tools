@@ -105,7 +105,7 @@ forcing_sources:
         greenhouse_cmip5_scenario:
             "${greenhouse_dir}/greenhouse_historical.nc":
                 to: 2014
-            "${greenhouse_dir}/greenhouse_{scenario_lowercase}.nc"
+            "${greenhouse_dir}/greenhouse_{scenario_lowercase}.nc":
                 from: 2015
 
 

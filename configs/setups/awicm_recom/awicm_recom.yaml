@@ -113,7 +113,7 @@ fesom:
         "CMIP6":
             version: "1.4"
         "1.0-recom":
-            version: "1.4"
+            version: "1.4-recom-awicm"
         "2.0":
             version: "2.0"
     choose_general.resolution:
@@ -143,6 +143,8 @@ fesom:
 ###############################################################################
 
 recom:
+    version: "2.0-recom-awicm"
+
     # NOTE: look at README.md for description of the namelists
     namelist_dir: "${esm_namelist_dir}/${model}/awicm_recom/"
     scenario: "${general.scenario}"

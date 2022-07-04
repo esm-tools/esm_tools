@@ -20,38 +20,36 @@ available_versions:
 - '2.1'
 
 choose_version:
-  '1.4-recom-awicm':
-    branch: fesom_recom_1.4_master
-    destination: fesom-1.4
-    # when coupled with Recom append the recom variables
-    add_yearly_outputs:
-        - "${recom_yearly_outputs}"
-    add_monthly_outputs:
-        - ${recom_monthly_outputs}
-    add_daily_outputs:
-        - ${recom_daily_outputs}
-    add_12_step_outputs:
-        - ${recom_12_step_outputs}
-  '1.4-recom-mocsy-slp':
-    branch: fesom-recom-mocsy-slp
-    destination: fesom-1.4
-  '1.4-esm_interface':
-    branch: using_esm-interface
-    destination: fesom-1.4
-  '1.4-recom':
-    branch: master
-    destination: fesom-1.4
-    # TODO: check these lines and ask Chris
-    # TODO: check branches
-    # when coupled with Recom append the recom variables
-    add_yearly_outputs:
-        - "${recom_yearly_outputs}"
-    add_monthly_outputs:
-        - "${recom_monthly_outputs}"
-    add_daily_outputs:
-        - "${recom_daily_outputs}"
-    add_12_step_outputs:
-        - "${recom_12_step_outputs}"
+    '1.4-recom-awicm':
+        branch: fesom_recom_1.4_master
+        destination: fesom-1.4
+        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
+        add_yearly_outputs:
+            - "${recom.yearly_outputs}"
+        add_monthly_outputs:
+            - "${recom.monthly_outputs}"
+        add_daily_outputs:
+            - "${recom.daily_outputs}"
+        add_12_step_outputs:
+            - "${recom.12_step_outputs}"
+    '1.4-recom-mocsy-slp':
+        branch: fesom-recom-mocsy-slp
+        destination: fesom-1.4
+    '1.4-esm_interface':
+        branch: using_esm-interface
+        destination: fesom-1.4
+    '1.4-recom':
+        branch: master
+        destination: fesom-1.4
+        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
+        add_yearly_outputs:
+            - "${recom.yearly_outputs}"
+        add_monthly_outputs:
+            - "${recom.monthly_outputs}"
+        add_daily_outputs:
+            - "${recom.daily_outputs}"
+        add_12_step_outputs:
+            - "${recom.12_step_outputs}"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
@@ -278,232 +276,125 @@ config_sources:
         oce:     "${namelist_dir}/namelist.oce"
         diag:    "${namelist_dir}/namelist.diag"
 
-# default output of components `fesom-1.4` and `recom-2.0`
-# - variables listed in `*_outputs` but not defined/not requested in the model will be ignored by the fesom-1.4 output scheduler
-# - variables defined/requested in the model but not listed in `*_outputs` will raise an error in the fesom-1.4 output scheduler
-# - variable names are case sensitive
-# - please keep alphabetic order
-# - a custom variable list (of all involved models, e.g. fesom or fesom AND recom) can be provided in the runscript via `further_reading` in the fesom section
-# - todo: if fesom1:namelist.oce:use_age_tracer=.true. --> age01, age02, ... must be added to `fesom_*_outputs`-lists
-fesom_yearly_outputs:
-- flice
-- fsitherm
-- opottemptend
-- pbo
-- relax_salt
-- rho
-- sidmassevapsubl
-- sidmasssi
-- sidmassth
-- sidmasstranx
-- sidmasstrany
-- sifllatstop
-- sisnconc
-- sisnmass
-- sisnthick
-- sispeed
-- sistrxdtop
-- sistrxubot
-- sistrydtop
-- sistryubot
-- thdgr
-- thdgrsn
-- u2o
-- uhice
-- uhsnow
-- urho
-- uso
-- uto
-- uv
-- v2o
-- vhice
-- vhsnow
-- virtual_salt
-- volo
-- vrho
-- vso
-- vto
-- w2o
-- wfo
-- wso
-- wto
-- zossq
+# default output of fesom component
+# 1. variables listed in `*_outputs` but not defined/not requested in the model will be ignored by the fesom-1.4 output scheduler
+# 2. variables defined/requested in the model but not listed in `*_outputs` will raise an error in the fesom-1.4 output scheduler
+# 3. variable names are case sensitive
+# 4. please keep alphabetic order
+# 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section
+# 6. if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
+yearly_outputs:
+    - flice
+    - fsitherm
+    - opottemptend
+    - pbo
+    - relax_salt
+    - rho
+    - sidmassevapsubl
+    - sidmasssi
+    - sidmassth
+    - sidmasstranx
+    - sidmasstrany
+    - sifllatstop
+    - sisnconc
+    - sisnmass
+    - sisnthick
+    - sispeed
+    - sistrxdtop
+    - sistrxubot
+    - sistrydtop
+    - sistryubot
+    - thdgr
+    - thdgrsn
+    - u2o
+    - uhice
+    - uhsnow
+    - urho
+    - uso
+    - uto
+    - uv
+    - v2o
+    - vhice
+    - vhsnow
+    - virtual_salt
+    - volo
+    - vrho
+    - vso
+    - vto
+    - w2o
+    - wfo
+    - wso
+    - wto
+    - zossq
+monthly_outputs:
+    - evap
+    - evs
+    - hfds
+    - lwrd
+    - mlotst
+    - olat
+    - olwout
+    - omldamax
+    - osen
+    - prlq
+    - prsn
+    - rsdo
+    - runoff
+    - shum
+    - siarean
+    - siareas
+    - sic
+    - siextentn
+    - siextents
+    - sithick
+    - sitimefrac
+    - siu
+    - siv
+    - sivol
+    - sivoln
+    - sivols
+    - so
+    - soga
+    - sos
+    - tair
+    - tauuo
+    - tauvo
+    - thetao
+    - thetaoga
+    - tos
+    - tso
+    - uo
+    - uwind
+    - vo
+    - vwind
+    - wnet
+    - wo
+    - zos
+daily_outputs: []
+12_step_outputs: []
 
-fesom_monthly_outputs:
-- evap
-- evs
-- hfds
-- lwrd
-- mlotst
-- olat
-- olwout
-- omldamax
-- osen
-- prlq
-- prsn
-- rsdo
-- runoff
-- shum
-- siarean
-- siareas
-- sic
-- siextentn
-- siextents
-- sithick
-- sitimefrac
-- siu
-- siv
-- sivol
-- sivoln
-- sivols
-- so
-- soga
-- sos
-- tair
-- tauuo
-- tauvo
-- thetao
-- thetaoga
-- tos
-- tso
-- uo
-- uwind
-- vo
-- vwind
-- wnet
-- wo
-- zos
+outdata_files:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT
+        "[[daily_outputs-->OUTPUT]]": OUTPUT
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT
 
-fesom_daily_outputs: []
+outdata_in_work:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-fesom_12_step_outputs: []
-
-# TODO: do we need to keep these here or move them to recom.yaml
-recom_yearly_outputs:
-- AGGdia3d
-- AGGphy3d
-- alphaCO2
-- benC
-- benCalc
-- benN
-- benSi
-- bgc21
-- calcdiss
-- calcif3d
-- denb
-- EXCdia3d
-- EXCphy3d
-- GNAd
-- GNAn
-- GNAsdia3d
-- GNAsphy3d
-- GPPdia3d
-- GPPphy3d
-- GRAZdia3d
-- GRAZphy3d
-- Hp
-- Kw
-- NNAd
-- NNAn
-- NNAsdia3d
-- NNAsphy3d
-- NPPdia3d
-- NPPphy3d
-- rDIN
-- rDOC
-- rDON
-- rDSi
-- RESdia3d
-- RESphy3d
-- RESzoo3d
-- TotGraz3d
-
-# TODO: these too. Should these be moved to recom.yaml?
-recom_monthly_outputs:
-- aCO2
-- aFe
-- aN
-- bgc01
-- bgc02
-- bgc03
-- bgc04
-- bgc05
-- bgc06
-- bgc07
-- bgc08
-- bgc09
-- bgc10
-- bgc11
-- bgc12
-- bgc13
-- bgc14
-- bgc15
-- bgc16
-- bgc17
-- bgc18
-- bgc19
-- bgc20
-- bgc21
-- bgc22
-- bgc23
-- bgc24
-- bgc25
-- bgc26
-- bgc27
-- bgc28
-- CO2f
-- CO2y
-- diags3d01
-- diags3d02
-- diags3d03
-- diags3d04
-- diags3d05
-- diags3d06
-- diags3d07
-- diags3d08
-- diags3d09
-- diags3d10
-- diags3d11
-- diags3d12
-- diags3d13
-- diags3d14
-- diags3d15
-- diags3d16
-- diags3d17
-- diags3d18
-- diags3d19
-- diags3d20
-- dpCO2s
-- GPPd
-- GPPn
-- NPPd
-- NPPn
-- O2f
-- PAR
-- pCO2s
-- slp
-- virtual_alk
-- virtual_dfe
-- virtual_dic
-- virtual_din
-- virtual_dsi
-- virtual_oxy
-- w10w
-
-# TODO
-recom_daily_outputs: []
-
-recom_12_step_outputs: []
-
-# add default output depending on coupling that involves fesom-1.4
-yearly_outputs: "${fesom_yearly_outputs}"
-monthly_outputs: "${fesom_monthly_outputs}"
-daily_outputs: "${fesom_daily_outputs}"
-12_step_outputs: "${fesom_12_step_outputs}"
+outdata_sources:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
 # export output lists to env variable `AWI_FESOM_YAML`
 # - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml
 # - there can be several blocks in `AWI_FESOM_YAML` with the same output frequency
+# - the variable lists exported here include recom variables if necessary
 runtime_environment_changes:
         add_export_vars:
                 AWI_FESOM_YAML:
@@ -530,24 +421,6 @@ runtime_environment_changes:
                                         vars: ${12_step_outputs}
                                         unit: s
                                         rate: 12
-
-outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT
-
-outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-
-outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
 ignore_files:
         gf: gf

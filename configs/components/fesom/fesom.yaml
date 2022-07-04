@@ -213,9 +213,6 @@ namelist_changes:
                         restart_length_unit: "remove_from_namelist"
                 mesh_def:
                         part_format: "remove_from_namelist"
-        namelist.oce:
-                boundary:
-                        restore_s_surf: "1.929e-06"
         namelist.forcing:
                 forcing_source:
                         wind_data_source: ${asforcing}

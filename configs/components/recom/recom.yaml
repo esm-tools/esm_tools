@@ -173,15 +173,6 @@ restart_out_sources:
         # "[[recom.monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         # "[[recom.daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-choose_computer.name:
-        blogin:
-                add_compiletime_environment_changes:
-                        add_export_vars:
-                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
-
 outdata_files:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT
         "[[monthly_outputs-->OUTPUT]]": OUTPUT

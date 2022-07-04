@@ -265,7 +265,7 @@ nemo:
                 ORCA05:
                         nproca: 24
                         nprocb: 20
-                        loccunif: 4
+                        loccunif_nb: 4
                 # Joakim: Need to find good choice for ORCA12
                 ORCA12:
                         nproca: 24

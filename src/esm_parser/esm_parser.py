@@ -113,6 +113,9 @@ COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
 
+# global variables
+list_counter = 0
+
 gray_list = [
     r"choose_lresume",
     r"choose_.*lresume",
@@ -1008,9 +1011,6 @@ def find_add_entries_in_config(mapping, model_name):
     return all_adds
 
 
-list_counter = 0
-
-
 def add_entry_to_chapter(
     add_chapter,
     add_entries,
@@ -1049,38 +1049,29 @@ def add_entry_to_chapter(
             error_type = "Type mismatch"
             error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
             user_error(error_type, error_text)
-        else:
-            if isinstance(
-                target_config[model_to_add_to][chapter_to_add],
-                list,
-            ):
-                # Define the list to be modified
-                mod_list = target_config[model_to_add_to][chapter_to_add]
-                # Add the entries
-                mod_list.extend(list(flatten_nested_lists(add_entries)))
 
-                # Remove duplicates
-                mod_list_no_dupl = []
-                for el in mod_list:
-                    if not isinstance(el, (dict, tuple, list)):
-                        if el not in mod_list_no_dupl:
-                            mod_list_no_dupl.append(el)
-                    else:
+        if isinstance(target_config[model_to_add_to][chapter_to_add], list):
+            # Define the list to be modified
+            mod_list = target_config[model_to_add_to][chapter_to_add]
+            # Add the entries
+            mod_list.extend(list(flatten_nested_lists(add_entries)))
+
+            # Remove duplicates
+            mod_list_no_dupl = []
+            for el in mod_list:
+                if not isinstance(el, (dict, tuple, list)):
+                    if el not in mod_list_no_dupl:
                         mod_list_no_dupl.append(el)
-                target_config[model_to_add_to][chapter_to_add] = mod_list_no_dupl
-                global list_counter
-                list_counter += 1
-            elif isinstance(
-                target_config[model_to_add_to][chapter_to_add],
-                dict,
-            ):
-                # If the chapter is a dictionary use dict_merge where the new entries
-                # have priority over the preexisting ones (user choices win over
-                # anything else)
-                dict_merge(
-                    target_config[model_to_add_to][chapter_to_add],
-                    add_entries,
-                )
+                else:
+                    mod_list_no_dupl.append(el)
+            target_config[model_to_add_to][chapter_to_add] = mod_list_no_dupl
+            global list_counter
+            list_counter += 1
+        elif isinstance(target_config[model_to_add_to][chapter_to_add], dict):
+            # If the chapter is a dictionary use dict_merge where the new entries
+            # have priority over the preexisting ones (user choices win over
+            # anything else)
+            dict_merge(target_config[model_to_add_to][chapter_to_add], add_entries)
     if list_counter > 1:
         pass
         # pdb.set_trace()

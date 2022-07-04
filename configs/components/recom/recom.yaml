@@ -100,7 +100,6 @@ namelists:
 namelist_changes:
         namelist.recom:
                 pavariables:
-                        bgc_num: "${bgc_num}"  # TODO: does this break anything? 
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         firstyearoffesomcycle: "${firstyearoffesomcycle}"

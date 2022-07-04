@@ -347,6 +347,7 @@ recom:
                         add_namelist_changes:
                             namelist.recom:
                                 pavariables:
+                                    bgc_num: "${bgc_num}"
                                     benthos_num: "${benthos_num}"
                                     bottflx_num: "${bottflx_num}"
 

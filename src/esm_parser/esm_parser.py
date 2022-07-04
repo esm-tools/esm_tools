@@ -2728,7 +2728,7 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
+def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
     """
     Notify the user about something. In the future this should also write in the log.
 
@@ -2739,14 +2739,16 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
     text : str
         Text clarifying the note.
     """
-    colorama.init(autoreset=True)
     reset_s = colorama.Style.RESET_ALL
-    note_text = re.sub("``([^`]*)``", f"{color}\\1{reset_s}", note_text)
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}")
+    for dsymbol in dsymbols:
+        note_text = re.sub(
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+        )
+    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")
 
 
-def user_error(error_type, error_text, exit_code=1):
+def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
     """
     User-friendly error using ``sys.exit()`` instead of an ``Exception``.
 
@@ -2760,7 +2762,7 @@ def user_error(error_type, error_text, exit_code=1):
         The exit code to send back to the parent process (default to 1)
     """
     error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED)
+    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
     sys.exit(exit_code)
 
 
@@ -2906,6 +2908,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         del self.config
 
+        self.check_user_defined_versions(user_config, setup_config)
+
         setup_config["general"].update(
             {
                 "esm_function_dir": CONFIG_PATH,
@@ -3022,6 +3026,50 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # pprint_config(self.config)
         # sys.exit(0)
+
+    def check_user_defined_versions(self, user_config={}, setup_config={}):
+        """
+        When running a standalone model, checks whether the users has define the
+        variable ``version`` in more than one section and if that's the case
+        throws and error. If ``version`` is only defined in the ``general`` section
+        it creates a ``version`` with the same value in the model section, ensuring
+        that the user can arbitrarily define ``version`` in either ``general`` or
+        ``<model>`` sections.
+
+        Parameters
+        ----------
+        user_config : dict
+            Experiment configuration defined by the user (e.g. runscript)
+        setup_config : dict
+            Experiment configuration defined by the default ESM-Tools configuration
+            files (``<PATH>/esm_tools/configs/``)
+
+        Notes
+        -----
+        Version error : esm_parser.user_error
+            If something goes wrong with the user's version choices it exits the code
+            with a ``esm_parser.user_error``
+        """
+        if "general" in self:
+            user_config = setup_config = self
+        if (
+            setup_config["general"].get("standalone")
+            and user_config["general"].get("run_or_compile", "runtime")=="runtime"
+        ):
+            version_in_runscript_general = user_config["general"].get("version")
+            model_name = user_config["general"]["setup_name"]
+            version_in_runscript_model = user_config.get(model_name, {}).get("version")
+            if version_in_runscript_general and version_in_runscript_model:
+                user_error(
+                    "Version",
+                    "You have defined the ``version`` variable both in the "
+                    f"``general`` and ``{model_name}`` sections of your runscript. "
+                    "This is not supported for ``standalone`` simulations. Please "
+                    "define ``only one version`` in one of the two sections."
+                )
+            elif version_in_runscript_general and not version_in_runscript_model:
+                if model_name in user_config:
+                    user_config[model_name]["version"] = version_in_runscript_general
 
     def finalize(self):
         self.run_recursive_functions(self)

@@ -22,25 +22,24 @@ def evaluate(config, job_type, recipe_name):
             "general"
         ].get(recipe_name)
     except KeyError:
-        print(
-            f"Your configuration is incorrect, and should include headings for {setup_name} as well as general!"
-        )
+        print("Your configuration is incorrect.")
+        print("It should include headings for the setup_name as well as general!")
         sys.exit(1)
 
     FUNCTION_PATH = esm_tools.get_config_filepath()
 
-    ###########################################################################################
+    ####################################################################################
     # LA: hotfix for non-matching python paths
     if (
-        "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+        "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"  # noqa: E501
         in sys.path
     ):
         sys.path.remove(
-            "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+            "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"  # noqa:501
         )
     if "/global/AWIsoft/tkleiner/lib/python2.7/site-packages" in sys.path:
         sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
-    ###########################################################################################
+    ####################################################################################
 
     recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
     need_to_parse_recipe = True
@@ -63,9 +62,9 @@ def evaluate(config, job_type, recipe_name):
     return config
 
 
-#########################################################################################
-#                                   general stuff                                       #
-#########################################################################################
+########################################################################################
+#                                  general stuff                                       #
+########################################################################################
 def end_it_all(config):
     if config["general"]["profile"]:
         for line in timing_info:
@@ -84,11 +83,11 @@ def write_to_log(config, message, message_sep=None):
     message : list
         A list of the message elements; which is joined by either (highest
         to lowest): 1) the message_sep argument passed to the method, 2)
-        The user's chosen seperator, as written in
+        The user's chosen separator, as written in
         ``config["general"]["experiment_log_file_message_sep"]``, 3)
         An empty space ``" "``.
     message_sep : None
-        The hard-coded message seperator to use; which ignores user choices.
+        The hard-coded message separator to use; which ignores user choices.
 
     Note
     ----
@@ -96,7 +95,7 @@ def write_to_log(config, message, message_sep=None):
 
     1) The datestamp formatting, whjich is taken from the config
        section ``general.experiment_log_file_dateformat``.
-    2) The message seperators; taken from
+    2) The message separators; taken from
        ``general.experiment_log_file_message_sep``. Note that if the
        programmer passes a ``message_sep`` argument; this one wins over
        the user choice.
@@ -129,7 +128,7 @@ def assemble_log_message(
         timestampStr = "$(date +" + strftime_str + ")"
     else:
         timestampStr = dateTimeObj.strftime(strftime_str)
-    # TODO: Do we want to be able to specify a timestamp seperator as well?
+    # TODO: Do we want to be able to specify a timestamp separator as well?
     line = timestampStr + " : " + message_sep.join(message)
     return line
 
@@ -137,7 +136,7 @@ def assemble_log_message(
 def update_reusable_filetypes(config, reusable_filetypes=None):
     """
     Removes some filetypes from the "resuable files" list. Filetypes to be
-    removed are either specifed in the config, or passed as an argument.
+    removed are either specified in the config, or passed as an argument.
 
     Reusable filetypes, declared in general
     (``config["general"]["reusable_filetypes"]``), or in model specific
@@ -195,8 +194,8 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
         if update_filetype not in potentially_reusable_filetypes:
             esm_parser.user_error(
                 "update-filetypes",
-                f"``{update_filetype}`` specified by you in ``--update-filetypes`` is not a "
-                + "ESM-Tools file type. Please, select one (or more) of the "
+                f"``{update_filetype}`` specified by you in ``--update-filetypes`` is "
+                + "not a ESM-Tools file type. Please, select one (or more) of the "
                 + "following file types:\n\t- "
                 + "\n\t- ".join(potentially_reusable_filetypes),
             )
@@ -211,8 +210,8 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             reusable_filetypes.remove(update_filetype)
         elif config["general"].get("verbose", False):
             print(
-                f"- The file type ``{update_filetype}`` you are trying to update was not "
-                "reusable accross runs in the first place, so it's been always "
+                f"- The file type ``{update_filetype}`` you are trying to update was"
+                "not reusable across runs in the first place, so it's been always "
                 "updated with the external source, and it will still be."
             )
 
@@ -227,7 +226,9 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     return reusable_filetypes
 
 
-############################## SINK CLASS FOR LOGURU.LOGGER ###########################
+##############################
+# SINK CLASS FOR LOGURU.LOGGER
+##############################
 
 
 class SmartSink:

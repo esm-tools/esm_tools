@@ -914,3 +914,60 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    information needed. Note that, for example, dates of the previous run are
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
+
+Error-handling and warning syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This syntax allows for error-handling and raising of warnings from the configuration
+files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
+under a given condition (e.g. ``choose_`` block for a given selection) use the key
+words ``error`` or ``warning`` respectively (if more than one error/warning is present
+in the section of your file, use ``add_error/warning`` to combine them).
+
+The syntax in the yaml files for triggering warnings or errors is as follows:
+
+.. code-block:: yaml
+
+   warning/error:
+       <name>: # Name for the specific warning or error
+           message: "the message of the warning/error"
+           esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
+           ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
+
+* ``<name>``: what is displayed on the title of the error/warning
+* ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
+  variables here (``${<variable>}``)
+* ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
+  versions
+* ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
+  after displaying the warning. Only works for warnings as errors halt the simulation
+  without asking
+
+**Example**
+
+.. code-block:: yaml
+
+   recom:
+       choose_scenario:
+           HIST:
+               [ ... ]
+           PI-CTRL:
+               [ ... ]
+           "*":
+               add_warning:
+                   "wrong scenario type":
+                       message: "The scenario you specified (``${recom.scenario}``) is not supported!"
+                       ask_user_to_continue: True
+
+If you then define ``recom.scenario: hist`` instead of ``HIST`` then you'll get the
+following:
+
+.. code-block::
+
+   wrong scenario type WARNING
+   ---------------------------
+   Section: recom
+
+   Wrong scenario, scenario hist does not exist
+
+   ? Do you want to continue (set general.ignore_config_warnings: False to avoid quesitoning)?

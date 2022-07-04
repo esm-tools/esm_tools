@@ -14,6 +14,8 @@ import warnings
 import f90nml
 import six
 
+from esm_parser import user_error
+
 
 class Namelist:
     """Methods for dealing with FORTRAN namelists"""
@@ -76,11 +78,13 @@ class Namelist:
                     mconfig["namelists"][nml] = f90nml.read(
                         os.path.join(mconfig["thisrun_config_dir"], nml)
                     )
-                except StopIteration:
-                    print(
-                        f"Sorry, the namelist we were trying to load: {nml} may have a formatting issue!"
+                except (StopIteration, ValueError) as e:
+                    user_error(
+                        "Namelist format",
+                        f"The namelist ``{nml}`` has a formatting issue. Please, "
+                        f"fix it before proceeding.\n\n``Hint:`` {e}",
+                        dsymbols=["``", "'"],
                     )
-                    sys.exit(1)
             else:
                 mconfig["namelists"][nml] = f90nml.namelist.Namelist()
             if mconfig.get("namelist_case") == "uppercase":

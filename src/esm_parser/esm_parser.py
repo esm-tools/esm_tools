@@ -1042,31 +1042,18 @@ def add_entry_to_chapter(
 
     # Eg. add_general.mylist -> mylist
     chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
-    if (
-        chapter_to_add
-        in target_config[model_to_add_to]
-    ):
-        target_config[model_to_add_to][
-            chapter_to_add
-        ] = add_entries
+    if chapter_to_add in target_config[model_to_add_to]:
+        target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if type(
-            target_config[model_to_add_to][
-                chapter_to_add
-            ]
-        ) != type(add_entries):
+        if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
             raise TypeError("Something is wrong")
         else:
             if isinstance(
-                target_config[model_to_add_to][
-                    chapter_to_add
-                ],
+                target_config[model_to_add_to][chapter_to_add],
                 list,
             ):
                 # Define the list to be modified
-                mod_list = target_config[model_to_add_to][
-                    chapter_to_add
-                ]
+                mod_list = target_config[model_to_add_to][chapter_to_add]
                 # Add the entries
                 mod_list.extend(list(flatten_nested_lists(add_entries)))
 
@@ -1078,24 +1065,18 @@ def add_entry_to_chapter(
                             mod_list_no_dupl.append(el)
                     else:
                         mod_list_no_dupl.append(el)
-                target_config[model_to_add_to][
-                    chapter_to_add
-                ] = mod_list_no_dupl
+                target_config[model_to_add_to][chapter_to_add] = mod_list_no_dupl
                 global list_counter
                 list_counter += 1
             elif isinstance(
-                target_config[model_to_add_to][
-                    chapter_to_add
-                ],
+                target_config[model_to_add_to][chapter_to_add],
                 dict,
             ):
                 # If the chapter is a dictionary use dict_merge where the new entries
                 # have priority over the preexisting ones (user choices win over
                 # anything else)
                 dict_merge(
-                    target_config[model_to_add_to][
-                        chapter_to_add
-                    ],
+                    target_config[model_to_add_to][chapter_to_add],
                     add_entries,
                 )
     if list_counter > 1:

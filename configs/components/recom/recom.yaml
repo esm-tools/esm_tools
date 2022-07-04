@@ -45,8 +45,6 @@ scenario: "PI-CTRL"
 
 time_step: 1800
 
-bgc_num: 22
-
 choose_scenario:
         PI-CTRL:
                 constant_CO2: true

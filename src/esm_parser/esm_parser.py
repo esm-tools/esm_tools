@@ -1039,36 +1039,37 @@ def add_entry_to_chapter(
     # If the desired chapter doesn't exist yet, just put it there
     logging.debug(model_to_add_to)
     logging.debug(add_chapter)
+
+    # Eg. add_general.mylist -> mylist
+    chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
     if (
-        not add_chapter.split(".")[-1].replace("add_", "")
+        chapter_to_add
         in target_config[model_to_add_to]
     ):
         target_config[model_to_add_to][
-            add_chapter.split(".")[-1].replace("add_", "")
+            chapter_to_add
         ] = add_entries
     else:
-        if not type(
+        if type(
             target_config[model_to_add_to][
-                add_chapter.split(".")[-1].replace("add_", "")
+                chapter_to_add
             ]
-        ) == type(add_entries):
+        ) != type(add_entries):
             raise TypeError("Something is wrong")
         else:
             if isinstance(
                 target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
+                    chapter_to_add
                 ],
                 list,
             ):
                 # Define the list to be modified
                 mod_list = target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
+                    chapter_to_add
                 ]
                 # Add the entries
-                if isinstance(add_entries, list):
-                    mod_list.extend(list(flatten_nested_lists(add_entries)))
-                else:
-                    mod_list.append(add_entries)
+                mod_list.extend(list(flatten_nested_lists(add_entries)))
+
                 # Remove duplicates
                 mod_list_no_dupl = []
                 for el in mod_list:
@@ -1078,13 +1079,13 @@ def add_entry_to_chapter(
                     else:
                         mod_list_no_dupl.append(el)
                 target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
+                    chapter_to_add
                 ] = mod_list_no_dupl
                 global list_counter
                 list_counter += 1
             elif isinstance(
                 target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
+                    chapter_to_add
                 ],
                 dict,
             ):
@@ -1093,7 +1094,7 @@ def add_entry_to_chapter(
                 # anything else)
                 dict_merge(
                     target_config[model_to_add_to][
-                        add_chapter.split(".")[-1].replace("add_", "")
+                        chapter_to_add
                     ],
                     add_entries,
                 )

@@ -283,13 +283,214 @@ config_sources:
 # - please keep alphabetic order
 # - a custom variable list (of all involved models, e.g. fesom or fesom AND recom) can be provided in the runscript via `further_reading` in the fesom section
 # - todo: if fesom1:namelist.oce:use_age_tracer=.true. --> age01, age02, ... must be added to `fesom_*_outputs`-lists
-fesom_yearly_outputs: [flice,fsitherm,opottemptend,pbo,relax_salt,rho,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sistrxdtop,sistrxubot,sistrydtop,sistryubot,thdgr,thdgrsn,u2o,uhice,uhsnow,urho,uso,uto,uv,v2o,vhice,vhsnow,virtual_salt,volo,vrho,vso,vto,w2o,wfo,wso,wto,zossq]
-fesom_monthly_outputs: [evap,evs,hfds,lwrd,mlotst,olat,olwout,omldamax,osen,prlq,prsn,rsdo,runoff,shum,siarean,siareas,sic,siextentn,siextents,sithick,sitimefrac,siu,siv,sivol,sivoln,sivols,so,soga,sos,tair,tauuo,tauvo,thetao,thetaoga,tos,tso,uo,uwind,vo,vwind,wnet,wo,zos]
+fesom_yearly_outputs:
+- flice
+- fsitherm
+- opottemptend
+- pbo
+- relax_salt
+- rho
+- sidmassevapsubl
+- sidmasssi
+- sidmassth
+- sidmasstranx
+- sidmasstrany
+- sifllatstop
+- sisnconc
+- sisnmass
+- sisnthick
+- sispeed
+- sistrxdtop
+- sistrxubot
+- sistrydtop
+- sistryubot
+- thdgr
+- thdgrsn
+- u2o
+- uhice
+- uhsnow
+- urho
+- uso
+- uto
+- uv
+- v2o
+- vhice
+- vhsnow
+- virtual_salt
+- volo
+- vrho
+- vso
+- vto
+- w2o
+- wfo
+- wso
+- wto
+- zossq
+
+fesom_monthly_outputs:
+- evap
+- evs
+- hfds
+- lwrd
+- mlotst
+- olat
+- olwout
+- omldamax
+- osen
+- prlq
+- prsn
+- rsdo
+- runoff
+- shum
+- siarean
+- siareas
+- sic
+- siextentn
+- siextents
+- sithick
+- sitimefrac
+- siu
+- siv
+- sivol
+- sivoln
+- sivols
+- so
+- soga
+- sos
+- tair
+- tauuo
+- tauvo
+- thetao
+- thetaoga
+- tos
+- tso
+- uo
+- uwind
+- vo
+- vwind
+- wnet
+- wo
+- zos
+
 fesom_daily_outputs: []
+
 fesom_12_step_outputs: []
-recom_yearly_outputs: &recom_yearly_outputs [AGGdia3d,AGGphy3d,alphaCO2,benC,benCalc,benN,benSi,bgc21,calcdiss,calcif3d,denb,EXCdia3d,EXCphy3d,GNAd,GNAn,GNAsdia3d,GNAsphy3d,GPPdia3d,GPPphy3d,GRAZdia3d,GRAZphy3d,Hp,Kw,NNAd,NNAn,NNAsdia3d,NNAsphy3d,NPPdia3d,NPPphy3d,rDIN,rDOC,rDON,rDSi,RESdia3d,RESphy3d,RESzoo3d,TotGraz3d]
-recom_monthly_outputs: [aCO2,aFe,aN,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,bgc23,bgc24,bgc25,bgc26,bgc27,bgc28,CO2f,CO2y,diags3d01,diags3d02,diags3d03,diags3d04,diags3d05,diags3d06,diags3d07,diags3d08,diags3d09,diags3d10,diags3d11,diags3d12,diags3d13,diags3d14,diags3d15,diags3d16,diags3d17,diags3d18,diags3d19,diags3d20,dpCO2s,GPPd,GPPn,NPPd,NPPn,O2f,PAR,pCO2s,slp,virtual_alk,virtual_dfe,virtual_dic,virtual_din,virtual_dsi,virtual_oxy,w10w]
+
+# TODO: do we need to keep these here or move them to recom.yaml
+recom_yearly_outputs:
+- AGGdia3d
+- AGGphy3d
+- alphaCO2
+- benC
+- benCalc
+- benN
+- benSi
+- bgc21
+- calcdiss
+- calcif3d
+- denb
+- EXCdia3d
+- EXCphy3d
+- GNAd
+- GNAn
+- GNAsdia3d
+- GNAsphy3d
+- GPPdia3d
+- GPPphy3d
+- GRAZdia3d
+- GRAZphy3d
+- Hp
+- Kw
+- NNAd
+- NNAn
+- NNAsdia3d
+- NNAsphy3d
+- NPPdia3d
+- NPPphy3d
+- rDIN
+- rDOC
+- rDON
+- rDSi
+- RESdia3d
+- RESphy3d
+- RESzoo3d
+- TotGraz3d
+
+# TODO: these too. Should these be moved to recom.yaml?
+recom_monthly_outputs:
+- aCO2
+- aFe
+- aN
+- bgc01
+- bgc02
+- bgc03
+- bgc04
+- bgc05
+- bgc06
+- bgc07
+- bgc08
+- bgc09
+- bgc10
+- bgc11
+- bgc12
+- bgc13
+- bgc14
+- bgc15
+- bgc16
+- bgc17
+- bgc18
+- bgc19
+- bgc20
+- bgc21
+- bgc22
+- bgc23
+- bgc24
+- bgc25
+- bgc26
+- bgc27
+- bgc28
+- CO2f
+- CO2y
+- diags3d01
+- diags3d02
+- diags3d03
+- diags3d04
+- diags3d05
+- diags3d06
+- diags3d07
+- diags3d08
+- diags3d09
+- diags3d10
+- diags3d11
+- diags3d12
+- diags3d13
+- diags3d14
+- diags3d15
+- diags3d16
+- diags3d17
+- diags3d18
+- diags3d19
+- diags3d20
+- dpCO2s
+- GPPd
+- GPPn
+- NPPd
+- NPPn
+- O2f
+- PAR
+- pCO2s
+- slp
+- virtual_alk
+- virtual_dfe
+- virtual_dic
+- virtual_din
+- virtual_dsi
+- virtual_oxy
+- w10w
+
+# TODO
 recom_daily_outputs: []
+
 recom_12_step_outputs: []
 
 # add default output depending on coupling that involves fesom-1.4
@@ -297,8 +498,6 @@ yearly_outputs: "${fesom_yearly_outputs}"
 monthly_outputs: "${fesom_monthly_outputs}"
 daily_outputs: "${fesom_daily_outputs}"
 12_step_outputs: "${fesom_12_step_outputs}"
-        
-
 
 # export output lists to env variable `AWI_FESOM_YAML`
 # - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml

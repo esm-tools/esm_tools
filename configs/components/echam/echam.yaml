@@ -404,52 +404,38 @@ choose_scenario:
                 scenario_type: cmip6
 
         RCP26:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: rcp26aerofin
-                        ozone: rcp26ozone
-                        greenhouse: rcp26greenh
-                        volcir: histvolcir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP
+            scenario_lowercase: rcp26
+            scenario_type: cmip5
         RCP45:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse: piaerocoarse
-                        aerofarir: piaerofarir
-                        aerofin: rcp45aerofin
-                        ozone: rcp45ozone
-                        greenhouse: rcp45greenh
-                        volcir: histvolcir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                add_input_files:
-                        MAC-SP: MAC-SP
+            scenario_lowercase: rcp45
+            scenario_type: cmip5
         RCP85:
-                greenhouse_dir: "${forcing_dir}"
-                forcing_files:
-                        aerocoarse_1849: piaerocoarse
-                        aerocoarse_1850: piaerocoarse
-                        aerocoarse_1851: piaerocoarse
-                        aerofarir_1849: piaerofarir
-                        aerofarir_1850: piaerofarir
-                        aerofarir_1851: piaerofarir
-                        aerofin_1849: piaerofin
-                        aerofin_1850: piaerofin
-                        aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario 
-                        volcir: histvolcir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP_hist_scenario
+            scenario_lowercase: rcp85
+            scenario_type: cmip5
 
 # TODO: came from release
 choose_scenario_type:
+        cmip5:
+            dataset: "r0004"
+            forcing_dir: "${pool_dir}/input/${dataset}/${resolution}" 
+            greenhouse_dir: "{forcing_dir}"
+            forcing_files:
+                aerocoarse_1849: piaerocoarse
+                aerocoarse_1850: piaerocoarse
+                aerocoarse_1851: piaerocoarse
+                aerofarir_1849: piaerofarir
+                aerofarir_1850: piaerofarir
+                aerofarir_1851: piaerofarir
+                aerofin_1849: piaerofin
+                aerofin_1850: piaerofin
+                aerofin_1851: piaerofin
+                ozone: ozone_cmip5_scenario
+                greenhouse: greenhouse_cmip5_scenario 
+                volcir: histvolcir
+                volcsw: histvolcsw
+                swflux: histswflux
+                MAC-SP: MAC-SP
+                
         cmip6:
                 greenhouse_dir: "${forcing_dir}"
                 forcing_files:

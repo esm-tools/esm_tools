@@ -1046,7 +1046,9 @@ def add_entry_to_chapter(
         target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
         if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
-            raise TypeError("Something is wrong")
+            error_type = "Type mismatch"
+            error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
+            user_error(error_type, error_text)
         else:
             if isinstance(
                 target_config[model_to_add_to][chapter_to_add],

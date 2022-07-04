@@ -1472,7 +1472,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
-        for update_key, update_value in six.iteritems(choices_available[choice]):
+        for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):

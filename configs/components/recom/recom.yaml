@@ -45,6 +45,8 @@ scenario: "PI-CTRL"
 
 time_step: 1800
 
+bgc_num: 22
+
 choose_scenario:
         PI-CTRL:
                 constant_CO2: true
@@ -100,6 +102,7 @@ namelists:
 namelist_changes:
         namelist.recom:
                 pavariables:
+                        bgc_num: "${bgc_num}"  # TODO: does this break anything? 
                         REcoMDataPath: "${data_path}"
                         constant_CO2: "${constant_CO2}"
                         firstyearoffesomcycle: "${firstyearoffesomcycle}"
@@ -107,10 +110,22 @@ namelist_changes:
                         numofCO2cycles: "${numofCO2cycles}"
                         currentCO2cycle: "${currentCO2cycle}"
                         REcoM_PI: "${REcoM_PI}"
-                        recom_restart: "${recom.lresume}"
+                        recom_restart: "${recom.lresume}"  # this was in the feat/ssp branch
                 paco2_flux_param:
                         CO2_for_spinup: "${CO2_for_spinup}"
 
+
+choose_lresume:
+        true:
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        recom_restart: true
+        false:
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        recom_restart: false
 
 config_files:
         recom:  recom
@@ -169,3 +184,24 @@ choose_computer.name:
                                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
 
+outdata_files:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT
+        "[[daily_outputs-->OUTPUT]]": OUTPUT
+outdata_in_work:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+outdata_sources:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+choose_computer.name:
+        blogin:
+                add_compiletime_environment_changes:
+                        add_export_vars:
+                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"

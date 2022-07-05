@@ -5,6 +5,7 @@ import copy
 import pathlib
 
 import six
+import questionary
 import yaml
 from esm_calendar import Date
 from colorama import Fore, Back, Style, init
@@ -363,28 +364,16 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                 )
                 correct_input = False
                 while not correct_input:
-                    update_choice = input(
+                    update_choice = questionary.confirm(
                         f"Do you want that {scriptsdir + '/' + tfile} is "
-                        + "updated with the above changes? (y/n): "
-                    )
-                    if update_choice == "y":
+                        + "updated with the above changes?"
+                    ).ask()
+                    if update_choice:
                         correct_input = True
                         oldscript = fromdir + "/" + tfile
                         print(oldscript)
                         shutil.copy2(oldscript, scriptsdir)
                         print(f"{scriptsdir + '/' + tfile} updated!")
-                    elif update_choice == "n":
-                        correct_input = True
-                        esm_parser.user_error(
-                            f"Original {file_type} different from target",
-                            differences
-                            + "\n"
-                            + "You can choose to -U flag in the esm_runscripts call "
-                            + "to update the runscript without asking (WARNING: This "
-                            + f"will overwrite your {file_type} in the experiment folder!)\n\n",
-                        )
-                    else:
-                        print(f"'{update_choice}' is not a valid answer.")
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):

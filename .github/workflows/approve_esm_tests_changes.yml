@@ -1,9 +1,8 @@
 # ESM-Tools pre-merge automation
 # ==============================
-# In a pull-request, if a comment contains #bump, the following steps are triggered:
-#   1. merges `release` into the PR-branch (updates bumpversion values and makes sure whatever we tag in the next step has everything until that version number)
-#   2. bumps the version according to the PR-branch name (`hotfix/`, `fix/` , `feature/` and `feat/` are understood)
-#   3. merges PR-branch into `develop`
+# In a pull-request, if a comment contains #approve-changes, the following steps are triggered:
+#   1. runs esm_tests for each computer with the saving of the laste_tested flag true
+#   2. commits those changes to the esm_tests_info repo
 
 name: approve esm_tests changes
 

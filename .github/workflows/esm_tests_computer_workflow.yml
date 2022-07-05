@@ -52,7 +52,7 @@ jobs:
         cd src/esm_tests/resources;
         rm -rf automatic_testing; # cleanup the resources directory from tests
         git add .;
-        #git commit -ma "approved changes from GitHub actions for ${{ inputs.computer }}";
-        echo "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git status
+        git commit -ma "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git status;
+        git push;
         

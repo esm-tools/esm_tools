@@ -266,13 +266,12 @@ fesom:
                 "2.1-recom":
                         version: "2.1-recom"
                         ALE_scheme: 'zstar'
-
-                        num_tracers: 33
+                        num_tracers: 24
                         namelist_dir: ${fesom.model_dir}/config/
                         add_config_sources:
-                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
-                        add_config_in_work:
-                                oce:     namelist.oce
+                                #5.7.22 Ying: default withtout ciso
+                                oce:    "${namelist_dir}/namelist.oce.recom"
+                                io:     "${namelist_dir}/namelist.io.recom"
                         remove_namelist_changes.namelist.config: [inout]
                         add_namelist_changes:
                                 namelist.config:
@@ -291,22 +290,23 @@ fesom:
                 "2.1-recom-par-tracers":
                         version: "2.1-recom-par-tracers"
                         ALE_scheme: 'zstar'
-
-                        num_tracers: 33
+                        #5.7.22 Ying: par-tracers only with ciso
+                        use_ciso: true
+#                        num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
-                        add_config_sources:
-                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
-                        add_config_in_work:
-                                oce:     namelist.oce
+#                        add_config_sources:
+#                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
+#                        add_config_in_work:
+#                                oce:     namelist.oce
                         remove_namelist_changes.namelist.config: [inout]
                         add_namelist_changes:
                                 namelist.config:
                                         restart_log:
                                                 restart_length: "${restart_rate}"
                                                 restart_length_unit: "${restart_unit}"
-                                namelist.oce:
-                                        oce_tra:
-                                                num_tracers: "${num_tracers}"
+#                                namelist.oce:
+#                                        oce_tra:
+#                                                num_tracers: "${num_tracers}"
                         wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
@@ -380,6 +380,13 @@ fesom:
             "*":
                 is: invalid
 
+        # use_ciso switch
+        choose_recom.use_ciso:
+                true:
+                        add_config_sources: 
+                                io: "${namelist_dir}/namelist.io.recom.ciso"
+                                oce: "${namelist_dir}/namelist.oce.recom.ciso"
+                        num_tracers: 33 
 #########################################################################################
 
 
@@ -396,7 +403,7 @@ recom:
                                     benthos_num: "${benthos_num}"
                                     bottflx_num: "${bottflx_num}"
 
-                        data_path: /work/ollie/mbutzin/fesom2/input/dust/
+                        data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/ 
 
                         restart_name: "restart."
 
@@ -412,16 +419,18 @@ recom:
 
                         namelist_dir: ${fesom.model_dir}/config/
 
-                        # Include the extra namelist that is not included by default in recom.yaml
-#                        add_namelists:
-#                                - namelist.io.recom.ciso
-#                        add_config_files:
-#                                io.recom.ciso: io.recom.ciso
-                        add_config_sources:
-                                recom: ${namelist_dir}/namelist.recom
-                        add_config_in_work:
-                                recom: namelist.recom
+                        #add_config_sources:
+                        #        recom: ${namelist_dir}/namelist.recom
+                        #add_config_in_work:
+                        #        recom: namelist.recom
 
+                        use_ciso: false
+                        choose_use_ciso: 
+                                true: 
+                                        add_namelist_changes:
+                                                namelist.recom:
+                                                        pavariables:
+                                                                ciso: true
 # kh 08.06.22
                 2.1-recom-par-tracers:
                         version: "2.0"
@@ -450,18 +459,14 @@ recom:
 
                         namelist_dir: ${fesom.model_dir}/config/
 
-                        # Include the extra namelist that is not included by default in recom.yaml
-#                        add_namelists:
-#                                - namelist.io.recom.ciso
-#                        add_config_files:
-#                                io.recom.ciso: io.recom.ciso
-                        add_config_sources:
-                                recom: ${namelist_dir}/namelist.recom
-                        add_config_in_work:
-                                recom: namelist.recom
+#                        add_config_sources:
+#                                recom: ${namelist_dir}/namelist.recom.ciso
+#                        add_config_in_work:
+#                                recom: namelist.recom
 
                 "*":
                         not_used: ""
+
 
 #########################################################################################
 

@@ -47,24 +47,6 @@ time_step: 1800
 
 bgc_num: 22
 
-#5.7.22 Ying: namelist_dir and config_sources moved up, because 
-#config_sources will be changed for scenario 'lgm'
-namelist_dir: "${esm_namelist_dir}/${model}"
-
-namelists:
-        - namelist.recom
-
-config_files:
-        recom:  recom
-
-choose_use_ciso:
-        true:
-                config_sources:
-                        recom:  "${namelist_dir}/namelist.recom.ciso"
-        false:
-                config_sources:
-                        recom:  "${namelist_dir}/namelist.recom"
-
 choose_scenario:
         preindustrial:
                 constant_CO2: true
@@ -90,27 +72,11 @@ choose_scenario:
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
                 numofCO2cycles: "${num_CO2_cycles}"
                 currentCO2cycle: "${current_CO2_cycle}"
-#4.7.22 Ying: to use a different namelist.recom for LGM
-        lgm:
-                constant_CO2: false
-                REcoM_PI: false
-                CO2_for_spinup: 185
-                firstyearoffesomcycle: "${general.initial_date!syear}"
-                lastyearoffesomcycle: "${general.final_date!syear}"
-                numofCO2cycles: 1
-                currentCO2cycle: 1
-                choose_use_ciso:
-                                true: 
-                                        config_sources:
-                                                recom:  "${namelist_dir}/namelist.recom.ciso.lgm"
-                                false: 
-                                        config_sources:
-                                                recom:  "${namelist_dir}/namelist.recom.lgm"
 
-#namelist_dir: "${esm_namelist_dir}/${model}"
+namelist_dir: "${esm_namelist_dir}/${model}"
 
-#namelists:
-#        - namelist.recom
+namelists:
+        - namelist.recom
 
 namelist_changes:
         namelist.recom:
@@ -139,13 +105,13 @@ choose_lresume:
                                 pavariables:
                                         recom_restart: false
 
-#config_files:
-#        recom:  recom
+config_files:
+        recom:  recom
 
-#config_sources:
-#        recom:  "${namelist_dir}/namelist.recom"
+config_sources:
+        recom:  "${namelist_dir}/namelist.recom"
+#        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 
-#4.7.22 Ying: why deleting 'restart' in filename?
 restart_name: ""
 
 restart_in_files:
@@ -166,7 +132,6 @@ restart_out_in_work:
 restart_out_sources:
         bio_restart: fesom.${end_date!syear}.bio.nc
 
-#4.7.22 Ying: frequency defined in namelist.io, why here?
 yearly_outputs: []
 
 monthly_outputs: [diags3d01,diags3d02,CO2y,aCO2,rDIN,rDON,rDOC,rDSi,PAR,NPPn,NPPd,GPPn,GPPd,NNAn,NNAd,GNAn,GNAd,benCalc,benSi,benC,benN,denb,aN,aFe,Hp,CO2f,dpCO2s,pCO2s,bgc01,bgc02,bgc03,bgc04,bgc05,bgc06,bgc07,bgc08,bgc09,bgc10,bgc11,bgc12,bgc13,bgc14,bgc15,bgc16,bgc17,bgc18,bgc19,bgc20,bgc21,bgc22,slp,age01,Kw,alphaCO2,O2f]

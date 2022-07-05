@@ -34,7 +34,7 @@ choose_version:
     branch: wiso
     wiso_code: true
   2.1-recom:
-    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
+    branch: awiesm2-recom-wiso-mass
     wiso_code: true
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
@@ -43,17 +43,11 @@ choose_version:
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     destination: fesom-2.1-recom-par_tracers
-
   2.1-recom-par_tracers_mpi: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
-    branch: awiesm2-recom-mpi # merged with awiesm2-recom-wiso-mass
-#    branch: awiesm2-recom-parallel # old version of awiesm2-recom-wiso-mass + tracer parallelisation
+    branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-
-# kh 09.06.22 esm_runscripts expects namelist files in directory .../fesom-2.1/config/... for setups awiesm-2.1-recom*
-# todo: check if there is something to do regarding namelists handling when using version 2.1-recom-par_tracers_mpi standalone
 #   destination: fesom-2.1-recom-par_tracers_mpi
-
 # kh 08.03.22 todo: merge conflict (if enabled)
 #   include_models:
 #       - recom
@@ -67,29 +61,29 @@ choose_fesom.par_tracers:
     True:
         namelist_dir: "${model_dir}/config/"
         # kh 21.02.22 use uppercase here
-        forcing_data_dir: "${pool_dir}/FORCING/"
+        #forcing_data_dir: "${pool_dir}/FORCING/"
         # kh 21.02.22
-        asforcing: CORE2
+        #asforcing: CORE2
         # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
+        #remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
         # kh 14.04.22 last used for core2 resolution on levante
         # kh 19.04.22 disable for haralds's tests
         nproc: 1024
         # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
-        remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
-            nm_xwind_file, nm_ywind_file, nm_humi_file, nm_qsr_file, nm_qlw_file,
-            nm_tair_file, nm_prec_file, nm_snow_file, nm_mslp_file, nm_runoff_file,
-            nm_sss_data_file]
+        #remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
+        #    nm_xwind_file, nm_ywind_file, nm_humi_file, nm_qsr_file, nm_qlw_file,
+        #    nm_tair_file, nm_prec_file, nm_snow_file, nm_mslp_file, nm_runoff_file,
+        #    nm_sss_data_file]
         # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        remove_fesom.config_files: [cvmix, icepack]
+        #remove_fesom.config_files: [cvmix, icepack]
         # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
-        add_config_files:
-                recom:   recom
-                io.recom.ciso: io.recom.ciso
+#        add_config_files:
+#                recom:   recom
+#                io.recom.ciso: io.recom.ciso
         # kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
-        add_config_sources:
-                recom:   "${namelist_dir}/namelist.recom"
-                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+#        add_config_sources:
+#                recom:   "${namelist_dir}/namelist.recom"
+#                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 #-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
 
 destination: "fesom-2.1"
@@ -136,11 +130,12 @@ choose_computer.name:
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
-forcing_data_dir: "${pool_dir}/forcing/"
-mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
+# YY 28.06.2022: why doubled here (climate, forcing and mesh)? Does the following exist on levante?
+#climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/" 
+#forcing_data_dir: "${pool_dir}/forcing/"
+#mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
-namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
+#namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -157,8 +152,6 @@ namelists:
         - namelist.io
         - namelist.cvmix
         - namelist.icepack
-
-
 
 choose_resolution:
         CORE2:

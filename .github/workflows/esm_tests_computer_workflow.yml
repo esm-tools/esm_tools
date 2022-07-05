@@ -34,8 +34,6 @@ jobs:
     steps:
     # NK: this changes working directory to fesom2
     - uses: actions/checkout@v2
-      with:
-        ref: CI/automate_esm_tests_info_update
 
     - name: add to the path
       run: |

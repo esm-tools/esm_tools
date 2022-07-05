@@ -289,7 +289,7 @@ forcing_in_work:
         "a_nd_file": "a_nd_file.nc"
         "lightning": "lightning.nc"
         "popdens": "population_density.nc"
-        "LU" : "landuse_harvest.@YEAR@.nc"
+        "LU" : "landuseHarvest.@YEAR@.nc"
         "Ndepo": "Ndepo.@YEAR@.nc"
         "LU_trans": "landuseTransitions.@YEAR@.nc"
 

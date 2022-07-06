@@ -81,6 +81,7 @@ general:
             add_include_models:
             - recom
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+            with_recom: true
 
 # kh 08.06.22
           '2.1-recom-par-tracers':
@@ -89,6 +90,7 @@ general:
             add_include_models:
             - recom
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+            with_recom: true
 
         with_wiso: false
         with_pico: false
@@ -391,8 +393,8 @@ fesom:
 
 
 recom:
-        choose_general.version:
-                2.1-recom:
+        choose_general.with_recom:
+                True:
                         version: "2.0"
                         bgc_num: 31
                         benthos_num: 8
@@ -403,7 +405,11 @@ recom:
                                     benthos_num: "${benthos_num}"
                                     bottflx_num: "${bottflx_num}"
 
-                        data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/ 
+                        choose_general.version:
+                            2.1-recom:
+                                data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
+                            2.1-recom-par-tracers:
+                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
 
@@ -425,45 +431,7 @@ recom:
                         #        recom: namelist.recom
 
                         use_ciso: false
-                        choose_use_ciso: 
-                                true: 
-                                        add_namelist_changes:
-                                                namelist.recom:
-                                                        pavariables:
-                                                                ciso: true
 # kh 08.06.22
-                2.1-recom-par-tracers:
-                        version: "2.0"
-                        bgc_num: 31
-                        benthos_num: 8
-                        bottflx_num: 8
-                        add_namelist_changes:
-                            namelist.recom:
-                                pavariables:
-                                    benthos_num: "${benthos_num}"
-                                    bottflx_num: "${bottflx_num}"
-
-                        data_path: /work/ollie/mbutzin/fesom2/input/dust/
-
-                        restart_name: "restart."
-
-                        remove_namelist_changes.namelist.recom.pavariables:
-                            - constant_CO2
-                            - firstyearoffesomcycle
-                            - lastyearoffesomcycle
-                            - numofCO2cycles
-                            - currentCO2cycle
-                            - REcoM_PI
-                        remove_namelist_changes.namelist.recom.paco2_flux_param:
-                            - CO2_for_spinup
-
-                        namelist_dir: ${fesom.model_dir}/config/
-
-#                        add_config_sources:
-#                                recom: ${namelist_dir}/namelist.recom.ciso
-#                        add_config_in_work:
-#                                recom: namelist.recom
-
                 "*":
                         not_used: ""
 

@@ -47,23 +47,16 @@ time_step: 1800
 
 bgc_num: 22
 
-#5.7.22 Ying: namelist_dir and config_sources moved up, because 
-#config_sources will be changed for scenario 'lgm'
-namelist_dir: "${esm_namelist_dir}/${model}"
-
-namelists:
-        - namelist.recom
-
-config_files:
-        recom:  recom
-
 choose_use_ciso:
         true:
-                config_sources:
-                        recom:  "${namelist_dir}/namelist.recom.ciso"
+                recom_namelist:  "namelist.recom.ciso"
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        ciso: true
         false:
-                config_sources:
-                        recom:  "${namelist_dir}/namelist.recom"
+                recom_namelist:  "namelist.recom"
+
 
 choose_scenario:
         preindustrial:
@@ -99,18 +92,14 @@ choose_scenario:
                 lastyearoffesomcycle: "${general.final_date!syear}"
                 numofCO2cycles: 1
                 currentCO2cycle: 1
-                choose_use_ciso:
-                                true: 
-                                        config_sources:
-                                                recom:  "${namelist_dir}/namelist.recom.ciso.lgm"
-                                false: 
-                                        config_sources:
-                                                recom:  "${namelist_dir}/namelist.recom.lgm"
+                namelist_sce: "lgm"
 
-#namelist_dir: "${esm_namelist_dir}/${model}"
+namelist_sce: ""
 
-#namelists:
-#        - namelist.recom
+namelist_dir: "${esm_namelist_dir}/${model}"
+
+namelists:
+        - namelist.recom
 
 namelist_changes:
         namelist.recom:
@@ -139,11 +128,11 @@ choose_lresume:
                                 pavariables:
                                         recom_restart: false
 
-#config_files:
-#        recom:  recom
+config_files:
+        recom:  recom
 
-#config_sources:
-#        recom:  "${namelist_dir}/namelist.recom"
+config_sources:
+        recom:  "${namelist_dir}/${recom_namelist}.${namelist_sce}"
 
 #4.7.22 Ying: why deleting 'restart' in filename?
 restart_name: ""

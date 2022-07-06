@@ -210,7 +210,7 @@ class Slurm:
 #model:  hdmodel, nodes:  1
 
 # kh 24.06.22 workaround: filter hdmodel
-                if nodes and (model != "hdmodel"):
+                if nodes:
                     headers.append(f"{nodes_flag}={nodes}")
                     headers.append(this_batch_system["partition_flag"])
                     headers.append(this_batch_system["hetjob_flag"])

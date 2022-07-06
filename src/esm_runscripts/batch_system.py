@@ -849,9 +849,9 @@ class batch_system:
         else:
 
 # kh 22.06.22 defensive (user_error/user_note could also be added here)
-            nproc = 1
-            cpus_per_proc = 1
-#           omp_num_threads = 1
+            nproc = 0
+            cpus_per_proc = 0
+#           omp_num_threads = 0
 
         # Number of nodes needed
         nodes = int(nproc * cpus_per_proc / cores_per_node) + (

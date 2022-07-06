@@ -61,7 +61,6 @@ add_choose_heterogeneous_parallelization:
 
  # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
                 launcher_flags_per_component: "
-                    --hint=nomultithread
                     --nodes=@nnodes@
                     --ntasks=@nproc@
                     --ntasks-per-node=@nproc_per_node@

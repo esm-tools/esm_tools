@@ -9,7 +9,7 @@ general:
 
    compute_time: "12:00:00"
    initial_date: "1950-02-01T00:00:00"       # Initial exp. date
-   final_date: "1950-03-01T00:00:00"         # Final date of the experiment
+   final_date: "1955-01-01T00:00:00"         # Final date of the experiment
 
    nyear: 0
    nmonth: 1

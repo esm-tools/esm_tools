@@ -10,6 +10,12 @@ on:
       computer:
         required: true
         type: string
+      update_esm_tests_info:
+        type: boolean
+        default: false
+      test_flags:
+        type: string
+        default: "-cnge -s False"
 
 jobs:
   computer:
@@ -37,4 +43,16 @@ jobs:
         ./install.sh
     - name: run esm_tests
       run: |
-        yes Y | esm_tests -cnge -s False
+        yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: update esm_tests info
+      if: ${{ inputs.update_esm_tests_info }}
+      run: |
+        git config --global user.name "${GITHUB_ACTOR}";
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
+        cd src/esm_tests/resources;
+        rm -rf automatic_testing; # cleanup the resources directory from tests
+        git add .;
+        git commit -ma "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git status;
+        git push;
+        

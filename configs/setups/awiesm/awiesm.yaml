@@ -296,19 +296,12 @@ fesom:
                         use_ciso: true
 #                        num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
-#                        add_config_sources:
-#                                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
-#                        add_config_in_work:
-#                                oce:     namelist.oce
                         remove_namelist_changes.namelist.config: [inout]
                         add_namelist_changes:
                                 namelist.config:
                                         restart_log:
                                                 restart_length: "${restart_rate}"
                                                 restart_length_unit: "${restart_unit}"
-#                                namelist.oce:
-#                                        oce_tra:
-#                                                num_tracers: "${num_tracers}"
                         wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
@@ -410,6 +403,7 @@ recom:
                         restart_name: "restart."
 
                         remove_namelist_changes.namelist.recom.pavariables:
+                            - bgc_num
                             - constant_CO2
                             - firstyearoffesomcycle
                             - lastyearoffesomcycle
@@ -421,7 +415,7 @@ recom:
 
                         namelist_dir: ${fesom.model_dir}/config/
 
-                        use_ciso: false
+#                        use_ciso: false
 # kh 08.06.22
                 "*":
                         not_used: ""

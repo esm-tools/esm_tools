@@ -47,6 +47,8 @@ time_step: 1800
 
 bgc_num: 22
 
+use_ciso: false
+
 choose_use_ciso:
         true:
                 recom_namelist:  "namelist.recom.ciso"
@@ -126,6 +128,9 @@ config_files:
 
 config_sources:
         recom:  "${namelist_dir}/${recom_namelist}${namelist_sce}"
+
+config_in_work:
+        recom: "namelist.recom"
 
 #4.7.22 Ying: why deleting 'restart' in filename?
 restart_name: ""

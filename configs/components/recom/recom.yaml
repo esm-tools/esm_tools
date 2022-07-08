@@ -85,14 +85,7 @@ choose_scenario:
                 currentCO2cycle: "${current_CO2_cycle}"
 #4.7.22 Ying: to use a different namelist.recom for LGM
         lgm:
-                constant_CO2: false
-                REcoM_PI: false
-                CO2_for_spinup: 185
-                firstyearoffesomcycle: "${general.initial_date!syear}"
-                lastyearoffesomcycle: "${general.final_date!syear}"
-                numofCO2cycles: 1
-                currentCO2cycle: 1
-                namelist_sce: "lgm"
+                namelist_sce: ".lgm"
 
 namelist_sce: ""
 
@@ -132,7 +125,7 @@ config_files:
         recom:  recom
 
 config_sources:
-        recom:  "${namelist_dir}/${recom_namelist}.${namelist_sce}"
+        recom:  "${namelist_dir}/${recom_namelist}${namelist_sce}"
 
 #4.7.22 Ying: why deleting 'restart' in filename?
 restart_name: ""

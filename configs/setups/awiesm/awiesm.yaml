@@ -396,20 +396,16 @@ recom:
         choose_general.with_recom:
                 True:
                         version: "2.0"
-                        bgc_num: 31
-                        benthos_num: 8
-                        bottflx_num: 8
-                        add_namelist_changes:
-                            namelist.recom:
-                                pavariables:
-                                    benthos_num: "${benthos_num}"
-                                    bottflx_num: "${bottflx_num}"
+#                        bgc_num: 31
+#                        benthos_num: 8
+#                        bottflx_num: 8
+#                        add_namelist_changes:
+#                            namelist.recom:
+#                                pavariables:
+#                                    benthos_num: "${benthos_num}"
+#                                    bottflx_num: "${bottflx_num}"
 
-                        choose_general.version:
-                            2.1-recom:
-                                data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
-                            2.1-recom-par-tracers:
-                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
+                        data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
 
                         restart_name: "restart."
 
@@ -424,11 +420,6 @@ recom:
                             - CO2_for_spinup
 
                         namelist_dir: ${fesom.model_dir}/config/
-
-                        #add_config_sources:
-                        #        recom: ${namelist_dir}/namelist.recom
-                        #add_config_in_work:
-                        #        recom: namelist.recom
 
                         use_ciso: false
 # kh 08.06.22

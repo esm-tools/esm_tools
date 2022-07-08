@@ -37,11 +37,18 @@ def install(package: str) -> None:
     installed_packages = esm_plugin_manager.find_installed_plugins()
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
+            if not os.environ.get("VIRTUAL_ENV"):
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
+            else:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "--user", package]
-            )
+            if not os.environ.get("VIRTUAL_ENV"):
+                # FIXME(PG): I do not really understand this....it is the same call as above??
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "--user", package]
+                )
+            else:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 
 ######################################################################################

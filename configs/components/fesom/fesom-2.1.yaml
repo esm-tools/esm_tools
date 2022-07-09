@@ -226,17 +226,13 @@ choose_use_icebergs:
 
             choose_use_icesheet_coupling:
                     true:
-                            choose_general.chunk_number:
-                                    1:
-                                            iceberg_dir: "${ini_iceberg_dir}"
-                                    "*":
-                                            iceberg_dir: "${general.experiment_couple_dir}"
-
                             choose_general.run_number:
                                     1:
+                                            iceberg_dir: "${ini_iceberg_dir}"
                                             input_sources:
                                                     num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
                                     "*":
+                                            iceberg_dir: "${general.experiment_couple_dir}"
                                             input_sources:
                                                     num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
 

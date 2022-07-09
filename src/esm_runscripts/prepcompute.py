@@ -194,7 +194,7 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
+        if model == "fesom" and config["fesom"].get("use_icebergs", False):
             config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
@@ -236,6 +236,8 @@ def copy_files_to_thisrun(config):
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
     if "fesom" in config["general"]["valid_model_names"]:
         if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
+            if not config["general"].get("iterative_coupling", False):
+                config = update_icebergs(config)
             if config["general"].get("run_number", 0) == 1:
                 if not os.path.isfile(
                     config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
@@ -256,7 +258,7 @@ def copy_files_to_thisrun(config):
 
 
 def update_icebergs(config):
-    six.print_("LA DEBUG: starting update icebergs")
+    six.print_("* starting update icebergs")
     if config["general"]["verbose"]:
         six.print_("updateing icebergs")
     if (
@@ -288,11 +290,9 @@ def copy_files_to_work(config):
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
     #config = scale_icebergs(config)
-    if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
-        if not config["general"].get("iterative_coupling", False):
-            config = update_icebergs(config)
-    else:
-        print("LA DEBUG: not updating icebergs")
+    #if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
+    #    if not config["general"].get("iterative_coupling", False):
+    #        config = update_icebergs(config)
     return config
 
 

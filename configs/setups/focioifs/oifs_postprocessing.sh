@@ -223,7 +223,7 @@ if ${ATM_CONVERT_NETCDF4} ; then
    		for s in $steps
       	        do
                         # Name of output from model (always ECE3...)
-                        input_orig=ECE3_${s}_${year}0101_${year}1231_${filetag}.nc
+                        input_orig=ECE3_${s}_${year}0101_${filetag}.nc
                         # Rename to this
 			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc3
                         # Name of final compressed file
@@ -413,9 +413,9 @@ print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
 
-if [[ "$run_monitoring" == "yes" ]] ; then
-    print "will now run NEMO monitoring for $startdate-$enddate"
-   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
-else
-   print "NEMO monitoring switched off, use -m to activate it"
-fi
+#if [[ "$run_monitoring" == "yes" ]] ; then
+#    print "will now run NEMO monitoring for $startdate-$enddate"
+#   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+#else
+#   print "OpenIFS monitoring switched off, use -m to activate it"
+#fi

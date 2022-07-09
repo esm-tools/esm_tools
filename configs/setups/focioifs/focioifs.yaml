@@ -240,6 +240,26 @@ oifs:
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
+        
+        # Post processing
+        choose_general.postprocessing:
+                True:
+                        workflow:
+                                next_run_triggered_by: tidy
+                                subjobs:
+                                        oifs_postprocessing:
+                                                batch_or_shell: shell
+                                                order_in_cluster: concurrent
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: tidy
+                                                script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    oifs_postprocessing.sh -m
+                                                    -r ${general.expid}
+                                                    -s ${start_date!syear}
+                                                    -e ${end_date!syear}"
+                                                nproc: 1
 
 nemo:
         

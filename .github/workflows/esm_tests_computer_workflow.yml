@@ -50,6 +50,7 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       run: |
         cd src/esm_tests/resources;
+        git checkout release;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
         rm -rf automatic_testing; # cleanup the resources directory from tests

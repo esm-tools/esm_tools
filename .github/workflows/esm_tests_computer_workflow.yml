@@ -38,6 +38,7 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
     
 #    - name: checkout esm_tests_info
 #      uses: actions/checkout@v3

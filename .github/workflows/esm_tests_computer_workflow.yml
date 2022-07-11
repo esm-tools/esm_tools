@@ -15,7 +15,7 @@ on:
         default: false
       test_flags:
         type: string
-        default: "-cnge -s False"
+        default: "-cngeu -s False"
 
 jobs:
   computer:

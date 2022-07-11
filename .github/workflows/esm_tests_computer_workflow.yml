@@ -65,4 +65,6 @@ jobs:
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
         git push;
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         

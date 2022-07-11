@@ -58,7 +58,7 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       run: |
         cd src/esm_tests/resources;
-        echo "BOT: ${{ secrets.ESM_TOOLS_BOT }};
+        echo "BOT: ${{ secrets.ESM_TOOLS_BOT }}";
         git remote set-url origin https://${{ secrets.ESM_TOOLS_BOT }}@github.com/esm-tools/esm_tests_info.git;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";

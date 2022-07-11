@@ -39,6 +39,7 @@ jobs:
       with:
         repository: esm-tools/esm_tests_info
         path: src/esm_tests/resources
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: add to the path
       run: |
@@ -61,6 +62,4 @@ jobs:
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
         git push;
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         

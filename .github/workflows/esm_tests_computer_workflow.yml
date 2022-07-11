@@ -45,11 +45,16 @@ jobs:
         ./install.sh
     - name: run esm_tests
       run: |
+        git submodule init;
+        git submodule update;
+        git submodule sync;
+        cd src/esm_tests/resources;
+        git checkout release;
+        cd ../../../;
         yes Y | esm_tests ${{ inputs.test_flags }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
-        git submodule sync;
         cd src/esm_tests/resources;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";

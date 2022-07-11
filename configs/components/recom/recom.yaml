@@ -1,14 +1,30 @@
 # =============================================================================
 # RECOM (Regulated Ecosystem Model) YAML CONFIGURATION FILE
 # =============================================================================
+
 model: recom
+git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
+metadata:
+    Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
+    Description:
+        REcoM (Regulated Ecosystem Model) is an ecosystem and biogeochemistry model.
+    Authors: Judith Hauck, Ozgur Gurses
+    Publications:
+        - "Seasonally different carbon flux changes in the Southern Ocean in response to the southern annular mode <https://doi.org/10.1002/2013GB004600>"
+        - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
+    License:
+        https://recom.readthedocs.io/en/latest/index.html
+
+# default branch and version
 branch: master
+destination: recom
 version: '2.0'
 
 available_versions:
     - '2.0'
     - 2.0-r
     - 2.0-recom-awicm
+
 choose_version:
     '2.0':
         branch: oxygen
@@ -133,42 +149,22 @@ choose_version:
         # 1. variable names are case sensitive
         # 2. please keep alphabetic order
         yearly_outputs:
-            - AGGdia3d
-            - AGGphy3d
             - alphaCO2
             - benC
             - benCalc
             - benN
             - benSi
-            - calcdiss
-            - calcif3d
             - denb
-            - EXCdia3d
-            - EXCphy3d
             - GNAd
             - GNAn
-            - GNAsdia3d
-            - GNAsphy3d
-            - GPPdia3d
-            - GPPphy3d
-            - GRAZdia3d
-            - GRAZphy3d
             - Hp
             - Kw
             - NNAd
             - NNAn
-            - NNAsdia3d
-            - NNAsphy3d
-            - NPPdia3d
-            - NPPphy3d
             - rDIN
             - rDOC
             - rDON
             - rDSi
-            - RESdia3d
-            - RESphy3d
-            - RESzoo3d
-            - TotGraz3d
         monthly_outputs:
             - aCO2
             - aFe
@@ -220,22 +216,8 @@ choose_version:
 
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
-destination: recom
-git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
 install_libs:
   - build/librecom.a
-
-metadata:
-        Institute: AWI
-        Description:
-                REcoM (Regulated Ecosystem Model) is an ecosystem and biogeochemistry model.
-        Authors: Judith Hauck, Ozgur Gurses
-        Publications:
-                - "Seasonally different carbon flux changes in the Southern Ocean in response to the southern annular mode <https://doi.org/10.1002/2013GB004600>"
-                - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
-        License:
-                Please make sure you have a licence to use REcoM. In case you are unsure,
-                please contact redmine...
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
@@ -290,7 +272,6 @@ choose_scenario:
                             \n- firstyearoffesomcycle\n- lastyearoffesomcycle
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
-
 
 #namelist_dir: "${esm_namelist_dir}/${model}"
 namelist_dir: "${general.model_dir}/recom/"
@@ -351,24 +332,6 @@ restart_out_in_work:
 
 restart_out_sources:
         bio_restart: fesom.${end_date!syear}.bio.nc
-
-outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT
-
-outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-
-outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
 choose_computer.name:
         blogin:

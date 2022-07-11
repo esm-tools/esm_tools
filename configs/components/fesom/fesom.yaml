@@ -1,28 +1,57 @@
+# =============================================================================
 # FESOM YAML CONFIGURATION FILE
+# =============================================================================
 
 model: fesom
-branch: master
-version: "1.4"
 type: ocean
+git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
+metadata:
+        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
+        Description:
+                Multiresolution sea ice-ocean model that solves the equations
+                of motion on unestructured meshes
+        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
+        Publications:
+            - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation. doi:10.1016/s1463-5003(02)00063-x" 
+            - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. doi:10.5194/gmd-7-663-2014"
+        License:
+            www.fesom.de
+
+# default branch and version
+branch: master
+destination: fesom-1.4
+version: "1.4"
 
 available_versions:
-- '2.0-o'
-- '1.4-esm_interface'
 - '1.4'
+- '1.4-esm_interface'
 - '1.4-recom'
-- '1.4-recom-mocsy-slp'
-- '2.0-paleodyn'
 - '1.4-recom-awicm'
+- '1.4-recom-mocsy-slp'
 - '2.0'
+- '2.0-o'
+- '2.0-paleodyn'
 - '2.0-r' # OG: temporarily here
+- '2.1'
 - '2.1-recom'
 - '2.1-wiso'
-- '2.1'
 
 choose_version:
+    '1.4-esm_interface':
+        branch: using_esm-interface
+    '1.4-recom':
+        branch: master
+        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
+        add_yearly_outputs:
+            - "${recom.yearly_outputs}"
+        add_monthly_outputs:
+            - "${recom.monthly_outputs}"
+        add_daily_outputs:
+            - "${recom.daily_outputs}"
+        add_12_step_outputs:
+            - "${recom.12_step_outputs}"
     '1.4-recom-awicm':
         branch: fesom_recom_1.4_master
-        destination: fesom-1.4
         # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
         add_yearly_outputs:
             - "${recom.yearly_outputs}"
@@ -34,40 +63,10 @@ choose_version:
             - "${recom.12_step_outputs}"
     '1.4-recom-mocsy-slp':
         branch: fesom-recom-mocsy-slp
-        destination: fesom-1.4
-    '1.4-esm_interface':
-        branch: using_esm-interface
-        destination: fesom-1.4
-    '1.4-recom':
-        branch: master
-        destination: fesom-1.4
-        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
-        add_yearly_outputs:
-            - "${recom.yearly_outputs}"
-        add_monthly_outputs:
-            - "${recom.monthly_outputs}"
-        add_daily_outputs:
-            - "${recom.daily_outputs}"
-        add_12_step_outputs:
-            - "${recom.12_step_outputs}"
 
-git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;   make install
-
-metadata:
-        Institute: Alfred Wegener Institute
-        Description:
-                Multiresolution sea ice-ocean model that solves the equations
-                of motion on unestructured meshes
-        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
-        Publications:
-                - "The Finite-volumE Sea ice-Ocean Model (FESOM2) <https://doi.org/10.5194/gmd-10-765-2017>"
-                - "Scalability and some optimization of the Finite-volumE Sea ice-Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>"
-        License:
-                Please make sure you have a licence to use FESOM. In case you are unsure,
-                please contact redmine...
 
 restart_rate: "12"
 restart_unit: "m"
@@ -373,6 +372,7 @@ monthly_outputs:
 daily_outputs: []
 12_step_outputs: []
 
+# copy fesom model output to outdata/fesom; includes recom data if enabled
 outdata_files:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT
         "[[monthly_outputs-->OUTPUT]]": OUTPUT

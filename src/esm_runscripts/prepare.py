@@ -689,11 +689,7 @@ def add_vcs_info(config):
     config : dict
         The experiment configuration
     """
-    import pdb
-    pdb.set_trace()
-    exp_vcs_info_file = (
-        f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
-    )
+    exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
     logger.debug("Experiment information is being stored for usage under:")
     logger.debug(f">>> {exp_vcs_info_file}")
     vcs_versions = {}
@@ -701,20 +697,63 @@ def add_vcs_info(config):
     for model in all_models:
         model_dir = config[model]["model_dir"]
         if helpers.is_git_repo(model_dir):
-            try:
-                vcs_versions[model] = helpers.get_git_hash
-            except helpers.GitDirtyError:
-                vcs_versions[model] = "unknown (dirty repo detected)"
+            vcs_versions[model] = helpers.get_all_git_info(model_dir)
+        else:
+            vcs_versions[model] = "Not a git-controlled model!"
 
     # NOTE(PG): There is no good way to get the repo directory from the config,
     # this may at least be a good start:
     esm_tools_repo = config.get("general", {}).get("esm_function_dir")
     if esm_tools_repo is not None:
         vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
-    pdb.set_trace()
+    else:
+        # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
+        esm_parser.user_error("esm_tools doesn't know where it's own install location is. Something is very seriously wrong.")
     with open(exp_vcs_info_file, "w") as f:
         yaml.dump(vcs_versions, f)
-    pdb.set_trace()
+    return config
+
+def check_vcs_info_against_last_run(config):
+    """
+    Ensures that the version control info for two runs is identical between the
+    current run and the previous run.
+
+
+    This is checked by ensuring that the dictionary representation of the VCS
+    files is identical. Differences will result in a ``user_error``, thus
+    terminating the run. The check can be circumvented by setting::
+
+        general:
+            allow_vcs_differences: True
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration
+    """
+    if config['general']['run_number'] == 1:
+        return config  # No check needed on the very first run
+    exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    # FIXME(PG): This file might not exist if people erase every run folder...
+    last_exp_vcs_info_file = f"{config['prev_run']['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+
+    with open(exp_vcs_info_file, "r") as f:
+        current_vcs_info = yaml.safe_load(f)
+    with open(last_exp_vcs_info_file, "r") as f:
+        last_vcs_info = yaml.safe_load(f)
+    if not config["general"].get("allow_vcs_differences", False) and current_vcs_info != last_vcs_info:
+        esm_parser.user_error("""
+            You have differences in either the model code or in the esm-tools between two runs! 
+
+            If you are **sure** that this is OK, you can set 'general.allow_vcs_differences' to True to avoid this check.
+            """)
+
+
     return config
 
 

@@ -1,0 +1,605 @@
+#########################################################################################
+######################### AWICM3 YAML CONFIGURATION FILE  ###############################
+#########################################################################################
+general:
+
+        model: awicm3
+
+        model_dir: ${esm_master_dir}/awicm3-${version}
+
+        lresume: False
+        coupled_setup: True
+
+        include_models:
+                - fesom
+                - oifs
+                - rnfmap
+                - oasis3mct
+
+        available_versions:
+        - 'v3.0'
+        - 'v3.1'
+        - 'master'
+        - 'frontiers'
+        - 'frontiers-xios'
+        choose_version:
+          v3.0:
+            couplings:
+            - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
+          v3.1:
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          master:
+            couplings:
+            - fesom-2.0-master+oifs-43r3-master
+          frontiers:
+            couplings:
+            - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers
+          frontiers-xios:
+            couplings:
+            - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+
+        version: "v3.1"
+        scenario: "piControl"
+        resolution: ${oifs.resolution}_${fesom.resolution}
+        postprocessing: false
+        post_time: "00:05:00"
+        compute_time: "00:30:00"
+
+        reusable_filetypes: [input, bin, src]
+
+        choose_computer.name:
+                levante:
+                        pool_dir: "/work/ab0246/a270092/input"
+                ollie:
+                        pool_dir: "/work/ollie/jstreffi/input"
+                juwels:
+                        pool_dir: "/p/project/chhb19/jstreffi/input"
+                aleph:
+                        pool_dir: "/proj/awi/input"
+                blogin:
+                        pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
+
+        # Load compute recipe from oifs.yaml
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
+
+
+
+        # Load general environment for the whole coupled setup
+        dr_hook_ignore_signals: -1
+        further_reading:
+                - oifs/oifs.env.yaml
+                - oasis3mct/oasis3mct.env.yaml
+
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+oifs:
+        version: "43r3"
+
+        add_compute_recipe: ["oasis_rmp_rst_to_input"]
+        execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
+
+        pool_dir: ${general.pool_dir}
+        model_dir: ${general.model_dir}/oifs-${version}
+        setup_dir: ${general.model_dir}
+        restart_firstlast: "last"
+        restart_rate: 12
+        ocean_resolution: "${fesom.resolution}"
+
+        mip: "cmip6"
+        scenario: "historical"
+
+        prepifs_expid: h6mv
+        input_expid: awi3   # This cannot be longer than 4 characters
+        input_dir: ${pool_dir}/oifs-${version}
+        rtables_dir: ${input_dir}/rtables/
+        forcing_dir: ${input_dir}/${version}/ifsdata/
+        ifsdata_dir: ${input_dir}/${version}/ifsdata/
+        choose_general.version:
+                "v3.0":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
+                "v3.1":
+                        with_xios: True
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                                        NAEPHY:
+                                                LECURR: true
+                                        NAERAD:
+                                                NSOLARSPECTRUM: "1"
+
+                "frontiers":
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                "frontiers-xios":
+                        with_xios: True
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+
+        cmip6_data_dir_nml: ${input_dir}/cmip6-data
+        cmip5_data_dir_nml: ${input_dir}/cmip5-data
+
+        # nproc must be not a prime number for OpenIFS parallelisation to work
+        # (This is just one of the many mysteries of the IFS...)
+        #
+        # We want to use 1 CPU for runoff mapper
+        # 287 fulfills this requirement and 288 divides well with 36 and 48
+        # (287 = 41 * 7)
+        # so that the configuration fills up the compute nodes
+        # 575 would also be ok (575 = 23 * 25)
+        # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
+        nproc: 36
+        omp_num_threads: 2
+        choose_general.resolution:
+                TL159_CORE2:
+                        nproc: 36
+                TCO159_CORE2:
+                        nproc: 36
+
+        # Wave model switch
+        wam: true
+
+        perturb: 0
+        ensemble_id: 1
+
+        # Microphysics switch: 0 for off, 1 for light version and 2 for full
+        sclct_switch: 2
+
+        restart_type: "eternal"
+
+        resolution: TCO159
+        levels: L91
+
+        environment_changes: # MA: Only used for JUWELS right now
+                OpenMP_flag: "-qopenmp"
+                OpenMP_CCDEFS: "_OPENMP"
+
+        runtime_environment_changes:
+                iolibraries: awi_libs
+                choose_computer.name:
+                        juwels:
+                                compiler_mpi: intel2022_ompi2022
+                        blogin:
+                                iolibraries: geomar_libs
+                        glogin:
+                                iolibraries: geomar_libs
+                        levante:
+                                iolibraries: system_libs
+                add_export_vars:
+                        # Turn on FESOM coupling
+                        FESOM_USE_CPLNG: '"active"'
+                        ECE_CPL_NEMO_LIM: '"false"'
+                        ECE_CPL_FESOM_FESIM: '"true"'
+                        ECE_AWI_CPL_FESOM: '"true"'
+
+        compiletime_environment_changes:
+                iolibraries: awi_libs
+                choose_computer.name:
+                        juwels:
+                                compiler_mpi: intel2022_ompi2022
+                        blogin:
+                                iolibraries: geomar_libs
+                        glogin:
+                                iolibraries: geomar_libs
+                        levante:
+                                iolibraries: system_libs
+
+        res_level: ${resolution}${levels}
+        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
+
+        coupling_fields:
+                "[[awicm3_fields-->FIELD]]":
+                    grid: atma
+                A_Runoff:
+                    grid: atmr
+                A_Calving:
+                    grid: atmr
+
+        input_files:
+                ICMGG_INIT: ICMGG_INIT
+                ICMGG_INIUA: ICMGG_INIUA
+                ICMSH_INIT: ICMSH_INIT
+
+        prepifs_dir: ${input_dir}/${res_level}/
+        tl_o3_data_dir: ${input_dir}/${version}/climate/
+        ICMGG_INIT_name: "_${fesom.resolution}"
+
+        # Remove ICMCL_INIT forcing, which is only required for standalone simulations
+        remove_forcing_files:
+                - ICMCL_INIT
+
+        # Postprocessing
+        choose_general.postprocessing:
+                True:
+                        workflow:
+                                next_run_triggered_by: tidy
+                                subjobs:
+                                        postprocessing:
+                                                batch_or_shell: batch
+                                                order_in_cluster: concurrent
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: tidy
+                                                script_dir: ${general.esm_function_dir}/setups/awicm3
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    postprocessing.sh
+                                                    ${oifs.experiment_outdata_dir}
+                                                    ${oifs.out_date_folder}"
+                                                nproc: 1
+
+
+fesom:
+        version: "2.0"
+        time_step: 1800
+        resolution: CORE2
+        lresume: false
+        nproc: 72
+        omp_num_threads: 1
+        choose_general.resolution:
+                TCO159_CORE2:
+                        nproc: 144
+                TL159_CORE2:
+                        nproc: 72
+
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
+
+        opbnd_dir: ""
+        tide_forcing_dir: ""
+        forcing_data_dir: ""
+        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        setup_dir: ${general.model_dir}
+
+        pool_dir: "${general.pool_dir}/fesom2/"
+
+        restart_unit: "d"
+        leapyear: True
+
+
+        # Move in the future to fesom-2.0.yaml
+        mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
+
+        surf_relax_s: "0.0"
+
+        namelist_changes:
+                namelist.config:
+                        restart_log:
+                                restart_length_unit: "${restart_unit}"
+                                restart_length: "${restart_rate}"
+                namelist.oce:
+                        oce_tra:
+                                surf_relax_s: "${surf_relax_s}"
+
+        choose_general.version:
+                "v3.0":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.0/"
+                "v3.1":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
+                "master":
+                        namelist_dir: "${model_dir}/config/"
+                "frontiers":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/frontiers/"
+                "frontiers-xios":
+                        model_tag: "frontiers"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/frontiers/"
+
+        remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+                - restart_length
+                - restart_length_unit
+        remove_namelist_changes.namelist.config.paths:
+                - ForcingDataPath
+                - OpbndPath
+                - TideForcingPath
+        # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
+        remove_namelist_changes:
+                - namelist.forcing
+
+
+        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
+
+        add_config_files:
+                cvmix: cvmix
+
+        add_config_sources:
+                cvmix: "${namelist_dir}/namelist.cvmix"
+
+        remove_config_files:
+                - diag
+
+        awicm3_fields: [ist_feom, sia_feom]
+
+        coupling_fields:
+                "[[awicm3_fields-->FIELD]]":
+                        grid: feom
+
+
+# It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
+# By default this option is turned off, and thus the follwing two lines are commented out.
+# further_reading:
+#       - fesom/fesom.io.yaml
+
+xios:
+        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+        nproc: 1
+        omp_num_threads: ${computer.partitions.compute.cores_per_node}
+
+rnfmap:
+        pool_dir: ${general.pool_dir}
+        runoff_maps_name: _${fesom.resolution}
+
+        nproc: 1
+        omp_num_threads: ${computer.partitions.compute.cores_per_node}
+        time_step: ${oasis3mct.coupling_time_step}
+
+        runoff_method: awicm3-default
+
+        coupling_fields:
+                "[[runoff_fields_send-->FIELD]]":
+                        grid: rnfo
+
+        grids:
+                rnfa:
+                        name: RnfA
+                rnfo:
+                        name: RnfO
+                        nx: 512
+                        ny: 256
+                        oasis_grid_type: "LR"
+        input_files:
+                runoff_maps: runoff_maps
+
+
+#########################################################################################
+
+# Settings for OASIS
+oasis3mct:
+        model_dir: ${general.model_dir}/oasis
+        pool_dir: ${general.pool_dir}/oasis/
+        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+        mct_version: 4.0
+        norestart: "F"
+
+        process_ordering:
+                - fesom
+                - oifs
+                - rnfmap
+
+        required_plugins:
+                - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
+
+        # lresume needs to be true to allow usage of flxatmos and sstocean
+        # "restart" files in initial coupling time step
+        # but only if the general model setup is a cold start (i.e. general.lresume = false)
+        lresume: True
+        ini_parent_date: "19500101" # not used, but needs to be present
+        ini_parent_exp_id: "khw0030" # not used, but needs to be present
+        ini_restart_dir: "${input_dir}"
+
+        output_exchanged_vars: false
+
+        time_step: 86400
+
+        a2o_lag: "${lag}"
+        a2r_lag: "${lag}"
+        o2a_lag: "${lag}"
+        o2r_lag: 0
+        r2a_lag: "${lag}"
+        a2o_seq: 2
+        o2a_seq: 2
+        o2r_seq: 1
+        r2a_seq: 2
+
+        coupling_time_step: "${oasis3mct.time_step}"
+        choose_general.version:
+                'frontiers-xios':
+                        add_process_ordering:
+                                - xios
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
+                'v3.1':
+                        rstos_file_name: 'rstos_uv'
+                        rstas_file_name: 'rstas_uv'
+                        add_process_ordering:
+                                - xios
+                        add_coupling_target_fields:
+                                add_rstos.nc:
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                '*':
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
+
+        coupling_target_fields:
+                rstas.nc:
+                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                rstos.nc:
+                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+
+
+        coupling_directions:
+                'atma->feom':
+                        lag: ${a2o_lag}
+                        seq: ${a2o_seq}
+                'atmr->rnfa':
+                        lag: ${r2a_lag}
+                        seq: ${r2a_seq}
+                'rnfo->feom':
+                        lag: ${o2r_lag}
+                        seq: ${o2r_seq}
+                'feom->atma':
+                        lag: ${o2a_lag}
+                        seq: ${o2a_seq}
+
+
+        coupling_methods:
+                bicubic:
+                        time_transformation: average
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+
+                bicubic_glb:
+                        time_transformation: average
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                                        algorithm: opt
+                bicubic_gss:
+                        time_transformation: average
+                        remapping:
+                                bicubic:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 15
+                        postprocessing:
+                                conserv:
+                                        method: gsspos
+                                        algorithm: opt
+                gauswgt_c:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
+                        postprocessing:
+                                conserv:
+                                        method: glbpos
+                                        algorithm: opt
+                gauswgt_gss:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
+                        postprocessing:
+                                conserv:
+                                        method: gsspos
+                                        algorithm: opt
+                gauswgt_i:
+                        time_transformation: instant
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
+
+        input_files: {}
+
+        input_in_work:
+                rmp: rmp_*.nc
+                areas: areas.nc
+                masks: masks.nc
+                grids: grids.nc
+
+        input_sources:
+                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                areas: ${input_dir}/areas.nc
+                masks: ${input_dir}/masks.nc
+                grids: ${input_dir}/grids.nc
+
+        restart_in_files:
+                rmp: rmp
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_in_in_work:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        choose_lresume:
+                false:
+                        lag: 0
+                        choose_general.run_number:
+                                1:
+                                        add_input_files:
+                                                rmp: rmp
+                                                areas: areas
+                                                masks: masks
+                                                grids: grids
+                true:
+                        lag: "${time_step}"
+                        # If ini_restart_dir is not specified in the runscript and, therefore,
+                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # sources when the run_number is 1
+                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        choose_load_restart_from_pool:
+                                true:
+                                        add_restart_in_sources:
+                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+
+        restart_in_sources:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_out_files:
+                rmp: rmp
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_out_in_work:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+        restart_out_sources:
+                rmp: rmp_*.nc
+                rstas.nc: rstas.nc
+                rstos.nc: rstos.nc
+
+
+computer:
+        # Activates the taskset approach for heterogeneous parallelization, by default
+        # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+        # problems)
+        taskset: true
+
+        choose_computer.name:
+                blogin:
+                        compiler_mpi: intel2019_ompi
+                glogin:
+                        compiler_mpi: intel2019_ompi
+                levante:
+                        compiler_mpi: intel2022_openmpi

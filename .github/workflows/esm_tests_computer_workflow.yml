@@ -50,6 +50,8 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       run: |
         cd src/esm_tests/resources;
+        git fetch;
+        git pull;
         git checkout release;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";

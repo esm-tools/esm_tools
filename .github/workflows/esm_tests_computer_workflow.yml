@@ -56,7 +56,7 @@ jobs:
         yes Y | esm_tests ${{ inputs.test_flags }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
-      uses: esm-tools/esm_tests_info/commit_changes.yml@release
+      uses: esm-tools/esm_tests_info/.github/workflows/commit_changes.yml@release
       with:
         computer: ${{ inputs.computer }}
         

@@ -45,11 +45,8 @@ jobs:
         ./install.sh
     - name: run esm_tests
       run: |
-        git submodule init;
-        git submodule update;
-        git submodule sync;
         cd src/esm_tests/resources;
-        git checkout release;
+        git remote get-url origin;
         cd ../../../;
         yes Y | esm_tests ${{ inputs.test_flags }}
     - name: update esm_tests info

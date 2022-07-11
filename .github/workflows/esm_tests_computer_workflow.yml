@@ -33,7 +33,9 @@ jobs:
     # Service containers to run with `gfortran_ubuntu`
     steps:
     # NK: this changes working directory to fesom2
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
 
     - name: add to the path
       run: |
@@ -54,7 +56,6 @@ jobs:
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
-        git remote set-url origin git@github.com:esm-tools/esm_tests_info.git
         git push;
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

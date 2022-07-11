@@ -35,7 +35,7 @@ jobs:
     # NK: this changes working directory to fesom2
     - uses: actions/checkout@v3
       with:
-        submodules: sync
+        submodules: true
 
     - name: add to the path
       run: |
@@ -49,6 +49,7 @@ jobs:
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
+        git submodule sync;
         cd src/esm_tests/resources;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";

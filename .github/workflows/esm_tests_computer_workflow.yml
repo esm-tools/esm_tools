@@ -33,6 +33,12 @@ jobs:
     # Service containers to run with `gfortran_ubuntu`
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Checkout tools repo
+      uses: actions/checkout@v3
+      with:
+        repository: esm-tools/esm_tests_info
+        path: ~/esm_tools/src/esm_tests/resources
 
     - name: add to the path
       run: |

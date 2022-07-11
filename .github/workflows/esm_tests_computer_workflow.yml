@@ -54,6 +54,7 @@ jobs:
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
+        git config --get remote.origin.url
         git push https://github.com/esm-tools/esm_tests_info;
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

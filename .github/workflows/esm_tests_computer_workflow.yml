@@ -56,7 +56,13 @@ jobs:
         yes Y | esm_tests ${{ inputs.test_flags }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
-      uses: esm-tools/esm_tests_info/.github/workflows/commit_changes.yml@release
-      with:
-        computer: ${{ inputs.computer }}
+      run: |
+        cd src/esm_tests/resources;
+#        git config --global user.name "${GITHUB_ACTOR}";
+#        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
+        rm -rf automatic_testing; # cleanup the resources directory from tests
+        git add .;
+        git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git status;
+        git push;
         

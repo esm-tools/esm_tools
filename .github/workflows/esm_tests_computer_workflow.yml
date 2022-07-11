@@ -17,6 +17,8 @@ on:
         type: string
         default: "-cngeu -s False"
 
+permissions: write-all
+
 jobs:
   computer:
     name: ${{ inputs.computer }}

@@ -35,7 +35,7 @@ jobs:
     # NK: this changes working directory to fesom2
     - uses: actions/checkout@v3
       with:
-        submodules: true
+        submodules: sync
 
     - name: add to the path
       run: |
@@ -50,7 +50,6 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       run: |
         cd src/esm_tests/resources;
-        git submodule sync;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
         rm -rf automatic_testing; # cleanup the resources directory from tests

@@ -296,7 +296,7 @@ cxx: "$CXX"
 
 # kh 23.06.22 should be set generally in accordance with 
 # the tips from DKRZ-TechTalk "From Mistral to Levante" June 22, 2022
-launcher_flags: "-l ${mt_launcher_flag}" # --distribution=block:cyclic"
+launcher_flags: "-l" # --distribution=block:cyclic"
 
 further_reading:
         - batch_system/slurm.yaml

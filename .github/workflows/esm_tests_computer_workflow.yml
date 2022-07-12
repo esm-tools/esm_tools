@@ -15,7 +15,7 @@ on:
         default: false
       test_flags:
         type: string
-        default: "-cnge -s False"
+        default: "-cngeu -s False"
 
 jobs:
   computer:
@@ -32,8 +32,18 @@ jobs:
 
     # Service containers to run with `gfortran_ubuntu`
     steps:
-    # NK: this changes working directory to fesom2
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+#    - name: checkout esm_tests_info
+#      uses: actions/checkout@v3
+#      with:
+#        repository: esm-tools/esm_tests_info
+#        path: src/esm_tests/resources
+#        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: add to the path
       run: |
@@ -47,12 +57,12 @@ jobs:
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
+        cd src/esm_tests/resources;
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
-        cd src/esm_tests/resources;
         rm -rf automatic_testing; # cleanup the resources directory from tests
         git add .;
-        git commit -ma "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
         git push;
         

@@ -87,7 +87,7 @@ general:
 oifs:
         version: "43r3"
 
-        add_compute_recipe: ["oasis_rmp_rst_to_input"]
+        add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}

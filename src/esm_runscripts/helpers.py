@@ -7,7 +7,6 @@ import esm_plugin_manager
 import esm_tools
 import git
 
-import git
 
 def vprint(message, config):
     if config["general"]["verbose"]:

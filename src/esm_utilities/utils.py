@@ -2,6 +2,9 @@ import pandas as pd
 import io
 import datetime
 import numpy as np
+import semver
+
+import esm_tools
 
 
 def logfile_stats(logfile_to_read):
@@ -99,3 +102,62 @@ def logfile_stats(logfile_to_read):
         f"Theoretical Throughput assuming no queueing time: {np.round(throughput, 2)} runs per day"
     )
     return df
+
+
+def check_valid_version(versionrange, version=""):
+    """
+    Returns ``True`` if the ``version`` provided matches the condition of
+    ``versionrange``.
+
+    Parameters
+    ----------
+    version : str
+        String specifying the version number with the format ``X.Y.Z``.
+    versionrange : str
+        Condition for the version range, expressed as a comparison operator
+        followed by a version number in the format ``X.Y.Z``.
+
+    Returns
+    -------
+    True, False : bool
+        ``True`` if the condition is met, ``False`` if not.
+    """
+    if not version:
+        version = esm_tools.__version__
+    version = semver.VersionInfo.parse(version)
+
+    if versionrange.startswith("<="):
+        operator = version.__le__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace("<=", "").strip()
+        )
+    if versionrange.startswith("<"):
+        operator = version.__lt__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace("<", "").strip()
+        )
+    elif versionrange.startswith(">="):
+        operator = version.__ge__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace(">=", "").strip()
+        )
+    elif versionrange.startswith(">"):
+        operator = version.__gt__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace(">", "").strip()
+        )
+    elif versionrange.startswith("=="):
+        operator = version.__eq__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace("==", "").strip()
+        )
+    elif versionrange.startswith("!="):
+        operator = version.__ne__
+        other_version = semver.VersionInfo.parse(
+            versionrange.replace("!=", "").strip()
+        )
+    else:
+        raise MessageOfTheDayError(
+            f"Unknown version range specified: {versionrange}"
+        )
+    return operator(other_version)

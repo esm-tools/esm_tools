@@ -3,7 +3,7 @@ import copy
 import sys
 
 import esm_parser
-import esm_rcfile
+import esm_tools
 
 from . import chunky_parts
 
@@ -85,13 +85,8 @@ def get_user_config_from_command_line(command_line_config):
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
     except SystemExit as sysexit:
         sys.exit(sysexit)
-    except esm_parser.EsmConfigFileError as error:
-        raise error
     except:
-        # use the full absolute path instead of CWD
-        user_config = esm_parser.initialize_from_shell_script(
-            command_line_config["runscript_abspath"]
-        )
+        raise("An error occurred reading the config file from the command line") 
 
     # NOTE(PG): I really really don't like this. But I also don't want to
     # re-introduce black/white lists
@@ -107,6 +102,9 @@ def get_user_config_from_command_line(command_line_config):
     user_config["general"].update(command_line_config)
     if deupdate_use_venv:
         user_config["general"]["use_venv"] = user_use_venv
+    user_config["general"]["isinteractive"] = command_line_config.get(
+        "last_jobtype", ""
+    )=="command_line"
     return user_config
 
 
@@ -151,8 +149,7 @@ def get_total_config_from_user_config(user_config):
 
 
 def add_esm_runscripts_defaults_to_config(config):
-    FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
-    path_to_file = FUNCTION_PATH + "/esm_software/esm_runscripts/defaults.yaml"
+    path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
     config = distribute_per_model_defaults(config)

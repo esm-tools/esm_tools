@@ -90,6 +90,7 @@ compile_infos:
         - 40r1
         - 43r3-master
         - 43r3-awicm-3.0
+        - 43r3-awicm-3.1
         - 43r3-awicm-frontiers
         - 43r3-awicm-frontiers-xios
         - 43r3
@@ -127,6 +128,15 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             destination: oifs-43r3
             with_xios: false # for now, later the default will be with_xios: true
+          43r3-awicm-3.1:
+            requires:
+            - oasis3mct-4.0-awicm-3.1
+            branch: awicm-3.1
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            install_bins: make/esm/oifs/bin/oifs
+            destination: oifs-43r3
+            with_xios: true
           43r3-awicm-frontiers:
             requires:
             - oasis3mct-4.0-awicm-frontiers
@@ -205,7 +215,6 @@ read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
 post_processing: 0
-use_ocean_currents: 0
 pextra: 0
 dr_hook_ignore_signals: -1
 
@@ -764,19 +773,6 @@ choose_wam:
 # OTHER CONFIGS AND SWITCHES
 #======================================================================================
 
-# For coupled setups we can use ocean currents
-choose_use_ocean_currents:
-        1:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".true."
-        0:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".false."
-
 ##
 ## mass conservation / mass fixer
 ## 0 - no mass fixer
@@ -1175,6 +1171,8 @@ prepcompute_recipe:
    - "modify_files"
    - "copy_files_to_work"
    - "report_missing_files"
+   - "add_vcs_info"
+   - "check_vcs_info_against_last_run"
    - "database_entry"
 # this does not work as expected, solution is work in progress
 #   - "postprocess"

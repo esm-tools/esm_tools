@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import copy
 import pathlib
 
@@ -358,22 +359,23 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
-                    + "Note: You can choose to use -U flag in the esm_runscripts call "
-                    + "to automatically update the runscript (WARNING: This "
-                    + f"will overwrite your {file_type} in the experiment folder!)\n",
+                    + "Note: You can choose to use ``-U`` flag in the "
+                    + "``esm_runscripts`` call to automatically update the runscript "
+                    + f"(WARNING: This will overwrite your {file_type} in the "
+                    + "experiment folder!)\n",
                 )
-                correct_input = False
-                while not correct_input:
-                    update_choice = questionary.confirm(
-                        f"Do you want that {scriptsdir + '/' + tfile} is "
-                        + "updated with the above changes?"
-                    ).ask()
-                    if update_choice:
-                        correct_input = True
-                        oldscript = fromdir + "/" + tfile
-                        print(oldscript)
-                        shutil.copy2(oldscript, scriptsdir)
-                        print(f"{scriptsdir + '/' + tfile} updated!")
+                update_choice = questionary.confirm(
+                    f"Do you want that {scriptsdir}/{tfile} is "
+                    + "updated with the above changes?"
+                ).ask()
+                if update_choice:
+                    oldscript = fromdir + "/" + tfile
+                    print(oldscript)
+                    shutil.copy2(oldscript, scriptsdir)
+                    print(f"{scriptsdir + '/' + tfile} updated!")
+                else:
+                    print("Submission stopped")
+                    sys.exit(1)
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):

@@ -13,7 +13,7 @@ on:
     
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+ 
 jobs:
   # Sequence of tasks that will be executed as part of the job
   ollie:
@@ -23,7 +23,7 @@ jobs:
         with:
           computer: ollie1
           update_esm_tests_info: true
-          test_flags: -cng -s True
+          test_flags: -cngu -s True
   levante:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -31,7 +31,7 @@ jobs:
         with:
           computer: levante1
           update_esm_tests_info: true
-          test_flags: -cng -s True
+          test_flags: -cngu -s True
   juwels:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -39,7 +39,7 @@ jobs:
         with:
           computer: jwlogin01.juwels
           update_esm_tests_info: true
-          test_flags: -cng -s True
+          test_flags: -cngu -s True
   aleph:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -47,7 +47,7 @@ jobs:
         with:
           computer: elogin1
           update_esm_tests_info: true
-          test_flags: -cng -s True
+          test_flags: -cngu -s True
   blogin:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -55,4 +55,4 @@ jobs:
         with:
           computer: blogin1
           update_esm_tests_info: true
-          test_flags: -cng -s True
+          test_flags: -cngu -s True

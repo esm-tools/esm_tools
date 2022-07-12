@@ -7,6 +7,7 @@ import esm_plugin_manager
 import esm_tools
 import git
 
+import git
 
 def vprint(message, config):
     if config["general"]["verbose"]:
@@ -372,7 +373,14 @@ def get_git_branch(path):
         The branch name
     """
     repo = git.Repo(path)
-    return repo.head.reference.name
+    if not repo.head.is_detached:
+        return repo.head.reference.name
+    commit = repo.head.commit
+    for tag in repo.tags:
+        if commit.hexsha == tag.commit.hexsha:
+            return f"DETACHED HEAD at tag {tag.name}"
+    else:
+        return f"DETACHED HEAD at commit {repo.head.commit.hexsha}"
 
 
 def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore.RED}):

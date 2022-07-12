@@ -56,7 +56,7 @@ add_choose_heterogeneous_parallelization:
         choose_taskset:
             # Support for old taskset heterogeneous parallelization approach
             true:
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag} --multi-prog ${config_files.hostfile}"
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
             # Support for new packjob heterogeneous parallelization approach
             false:
 
@@ -72,7 +72,7 @@ add_choose_heterogeneous_parallelization:
                 launcher_comp_sep: " \\\n:"
     false:
         cpu_bind: "cores"
-        srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag} --multi-prog ${config_files.hostfile}"
+        srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
 
 choose_launcher:
         srun:

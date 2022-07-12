@@ -71,11 +71,11 @@ import socket
 import subprocess
 import sys
 import warnings
-import numpy
 
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
+import numpy
 import coloredlogs
 import colorama
 import yaml
@@ -113,6 +113,9 @@ COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
 
+# global variables
+list_counter = 0
+
 gray_list = [
     r"choose_lresume",
     r"choose_.*lresume",
@@ -138,6 +141,33 @@ early_choose_vars = ["include_models", "version", "omp_num_threads"]
 # Ensure FileNotFoundError exists:
 if six.PY2:  # pragma: no cover
     FileNotFoundError = IOError
+
+
+def flatten_nested_lists(lst):
+    """Recursively flattens an arbitrarily nested list and yields a generator
+
+    Examples
+    --------
+    >>> list(flatten_nested_lists( [[1,2,3]] ))
+    [1, 2, 3]
+
+    >>> list(flatten_nested_lists( [1,2,3, [4,5,6], "foo"] ))
+    [1, 2, 3, 4, 5, 6, 'foo']
+
+    >>> list(flatten_nested_lists( [[1,2,3], [4,5,6], [7,8,9]] ))
+    [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    >>> list(flatten_nested_lists( [[1,2,3], {"foo": "bar"}] ))
+    [1, 2, 3, {'foo': 'bar'}]
+    """
+    # Traverse the list and return the scalar item. If the item is a list, then
+    # enter recursion
+    for item in lst:
+        if isinstance(item, list):
+            for subitem in flatten_nested_lists(item):
+                yield subitem
+        else:
+            yield item
 
 
 def look_for_file(model, item, all_config=None):
@@ -981,9 +1011,6 @@ def find_add_entries_in_config(mapping, model_name):
     return all_adds
 
 
-list_counter = 0
-
-
 def add_entry_to_chapter(
     add_chapter,
     add_entries,
@@ -1012,61 +1039,39 @@ def add_entry_to_chapter(
     # If the desired chapter doesn't exist yet, just put it there
     logging.debug(model_to_add_to)
     logging.debug(add_chapter)
-    if (
-        not add_chapter.split(".")[-1].replace("add_", "")
-        in target_config[model_to_add_to]
-    ):
-        target_config[model_to_add_to][
-            add_chapter.split(".")[-1].replace("add_", "")
-        ] = add_entries
+
+    # Eg. add_general.mylist -> mylist
+    chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
+    if chapter_to_add not in target_config[model_to_add_to]:
+        target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if not type(
-            target_config[model_to_add_to][
-                add_chapter.split(".")[-1].replace("add_", "")
-            ]
-        ) == type(add_entries):
-            raise TypeError("Something is wrong")
-        else:
-            if isinstance(
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ],
-                list,
-            ):
-                # Define the list to be modified
-                mod_list = target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ]
-                # Add the entries
-                mod_list += add_entries
-                # Remove duplicates
-                mod_list_no_dupl = []
-                for el in mod_list:
-                    if not isinstance(el, (dict, tuple, list)):
-                        if not el in mod_list_no_dupl:
-                            mod_list_no_dupl.append(el)
-                    else:
+        if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
+            error_type = "Type mismatch"
+            error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
+            user_error(error_type, error_text)
+
+        if isinstance(target_config[model_to_add_to][chapter_to_add], list):
+            # Define the list to be modified
+            mod_list = target_config[model_to_add_to][chapter_to_add]
+            # Add the entries
+            mod_list.extend(list(flatten_nested_lists(add_entries)))
+
+            # Remove duplicates
+            mod_list_no_dupl = []
+            for el in mod_list:
+                if not isinstance(el, (dict, tuple, list)):
+                    if el not in mod_list_no_dupl:
                         mod_list_no_dupl.append(el)
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ] = mod_list_no_dupl
-                global list_counter
-                list_counter += 1
-            elif isinstance(
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ],
-                dict,
-            ):
-                # If the chapter is a dictionary use dict_merge where the new entries
-                # have priority over the preexisting ones (user choices win over
-                # anything else)
-                dict_merge(
-                    target_config[model_to_add_to][
-                        add_chapter.split(".")[-1].replace("add_", "")
-                    ],
-                    add_entries,
-                )
+                else:
+                    mod_list_no_dupl.append(el)
+            target_config[model_to_add_to][chapter_to_add] = mod_list_no_dupl
+            global list_counter
+            list_counter += 1
+        elif isinstance(target_config[model_to_add_to][chapter_to_add], dict):
+            # If the chapter is a dictionary use dict_merge where the new entries
+            # have priority over the preexisting ones (user choices win over
+            # anything else)
+            dict_merge(target_config[model_to_add_to][chapter_to_add], add_entries)
     if list_counter > 1:
         pass
         # pdb.set_trace()
@@ -1442,7 +1447,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         user_error(
             "choose_ block",
             "``choose_`` blocks need to be defined as ``dictionaries``. Currently, "
-            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``"
+            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``",
         )
     for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
         if (
@@ -1467,9 +1472,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
-        for update_key, update_value in six.iteritems(
-            choices_available[choice]
-        ):
+        for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
@@ -1816,6 +1819,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             """
             if type(item) == str and "[[" in item and func == list_to_multikey:
                 newright += new_item
+            elif isinstance(new_item, list):
+                newright.extend(new_item)
             else:
                 newright.append(new_item)
         right = newright
@@ -1937,9 +1942,8 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
             # preceding (``prefix``) or following (``suffix``) string, then add up
             # the parts, making sure that other variables (``${}``) are also
             # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
-            if (
-                (not isinstance(var_result, list) and (prefix or suffix)) or
-                (isinstance(var_result, dict) and "NONE_YET" in var_result)
+            if (not isinstance(var_result, list) and (prefix or suffix)) or (
+                isinstance(var_result, dict) and "NONE_YET" in var_result
             ):
                 prefix, var_result, more_rest = (
                     str(prefix),
@@ -2728,7 +2732,7 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
+def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
     """
     Notify the user about something. In the future this should also write in the log.
 
@@ -2740,12 +2744,15 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
         Text clarifying the note.
     """
     reset_s = colorama.Style.RESET_ALL
-    note_text = re.sub("``([^`]*)``", f"{color}\\1{reset_s}", note_text)
+    for dsymbol in dsymbols:
+        note_text = re.sub(
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+        )
     print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")
 
 
-def user_error(error_type, error_text, exit_code=1):
+def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
     """
     User-friendly error using ``sys.exit()`` instead of an ``Exception``.
 
@@ -2759,7 +2766,7 @@ def user_error(error_type, error_text, exit_code=1):
         The exit code to send back to the parent process (default to 1)
     """
     error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED)
+    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
     sys.exit(exit_code)
 
 
@@ -2905,6 +2912,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         del self.config
 
+        self.check_user_defined_versions(user_config, setup_config)
+
         setup_config["general"].update(
             {
                 "esm_function_dir": CONFIG_PATH,
@@ -3021,6 +3030,50 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # pprint_config(self.config)
         # sys.exit(0)
+
+    def check_user_defined_versions(self, user_config={}, setup_config={}):
+        """
+        When running a standalone model, checks whether the users has define the
+        variable ``version`` in more than one section and if that's the case
+        throws and error. If ``version`` is only defined in the ``general`` section
+        it creates a ``version`` with the same value in the model section, ensuring
+        that the user can arbitrarily define ``version`` in either ``general`` or
+        ``<model>`` sections.
+
+        Parameters
+        ----------
+        user_config : dict
+            Experiment configuration defined by the user (e.g. runscript)
+        setup_config : dict
+            Experiment configuration defined by the default ESM-Tools configuration
+            files (``<PATH>/esm_tools/configs/``)
+
+        Notes
+        -----
+        Version error : esm_parser.user_error
+            If something goes wrong with the user's version choices it exits the code
+            with a ``esm_parser.user_error``
+        """
+        if "general" in self:
+            user_config = setup_config = self
+        if (
+            setup_config["general"].get("standalone")
+            and user_config["general"].get("run_or_compile", "runtime") == "runtime"
+        ):
+            version_in_runscript_general = user_config["general"].get("version")
+            model_name = user_config["general"]["setup_name"]
+            version_in_runscript_model = user_config.get(model_name, {}).get("version")
+            if version_in_runscript_general and version_in_runscript_model:
+                user_error(
+                    "Version",
+                    "You have defined the ``version`` variable both in the "
+                    f"``general`` and ``{model_name}`` sections of your runscript. "
+                    "This is not supported for ``standalone`` simulations. Please "
+                    "define ``only one version`` in one of the two sections.",
+                )
+            elif version_in_runscript_general and not version_in_runscript_model:
+                if model_name in user_config:
+                    user_config[model_name]["version"] = version_in_runscript_general
 
     def finalize(self):
         self.run_recursive_functions(self)

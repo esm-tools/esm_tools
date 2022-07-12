@@ -32,6 +32,7 @@ choose_job_type:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
+                        - "check_config_for_warnings_errors"
 
         assemble:
                 recipe:

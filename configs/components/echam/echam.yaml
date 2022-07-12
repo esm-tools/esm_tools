@@ -239,8 +239,6 @@ choose_version:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -260,8 +258,6 @@ choose_version:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -302,8 +298,20 @@ choose_concurrent_radiation_code:
                                         nprocbr: "${nprocbr}"
                                 radctl:
                                         lrad_async: "${lrad_async}"
+                add_streams:
+                    - rad
         "*":
                 from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
+
+
+# If general.with_wiso exists, take it from that section
+choose_general.with_wiso:
+        True:
+                with_wiso: True
+        False:
+                with_wiso: False
+        "*":
+                from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 
 choose_scenario:
@@ -506,8 +514,6 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
-                                        - sf_wiso
-                                        - rad
 
                                 # The following lines take care of the renaming of the
                                 # ozon files, and their copying

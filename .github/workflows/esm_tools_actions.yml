@@ -33,6 +33,7 @@ jobs:
       run: |
         pip install pytest
         pytest -v .
+        pytest -v --doctest-modules .
 
     - name: run esm_master first time
       run: |

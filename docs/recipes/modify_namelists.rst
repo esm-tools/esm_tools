@@ -122,7 +122,7 @@ included in one ``namelist_changes`` block, but you can only have one
 Unusual Namelists
 ~~~~~~~~~~~~~~~~~
 
-Somethings, you have strange namelists of the form:
+Some times, you have strange namelists of the form:
 
 .. code-block:: fortran
 

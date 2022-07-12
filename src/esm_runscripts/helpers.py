@@ -1,9 +1,11 @@
 import sys
 from datetime import datetime
 
+import colorama
 import esm_parser
 import esm_plugin_manager
 import esm_tools
+import git
 
 
 def vprint(message, config):
@@ -295,3 +297,131 @@ class SmartSink:
         """
         self.path = path
         self.write_log(self.log_record, "w")
+
+
+################################################################################
+# Git Checks of esm-tools
+#
+# NOTE(PG): These functions would likely be better as a separate file
+
+
+def is_git_repo(path):
+    """
+    Determines whether or not a directory is a git repository.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The location to check
+
+    Returns
+    bool :
+        True or False, depending on if the location is a git directory
+    """
+    try:
+        git.Repo(path).git_dir
+        return True
+    except git.exc.InvalidGitRepositoryError:
+        return False
+
+
+class GitDirtyError(git.exc.GitError):
+    """Thrown if the git repository is dirty"""
+
+
+def get_git_hash(path, allow_dirty=True):
+    """
+    Gets the commit has of a git directory stored at ``path``
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        Path to determine the git hash for
+    allow_dirty : bool
+        Complain or not complain about a dirty git repo.
+
+    Returns
+    -------
+    githash : str
+        The commit has the repository is currently on
+
+    Raises
+    ------
+    GitDirtyError :
+       Raised if the repo is "dirty"; thus meaning that the hash is not meaningful
+    """
+    repo = git.Repo(path)
+    if not allow_dirty and repo.is_dirty():
+        raise GitDirtyError(
+            f"Your repo at {path} is dirty, thus the git hash is not meaningful!"
+        )
+    return repo.git.rev_parse(repo.head, short=True)
+
+
+def get_git_branch(path):
+    """Gets the name of the current git branch for repo at path
+
+    Parameters
+    ----------
+    path : str
+        The path of the repository to examine
+
+    Returns
+    -------
+    str :
+        The branch name
+    """
+    repo = git.Repo(path)
+    return repo.head.reference.name
+
+
+def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore.RED}):
+    """
+    Gets the differences
+
+    Parameters
+    ----------
+    path : str
+        The git repository to check
+    add_colors : dict
+        A dictionary of ``colorama.Fore`` properties for added lines, stored
+        under the key ``'+'`` and removed lines, stored under the key ``'-'``.
+
+    Returns
+    -------
+    list :
+        The colorized list of strings.
+    """
+    repo = git.Repo(path)
+    diffs = repo.git.diff(repo.commit()).split("\n")
+    if add_colors:
+        for index, diff in enumerate(diffs):
+            if diff.startswith("+"):
+                diff = f'{add_colors["+"]}{diff}{colorama.Style.RESET_ALL}'
+            elif diff.startswith("-"):
+                diff = f'{add_colors["-"]}{diff}{colorama.Style.RESET_ALL}'
+            diffs[index] = diff
+    # In case no diffs are detected, we still want to return an empty
+    # list.
+    if not diffs:
+        diffs = []
+    return diffs
+
+
+def get_all_git_info(path):
+    """Gets all information needed for the vcs dump file
+
+    Returns
+    -------
+    dict :
+        A dictionary with the following information: git hash, branch name, differences, .....
+    """
+    git_info = {
+        "path": path,
+        "hash": get_git_hash(path),
+        "branch_name": get_git_branch(path),
+        # NOTE(PG): Dumping to YAML is not friendly with colors, it seems...
+        "diffs": get_git_diffs(path, add_colors=False),
+    }
+    return git_info
+

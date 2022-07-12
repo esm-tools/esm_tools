@@ -30,10 +30,10 @@ choose_use_hyperthreading:
                 choose_heterogeneous_parallelization:
                         False:
                                 hyperthreading_flag: "--ntasks-per-core=1"
-                                mt_launcher_flag: "--hint=nomultithread"
+                                mt_launcher_flag: "--hint=nomultithread "
                         True:
                                 hyperthreading_flag: ""
-                                mt_launcher_flag: "--hint=nomultithread"
+                                mt_launcher_flag: "--hint=nomultithread "
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"

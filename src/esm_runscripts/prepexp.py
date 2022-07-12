@@ -373,9 +373,9 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     print(oldscript)
                     shutil.copy2(oldscript, scriptsdir)
                     print(f"{scriptsdir + '/' + tfile} updated!")
-                elif not update_choice:
+                else:
                     print("Submission stopped")
-                    sys.exit(0)
+                    sys.exit(1)
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):

@@ -106,6 +106,7 @@ choose_compiler_mpi:
         - "load Python/3.9.6"
         - "load imkl/2021.4.0"
         - "load Perl/5.34.0"
+         - "load git"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -127,6 +128,7 @@ choose_compiler_mpi:
         - "load Python/3.9.6"
         - "load imkl/2021.4.0"
         - "load Perl/5.34.0"
+         - "load git"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -149,6 +151,7 @@ choose_compiler_mpi:
         - "load imkl/2020.2.254"
         - "load Perl/5.32.0"
         - "load UCX/1.10.1"
+         - "load git"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -168,6 +171,7 @@ choose_compiler_mpi:
         - "load Python/3.8.5"
         - "load imkl/2020.2.254"
         - "load Perl/5.32.0"
+         - "load git"
       add_export_vars:
         FC: mpiifort
         F77: mpiifort
@@ -193,6 +197,7 @@ choose_compiler_mpi:
         - "unload netCDF-Fortran"
         - "unload netCDF"
         - "unload grib_api"
+         - "load git"
       add_export_vars:
         FC: mpifort
         F77: mpifort
@@ -211,6 +216,7 @@ choose_compiler_mpi:
          - "load CMake"
          - "load Python/3.6.8"
          - "load imkl/2019.3.199"
+         - "load git"
       add_export_vars:
          FC: mpiifort
          F77: mpiifort
@@ -233,6 +239,7 @@ choose_compiler_mpi:
          - "unload netCDF-Fortran"
          - "unload netCDF"
          - "unload grib_api"
+         - "load git"
       add_export_vars:
          FC: mpifort
          F77: mpifort
@@ -250,6 +257,7 @@ choose_iolibraries:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
          - "load netCDF netCDF-Fortran"
+         - "load git"
 
     # AWI LIBS
     awi_libs:

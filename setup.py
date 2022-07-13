@@ -12,7 +12,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click==8.1.3",
+    "Click==8.0.4",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
     "coloredlogs==15.0.1",  # NOTE(PG): Should be removed during cleanup for loguru instead

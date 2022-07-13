@@ -12,34 +12,33 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click>=7.0",
-    "PyGithub",
-    "colorama",
-    "coloredlogs",
-    "emoji",
-    "f90nml",
-    "gfw-creator",
-    "gitpython",
-    "loguru",
-    "numpy",
-    "packaging",
-    "pandas>=1.0",
-    "psutil",
-    "pyyaml",
-    "pyyaml>=5.1",
-    "questionary",
-    "semver",
-    "six",
-    "sqlalchemy",
-    "tabulate",
-    "tqdm",
-    "typing_extensions>=3.10.0.0",
-    "xdgenvpy",
+    "Click==8.1.3",
+    "PyGithub==1.55",
+    "colorama==0.4.5",
+    "coloredlogs==15.0.1",  # NOTE(PG): Should be removed during cleanup for loguru instead
+    "emoji==1.7.0",
+    "f90nml==1.4.2",
+    "gfw-creator==0.2.2",
+    "gitpython==3.1.27",
+    "loguru==0.6.0",
+    "numpy==1.23.1",
+    "packaging==21.3",
+    "pandas==1.0",
+    "psutil==5.9.1",
+    "pyyaml==5.1",
+    "questionary==1.10.1",
+    "semver==2.13.0",
+    "six==1.16.0",  # NOTE(PG): Should be removed during cleanup
+    "sqlalchemy==1.4.39",
+    "tabulate==0.8.10",
+    "tqdm==4.64.0",
+    "typing_extensions==4.3.0",
+    "xdgenvpy==2.3.5",
 ]
 
 setup_requirements = []
 
-test_requirements = ["pyfakefs"]
+test_requirements = ["pyfakefs==4.6.0",]
 
 setup(
     author="Dirk Barbi",

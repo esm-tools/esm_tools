@@ -19,7 +19,7 @@ requirements = [
     "emoji==1.7.0",
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.27",
+    "gitpython==3.1.20",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
     "numpy==1.23.1",
     "packaging==21.3",

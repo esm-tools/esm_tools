@@ -697,7 +697,13 @@ def add_vcs_info(config):
     vcs_versions = {}
     all_models = config.get("general", {}).get("models", [])
     for model in all_models:
-        model_dir = config[model]["model_dir"]
+        logger.debug(f"Locating {model}")
+        try:
+            model_dir = config[model]["model_dir"]
+        except KeyError:
+            # XIOS does not seem to define model_dir? Jan? What?
+            vcs_versions[model] = f"Unable to locate model_dir for {model}."
+            continue
         if helpers.is_git_repo(model_dir):
             vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:

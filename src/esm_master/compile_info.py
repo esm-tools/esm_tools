@@ -18,6 +18,8 @@ import esm_parser
 from .software_package import *
 import colorama
 
+from loguru import logger
+
 ######################################################################################
 ############################## Combine all YAMLS #####################################
 ######################################################################################
@@ -28,8 +30,7 @@ def save_pickle(obj, path):
         with open(path, "wb") as f:
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
     except OSError:
-        # Should be a logger.debug at some point
-        print(f"{path} was not writable, pickle file is not dumped")
+        logger.warning(f"{path} was not writable, pickle file is not dumped")
 
 
 def load_pickle(path):

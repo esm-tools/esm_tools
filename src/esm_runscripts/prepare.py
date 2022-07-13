@@ -713,7 +713,7 @@ def add_vcs_info(config):
     # this may at least be a good start:
     esm_tools_repo = config.get("general", {}).get("esm_function_dir")
     if esm_tools_repo is not None:
-        vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
+        vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
         esm_parser.user_error("esm_tools doesn't know where it's own install location is. Something is very seriously wrong.")

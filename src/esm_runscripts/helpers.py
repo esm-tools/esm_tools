@@ -396,8 +396,8 @@ def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore
 
     Returns
     -------
-    list :
-        The colorized list of strings.
+    str :
+        The (maybe) colorized difference as a multi-line string.
     """
     repo = git.Repo(path)
     diffs = repo.git.diff(repo.commit()).split("\n")
@@ -411,8 +411,8 @@ def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore
     # In case no diffs are detected, we still want to return an empty
     # list.
     if not diffs:
-        diffs = []
-    return diffs
+        diffs = "\n".join([])
+    return "\n".join(diffs)
 
 
 def get_all_git_info(path):

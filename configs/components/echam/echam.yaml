@@ -805,6 +805,17 @@ check_error:
                 #frequency: 90
 
 
+# Parallel IO Stuff from @seb-wahl
+nprocio: 0
+choose_nprocio:
+   0:
+       nprocio_option: False # An option cannot be empty, so a variable is needed here
+   "*":
+       add_namelist_changes:
+          namelist.echam:
+             parctl:
+                iomode: 2
+                nprocio: ${nprocio}
 
 
 further_reading:

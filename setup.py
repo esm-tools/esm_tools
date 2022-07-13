@@ -32,7 +32,7 @@ requirements = [
     "sqlalchemy==1.4.39",
     "tabulate==0.8.10",
     "tqdm==4.64.0",
-    "typing_extensions==4.3.0",
+    "typing_extensions==4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
 ]
 

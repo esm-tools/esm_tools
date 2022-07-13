@@ -1,11 +1,12 @@
 import os
 import shutil
 import subprocess
+import sys
 import copy
 import pathlib
 
-import esm_rcfile
 import six
+import questionary
 import yaml
 from esm_calendar import Date
 from colorama import Fore, Back, Style, init
@@ -61,7 +62,7 @@ def copy_tools_to_thisrun(config):
     # Paths inside the experiment directory where esm_tools and namelists
     # are copied to. Those are not functional but a reference to what was
     # the original state when the experiment was firstly started
-    tools_dir = scriptsdir + "/esm_tools/functions"
+    tools_dir = scriptsdir + "/esm_tools/configs"
     namelists_dir = scriptsdir + "/esm_tools/namelists"
 
     if config["general"]["verbose"]:
@@ -80,13 +81,10 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_rcfile.EsmToolsDir("FUNCTION_PATH"))
+        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print(
-            "Copying standard namelists from: ",
-            esm_rcfile.EsmToolsDir("NAMELIST_PATH"),
-        )
+        print("Copying standard namelists from: ",esm_tools.get_namelist_filepath())
         esm_tools.copy_namelist_folder(namelists_dir)
 
     # check for recursive creation of the file tree. This prevents the risk of
@@ -172,9 +170,12 @@ def copy_tools_to_thisrun(config):
         new_command = " ".join(new_command_list)
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
-        # prevent continuous addition of --no-motd
-        if not "--no-motd" in restart_command:
-            restart_command += " --no-motd "
+        # Add non-interaction flags
+        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        for ni_flag in non_interaction_flags:
+            # prevent continuous addition of ``ni_flag``
+            if ni_flag not in restart_command:
+                restart_command += f" {ni_flag} "
 
         if config["general"]["verbose"]:
             print(restart_command)
@@ -358,34 +359,23 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
-                    + "Note: You can choose to use -U flag in the esm_runscripts call "
-                    + "to automatically update the runscript (WARNING: This "
-                    + f"will overwrite your {file_type} in the experiment folder!)\n",
+                    + "Note: You can choose to use ``-U`` flag in the "
+                    + "``esm_runscripts`` call to automatically update the runscript "
+                    + f"(WARNING: This will overwrite your {file_type} in the "
+                    + "experiment folder!)\n",
                 )
-                correct_input = False
-                while not correct_input:
-                    update_choice = input(
-                        f"Do you want that {scriptsdir + '/' + tfile} is "
-                        + "updated with the above changes? (y/n): "
-                    )
-                    if update_choice == "y":
-                        correct_input = True
-                        oldscript = fromdir + "/" + tfile
-                        print(oldscript)
-                        shutil.copy2(oldscript, scriptsdir)
-                        print(f"{scriptsdir + '/' + tfile} updated!")
-                    elif update_choice == "n":
-                        correct_input = True
-                        esm_parser.user_error(
-                            f"Original {file_type} different from target",
-                            differences
-                            + "\n"
-                            + "You can choose to -U flag in the esm_runscripts call "
-                            + "to update the runscript without asking (WARNING: This "
-                            + f"will overwrite your {file_type} in the experiment folder!)\n\n",
-                        )
-                    else:
-                        print(f"'{update_choice}' is not a valid answer.")
+                update_choice = questionary.confirm(
+                    f"Do you want that {scriptsdir}/{tfile} is "
+                    + "updated with the above changes?"
+                ).ask()
+                if update_choice:
+                    oldscript = fromdir + "/" + tfile
+                    print(oldscript)
+                    shutil.copy2(oldscript, scriptsdir)
+                    print(f"{scriptsdir + '/' + tfile} updated!")
+                else:
+                    print("Submission stopped")
+                    sys.exit(1)
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):

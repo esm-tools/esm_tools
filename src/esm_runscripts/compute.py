@@ -1,10 +1,12 @@
 import os
 import shutil
 import subprocess
+import sys
 import copy
 import pathlib
 
 import f90nml
+import questionary
 import six
 import yaml
 from colorama import Fore, Back, Style, init
@@ -12,7 +14,6 @@ from colorama import Fore, Back, Style, init
 import esm_tools
 import esm_calendar
 import esm_parser
-import esm_rcfile
 import esm_runscripts
 
 from .batch_system import batch_system
@@ -345,11 +346,6 @@ def _write_finalized_config(config):
 
     # format for the other ESM data structures
     EsmConfigDumper.add_representer(
-        esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str,
-    )
-
-    EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
@@ -462,34 +458,23 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
-                    + "Note: You can choose to use -U flag in the esm_runscripts call "
-                    + "to automatically update the runscript (WARNING: This "
-                    + f"will overwrite your {file_type} in the experiment folder!)\n",
+                    + "Note: You can choose to use ``-U`` flag in the "
+                    + "``esm_runscripts`` call to automatically update the runscript "
+                    + f"(WARNING: This will overwrite your {file_type} in the "
+                    + "experiment folder!)\n",
                 )
-                correct_input = False
-                while not correct_input:
-                    update_choice = input(
-                        f"Do you want that {scriptsdir + '/' + tfile} is "
-                        + "updated with the above changes? (y/n): "
-                    )
-                    if update_choice == "y":
-                        correct_input = True
-                        oldscript = fromdir + "/" + tfile
-                        print(oldscript)
-                        shutil.copy2(oldscript, scriptsdir)
-                        print(f"{scriptsdir + '/' + tfile} updated!")
-                    elif update_choice == "n":
-                        correct_input = True
-                        esm_parser.user_error(
-                            f"Original {file_type} different from target",
-                            differences
-                            + "\n"
-                            + "You can choose to -U flag in the esm_runscripts call "
-                            + "to update the runscript without asking (WARNING: This "
-                            + f"will overwrite your {file_type} in the experiment folder!)\n\n",
-                        )
-                    else:
-                        print(f"'{update_choice}' is not a valid answer.")
+                update_choice = questionary.confirm(
+                    f"Do you want that {scriptsdir}/{tfile} is "
+                    + "updated with the above changes?"
+                ).ask()
+                if update_choice:
+                    oldscript = fromdir + "/" + tfile
+                    print(oldscript)
+                    shutil.copy2(oldscript, scriptsdir)
+                    print(f"{scriptsdir + '/' + tfile} updated!")
+                else:
+                    print("Submission stopped")
+                    sys.exit(1)
 
 
 def copy_tools_to_thisrun(config):
@@ -533,12 +518,12 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_rcfile.EsmToolsDir("FUNCTION_PATH"))
+        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         print(
             "Copying standard namelists from: ",
-            esm_rcfile.EsmToolsDir("NAMELIST_PATH"),
+            esm_tools.get_namelist_filepath(),
         )
         esm_tools.copy_namelist_folder(namelists_dir)
 
@@ -613,9 +598,12 @@ def copy_tools_to_thisrun(config):
         new_command = " ".join(new_command_list)
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
-        # prevent continuous addition of --no-motd
-        if not "--no-motd" in restart_command:
-            restart_command += " --no-motd "
+        # Add non-interaction flags
+        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        for ni_flag in non_interaction_flags:
+            # prevent continuous addition of ``ni_flag``
+            if not ni_flag in restart_command:
+                restart_command += f" {ni_flag} "
 
         if config["general"]["verbose"]:
             print(restart_command)

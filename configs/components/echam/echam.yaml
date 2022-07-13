@@ -172,20 +172,24 @@ nprocb: 24
 lrad_async: false
 lrestart_from_old: false
 
+choose_computer.partitions.compute.cores_per_node:
+        24:
+                nproca: 24
+                nprocb: 24
+
+        36:
+                nproca: 24
+                nprocb: 24
+        128:
+                nproca: 16
+                nprocb: 16
+
 choose_resolution:
         T63:
                 levels: "L47"
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.partitions.compute.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 24
-
-                        36:
-                                nproca: 24
-                                nprocb: 24
 
         T31:
                 levels: "L19"
@@ -235,8 +239,6 @@ choose_version:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -256,8 +258,6 @@ choose_version:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -275,6 +275,7 @@ choose_version:
 #               npromar: 8
 #               lrad_async: true
 #               lrestart_from_old: false
+
 
 choose_concurrent_radiation_code:
         True:
@@ -297,8 +298,20 @@ choose_concurrent_radiation_code:
                                         nprocbr: "${nprocbr}"
                                 radctl:
                                         lrad_async: "${lrad_async}"
+                add_streams:
+                    - rad
         "*":
                 from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
+
+
+# If general.with_wiso exists, take it from that section
+choose_general.with_wiso:
+        True:
+                with_wiso: True
+        False:
+                with_wiso: False
+        "*":
+                from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 
 choose_scenario:
@@ -501,8 +514,6 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
-                                        - sf_wiso
-                                        - rad
 
                                 # The following lines take care of the renaming of the
                                 # ozon files, and their copying

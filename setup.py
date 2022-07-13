@@ -26,7 +26,7 @@ requirements = [
     "pandas==1.0",
     "psutil==5.9.1",
     "pyyaml==5.1",
-    "questionary==1.10.1",
+    "questionary==1.10.0",
     "semver==2.13.0",
     "six==1.16.0",  # NOTE(PG): Should be removed during cleanup
     "sqlalchemy==1.4.39",

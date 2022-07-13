@@ -151,6 +151,9 @@ choose_resolution:
                 nx: 912469
         DART:
                 nx: 3160340
+        HR:
+                nx: 1306775
+
 mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:

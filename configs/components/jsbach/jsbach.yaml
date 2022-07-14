@@ -42,7 +42,7 @@ choose_version:
         "3.20p1":
                 dataset: r0010
                 forcing_in_work:
-                       "LU" : "landuseHarvest.@YEAR@.nc"
+                        LU : "landuseHarvest.@YEAR@.nc"
 
                 choose_dynamic_vegetations:
                         true:
@@ -199,32 +199,7 @@ choose_version:
                                         #lightning: lightning
                                         #popdens: popdens
 
-                        # deniz: there are missing in the release
-                        RCP26:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP26
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-
-                        RCP45:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP45
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-
-                        RCP85:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP85
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-
-                        # SSP scenarios share common paths. They are grouped under cmip6 and 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
                         ssp126:
                                 scenario_type: cmip6
@@ -372,29 +347,6 @@ choose_version:
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
-
-                        # RCP scenarios are missing in release
-                        RCP26:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP26
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP45:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP45
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
-                        RCP85:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_RCP85
-                                        LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
 
 # common options for scenarios, eg. CMIP6
 choose_scenario_type:

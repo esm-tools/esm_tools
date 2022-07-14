@@ -4,18 +4,6 @@
 
 model: fesom
 type: ocean
-git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
-metadata:
-        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
-        Description:
-                Multiresolution sea ice-ocean model that solves the equations
-                of motion on unestructured meshes
-        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
-        Publications:
-            - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation. doi:10.1016/s1463-5003(02)00063-x" 
-            - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. doi:10.5194/gmd-7-663-2014"
-        License:
-            www.fesom.de
 
 # default branch and version
 branch: master
@@ -64,9 +52,22 @@ choose_version:
     '1.4-recom-mocsy-slp':
         branch: fesom-recom-mocsy-slp
 
+git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;   make install
+
+metadata:
+        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
+        Description:
+                Multiresolution sea ice-ocean model that solves the equations
+                of motion on unestructured meshes
+        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
+        Publications:
+                - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation <https://doi.org/10.1016/s1463-5003(02)00063-x>"
+                - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. <https://doi.org/10.5194/gmd-7-663-2014>"
+        License:
+                www.fesom.de
 
 restart_rate: "12"
 restart_unit: "m"

@@ -87,7 +87,7 @@ choose_version:
                                         lightning: lightning
                                         popdens: popdens
 
-                        # SSP scenarios share common paths. They are grouped under cmip6 and 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
                         ssp585:
                                 scenario_type: cmip6
@@ -218,56 +218,6 @@ choose_version:
 
                         cmip6hist:
                                 scenario_type: cmip6
-
-                        # TODO: deniz: fix these
-                        # Chris: Ndepo: if you run with dynveg=false I think it doesnt matter which Ndepo files are used
-                        SSP126:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_ssp126
-                                        LU_trans: LU_trans_ssp126
-                                        cover_fract: cover_fract_ssp126
-                                        Ndepo: Ndepo_ssp126
-                                        a_nd_file: a_nd_file
-                                        lightning: lightning
-                                        popdens: popdens_ssp1
-
-                        SSP245:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_ssp245
-                                        LU_trans: LU_trans_ssp245
-                                        cover_fract: cover_fract_ssp245
-                                        Ndepo: Ndepo_ssp245
-                                        a_nd_file: a_nd_file
-                                        lightning: lightning
-                                        popdens: popdens_ssp2
-
-                        SSP534OS:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_ssp534os
-                                        LU_trans: LU_trans_ssp534os
-                                        cover_fract: cover_fract_ssp534os
-                                        Ndepo: Ndepo_ssp534os
-                                        a_nd_file: a_nd_file
-                                        lightning: lightning
-                                        popdens: popdens_ssp5
-
-                        SSP585:
-                                add_input_files:
-                                        jsbach: jsbach_1850
-                                forcing_files:
-                                        LU: LU_ssp585
-                                        LU_trans: LU_trans_ssp585
-                                        cover_fract: cover_fract_ssp585
-                                        Ndepo: Ndepo_ssp585
-                                        a_nd_file: a_nd_file
-                                        lightning: lightning
-                                        popdens: popdens_ssp5
 
         "3.10":
                 dataset: r0007

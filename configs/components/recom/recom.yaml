@@ -294,18 +294,6 @@ namelist_changes:
                         CO2_for_spinup: "${CO2_for_spinup}"
 
 
-choose_lresume:
-        true:
-                add_namelist_changes:
-                        namelist.recom:
-                                pavariables:
-                                        recom_restart: true
-        false:
-                add_namelist_changes:
-                        namelist.recom:
-                                pavariables:
-                                        recom_restart: false
-
 config_files:
         recom:  recom
 

@@ -273,7 +273,6 @@ choose_scenario:
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
 
-#namelist_dir: "${esm_namelist_dir}/${model}"
 namelist_dir: "${general.model_dir}/recom/"
 
 namelists:

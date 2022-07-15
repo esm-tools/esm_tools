@@ -152,7 +152,6 @@ recom:
             version: "2.0-recom-awicm"
 
             # NOTE: look at README.md for description of the namelists
-            namelist_dir: "${esm_namelist_dir}/${model}/awicm_recom/"
             scenario: "${general.scenario}"
 
             # setup-specific namelist.recom

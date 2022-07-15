@@ -6,15 +6,14 @@
 # - initial run
 # =============================================================================
 general:
-    setup_name: 'awicm_recom'
+    setup_name: 'awicm'
     post_processing: 0
-    machine_name: "mistral"
     # account: <your account>
     account: ab0995
     compute_time: "00:45:00"
     use_database: false
     use_venv: false
-    version: "CMIP6"
+    version: "1.0-recom"
     scenario: "HIST"
     # model_dir: <your model directory>
     model_dir: "/home/a/a271096/model_codes/LEVANTE_OPTIMIZATION_FORKS/scratch/awicm-1.0-recom"
@@ -33,17 +32,12 @@ general:
     nyear: 0    # Number of years per run
     nmonth: 1
 
-# computer:
-    # partition: "compute,compute2"
-    # cores_per_node: 72 # multiple of 24 and 36
-
 echam:
     version: "6.3.04p1"
     resolution: "T63"
     nproca: 24
     nprocb: 24
     levels: "L47"
-    scenario: "${general.scenario}"
     post_processing: False
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/echam/"
@@ -81,6 +75,7 @@ fesom:
     # ini_parent_dir: "${general.ini_parent_dir}/fesom/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
     # ini_parent_date: "${general.ini_parent_date}" 
+    nproc: 384
     restart_rate: 1
     restart_unit: "m"
     restart_first: 1
@@ -94,7 +89,6 @@ fesom:
                 Kh0: 800.0
 
 recom:
-    scenario: "${general.scenario}"
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/recom/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"

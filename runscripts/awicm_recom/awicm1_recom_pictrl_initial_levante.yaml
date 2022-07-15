@@ -6,11 +6,10 @@
 # - initial run
 # =============================================================================
 general:
-    setup_name: "awicm_recom"
-    version: "CMIP6"
+    setup_name: "awicm"
+    version: "1.0-recom"
     scenario: "PI-CTRL"
     post_processing: 0
-    machine_name: "levante"
     # account: <your account>
     account: ab0995
     compute_time: "00:30:00"
@@ -36,17 +35,12 @@ general:
     # ini_parent_date: "2685-12-31"
     first_initial_year: "${general.initial_date!syear}" 
 
-# computer:
-    # partition: "compute,compute2"
-    # cores_per_node: 72 # multiple of 24 and 36
-
 echam:
     version: "6.3.04p1"
     resolution: "T63"
     nproca: 24
     nprocb: 24
     levels: "L47"
-    scenario: "PI-CTRL"
     post_processing: False
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/echam/"
@@ -80,6 +74,7 @@ fesom:
     # ini_parent_dir: "${general.ini_parent_dir}/fesom/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
     # ini_parent_date: "${general.ini_parent_date}"   
+    nproc: 384
     restart_rate: 1
     restart_unit: "m"
     restart_first: 1

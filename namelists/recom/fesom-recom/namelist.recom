@@ -13,7 +13,7 @@ VDet_zoo2             = 200.d0       ! Sinking velocity, constant through the wa
 VPhy                  = 0.d0        !!! If the number of sinking velocities are different from 3, code needs to be changed !!!
 VDia                  = 0.d0 
 allow_var_sinking     = .true.   
-biostep               = 1           ! Number of times biology should be stepped forward for each time step       
+biostep               = 1           ! Number of times biology should be stepped forward for each time step		 
 REcoM_Geider_limiter  = .false.     ! Decides what routine should be used to calculate limiters in sms
 REcoM_Grazing_Variable_Preference = .false. ! Decides if grazing should have preference for phyN or DiaN 
 REcoM_Second_Zoo      = .true.     ! Decides second zooplankton or no 
@@ -79,7 +79,7 @@ a_chl                 = 0.03d0      ! [1/m * 1/(mg Chl)] Chlorophyll specific at
 /
 
 &paphotosynthesis
-alfa                  = 0.14d0      ! [(mmol C*m2)/(mg Chl*W*day)] 
+alfa                  = 0.14d0	    ! [(mmol C*m2)/(mg Chl*W*day)] 
 alfa_d                = 0.19d0      ! An initial slope of the P-I curve
 parFrac               = 0.43d0
 /
@@ -184,7 +184,7 @@ deg_Chl_d             = 0.15d0
 &padetritus_N
 grazEff               = 0.4d0       ! [] Grazing efficiency (fraction of grazing flux into zooplankton pool) 
 grazEff2              = 0.8d0         ! [] Grazing efficiency (fraction of grazing flux into second zooplankton pool)
-reminN                = 0.165d0     ! [1/day] Temperature dependent remineralisation rate of detritus   
+reminN                = 0.165d0     ! [1/day] Temperature dependent remineralisation rate of detritus	
 /
 
 &padetritus_C
@@ -237,4 +237,5 @@ CO2_for_spinup        = 278.d0                      ! [uatm] Atmospheric partial
 &paalkalinity_restoring
 restore_alk_surf      = 3.2e-07 !10.d0/31536000.d0
 /
+
 

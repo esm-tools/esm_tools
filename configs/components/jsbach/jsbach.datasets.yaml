@@ -38,7 +38,7 @@ forcing_sources:
 
 choose_dataset:
         r0007:
-                "hist_fold": "hist"
+                hist_fold: "hist"
                 add_forcing_sources:
                         "cover_fract_HIST":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_1850.nc":
@@ -60,38 +60,32 @@ choose_dataset:
                 add_forcing_sources:
                         "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
                         "Ndepo_1950": "${input_dir}/${echam.resolution}/ndepo/Ndepo.1950.nc"
-                        "Ndepo_ssp126":
-                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126.nc": # nyear x nmonth
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
+
+                        "Ndepo_hist_scenario":
+                            # TODO: pool on Levante seems to be broken currently.
+                            # There are no yearly Ndepo files. ${input_dir_awi}
+                            # contains the yearly files
+                            choose_use_input_dir_awi:
+                                False:
+                                    "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
+                                        to: 1850
+                                    "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                    # TODO: these files don't exist on Levante
+                                    "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
+                                        from: 2015
+                            # TODO: test this with a check run
+                                True:
+                                    # These files are 12-monthly; see README.md in Ndepo/ directory
+                                    # NOTE: ssp370 might be missing in this directory
+                                    "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_@YEAR@.nc": 
                                         from: 1850
                                         to: 2099
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_2099.nc": # 12 months
+                                    "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_2099.nc":
                                         from: 2100
                                         to: 2101
-                        "Ndepo_ssp245":
-                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245.nc": # nyear x nmonth
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
-                                        from: 1850
-                                        to: 2099
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp245/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp245_2099.nc": # 12 months
-                                        from: 2100
-                                        to: 2101
-                        "Ndepo_ssp534os":
-                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os.nc": # nyear x nmonth
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
-                                        from: 1850
-                                        to: 2099
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp534os/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp534os_2099.nc": # 12 months
-                                        from: 2100
-                                        to: 2101
-                        "Ndepo_ssp585":
-                                #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585.nc": # nyear x nmonth
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir
-                                        from: 1850
-                                        to: 2099
-                                "${input_dir_awi}/${echam.resolution}/Ndepo/ssp585/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp585_2099.nc": # 12 months
-                                        from: 2100
-                                        to: 2101
+
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
@@ -160,13 +154,4 @@ choose_dataset:
                                         from: 1851
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                                        from: 2015
-
-                        "Ndepo_hist_scenario":
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
-                                        to: 1850
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
-                                        from: 1851
-                                        to: 2014
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
                                         from: 2015

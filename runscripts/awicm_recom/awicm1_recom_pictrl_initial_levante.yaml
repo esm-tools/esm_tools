@@ -93,8 +93,6 @@ recom:
             pavariables:
                 # for the default case only 2 diagnostic 3d tracers will be used
                 diags3d_num: 2
-                # path of the Recom forcing files 
-                REcoMDataPath: "/work/ba1103/from_Mistral/ba1103/a270094/MarESys/forcing/CORE2mesh/"
 
 oasis3mct:
     time_step: 10800

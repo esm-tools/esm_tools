@@ -198,6 +198,8 @@ choose_computer.name:
                                 - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
                                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+        levante:
+                data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
 
 # default recom output, common to all versions
 # 1. variable names are case sensitive

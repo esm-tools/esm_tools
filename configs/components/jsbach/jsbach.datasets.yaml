@@ -124,7 +124,7 @@ choose_dataset:
                         "LU_trans_hist_scenario": 
                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": 
                                         to: 2014
-                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                                          from: 2015
                         "cover_fract_ssp126":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":

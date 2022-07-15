@@ -54,19 +54,6 @@ forcing_sources:
                 "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
                         from: 1865
                         to: 2000
-
-        # CMIP5 aero
-        aerofin_cmip5_scenario:
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
-                    to: 1864
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                    from: 1865
-                    to: 2000
-            # eg. rcp26/45/85
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_{scenario_lowercase}_@YEAR@.nc":
-                    from: 2001
-                    to: 2014
-
         # volcanic
         # TODO: important: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
         "histvolcir":
@@ -102,11 +89,6 @@ forcing_sources:
                         to: 2014
                 "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
-        greenhouse_cmip5_scenario:
-                "${greenhouse_dir}/greenhouse_historical.nc":
-                        to: 2014
-                "${greenhouse_dir}/greenhouse_{scenario_lowercase}.nc":
-                        from: 2015
 
         # TODO: greenhouse files differ
         # greenhouse
@@ -137,16 +119,6 @@ forcing_sources:
                         to: 2014
                 # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
-                        from: 2015
-                        
-        ozone_cmip5_scenario:
-                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_1850.nc":
-                        to: 1850
-                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_@YEAR@.nc":
-                        from: 1851
-                        to: 2008
-                # scenario: RCP26/45/85 
-                "${forcing_dir}/ozone/${resolution}_ozone_CMIP5_${scenario}_@YEAR@.nc":
                         from: 2015
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"

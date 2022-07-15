@@ -29,24 +29,32 @@ choose_version:
     '1.4-recom':
         branch: fesom_recom_1.4_master
         # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
-        add_yearly_outputs_for_AWI_FESOM_YAML:
+        yearly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.yearly_outputs}"
             - "${recom.yearly_outputs}"
-        add_monthly_outputs_for_AWI_FESOM_YAML:
+        monthly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.monthly_outputs}"
             - "${recom.monthly_outputs}"
-        add_daily_outputs_for_AWI_FESOM_YAML:
+        daily_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.daily_outputs}"
             - "${recom.daily_outputs}"
-        add_12_step_outputs_for_AWI_FESOM_YAML:
+        12_step_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.12_step_outputs}"
             - "${recom.12_step_outputs}"
     '1.4-recom-awicm':
         branch: fesom_recom_1.4_master
         # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
-        add_yearly_outputs_for_AWI_FESOM_YAML:
+        yearly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.yearly_outputs}"
             - "${recom.yearly_outputs}"
-        add_monthly_outputs_for_AWI_FESOM_YAML:
+        monthly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.monthly_outputs}"
             - "${recom.monthly_outputs}"
-        add_daily_outputs_for_AWI_FESOM_YAML:
+        daily_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.daily_outputs}"
             - "${recom.daily_outputs}"
-        add_12_step_outputs_for_AWI_FESOM_YAML:
+        12_step_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.12_step_outputs}"
             - "${recom.12_step_outputs}"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git

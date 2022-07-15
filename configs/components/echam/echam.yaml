@@ -787,8 +787,6 @@ coupling_fields:
                 grid: atmo
         hydr_atm:
                 grid: atmo
-
-        # TODO: absent in release
         co2_atmo:
                 grid: atmo
         co2c_atm:

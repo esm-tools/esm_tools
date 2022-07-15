@@ -72,20 +72,6 @@ choose_dataset:
                 add_forcing_sources:
                         "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
                         "Ndepo_1950": "${input_dir}/${echam.resolution}/ndepo/Ndepo.1950.nc"
-
-                        "Ndepo_hist_scenario":
-                        # TODO: pool on Levante seems to be broken currently.
-                        # There are no yearly Ndepo files. ${input_dir_awi}
-                        # contains the yearly files
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
-                                        to: 1850
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
-                                        from: 1851
-                                        to: 2014
-                                # TODO: these files don't exist on Levante
-                                "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
-                                        from: 2015
-
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
@@ -154,4 +140,17 @@ choose_dataset:
                                         from: 1851
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                                        from: 2015
+
+                        "Ndepo_hist_scenario":
+                        # TODO: pool on Levante seems to be broken currently.
+                        # There are no yearly Ndepo files. ${input_dir_awi}
+                        # contains the yearly files
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
+                                        to: 1850
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
+                                        from: 1851
+                                        to: 2014
+                                # TODO: these files don't exist on Levante
+                                "${input_dir}/${echam.resolution}/ndepo/Ndepo_${echam.scenario}.@YEAR@.nc":
                                         from: 2015

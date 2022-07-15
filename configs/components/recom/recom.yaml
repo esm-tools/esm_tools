@@ -28,7 +28,8 @@ available_versions:
 choose_version:
     '2.0':
         branch: oxygen
-        # default recom output if fesom runs standalone
+        # additional recom output if fesom runs standalone
+        # (see default output at the bottom)
         # 1. variable names are case sensitive
         # 2. please keep alphabetic order
         add_yearly_outputs:

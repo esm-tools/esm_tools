@@ -281,7 +281,7 @@ config_sources:
 # 2. variables defined/requested in the model but not listed in `*_outputs` will raise an error in the fesom-1.4 output scheduler
 # 3. variable names are case sensitive
 # 4. please keep alphabetic order
-# 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section
+# 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section, or in your runscript
 # 6. if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
 yearly_outputs:
     - flice

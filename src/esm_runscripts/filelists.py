@@ -593,10 +593,7 @@ def replace_year_placeholder(config):
                             # corresponding year
                             for year in all_years:
                                 new_category = file_category + "_year_" + str(year)
-                                # Kinne Aerosol files are handled out of this time loop
-                                if "@YEAR_1850@" in config[model][filetype + "_targets"][file_category]:
-                                    continue
-                                
+
                                 # if the source contains 'from' or 'to' information
                                 # then they have a dict type
                                 if (

@@ -128,10 +128,3 @@ recom:
                                         ini_parent_exp_id: "${general.ini_parent_exp_id}"
                                         ini_restart_dir: "${general.ini_restart_dir}/recom/"
                                         ini_parent_date: "${prev_date}"
-
-        # setup-specific namelist.recom 
-        config_sources:
-                recom: "${namelist_dir}/namelist.recom"
-        add_config_in_work:
-                recom: "namelist.recom"
-

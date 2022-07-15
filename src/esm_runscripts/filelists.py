@@ -314,12 +314,11 @@ def target_subfolders(config):
                 ):  # * only in targets if denotes subfolder
                     # TODO: change with user_error()
                     if not descr in config[model][filetype + "_sources"]:
-                        print(
-                            "no source found for target " + name + " in model " + model,
-                            flush=True,
+                        esm_parser.user_error(
+                            "Filelists",
+                            f"No source found for target ``{name}`` in model "
+                            f"``{model}``\n"
                         )
-                        helpers.print_datetime(config)
-                        sys.exit(-1)
                     if "*" in filename:
                         source_filename = os.path.basename(
                             config[model][filetype + "_sources"][descr]

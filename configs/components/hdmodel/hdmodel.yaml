@@ -16,9 +16,7 @@ license_text: |
 pool_dir: "${computer.pool_directories.pool}/JSBACH/input/${jsbach.dataset}/HD"
 input_dir: "${pool_dir}"
 
-# (deniz) TODO: this will return the string NONE. YAML supports a null type:
-# via null, ~, or !!null. Then the corresponding Python type will be None
-executable: NONE
+executable: null
 
 input_files :
         hdstart: hdstart

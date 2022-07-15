@@ -250,6 +250,8 @@ choose_version:
 
         6.3.05p2-concurrent_radiation:
                 concurrent_radiation_code: true
+                # TODO (deniz): YAML supports null, I think it is better to use
+                # null instead of UNDEFINED, not_applicable, ...
                 repo_tag: not_applicable
                 dataset: r0007
                 add_namelist_changes:
@@ -356,6 +358,9 @@ choose_scenario:
         # old hist settings --> need to discuss with deniz whether this is
         # still needed
         HIST:
+                # NOTE: r0007 (default dataset) has upto 2014 but r0008 has
+                # upto 2024 (used by FOCI)
+                dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
                         # aerocoarse: piaerocoarse

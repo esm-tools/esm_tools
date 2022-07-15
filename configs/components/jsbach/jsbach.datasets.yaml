@@ -59,6 +59,7 @@ choose_dataset:
         r0010:
                 add_forcing_sources:
                         "Ndepo_1850": "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_NCAR_CCMI-1-0_gr_185001-185012-clim.nc" # 12 months
+                        "Ndepo_1950": "${input_dir}/${echam.resolution}/ndepo/Ndepo.1950.nc"
                         "Ndepo_ssp126":
                                 #"${input_dir}/${echam.resolution}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126.nc": # nyear x nmonth
                                 "${input_dir_awi}/${echam.resolution}/Ndepo/ssp126/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-ssp126_@YEAR@.nc": # 12 months; see README.md in Ndepo/ dir

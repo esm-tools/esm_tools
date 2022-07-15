@@ -29,24 +29,24 @@ choose_version:
     '1.4-recom':
         branch: fesom_recom_1.4_master
         # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
-        add_yearly_outputs:
+        add_yearly_outputs_for_AWI_FESOM_YAML:
             - "${recom.yearly_outputs}"
-        add_monthly_outputs:
+        add_monthly_outputs_for_AWI_FESOM_YAML:
             - "${recom.monthly_outputs}"
-        add_daily_outputs:
+        add_daily_outputs_for_AWI_FESOM_YAML:
             - "${recom.daily_outputs}"
-        add_12_step_outputs:
+        add_12_step_outputs_for_AWI_FESOM_YAML:
             - "${recom.12_step_outputs}"
     '1.4-recom-awicm':
         branch: fesom_recom_1.4_master
         # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
-        add_yearly_outputs:
+        add_yearly_outputs_for_AWI_FESOM_YAML:
             - "${recom.yearly_outputs}"
-        add_monthly_outputs:
+        add_monthly_outputs_for_AWI_FESOM_YAML:
             - "${recom.monthly_outputs}"
-        add_daily_outputs:
+        add_daily_outputs_for_AWI_FESOM_YAML:
             - "${recom.daily_outputs}"
-        add_12_step_outputs:
+        add_12_step_outputs_for_AWI_FESOM_YAML:
             - "${recom.12_step_outputs}"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
@@ -389,6 +389,11 @@ outdata_sources:
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
+yearly_outputs_for_AWI_FESOM_YAML: ${yearly_outputs}
+monthly_outputs_for_AWI_FESOM_YAML: ${monthly_outputs}
+daily_outputs_for_AWI_FESOM_YAML: ${daily_outputs}
+12_step_outputs_for_AWI_FESOM_YAML: ${12_step_outputs}
+
 # export output lists to env variable `AWI_FESOM_YAML`
 # - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml
 # - there can be several blocks in `AWI_FESOM_YAML` with the same output frequency
@@ -403,20 +408,20 @@ runtime_environment_changes:
                                         first: ${restart_first}
                                         rate: ${restart_rate}
                                 -
-                                        vars: ${yearly_outputs}
+                                        vars: ${yearly_outputs_for_AWI_FESOM_YAML}
                                         unit: y
                                         first: ${yearly_outputs_start}
                                         rate: 1
                                 -
-                                        vars: ${monthly_outputs}
+                                        vars: ${monthly_outputs_for_AWI_FESOM_YAML}
                                         unit: m
                                         rate: 1
                                 -
-                                        vars: ${daily_outputs}
+                                        vars: ${daily_outputs_for_AWI_FESOM_YAML}
                                         unit: d
                                         rate: 1
                                 -
-                                        vars: ${12_step_outputs}
+                                        vars: ${12_step_outputs_for_AWI_FESOM_YAML}
                                         unit: s
                                         rate: 12
 

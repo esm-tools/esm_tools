@@ -31,79 +31,34 @@ choose_version:
         # default recom output if fesom runs standalone
         # 1. variable names are case sensitive
         # 2. please keep alphabetic order
-        yearly_outputs:
+        add_yearly_outputs:
             - AGGdia3d
             - AGGphy3d
-            - alphaCO2
-            - benC
-            - benCalc
-            - benN
-            - benSi
             - calcdiss
             - calcif3d
-            - denb
             - EXCdia3d
             - EXCphy3d
-            - GNAd
-            - GNAn
             - GNAsdia3d
             - GNAsphy3d
             - GPPdia3d
             - GPPphy3d
             - GRAZdia3d
             - GRAZphy3d
-            - Hp
-            - Kw
-            - NNAd
-            - NNAn
             - NNAsdia3d
             - NNAsphy3d
             - NPPdia3d
             - NPPphy3d
-            - rDIN
-            - rDOC
-            - rDON
-            - rDSi
             - RESdia3d
             - RESphy3d
             - RESzoo3d
             - TotGraz3d
-        monthly_outputs:
-            - aCO2
-            - aFe
-            - aN
-            - bgc01
-            - bgc02
-            - bgc03
-            - bgc04
-            - bgc05
-            - bgc06
-            - bgc07
-            - bgc08
-            - bgc09
-            - bgc10
-            - bgc11
-            - bgc12
-            - bgc13
-            - bgc14
-            - bgc15
-            - bgc16
-            - bgc17
-            - bgc18
-            - bgc19
-            - bgc20
-            - bgc21
-            - bgc22
+        add_monthly_outputs:
             - bgc23
             - bgc24
             - bgc25
             - bgc26
             - bgc27
             - bgc28
-            - CO2f
-            - CO2y
-            - diags3d01
-            - diags3d02
             - diags3d03
             - diags3d04
             - diags3d05
@@ -122,97 +77,11 @@ choose_version:
             - diags3d18
             - diags3d19
             - diags3d20
-            - dpCO2s
-            - GPPd
-            - GPPn
-            - NPPd
-            - NPPn
-            - O2f
-            - PAR
-            - pCO2s
-            - slp
-            - virtual_alk
-            - virtual_dfe
-            - virtual_dic
-            - virtual_din
-            - virtual_dsi
-            - virtual_oxy
-            - w10w
-        daily_outputs: []
-        12_step_outputs: []
     2.0-r:
         # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
         branch: recom-update
     2.0-recom-awicm:
         branch: oxygen
-        # default recom output if fesom runs coupled to atmosphere
-        # 1. variable names are case sensitive
-        # 2. please keep alphabetic order
-        yearly_outputs:
-            - alphaCO2
-            - benC
-            - benCalc
-            - benN
-            - benSi
-            - denb
-            - GNAd
-            - GNAn
-            - Hp
-            - Kw
-            - NNAd
-            - NNAn
-            - rDIN
-            - rDOC
-            - rDON
-            - rDSi
-        monthly_outputs:
-            - aCO2
-            - aFe
-            - aN
-            - bgc01
-            - bgc02
-            - bgc03
-            - bgc04
-            - bgc05
-            - bgc06
-            - bgc07
-            - bgc08
-            - bgc09
-            - bgc10
-            - bgc11
-            - bgc12
-            - bgc13
-            - bgc14
-            - bgc15
-            - bgc16
-            - bgc17
-            - bgc18
-            - bgc19
-            - bgc20
-            - bgc21
-            - bgc22
-            - CO2f
-            - CO2y
-            - diags3d01
-            - diags3d02
-            - dpCO2s
-            - GPPd
-            - GPPn
-            - NPPd
-            - NPPn
-            - O2f
-            - PAR
-            - pCO2s
-            - slp
-            - virtual_alk
-            - virtual_dfe
-            - virtual_dic
-            - virtual_din
-            - virtual_dsi
-            - virtual_oxy
-            - w10w
-        daily_outputs: []
-        12_step_outputs: []
 
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
@@ -328,3 +197,85 @@ choose_computer.name:
                                 - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
                                 - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
                                 - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+
+# default recom output, common to all versions
+# 1. variable names are case sensitive
+# 2. please keep alphabetic order
+yearly_output:
+    - alphaCO2
+    - benC
+    - benCalc
+    - benN
+    - benSi
+    - denb
+    - GNAd
+    - GNAn
+    - Hp
+    - Kw
+    - NNAd
+    - NNAn
+    - rDIN
+    - rDOC
+    - rDON
+    - rDSi
+monthly_output:
+    - aCO2
+    - aFe
+    - aN
+    - bgc01
+    - bgc02
+    - bgc03
+    - bgc04
+    - bgc05
+    - bgc06
+    - bgc07
+    - bgc08
+    - bgc09
+    - bgc10
+    - bgc11
+    - bgc12
+    - bgc13
+    - bgc14
+    - bgc15
+    - bgc16
+    - bgc17
+    - bgc18
+    - bgc19
+    - bgc20
+    - bgc21
+    - bgc22
+    - CO2f
+    - CO2y
+    - diags3d01
+    - diags3d02
+    - dpCO2s
+    - GPPd
+    - GPPn
+    - NPPd
+    - NPPn
+    - O2f
+    - PAR
+    - pCO2s
+    - slp
+    - virtual_alk
+    - virtual_dfe
+    - virtual_dic
+    - virtual_din
+    - virtual_dsi
+    - virtual_oxy
+    - w10w
+daily_outputs: []
+12_step_outputs: []
+
+outdata_files:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT
+        "[[daily_outputs-->OUTPUT]]": OUTPUT
+outdata_in_work:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+outdata_sources:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc

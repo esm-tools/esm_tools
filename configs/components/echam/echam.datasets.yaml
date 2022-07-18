@@ -98,14 +98,14 @@ forcing_sources:
         # - all historical years <= 2014 are identical throughout all SSP GHG files
         # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
         #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
-        
+
         # radiation
         "histswflux":
                 "${input_dir}/solar_irradiance/swflux_14band_1850.nc":
                         to: 1850
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
-        
+
         "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
         # TODO: years are different
         # ozone
@@ -126,10 +126,6 @@ forcing_sources:
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
-        # DONE: these (SSP ozone) are missing in release -> removed. TODO: remove this comment later
-
-        # TODO: these came from release
-        # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
         "MAC-SP": "${input_dir}/MAC-SP.nc"
 
         "MAC-SP_hist_scenario":

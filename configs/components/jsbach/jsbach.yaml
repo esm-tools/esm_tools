@@ -22,7 +22,7 @@ pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
 input_dir_awi: "${pool_dir_awi}/input/${dataset}"
 # deniz: used in Ndepo files. TODO: let this comment stay here until the pool
 # issues are finally resolved on Levante
-use_input_dir_awi: False  
+use_input_dir_awi: False
 
 dynamic_vegetations: False
 

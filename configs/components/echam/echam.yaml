@@ -250,8 +250,6 @@ choose_version:
 
         6.3.05p2-concurrent_radiation:
                 concurrent_radiation_code: true
-                # TODO (deniz): YAML supports null, I think it is better to use
-                # null instead of UNDEFINED, not_applicable, ...
                 repo_tag: not_applicable
                 dataset: r0007
                 add_namelist_changes:
@@ -346,7 +344,6 @@ choose_scenario:
                         ozone: 1850ozone
         1950:
                 forcing_files:
-                        # TODO: there are many things in release
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
@@ -368,7 +365,6 @@ choose_scenario:
                         # aerofin: histaerofin
                         sst: amipsst
                         sic: amipsic
-                        # TODO: removed kinne_1850 aerosol files
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse
                         aerocoarse_1851: piaerocoarse
@@ -383,11 +379,8 @@ choose_scenario:
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                # add_input_files:  # commented out to make it a forcing
-                # TODO: remove after it passes the test
                         MAC-SP: MAC-SP
 
-        # TODO: came from release
         # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
         # under the choose_scenario_type block
         ssp585:
@@ -643,7 +636,6 @@ streamsnc:
         - jsbid
         - sp6h
         - spim
-        # TODO: the rest is absent in release
         - sp
         - gl
         - g3b
@@ -655,9 +647,6 @@ streamsnc:
         - co2
         - tdiag
 
-#prev_date: 18500101
-
-# BUG: PG Why do we need lists here?
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 

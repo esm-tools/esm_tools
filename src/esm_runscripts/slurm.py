@@ -200,6 +200,16 @@ class Slurm:
             # and partitions)
             for model in config["general"]["valid_model_names"]:
                 nodes = config[model].get("nodes")
+
+# kh 24.06.22 observed behavior was:
+#model:  echam, nodes:  4
+#model:  fesom, nodes:  32
+#model:  oasis3mct, nodes:  None
+#model:  recom, nodes:  None
+#model:  jsbach, nodes:  None
+#model:  hdmodel, nodes:  1
+
+# kh 24.06.22 workaround: filter hdmodel
                 if nodes:
                     headers.append(f"{nodes_flag}={nodes}")
                     headers.append(this_batch_system["partition_flag"])

@@ -26,7 +26,7 @@ fesom:
     restart_unit: "m"
     restart_first: 1
     lresume: false
-    time_step: 2400
+    time_step: 1800
     nproc: 384
 
 oifs:
@@ -49,6 +49,6 @@ oasis3mct:
 
 xios:
     with_model: oifs
-    nproc: 8
-    omp_num_threads: 16
+    nproc: 4
+    omp_num_threads: 32
 

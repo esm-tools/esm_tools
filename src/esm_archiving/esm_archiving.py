@@ -451,25 +451,26 @@ def get_files_for_date_range(
     Example
     -------
     >>> filepattern =  "LGM_24hourly_PMIP4_echam6_BOT_mm_>>>DATE<<<.nc"
-    >>> get_files_for_date_range(filepattern, "1890-07", "1891-11", "1M", date_format="%Y%m")
-    [
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189007.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189008.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189009.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189010.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189011.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189012.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189101.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189102.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189103.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189104.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189105.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189106.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189107.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189108.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189109.nc",
-        "LGM_24hourly_PMIP4_echam6_BOT_mm_189110.nc",
-    ]
+    >>> LGM_files = get_files_for_date_range(filepattern, "1890-07", "1891-11", "1M", date_format="%Y%m")
+    >>> LGM_files == [
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189007.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189008.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189009.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189010.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189011.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189012.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189101.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189102.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189103.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189104.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189105.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189106.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189107.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189108.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189109.nc",
+    ... "LGM_24hourly_PMIP4_echam6_BOT_mm_189110.nc",
+    ... ]
+    True
     """
     # I had initially wanted to do a regex for this; but I get the impression
     # that's a horrible idea. Or at least, a difficult one. If we know the date

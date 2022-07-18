@@ -1,5 +1,11 @@
 hist_fold: hist_harvest
-hist_scenario: ssp370  # dataset to use for year > 2014
+
+# CD: Only for LU_hist definition is for years larger than 2014 (needed only to load
+# forcing data of the current year + 1 to do an interpolation). The historical
+# simulation in CMIP6 ends in 2014, the only data that is needed by echam is data from
+# 2015 and we agreed to choose the one from the ssp370 scenario (it does not really
+# matter which is chosen)
+hist_extend_scenario: ssp370
 
 input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
@@ -23,7 +29,7 @@ forcing_sources:
                         from: 1851
                         to: 2014
                 # HIST scenario will use this data beyond year 2014
-                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 2015
 
         # landuse transitions
@@ -33,7 +39,7 @@ forcing_sources:
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
             # For the transient land data use a similar fix like in HIST land use
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 from: 2015
 
         # NOTE: these files are prepared by Christopher Danek (AWI). These are 

@@ -400,8 +400,10 @@ choose_scenario:
 
         cmip6hist:
                 scenario_type: cmip6
+
+choose_scenario_type:
         cmip6:
-                greenhouse_dir: "${forcing_dir}"
+                greenhouse_dir: "${input_dir}"
                 forcing_files:
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse

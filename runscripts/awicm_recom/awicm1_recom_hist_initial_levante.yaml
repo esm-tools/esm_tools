@@ -33,7 +33,6 @@ general:
     nmonth: 1
 
 echam:
-    version: "6.3.04p1"
     resolution: "T63"
     nproca: 24
     nprocb: 24

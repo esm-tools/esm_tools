@@ -1,5 +1,5 @@
 # =============================================================================
-# test runscript for 
+# test runscript for
 # - setup: awicm1-recom
 # - machine: mistral
 # - scenario: PI-CTRL
@@ -26,17 +26,16 @@ general:
     nmonth: 1
     nday: 0
     restart_rate: 1
-    restart_unit: months 
+    restart_unit: months
     lresume: False
     # uncomment these for a restart run
-    # ini_parent_dir: "" 
+    # ini_parent_dir: ""
     # ini_restart_dir: "${general.ini_parent_dir}/"
     # ini_parent_exp_id: nml_all_mvstreamctl
     # ini_parent_date: "2685-12-31"
-    first_initial_year: "${general.initial_date!syear}" 
+    first_initial_year: "${general.initial_date!syear}"
 
 echam:
-    version: "6.3.04p1"
     resolution: "T63"
     nproca: 24
     nprocb: 24
@@ -45,7 +44,7 @@ echam:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/echam/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"  
+    # ini_parent_date: "${general.ini_parent_date}"
     restart_unit: "months"
     dataset: r0007
 
@@ -53,7 +52,7 @@ jsbach:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/jsbach/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"   
+    # ini_parent_date: "${general.ini_parent_date}"
     dynamic_vegetations: True
     dynveg_file_ending: "_dynveg"
     dataset: r0010
@@ -65,7 +64,7 @@ hdmodel:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/hdmodel/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"   
+    # ini_parent_date: "${general.ini_parent_date}"
 
 fesom:
     resolution: CORE2
@@ -73,7 +72,7 @@ fesom:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/fesom/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"   
+    # ini_parent_date: "${general.ini_parent_date}"
     nproc: 384
     restart_rate: 1
     restart_unit: "m"
@@ -85,7 +84,7 @@ recom:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/recom/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"   
+    # ini_parent_date: "${general.ini_parent_date}"
 
     # change the default namelist that comes from ESM-Tools
     namelist_changes:
@@ -101,4 +100,4 @@ oasis3mct:
     lresume: "${general.lresume}"
     # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
     # ini_parent_exp_id: "${general.ini_parent_exp_id}"
-    # ini_parent_date: "${general.ini_parent_date}"   
+    # ini_parent_date: "${general.ini_parent_date}"

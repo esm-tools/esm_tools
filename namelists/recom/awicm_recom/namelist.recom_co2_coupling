@@ -2,32 +2,32 @@ This is the namelist recom
 
 &pavariables
 use_REcoM             =.true.
-REcoM_restart         =.false.
+REcoM_restart         =.false.      ! First year .false.
 recom_binary_write    =.false.      ! Determines if tracervalue snapshots are saved. For fine grids it may crash the model to set this to true
 
 recom_binary_init     = .false.     ! Restart from binary
-bgc_num               = 22
-diags3d_num           = 20           ! Number of diagnostic 3d tracers to be saved
+bgc_num               = 22         ! set it 28 in case of REcoM_Second_Zoo=.true. (Turn on second zoo and detritus classes)
+diags3d_num           = 2             ! Number of diagnostic 3d tracers to be saved ! -- set it 20 for oxygen -- set it 2 for co2_coupling with echam --
 VDet                  = 20.d0       ! Sinking velocity, constant through the water column and positive downwards
 VDet_zoo2             = 200.d0       ! Sinking velocity, constant through the water column
 VPhy                  = 0.d0        !!! If the number of sinking velocities are different from 3, code needs to be changed !!!
 VDia                  = 0.d0 
 allow_var_sinking     = .true.   
-biostep               = 1           ! Number of times biology should be stepped forward for each time step		 
+biostep               = 1           ! Number of times biology should be stepped forward for each time step       
 REcoM_Geider_limiter  = .false.     ! Decides what routine should be used to calculate limiters in sms
 REcoM_Grazing_Variable_Preference = .false. ! Decides if grazing should have preference for phyN or DiaN 
 REcoM_Second_Zoo      = .false.     ! Decides second zooplankton or no 
 Grazing_detritus      = .false.
 zoo2_fecal_loss       = .false.
 zoo2_initial_field    = .false.
-het_resp_noredfield   = .false.    ! Decides respiratation of copepod group
-diatom_mucus          = .false.    ! Decides nutrient limitation effect on aggregation
-Graz_pref_new         = .false.    ! If it is true Fasham 1990, if not recom original variable preference
+het_resp_noredfield   = .false.      ! Decides respiratation of copepod group
+diatom_mucus          = .false.      ! Decides nutrient limitation effect on aggregation
+Graz_pref_new         = .false.      ! If it is true Fasham 1990, if not recom original variable preference
 Diagnostics           = .true.
-constant_CO2          = .false.
+constant_CO2          = .false.      ! .true. for a control simulation, .false. in case of increasing co2 
 UseFeDust             = .true.      ! Turns dust input of iron off when set to.false.
 UseDustClim           = .true.
-UseDustClimAlbani     = .true.     ! Use Albani dustclim field (If it is false Mahowald will be used)
+UseDustClimAlbani     = .true.      ! Use Albani dustclim field (If it is false Mahowald will be used)
 use_Fe2N              = .true.      ! use Fe2N instead of Fe2C, as in MITgcm version
 use_photodamage       = .true.      ! use Alvarez et al (2018) for chlorophyll degradation
 HetRespFlux_plus      = .true.      !MB More stable computation of zooplankton respiration fluxes adding a small number to HetN
@@ -36,10 +36,10 @@ restore_alkalinity    = .true.
 NitrogenSS            = .false.     ! When set to true, external sources and sinks of nitrogen are activated (Riverine, aeolian and denitrification)
 useAeolianN           = .false.      ! When set to true, aeolian nitrogen deposition is activated
 firstyearoffesomcycle = 1958        ! The first year of the actual physical forcing (e.g. JRA-55) used
-lastyearoffesomcycle  = 2017        ! Last year of the actual physical forcing used
-numofCO2cycles        = 3           ! Number of cycles of the forcing planned 
+lastyearoffesomcycle  = 2020        ! Last year of the actual physical forcing used
+numofCO2cycles        = 1           ! Number of cycles of the forcing planned 
 currentCO2cycle       = 1           ! Which CO2 cycle we are currently running
-REcoM_PI              = .true.
+REcoM_PI              = .true.      ! Consistent with constant_CO2 = .true. (just for initialization)
 Nmocsy                = 1           ! Length of the vector that is passed to mocsy (always one for recom)
 
 /
@@ -79,7 +79,7 @@ a_chl                 = 0.03d0      ! [1/m * 1/(mg Chl)] Chlorophyll specific at
 /
 
 &paphotosynthesis
-alfa                  = 0.14d0	    ! [(mmol C*m2)/(mg Chl*W*day)] 
+alfa                  = 0.14d0      ! [(mmol C*m2)/(mg Chl*W*day)] 
 alfa_d                = 0.19d0      ! An initial slope of the P-I curve
 parFrac               = 0.43d0
 /
@@ -184,7 +184,7 @@ deg_Chl_d             = 0.15d0
 &padetritus_N
 grazEff               = 0.4d0       ! [] Grazing efficiency (fraction of grazing flux into zooplankton pool) 
 grazEff2              = 0.8d0         ! [] Grazing efficiency (fraction of grazing flux into second zooplankton pool)
-reminN                = 0.165d0     ! [1/day] Temperature dependent remineralisation rate of detritus	
+reminN                = 0.165d0     ! [1/day] Temperature dependent remineralisation rate of detritus   
 /
 
 &padetritus_C

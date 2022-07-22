@@ -4,21 +4,33 @@ model: medusa
 branch: main
 version: '2.0'
 
+metadata:
+        Institute: University Liege
+        Description:
+                MEDUSA is Model of Early Diagenesis in the Upper Sediment with Adatable complexity.
+        Authors: Guy Munhoven
+        Publications:
+                - "Model of Early Diagenesis in the Upper Sediment with Adaptable complexity – MEDUSA (v. 2): a time-dependent biogeochemical sediment module for Earth system models, process analysis
+and teaching <https://doi.org/10.5194/gmd-14-3603-2021>"
+        License:
+                Please make sure you have a licence to use MEDUSA. In case you are unsure,
+                please contact Guy Munhoven (guy.munhoven@uliege.be)
+
 choose_version: 
     '2.0':
       branch: main
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 
-#YY: directory for code and libraries
+# directory for code and libraries
 base_dir: "/work/ab0995/a270105/esm_code/medusa-2.0" 
-#YY: directory of medusa code
+# directory of medusa code
 model_dir: "${base_dir}/medmbm/trunk4mcg"
-#YY: directory of application
+# directory of application
 setup_dir: "${model_dir}/apps/medusa_recom_awiesm"
-#YY: directory of executables
+# directory of executables
 bin_dir: "${model_dir}/work"
-#YY: fesom.mesh.diag.nc needed for medusa
+# input data e.g. fesom.mesh.diag.nc needed for medusa
 data_path: ""
 
 clean_command: ${defaults.clean_command}
@@ -34,4 +46,6 @@ comp_command: "
     mv libmodmxm.a ${base_dir}/lib;
     cp modmxm.h *.mod ${base_dir}/include;
     "
+
+#scenario: "paleo"
 

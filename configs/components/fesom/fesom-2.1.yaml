@@ -162,6 +162,11 @@ choose_resolution:
                 nx: 3140
                 mesh_dir: "${fesom.mesh_base_dir}/pi/"
                 nproc: 4
+# YY: add LGM with glac1d_m1 resoluation
+        LGM:
+                nx: 95239
+                mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
+                nproc: 1024
 
 restart_in_files:
         oce_restart: oce_restart

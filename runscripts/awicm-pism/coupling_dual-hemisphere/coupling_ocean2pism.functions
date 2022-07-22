@@ -8,6 +8,8 @@ function ocean2pism {
         module load miniconda
     elif [ "$MACHINE" == "mistral" ]; then
         module load defaults
+    elif [ "$MACHINE" == "levante" ]; then
+        module load cdo
     fi
     echo $(module list)
     . ${FUNCTION_PATH}/coupling_general.functions

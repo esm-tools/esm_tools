@@ -109,6 +109,7 @@ choose_compiler_mpi:
          MPIFC: mpiifort
          FCFLAGS: -free
          CC: mpiicc
+         MPICC: mpiicc
          CXX: mpiicpc
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
@@ -123,6 +124,7 @@ choose_compiler_mpi:
          MPIFC: mpiifort
          FCFLAGS: -free
          CC: mpiicc
+         MPICC: mpiicc
          CXX: mpiicpc
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
@@ -154,6 +156,7 @@ choose_compiler_mpi:
          MPIFC: mpifort
          FCFLAGS: -free
          CC: mpicc
+         MPICC: mpicc
          CXX: mpic++
          MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""

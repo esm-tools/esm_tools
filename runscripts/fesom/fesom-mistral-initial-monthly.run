@@ -33,7 +33,7 @@ RESTART_RATE_fesom=1
 RESTART_FIRST_fesom=1
 RESTART_UNIT_fesom='m'
 
-further_reading_fesom="fesom_output_control.yaml"
+further_reading_fesom="fesom_output.yaml"
 
 ###############################################################################
 load_all_functions

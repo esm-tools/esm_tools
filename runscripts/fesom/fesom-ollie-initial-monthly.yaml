@@ -20,5 +20,5 @@ fesom:
         restart_unit: 'm'
         post_processing: 0
 
-        #        further_reading: "fesom_output_control.yaml"
+        #further_reading: "fesom_output.yaml"
 

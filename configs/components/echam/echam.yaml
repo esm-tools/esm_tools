@@ -64,7 +64,7 @@ compile_infos:
               FCFLAGS="-cpp -DHAMMOZ" INSTALL='/usr/bin/install -p'
             git-repository: https://gitlab.awi.de/paleodyn/Models/echam6.git
           6.3.05p2-foci:
-            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
             comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
                ./configure --prefix=$(pwd)/../ --with-coupler=oasis3-mct-nemo --disable-mh-file --enable-cdi-pio --disable-shared CFLAGS="-O2 -DgFortran -std=gnu99" FCFLAGS="-DQBO -I. -O3 -traceback -fp-model source -fast-transcendentals -no-prec-sqrt -no-prec-div -xHost" FFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" LAPACK_LIB='-mkl=sequential' OASIS3MCTROOT=$(pwd)/../ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support" ;
                make -j `nproc --all`; make install -j `nproc --all`; 

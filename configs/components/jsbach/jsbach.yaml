@@ -285,6 +285,10 @@ choose_scenario_is_ssp:
                 # SSP scenarios share common paths. They are grouped under cmip6 and
                 # further options are given under `choose_scenario_type` section
                 scenario_type: cmip6
+                add_forcing_files:
+                            Ndepo: Ndepo_ssp
+                            popdens: popdens_ssp
+                            cover_fract: cover_fract_ssp
 
         False:
                 ssp_num: null

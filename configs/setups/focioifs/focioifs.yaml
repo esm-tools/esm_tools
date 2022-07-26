@@ -19,6 +19,8 @@ general:
            - "modify_files"
            - "copy_files_to_work"
            - "report_missing_files"
+           #- "add_vcs_info"
+           #- "check_vcs_info_against_last_run"
            - "database_entry"
 
         model: focioifs
@@ -108,6 +110,10 @@ oifs:
         compiletime_environment_changes:
           iolibraries: geomar_libs
           choose_computer.name:
+             levante:
+                #compiler_mpi: intel2022_impi2021
+                compiler_mpi: intel2022_openmpi 
+                iolibraries: system_libs 
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
@@ -121,13 +127,14 @@ oifs:
           iolibraries: geomar_libs
           add_export_vars:
              # Turn on FOCI coupling        
-             - 'FOCI_USE_CPLNG="active"'
-             - 'FESOM_USE_CPLNG="no"'
-             - 'ECE_USE_CPLNG="no"'
-             #FOCI_USE_CPLNG: "active"
-             #FESOM_USE_CPLNG: "no"
-             #ECE_USE_CPLNG: "no"
+             FOCI_USE_CPLNG: "active"
+             FESOM_USE_CPLNG: "no"
+             ECE_USE_CPLNG: "no"
           choose_computer.name:
+             levante:
+                #compiler_mpi: intel2022_impi2021
+                compiler_mpi: intel2022_openmpi 
+                iolibraries: system_libs 
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:

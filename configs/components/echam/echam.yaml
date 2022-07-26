@@ -4,8 +4,6 @@ model: echam
 repository: https://gitlab.dkrz.de/modular_esm/echam6
 type: atmosphere
 
-
-
 compile_infos:
         available_versions:
         - 6.3.05p2
@@ -22,6 +20,13 @@ compile_infos:
 
         branch: ${echam.version}
         choose_version:
+          6.3.05p2-awiesm-2.1:
+            branch: "6.3.05p2-awiesm-2.1"
+            clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
+            comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
+            git-repository: "https://gitlab.awi.de/paleodyn/Models/echam6.git"
+            # model_dir: echam-6.3.05p2
+            destination: echam-6.3.05p2
           6.3.02p4:
             install_bins: src/bin/echam6
           6.3.04p1-esm_interface:
@@ -80,8 +85,6 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/echam6.git
         install_bins: src/echam/bin/echam6
 
-
-
 metadata:
         Institute: MPI-Met
         Description:
@@ -101,13 +104,11 @@ include_models:
         - jsbach
         - hdmodel
 
-
-
 executable: echam6
 version: 6.3.04p1
 resolution: T63
 scenario: "PI-CTRL"
-scenario_type: ${scenario} 
+scenario_type: ${scenario}
 postprocessing_stream: 'BOT ATM LOG'
 yr_perp_off: false
 transient_advance_forcing: false
@@ -131,9 +132,9 @@ restart_rate: 1
 restart_unit: "months"
 restart_firstlast: "first"
 
-
+# ===
 # default directories
-
+# ===
 #model_dir: "${general.esm_master.dir}/echam-${version}"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -152,9 +153,8 @@ choose_switch:
 # choice
 #
 
-lwiso_rerun: False
-lwiso: False
-nwiso: 0
+with_wiso: false
+wiso_code: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -166,20 +166,24 @@ nprocb: 24
 lrad_async: false
 lrestart_from_old: false
 
+choose_computer.partitions.compute.cores_per_node:
+        24:
+                nproca: 24
+                nprocb: 24
+
+        36:
+                nproca: 24
+                nprocb: 24
+        128:
+                nproca: 16
+                nprocb: 16
+
 choose_resolution:
         T63:
                 levels: "L47"
                 time_step: 450
                 _nx: 192
                 _ny: 96
-                choose_computer.partitions.compute.cores_per_node:
-                        24:
-                                nproca: 24
-                                nprocb: 24
-
-                        36:
-                                nproca: 24
-                                nprocb: 24
 
         T31:
                 levels: "L19"
@@ -193,6 +197,12 @@ choose_resolution:
                 _ny: 192
 
 choose_version:
+        6.3.05p2-awiesm-2.1:
+                # TODO MA: this problably needs much more stuff from the wiso version
+                wiso_code: true
+                concurrent_radiation_code: true
+                repo_tag: not_applicable
+                dataset: r0007
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
@@ -220,101 +230,33 @@ choose_version:
                 lrad_async: "remove_from_namelist"
 
         6.3.05p2-concurrent_radiation-paleodyn:
-                choose_computer.name:
-                    mistral:
-                        compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                test1:
-                    test2: true
+                concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
                                         npromar: "${npromar}"
-                                parctl:
-
-# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
-#                                       nprocrad: "${nprocrad}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 radctl:
-                                        lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
-                choose_computer.name:
-                    mistral:
-                        add_compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        add_runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                wiso_code: true
+                concurrent_radiation_code: true
                 add_namelist_changes:
                         namelist.echam:
-                                parctl:
-                                        nproca: "${nproca}"
-                                        nprocb: "${nprocb}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 runctl:
                                         default_output: True
-                                radctl:
-                                        lrad_async: "${lrad_async}"
-                                wisoctl:
-                                        lwiso_rerun: "${lwiso_rerun}"
-                                        lwiso: "${lwiso}"
-                                        nwiso: "${nwiso}"
-                add_streams:
-                        - wiso
-                        - accw_wiso
-                        - sf_wiso
-                        - rad
-                add_forcing_files:
-                        ozonea: piozonea
-                        ozoneb: piozoneb
-                        ozonec: piozonec
-                add_forcing_in_work:
-                        ozonea: "ozon1988"
-                        ozoneb: "ozon1989"
-                        ozonec: "ozon1990"
-                restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
-                restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
-                add_coupling_fields:
-                        "[[wiso_fields-->FIELD]]":
-                                grid: atmo
-
 
         6.3.05p2-concurrent_radiation:
+                concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0007
-                add_streams:
-                    - rad
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
                                         npromar: "${npromar}"
-                                parctl:
-
-# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
-#                                       nprocrad: "${nprocrad}"
-                                        nprocar: "${nprocar}"
-                                        nprocbr: "${nprocbr}"
                                 radctl:
-                                        lrad_async: "${lrad_async}"
                                         lrestart_from_old: "${lrestart_from_old}"
 
 # kh 30.04.20 parameter values below (nprocar..lrestart_from_old) would supersed corresponding parameter values
@@ -327,6 +269,42 @@ choose_version:
 #               npromar: 8
 #               lrad_async: true
 #               lrestart_from_old: false
+
+
+choose_concurrent_radiation_code:
+        True:
+                choose_computer.name:
+                    mistral:
+                        compiletime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                        runtime_environment_changes:
+                            add_export_vars:
+                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
+                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                add_namelist_changes:
+                        namelist.echam:
+                                parctl:
+# kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
+#                                       nprocrad: "${nprocrad}"
+                                        nprocar: "${nprocar}"
+                                        nprocbr: "${nprocbr}"
+                                radctl:
+                                        lrad_async: "${lrad_async}"
+                add_streams:
+                    - rad
+        "*":
+                from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
+
+# If general.with_wiso exists, take it from that section
+choose_general.with_wiso:
+        True:
+                with_wiso: True
+        False:
+                with_wiso: False
+        "*":
+                from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 choose_scenario:
         "PI-CTRL":
@@ -364,22 +342,8 @@ choose_scenario:
                         aerofin: piaerofin
                         aerofarir: piaerofarir
                         ozone: 1850ozone
-        "1950":
+        1950:
                 forcing_files:
-
-                        #with iaero = 8 (MAC-SP) use the following
-                        #MAC-SP: MAC-SP_1950 # not yet implemented
-                        #aerocoarse_1849: piaerocoarse
-                        #aerocoarse_1850: piaerocoarse
-                        #aerocoarse_1851: piaerocoarse
-                        #aerofarir_1849: piaerofarir
-                        #aerofarir_1850: piaerofarir
-                        #aerofarir_1851: piaerofarir
-                        #aerofin_1849: piaerofin
-                        #aerofin_1850: piaerofin
-                        #aerofin_1851: piaerofin
-                        #
-                        # with iaero = 3 use te following
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
@@ -391,6 +355,9 @@ choose_scenario:
         # old hist settings --> need to discuss with deniz whether this is
         # still needed
         HIST:
+                # NOTE: r0007 (default dataset) has upto 2014 but r0008 has
+                # upto 2024 (used by FOCI)
+                dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
                         # aerocoarse: piaerocoarse
@@ -398,33 +365,45 @@ choose_scenario:
                         # aerofin: histaerofin
                         sst: amipsst
                         sic: amipsic
-                        # deniz TODO: explain
-                        aerocoarse_kinne_1850: piaerocoarse   # deniz: added these
-                        aerofarir_kinne_1850: piaerofarir
-                        aerofin_kinne_1850: piaerofin
-                        ozone: histozone
+                        aerocoarse_1849: piaerocoarse
+                        aerocoarse_1850: piaerocoarse
+                        aerocoarse_1851: piaerocoarse
+                        aerofarir_1849: piaerofarir
+                        aerofarir_1850: piaerofarir
+                        aerofarir_1851: piaerofarir
+                        aerofin_1849: piaerofin
+                        aerofin_1850: piaerofin
+                        aerofin_1851: piaerofin
+                        ozone: ozone_hist_scenario
                         greenhouse: histgreenh
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
                         MAC-SP: MAC-SP
 
+        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+        # under the choose_scenario_type block
         ssp585:
-                scenario_type: cmip6 
+                scenario_type: cmip6
+
         ssp370:
-                scenario_type: cmip6 
+                scenario_type: cmip6
+
         ssp126:
-                scenario_type: cmip6 
+                scenario_type: cmip6
+
         ssp245:
-                scenario_type: cmip6 
+                scenario_type: cmip6
+
         ssp534os:
-                scenario_type: cmip6 
+                scenario_type: cmip6
+
         cmip6hist:
-                scenario_type: cmip6 
+                scenario_type: cmip6
 
 choose_scenario_type:
         cmip6:
-                greenhouse_dir: "${forcing_dir}"
+                greenhouse_dir: "${input_dir}"
                 forcing_files:
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse
@@ -436,7 +415,7 @@ choose_scenario_type:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario 
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
@@ -455,8 +434,6 @@ choose_lresume:
                         namelist.echam:
                                 runctl:
                                         dt_start: "remove_from_namelist"
-
-
 
 choose_CO2:
         '*':
@@ -509,6 +486,40 @@ choose_yr_perp_off:
                                 runctl:
                                         l_orbsvop87: ".false."
 
+choose_wiso_code:
+        True:
+                lwiso: "${with_wiso}"
+                add_namelist_changes:
+                        namelist.echam:
+                                wisoctl:
+                                        lwiso_rerun: "${lwiso_rerun}"
+                                        lwiso: "${lwiso}"
+                                        nwiso: "${nwiso}"
+                choose_with_wiso:
+                        True:
+                                nwiso: 3
+                                lwiso_rerun: ${lresume}
+                                add_coupling_fields:
+                                        "[[wiso_fields-->FIELD]]":
+                                                grid: atmo
+                                add_streams:
+                                        - wiso
+                                        - accw_wiso
+
+                                # The following lines take care of the renaming of the
+                                # ozon files, and their copying
+                                add_forcing_files:
+                                        ozonea: piozonea
+                                        ozoneb: piozoneb
+                                        ozonec: piozonec
+                                add_forcing_in_work:
+                                        ozonea: "ozon1988"
+                                        ozoneb: "ozon1989"
+                                        ozonec: "ozon1990"
+
+                        False:
+                                nwiso: 0
+                                lwiso_rerun: False
 
 bin_files:
         "echam_bin": "echam_bin"
@@ -540,10 +551,6 @@ input_in_work:
 forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
-        # deniz: TODO: write comment
-        aerocoarse_kinne_1850: "aero_coarse_@YEAR_1850@.nc"
-        aerofarir_kinne_1850: "aero_farir_@YEAR_1850@.nc"
-        aerofin_kinne_1850: "aero_fine_@YEAR_1850@.nc"
         # ok this is another crazy ECHAM6 speciality
         # every year the background aerosol files for 1849 to 1851 
         # need to be linked to the same file for historical/scenario runs
@@ -569,36 +576,42 @@ forcing_in_work:
         "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
-        aerocoarse_kinne_1850:       # deniz: added these 3 file types
-                - need_year_before
-                - need_year_after
-        aerofarir_kinne_1850:
-                - need_year_before
-                - need_year_after
-        aerofin_kinne_1850:
-                - need_year_before
-                - need_year_after
         aerocoarse:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         aerofin:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         aerofarir:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         ozone:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
+        # deniz: added these 3 variables. They were present in the esm-tools r4
         volcsw:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         volcir:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
         swflux:
                 - need_year_before
                 - need_year_after
+                - need_2years_before
+                - need_2years_after
 
 streams:
         - echam
@@ -625,10 +638,16 @@ streamsnc:
         - jsbid
         - sp6h
         - spim
-
-          #prev_date: 18500101
-# BUG: PG Why do we need lists here?
-
+        - sp
+        - gl
+        - g3b
+        - scm
+        - ma
+        - surf
+        - cfdiag
+        - aeropt
+        - co2
+        - tdiag
 
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
@@ -647,7 +666,6 @@ ignore_in_work:
         "[[streams-->STREAM]]": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM
         "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
-
 
 outdata_files:
         "[[streams-->STREAM]]": STREAM
@@ -683,7 +701,6 @@ restart_out_sources:
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
-
 log_files:
         atmout: atmout
         stderr: stderr
@@ -701,7 +718,6 @@ log_in_work:
 
 namelists:
         - "namelist.echam"
-
 
 namelist_changes:
         namelist.echam:
@@ -767,6 +783,12 @@ coupling_fields:
                 grid: atmo
         hydr_atm:
                 grid: atmo
+        co2_atmo:
+                grid: atmo
+        co2c_atm:
+                grid: atmo
+        w10w_atm:
+                grid: atmo
 
 grids:
         atmo:
@@ -775,8 +797,6 @@ grids:
                 ny: "${_ny}"
                 oasis_grid_type: "D"
                 number_of_overlapping_points: 0 # oasis P-value
-
-
 
 # Configuration Files:
 config_sources:
@@ -793,9 +813,6 @@ check_error:
                 #message: "high wind speed was found during your run, applying wind speed fix and resubmitting..."
                 #file: "${general.work_dir}/atmout"
                 #frequency: 90
-
-
-
 
 further_reading:
         - echam/echam.datasets.yaml

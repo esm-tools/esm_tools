@@ -17,6 +17,7 @@ forcing_sources:
                 "${forcing_dir}/amip/${resolution}_amipsst_@YEAR@.nc":
                         from: 1870
                         to: 2016
+
         "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"
 
         # sic
@@ -24,20 +25,21 @@ forcing_sources:
                 "${forcing_dir}/amip/${resolution}_amipsic_@YEAR@.nc":
                         from: 1870
                         to: 2016
+
         "pisic": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sic_1880-2379.nc"
 
         # aero
         "piaerocoarse": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc"
         "piaerofarir": "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc"
         "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
-        
+
         "histaerocoarse": 
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc":
                 to: 1864
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa_@YEAR@.nc":
                 from: 1865
                 to: 2000
-                
+
         "histaerofarir": 
             "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc":
                 to: 1864
@@ -52,6 +54,7 @@ forcing_sources:
                         from: 1865
                         to: 2000
         # volcanic
+        # NOTE: HIST scenario uses r0008 instead of r0007
         "histvolcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1850.nc":
                         to: 1850
@@ -60,6 +63,8 @@ forcing_sources:
                         to: 2024
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2024.nc":
                         from: 2025
+
+        # TODO: important: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
@@ -68,11 +73,15 @@ forcing_sources:
                         to: 2024
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2024.nc":
                         from: 2025
+
         "1950volcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1950.nc"
+
         "1950volcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
+
         # greenhouse
+        # TODO: currently only r0008 contains the greenhouse_ssp* files
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "greenhouse_hist_scenario":
                 "${greenhouse_dir}/greenhouse_historical.nc":
@@ -80,27 +89,33 @@ forcing_sources:
                 "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
 
+        # TODO: greenhouse files differ
+        # greenhouse
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
+        #"histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        # - use any SSP file for the historical scenario to have GHG values for year 2015,
+        #   necessary for Echams year+1 interpolation for last historical year 2014
+        # - all historical years <= 2014 are identical throughout all SSP GHG files
+        # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
+        #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
+
         # radiation
         "histswflux":
                 "${input_dir}/solar_irradiance/swflux_14band_1850.nc":
                         to: 1850
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
+
         "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
+        # TODO: years are different
         # ozone
-        "histozone":
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
-                        to: 1850
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
-                        from: 1851
-                        to: 2008
         "ozone_hist_scenario":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
                         to: 1850
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
+                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
                         from: 2015
 
@@ -111,7 +126,6 @@ forcing_sources:
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
-        # MAC-SP is now a forcing as in varies with CMIP6 scenarios after 2014
         "MAC-SP": "${input_dir}/MAC-SP.nc"
 
         "MAC-SP_hist_scenario":
@@ -119,4 +133,3 @@ forcing_sources:
                          to: 2014
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
-

@@ -9,8 +9,6 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-use_icebergs: False
-
 choose_version:
   '2.0':
     branch: 2.0.2
@@ -32,7 +30,12 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-5
+    branch: AWI-CM3_v3.0
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-awicm-3.1:
+    branch: AWI-CM3_v3.1
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -112,7 +115,16 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+
+# FIXME(KH, PG): This will need to be put in correctly.
+# NOTE(PG): For awiesm test on levante --> cvmix namelist back in, recom namelist out!
+# kh 21.02.22 orig (disabled for a special test)
         - namelist.cvmix
+# kh 21.02.22 orig (disabled for a special test)
+#        - namelist.cvmix
+
+# kh 21.02.22 special test only
+#        - namelist.recom
 
 
 choose_asforcing:
@@ -139,6 +151,9 @@ choose_resolution:
                 nx: 912469
         DART:
                 nx: 3160340
+        HR:
+                nx: 1306775
+
 mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
@@ -146,10 +161,10 @@ restart_in_files:
         ice_restart: ice_restart
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
+
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -157,7 +172,6 @@ restart_in_in_work:
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -170,18 +184,18 @@ restart_out_files:
         par_ice_restart: par_ice_restart
         fesom_raw_restart_info: fesom_raw_restart_info
         fesom_raw_restart: fesom_raw_restart
+
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -192,38 +206,6 @@ outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
         fesom: "*.fesom.*.nc"
-
-choose_use_icebergs:
-        True:
-            ib_num_old: 0
-            ib_num_new: 0
-
-            add_restart_in_files:
-                    icb_restart: icb_restart
-
-            add_restart_out_files:
-                    icb_restart: icb_restart
-
-            input_in_work:
-                    longitude: "icb_longitude.dat"
-                    latitude: "icb_latitude.dat"
-                    length: "icb_length.dat"
-                    height: "icb_height.dat"
-                    scaling: "icb_scaling.dat"
-
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
-                    latitude: "latitude"
-                    length: "length"
-                    height: "height"
-                    scaling: "scaling"
 
 log_files:
         clock: clock
@@ -372,6 +354,10 @@ coupling_fields:
         sie_feom:
                 grid: feom
         snt_feom:
+                grid: feom
+        u_feom:
+                grid: feom
+        v_feom:
                 grid: feom
         taux_oce:
                 grid: feom

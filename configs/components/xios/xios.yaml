@@ -22,11 +22,15 @@ archfile: ESMTOOLS_generic_intel
 available_versions:
 - 2.0_r982_ogcm
 - 2.0_r982
+- trunk
+- trunk_oasis
 - "2.5"
 - 2.5_r1910
 - 2.5_r1910_oifs
 - 2.5_r1910_ogcm
+
 branch: esm-tools
+
 choose_version:
   2.0_r982:
     archfile: ESMTOOLS_generic_oasis_intel
@@ -34,6 +38,18 @@ choose_version:
   2.0_r982_ogcm:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
+  trunk:
+    git-repository: https://git.geomar.de/foci/src/xios.git
+    branch: xios_trunk 
+    archfile: ESMTOOLS_generic_intel
+    use_oasis: '' 
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+  trunk_oasis:
+    git-repository: https://git.geomar.de/foci/src/xios.git
+    branch: xios_trunk 
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
     archfile: ESMTOOLS_generic_oasis_intel
@@ -46,6 +62,9 @@ choose_version:
         archfile: ESMTOOLS_generic_oasis_intel
       "*":
         foo: bar
+    choose_computer.name:
+        levante:
+            archfile: ESMTOOLS_levante_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x

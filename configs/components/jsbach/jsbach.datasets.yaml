@@ -20,7 +20,7 @@ input_sources:
 
 forcing_sources:
         # harvest
-        "LU_1850": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc"
+        "LU_1850": "/work/ollie/pool/JSBACH/input/r0009/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc"
         "LU_1950": "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1950.nc"
         "LU_HIST":
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_1850.nc":

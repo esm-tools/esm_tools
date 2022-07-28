@@ -23,29 +23,34 @@ choose_version:
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 
 # directory for code and libraries
-base_dir: "/work/ab0995/a270105/esm_code/medusa-2.0" 
-# directory of medusa code
-model_dir: "${base_dir}/medmbm/trunk4mcg"
-# directory of application
-setup_dir: "${model_dir}/apps/medusa_recom_awiesm"
+model_dir: "${general.esm_master.dir}/medusa-${version}" 
+lib_dir: "${model_dir}/lib"
+inc_dir: "${model_dir}/include"
+# directory of applications
+setup_dir: "${model_dir}/medmbm/trunk4mcg/apps"
 # directory of executables
 bin_dir: "${model_dir}/work"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
-data_path: ""
+#data_path: ""
 
 clean_command: ${defaults.clean_command}
-comp_command: "
-    cd ${base_dir};
-    mkdir -p lib;
-    mkdir -p include;
-    cd ${base_dir}/libthdyct/trunk;
-    make;
-    mv libthdyct.a ${base_dir}/lib;
-    cd ${base_dir}/muxml/trunk/src;
-    make libmodmxm.a;
-    mv libmodmxm.a ${base_dir}/lib;
-    cp modmxm.h *.mod ${base_dir}/include;
-    "
+comp_command: "mkdir -p lib; mkdir -p include; 
+    cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
+    mv libthdyct.a ${model_dir}/lib;
+    cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
+    make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
+    cp modmxm.h *.mod ${model_dir}/include;
+    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; cp Makefile_mpiifort ./Makefile; make;
+    cd ${model_dir}/medmbm/trunk4mcg/src-med; cp Makefile_mpiifort ./Makefile; make;
+    make usetemplates;
+    make libmedusa.a;
+    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; make; 
+    " 
+    
+
+#YY: compiler-dependent changes in Makefile -> choose_compiler/machine?
+#include/ifort or mpiifort, lib/ifort or mpiifort
+
 
 #scenario: "paleo"
 

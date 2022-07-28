@@ -4,6 +4,14 @@ import shutil
 import subprocess
 import copy
 
+######################################
+# LA for icebergs
+from cdo import Cdo
+import glob
+import pandas as pd
+from .icb_apply_distribution_functions import *
+######################################
+
 import f90nml
 import six
 import yaml
@@ -186,7 +194,7 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
+        if model == "fesom" and config["fesom"].get("use_icebergs", False):
             config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
@@ -228,6 +236,8 @@ def copy_files_to_thisrun(config):
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
     if "fesom" in config["general"]["valid_model_names"]:
         if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
+            if not config["general"].get("iterative_coupling", False):
+                config = update_icebergs(config)
             if config["general"].get("run_number", 0) == 1:
                 if not os.path.isfile(
                     config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
@@ -247,12 +257,42 @@ def copy_files_to_thisrun(config):
     return config
 
 
+def update_icebergs(config):
+    six.print_("* starting update icebergs")
+    if config["general"]["verbose"]:
+        six.print_("updateing icebergs")
+    if (
+        config["fesom"].get("use_icebergs", False)
+        and config["fesom"].get("update_icebergs", False)
+        and config["general"]["run_number"] > 1
+    ):
+       
+        six.print_("LA DEBUG: update icebergs!")
+        icb_script  = config["fesom"].get("icb_script", "")
+        disch_file  = config["fesom"].get("disch_file", "")
+        iceberg_dir = config["fesom"].get("iceberg_dir", config['general']['experiment_couple_dir'])
+        mesh_dir    = config["fesom"]["mesh_dir"]
+        basin_file  = config["fesom"].get("basin_file", "")
+        icb_restart_file  = config["fesom"]["restart_in_sources"].get("icb_restart", "")
+        scaling_factor    = config["fesom"].get("scaling_factor", [1, 1, 1, 1, 1, 1])
+
+        six.print_("LA DEBUG: use scaling factors ", scaling_factor)
+        ib = IcebergCalving(disch_file, mesh_dir, iceberg_dir, basin_file, icb_restart_file, scaling_factor=scaling_factor)
+        ib.create_dataframe()
+        ib._icb_generator()
+    return config
+
+
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
         six.print_("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
+    #config = scale_icebergs(config)
+    #if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
+    #    if not config["general"].get("iterative_coupling", False):
+    #        config = update_icebergs(config)
     return config
 
 

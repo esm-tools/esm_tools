@@ -274,6 +274,8 @@ choose_version:
             grid: agr1
         "[[agr1_r_fields-->FIELD]]":
             grid: agr1r
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agr1
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
 
@@ -986,7 +988,7 @@ opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEv
 
 agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 
                 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
-agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OIceEvap, 1_O_dQnsdT]
+agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OTotEvap, 1_OIceEvap, 1_O_dQnsdT]
 agr2_t_fields: [1_O_AgrSpg]
 
 coupling_fields:
@@ -996,20 +998,27 @@ coupling_fields:
                 grid: opac
 
 choose_runoff_method:
+        # EM21 developed by Eric Maisonnave in 2021
+        # Runoff is split to river and calving. 
+        # Also remapped from runoff mapper grid (rnfm) 
+        # to the opac grid (for NEMO) and agr1 (for AGRIF)
         "EM21":
                 ornf_fields: [O_Runoff]
                 ocal_fields: [OCalving]
                 agr1_r_fields: [1_O_Runoff]
-                agr1_c_fields: [1_OCalving]
+                agr1_rc_fields: [1_OCalving]
                 add_coupling_fields:
                         "[[ornf_fields-->FIELD]]":
                                 grid: opac
                         "[[ocal_fields-->FIELD]]":
                                 grid: opaa
                         "[[agr1_r_fields-->FIELD]]":
-                                grid: agr1r
-                        "[[agr1_c_fields-->FIELD]]":
-                                grid: agr1c
+                                grid: agr1
+                        "[[agr1_rc_fields-->FIELD]]":
+                                grid: agr1
+        
+        # Old method based on remapping runoff to a pre-made
+        # runoff mask on the ORCA05 grid (rnfo) or AGRIF (agr1r)
         "*":
                 ornf_fields: [O_Runoff]
                 agr1_r_fields: [1_O_Runoff]

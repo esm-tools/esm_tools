@@ -3,6 +3,7 @@
 model: medusa
 branch: main
 version: '2.0'
+apps: medusa_recom_awiesm
 
 metadata:
         Institute: University Liege
@@ -26,8 +27,9 @@ git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 model_dir: "${general.esm_master.dir}/medusa-${version}" 
 lib_dir: "${model_dir}/lib"
 inc_dir: "${model_dir}/include"
+code_dir: "${model_dir}/medmbm/trunk4mcg"
 # directory of applications
-setup_dir: "${model_dir}/medmbm/trunk4mcg/apps"
+setup_dir: "${code_dir}/apps/${apps}"
 # directory of executables
 bin_dir: "${model_dir}/work"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
@@ -36,15 +38,15 @@ bin_dir: "${model_dir}/work"
 clean_command: ${defaults.clean_command}
 comp_command: "mkdir -p lib; mkdir -p include; 
     cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
-    mv libthdyct.a ${model_dir}/lib;
+    mv libthdyct.a ${lib_dir};
     cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
-    make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
-    cp modmxm.h *.mod ${model_dir}/include;
-    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; cp Makefile_mpiifort ./Makefile; make;
+    make libmodmxm.a; mv libmodmxm.a ${lib_dir};
+    cp modmxm.h *.mod ${inc_dir};
+    cd ${code_dir}/src-mcg; cp Makefile_mpiifort ./Makefile; make;
     cd ${model_dir}/medmbm/trunk4mcg/src-med; cp Makefile_mpiifort ./Makefile; make;
     make usetemplates;
     make libmedusa.a;
-    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; make; 
+    cd ${set_dir}; make; 
     " 
     
 
@@ -54,3 +56,14 @@ comp_command: "mkdir -p lib; mkdir -p include;
 
 #scenario: "paleo"
 
+namelist_dir: ""
+
+namelists:
+    - medusa_recom_paleo_files.nml
+    - medusa_recom_paleo_forcing.nml
+    - medusa_seafloor_init.nml
+
+
+
+namelist_changes        
+     

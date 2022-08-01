@@ -54,8 +54,8 @@ def merge_thisrun_into_experiment(config):
     #        # source = "init", "thisrun", "work"
     #        # target = "thisrun", "work", "experiment"
     #
-    #        six.print_("=" * 80, "\n")
-    #        six.print_("COPYING STUFF FROM " + source.upper() + " TO " + target.upper() + " FOLDERS")
+    #        print("=" * 80, "\n")
+    #        print("COPYING STUFF FROM " + source.upper() + " TO " + target.upper() + " FOLDERS")
     #
     #        successful_files = []
     #        missing_files = {}
@@ -90,7 +90,7 @@ def merge_thisrun_into_experiment(config):
     #        if missing_files:
     #            if not "files_missing_when_preparing_run" in config["general"]:
     #                config["general"]["files_missing_when_preparing_run"] = {}
-    #            six.print_("--- WARNING: These files were missing:")
+    #            print("--- WARNING: These files were missing:")
     #            for missing_file in missing_files:
     #                print( "  - " + missing_file + ": " + missing_files[missing_file])
     #            config["general"]["files_missing_when_preparing_run"].update(missing_files)
@@ -102,7 +102,7 @@ def merge_thisrun_into_experiment(config):
     #            "Checking which file to use for this year: %s",
     #            year,
     #        )
-    #        for fname, valid_years in six.iteritems(file_source):
+    #        for fname, valid_years in file_source.items():
     #            logging.debug("Checking %s", fname)
     #            min_year = float(valid_years.get("from", "-inf"))
     #            max_year = float(valid_years.get("to", "inf"))
@@ -217,7 +217,7 @@ def merge_thisrun_into_experiment(config):
         if missing_files:
             if not "files_missing_when_preparing_run" in config["general"]:
                 config["general"]["files_missing_when_preparing_run"] = {}
-            six.print_("--- WARNING: These files were missing:")
+            print("--- WARNING: These files were missing:")
             for missing_file in missing_files:
                 print("  - " + missing_file + ": " + missing_files[missing_file])
             config["general"]["files_missing_when_preparing_run"].update(missing_files)
@@ -226,10 +226,10 @@ def merge_thisrun_into_experiment(config):
 
 #  def assemble_file_lists(self, config, filetypes):
 #      all_files_to_copy = []
-#      six.print_("\n" "- Generating file lists for this run...")
+#      print("\n" "- Generating file lists for this run...")
 #      for model in config["general"]["valid_model_names"]:
-##          six.print_("-" * 80)
-#          six.print_("* %s" % config[model]["model"], "\n")
+##          print("-" * 80)
+#          print("* %s" % config[model]["model"], "\n")
 #          all_component_files, filetype_specific_dict = (
 #              self.really_assemble_file_list(config, model, filetypes)
 #          )
@@ -257,7 +257,7 @@ def merge_thisrun_into_experiment(config):
 #            filetype_files = []
 #
 #            if filetype == "restart_in" and not modelconfig["lresume"]:
-#                six.print_("- restart files do not make sense for a cold start, skipping...")
+#                print("- restart files do not make sense for a cold start, skipping...")
 #                continue
 #            if filetype + "_sources" not in modelconfig:
 #                continue
@@ -266,14 +266,12 @@ def merge_thisrun_into_experiment(config):
 #
 #            inverted_dict = {}
 #            if filetype + "_files" in modelconfig:
-#                for k, v in six.iteritems(modelconfig[filetype + "_files"]):
+#                for k, v in modelconfig[filetype + "_files"]).items():
 #                    inverted_dict[v] = k
 #
 #            sources_dict = copy.deepcopy(modelconfig[filetype + "_sources"])
 #
-#            for file_descriptor, file_source in six.iteritems(
-#                sources_dict
-#            ):
+#            for file_descriptor, file_source in sources_dict.items():
 #                if "*" in file_source:
 #                    #esm_parser.pprint_config(self.config)
 #                    # restart_out* and outdata* entries in yaml files are provided without their path
@@ -326,9 +324,7 @@ def merge_thisrun_into_experiment(config):
 #           ######## end globbing stuff
 #
 #            filedir_intermediate = modelconfig["thisrun_" + filetype + "_dir"]
-#            for file_descriptor, file_source in six.iteritems(
-#                modelconfig[filetype + "_sources"]
-#            ):
+#            for file_descriptor, file_source in modelconfig[filetype + "_sources"].items():
 #                if filetype == "restart_in" and not file_source.startswith("/"):
 #                    # don't use basename on restart_in as restarts can be in subfolders,
 #                    # relative to parent_restart_dir, example: oifs.yaml
@@ -341,7 +337,7 @@ def merge_thisrun_into_experiment(config):
 #                        continue
 #                    else:
 #                        inverted_dict = {}
-#                        for k, v in six.iteritems(modelconfig[filetype + "_files"]):
+#                        for k, v in modelconfig[filetype + "_files"].items():
 #                            inverted_dict[v] = k
 #                        file_category = inverted_dict[file_descriptor]
 #                else:
@@ -391,7 +387,7 @@ def merge_thisrun_into_experiment(config):
 #                    # also performs the substitution on the dictionary keys.
 #                    if isinstance(file_source, dict):
 #                        file_source_new = {}
-#                        for key, value in six.iteritems(file_source):
+#                        for key, value in file_source.items():
 #                            key_new = key.replace("@YEAR@", str(year))
 #                            file_source_new[key_new] = value
 #                        del file_source
@@ -429,7 +425,7 @@ def merge_thisrun_into_experiment(config):
 #                "Checking which file to use for this year: %s",
 #                year,
 #            )
-##            for fname, valid_years in six.iteritems(file_source):
+##            for fname, valid_years in file_source.items():
 #                logging.debug("Checking %s", fname)
 #                min_year = float(valid_years.get("from", "-inf"))
 #                max_year = float(valid_years.get("to", "inf"))

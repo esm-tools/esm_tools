@@ -155,6 +155,7 @@ def get_scripts(info):
             with open(model_config, "r") as c:
                 config_test = yaml.load(c, Loader=yaml.FullLoader)
             computers = config_test.get("computers", False)
+            ignore_runscripts = config_test.get("ignore_runscripts", {})
             if computers:
                 # If this runscript is not to be evaluated in this computer, move on
                 if info["this_computer"] not in computers:
@@ -172,6 +173,10 @@ def get_scripts(info):
                     or isinstance(test_info.get(model), str)
                     or script in test_info.get(model, [])
                 ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
+                    # Check if the script is an exception for this computer and needs
+                    # to be exited
+                    if script in ignore_runscripts.get(info["this_computer"], []):
+                        continue
                     # Check that it is actually a runscript
                     if (
                         not any(script in s for s in ignore_scripts)

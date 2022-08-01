@@ -138,10 +138,24 @@ def work_through_recipe(recipe, plugins, config):
         if plugins[workitem]["type"] == "core":
             thismodule = __import__(plugins[workitem]["module"])
             submodule = getattr(thismodule, plugins[workitem]["submodule"])
-            config = getattr(submodule, workitem)(config)
+            # NOTE(PG): This is sloppy, but it gets the job done...
+            if config['general'].get("timing", False):
+                from esm_profile import timing
+
+                workitem_callable = getattr(submodule, workitem)
+                timed_workitem_callable = timing(workitem_callable)
+                config = timed_workitem_callable(config)
+            else:
+                config = getattr(submodule, workitem)(config)
         elif plugins[workitem]["type"] == "installed":
             # print("Installed plugin will be run: ", workitem)
-            config = plugins[workitem]["callable"](config)
+            if config['general'].get("timing", False):
+                from esm_profile import timing
+                workitem_callable = plugins[workitem]["callable"]
+                timed_workitem_callable = timing(workitem_callable)
+                config = timed_workitem_callable(config)
+            else:
+                config = plugins[workitem]["callable"](config)
         else:
             if sys.version_info >= (3, 5):
                 import importlib.util
@@ -155,5 +169,11 @@ def work_through_recipe(recipe, plugins, config):
                 )
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
-                config = getattr(thismodule, workitem)(config)
+                if config['general'].get("timing", False):
+                    from esm_profile import timing
+                    workitem_callable = getattr(thismodule, workitem)
+                    timed_workitem_callable = timing(workitem_callable)
+                    config = timed_workitem_callable(config)
+                else:
+                    config = getattr(thismodule, workitem)(config)
     return config

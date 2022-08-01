@@ -3,7 +3,7 @@
 model: medusa
 branch: main
 version: '2.0'
-apps: medusa_recom_awiesm
+apps: 'medusa_recom_awiesm'
 
 metadata:
         Institute: University Liege
@@ -22,33 +22,34 @@ choose_version:
       branch: main
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
-
-# directory for code and libraries
+ directory for code and libraries
 model_dir: "${general.esm_master.dir}/medusa-${version}" 
-lib_dir: "${model_dir}/lib"
-inc_dir: "${model_dir}/include"
-code_dir: "${model_dir}/medmbm/trunk4mcg"
+#lib_dir: "${model_dir}/lib"
+#inc_dir: "${model_dir}/include"
+#code_dir: "${model_dir}/medmbm/trunk4mcg"
 # directory of applications
-setup_dir: "${code_dir}/apps/${apps}"
+setup_dir: "${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_paleo"
 # directory of executables
-bin_dir: "${model_dir}/work"
+bin_dir: "${model_dir}/work/exe_files"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
 #data_path: ""
 
 clean_command: ${defaults.clean_command}
 comp_command: "mkdir -p lib; mkdir -p include; 
     cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
-    mv libthdyct.a ${lib_dir};
+    mv libthdyct.a ${model_dir}/lib;
     cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
-    make libmodmxm.a; mv libmodmxm.a ${lib_dir};
-    cp modmxm.h *.mod ${inc_dir};
-    cd ${code_dir}/src-mcg; cp Makefile_mpiifort ./Makefile; make;
+    make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
+    cp modmxm.h *.mod ${model_dir}/include;
+    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; cp Makefile_mpiifort ./Makefile; make;
     cd ${model_dir}/medmbm/trunk4mcg/src-med; cp Makefile_mpiifort ./Makefile; make;
     make usetemplates;
     make libmedusa.a;
-    cd ${set_dir}; make; 
-    " 
+    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; make;" 
     
+executable: medusa_recom_paleo
+#install_bins: "bin/medusa_recom_paleo"
+lresume: false
 
 #YY: compiler-dependent changes in Makefile -> choose_compiler/machine?
 #include/ifort or mpiifort, lib/ifort or mpiifort
@@ -65,5 +66,5 @@ namelists:
 
 
 
-namelist_changes        
+#namelist_changes        
      

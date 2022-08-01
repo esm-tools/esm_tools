@@ -33,4 +33,4 @@ fesom:
 recom:
         data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
         lresume: "${general.lresume}"
-        scenario: "preindustrial"
+        scenario: "PI-CTRL"

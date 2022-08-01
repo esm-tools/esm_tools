@@ -572,6 +572,14 @@ def check(info, mode, model, version, out, script, v):
     if actually_do or mode == "submission":
         # Check for errors in the output
         errors = config_test.get(test_type, {}).get("errors", [])
+        # Get exceptions
+        error_exceptions = {}
+        cleaned_errors = []
+        for error in errors:
+            cleaned_error = error.split(" except ")[0]
+            error_exceptions[cleaned_error] = find_exceptions(error)
+            cleaned_errors.append(cleaned_error)
+        errors = cleaned_errors
         # Add specific errors
         if mode == "comp":
             errors.append("errors occurred!")
@@ -579,7 +587,7 @@ def check(info, mode, model, version, out, script, v):
             errors.extend(["Traceback (most recent call last):", "ERROR"])
         # Loop through errors
         for error in errors:
-            if error in out:
+            if error in out and script not in error_exceptions.get(error, []):
                 logger.error(f"\t\tError during {mode_name[mode]}!\n\n{out}")
                 success = False
         if mode != "run":
@@ -766,13 +774,7 @@ def exist_files(files, path, version):
     files_checked = True
     # Loop through files
     for f in files:
-        exception_list = []
-        # Get the commands inside the ``[]``
-        if " [" in f and f[-1] == "]":
-            exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", f)
-            if len(exception_list) > 1:
-                raise Exception("You should only have one list per file")
-            exception_list = [x.replace(" ", "") for x in exception_list[0].split(",")]
+        exception_list = find_exceptions(f)
 
         # Command's logic
         if " except " in f and version in exception_list:
@@ -797,3 +799,29 @@ def exist_files(files, path, version):
                 files_checked = False
 
     return files_checked
+
+def find_exceptions(string_to_be_checked):
+    """
+    Finds exceptions on the ``string_to_be_checked`` with the format
+    `` except [<item1>, <item2>, ...]``, and returns the list of the exceptions
+    specified between the square brackets in the string.
+
+    Parameters
+    ----------
+    string_to_be_checked : str
+        String to be searched for exceptions
+
+    Returns
+    -------
+    exception_list : list
+        List of exceptions found on the string
+    """
+    exception_list = []
+    # Get the commands inside the ``[]``
+    if " [" in string_to_be_checked and string_to_be_checked[-1] == "]":
+        exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", string_to_be_checked)
+        if len(exception_list) > 1:
+            raise Exception("You should only have one list per file")
+        exception_list = [x.replace(" ", "") for x in exception_list[0].split(",")]
+
+    return exception_list

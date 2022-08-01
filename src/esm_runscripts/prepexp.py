@@ -9,6 +9,7 @@ from colorama import Fore
 import esm_tools
 import esm_parser
 
+from .batch_system import batch_system
 from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
 

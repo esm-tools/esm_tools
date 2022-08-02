@@ -21,8 +21,8 @@ choose_version:
     '2.0':
       branch: main
 
-git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
- directory for code and libraries
+git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git 
+# directory for code and libraries
 model_dir: "${general.esm_master.dir}/medusa-${version}" 
 #lib_dir: "${model_dir}/lib"
 #inc_dir: "${model_dir}/include"

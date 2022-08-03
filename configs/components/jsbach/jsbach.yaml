@@ -278,7 +278,7 @@ choose_scenario_type:
                         popdens: popdens
 
 # For ssp scenarios find the pathway first 4 characters
-scenario_is_ssp: "$(( 'ssp' in '${scenario}' ))"
+scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
 choose_scenario_is_ssp:
         True:
                 ssp_num: "$(( '${scenario}'[:4] ))"

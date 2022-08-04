@@ -111,6 +111,8 @@ export_vars:
         KMP_LIBRARY: turnaround
         KMP_AFFINITY: "granularity=fine,scatter"
 
+# kh 03.08.22 OMP_STACKSIZE default is 8MB which might not be sufficient for e.g. fesom in awiesm-2.1
+        OMP_STACKSIZE: 64M
 
 # Variables needed exclusively during runtime
 # NOTE: runtime_environment_changes does not work from the machine files

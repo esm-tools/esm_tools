@@ -2,6 +2,6 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.12.8"
+__version__ = "6.13.1"
 
 from .esm_motd import *

@@ -50,7 +50,7 @@ oifs:
     input_expid: awi3
     wam: true
     lresume: false
-    time_step: 720
+    time_step: 60
     nproc: 384
     omp_num_threads: 8
 

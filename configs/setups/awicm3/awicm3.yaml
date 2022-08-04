@@ -36,6 +36,10 @@ general:
           master:
             couplings:
             - fesom-2.0-master+oifs-43r3-master
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
           frontiers:
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers
@@ -142,6 +146,22 @@ oifs:
                                                 NIO_SERV_METHOD: 2
                                                 NMSG_LEVEL_CLIENT: 0
                                                 NMSG_LEVEL_SERVER: 1
+                "master":
+                        with_xios: True
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                                        NAEPHY:
+                                                LECURR: true
+                                        NAERAD:
+                                                NSOLARSPECTRUM: "1"
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -423,6 +443,14 @@ oasis3mct:
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
                 'v3.1':
+                        rstos_file_name: 'rstos_uv'
+                        rstas_file_name: 'rstas_uv'
+                        add_process_ordering:
+                                - xios
+                        add_coupling_target_fields:
+                                add_rstos.nc:
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                'master':
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
                         add_process_ordering:

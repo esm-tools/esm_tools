@@ -41,6 +41,10 @@ setup_requirements = []
 
 test_requirements = ["pytest", "pyfakefs"]
 
+extras = {
+    "test": test_requirements,
+}
+
 setup(
     author="Dirk Barbi",
     author_email="dirk.barbi@awi.de",
@@ -91,6 +95,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
+    extras_require=extras,
     url="https://github.com/esm-tools/esm_tools",
     version="6.13.4",
     zip_safe=False,

@@ -31,7 +31,8 @@ jobs:
 
     - name: Run Pytest
       run: |
-        pip install pytest
+        # Install test requirements
+        pip install .[test]
         pytest -v .
         # For now, only test actual source code. Stuff like coupling scripts is ignored
         pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*" 

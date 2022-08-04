@@ -2,8 +2,9 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
 from os import getenv
+
+from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -38,7 +39,11 @@ requirements = [
 
 setup_requirements = []
 
-test_requirements = ["pyfakefs"]
+test_requirements = ["pytest", "pyfakefs"]
+
+extras = {
+    "test": test_requirements,
+}
 
 setup(
     author="Dirk Barbi",
@@ -90,6 +95,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
+    extras_require=extras,
     url="https://github.com/esm-tools/esm_tools",
     version="6.13.4",
     zip_safe=False,

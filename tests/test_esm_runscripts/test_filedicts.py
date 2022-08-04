@@ -13,6 +13,8 @@ Some considerations
 """
 import os
 
+import yaml
+
 import esm_runscripts.filedicts
 
 
@@ -28,6 +30,7 @@ def test_example(fs):
                 path_in_pool: /work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc
                 name_in_work: unit.24
     """
+    config = yaml.safe_load(config)
     # Create some fake files and directories you might want in your test
     fs.create_file("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
     fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")

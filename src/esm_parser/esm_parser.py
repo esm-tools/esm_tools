@@ -79,7 +79,6 @@ import numpy
 import coloredlogs
 import colorama
 import yaml
-import six
 
 # functions reading in dict from file
 from .yaml_to_dict import *
@@ -137,10 +136,6 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
 early_choose_vars = ["include_models", "version", "omp_num_threads"]
-
-# Ensure FileNotFoundError exists:
-if six.PY2:  # pragma: no cover
-    FileNotFoundError = IOError
 
 
 def flatten_nested_lists(lst):
@@ -574,7 +569,7 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
     :param winner: should be either receiving (default) or to_be_included
     :return: None
     """
-    for k, v in six.iteritems(merge_dct):
+    for k in merge_dct:
         if (
             k in dct
             and isinstance(dct[k], dict)
@@ -616,10 +611,10 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
         "dont_overwrite_with_empty_value", False
     )
 
-    for k, v in six.iteritems(merge_dct):
+    for k, v in merge_dct.items():
         if (
             k in dct
-            and isinstance(dct[k], dict)
+            and isinstance(v, dict)
             and isinstance(merge_dct[k], collections.Mapping)
         ):
             # NOTE(PG): this is a very bad hack and doesn't belong here at all.
@@ -799,7 +794,7 @@ def find_remove_entries_in_config(mapping, model_name, models=[]):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -956,7 +951,7 @@ def basic_find_remove_entries_in_config(mapping):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -974,12 +969,7 @@ def basic_find_add_entries_in_config(mapping):
     mappings = [mapping]
     while mappings:
         mapping = mappings.pop()
-        # try:
-        #    items = six.iteritems(mapping)
-        # except AttributeError:
-        #    continue
-        for key in list(mapping):
-            value = mapping[key]
+        for key, value in mapping.items():
             # for key, value in items:
             if isinstance(key, str) and key.startswith("add_"):
                 all_adds.append((key, value))
@@ -996,7 +986,7 @@ def find_add_entries_in_config(mapping, model_name):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -1194,7 +1184,7 @@ def find_value_for_nested_key(mapping, key_of_interest, tree=[]):
             tree = [None]
     for leaf in reversed(tree):
         logging.debug("Looking in bottommost leaf %s", leaf)
-        for key, value in six.iteritems(mapping):
+        for key, value in mapping.items():
             if key == key_of_interest:
                 return value
         if leaf:
@@ -1233,7 +1223,7 @@ def basic_choose_blocks(config_to_resolve, config_to_search, isblacklist=True):
 def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
     logging.debug("Top of list_all_keys_starting_with_choose")
     all_chooses = []
-    for key, value in six.iteritems(mapping):
+    for key, value in mapping.items():
         if (
             isinstance(key, str)
             and key.startswith("choose_")
@@ -1299,7 +1289,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
 
 def basic_determine_set_variables_in_choose_block(config):
     set_variables = []
-    for k, v in six.iteritems(config):
+    for k, v in config.items():
         if isinstance(v, dict):  # and isinstance(k, str) and k.startswith("choose_"):
             # Go in further
             set_variables += basic_determine_set_variables_in_choose_block(v)
@@ -1333,7 +1323,7 @@ def determine_set_variables_in_choose_block(config, valid_model_names, model_nam
         determined in ``config``
     """
     set_variables = []
-    for k, v in six.iteritems(config):
+    for k, v in config.items():
         if isinstance(k, str) and k in valid_model_names:
             logging.debug(k)
             model_name = k
@@ -1370,7 +1360,6 @@ def basic_find_one_independent_choose(all_set_variables):
     """
     task_list = []
     for choose_keyword in list(all_set_variables):
-        # for choose_keyword, set_vars in six.iteritems(value):
         task_list.append(choose_keyword)
         task_list = basic_add_more_important_tasks(
             choose_keyword, all_set_variables, task_list
@@ -1477,9 +1466,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     elif "*" in config_to_replace_in.get(choose_key):
         logging.debug("Found a * case!")
-        for update_key, update_value in six.iteritems(
-            config_to_replace_in[choose_key]["*"]
-        ):
+        for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
         # Those two are too noisy
@@ -1748,22 +1735,12 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         do_func_for = [dict, list]
     elif level == "atomic":
         do_func_for = [str, int, float, Date]
-        if six.PY2:
-            do_func_for.append(unicode)
     elif level == "always":
         do_func_for = [str, dict, list, int, float, bool]
     elif level == "keys":
         do_func_for = []
     else:
         do_func_for = []
-
-    # Python 2/3 error in YAML parser, bad workaround:
-    if six.PY2:
-        if isinstance(right, unicode):
-            logging.warning("Unicode type detected, converting to a regular string!")
-            right = right.encode("utf-8")
-            assert isinstance(right, str)
-            logging.warning(right)
 
     logging.debug("Type right: %s", type(right))
     logging.debug("Do func for: %s", do_func_for)
@@ -1878,17 +1855,6 @@ def recursive_get(config_to_search, config_elements):
     # This looks dangerous too...
     if my_config_elements:
         return recursive_get(result, my_config_elements)
-
-    # Unicode vs Str again
-    if six.PY2:
-        if isinstance(result, list):
-            for index, entry in enumerate(result):
-                if isinstance(entry, unicode):
-                    logging.critical("Changing unicode to str!")
-                    result[index] = str(index)
-        elif isinstance(result, unicode):
-            logging.critical("Changing unicode to str!")
-            entries_of_key = str(entries_of_key)
 
     return result
 
@@ -2161,7 +2127,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     return_dict2 = replacement_dict
 
                 if list_fence in suffix:
-                    for key, value in six.iteritems(return_dict2):
+                    for key, value in return_dict2.items():
                         return_dict.update(
                             list_to_multikey(
                                 tree + [key],
@@ -2797,7 +2763,7 @@ class GeneralConfig(dict):  # pragma: no cover
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
         self._config_init(user_config)
-        for k, v in six.iteritems(self.config):
+        for k, v in self.config.items():
             self.__setitem__(k, v)
         del self.config
 

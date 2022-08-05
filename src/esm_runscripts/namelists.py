@@ -12,7 +12,6 @@ import sys
 import warnings
 
 import f90nml
-import six
 
 from esm_parser import user_error
 
@@ -222,7 +221,7 @@ class Namelist:
             The modified configuration.
         """
         namelist_changes = mconfig.get("namelist_changes", {})
-        for namelist, changes in six.iteritems(namelist_changes):
+        for namelist, changes in namelist_changes.items():
             mconfig["namelists"][namelist].patch(changes)
         return mconfig
 
@@ -427,7 +426,7 @@ class Namelist:
         """
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             with open(
                 os.path.join(mconfig["thisrun_config_dir"], nml_name), "w"
             ) as nml_file:
@@ -442,12 +441,12 @@ class Namelist:
     def nmls_output(mconfig):
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             all_nmls[nml_name] = nml_obj  # PG: or a string representation?
         for nml_name, nml in all_nmls.items():
             message = f"\nFinal Contents of {nml_name}:"
-            six.print_(message)
-            six.print_(len(message) * "-")
+            print(message)
+            print(len(message) * "-")
             nml.write(sys.stdout)
             print("-" * 80)
             print(f"::: end of the contents of {nml_name}\n")
@@ -455,7 +454,7 @@ class Namelist:
 
     @staticmethod
     def nmls_output_all(config):
-        six.print_(
+        print(
             "\n" "- Namelists modified according to experiment specifications..."
         )
         for model in config["general"]["valid_model_names"]:

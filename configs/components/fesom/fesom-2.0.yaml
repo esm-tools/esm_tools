@@ -24,7 +24,7 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-master:
-    branch: master
+    branch: refactoring
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git

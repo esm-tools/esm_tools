@@ -19,6 +19,8 @@ from . import helpers
 
 
 def rename_sources_to_targets(config):
+    # TODO: many variables are repeated
+
     # Purpose of this routine is to make sure that filetype_sources and
     # filetype_targets are set correctly, and _in_work is unset
     for filetype in config["general"]["all_model_filetypes"]:
@@ -28,10 +30,8 @@ def rename_sources_to_targets(config):
             targets = filetype + "_targets" in config[model]
             in_work = filetype + "_in_work" in config[model]
 
-            if (
-                filetype in config["general"]["out_filetypes"]
-            ):  # stuff to be copied out of work
-
+            # stuff to be copied out of work
+            if filetype in config["general"]["out_filetypes"]:
                 if sources and targets and in_work:
                     if (
                         # TODO: typo here. "not" should be removed and == should be replaced with !=
@@ -76,7 +76,8 @@ def rename_sources_to_targets(config):
                             config[model][filetype + "_targets"]
                         )
 
-            else:  # stuff to be copied into work
+            # stuff to be copied into work
+            else:
 
                 if sources and targets and in_work:
                     if (

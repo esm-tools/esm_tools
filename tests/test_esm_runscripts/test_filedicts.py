@@ -18,6 +18,7 @@ def test_filedicts_basics(fs):
                     properties such as geopotential, temperature, pressure
     """
     config = yaml.safe_load(dummy_config)
+    # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = SimulationFile(config["echam"]["files"]["jan_surf"])
     assert sim_file["name_in_work"] == "unit.24"

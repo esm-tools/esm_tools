@@ -31,7 +31,6 @@ requirements = [
     "pyyaml>=5.1",
     "questionary",
     "semver",
-    "six",
     "sqlalchemy",
     "tabulate",
     "tqdm",
@@ -94,6 +93,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.13.3",
+    version="6.13.5",
     zip_safe=False,
 )

@@ -45,7 +45,7 @@ def rename_sources_to_targets(config):
                         # TODO: remove the comments after discussion
                         # TODO: it would be better to change it with user_error() -> FIXED
                         error_type = "File Mismatch"
-                        error_text = "Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
+                        error_text = f"Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
                         esm_parser.user_error(error_type, error_text)
 
                 elif sources and targets and not in_work:
@@ -54,14 +54,9 @@ def rename_sources_to_targets(config):
 
                 elif sources and not targets:
                     if config["general"]["verbose"]:
-                        # TODO: change to f-string to decrease file length
-                        print(
-                            "Renaming sources to targets for filetype "
-                            + filetype
-                            + " in model "
-                            + model,
-                            flush=True,
-                        )
+                        # TODO: change to f-string to decrease file length -> FIXED
+                        # TODO: remove the comments after discussion
+                        print(f"Renaming sources to targets for filetype {filetype} in model {model}", flush=True)
                         helpers.print_datetime(config)
                     config[model][filetype + "_targets"] = copy.deepcopy(
                         config[model][filetype + "_sources"]
@@ -90,18 +85,12 @@ def rename_sources_to_targets(config):
                         == config[model][filetype + "_in_work"]
                     ):
                         # TODO: convert to f-string to decrease file length
-                        print(
-                            "Mismatch between "
-                            + filetype
-                            + "_targets and "
-                            + filetype
-                            + "_in_work in model "
-                            + model,
-                            flush=True,
-                        )
                         helpers.print_datetime(config)
-                        # TODO: replace with user_error()
-                        sys.exit(-1)
+                        # TODO: replace with user_error() -> FIXED
+                        # TODO: remove the comments after discussion
+                        error_type = "File Mismatch"
+                        error_text = f"Mismatch between {filetype}_targets and {filetype}_in_work in model {model}"
+                        esm_parser.user_error(error_type, error_text)
 
                 elif sources and targets and not in_work:
                     # all fine

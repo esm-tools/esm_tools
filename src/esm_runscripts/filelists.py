@@ -132,8 +132,9 @@ def complete_targets(config):
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
-                    # TODO: use not in instead of not ... in
-                    if not category in config[model][filetype + "_targets"]:
+                    # TODO: use not in instead of not ... in -> FIXED
+                    # TODO: remove comments after discussion
+                    if category not in config[model][filetype + "_targets"]:
                         file_source = config[model][filetype + "_sources"][category]
 
                         # check if the file_source has the correct type. For
@@ -234,9 +235,9 @@ def choose_needed_files(config):
             new_sources = new_targets = {}
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
-                # TODO: change with not in operator
+                # TODO: change with not in operator -> FIXED
                 # TODO: use f-string
-                if not name in config[model][filetype + "_sources"]:
+                if name not in config[model][filetype + "_sources"]:
                     print(
                         "Implementation "
                         + name
@@ -258,8 +259,9 @@ def choose_needed_files(config):
 
             all_categs = list(config[model][filetype + "_targets"].keys())
             for category in all_categs:
-                # TODO: change wit not in operator
-                if not category in config[model][filetype + "_sources"]:
+                # TODO: change wit not in operator -> FIXED
+                # TODO: remove the comments after discussion
+                if category not in config[model][filetype + "_sources"]:
                     del config[model][filetype + "_targets"][category]
 
             del config[model][filetype + "_files"]
@@ -318,9 +320,9 @@ def target_subfolders(config):
                 for descr, filename in config[model][filetype + "_targets"].items():
                     # * only in targets if denotes subfolder
                     # TODO: change with user_error()
-                    # TODO: better to use "not in" operator instead of not ... in
+                    # TODO: better to use "not in" operator instead of not ... in -> FIXED
                     # TODO: name is not defined, this should be filename
-                    if not descr in config[model][filetype + "_sources"]:
+                    if descr not in config[model][filetype + "_sources"]:
                         esm_parser.user_error(
                             "Filelists",
                             f"No source found for target ``{name}`` in model "

@@ -2,10 +2,8 @@
 The file-dictionary implementation
 """
 
-from collections import UserDict
 
-
-class SimulationFile(UserDict):
+class SimulationFile(dict):
     """
     Desribes a file used within a ESM Simulation.
 
@@ -32,16 +30,16 @@ class SimulationFile(UserDict):
         >>> sim_file.cp_to_exp_tree()
     """
 
-    # Do NOT implment an __init__ unless you really think you need to. UserDict
+    # Do NOT implment an __init__ unless you really think you need to. dict
     # takes care of this in a way is that is considerably smarter than any of us are.
     #
     # Please delete my annoying comments before merging into actual release ;-)
 
-    def cp_to_exp_tree(self) -> None:
+    def cp(self) -> None:
         pass
 
-    def ln_to_exp_tree(self) -> None:
+    def ln(self) -> None:
         pass
 
-    def mv_to_exp_tree(self) -> None:
+    def mv(self) -> None:
         pass

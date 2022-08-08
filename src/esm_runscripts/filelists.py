@@ -34,9 +34,12 @@ def rename_sources_to_targets(config):
 
                 if sources and targets and in_work:
                     if (
+                        # TODO: typo here. "not" should be removed and == should be replaced with !=
                         not config[model][filetype + "_sources"]
                         == config[model][filetype + "_in_work"]
                     ):
+                        # TODO: changed with f-string. It would be good to decrease the indentations
+                        #f"Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
                         print(
                             "Mismatch between "
                             + filetype
@@ -46,6 +49,7 @@ def rename_sources_to_targets(config):
                             + model,
                             flush=True,
                         )
+                        # TODO: it would be better to change it with user_error()
                         helpers.print_datetime(config)
                         sys.exit(-1)
 
@@ -55,6 +59,7 @@ def rename_sources_to_targets(config):
 
                 elif sources and not targets:
                     if config["general"]["verbose"]:
+                        # TODO: change to f-string to decrease file length
                         print(
                             "Renaming sources to targets for filetype "
                             + filetype
@@ -85,9 +90,11 @@ def rename_sources_to_targets(config):
 
                 if sources and targets and in_work:
                     if (
+                        # TODO: typo here? != instead of not ... ==
                         not config[model][filetype + "_targets"]
                         == config[model][filetype + "_in_work"]
                     ):
+                        # TODO: convert to f-string to decrease file length
                         print(
                             "Mismatch between "
                             + filetype
@@ -98,6 +105,7 @@ def rename_sources_to_targets(config):
                             flush=True,
                         )
                         helpers.print_datetime(config)
+                        # TODO: replace with user_error()
                         sys.exit(-1)
 
                 elif sources and targets and not in_work:
@@ -105,8 +113,10 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
+                    # TODO: use f-string
                     print(filetype + "_sources missing in model " + model, flush=True)
                     helpers.print_datetime(config)
+                    # TODO: replace with user_error()
                     sys.exit(-1)
 
                 elif sources and not targets:
@@ -132,6 +142,7 @@ def complete_targets(config):
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
+                    # TODO: use not in instead of not ... in
                     if not category in config[model][filetype + "_targets"]:
                         file_source = config[model][filetype + "_sources"][category]
 
@@ -209,6 +220,7 @@ def reuse_sources(config):
             ):
                 for category in config[model][filetype + "_sources"]:
                     config[model][filetype + "_sources"][category] = (
+                        # TODO: use f-string
                         config[model]["experiment_" + filetype + "_dir"]
                         + "/"
                         + config[model][filetype + "_targets"][category]
@@ -223,12 +235,15 @@ def choose_needed_files(config):
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
 
+            # TODO: change with not in operator
             if not filetype + "_files" in config[model]:
                 continue
 
             new_sources = new_targets = {}
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
+                # TODO: change with not in operator
+                # TODO: use f-string
                 if not name in config[model][filetype + "_sources"]:
                     print(
                         "Implementation "
@@ -249,6 +264,7 @@ def choose_needed_files(config):
 
             all_categs = list(config[model][filetype + "_targets"].keys())
             for category in all_categs:
+                # TODO: change wit not in operator
                 if not category in config[model][filetype + "_sources"]:
                     del config[model][filetype + "_targets"][category]
 
@@ -306,6 +322,8 @@ def target_subfolders(config):
                 for descr, filename in config[model][filetype + "_targets"].items():
                     # * only in targets if denotes subfolder
                     # TODO: change with user_error()
+                    # TODO: better to use "not in" operator instead of not ... in
+                    # TODO: name is not defined, this should be filename
                     if not descr in config[model][filetype + "_sources"]:
                         esm_parser.user_error(
                             "Filelists",
@@ -589,6 +607,7 @@ def replace_year_placeholder(config):
 
                                 # if the source contains 'from' or 'to' information
                                 # then they have a dict type
+                                # TODO: replace with isinstance
                                 if (
                                     type(
                                         config[model][filetype + "_sources"][
@@ -695,6 +714,9 @@ def replace_year_placeholder(config):
                                 # end if
                             # end of the for year loop
 
+                            # TODO (Deniz): this should not be needed any more but 
+                            # do one more test with AWICM-Recom
+
                             # deniz: new additions for @YEAR_1850@
                             # these are the Kinne aerosol files for the background
                             # aerosol concentration. They are needed for years
@@ -738,6 +760,7 @@ def replace_year_placeholder(config):
 
                 for file_category in config[model][filetype + "_targets"]:
 
+                    # TODO: replace with isinstance
                     if (
                         type(config[model][filetype + "_sources"][file_category])
                         == dict
@@ -895,6 +918,7 @@ def resolve_symlinks(file_source):
 
         # deniz: check if file links to itself. In UNIX
         # ln -s endless_link endless_link is a valid command
+        # TODO: config is not defined here. This should be added as a function argument if config is not a global variable
         if os.path.abspath(file_source) == points_to:
             if config["general"]["verbose"]:
                 print(f"file {file_source} links to itself", flush=True)
@@ -1048,6 +1072,7 @@ def filter_allowed_missing_files(config):
             for allowed_missing_pattern in config[model].get(
                 "allowed_missing_files", []
             ):
+                # TODO: this expression needs to be clarified
                 if (
                     re.match(allowed_missing_pattern, missing_file_source_fname)
                     or missing_file_source_fname in glob.glob(allowed_missing_pattern)
@@ -1154,6 +1179,7 @@ def get_method(movement):
 
 def complete_all_file_movements(config):
 
+    # TODO: mconfig or gconfig
     mconfig = config["general"]
     general_file_movements = copy.deepcopy(mconfig.get("file_movements", {}))
     if "defaults.yaml" in mconfig:
@@ -1223,6 +1249,9 @@ def complete_all_file_movements(config):
                         )
                     # Solve ``all_directions``
                     file_spec_movements = mconfig["file_movements"][file_in_fm]
+
+                    # TODO: init_to_exp, ..., work_to_run -> movements list. This will remove the duplication
+
                     if "all_directions" in file_spec_movements:
                         movement_type = file_spec_movements["all_directions"]
                         for movement in [
@@ -1307,6 +1336,7 @@ def get_movement(config, model, category, filetype, source, target):
         )
     else:
         # This should NOT happen
+        # TODO: replace with user_error()
         print(f"Error: Unknown file movement from {source} to {target}", flush=True)
         helpers.print_datetime(config)
         sys.exit(42)

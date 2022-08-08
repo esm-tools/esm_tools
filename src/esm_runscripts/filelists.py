@@ -941,7 +941,7 @@ def copy_files(config, filetypes, source, target):
         text_target = "targets"
 
     # TODO: not == can be replaced with !=
-    for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
+    for filetype in [filetype for filetype in filetypes if filetype != "ignore"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_" + text_source in config[model]:
                 sourceblock = config[model][filetype + "_" + text_source]

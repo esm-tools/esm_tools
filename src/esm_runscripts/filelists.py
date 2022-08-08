@@ -81,9 +81,10 @@ def rename_sources_to_targets(config):
 
                 if sources and targets and in_work:
                     if (
-                        # TODO: typo here? != instead of not ... ==
-                        not config[model][filetype + "_targets"]
-                        == config[model][filetype + "_in_work"]
+                        # TODO: typo here? != instead of not ... == -> FIXED
+                        # TODO: remove comments after discussion
+                        config[model][filetype + "_targets"]
+                        != config[model][filetype + "_in_work"]
                     ):
                         # TODO: convert to f-string to decrease file length
                         helpers.print_datetime(config)
@@ -228,8 +229,9 @@ def choose_needed_files(config):
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
 
-            # TODO: change with not in operator
-            if not filetype + "_files" in config[model]:
+            # TODO: change with not in operator -> FIXED
+            # TODO: remove comments after discussion
+            if filetype + "_files" not in config[model]:
                 continue
 
             new_sources = new_targets = {}
@@ -436,6 +438,7 @@ def get_target_name_from_wildcard(config, model, filename, filetype, descr):
 
 def complete_restart_in(config):
     for model in config["general"]["valid_model_names"]:
+        # TODO: why not simply != 1
         if (
             not config[model]["lresume"] and config["general"]["run_number"] == 1
         ):  # isn't that redundant? if run_number > 1 then lresume == True?
@@ -859,7 +862,9 @@ def check_for_unknown_files(config):
     known_files = [os.path.realpath(known_file) for known_file in known_files]
     known_files = list(dict.fromkeys(known_files))
 
-    if not "unknown_sources" in config["general"]:
+    # TODO: replace with not in -> FIXED
+    # TODO: remove comments after discussion
+    if "unknown_sources" not in config["general"]:
         config["general"]["unknown_sources"] = {}
         config["general"]["unknown_targets"] = {}
         config["general"]["unknown_intermediate"] = {}
@@ -933,6 +938,7 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
+    # TODO: not == can be replaced with !=
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_" + text_source in config[model]:
@@ -997,7 +1003,9 @@ def copy_files(config, filetypes, source, target):
                             missing_files.update({file_target: file_source})
 
     if missing_files:
-        if not "files_missing_when_preparing_run" in config["general"]:
+        # TODO: replace not with not in -> FIXED
+        # TODO: remove comments after discussion
+        if "files_missing_when_preparing_run" not in config["general"]:
             config["general"]["files_missing_when_preparing_run"] = {}
         if config["general"]["verbose"]:
             print("\n\nWARNING: These files were missing:")
@@ -1082,7 +1090,9 @@ def report_missing_files(config):
     # this list is populated by the ``copy_files`` function in filelists.py
     config = _check_fesom_missing_files(config)
     if "files_missing_when_preparing_run" in config["general"]:
-        if not config["general"]["files_missing_when_preparing_run"] == {}:
+        # TODO: replace not with != -> FIXED
+        # TODO: remove comment after discussion
+        if config["general"]["files_missing_when_preparing_run"] != {}:
             print("MISSING FILES:", flush=True)
         for missing_file in config["general"]["files_missing_when_preparing_run"]:
             print(flush=True)
@@ -1092,7 +1102,9 @@ def report_missing_files(config):
             )
             print(f"- missing target: {missing_file}", flush=True)
             helpers.print_datetime(config)
-        if not config["general"]["files_missing_when_preparing_run"] == {}:
+        # TODO: replace not with != -> FIXED
+        # TODO: remove comment after discussion
+        if config["general"]["files_missing_when_preparing_run"] != {}:
             print(80 * "=")
         print()
     return config
@@ -1131,19 +1143,25 @@ def _check_fesom_missing_files(config):
 
 def create_missing_file_movement_entries(config):
     for model in config["general"]["valid_model_names"] + ["general"]:
-        if not "file_movements" in config[model]:
+        # TODO: replace not with not in -> FIXED
+        # TODO: remove comment after discussion
+        if "file_movements" not in config[model]:
             config[model]["file_movements"] = {}
         for filetype in config["general"]["all_model_filetypes"] + [
             "scripts",
             "unknown",
         ]:
-            if not filetype in config[model]["file_movements"]:
+            # TODO: replace not with not in -> FIXED
+            # TODO: remove comment after discussion
+            if filetype not in config[model]["file_movements"]:
                 config[model]["file_movements"][filetype] = {}
     return config
 
 
 def complete_one_file_movement(config, model, filetype, movement, movetype):
-    if not movement in config[model]["file_movements"][filetype]:
+    # TODO: replace not with not in -> FIXED
+    # TODO: remove comment after discussion
+    if movement not in config[model]["file_movements"][filetype]:
         config[model]["file_movements"][filetype][movement] = movetype
     return config
 
@@ -1171,7 +1189,9 @@ def complete_all_file_movements(config):
                     mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
                 )
                 del mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
-    if not "file_movements" in mconfig:
+    # TODO: replace not with not in -> FIXED
+    # TODO: remove comment after discussion
+    if "file_movements" not in mconfig:
         mconfig["file_movements"] = {}
     # General ``file_movements`` win over default ones
     esm_parser.dict_merge(mconfig["file_movements"], general_file_movements)

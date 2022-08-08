@@ -15,6 +15,8 @@ import os
 
 import yaml
 
+from pathlib import Path
+
 import esm_runscripts.filedicts
 
 
@@ -59,3 +61,37 @@ def test_filedicts_basics(fs):
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
     assert sim_file["name_in_work"] == "unit.24"
+
+def test_cp(fs):
+    """Tests for ``filedicts.cp``"""
+
+    dummy_config = """
+    echam:
+        files:
+            jan_surf:
+                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                path_in_pool: /work/ollie/pool/ECHAM/T63/
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Set source and targets
+    target_folder = config["echam"]["thisrun_work_dir"]
+    source = Path(
+        config["echam"]["files"]["jan_surf"]["path_in_pool"],
+        config["echam"]["files"]["jan_surf"]["name_in_pool"],
+    )
+    target = Path(
+        target_folder,
+        config["echam"]["files"]["jan_surf"]["name_in_work"],
+    )
+
+    # Create files and folders
+    fs.create_file(source)
+    fs.create_dir(target_folder)
+
+    # Test the method
+    esm_runscripts.filedicts.SimulationFile.cp(source, target)
+
+    assert os.path.exists(target)

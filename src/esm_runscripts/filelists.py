@@ -312,13 +312,12 @@ def target_subfolders(config):
                     # * only in targets if denotes subfolder
                     # TODO: change with user_error()
                     # TODO: better to use "not in" operator instead of not ... in -> FIXED
-                    # TODO: name is not defined, this should be filename
+                    # TODO: name is not defined, this should be filename -> FIXED
+                    # TODO: clear comments after discussion
                     if descr not in config[model][filetype + "_sources"]:
-                        esm_parser.user_error(
-                            "Filelists",
-                            f"No source found for target ``{name}`` in model "
-                            f"``{model}``\n",
-                        )
+                        error_type = "Missing Source"
+                        error_text = f"No source found for target ``{filename}`` in model ``{model}``",
+                        esm_parser.user_error(error_type, error_text)
                     if "*" in filename:
                         source_filename = os.path.basename(
                             config[model][filetype + "_sources"][descr]
@@ -1319,13 +1318,16 @@ def get_movement(config, model, category, filetype, source, target):
         )
     else:
         # This should NOT happen
-        # TODO: replace with user_error()
-        print(f"Error: Unknown file movement from {source} to {target}", flush=True)
-        helpers.print_datetime(config)
-        sys.exit(42)
+        # TODO: replace with user_error() -> FIXED
+        # TODO: remove comments after discussion
+        error_type = "Unknown File Movement"
+        error_text = f"Error: Unknown file movement from {source} to {target}"
+        esm_parser.user_error(error_type, error_text)
 
 
 def assemble(config):
+    # TODO: config_in, config_out
+    # get the names from workflow. There is repetition: both in yaml and in code. This should come from Python only
     config = complete_all_file_movements(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)

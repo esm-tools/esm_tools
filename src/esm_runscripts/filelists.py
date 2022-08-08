@@ -35,8 +35,10 @@ def rename_sources_to_targets(config):
                 if sources and targets and in_work:
                     if (
                         # TODO: typo here. "not" should be removed and == should be replaced with !=
-                        not config[model][filetype + "_sources"]
-                        == config[model][filetype + "_in_work"]
+                        # FIXED. not operator negates the dictionary and makes it False
+                        # TODO: remove these comments after discussion
+                        config[model][filetype + "_sources"]
+                        != config[model][filetype + "_in_work"]
                     ):
                         # TODO: changed with f-string. It would be good to decrease the indentations
                         #f"Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
@@ -1343,6 +1345,8 @@ def get_movement(config, model, category, filetype, source, target):
 
 
 def assemble(config):
+    #breakpoint()
+    #import ipdb; ipdb.set_trace()
     config = complete_all_file_movements(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)

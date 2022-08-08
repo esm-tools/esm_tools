@@ -236,21 +236,12 @@ def choose_needed_files(config):
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
                 # TODO: change with not in operator -> FIXED
-                # TODO: use f-string
+                # TODO: use f-string -> FIXED
+                # TODO: remove comments after discussion
                 if name not in config[model][filetype + "_sources"]:
-                    print(
-                        "Implementation "
-                        + name
-                        + " not found for filetype "
-                        + filetype
-                        + " of model "
-                        + model,
-                        flush=True,
-                    )
-                    print(config[model][filetype + "_files"], flush=True)
-                    print(config[model][filetype + "_sources"], flush=True)
-                    helpers.print_datetime(config)
-                    sys.exit(-1)
+                    error_type = "Missing Filetype Implementation"
+                    error_text = f"Implementation {name} not found for filetype {filetype} of model {model}"
+                    esm_parser.user_error(error_type, error_text)
                 new_sources.update(
                     {category: config[model][filetype + "_sources"][name]}
                 )

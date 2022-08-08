@@ -39,3 +39,23 @@ def test_example(fs):
     assert os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
     )
+    
+def test_filedicts_basics(fs):
+    """Tests basic attribute behavior of filedicts"""
+
+    dummy_config = """
+    echam:
+        files:
+            jan_surf:
+                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                filetype: NetCDF
+                description: >
+                    Initial values used for the simulation, including
+                    properties such as geopotential, temperature, pressure
+    """
+    config = yaml.safe_load(dummy_config)
+    # Not needed for this test, just a demonstration:
+    fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    assert sim_file["name_in_work"] == "unit.24"

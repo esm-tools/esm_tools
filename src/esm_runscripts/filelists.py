@@ -19,8 +19,6 @@ from . import helpers
 
 
 def rename_sources_to_targets(config):
-    # TODO: many variables are repeated
-
     # Purpose of this routine is to make sure that filetype_sources and
     # filetype_targets are set correctly, and _in_work is unset
     for filetype in config["general"]["all_model_filetypes"]:
@@ -438,7 +436,6 @@ def get_target_name_from_wildcard(config, model, filename, filetype, descr):
 
 def complete_restart_in(config):
     for model in config["general"]["valid_model_names"]:
-        # TODO: why not simply != 1
         if (
             not config[model]["lresume"] and config["general"]["run_number"] == 1
         ):  # isn't that redundant? if run_number > 1 then lresume == True?

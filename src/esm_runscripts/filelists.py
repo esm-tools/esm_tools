@@ -462,7 +462,7 @@ def assemble_intermediate_files_and_finalize_targets(config):
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_targets" in config[model]:
-                if not filetype + "_intermediate" in config[model]:
+                if filetype + "_intermediate" not in config[model]:
                     config[model][filetype + "_intermediate"] = {}
                 for category in config[model][filetype + "_targets"]:
                     target_name = config[model][filetype + "_targets"][category]
@@ -516,6 +516,8 @@ def find_valid_year(config, year):
 
 
 def replace_year_placeholder(config):
+    # TODO: this function is doing way too many things. It needs to be 
+    # divided into multiple functions
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_targets" in config[model]:
@@ -906,10 +908,10 @@ def resolve_symlinks(file_source):
         # deniz: check if file links to itself. In UNIX
         # ln -s endless_link endless_link is a valid command
         # TODO: config is not defined here. This should be added as a function argument if config is not a global variable
+        # -> FIXED
         if os.path.abspath(file_source) == points_to:
-            if config["general"]["verbose"]:
-                print(f"file {file_source} links to itself", flush=True)
-                helpers.print_datetime(config)
+            print(f"file {file_source} links to itself", flush=True)
+            helpers.print_datetime(config)
             return file_source
 
         # recursively find the file that the link is pointing to
@@ -1348,6 +1350,7 @@ def get_movement(config, model, category, filetype, source, target):
 def assemble(config):
     # TODO: config_in, config_out
     # get the names from workflow. There is repetition: both in yaml and in code. This should come from Python only
+    print("I am in the assemble() function")
     config = complete_all_file_movements(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)

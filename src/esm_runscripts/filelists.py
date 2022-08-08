@@ -97,11 +97,14 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    # TODO: use f-string
-                    print(filetype + "_sources missing in model " + model, flush=True)
                     helpers.print_datetime(config)
+                    # TODO: use f-string
                     # TODO: replace with user_error()
-                    sys.exit(-1)
+                    # FIXED: both are fixed
+                    # TODO: remove the comments after discussion
+                    error_type = "Missing Sources"
+                    error_text = f"{filetype}_sources missing in model {model}"
+                    esm_parser.user_error(error_type, error_text)
 
                 elif sources and not targets:
                     if in_work:

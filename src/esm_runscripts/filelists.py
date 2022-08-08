@@ -41,19 +41,12 @@ def rename_sources_to_targets(config):
                         != config[model][filetype + "_in_work"]
                     ):
                         # TODO: changed with f-string. It would be good to decrease the indentations
-                        #f"Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
-                        print(
-                            "Mismatch between "
-                            + filetype
-                            + "_sources and "
-                            + filetype
-                            + "_in_work in model "
-                            + model,
-                            flush=True,
-                        )
-                        # TODO: it would be better to change it with user_error()
-                        helpers.print_datetime(config)
-                        sys.exit(-1)
+                        # FIXED and tested
+                        # TODO: remove the comments after discussion
+                        # TODO: it would be better to change it with user_error() -> FIXED
+                        error_type = "File Mismatch"
+                        error_text = "Mismatch between {filetype}_sources and {filetype}_in_work in model {model}"
+                        esm_parser.user_error(error_type, error_text)
 
                 elif sources and targets and not in_work:
                     # all fine

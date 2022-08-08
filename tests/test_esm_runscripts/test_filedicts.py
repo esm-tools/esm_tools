@@ -92,6 +92,7 @@ def test_cp(fs):
     fs.create_dir(target_folder)
 
     # Test the method
-    esm_runscripts.filedicts.SimulationFile.cp(source, target)
+    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    sim_file.cp("pool", "work")
 
     assert os.path.exists(target)

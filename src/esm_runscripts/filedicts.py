@@ -42,9 +42,8 @@ class SimulationFile(dict):
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
         """
-        super().__init__()
         attrs_dict = dpath.util.get(full_config, attrs_address, separator=".")
-        self.update(attrs_dict)
+        super().__init__(attrs_dict)
         self._config = full_config
         self.locations = {
             "work": pathlib.Path(full_config["general"]["thisrun_work_dir"]),

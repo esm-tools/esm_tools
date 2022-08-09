@@ -4,6 +4,8 @@ The file-dictionary implementation
 import pathlib
 
 import dpath.util
+from esm_parser import user_error
+from loguru import logger
 
 
 class SimulationFile(dict):
@@ -63,10 +65,40 @@ class SimulationFile(dict):
     def ln(self) -> None:
         pass
 
-    def mv(self) -> None:
-        pass
-        
-        
+    def mv(self, source, target) -> None:
+        """
+        Moves (renames) the SimulationFile from it's location in `source` to
+        it's location in `target`.
+
+        Source and target should be on of work, pool, exp_tree, or run_tree.
+        You need to specify name_in_`source` and name_in_`target` in the
+        object's attrs_dict.
+        """
+        if source not in self.locations:
+            raise ValueError(
+                "source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        # NOTE(PG): The next few lines can probably be a internal function, we
+        # will use it in copy, move, and link:
+
+        # Figure out names in source and target:
+        sname = self.get(f"name_in_{source}")
+        tname = self.get(f"name_in_{target}")
+        # Relative path in source and target
+        srpath = self.get(f"path_in_{source}")
+        trpath = self.get(f"path_in_{target}")
+        # Build target and source paths:
+        spath = self.locations[source].joinpath(srpath, sname)
+        tpath = self.locations[target].joinpath(trpath, tname)
+
+        # Perform the movement:
+        try:
+            spath.rename(tpath)
+            logger.success(f"Moved {spath} --> {tpath}")
+        except Exception:  # Probably better to look for specific "breaking" things here
+            user_error("Filedict Error", f"Unable to move {spath} to {tpath}")
+
+
 def copy_files(config):
     """Copies files"""
     # PG: No. We do not want this kind of general function. This is just to

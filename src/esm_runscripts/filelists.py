@@ -54,7 +54,10 @@ def rename_sources_to_targets(config):
                     if config["general"]["verbose"]:
                         # TODO: change to f-string to decrease file length -> FIXED
                         # TODO: remove the comments after discussion
-                        print(f"Renaming sources to targets for filetype {filetype} in model {model}", flush=True)
+                        print(
+                            f"Renaming sources to targets for filetype {filetype} in model {model}",
+                            flush=True,
+                        )
                         helpers.print_datetime(config)
                     config[model][filetype + "_targets"] = copy.deepcopy(
                         config[model][filetype + "_sources"]
@@ -316,7 +319,9 @@ def target_subfolders(config):
                     # TODO: clear comments after discussion
                     if descr not in config[model][filetype + "_sources"]:
                         error_type = "Missing Source"
-                        error_text = f"No source found for target ``{filename}`` in model ``{model}``",
+                        error_text = (
+                            f"No source found for target ``{filename}`` in model ``{model}``",
+                        )
                         esm_parser.user_error(error_type, error_text)
                     if "*" in filename:
                         source_filename = os.path.basename(
@@ -513,7 +518,7 @@ def find_valid_year(config, year):
 
 
 def replace_year_placeholder(config):
-    # TODO: this function is doing way too many things. It needs to be 
+    # TODO: this function is doing way too many things. It needs to be
     # divided into multiple functions
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:

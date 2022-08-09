@@ -17,6 +17,7 @@ requirements = [
     "PyGithub",
     "colorama",
     "coloredlogs",
+    "dpath==2.0.6",
     "emoji",
     "f90nml",
     "gfw-creator",

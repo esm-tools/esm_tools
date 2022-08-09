@@ -87,7 +87,8 @@ class SimulationFile(dict):
         target_path = self.locations[target].joinpath(self.names[target])
 
         # Checks
-        source_path_type = self.check_source_and_target(source_path, target_path)
+        self.check_source_and_target(source_path, target_path)
+        source_path_type = self.path_type(source_path)
 
         # Actual copy
         if source_path_type == "dir":
@@ -136,6 +137,20 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     def check_source_and_target(self, source_path, target_path):
+        """
+        Performs checks for file movements
+
+        Raises
+        ------
+        Exception
+            - If the ``target_path`` exists
+            - If the parent dir of the ``target_path`` does not exist
+
+        Note
+        ----
+            - If the ``source_path`` does not exist adds it to a list of missing files
+              in the ``self._config`` (TODO)
+        """
 
         # Types
         source_path_type = self.path_type(source_path)
@@ -157,5 +172,3 @@ class SimulationFile(dict):
         if not target_path_parent_type:
             # TODO: we might consider creating it
             raise Exception("Target directory does not exist!")
-
-        return source_path_type

@@ -2,8 +2,10 @@
 The file-dictionary implementation
 """
 import pathlib
+import shutil
 
 import dpath.util
+from esm_parser import user_error
 
 
 class SimulationFile(dict):
@@ -45,19 +47,28 @@ class SimulationFile(dict):
         attrs_dict = dpath.util.get(full_config, attrs_address, separator=".")
         super().__init__(attrs_dict)
         self._config = full_config
+        self.component = component = attrs_address.split(".")[0]
         self.locations = {
-            "work": pathlib.Path(full_config["general"]["thisrun_work_dir"]),
-            "pool": pathlib.Path(full_config["computer"]["pool_dir"]),
-            "exp_tree": pathlib.Path(full_config["general"]["exp_dir"]),
-            "run_tree": pathlib.Path(full_config["general"]["thisrun_dir"]),
+            "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
+            "pool": pathlib.Path(self["path_in_pool"]),
+#            "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+#            "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+
+        }
+        self.names = {
+            "work": pathlib.Path(self["name_in_work"]),
+            "pool": pathlib.Path(self["name_in_pool"]),
         }
         # Allow dot access:
         self.work = self.locations["work"]
         self.pool = self.locations["pool"]
-        self.exp_tree = self.locations["exp_tree"]
-        self.run_tree = self.locations["run_tree"]
+#        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
+#        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
 
-    def cp(self, source, target) -> None:
+        # Verbose set to true by default, for now at least
+        self.verbose = full_config.get("general", {}).get("verbose", True)
+
+    def _cp(self, source, target) -> None:
         """
         Copies the source file or folder to the target path. It changes the name of the
         target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
@@ -72,33 +83,57 @@ class SimulationFile(dict):
             ``"exp_tree"``, ``run_tree``
         """
         # Build target and source paths
-        spath = self.location[source].joinpath(self.name[source])
-        tpath = self.location[target].joinpath(self.name[target])
+        spath = self.locations[source].joinpath(self.names[source])
+        tpath = self.locations[target].joinpath(self.names[target])
 
         # Checks
+        spath_type = self._check_source_and_target(spath, tpath)
 
-    def ln(self) -> None:
+        # Actual copy
+        try:
+            shutil.copy2(spath, tpath)
+        except Exception:
+            user_error("Filedict Error", f"Unable to copy {spath} to {tpath}")
+
+    def _ln(self) -> None:
         pass
 
-    def mv(self) -> None:
+    def _mv(self) -> None:
         pass
 
-    def path_type(self, path):
-        if spath.is_file():
+    def _path_type(self, path):
+        if path.is_file():
             return "file"
-        elif spath.is_dir:
+        elif path.is_dir:
             return "dir"
-        elif spath.is_link:
+        elif path.is_link:
             return "link"
-        elif not spath.exist():
+        elif not path.exist():
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
-        
-        
-        
-def copy_files(config):
-    """Copies files"""
-    # PG: No. We do not want this kind of general function. This is just to
-    # demonstrate how the test would work
-    return config
+
+    def _check_source_and_target(self, spath, tpath):
+
+        # Types
+        spath_type = self._path_type(spath)
+        tpath_type = self._path_type(tpath)
+        tpath_parent_type = self._path_type(tpath.parent)
+
+        # Checks
+        # ------
+        # Source exists
+        if not spath_type:
+            if self.verbose:
+                print(f"Source file ``{spath}`` does not exist!") # I'll change this when we have loguru available
+            # TODO: Add the missing file to the config["<model>"]["missing_files"]
+        # Target exist
+        if tpath_type:
+            # TODO: Change this behavior
+            raise Exception("File already exists!")
+        # Target dir exists
+        if not tpath_parent_type:
+            # TODO: we might consider creating it
+            raise Exception("Target directory does not exist!")
+
+        return spath_type

@@ -105,6 +105,6 @@ def test_cp(fs):
 
     # Test the method
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
-    sim_file.cp("pool", "work")
+    sim_file._cp("pool", "work")
 
     assert os.path.exists(target)

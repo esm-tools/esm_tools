@@ -39,7 +39,8 @@ def test_example(fs):
     assert os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
     )
-    
+
+
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
@@ -57,7 +58,9 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["jan_surf"]
+    )
     assert sim_file["name_in_work"] == "unit.24"
 
 
@@ -72,8 +75,40 @@ def test_allowed_to_be_missing_attr():
                 allowed_to_be_missing: False
     """
     config = yaml.safe_load(dummy_config)
-    sim_file_001 = esm_runscripts.filedicts.SimulationFile(config['echam']['files']['human_readable_tag_001'])
-    sim_file_002 = esm_runscripts.filedicts.SimulationFile(config['echam']['files']['human_readable_tag_002'])
+    sim_file_001 = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["human_readable_tag_001"]
+    )
+    sim_file_002 = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["human_readable_tag_002"]
+    )
 
     assert sim_file_001.allowed_to_be_missing == True
     assert sim_file_002.allowed_to_be_missing == False
+
+
+def test_allowed_to_be_missing_mv(fs):
+    """Checks that files in move mode which are allowed to be missing are skipped"""
+    dummy_config = """
+    general:
+        expid: expid
+        base_dir: /some/dummy/location/
+    echam:
+        files:
+            human_readable_tag_001:
+                allowed_to_be_missing: True
+                name_in_pool: foo
+                path_in_pool: /work/data/pool
+                name_in_work: foo
+                path_in_work: .
+                movement_type: move
+    """
+    config = yaml.safe_load(dummy_config)
+    fs.create_dir("/work/data/pool")
+    fs.create_file("/work/data/pool/not_foo_at_all")
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["human_readable_tag_001"]
+    )
+    sim_file.mv("pool", "work")
+    assert not os.path.exists(
+        "/some/dummy/location/expid/run_18500101-18501231/work/foo"
+    )

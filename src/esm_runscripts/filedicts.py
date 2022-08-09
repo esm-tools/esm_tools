@@ -88,10 +88,9 @@ class SimulationFile(dict):
 
         @functools.wraps(method)
         def inner_method(self, *args, **kwargs):
-            if self.is_allowed_to_be_missing:
-                # FIXME(PG): The second qualname is wrong.
+            if self.allowed_to_be_missing:
                 logger.warning(
-                    f"Skipping {method.__qualname__} as this file ({self.__qualname__}) is allowed to be missing!"
+                    f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
                 )
                 return None  # None is the default return, but let us be explicit here, as it is a bit confusing
             else:

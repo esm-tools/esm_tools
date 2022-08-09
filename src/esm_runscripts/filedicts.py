@@ -44,7 +44,9 @@ class SimulationFile(dict):
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
         """
-        attrs_dict = dpath.util.get(full_config, attrs_address, separator=".")
+        attrs_dict = dpath.util.get(
+            full_config, attrs_address, separator=".", default={}
+        )
         super().__init__(attrs_dict)
         self._config = full_config
         self.locations = {
@@ -65,18 +67,22 @@ class SimulationFile(dict):
     def ln(self) -> None:
         pass
 
-    def mv(self, source, target) -> None:
+    def mv(self, source: str, target: str) -> None:
         """
         Moves (renames) the SimulationFile from it's location in `source` to
         it's location in `target`.
 
-        Source and target should be on of work, pool, exp_tree, or run_tree.
-        You need to specify name_in_`source` and name_in_`target` in the
-        object's attrs_dict.
+        Parameters
+        ----------
+        source : str
+            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+        target : str
+            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
         if source not in self.locations:
-            raise ValueError(
-                "source is incorrectly defined, and needs to be in {self.locations}"
+            user_error(
+                "Filedict Error",
+                "source is incorrectly defined, and needs to be in {self.locations}",
             )
         source_path, target_path = self._determine_names(source, target)
         # Perform the movement:
@@ -88,10 +94,32 @@ class SimulationFile(dict):
                 "Filedict Error", f"Unable to move {source_path} to {target_path}"
             )
 
-    def _determine_names(self, source, target):
+    def _determine_names(
+        self, source: str, target: str
+    ) -> tuple[pathlib.Path, pathlib.Path]:
+        """
+        Determines names for source and target, depending on name and path
+
+        Source and target should be on of work, pool, exp_tree, or run_tree.
+        You need to specify name_in_`source` and name_in_`target` in the
+        object's attrs_dict.
+
+        Parameters
+        ----------
+        source : str
+            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+        target : str
+            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+
+        Returns
+        -------
+        tuple of pathlib.Path, pathlib.Path :
+           The calculated source path and target path.
+
+        """
         # Figure out names in source and target:
-        source_name = self.get(f"name_in_{source}")
-        target_name = self.get(f"name_in_{target}")
+        source_name = self[f"name_in_{source}"]
+        target_name = self[f"name_in_{target}"]
         # Relative path in source and target
         source_relative_path = self.get(f"path_in_{source}", ".")
         target_relative_path = self.get(f"path_in_{target}", ".")

@@ -1,6 +1,9 @@
 """
 The file-dictionary implementation
 """
+import pathlib
+
+import dpath.util
 
 
 class SimulationFile(dict):
@@ -23,22 +26,31 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config['echam']['files']['jan_surf'])
+        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])
 
     You could then copy the file to the experiment folder::
 
         >>> sim_file.cp_to_exp_tree()
     """
 
-    def __init__(self, attrs_dict, full_config):
+    def __init__(self, full_config, attrs_address):
+        """
+        Parameters
+        ----------
+        full_config : dict
+            The full simulation configuration
+        attrs_address : str
+            The address of this specific file in the full config, separated by dots.
+        """
         super().__init__()
+        attrs_dict = dpath.util.get(full_config, attrs_address, separator=".")
         self.update(attrs_dict)
         self._config = full_config
         self.locations = {
-            "work": full_config["general"]["thisrun_work_dir"],
-            "pool": full_config["computer"]["pool_dir"],
-            "exp_tree": full_config["general"]["exp_dir"],
-            "run_tree": full_config["general"]["thisrun_dir"],
+            "work": pathlib.Path(full_config["general"]["thisrun_work_dir"]),
+            "pool": pathlib.Path(full_config["computer"]["pool_dir"]),
+            "exp_tree": pathlib.Path(full_config["general"]["exp_dir"]),
+            "run_tree": pathlib.Path(full_config["general"]["thisrun_dir"]),
         }
         # Allow dot access:
         self.work = self.locations["work"]

@@ -65,13 +65,13 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["jan_surf"], config
-    )
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
-    assert sim_file.work == "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    assert sim_file.work == Path(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    )
     assert sim_file._config == config
-    assert sim_file.locations["pool"] == "/work/ollie/pool"
+    assert sim_file.locations["pool"] == Path("/work/ollie/pool")
 
 
 def test_cp(fs):

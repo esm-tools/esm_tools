@@ -96,8 +96,11 @@ class SimulationFile(dict):
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
-        except Exception:
-            user_error("Filedict Error", f"Unable to copy {source_path} to {target_path}")
+        except Exception as error:
+            raise Exception(
+                f"Unable to copy {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
 
     def ln(self) -> None:
         pass

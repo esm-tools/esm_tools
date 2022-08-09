@@ -83,21 +83,21 @@ class SimulationFile(dict):
             ``"exp_tree"``, ``run_tree``
         """
         # Build target and source paths
-        spath = self.locations[source].joinpath(self.names[source])
-        tpath = self.locations[target].joinpath(self.names[target])
+        source_path = self.locations[source].joinpath(self.names[source])
+        target_path = self.locations[target].joinpath(self.names[target])
 
         # Checks
-        spath_type = self.check_source_and_target(spath, tpath)
+        source_path_type = self.check_source_and_target(source_path, target_path)
 
         # Actual copy
-        if spath_type == "dir":
+        if source_path_type == "dir":
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
         try:
-            copy_func(spath, tpath)
+            copy_func(source_path, target_path)
         except Exception:
-            user_error("Filedict Error", f"Unable to copy {spath} to {tpath}")
+            user_error("Filedict Error", f"Unable to copy {source_path} to {target_path}")
 
     def ln(self) -> None:
         pass
@@ -117,27 +117,27 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
-    def check_source_and_target(self, spath, tpath):
+    def check_source_and_target(self, source_path, target_path):
 
         # Types
-        spath_type = self.path_type(spath)
-        tpath_type = self.path_type(tpath)
-        tpath_parent_type = self.path_type(tpath.parent)
+        source_path_type = self.path_type(source_path)
+        target_path_type = self.path_type(target_path)
+        target_path_parent_type = self.path_type(target_path.parent)
 
         # Checks
         # ------
         # Source exists
-        if not spath_type:
+        if not source_path_type:
             if self.verbose:
-                print(f"Source file ``{spath}`` does not exist!") # I'll change this when we have loguru available
+                print(f"Source file ``{source_path}`` does not exist!") # I'll change this when we have loguru available
             # TODO: Add the missing file to the config["<model>"]["missing_files"]
         # Target exist
-        if tpath_type:
+        if target_path_type:
             # TODO: Change this behavior
             raise Exception("File already exists!")
         # Target dir exists
-        if not tpath_parent_type:
+        if not target_path_parent_type:
             # TODO: we might consider creating it
             raise Exception("Target directory does not exist!")
 
-        return spath_type
+        return source_path_type

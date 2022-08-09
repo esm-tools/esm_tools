@@ -12,10 +12,9 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
+from pathlib import Path
 
 import yaml
-
-from pathlib import Path
 
 import esm_runscripts.filedicts
 
@@ -41,11 +40,18 @@ def test_example(fs):
     assert os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
     )
-    
+
+
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
     dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
@@ -59,8 +65,14 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["jan_surf"], config
+    )
     assert sim_file["name_in_work"] == "unit.24"
+    assert sim_file.work == "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    assert sim_file._config == config
+    assert sim_file.locations["pool"] == "/work/ollie/pool"
+
 
 def test_cp(fs):
     """Tests for ``filedicts.cp``"""

@@ -30,10 +30,21 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()
     """
 
-    # Do NOT implment an __init__ unless you really think you need to. dict
-    # takes care of this in a way is that is considerably smarter than any of us are.
-    #
-    # Please delete my annoying comments before merging into actual release ;-)
+    def __init__(self, attrs_dict, full_config):
+        super().__init__()
+        self.update(attrs_dict)
+        self._config = full_config
+        self.locations = {
+            "work": full_config["general"]["thisrun_work_dir"],
+            "pool": full_config["computer"]["pool_dir"],
+            "exp_tree": full_config["general"]["exp_dir"],
+            "run_tree": full_config["general"]["thisrun_dir"],
+        }
+        # Allow dot access:
+        self.work = self.locations["work"]
+        self.pool = self.locations["pool"]
+        self.exp_tree = self.locations["exp_tree"]
+        self.run_tree = self.locations["run_tree"]
 
     def cp(self) -> None:
         pass

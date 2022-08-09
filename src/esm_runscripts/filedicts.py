@@ -35,14 +35,44 @@ class SimulationFile(dict):
     #
     # Please delete my annoying comments before merging into actual release ;-)
 
-    def cp(self) -> None:
-        pass
+    def cp(self, source, target) -> None:
+        """
+        Copies the source file or folder to the target path. It changes the name of the
+        target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
+
+        Parameters
+        ----------
+        source : str
+            String specifying one of the following options: ``"pool"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
+        target : str
+            String specifying one of the following options: ``"pool"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
+        """
+        # Build target and source paths
+        spath = self.location[source].joinpath(self.name[source])
+        tpath = self.location[target].joinpath(self.name[target])
+
+        # Checks
 
     def ln(self) -> None:
         pass
 
     def mv(self) -> None:
         pass
+
+    def path_type(self, path):
+        if spath.is_file():
+            return "file"
+        elif spath.is_dir:
+            return "dir"
+        elif spath.is_link:
+            return "link"
+        elif not spath.exist():
+            return False
+        else:
+            raise Exception(f"Cannot identify the path's type of {path}")
+        
         
         
 def copy_files(config):

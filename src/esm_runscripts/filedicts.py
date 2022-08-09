@@ -69,8 +69,8 @@ class SimulationFile(dict):
 
     def mv(self, source: str, target: str) -> None:
         """
-        Moves (renames) the SimulationFile from it's location in `source` to
-        it's location in `target`.
+        Moves (renames) the SimulationFile from it's location in ``source`` to
+        it's location in ``target``.
 
         Parameters
         ----------

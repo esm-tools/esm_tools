@@ -104,11 +104,11 @@ class SimulationFile(dict):
     def _path_type(self, path):
         if path.is_file():
             return "file"
-        elif path.is_dir:
+        elif path.is_dir():
             return "dir"
-        elif path.is_link:
+        elif path.is_symlink():
             return "link"
-        elif not path.exist():
+        elif not path.exists():
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")

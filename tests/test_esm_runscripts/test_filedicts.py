@@ -98,7 +98,6 @@ def test_cp(fs):
         target_folder,
         config["echam"]["files"]["jan_surf"]["name_in_work"],
     )
-
     # Create files and folders
     fs.create_file(source)
     fs.create_dir(target_folder)

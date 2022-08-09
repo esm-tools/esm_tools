@@ -105,7 +105,22 @@ class SimulationFile(dict):
     def mv(self) -> None:
         pass
 
-    def path_type(self, path):
+    def path_type(self, path: pathlib.Path) -> str or bool:
+        """
+        Checks if the given ``path`` exists. If it does returns it's type, if it
+        doesn't, returns ``False``.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Path to be checked.
+
+        Returns
+        -------
+        str or bool
+            If the path exists it returns its type as a string (``file``, ``dir``,
+            ``link``). If it doesn't exist returns ``False``.
+        """
         if path.is_file():
             return "file"
         elif path.is_dir():

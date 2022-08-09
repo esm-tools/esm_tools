@@ -75,7 +75,7 @@ def test_filedicts_basics(fs):
 
 
 def test_cp_file(fs):
-    """Tests for ``filedicts.cp``"""
+    """Tests for ``filedicts.cp`` copying file"""
 
     dummy_config = """
     echam:
@@ -109,7 +109,7 @@ def test_cp_file(fs):
     assert os.path.exists(target)
 
 def test_cp_folder(fs):
-    """Tests for ``filedicts.cp``"""
+    """Tests for ``filedicts.cp`` copying folder"""
 
     dummy_config = """
     oifs:

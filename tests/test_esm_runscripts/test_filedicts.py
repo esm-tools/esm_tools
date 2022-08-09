@@ -17,8 +17,7 @@ from pathlib import Path
 import yaml
 import pytest
 
-import esm_runscripts.filedicts
-from esm_runscripts.filedicts import resolve_file_movements
+import esm_runscripts.filedicts as filedicts
 
 
 @pytest.fixture()
@@ -107,7 +106,7 @@ def test_cp(fs):
 
 def test_resolve_file_movements(config):
     # act
-    config = resolve_file_movements(config)
+    config = filedicts.resolve_file_movements(config)
 
     # assert
     assert isinstance(config, dict)

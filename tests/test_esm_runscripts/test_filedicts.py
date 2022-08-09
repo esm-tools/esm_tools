@@ -59,3 +59,21 @@ def test_filedicts_basics(fs):
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
     assert sim_file["name_in_work"] == "unit.24"
+
+
+def test_allowed_to_be_missing_attr():
+    """Ensures the property allowed_to_be_missing works correctly"""
+    dummy_config = """
+    echam:
+        files:
+            human_readable_tag_001:
+                allowed_to_be_missing: True
+            human_readable_tag_002:
+                allowed_to_be_missing: False
+    """
+    config = yaml.safe_load(dummy_config)
+    sim_file_001 = esm_runscripts.filedicts.SimulationFile(config['echam']['files']['human_readable_tag_001'])
+    sim_file_002 = esm_runscripts.filedicts.SimulationFile(config['echam']['files']['human_readable_tag_002'])
+
+    assert sim_file_001.allowed_to_be_missing == True
+    assert sim_file_002.allowed_to_be_missing == False

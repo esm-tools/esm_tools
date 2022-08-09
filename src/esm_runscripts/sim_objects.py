@@ -84,6 +84,8 @@ class SimulationSetup(object):
             # that last line is necessary so that maybe_resubmit knows which
             # cluster to look up in the workflow
 
+        # TODO: this is confusing. If no jobtype is matched a warning should
+        # be printed
         else:
             self.assembler()
 

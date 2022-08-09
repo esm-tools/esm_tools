@@ -78,25 +78,27 @@ class SimulationFile(dict):
             raise ValueError(
                 "source is incorrectly defined, and needs to be in {self.locations}"
             )
-        # NOTE(PG): The next few lines can probably be a internal function, we
-        # will use it in copy, move, and link:
-
-        # Figure out names in source and target:
-        sname = self.get(f"name_in_{source}")
-        tname = self.get(f"name_in_{target}")
-        # Relative path in source and target
-        srpath = self.get(f"path_in_{source}")
-        trpath = self.get(f"path_in_{target}")
-        # Build target and source paths:
-        spath = self.locations[source].joinpath(srpath, sname)
-        tpath = self.locations[target].joinpath(trpath, tname)
-
+        source_path, target_path = self._determine_names(source, target)
         # Perform the movement:
         try:
-            spath.rename(tpath)
-            logger.success(f"Moved {spath} --> {tpath}")
+            source_path.rename(target_path)
+            logger.success(f"Moved {source_path} --> {target_path}")
         except Exception:  # Probably better to look for specific "breaking" things here
-            user_error("Filedict Error", f"Unable to move {spath} to {tpath}")
+            user_error(
+                "Filedict Error", f"Unable to move {source_path} to {target_path}"
+            )
+
+    def _determine_names(self, source, target):
+        # Figure out names in source and target:
+        source_name = self.get(f"name_in_{source}")
+        target_name = self.get(f"name_in_{target}")
+        # Relative path in source and target
+        source_relative_path = self.get(f"path_in_{source}", ".")
+        target_relative_path = self.get(f"path_in_{target}", ".")
+        # Build target and source paths:
+        source_path = self.locations[source].joinpath(source_relative_path, source_name)
+        target_path = self.locations[target].joinpath(target_relative_path, target_name)
+        return source_path, target_path
 
 
 def copy_files(config):

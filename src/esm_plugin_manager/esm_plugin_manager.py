@@ -20,6 +20,8 @@ def read_recipe(recipe, additional_dict, needs_parse=True):
 def read_plugin_information(plugins_bare, recipe, needs_parse=True):
     # pluginfile = esm_plugins.yaml
     if needs_parse:
+        # This line is actually confusing. plugins_bare should have been defined
+        # as plugins_bare_path.
         plugins_bare = yaml_file_to_dict(plugins_bare)
     extra_info = ["location", "git-url"]
     plugins = {}
@@ -135,6 +137,9 @@ def work_through_recipe(recipe, plugins, config):
             print("=" * len(message))
             print(message)
             print("=" * len(message))
+
+        # call the function that is given in recipe yaml. Eg:
+        # config_out = function(config_in)
         if plugins[workitem]["type"] == "core":
             thismodule = __import__(plugins[workitem]["module"])
             submodule = getattr(thismodule, plugins[workitem]["submodule"])
@@ -143,6 +148,8 @@ def work_through_recipe(recipe, plugins, config):
             # print("Installed plugin will be run: ", workitem)
             config = plugins[workitem]["callable"](config)
         else:
+            # TODO: this if can be removed. f-strings are supported in >=3.6. 
+            # Any version of Python below that would not work anyways
             if sys.version_info >= (3, 5):
                 import importlib.util
 

@@ -18,7 +18,7 @@ import yaml
 import pytest
 
 import esm_runscripts.filedicts
-from esm_runscripts.filelists import resolve_file_movements
+from esm_runscripts.filedicts import resolve_file_movements
 
 
 @pytest.fixture()
@@ -49,8 +49,7 @@ def test_example(fs):
     assert os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
     )
-
-
+    
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
@@ -68,11 +67,8 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["jan_surf"]
-    )
+    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
     assert sim_file["name_in_work"] == "unit.24"
-
 
 def test_cp(fs):
     """Tests for ``filedicts.cp``"""

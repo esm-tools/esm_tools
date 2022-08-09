@@ -8,13 +8,11 @@ import re
 import shutil
 import sys
 import time
-from typing import Type
 
 import f90nml
 import yaml
 
 import esm_parser
-from esm_parser import ConfigSetup
 import esm_tools
 
 from . import helpers
@@ -1314,14 +1312,6 @@ def get_movement(config, model, category, filetype, source, target):
         print(f"Error: Unknown file movement from {source} to {target}", flush=True)
         helpers.print_datetime(config)
         sys.exit(42)
-
-
-def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
-    """Replaces former assemble() function"""
-    # TODO: to be filled with functions
-    # DONE: type annotation
-    # DONE: basic unit test: test_resolve_file_movements
-    return config
 
 
 def assemble(config):

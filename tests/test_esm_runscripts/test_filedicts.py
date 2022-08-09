@@ -12,12 +12,20 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
-
-import yaml
-
 from pathlib import Path
 
+import yaml
+import pytest
+
 import esm_runscripts.filedicts
+from esm_runscripts.filelists import resolve_file_movements
+
+
+@pytest.fixture()
+def config():
+    """Generates fake config to be used before each test"""
+    fake_config = dict()
+    yield fake_config
 
 
 def test_example(fs):
@@ -41,7 +49,8 @@ def test_example(fs):
     assert os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
     )
-    
+
+
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
@@ -59,8 +68,11 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config["echam"]["files"]["jan_surf"]
+    )
     assert sim_file["name_in_work"] == "unit.24"
+
 
 def test_cp(fs):
     """Tests for ``filedicts.cp``"""
@@ -95,3 +107,11 @@ def test_cp(fs):
     esm_runscripts.filedicts.SimulationFile.cp(source, target)
 
     assert os.path.exists(target)
+
+
+def test_resolve_file_movements(config):
+    # act
+    config = resolve_file_movements(config)
+
+    # assert
+    assert isinstance(config, dict)

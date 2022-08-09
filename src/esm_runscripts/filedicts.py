@@ -1,6 +1,8 @@
 """
 The file-dictionary implementation
 """
+import functools
+
 from loguru import logger
 
 
@@ -62,7 +64,7 @@ class SimulationFile(dict):
     #
     # Please delete my annoying comments before merging into actual release ;-)
 
-    # This part allows for dot-access to certain parts of the object:
+    # This part allows for dot-access to allowed_to_be_missing:
     @property
     def allowed_to_be_missing(self):
         """
@@ -73,6 +75,29 @@ class SimulationFile(dict):
             True
         """
         return self.get("allowed_to_be_missing", False)
+
+    # NOTE(PG): I **do not** understand this syntax. Suddenly no more self, and
+    # then yes, and then no, and what?? But hey, it seems to work...
+    # NOTE(PG): https://www.geeksforgeeks.org/creating-decorator-inside-a-class-in-python/
+    def skip_missing(method):
+        """Allows to decorate a method with skip_missing
+
+        If a method is decorated with skip_missing, it will return None instead
+        of executing. Used for cp, ln, mv.
+        """
+
+        @functools.wraps(method)
+        def inner_method(self, *args, **kwargs):
+            if self.is_allowed_to_be_missing:
+                # FIXME(PG): The second qualname is wrong.
+                logger.warning(
+                    f"Skipping {method.__qualname__} as this file ({self.__qualname__}) is allowed to be missing!"
+                )
+                return None  # None is the default return, but let us be explicit here, as it is a bit confusing
+            else:
+                return method(*args, **kwargs)
+
+        return inner_method
 
     @skip_missing
     def cp(self) -> None:
@@ -85,24 +110,6 @@ class SimulationFile(dict):
     @skip_missing
     def mv(self) -> None:
         pass
-
-    def skip_missing(method):
-        """Allows to decorate a method with skip_missing
-
-        If a method is decorated with skip_missing, it will return None instead
-        of executing. Used for cp, ln, mv.
-        """
-
-        def inner_method(self):
-            if self.is_allowed_to_be_missing:
-                logger.warning(
-                    f"Skipping {method.__name__} as this file ({self.__name__}) is allowed to be missing!"
-                )
-                return
-            else:
-                return method()
-
-        return inner_method
 
 
 def copy_files(config):

@@ -90,8 +90,12 @@ class SimulationFile(dict):
         spath_type = self.check_source_and_target(spath, tpath)
 
         # Actual copy
+        if spath_type == "dir":
+            copy_func = shutil.copytree
+        else:
+            copy_func = shutil.copy2
         try:
-            shutil.copy2(spath, tpath)
+            copy_func(spath, tpath)
         except Exception:
             user_error("Filedict Error", f"Unable to copy {spath} to {tpath}")
 

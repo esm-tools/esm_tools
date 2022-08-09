@@ -68,7 +68,7 @@ class SimulationFile(dict):
         # Verbose set to true by default, for now at least
         self.verbose = full_config.get("general", {}).get("verbose", True)
 
-    def _cp(self, source, target) -> None:
+    def cp(self, source, target) -> None:
         """
         Copies the source file or folder to the target path. It changes the name of the
         target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
@@ -87,7 +87,7 @@ class SimulationFile(dict):
         tpath = self.locations[target].joinpath(self.names[target])
 
         # Checks
-        spath_type = self._check_source_and_target(spath, tpath)
+        spath_type = self.check_source_and_target(spath, tpath)
 
         # Actual copy
         try:
@@ -95,13 +95,13 @@ class SimulationFile(dict):
         except Exception:
             user_error("Filedict Error", f"Unable to copy {spath} to {tpath}")
 
-    def _ln(self) -> None:
+    def ln(self) -> None:
         pass
 
-    def _mv(self) -> None:
+    def mv(self) -> None:
         pass
 
-    def _path_type(self, path):
+    def path_type(self, path):
         if path.is_file():
             return "file"
         elif path.is_dir():
@@ -113,12 +113,12 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
-    def _check_source_and_target(self, spath, tpath):
+    def check_source_and_target(self, spath, tpath):
 
         # Types
-        spath_type = self._path_type(spath)
-        tpath_type = self._path_type(tpath)
-        tpath_parent_type = self._path_type(tpath.parent)
+        spath_type = self.path_type(spath)
+        tpath_type = self.path_type(tpath)
+        tpath_parent_type = self.path_type(tpath.parent)
 
         # Checks
         # ------

@@ -74,7 +74,7 @@ def test_filedicts_basics(fs):
     assert sim_file.locations["pool"] == Path("/work/ollie/pool")
 
 
-def test_cp(fs):
+def test_cp_file(fs):
     """Tests for ``filedicts.cp``"""
 
     dummy_config = """
@@ -104,6 +104,6 @@ def test_cp(fs):
 
     # Test the method
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
-    sim_file._cp("pool", "work")
+    sim_file.cp("pool", "work")
 
     assert os.path.exists(target)

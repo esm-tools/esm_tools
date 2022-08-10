@@ -13,6 +13,7 @@ Some considerations
 """
 import os
 from pathlib import Path
+from collections.abc import Callable
 
 import yaml
 import pytest
@@ -27,6 +28,32 @@ def config():
     """Generates fake config to be used before each test"""
     fake_config = dict()
     yield fake_config
+
+
+@pytest.fixture()
+def simulation_file(fs):
+    """Generates fake SimulationFile object to be used before each test"""
+    dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
+    echam:
+        files:
+            jan_surf:
+                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                filetype: NetCDF
+                description: >
+                    Initial values used for the simulation, including
+                    properties such as geopotential, temperature, pressure
+    """
+    config = yaml.safe_load(dummy_config)
+    fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+    fake_simulation_file = filedicts.SimulationFile(config, "echam.files.jan_surf")
+    yield fake_simulation_file
 
 
 def test_example(fs):
@@ -154,4 +181,50 @@ def test_mv(fs):
     assert os.path.exists(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
     )
+
+
+# ===
+# Tests for SimulationFile.ln() method
+# + check if source exists
+# + check if destination is written
+# + check if destination already exists or a symlink
+# + check for self pointing
+# + check if source path does not exist
+# + check if destination path does not exist
+# ===
+def test_ln_iscallable(simulation_file):
+    assert isinstance(simulation_file.ln, Callable)
+
+def test_ln_links_files_correctly(simulation_file, fs):
+    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
+    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
+    source_file = fs.create_file(source_path)
+    simulation_file.ln(source_path, destination_path)
+    assert os.path.exists(source_path)
+    assert os.path.exists(destination_path)
+    
+def test_ln_raises_exception_when_destination_path_exists(simulation_file, fs):
+    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
+    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
+    source_file = fs.create_file(source_path)
+    with pytest.raises(FileExistsError):
+        simulation_file.ln(source_path, source_path)
+
+def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
+    source_path = "/some/directory/file.nc"
+    with pytest.raises(OSError):
+        simulation_file.ln(source_path, source_path) 
+    
+def test_ln_raises_exception_when_source_file_does_not_exist(simulation_file, fs):
+    source_path = "~/echam.yaml"
+    destination_path = "~/echam_link.yaml"
+    with pytest.raises(FileNotFoundError):
+        simulation_file.ln(source_path, destination_path)
+
+def test_ln_raises_exception_when_destination_path_does_not_exist(simulation_file, fs):
+    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
+    source_file = fs.create_file(source_path)
+    destination_path = "/does/not/exist/file.nc" 
+    with pytest.raises(FileNotFoundError):
+        simulation_file.ln(source_path, destination_path)
 

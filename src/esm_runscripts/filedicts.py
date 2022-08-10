@@ -1,8 +1,9 @@
 """
 The file-dictionary implementation
 """
-from typing import Type, Tuple
+from typing import Type, Tuple, AnyStr, Union
 import pathlib
+import os
 
 import dpath.util
 from loguru import logger
@@ -36,6 +37,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()
     """
 
+
     def __init__(self, full_config, attrs_address):
         """
         Parameters
@@ -62,11 +64,66 @@ class SimulationFile(dict):
         self.exp_tree = self.locations["exp_tree"]
         self.run_tree = self.locations["run_tree"]
 
+
     def cp(self) -> None:
         pass
 
-    def ln(self) -> None:
-        pass
+
+    def ln(self, source_path: Union[AnyStr, os.PathLike], destination_path: str) -> None:
+        """creates symbolic links. Wrapper around os.symlink
+        
+        Parameters
+        ----------
+        source_path : str, PathLike
+            path of the file to be linked
+
+        destination_path : str, PathLike
+            path of the symbolic link
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        FileNotFoundError
+            - Source path does not exist
+        OSError
+            - Destination path is a directory
+            - Symbolic link is trying to link to itself
+            - Destination path does not exist 
+        FileExistsError
+            - Destination path already exists
+        """
+        # Retrieve the absolute path by expanding ~
+        source_path = os.path.abspath(os.path.expanduser(source_path))
+        destination_path = os.path.abspath(os.path.expanduser(destination_path))
+
+        if not os.path.exists(source_path):
+            err_msg = f"Unable to create symbolic link: `{source_path}` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        if os.path.isdir(destination_path):
+            err_msg = f"Unable to create symbolic link: `{destination_path}` is a directory"
+            raise OSError(err_msg)
+
+        destination_exists = os.path.exists(destination_path) or os.path.islink(destination_path)
+        if destination_exists: 
+            err_msg = f"Unable to create symbolic link: `{destination_path}`. File already exists"
+            raise FileExistsError(err_msg)
+
+        points_to_itself = source_path == destination_path
+        if points_to_itself:
+            err_msg = f"Unable to create symbolic link: `{source_path}` is linking to itself"
+            raise OSError(err_msg)
+
+        destination_parent = pathlib.Path(destination_path).parents[0]
+        if not destination_parent.exists():
+            err_msg = f"Unable to create symbolic link: `{destination_parent}` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        os.symlink(source_path, destination_path)
+
 
     def mv(self, source: str, target: str) -> None:
         """
@@ -92,6 +149,7 @@ class SimulationFile(dict):
         except IOError:
             # NOTE(PG): Re-raise IOError with our own message:
             raise IOError(f"Unable to move {source_path} to {target_path}")
+
 
     def _determine_names(
         self, source: str, target: str

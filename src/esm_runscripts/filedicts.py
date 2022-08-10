@@ -1,20 +1,58 @@
 """
 The file-dictionary implementation
+
+Developer Notes
+---------------
+* Internal functions, decorators, and methods are prefixed with _. They should
+  only be used inside of this file.
+* Decorators should have names that map to an attribute of the object. See the
+  example in ``_allowed_to_be_missing``.
 """
 import functools
 import pathlib
-from typing import Type
+from typing import Tuple, Type
 
 import dpath.util
 from esm_parser import ConfigSetup
 from loguru import logger
 
 
-def skip_missing(method):
-    """Allows to decorate a method with skip_missing
+# NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
+# this decorator should **only** be used inside of this file.
+def _allowed_to_be_missing(method):
+    """Allows to decorate a method with ``_allowed_to_be_missing``, causing it
+    to always return ``None``.
 
-    If a method is decorated with skip_missing, it will return None instead
-    of executing. Used for cp, ln, mv.
+    If a method is decorated with ``@_allowed_to_be_missing``, it will return
+    ``None`` instead of executing if the file has a attribute of
+    ``allowed_to_be_missing`` set to ``True. You get a warning via the logger
+    giving the full method name that was decorated and a representation of the
+    file that was trying to be moved, linked, or copied.
+
+    Usage Example
+    -------------
+    Given you have an instanciated simulation file under ``sim_file`` with the following property::
+        >>> sim_file.allowed_to_be_missing
+        True
+
+    And given that you have a decorated method foo, that would act on the file::
+        >>> rvalue = sim_file.foo(*args, **kwargs)
+        >>> rvalue is None
+        True
+        >>> print(rvalue)
+        None
+
+    Programming Example
+    -------------------
+    class MyCoolClass:
+        def __init__(self):
+            self.allowed_to_be_missing = True
+
+        @_allowed_to_be_missing
+        def foo(self, *args, **kwargs):
+            # This method will always return None, the return below is never
+            # reached:
+            return 123
     """
 
     @functools.wraps(method)
@@ -96,15 +134,15 @@ class SimulationFile(dict):
         """
         return self.get("allowed_to_be_missing", False)
 
-    @skip_missing
+    @_allowed_to_be_missing
     def cp(self) -> None:
         pass
 
-    @skip_missing
+    @_allowed_to_be_missing
     def ln(self) -> None:
         pass
 
-    @skip_missing
+    @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
         """
         Moves (renames) the SimulationFile from it's location in ``source`` to
@@ -132,7 +170,7 @@ class SimulationFile(dict):
 
     def _determine_names(
         self, source: str, target: str
-    ) -> tuple[pathlib.Path, pathlib.Path]:
+    ) -> Tuple[pathlib.Path, pathlib.Path]:
         """
         Determines names for source and target, depending on name and path
 

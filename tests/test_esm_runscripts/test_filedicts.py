@@ -12,6 +12,7 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
+from pathlib import Path
 
 import yaml
 
@@ -45,6 +46,12 @@ def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
     dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
@@ -58,9 +65,7 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["jan_surf"]
-    )
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
 
 
@@ -76,10 +81,10 @@ def test_allowed_to_be_missing_attr():
     """
     config = yaml.safe_load(dummy_config)
     sim_file_001 = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["human_readable_tag_001"]
+        config, "echam.files.human_readable_tag_001"
     )
     sim_file_002 = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["human_readable_tag_002"]
+        config, "echam.files.human_readable_tag_002"
     )
 
     assert sim_file_001.allowed_to_be_missing == True
@@ -106,9 +111,44 @@ def test_allowed_to_be_missing_mv(fs):
     fs.create_dir("/work/data/pool")
     fs.create_file("/work/data/pool/not_foo_at_all")
     sim_file = esm_runscripts.filedicts.SimulationFile(
-        config["echam"]["files"]["human_readable_tag_001"]
+        config, "echam.files.human_readable_tag_001"
     )
     sim_file.mv("pool", "work")
     assert not os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/foo"
     )
+
+
+def test_cp(fs):
+    """Tests for ``filedicts.cp``"""
+
+    dummy_config = """
+    echam:
+        files:
+            jan_surf:
+                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                path_in_pool: /work/ollie/pool/ECHAM/T63/
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Set source and targets
+    target_folder = config["echam"]["thisrun_work_dir"]
+    source = Path(
+        config["echam"]["files"]["jan_surf"]["path_in_pool"],
+        config["echam"]["files"]["jan_surf"]["name_in_pool"],
+    )
+    target = Path(
+        target_folder,
+        config["echam"]["files"]["jan_surf"]["name_in_work"],
+    )
+
+    # Create files and folders
+    fs.create_file(source)
+    fs.create_dir(target_folder)
+
+    # Test the method
+    esm_runscripts.filedicts.SimulationFile.cp(source, target)
+
+    assert os.path.exists(target)

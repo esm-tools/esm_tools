@@ -2,33 +2,10 @@
 The file-dictionary implementation
 """
 import functools
+import pathlib
 
+import dpath.util
 from loguru import logger
-
-
-class SimulationFiles(dict):
-    """
-    Describes all files used in a ESM Simulation
-
-    Given a config like this::
-
-        $ cat dummy_config.yaml
-
-        model_a:
-            files:
-                file_a:
-                    name_in_pool: blah
-                    name_in_work: blah2
-                file_b:
-                    name_in_pool: woohoo
-                    name_in_work: woohoo2
-
-    You can get in Python::
-
-        >>> sim_files = SimulationFiles(config["model_a"]["files"])
-        >>> print(sim_files)
-        {file_a: <SimulationFile(...)>, file_b: <SimulationFile(...)>}
-    """
 
 
 class SimulationFile(dict):
@@ -52,17 +29,36 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config['echam']['files']['jan_surf'])
+        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])
 
     You could then copy the file to the experiment folder::
 
         >>> sim_file.cp_to_exp_tree()
     """
 
-    # Do NOT implment an __init__ unless you really think you need to. dict
-    # takes care of this in a way is that is considerably smarter than any of us are.
-    #
-    # Please delete my annoying comments before merging into actual release ;-)
+    def __init__(self, full_config, attrs_address):
+        """
+        Parameters
+        ----------
+        full_config : dict
+            The full simulation configuration
+        attrs_address : str
+            The address of this specific file in the full config, separated by dots.
+        """
+        attrs_dict = dpath.util.get(full_config, attrs_address, separator=".")
+        super().__init__(attrs_dict)
+        self._config = full_config
+        self.locations = {
+            "work": pathlib.Path(full_config["general"]["thisrun_work_dir"]),
+            "pool": pathlib.Path(full_config["computer"]["pool_dir"]),
+            "exp_tree": pathlib.Path(full_config["general"]["exp_dir"]),
+            "run_tree": pathlib.Path(full_config["general"]["thisrun_dir"]),
+        }
+        # Allow dot access:
+        self.work = self.locations["work"]
+        self.pool = self.locations["pool"]
+        self.exp_tree = self.locations["exp_tree"]
+        self.run_tree = self.locations["run_tree"]
 
     # This part allows for dot-access to allowed_to_be_missing:
     @property

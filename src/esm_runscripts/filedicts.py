@@ -10,6 +10,26 @@ from esm_parser import ConfigSetup
 from loguru import logger
 
 
+def skip_missing(method):
+    """Allows to decorate a method with skip_missing
+
+    If a method is decorated with skip_missing, it will return None instead
+    of executing. Used for cp, ln, mv.
+    """
+
+    @functools.wraps(method)
+    def inner_method(self, *args, **kwargs):
+        if self.allowed_to_be_missing:
+            logger.warning(
+                f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
+            )
+            return None  # None is the default return, but let us be explicit here, as it is a bit confusing
+        else:
+            return method(self, *args, **kwargs)
+
+    return inner_method
+
+
 class SimulationFile(dict):
     """
     Desribes a file used within a ESM Simulation.
@@ -75,28 +95,6 @@ class SimulationFile(dict):
             True
         """
         return self.get("allowed_to_be_missing", False)
-
-    # NOTE(PG): I **do not** understand this syntax. Suddenly no more self, and
-    # then yes, and then no, and what?? But hey, it seems to work...
-    # NOTE(PG): https://www.geeksforgeeks.org/creating-decorator-inside-a-class-in-python/
-    def skip_missing(method):
-        """Allows to decorate a method with skip_missing
-
-        If a method is decorated with skip_missing, it will return None instead
-        of executing. Used for cp, ln, mv.
-        """
-
-        @functools.wraps(method)
-        def inner_method(self, *args, **kwargs):
-            if self.allowed_to_be_missing:
-                logger.warning(
-                    f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
-                )
-                return None  # None is the default return, but let us be explicit here, as it is a bit confusing
-            else:
-                return method(*args, **kwargs)
-
-        return inner_method
 
     @skip_missing
     def cp(self) -> None:

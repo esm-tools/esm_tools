@@ -85,6 +85,12 @@ def test_filedicts_basics(fs):
 def test_allowed_to_be_missing_attr():
     """Ensures the property allowed_to_be_missing works correctly"""
     dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
     echam:
         files:
             human_readable_tag_001:
@@ -110,6 +116,11 @@ def test_allowed_to_be_missing_mv(fs):
     general:
         expid: expid
         base_dir: /some/dummy/location/
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
     echam:
         files:
             human_readable_tag_001:

@@ -37,9 +37,8 @@ def test_example(fs):
     fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")
     # This module also have functions for link files, globbing, etc.
     config_out = esm_runscripts.filedicts.copy_files(config)
-    assert os.path.exists(
-        "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
-    )
+    assert os.path.exists("/some/dummy/location/expid/run_18500101-18501231/work/")
+    assert os.path.exists("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
 
 
 def test_filedicts_basics(fs):

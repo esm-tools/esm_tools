@@ -14,12 +14,11 @@ Some considerations
 import os
 from pathlib import Path
 
-import yaml
 import pytest
-
-import esm_runscripts.filedicts as filedicts
+import yaml
 
 import esm_runscripts.filedicts
+import esm_runscripts.filedicts as filedicts
 
 
 @pytest.fixture()
@@ -76,6 +75,11 @@ def test_filedicts_basics(fs):
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
+    assert sim_file.work == Path(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    )
+    assert sim_file._config == config
+    assert sim_file.locations["pool"] == Path("/work/ollie/pool")
 
 
 def test_allowed_to_be_missing_attr():
@@ -199,4 +203,3 @@ def test_mv(fs):
     assert os.path.exists(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
     )
-

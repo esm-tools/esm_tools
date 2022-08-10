@@ -12,13 +12,12 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
+from pathlib import Path
 
 import yaml
 import pytest
 
 import esm_runscripts.filedicts as filedicts
-
-from pathlib import Path
 
 import esm_runscripts.filedicts
 
@@ -48,14 +47,20 @@ def test_example(fs):
     fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")
     # This module also have functions for link files, globbing, etc.
     config_out = esm_runscripts.filedicts.copy_files(config)
-    assert os.path.exists(
-        "/some/dummy/location/expid/run_18500101-18501231/work/unit.24"
-    )
-    
+    assert os.path.exists("/some/dummy/location/expid/run_18500101-18501231/work/")
+    assert os.path.exists("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
+
+
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
     dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
@@ -69,8 +74,14 @@ def test_filedicts_basics(fs):
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config["echam"]["files"]["jan_surf"])
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
+    assert sim_file.work == Path(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    )
+    assert sim_file._config == config
+    assert sim_file.locations["pool"] == Path("/work/ollie/pool")
+
 
 def test_cp(fs):
     """Tests for ``filedicts.cp``"""
@@ -113,3 +124,34 @@ def test_resolve_file_movements(config):
 
     # assert
     assert isinstance(config, dict)
+
+
+def test_mv(fs):
+    """Tests for mv"""
+    dummy_config = """
+    general:
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    computer:
+        pool_dir: "/work/ollie/pool"
+    echam:
+        files:
+            jan_surf:
+                name_in_pool: T63CORE2_jan_surf.nc
+                path_in_pool: ECHAM/T63/
+                name_in_work: unit.24
+                path_in_work: .
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+    """
+    config = yaml.safe_load(dummy_config)
+    fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+    fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20010101/work")
+    assert os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file.mv("pool", "work")
+    assert not os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+    assert os.path.exists(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
+    )
+

@@ -4,7 +4,6 @@ The file-dictionary implementation
 import pathlib
 
 import dpath.util
-from esm_parser import user_error
 from loguru import logger
 
 
@@ -80,19 +79,17 @@ class SimulationFile(dict):
             One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
         if source not in self.locations:
-            user_error(
-                "Filedict Error",
-                "source is incorrectly defined, and needs to be in {self.locations}",
+            raise ValueError(
+                f"source is incorrectly defined, and needs to be in {self.locations}"
             )
         source_path, target_path = self._determine_names(source, target)
         # Perform the movement:
         try:
             source_path.rename(target_path)
             logger.success(f"Moved {source_path} --> {target_path}")
-        except Exception:  # Probably better to look for specific "breaking" things here
-            user_error(
-                "Filedict Error", f"Unable to move {source_path} to {target_path}"
-            )
+        except IOError:
+            # NOTE(PG): Re-raise IOError with our own message:
+            raise IOError(f"Unable to move {source_path} to {target_path}")
 
     def _determine_names(
         self, source: str, target: str

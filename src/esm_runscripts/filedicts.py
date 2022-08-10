@@ -8,7 +8,7 @@ import shutil
 import dpath.util
 from loguru import logger
 
-from esm_parser import ConfigSetup
+from esm_parser import ConfigSetup, user_error
 
 class SimulationFile(dict):
     """
@@ -39,6 +39,9 @@ class SimulationFile(dict):
 
     def __init__(self, full_config, attrs_address):
         """
+        - Initiates the properties of the object
+        - Triggers basic checks
+
         Parameters
         ----------
         full_config : dict
@@ -51,6 +54,7 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
+        self.name = name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.locations = {
             "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
@@ -64,13 +68,16 @@ class SimulationFile(dict):
             "computer": pathlib.Path(self["name_in_computer"]),
         }
         # Allow dot access:
-        self.work = self.locations["work"]
-        self.computer = self.locations["computer"]
-#        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
-#        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        self.path_in_work = self.locations["work"]
+        self.path_in_computer = self.locations["computer"]
+#        self.path_exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
+#        self.path_run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
 
         # Verbose set to true by default, for now at least
         self.verbose = full_config.get("general", {}).get("verbose", True)
+
+        # Checks
+        self._check_path_in_computer_is_abs()
 
     def cp(self, source, target) -> None:
         """
@@ -195,6 +202,16 @@ class SimulationFile(dict):
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
+
+    def _check_path_in_computer_is_abs(self):
+        if not self.path_in_computer.is_absolute():
+            user_error(
+                "File Dictionaries",
+                "The path defined for "
+                f"``{self.component}.files.{self.name}.path_in_computer`` is not "
+                "abosulte. Please, always define an absolute path for the "
+                "``path_in_computer`` variable."
+            )
 
     def check_source_and_target(self, source_path, target_path):
         """

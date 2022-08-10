@@ -62,11 +62,10 @@ else
 	source $condapath/bin/activate jupyter_mon 
 fi
 
-set -x
 cd $(dirname $0)
 papermill echam_monitoring.ipynb echam_monitoring_${expid}.ipynb -p expid $expid -p iniyear $iniyear -p exproot $basedir -p obsroot $obsroot
 jupyter-nbconvert --no-input --to html echam_monitoring_${expid}.ipynb
-mv -v *.html $obsroot/$expid/mon/echam/
+mv -v *.html $basedir/$expid/mon/echam/
 
 echo "`date`: ECHAM6 monitoring finished"
 exit 0

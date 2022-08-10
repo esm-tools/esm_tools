@@ -339,6 +339,20 @@ echam:
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}"
                                                 nproc: 1
+                                        echam_monitoring:
+                                                batch_or_shell: shell
+                                                order_in_cluster: sequential 
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: echam_postprocessing 
+                                                script_dir: ${general.esm_function_dir}/setups/foci
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    echam_monitoring.sh
+                                                    -r ${general.expid}
+                                                    -i ${initial_date!syear}
+                                                    -o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
+                                                    "
+                                                nproc: 1
 
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"

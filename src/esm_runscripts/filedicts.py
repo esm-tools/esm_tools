@@ -1,7 +1,7 @@
 """
 The file-dictionary implementation
 """
-from typing import Type
+from typing import Type, Tuple
 import pathlib
 
 import dpath.util
@@ -95,7 +95,7 @@ class SimulationFile(dict):
 
     def _determine_names(
         self, source: str, target: str
-    ) -> tuple[pathlib.Path, pathlib.Path]:
+    ) -> Tuple[pathlib.Path, pathlib.Path]:
         """
         Determines names for source and target, depending on name and path
 

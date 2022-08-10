@@ -143,8 +143,8 @@ def test_allowed_to_be_missing_mv(fs):
     )
 
 
-def test_cp(fs):
-    """Tests for ``filedicts.cp``"""
+def test_cp_file(fs):
+    """Tests for ``filedicts.cp`` copying file"""
 
     dummy_config = """
     echam:
@@ -167,13 +167,48 @@ def test_cp(fs):
         target_folder,
         config["echam"]["files"]["jan_surf"]["name_in_work"],
     )
-
     # Create files and folders
     fs.create_file(source)
     fs.create_dir(target_folder)
 
     # Test the method
-    esm_runscripts.filedicts.SimulationFile.cp(source, target)
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file.cp("pool", "work")
+
+    assert os.path.exists(target)
+
+
+def test_cp_folder(fs):
+    """Tests for ``filedicts.cp`` copying folder"""
+
+    dummy_config = """
+    oifs:
+        files:
+            o3_data:
+                name_in_pool: o3chem_l91
+                name_in_work: o3chem_l91
+                path_in_pool: /work/ollie/pool/OIFS/159_4
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Set source and targets
+    target_folder = config["oifs"]["thisrun_work_dir"]
+    source = Path(
+        config["oifs"]["files"]["o3_data"]["path_in_pool"],
+        config["oifs"]["files"]["o3_data"]["name_in_pool"],
+    )
+    target = Path(
+        target_folder,
+        config["oifs"]["files"]["o3_data"]["name_in_work"],
+    )
+    # Create files and folders
+    fs.create_dir(source)
+    fs.create_dir(target_folder)
+
+    # Test the method
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
+    sim_file.cp("pool", "work")
 
     assert os.path.exists(target)
 

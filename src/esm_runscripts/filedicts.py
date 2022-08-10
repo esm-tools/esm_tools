@@ -3,6 +3,7 @@ The file-dictionary implementation
 """
 from typing import Type, Tuple
 import pathlib
+import shutil
 
 import dpath.util
 from loguru import logger
@@ -50,20 +51,61 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
+        self.component = component = attrs_address.split(".")[0]
         self.locations = {
-            "work": pathlib.Path(full_config["general"]["thisrun_work_dir"]),
-            "pool": pathlib.Path(full_config["computer"]["pool_dir"]),
-            "exp_tree": pathlib.Path(full_config["general"]["exp_dir"]),
-            "run_tree": pathlib.Path(full_config["general"]["thisrun_dir"]),
+            "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
+            "pool": pathlib.Path(self["path_in_pool"]),
+#            "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+#            "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+
+        }
+        self.names = {
+            "work": pathlib.Path(self["name_in_work"]),
+            "pool": pathlib.Path(self["name_in_pool"]),
         }
         # Allow dot access:
         self.work = self.locations["work"]
         self.pool = self.locations["pool"]
-        self.exp_tree = self.locations["exp_tree"]
-        self.run_tree = self.locations["run_tree"]
+#        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
+#        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
 
-    def cp(self) -> None:
-        pass
+        # Verbose set to true by default, for now at least
+        self.verbose = full_config.get("general", {}).get("verbose", True)
+
+    def cp(self, source, target) -> None:
+        """
+        Copies the source file or folder to the target path. It changes the name of the
+        target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
+
+        Parameters
+        ----------
+        source : str
+            String specifying one of the following options: ``"pool"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
+        target : str
+            String specifying one of the following options: ``"pool"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
+        """
+        # Build target and source paths
+        source_path = self.locations[source].joinpath(self.names[source])
+        target_path = self.locations[target].joinpath(self.names[target])
+
+        # Checks
+        self.check_source_and_target(source_path, target_path)
+        source_path_type = self.path_type(source_path)
+
+        # Actual copy
+        if source_path_type == "dir":
+            copy_func = shutil.copytree
+        else:
+            copy_func = shutil.copy2
+        try:
+            copy_func(source_path, target_path)
+        except Exception as error:
+            raise Exception(
+                f"Unable to copy {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
 
     def ln(self) -> None:
         pass
@@ -127,6 +169,69 @@ class SimulationFile(dict):
         target_path = self.locations[target].joinpath(target_relative_path, target_name)
         return source_path, target_path
 
+    def path_type(self, path: pathlib.Path) -> str or bool:
+        """
+        Checks if the given ``path`` exists. If it does returns it's type, if it
+        doesn't, returns ``False``.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            Path to be checked.
+
+        Returns
+        -------
+        str or bool
+            If the path exists it returns its type as a string (``file``, ``dir``,
+            ``link``). If it doesn't exist returns ``False``.
+        """
+        if path.is_file():
+            return "file"
+        elif path.is_dir():
+            return "dir"
+        elif path.is_symlink():
+            return "link"
+        elif not path.exists():
+            return False
+        else:
+            raise Exception(f"Cannot identify the path's type of {path}")
+
+    def check_source_and_target(self, source_path, target_path):
+        """
+        Performs checks for file movements
+
+        Raises
+        ------
+        Exception
+            - If the ``target_path`` exists
+            - If the parent dir of the ``target_path`` does not exist
+
+        Note
+        ----
+            - If the ``source_path`` does not exist adds it to a list of missing files
+              in the ``self._config`` (TODO)
+        """
+
+        # Types
+        source_path_type = self.path_type(source_path)
+        target_path_type = self.path_type(target_path)
+        target_path_parent_type = self.path_type(target_path.parent)
+
+        # Checks
+        # ------
+        # Source exists
+        if not source_path_type:
+            if self.verbose:
+                print(f"Source file ``{source_path}`` does not exist!") # I'll change this when we have loguru available
+            # TODO: Add the missing file to the config["<model>"]["missing_files"]
+        # Target exist
+        if target_path_type:
+            # TODO: Change this behavior
+            raise Exception("File already exists!")
+        # Target dir exists
+        if not target_path_parent_type:
+            # TODO: we might consider creating it
+            raise Exception("Target directory does not exist!")
 
 def copy_files(config):
     """Copies files"""

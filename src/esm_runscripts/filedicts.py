@@ -21,7 +21,7 @@ class SimulationFile(dict):
         echam:
             files:
                 jan_surf:
-                    name_in_pool: T63CORE2_jan_surf.nc
+                    name_in_computer: T63CORE2_jan_surf.nc
                     name_in_work: unit.24
                     filetype: NetCDF
                     description: >
@@ -54,18 +54,18 @@ class SimulationFile(dict):
         self.component = component = attrs_address.split(".")[0]
         self.locations = {
             "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
-            "pool": pathlib.Path(self["path_in_pool"]),
+            "computer": pathlib.Path(self["path_in_computer"]),
 #            "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
 #            "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
 
         }
         self.names = {
             "work": pathlib.Path(self["name_in_work"]),
-            "pool": pathlib.Path(self["name_in_pool"]),
+            "computer": pathlib.Path(self["name_in_computer"]),
         }
         # Allow dot access:
         self.work = self.locations["work"]
-        self.pool = self.locations["pool"]
+        self.computer = self.locations["computer"]
 #        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
 #        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
 
@@ -80,10 +80,10 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         target : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
         # Build target and source paths
@@ -118,9 +118,9 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
         if source not in self.locations:
             raise ValueError(
@@ -141,16 +141,16 @@ class SimulationFile(dict):
         """
         Determines names for source and target, depending on name and path
 
-        Source and target should be on of work, pool, exp_tree, or run_tree.
+        Source and target should be on of work, computer, exp_tree, or run_tree.
         You need to specify name_in_`source` and name_in_`target` in the
         object's attrs_dict.
 
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
 
         Returns
         -------

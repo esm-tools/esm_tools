@@ -116,9 +116,7 @@ def rename_sources_to_targets(config):
                         )
                     else:
                         config[model][filetype + "_targets"] = {}
-                        for descrip, name in config[model][
-                            filetype + "_sources"
-                        ].items():
+                        for descrip, name in config[model][filetype + "_sources"].items():
                             config[model][filetype + "_targets"].update(
                                 {descrip: os.path.basename(name)}
                             )
@@ -169,9 +167,7 @@ def complete_sources(config):
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
-                    if not config[model][filetype + "_sources"][category].startswith(
-                        "/"
-                    ):
+                    if not config[model][filetype + "_sources"][category].startswith("/"):
                         config[model][filetype + "_sources"][category] = (
                             config["general"]["thisrun_work_dir"]
                             + "/"
@@ -247,9 +243,7 @@ def choose_needed_files(config):
                     print(config[model][filetype + "_sources"], flush=True)
                     helpers.print_datetime(config)
                     sys.exit(-1)
-                new_sources.update(
-                    {category: config[model][filetype + "_sources"][name]}
-                )
+                new_sources.update({category: config[model][filetype + "_sources"][name]})
 
             config[model][filetype + "_sources"] = new_sources
 
@@ -268,9 +262,7 @@ def globbing(config):
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 # oldconf = copy.deepcopy(config[model])
-                for descr, filename in copy.deepcopy(
-                    config[model][filetype + "_sources"]
-                ).items():
+                for descr, filename in copy.deepcopy(config[model][filetype + "_sources"]).items():
                     if "*" in filename:
                         del config[model][filetype + "_sources"][descr]
                         # Save the wildcard string for later use when copying to target
@@ -318,7 +310,7 @@ def target_subfolders(config):
                         esm_parser.user_error(
                             "Filelists",
                             f"No source found for target ``{name}`` in model "
-                            f"``{model}``\n",
+                            f"``{model}``\n"
                         )
                     if "*" in filename:
                         source_filename = os.path.basename(
@@ -338,7 +330,9 @@ def target_subfolders(config):
                                 config, model, filename, filetype, descr
                             )
                             config[model][filetype + "_targets"][descr] = (
-                                "/".join(filename.split("/")[:-1]) + "/" + target_name
+                                "/".join(filename.split("/")[:-1])
+                                + "/"
+                                + target_name
                             )
                         else:
                             # Return the correct target name
@@ -411,8 +405,12 @@ def get_target_name_from_wildcard(config, model, filename, filetype, descr):
     gen_descr = descr.split("_glob_")[0]
     # Load the wild cards from source and target and split them
     # at the *
-    wild_card_source_all = config[model][f"{filetype}_sources_wild_card"]
-    wild_card_source = wild_card_source_all[gen_descr].split("*")
+    wild_card_source_all = config[model][
+        f"{filetype}_sources_wild_card"
+    ]
+    wild_card_source = wild_card_source_all[gen_descr].split(
+        "*"
+    )
     wild_card_target = target_filename.split("*")
     # Check for syntax mistakes
     if len(wild_card_target) != len(wild_card_source):

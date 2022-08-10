@@ -12,12 +12,15 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
-from pathlib import Path
 
 import yaml
 import pytest
 
 import esm_runscripts.filedicts as filedicts
+
+from pathlib import Path
+
+import esm_runscripts.filedicts
 
 
 @pytest.fixture()

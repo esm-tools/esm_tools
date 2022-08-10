@@ -14,6 +14,7 @@ from .prepare import *
 from .last_minute import *
 from .dataprocess import *
 from .filelists import *
+from .filedicts import *
 from .chunky_parts import *
 from .workflow import *
 from .tidy import *

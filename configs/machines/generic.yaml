@@ -1,10 +1,9 @@
 # GENERIC YAML CONFIGURATION FILES
 
 name: generic
-accounting: true
-
-batch_system: "slurm"
+accounting: false
 hetjob_flag: "?" # either hetjob or packjob
+batch_system: "slurm"
 
 jobtype: compute
 

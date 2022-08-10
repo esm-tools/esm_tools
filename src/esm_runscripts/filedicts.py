@@ -1,11 +1,13 @@
 """
 The file-dictionary implementation
 """
+from typing import Type
 import pathlib
 
 import dpath.util
 from loguru import logger
 
+from esm_parser import ConfigSetup
 
 class SimulationFile(dict):
     """
@@ -130,4 +132,12 @@ def copy_files(config):
     """Copies files"""
     # PG: No. We do not want this kind of general function. This is just to
     # demonstrate how the test would work
+    return config
+
+
+def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
+    """Replaces former assemble() function"""
+    # TODO: to be filled with functions
+    # DONE: type annotation
+    # DONE: basic unit test: test_resolve_file_movements
     return config

@@ -15,8 +15,18 @@ import os
 from pathlib import Path
 
 import yaml
+import pytest
+
+import esm_runscripts.filedicts as filedicts
 
 import esm_runscripts.filedicts
+
+
+@pytest.fixture()
+def config():
+    """Generates fake config to be used before each test"""
+    fake_config = dict()
+    yield fake_config
 
 
 def test_example(fs):
@@ -108,6 +118,14 @@ def test_cp(fs):
     assert os.path.exists(target)
 
 
+def test_resolve_file_movements(config):
+    # act
+    config = filedicts.resolve_file_movements(config)
+
+    # assert
+    assert isinstance(config, dict)
+
+
 def test_mv(fs):
     """Tests for mv"""
     dummy_config = """
@@ -136,3 +154,4 @@ def test_mv(fs):
     assert os.path.exists(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
     )
+

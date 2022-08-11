@@ -224,7 +224,7 @@ def test_mv(fs):
 
 def test_check_path_in_computer_is_abs(fs):
     """
-    Tests that ``esm_parser.user_error`` is use when the ``path_in_computer``
+    Tests that ``esm_parser.user_error`` is used when the ``path_in_computer``
     is not absolute
     """
 
@@ -252,3 +252,39 @@ def test_check_path_in_computer_is_abs(fs):
 
     # error needs to occur as the path is not absolute
     assert any(["ERROR: File Dictionaries" in line for line in output])
+
+def test_resolve_paths(fs):
+    """
+    Tests ``_resolve_paths``
+    """
+
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    echam:
+        files:
+            jan_surf:
+                type: input
+                name_in_computer: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                path_in_computer: /work/ollie/pool/ECHAM/T63/
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+    """
+    config = yaml.safe_load(dummy_config)
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+
+    assert sim_file["absolute_path_in_work"] == Path(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
+    )
+    assert sim_file["absolute_path_in_computer"] == Path(
+        "/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
+    )
+    assert sim_file["absolute_path_in_exp_tree"] == Path(
+        "/work/ollie/pgierz/some_exp/input/echam/T63CORE2_jan_surf.nc"
+    )
+    assert sim_file["absolute_path_in_run_tree"] == Path(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc"
+    )

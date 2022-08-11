@@ -1,9 +1,5 @@
 """
 The file-dictionary implementation
-
-==========================================
-Now with Automatic CI Testing! It's Great!
-==========================================
 """
 import pathlib
 import shutil

@@ -58,6 +58,10 @@ class SimulationFile(dict):
         self.component = component = attrs_address.split(".")[0]
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
+        # Complete tree names if not defined by the user
+        self["name_in_run_tree"] = self.get("name_in_run_tree", self["name_in_computer"])
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", self["name_in_computer"])
+
         # Complete paths for all possible locations
         self._resolve_paths()
 

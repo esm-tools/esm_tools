@@ -49,12 +49,14 @@ def test_example(fs):
     general:
         base_dir: /some/dummy/location/
     echam:
-        simulation_files:
+        files:
             jan_surf:
                 name: ECHAM Jan Surf File
                 path_in_computer: /work/ollie/pool/ECHAM
                 name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
+                type: input
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
     """
     config = yaml.safe_load(config)
     # Create some fake files and directories you might want in your test
@@ -73,6 +75,7 @@ def test_filedicts_basics(fs):
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -82,17 +85,19 @@ def test_filedicts_basics(fs):
                 name_in_work: unit.24
                 path_in_computer: /work/ollie/pool/ECHAM/T63
                 filetype: NetCDF
+                type: input
                 description: >
                     Initial values used for the simulation, including
                     properties such as geopotential, temperature, pressure
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
-    assert sim_file.path_in_work == Path(
+    assert sim_file.locations["work"] == Path(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     )
     assert sim_file._config == config
@@ -103,18 +108,22 @@ def test_cp_file(fs):
     """Tests for ``filedicts.cp`` copying file"""
 
     dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
     echam:
         files:
             jan_surf:
                 name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
+                type: input
                 path_in_computer: /work/ollie/pool/ECHAM/T63/
-        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
     config = yaml.safe_load(dummy_config)
 
     # Set source and targets
-    target_folder = config["echam"]["thisrun_work_dir"]
+    target_folder = config["general"]["thisrun_work_dir"]
     source = Path(
         config["echam"]["files"]["jan_surf"]["path_in_computer"],
         config["echam"]["files"]["jan_surf"]["name_in_computer"],
@@ -138,18 +147,22 @@ def test_cp_folder(fs):
     """Tests for ``filedicts.cp`` copying folder"""
 
     dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
     oifs:
         files:
             o3_data:
                 name_in_computer: o3chem_l91
                 name_in_work: o3chem_l91
+                type: input
                 path_in_computer: /work/ollie/pool/OIFS/159_4
-        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
     """
     config = yaml.safe_load(dummy_config)
 
     # Set source and targets
-    target_folder = config["oifs"]["thisrun_work_dir"]
+    target_folder = config["general"]["thisrun_work_dir"]
     source = Path(
         config["oifs"]["files"]["o3_data"]["path_in_computer"],
         config["oifs"]["files"]["o3_data"]["name_in_computer"],
@@ -183,6 +196,7 @@ def test_mv(fs):
     general:
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -190,9 +204,11 @@ def test_mv(fs):
             jan_surf:
                 name_in_computer: T63CORE2_jan_surf.nc
                 path_in_computer: /work/ollie/pool/ECHAM/T63/
+                type: input
                 name_in_work: unit.24
                 path_in_work: .
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
     config = yaml.safe_load(dummy_config)
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
@@ -216,13 +232,16 @@ def test_check_path_in_computer_is_abs(fs):
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     echam:
         files:
             jan_surf:
+                type: input
                 name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
                 path_in_computer: pool/ECHAM/T63
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
     config = yaml.safe_load(dummy_config)
 

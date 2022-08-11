@@ -78,7 +78,7 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
-    def cp(self, source, target) -> None:
+    def cp(self, source: str, target: str) -> None:
         """
         Copies the source file or folder to the target path. It changes the name of the
         target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
@@ -92,21 +92,24 @@ class SimulationFile(dict):
             String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
-        # Build target and source paths
-        source_path = self.locations[source].joinpath(self.names[source])
-        target_path = self.locations[target].joinpath(self.names[target])
+        if source not in self.locations:
+            raise ValueError(
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        source_path, target_path = self._determine_names(source, target)
 
         # Checks
         self._check_source_and_target(source_path, target_path)
-        source_path_type = self._path_type(source_path)
 
         # Actual copy
+        source_path_type = self._path_type(source_path)
         if source_path_type == "dir":
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
+            logger.success(f"Copied {source_path} --> {target_path}")
         except Exception as error:
             raise Exception(
                 f"Unable to copy {source_path} to {target_path}\n\n"
@@ -130,7 +133,7 @@ class SimulationFile(dict):
         """
         if source not in self.locations:
             raise ValueError(
-                f"source is incorrectly defined, and needs to be in {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
         source_path, target_path = self._determine_names(source, target)
 
@@ -141,9 +144,12 @@ class SimulationFile(dict):
         try:
             source_path.rename(target_path)
             logger.success(f"Moved {source_path} --> {target_path}")
-        except IOError:
+        except IOError as error:
             # NOTE(PG): Re-raise IOError with our own message:
-            raise IOError(f"Unable to move {source_path} to {target_path}")
+            raise IOError(
+                f"Unable to move {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
 
     def _determine_names(
         self, source: str, target: str

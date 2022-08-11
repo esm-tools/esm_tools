@@ -67,9 +67,8 @@ class SimulationFile(dict):
     def cp(self) -> None:
         pass
 
-    def ln(
-        self, source_path: Union[AnyStr, os.PathLike], destination_path: str
-    ) -> None:
+    def ln(self, source_key: AnyStr, destination_key: AnyStr) -> None:
+        #self, source_path: Union[AnyStr, os.PathLike], destination_path: str
         """creates symbolic links. Wrapper around os.symlink
 
         Parameters
@@ -94,6 +93,16 @@ class SimulationFile(dict):
             - Destination path does not exist
         FileExistsError
             - Destination path already exists
+        """
+
+
+        # TODO: refactor: use keys instead of paths (11/8/2022)
+        # TODO: rewrite docstring
+
+        source_path = self.locations[source_key] / self.names[source_key]
+        target_path = self.locations[target_key] / self.names[target_key]
+
+
         """
         # Retrieve the absolute path by expanding ~
         source_path = os.path.abspath(os.path.expanduser(source_path))
@@ -131,6 +140,7 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         os.symlink(source_path, destination_path)
+        """
 
     def mv(self, source: str, target: str) -> None:
         """

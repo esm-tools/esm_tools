@@ -30,11 +30,11 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])
+        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])  # doctest: +SKIP
 
     You could then copy the file to the experiment folder::
 
-        >>> sim_file.cp_to_exp_tree()
+        >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
     def __init__(self, full_config, attrs_address):

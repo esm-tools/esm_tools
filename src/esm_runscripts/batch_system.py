@@ -223,6 +223,11 @@ class batch_system:
                 else:
                     continue
 
+                # seb-wahl: add support for ECHAM6's parallel I/O feature
+                # namelist parctl in namelist.echam
+                if "nprocio" in config[model]:
+                    config[model]["tasks"] += config[model].get("nprocio",0)
+
                 nproc = config[model]["tasks"]
                 if cluster == "compute":
                     cores_per_node = config["computer"]["partitions"]["compute"][

@@ -288,3 +288,36 @@ def test_resolve_paths(fs):
     assert sim_file["absolute_path_in_run_tree"] == Path(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc"
     )
+
+def test_resolve_paths_old_config():
+    """
+    Tests ``_resolve_paths``
+    """
+    # Load an old config
+    tests_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "."
+    )
+    with open(f"{tests_path}/awicm3_config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    # Add the new ``files`` dictionary
+    config["oifs"]["files"] = {"o3_data": {
+        "name_in_computer": "o3chem_l91",
+        "name_in_work": "o3chem_l91",
+        "type": "input",
+        "path_in_computer": "/work/ollie/jstreffi/input/oifs-43r3/43r3/climate/95_4",
+    }}
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
+
+    assert sim_file["absolute_path_in_work"] == Path(
+        "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/run_20000101-20000101/work/o3chem_l91"
+    )
+    assert sim_file["absolute_path_in_computer"] == Path(
+        "/work/ollie/jstreffi/input/oifs-43r3/43r3/climate/95_4/o3chem_l91"
+    )
+    assert sim_file["absolute_path_in_exp_tree"] == Path(
+        "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/input/oifs/o3chem_l91"
+    )
+    assert sim_file["absolute_path_in_run_tree"] == Path(
+        "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/run_20000101-20000101/input/oifs/o3chem_l91"
+    )

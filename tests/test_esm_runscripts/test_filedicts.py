@@ -228,11 +228,8 @@ def test_check_path_in_computer_is_abs(fs):
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        try:
+        with pytest.raises(SystemExit) as error:
             sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
-        except SystemExit as e:
-            error = e
 
     # error needs to occur as the path is not absolute
-    assert isinstance(error, SystemExit)
     assert any(["ERROR: File Dictionaries" in line for line in output])

@@ -209,7 +209,7 @@ class SimulationFile(dict):
                 "File Dictionaries",
                 "The path defined for "
                 f"``{self.component}.files.{self.name}.path_in_computer`` is not "
-                "abosulte. Please, always define an absolute path for the "
+                "absolute. Please, always define an absolute path for the "
                 "``path_in_computer`` variable."
             )
 

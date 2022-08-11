@@ -20,31 +20,31 @@ export MPIROOT=$($MPIFC -show | perl -lne 'm{ -I(.*?)/include } and print $1')
 # No. of cores for make
 N=2
 
-BASE_DIR="/pf/a/a270124/pism_build_sebastian02"
-
-PNETCDF_ROOT="${BASE_DIR}/local/modules/pnetcdf"
-PNETCDF_ROOT="/sw/rhel6-x64/netcdf/parallel_netcdf-1.10.0-openmpi2-intel14"
-#PNETCDF_VER="1.8.1"
-#PNETCDF_VER="1.12.0"
-PNETCDF_VER="1.10.0"
-PNETCDF_INCLUDES="${PNETCDF_ROOT}/include"
-PNETCDF_LIBRARIES="${PNETCDF_ROOT}/lib"
-
-#HDF5_ROOT="${BASE_DIR}/local/modules/hdf5"
-HDF5_ROOT="/sw/rhel6-x64/hdf5/hdf5-1.8.21-gcc64"
-#HDF5_VER="1.8.15"
-HDF5_VER="1.8.21"
-#HDF5_VER="1.10.5"
-HDF5_INCLUDES="${HDF5_ROOT}/include"
-HDF5_LIBRARIES="${HDF5_ROOT}/lib"
-
-#NETCDF_ROOT="${BASE_DIR}/local/modules/netcdf"
-NETCDF_ROOT="/sw/rhel6-x64/netcdf/netcdf_c-4.7.2-gcc64"
-#NETCDF_VER="4.4.1.1"
-#NETCDF_VER="4.7.3"
-NETCDF_VER="4.7.2"
-NETCDF_INCLUDES="${NETCDF_ROOT}/include"
-NETCDF_LIBRARIES="${NETCDF_ROOT}/lib"
+#BASE_DIR="/pf/a/a270124/pism_build_sebastian02"
+#
+#PNETCDF_ROOT="${BASE_DIR}/local/modules/pnetcdf"
+#PNETCDF_ROOT="/sw/rhel6-x64/netcdf/parallel_netcdf-1.10.0-openmpi2-intel14"
+##PNETCDF_VER="1.8.1"
+##PNETCDF_VER="1.12.0"
+#PNETCDF_VER="1.10.0"
+#PNETCDF_INCLUDES="${PNETCDF_ROOT}/include"
+#PNETCDF_LIBRARIES="${PNETCDF_ROOT}/lib"
+#
+##HDF5_ROOT="${BASE_DIR}/local/modules/hdf5"
+#HDF5_ROOT="/sw/rhel6-x64/hdf5/hdf5-1.8.21-gcc64"
+##HDF5_VER="1.8.15"
+#HDF5_VER="1.8.21"
+##HDF5_VER="1.10.5"
+#HDF5_INCLUDES="${HDF5_ROOT}/include"
+#HDF5_LIBRARIES="${HDF5_ROOT}/lib"
+#
+##NETCDF_ROOT="${BASE_DIR}/local/modules/netcdf"
+#NETCDF_ROOT="/sw/rhel6-x64/netcdf/netcdf_c-4.7.2-gcc64"
+##NETCDF_VER="4.4.1.1"
+##NETCDF_VER="4.7.3"
+#NETCDF_VER="4.7.2"
+#NETCDF_INCLUDES="${NETCDF_ROOT}/include"
+#NETCDF_LIBRARIES="${NETCDF_ROOT}/lib"
 
 cd Fortran-v1.0
 

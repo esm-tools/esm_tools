@@ -137,8 +137,9 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-        module unload netcdf
-        module load netcdf/4.6.0_gnu
+        #module unload netcdf
+        #module load netcdf/4.6.0_gnu
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/spack-levante.2022-02-17/netcdf-fortran-4.5.3-jlxcfz/lib/
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
@@ -146,8 +147,8 @@ update_orography_run_calnoro() {
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
         #rm sso_par_fil.srv topodata.nc
         
-        module unload netcdf/4.6.0_gnu
-        module load netcdf/4.6.0_intel
+        #module unload netcdf/4.6.0_gnu
+        #module load netcdf/4.6.0_intel
 }
 
 ## @fn update_orography_generate_target_orography_file() 
@@ -342,9 +343,9 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        cp ${FUNCTION_PATH}/utils/_build/jsbach_init_file .
-        cp ${FUNCTION_PATH}/utils/_build//iterative_coupling/utils/_build/mo_kinds.mod .
-        cp ${FUNCTION_PATH}/utils/_build/iterative_coupling/utils/_build/mo_vegparams.mod .
+        cp ${FUNCTION_PATH}/jsbach_init_file .
+        cp ${FUNCTION_PATH}/iterative_coupling/utils/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/iterative_coupling/utils/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}
@@ -532,8 +533,8 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/unpack .
+                if [ -f ${FUNCTION_PATH}/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/unpack .
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
@@ -704,8 +705,8 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         
         # Ensure that the pack binary is here:
         if [ ! -f pack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/pack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/pack .
+                if [ -f ${FUNCTION_PATH}/pack ]; then
+                        cp -v ${FUNCTION_PATH}/pack .
                 else
                         echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
                         exit
@@ -770,8 +771,8 @@ set_glacial_mask_jsbach_update_restart_veg() {
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/unpack .
+                if [ -f ${FUNCTION_PATH}/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/unpack .
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
@@ -911,8 +912,8 @@ set_glacial_mask_jsbach_update_restart_veg() {
         echo -e "\t\t- Finished with modification of variables, now we need to repack"
         # Ensure that the pack binary is here:
         if [ ! -f pack ]; then
-                if [ -f ${FUNCTION_PATH}/utils/_build/pack ]; then
-                        cp -v ${FUNCTION_PATH}/utils/_build/pack .
+                if [ -f ${FUNCTION_PATH}/pack ]; then
+                        cp -v ${FUNCTION_PATH}/pack .
                 else
                         echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
                         exit

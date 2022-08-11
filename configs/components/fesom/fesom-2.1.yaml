@@ -200,7 +200,8 @@ restart_out_sources:
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        #fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        fesom: "*.fesom.*.nc"
 
 choose_use_icebergs:
         True:

@@ -86,11 +86,12 @@ function pism_atmosphere_get_newest_output {
             #cdo cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | tail -$(( CHUNK_SIZE_pism_standalone/NYEAR)) ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
             echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
             cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
-            ntime=$( cdo ntime ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc )
+            #ntime=$( cdo ntime ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc )
             #ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
             #cdo -s timsum ${LATEST_PISM_FILE_SINGLE} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
-            cdo timsum ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
-            cdo divc,${ntime} ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
+            cdo timmean ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
+            #cdo timsum ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
+            #cdo divc,${ntime} ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
 
             rm ${PISM_OFILE_LIST}
         #elif [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${START_MONTH_pism}${START_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then

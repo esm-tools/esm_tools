@@ -12,15 +12,30 @@ Some considerations
   unit test, which you don't really want.  
 """
 import os
-from pathlib import Path
+import sys
 from collections.abc import Callable
+from io import StringIO
+from pathlib import Path
 
-import yaml
 import pytest
-
-import esm_runscripts.filedicts as filedicts
+import yaml
 
 import esm_runscripts.filedicts
+import esm_runscripts.filedicts as filedicts
+
+
+class Capturing(list):
+    """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
+
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        del self._stringio  # free up some memory
+        sys.stdout = self._stdout
 
 
 @pytest.fixture()
@@ -65,7 +80,8 @@ def test_example(fs):
         simulation_files:
             jan_surf:
                 name: ECHAM Jan Surf File
-                path_in_pool: /work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc
+                path_in_computer: /work/ollie/pool/ECHAM
+                name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
     """
     config = yaml.safe_load(config)
@@ -83,43 +99,44 @@ def test_filedicts_basics(fs):
 
     dummy_config = """
     general:
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
-        exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        exp_dir: "/work/ollie/pgierz/some_exp"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
-                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
+                path_in_computer: /work/ollie/pool/ECHAM/T63
                 filetype: NetCDF
                 description: >
                     Initial values used for the simulation, including
                     properties such as geopotential, temperature, pressure
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     """
     config = yaml.safe_load(dummy_config)
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
     assert sim_file["name_in_work"] == "unit.24"
-    assert sim_file.work == Path(
+    assert sim_file.path_in_work == Path(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     )
     assert sim_file._config == config
-    assert sim_file.locations["pool"] == Path("/work/ollie/pool")
+    assert sim_file.locations["computer"] == Path("/work/ollie/pool/ECHAM/T63")
 
 
-def test_cp(fs):
-    """Tests for ``filedicts.cp``"""
+def test_cp_file(fs):
+    """Tests for ``filedicts.cp`` copying file"""
 
     dummy_config = """
     echam:
         files:
             jan_surf:
-                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
-                path_in_pool: /work/ollie/pool/ECHAM/T63/
+                path_in_computer: /work/ollie/pool/ECHAM/T63/
         thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
     """
     config = yaml.safe_load(dummy_config)
@@ -127,20 +144,55 @@ def test_cp(fs):
     # Set source and targets
     target_folder = config["echam"]["thisrun_work_dir"]
     source = Path(
-        config["echam"]["files"]["jan_surf"]["path_in_pool"],
-        config["echam"]["files"]["jan_surf"]["name_in_pool"],
+        config["echam"]["files"]["jan_surf"]["path_in_computer"],
+        config["echam"]["files"]["jan_surf"]["name_in_computer"],
     )
     target = Path(
         target_folder,
         config["echam"]["files"]["jan_surf"]["name_in_work"],
     )
-
     # Create files and folders
     fs.create_file(source)
     fs.create_dir(target_folder)
 
     # Test the method
-    esm_runscripts.filedicts.SimulationFile.cp(source, target)
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file.cp("computer", "work")
+
+    assert os.path.exists(target)
+
+
+def test_cp_folder(fs):
+    """Tests for ``filedicts.cp`` copying folder"""
+
+    dummy_config = """
+    oifs:
+        files:
+            o3_data:
+                name_in_computer: o3chem_l91
+                name_in_work: o3chem_l91
+                path_in_computer: /work/ollie/pool/OIFS/159_4
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Set source and targets
+    target_folder = config["oifs"]["thisrun_work_dir"]
+    source = Path(
+        config["oifs"]["files"]["o3_data"]["path_in_computer"],
+        config["oifs"]["files"]["o3_data"]["name_in_computer"],
+    )
+    target = Path(
+        target_folder,
+        config["oifs"]["files"]["o3_data"]["name_in_work"],
+    )
+    # Create files and folders
+    fs.create_dir(source)
+    fs.create_dir(target_folder)
+
+    # Test the method
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
+    sim_file.cp("computer", "work")
 
     assert os.path.exists(target)
 
@@ -157,7 +209,6 @@ def test_mv(fs):
     """Tests for mv"""
     dummy_config = """
     general:
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
     computer:
@@ -165,18 +216,18 @@ def test_mv(fs):
     echam:
         files:
             jan_surf:
-                name_in_pool: T63CORE2_jan_surf.nc
-                path_in_pool: ECHAM/T63/
+                name_in_computer: T63CORE2_jan_surf.nc
+                path_in_computer: /work/ollie/pool/ECHAM/T63/
                 name_in_work: unit.24
                 path_in_work: .
-        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     """
     config = yaml.safe_load(dummy_config)
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20010101/work")
     assert os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
-    sim_file.mv("pool", "work")
+    sim_file.mv("computer", "work")
     assert not os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     assert os.path.exists(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
@@ -195,36 +246,71 @@ def test_mv(fs):
 def test_ln_iscallable(simulation_file):
     assert isinstance(simulation_file.ln, Callable)
 
+
 def test_ln_links_files_correctly(simulation_file, fs):
     source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
-    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
+    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc"
     source_file = fs.create_file(source_path)
     simulation_file.ln(source_path, destination_path)
     assert os.path.exists(source_path)
     assert os.path.exists(destination_path)
-    
+
+
 def test_ln_raises_exception_when_destination_path_exists(simulation_file, fs):
     source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
-    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
+    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc"
     source_file = fs.create_file(source_path)
     with pytest.raises(FileExistsError):
         simulation_file.ln(source_path, source_path)
 
+
 def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
     source_path = "/some/directory/file.nc"
     with pytest.raises(OSError):
-        simulation_file.ln(source_path, source_path) 
-    
+        simulation_file.ln(source_path, source_path)
+
+
 def test_ln_raises_exception_when_source_file_does_not_exist(simulation_file, fs):
     source_path = "~/echam.yaml"
     destination_path = "~/echam_link.yaml"
     with pytest.raises(FileNotFoundError):
         simulation_file.ln(source_path, destination_path)
 
+
 def test_ln_raises_exception_when_destination_path_does_not_exist(simulation_file, fs):
     source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
     source_file = fs.create_file(source_path)
-    destination_path = "/does/not/exist/file.nc" 
+    destination_path = "/does/not/exist/file.nc"
     with pytest.raises(FileNotFoundError):
         simulation_file.ln(source_path, destination_path)
 
+
+def test_check_path_in_computer_is_abs(fs):
+    """
+    Tests that ``esm_parser.user_error`` is use when the ``path_in_computer``
+    is not absolute
+    """
+
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+    echam:
+        files:
+            jan_surf:
+                name_in_computer: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                path_in_computer: pool/ECHAM/T63
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
+
+    # error needs to occur as the path is not absolute
+    assert any(["ERROR: File Dictionaries" in line for line in output])

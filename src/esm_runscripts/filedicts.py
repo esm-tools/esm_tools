@@ -8,7 +8,7 @@ import shutil
 import dpath.util
 from loguru import logger
 
-from esm_parser import ConfigSetup
+from esm_parser import ConfigSetup, user_error
 
 class SimulationFile(dict):
     """
@@ -21,7 +21,7 @@ class SimulationFile(dict):
         echam:
             files:
                 jan_surf:
-                    name_in_pool: T63CORE2_jan_surf.nc
+                    name_in_computer: T63CORE2_jan_surf.nc
                     name_in_work: unit.24
                     filetype: NetCDF
                     description: >
@@ -39,6 +39,9 @@ class SimulationFile(dict):
 
     def __init__(self, full_config, attrs_address):
         """
+        - Initiates the properties of the object
+        - Triggers basic checks
+
         Parameters
         ----------
         full_config : dict
@@ -51,26 +54,30 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
+        self.name = name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.locations = {
             "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
-            "pool": pathlib.Path(self["path_in_pool"]),
+            "computer": pathlib.Path(self["path_in_computer"]),
 #            "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
 #            "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
 
         }
         self.names = {
             "work": pathlib.Path(self["name_in_work"]),
-            "pool": pathlib.Path(self["name_in_pool"]),
+            "computer": pathlib.Path(self["name_in_computer"]),
         }
         # Allow dot access:
-        self.work = self.locations["work"]
-        self.pool = self.locations["pool"]
-#        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
-#        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        self.path_in_work = self.locations["work"]
+        self.path_in_computer = self.locations["computer"]
+#        self.path_exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
+#        self.path_run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
 
         # Verbose set to true by default, for now at least
         self.verbose = full_config.get("general", {}).get("verbose", True)
+
+        # Checks
+        self._check_path_in_computer_is_abs()
 
     def cp(self, source, target) -> None:
         """
@@ -80,10 +87,10 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         target : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
         # Build target and source paths
@@ -118,9 +125,9 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
         if source not in self.locations:
             raise ValueError(
@@ -141,16 +148,16 @@ class SimulationFile(dict):
         """
         Determines names for source and target, depending on name and path
 
-        Source and target should be on of work, pool, exp_tree, or run_tree.
+        Source and target should be on of work, computer, exp_tree, or run_tree.
         You need to specify name_in_`source` and name_in_`target` in the
         object's attrs_dict.
 
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
 
         Returns
         -------
@@ -195,6 +202,16 @@ class SimulationFile(dict):
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
+
+    def _check_path_in_computer_is_abs(self):
+        if not self.path_in_computer.is_absolute():
+            user_error(
+                "File Dictionaries",
+                "The path defined for "
+                f"``{self.component}.files.{self.name}.path_in_computer`` is not "
+                "absolute. Please, always define an absolute path for the "
+                "``path_in_computer`` variable."
+            )
 
     def check_source_and_target(self, source_path, target_path):
         """

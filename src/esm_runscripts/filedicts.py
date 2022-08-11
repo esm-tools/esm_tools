@@ -11,10 +11,10 @@ Developer Notes
 import functools
 import pathlib
 import shutil
-from typing import Tuple, Type
+from typing import Tuple, Union
 
 import dpath.util
-from esm_parser import ConfigSetup
+from esm_parser import ConfigSetup, user_error
 from loguru import logger
 
 
@@ -80,7 +80,7 @@ class SimulationFile(dict):
         echam:
             files:
                 jan_surf:
-                    name_in_pool: T63CORE2_jan_surf.nc
+                    name_in_computer: T63CORE2_jan_surf.nc
                     name_in_work: unit.24
                     filetype: NetCDF
                     allowed_to_be_missing: True
@@ -97,8 +97,11 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()
     """
 
-    def __init__(self, full_config, attrs_address):
+    def __init__(self, full_config: dict, attrs_address: dict):
         """
+        - Initiates the properties of the object
+        - Triggers basic checks
+
         Parameters
         ----------
         full_config : dict
@@ -111,23 +114,29 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
+        self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.locations = {
             "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
-            "pool": pathlib.Path(self["path_in_pool"]),
-            #            "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
-            #            "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+            "computer": pathlib.Path(self["path_in_computer"]),
+            # "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
+            # "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
         }
         self.names = {
             "work": pathlib.Path(self["name_in_work"]),
-            "pool": pathlib.Path(self["name_in_pool"]),
+            "computer": pathlib.Path(self["name_in_computer"]),
         }
         # Allow dot access:
         self.work = self.locations["work"]
-        self.pool = self.locations["pool"]
+        self.path_in_work = self.locations["work"]
+        self.path_in_computer = self.locations["computer"]
+        # self.path_exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
+        # self.path_run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        # Verbose set to true by default, for now at least
+        self._verbose = full_config.get("general", {}).get("verbose", True)
 
-    #        self.exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
-    #        self.run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        # Checks
+        self._check_path_in_computer_is_abs()
 
     # This part allows for dot-access to allowed_to_be_missing:
     @property
@@ -141,9 +150,6 @@ class SimulationFile(dict):
         """
         return self.get("allowed_to_be_missing", False)
 
-        # Verbose set to true by default, for now at least
-        self.verbose = full_config.get("general", {}).get("verbose", True)
-
     @_allowed_to_be_missing
     def cp(self, source, target) -> None:
         """
@@ -153,10 +159,10 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         target : str
-            String specifying one of the following options: ``"pool"``, ``"work"``,
+            String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
         # Build target and source paths
@@ -164,8 +170,8 @@ class SimulationFile(dict):
         target_path = self.locations[target].joinpath(self.names[target])
 
         # Checks
-        self.check_source_and_target(source_path, target_path)
-        source_path_type = self.path_type(source_path)
+        self._check_source_and_target(source_path, target_path)
+        source_path_type = self._path_type(source_path)
 
         # Actual copy
         if source_path_type == "dir":
@@ -193,15 +199,19 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
         if source not in self.locations:
             raise ValueError(
                 f"source is incorrectly defined, and needs to be in {self.locations}"
             )
         source_path, target_path = self._determine_names(source, target)
+
+        # Checks
+        self._check_source_and_target(source_path, target_path)
+
         # Perform the movement:
         try:
             source_path.rename(target_path)
@@ -216,16 +226,16 @@ class SimulationFile(dict):
         """
         Determines names for source and target, depending on name and path
 
-        Source and target should be on of work, pool, exp_tree, or run_tree.
+        Source and target should be on of work, computer, exp_tree, or run_tree.
         You need to specify name_in_`source` and name_in_`target` in the
         object's attrs_dict.
 
         Parameters
         ----------
         source : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
-            One of ``"pool"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
 
         Returns
         -------
@@ -244,7 +254,7 @@ class SimulationFile(dict):
         target_path = self.locations[target].joinpath(target_relative_path, target_name)
         return source_path, target_path
 
-    def path_type(self, path: pathlib.Path) -> str or bool:
+    def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
         doesn't, returns ``False``.
@@ -271,7 +281,17 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
-    def check_source_and_target(self, source_path, target_path):
+    def _check_path_in_computer_is_abs(self):
+        if not self.path_in_computer.is_absolute():
+            user_error(
+                "File Dictionaries",
+                "The path defined for "
+                f"``{self.component}.files.{self.name}.path_in_computer`` is not "
+                "absolute. Please, always define an absolute path for the "
+                "``path_in_computer`` variable.",
+            )
+
+    def _check_source_and_target(self, source_path, target_path):
         """
         Performs checks for file movements
 
@@ -288,15 +308,15 @@ class SimulationFile(dict):
         """
 
         # Types
-        source_path_type = self.path_type(source_path)
-        target_path_type = self.path_type(target_path)
-        target_path_parent_type = self.path_type(target_path.parent)
+        source_path_type = self._path_type(source_path)
+        target_path_type = self._path_type(target_path)
+        target_path_parent_type = self._path_type(target_path.parent)
 
         # Checks
         # ------
         # Source exists
         if not source_path_type:
-            if self.verbose:
+            if self._verbose:
                 print(
                     f"Source file ``{source_path}`` does not exist!"
                 )  # I'll change this when we have loguru available

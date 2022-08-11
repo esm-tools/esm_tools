@@ -61,6 +61,8 @@ class SimulationFile(dict):
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get("name_in_run_tree", self["name_in_computer"])
         self["name_in_exp_tree"] = self.get("name_in_exp_tree", self["name_in_computer"])
+        if self["type"] not in ["restart", "outdata"]:
+            self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
 
         # Complete paths for all possible locations
         self._resolve_paths()

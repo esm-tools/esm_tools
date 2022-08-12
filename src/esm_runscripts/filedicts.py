@@ -7,8 +7,9 @@ import shutil
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
-from esm_parser import ConfigSetup, user_error
 from loguru import logger
+
+from esm_parser import ConfigSetup, user_error
 
 
 class SimulationFile(dict):
@@ -159,16 +160,14 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         if os.path.isdir(target_path):
-            err_msg = (
-                f"Unable to create symbolic link: `{target_path}` is a directory"
-            )
+            err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
             raise OSError(err_msg)
 
-        target_exists = os.path.exists(target_path) or os.path.islink(
-            target_path
-        )
+        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
         if target_exists:
-            err_msg = f"Unable to create symbolic link: `{target_path}`. File already exists"
+            err_msg = (
+                f"Unable to create symbolic link: `{target_path}`. File already exists"
+            )
             raise FileExistsError(err_msg)
 
         target_parent = target_path.parent

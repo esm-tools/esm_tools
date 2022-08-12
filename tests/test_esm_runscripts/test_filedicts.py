@@ -13,11 +13,10 @@ Some considerations
 """
 import os
 import sys
+from collections import namedtuple
 from collections.abc import Callable
 from io import StringIO
 from pathlib import Path
-from collections.abc import Callable
-from collections import namedtuple
 
 import pytest
 import yaml

@@ -4,6 +4,7 @@ The file-dictionary implementation
 import pathlib
 import shutil
 from typing import Type, Tuple, AnyStr, Union
+import os
 
 import dpath.util
 from esm_parser import ConfigSetup, user_error
@@ -117,17 +118,16 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    def ln(self, source_key: AnyStr, destination_key: AnyStr) -> None:
-        #self, source_path: Union[AnyStr, os.PathLike], destination_path: str
-        """creates symbolic links. Wrapper around os.symlink
+    def ln(self, source_key: AnyStr, target_key: AnyStr) -> None:
+        """creates symbolic links from the path retrieved by ``source_key`` to the one by ``target_key``
 
         Parameters
         ----------
-        source_path : str, PathLike
-            path of the file to be linked
+        source_key : str
+            key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
-        destination_path : str, PathLike
-            path of the symbolic link
+        target_key : str
+            key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
         Returns
         -------
@@ -138,59 +138,48 @@ class SimulationFile(dict):
         FileNotFoundError
             - Source path does not exist
         OSError
-            - Destination path is a directory
+            - Target path is a directory
             - Symbolic link is trying to link to itself
-            - Destination path does not exist
+            - Target path does not exist
         FileExistsError
-            - Destination path already exists
+            - Target path already exists
         """
-
-
-        # TODO: refactor: use keys instead of paths (11/8/2022)
-        # TODO: rewrite docstring
-
+        # full paths: directory path / file name
         source_path = self.locations[source_key] / self.names[source_key]
         target_path = self.locations[target_key] / self.names[target_key]
 
-
-        """
-        # Retrieve the absolute path by expanding ~
-        source_path = os.path.abspath(os.path.expanduser(source_path))
-        destination_path = os.path.abspath(os.path.expanduser(destination_path))
-
-        if not os.path.exists(source_path):
-            err_msg = f"Unable to create symbolic link: `{source_path}` does not exist"
-            raise FileNotFoundError(err_msg)
-
-        if os.path.isdir(destination_path):
-            err_msg = (
-                f"Unable to create symbolic link: `{destination_path}` is a directory"
-            )
-            raise OSError(err_msg)
-
-        destination_exists = os.path.exists(destination_path) or os.path.islink(
-            destination_path
-        )
-        if destination_exists:
-            err_msg = f"Unable to create symbolic link: `{destination_path}`. File already exists"
-            raise FileExistsError(err_msg)
-
-        points_to_itself = source_path == destination_path
+        points_to_itself = source_path == target_path
         if points_to_itself:
             err_msg = (
                 f"Unable to create symbolic link: `{source_path}` is linking to itself"
             )
             raise OSError(err_msg)
 
-        destination_parent = pathlib.Path(destination_path).parents[0]
-        if not destination_parent.exists():
+        if not os.path.exists(source_path):
+            err_msg = f"Unable to create symbolic link: source file `{source_path}` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        if os.path.isdir(target_path):
             err_msg = (
-                f"Unable to create symbolic link: `{destination_parent}` does not exist"
+                f"Unable to create symbolic link: `{target_path}` is a directory"
+            )
+            raise OSError(err_msg)
+
+        target_exists = os.path.exists(target_path) or os.path.islink(
+            target_path
+        )
+        if target_exists:
+            err_msg = f"Unable to create symbolic link: `{target_path}`. File already exists"
+            raise FileExistsError(err_msg)
+
+        target_parent = target_path.parent
+        if not target_parent.exists():
+            err_msg = (
+                f"Unable to create symbolic link: `{target_parent}` does not exist"
             )
             raise FileNotFoundError(err_msg)
 
-        os.symlink(source_path, destination_path)
-        """
+        os.symlink(source_path, target_path)
 
     def mv(self, source: str, target: str) -> None:
         """

@@ -16,6 +16,7 @@ import sys
 from io import StringIO
 from pathlib import Path
 from collections.abc import Callable
+from collections import namedtuple
 
 import yaml
 import pytest
@@ -38,35 +39,65 @@ class Capturing(list):
 
 
 @pytest.fixture()
-def config():
-    """Generates fake config to be used before each test"""
-    fake_config = dict()
-    yield fake_config
-
-
-@pytest.fixture()
-def simulation_file(fs):
-    """Generates fake SimulationFile object to be used before each test"""
-    dummy_config = """
+def config_tuple():
+    """setup function
+    Generates fake config to be used before each test. NamedTuple has 2 fields:
+    - config: configuration dictionary
+    - attr_address: path to retrieve from the config
+    """
+    config_str = """
     general:
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
-        exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        exp_dir: "/work/ollie/pgierz/some_exp"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
-                name_in_pool: T63CORE2_jan_surf.nc
+                name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
+                path_in_computer: /work/ollie/pool/ECHAM/T63
                 filetype: NetCDF
                 description: >
                     Initial values used for the simulation, including
                     properties such as geopotential, temperature, pressure
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     """
-    config = yaml.safe_load(dummy_config)
-    fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    fake_simulation_file = filedicts.SimulationFile(config, "echam.files.jan_surf")
+    config = yaml.safe_load(config_str)
+    attr_address = "echam.files.jan_surf"
+    # create a named tuple since configuration and the attribute address is tightly coupled to each other
+    Config_Tuple = namedtuple("Config_Tuple", ["config", "attr_address"])
+    fake_config_tuple = Config_Tuple(config, attr_address)
+    yield fake_config_tuple
+
+
+@pytest.fixture()
+def simulation_file(fs, config_tuple):
+    """setup function
+    Generates 
+      - fake SimulationFile
+      - source directory (computer)
+      - target directory (work)
+    to be used before each test
+    """
+    config = config_tuple.config
+    attr_address = config_tuple.attr_address
+    fake_simulation_file = filedicts.SimulationFile(config, attr_address)
+
+    path_of_computer = fake_simulation_file.path_in_computer
+    name_in_computer = fake_simulation_file.names["computer"]
+    file_path_in_computer = path_of_computer / name_in_computer
+
+    path_of_work = fake_simulation_file.path_in_work
+    name_in_work = fake_simulation_file.names["work"]
+    file_path_in_work = path_of_work / name_in_work
+
+    # create files and directories
+    # file_path_in_computer : source file path
+    # path_of_work          : target directory path
+    fs.create_file(file_path_in_computer)
+    fs.create_dir(path_of_work)
+
     yield fake_simulation_file
 
 
@@ -235,48 +266,71 @@ def test_mv(fs):
 
 # ===
 # Tests for SimulationFile.ln() method
-# + check if source exists
-# + check if destination is written
-# + check if destination already exists or a symlink
-# + check for self pointing
-# + check if source path does not exist
-# + check if destination path does not exist
+# + 1) check if function is callable
+# + 2) check if linking occurs
+# + 3) check for self pointing
+# + 4) check if target path is a directory and not a file
+# + 5) check if target file already exists or a symlink
+# + 6) check if source file does not exists
+# + 8) check if target directory does not exist
 # ===
 def test_ln_iscallable(simulation_file):
     assert isinstance(simulation_file.ln, Callable)
 
-def test_ln_links_files_correctly(simulation_file, fs):
-    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
-    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
-    source_file = fs.create_file(source_path)
-    simulation_file.ln(source_path, destination_path)
-    assert os.path.exists(source_path)
-    assert os.path.exists(destination_path)
-    
-def test_ln_raises_exception_when_destination_path_exists(simulation_file, fs):
-    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
-    destination_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf_2.nc" 
-    source_file = fs.create_file(source_path)
-    with pytest.raises(FileExistsError):
-        simulation_file.ln(source_path, source_path)
+
+def test_ln_links_file_from_computer_to_work(simulation_file, fs):
+    path_of_computer = simulation_file.path_in_computer
+    name_in_computer = simulation_file.names["computer"]
+    file_path_in_computer = path_of_computer / name_in_computer
+    path_of_work = simulation_file.path_in_work
+    name_in_work = simulation_file.names["work"]
+    file_path_in_work = path_of_work / name_in_work
+
+    simulation_file.ln("computer", "work")
+    assert os.path.exists(file_path_in_computer)
+    assert os.path.exists(file_path_in_work)
+
 
 def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
-    source_path = "/some/directory/file.nc"
     with pytest.raises(OSError):
-        simulation_file.ln(source_path, source_path) 
-    
-def test_ln_raises_exception_when_source_file_does_not_exist(simulation_file, fs):
-    source_path = "~/echam.yaml"
-    destination_path = "~/echam_link.yaml"
-    with pytest.raises(FileNotFoundError):
-        simulation_file.ln(source_path, destination_path)
+        simulation_file.ln("computer", "computer") 
 
-def test_ln_raises_exception_when_destination_path_does_not_exist(simulation_file, fs):
-    source_path = "/some/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc"
-    source_file = fs.create_file(source_path)
-    destination_path = "/does/not/exist/file.nc" 
+    
+def test_ln_raises_exception_when_target_is_a_directory_and_not_a_file(simulation_file, fs):
+    # erase the file name so that we only have a directory path instead
+    simulation_file.names["work"] = ""
+    with pytest.raises(OSError):
+        simulation_file.ln("computer", "work")
+
+
+def test_ln_raises_exception_when_target_path_exists(simulation_file, fs):
+    path_of_work = simulation_file.path_in_work
+    name_in_work = simulation_file.names["work"]
+    file_path_in_work = path_of_work / name_in_work
+    # create the target file so that it will raise an exception
+    fs.create_file(file_path_in_work)
+
+    with pytest.raises(FileExistsError):
+        simulation_file.ln("computer", "work")
+
+
+def test_ln_raises_exception_when_source_file_does_not_exist(simulation_file, fs):
+    path_of_computer = simulation_file.path_in_computer
+    name_in_computer = simulation_file.names["computer"]
+    file_path_in_computer = path_of_computer / name_in_computer
+    fs.remove_object(file_path_in_computer)
+
     with pytest.raises(FileNotFoundError):
-        simulation_file.ln(source_path, destination_path)
+        simulation_file.ln("computer", "work")
+
+
+def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs):
+    path_of_work = simulation_file.path_in_work
+    fs.remove_object(path_of_work)
+    with pytest.raises(FileNotFoundError):
+        simulation_file.ln("computer", "work")
+
+# ========== end of ln() tests ==========
 
 def test_check_path_in_computer_is_abs(fs):
     """

@@ -56,21 +56,16 @@ class SimulationFile(dict):
         self._config = full_config
         self.name = name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
-        self.locations = {
-            "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
-            "computer": pathlib.Path(self["path_in_computer"]),
-            # "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
-            # "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
-        }
-        self.names = {
-            "work": pathlib.Path(self["name_in_work"]),
-            "computer": pathlib.Path(self["name_in_computer"]),
-        }
-        # Allow dot access:
-        self.path_in_work = self.locations["work"]
-        self.path_in_computer = self.locations["computer"]
-        # self.path_exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
-        # self.path_run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        self.path_in_computer = pathlib.Path(self["path_in_computer"])
+
+        # Complete tree names if not defined by the user
+        self["name_in_run_tree"] = self.get("name_in_run_tree", self["name_in_computer"])
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", self["name_in_computer"])
+        if self["type"] not in ["restart", "outdata"]:
+            self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
+
+        # Complete paths for all possible locations
+        self._resolve_paths()
 
         # Verbose set to true by default, for now at least
         self._verbose = full_config.get("general", {}).get("verbose", True)
@@ -96,7 +91,8 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
-        source_path, target_path = self._determine_names(source, target)
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         # Checks
         self._check_source_and_target(source_path, target_path)
@@ -135,7 +131,8 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
-        source_path, target_path = self._determine_names(source, target)
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         # Checks
         self._check_source_and_target(source_path, target_path)
@@ -151,39 +148,32 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    def _determine_names(
-        self, source: str, target: str
-    ) -> Tuple[pathlib.Path, pathlib.Path]:
+    def _resolve_paths(self) -> None:
         """
-        Determines names for source and target, depending on name and path
+        Builds the absolute paths of the file for the different locations
+        (``computer``, ``work``, ``exp_tree``, ``run_tree``) using the information
+        about the experiment paths in ``self._config`` and the
+        ``self["path_in_computer"]``.
 
-        Source and target should be on of work, computer, exp_tree, or run_tree.
-        You need to specify name_in_`source` and name_in_`target` in the
-        object's attrs_dict.
-
-        Parameters
-        ----------
-        source : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
-        target : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
-
-        Returns
-        -------
-        tuple of pathlib.Path, pathlib.Path :
-           The calculated source path and target path.
-
+        It defines these new variables in the ``SimulationFile`` dictionary:
+        - ``self["absolute_path_in_work"]``
+        - ``self["absolute_path_in_computer"]``
+        - ``self["absolute_path_in_run_tree"]``
+        - ``self["absolute_path_in_exp_tree"]``
         """
-        # Figure out names in source and target:
-        source_name = self[f"name_in_{source}"]
-        target_name = self[f"name_in_{target}"]
-        # Relative path in source and target
-        source_relative_path = self.get(f"path_in_{source}", ".")
-        target_relative_path = self.get(f"path_in_{target}", ".")
-        # Build target and source paths:
-        source_path = self.locations[source].joinpath(source_relative_path, source_name)
-        target_path = self.locations[target].joinpath(target_relative_path, target_name)
-        return source_path, target_path
+        self.locations = {
+            "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
+            "computer": pathlib.Path(self["path_in_computer"]),
+            "exp_tree": pathlib.Path(self._config[self.component][
+                f"experiment_{self['type']}_dir"
+            ]),
+            "run_tree": pathlib.Path(self._config[self.component][
+                f"thisrun_{self['type']}_dir"
+            ]),
+        }
+
+        for key, path in self.locations.items():
+            self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
     def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
         """
@@ -218,8 +208,8 @@ class SimulationFile(dict):
                 "File Dictionaries",
                 "The path defined for "
                 f"``{self.component}.files.{self.name}.path_in_computer`` is not "
-                "absolute. Please, always define an absolute path for the "
-                "``path_in_computer`` variable.",
+                f"absolute (``{self.path_in_computer}``). Please, always define an "
+                "absolute path for the ``path_in_computer`` variable.",
             )
 
     def _check_source_and_target(self, source_path, target_path):
@@ -229,13 +219,9 @@ class SimulationFile(dict):
         Raises
         ------
         Exception
+            - If the ``source_path`` does not exist
             - If the ``target_path`` exists
             - If the parent dir of the ``target_path`` does not exist
-
-        Note
-        ----
-            - If the ``source_path`` does not exist adds it to a list of missing files
-              in the ``self._config`` (TODO)
         """
 
         # Types
@@ -247,19 +233,15 @@ class SimulationFile(dict):
         # ------
         # Source exists
         if not source_path_type:
-            if self._verbose:
-                print(
-                    f"Source file ``{source_path}`` does not exist!"
-                )  # I'll change this when we have loguru available
-            # TODO: Add the missing file to the config["<model>"]["missing_files"]
+            raise Exception(f"Source file ``{source_path}`` does not exist!")
         # Target exist
         if target_path_type:
             # TODO: Change this behavior
-            raise Exception("File already exists!")
+            raise Exception(f"File ``{target_path_type}`` already exists!")
         # Target dir exists
         if not target_path_parent_type:
             # TODO: we might consider creating it
-            raise Exception("Target directory does not exist!")
+            raise Exception(f"Target directory ``{target_path_parent_type}`` does not exist!")
 
 
 def copy_files(config):

@@ -13,28 +13,30 @@ Some considerations
 """
 import os
 import sys
+from collections.abc import Callable
 from io import StringIO
 from pathlib import Path
 from collections.abc import Callable
 from collections import namedtuple
 
-import yaml
 import pytest
-
-import esm_runscripts.filedicts as filedicts
+import yaml
 
 import esm_runscripts.filedicts
+import esm_runscripts.filedicts as filedicts
 
 
 class Capturing(list):
     """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
+
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._stringio = StringIO()
         return self
+
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio    # free up some memory
+        del self._stringio  # free up some memory
         sys.stdout = self._stdout
 
 
@@ -355,7 +357,9 @@ def test_check_path_in_computer_is_abs(fs):
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
 
     # error needs to occur as the path is not absolute
     assert any(["ERROR: File Dictionaries" in line for line in output])

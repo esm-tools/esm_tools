@@ -30,10 +30,17 @@ jobs:
         run: |
           ./install.sh
 
+      - name: Install Test requirements
+        run: |
+          # pip install .[test]  # <-- PG: seems not to work for reasons I do not really understand.
+          pip install pytest
+          pip install pyfakefs
+
       - name: Run Pytest
         run: |
-          pip install pytest
           pytest -v .
+          # For now, only test actual source code. Stuff like coupling scripts is ignored
+          pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*" 
 
       - name: run esm_master first time
         run: |

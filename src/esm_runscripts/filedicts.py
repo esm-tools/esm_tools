@@ -1,15 +1,14 @@
 """
 The file-dictionary implementation
 """
+import os
 import pathlib
 import shutil
-from typing import Type, Tuple, AnyStr, Union
-import os
+from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
 from esm_parser import ConfigSetup, user_error
 from loguru import logger
-
 
 
 class SimulationFile(dict):
@@ -32,11 +31,11 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])
+        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])  # doctest: +SKIP
 
     You could then copy the file to the experiment folder::
 
-        >>> sim_file.cp_to_exp_tree()
+        >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
     def __init__(self, full_config, attrs_address):

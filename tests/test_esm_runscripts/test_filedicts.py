@@ -50,11 +50,14 @@ def config_tuple():
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
         files:
             jan_surf:
+                type: input
+                allowed_to_be_missing: False
                 name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
                 path_in_computer: /work/ollie/pool/ECHAM/T63
@@ -62,6 +65,8 @@ def config_tuple():
                 description: >
                     Initial values used for the simulation, including
                     properties such as geopotential, temperature, pressure
+        experiment_input_dir: "/work/ollie/pgierz/some_exp/input/echam"
+        thisrun_input_dir: "/work/ollie/pgierz/some_exp/run_20000101-20000101/input/echam"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     """
     config = yaml.safe_load(config_str)
@@ -75,29 +80,20 @@ def config_tuple():
 @pytest.fixture()
 def simulation_file(fs, config_tuple):
     """setup function
-    Generates 
+    Generates
       - fake SimulationFile
       - source directory (computer)
       - target directory (work)
+      - fake file on computer
     to be used before each test
     """
     config = config_tuple.config
     attr_address = config_tuple.attr_address
     fake_simulation_file = filedicts.SimulationFile(config, attr_address)
 
-    path_of_computer = fake_simulation_file.path_in_computer
-    name_in_computer = fake_simulation_file.names["computer"]
-    file_path_in_computer = path_of_computer / name_in_computer
-
-    path_of_work = fake_simulation_file.path_in_work
-    name_in_work = fake_simulation_file.names["work"]
-    file_path_in_work = path_of_work / name_in_work
-
-    # create files and directories
-    # file_path_in_computer : source file path
-    # path_of_work          : target directory path
-    fs.create_file(file_path_in_computer)
-    fs.create_dir(path_of_work)
+    fs.create_dir(fake_simulation_file.locations["work"])
+    fs.create_dir(fake_simulation_file.locations["computer"])
+    fs.create_file(fake_simulation_file["absolute_path_in_computer"])
 
     yield fake_simulation_file
 
@@ -173,11 +169,19 @@ def test_allowed_to_be_missing_attr():
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
         files:
             human_readable_tag_001:
                 allowed_to_be_missing: True
+                path_in_computer: "/some/location/on/ollie"
+                name_in_computer: "foo"
+                type: "input"
             human_readable_tag_002:
                 allowed_to_be_missing: False
+                path_in_computer: "/some/location/on/ollie"
+                name_in_computer: "bar"
+                type: "input"
     """
     config = yaml.safe_load(dummy_config)
     sim_file_001 = esm_runscripts.filedicts.SimulationFile(
@@ -203,8 +207,11 @@ def test_allowed_to_be_missing_mv(fs):
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
         files:
             human_readable_tag_001:
+                type: input
                 allowed_to_be_missing: True
                 name_in_computer: foo
                 path_in_computer: /work/data/pool
@@ -360,12 +367,8 @@ def test_ln_iscallable(simulation_file):
 
 
 def test_ln_links_file_from_computer_to_work(simulation_file, fs):
-    path_of_computer = simulation_file.path_in_computer
-    name_in_computer = simulation_file.names["computer"]
-    file_path_in_computer = path_of_computer / name_in_computer
-    path_of_work = simulation_file.path_in_work
-    name_in_work = simulation_file.names["work"]
-    file_path_in_work = path_of_work / name_in_work
+    file_path_in_work = simulation_file["absolute_path_in_work"]
+    file_path_in_computer = simulation_file["absolute_path_in_computer"]
 
     simulation_file.ln("computer", "work")
     assert os.path.exists(file_path_in_computer)
@@ -374,20 +377,20 @@ def test_ln_links_file_from_computer_to_work(simulation_file, fs):
 
 def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
     with pytest.raises(OSError):
-        simulation_file.ln("computer", "computer") 
+        simulation_file.ln("computer", "computer")
 
-    
-def test_ln_raises_exception_when_target_is_a_directory_and_not_a_file(simulation_file, fs):
-    # erase the file name so that we only have a directory path instead
-    simulation_file.names["work"] = ""
+
+def test_ln_raises_exception_when_target_is_a_directory_and_not_a_file(
+    simulation_file, fs
+):
+    # Since the simulation_file fixture is a fake_jan_surf, we need the work folder:
+    simulation_file["absolute_path_in_work"] = simulation_file.locations["work"]
     with pytest.raises(OSError):
         simulation_file.ln("computer", "work")
 
 
 def test_ln_raises_exception_when_target_path_exists(simulation_file, fs):
-    path_of_work = simulation_file.path_in_work
-    name_in_work = simulation_file.names["work"]
-    file_path_in_work = path_of_work / name_in_work
+    file_path_in_work = simulation_file["absolute_path_in_work"]
     # create the target file so that it will raise an exception
     fs.create_file(file_path_in_work)
 
@@ -396,22 +399,19 @@ def test_ln_raises_exception_when_target_path_exists(simulation_file, fs):
 
 
 def test_ln_raises_exception_when_source_file_does_not_exist(simulation_file, fs):
-    path_of_computer = simulation_file.path_in_computer
-    name_in_computer = simulation_file.names["computer"]
-    file_path_in_computer = path_of_computer / name_in_computer
-    fs.remove_object(file_path_in_computer)
-
+    fs.remove_object(str(simulation_file["absolute_path_in_computer"]))
     with pytest.raises(FileNotFoundError):
         simulation_file.ln("computer", "work")
 
 
 def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs):
-    path_of_work = simulation_file.path_in_work
-    fs.remove_object(path_of_work)
+    fs.remove_object(str(simulation_file.locations["work"]))
     with pytest.raises(FileNotFoundError):
         simulation_file.ln("computer", "work")
 
+
 # ========== end of ln() tests ==========
+
 
 def test_check_path_in_computer_is_abs(fs):
     """
@@ -445,6 +445,7 @@ def test_check_path_in_computer_is_abs(fs):
 
     # error needs to occur as the path is not absolute
     assert any(["ERROR: File Dictionaries" in line for line in output])
+
 
 def test_resolve_paths(fs):
     """
@@ -482,23 +483,24 @@ def test_resolve_paths(fs):
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc"
     )
 
+
 def test_resolve_paths_old_config():
     """
     Tests ``_resolve_paths``
     """
     # Load an old config
-    tests_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "."
-    )
+    tests_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
     with open(f"{tests_path}/awicm3_config.yaml", "r") as f:
         config = yaml.safe_load(f)
     # Add the new ``files`` dictionary
-    config["oifs"]["files"] = {"o3_data": {
-        "name_in_computer": "o3chem_l91",
-        "name_in_work": "o3chem_l91",
-        "type": "input",
-        "path_in_computer": "/work/ollie/jstreffi/input/oifs-43r3/43r3/climate/95_4",
-    }}
+    config["oifs"]["files"] = {
+        "o3_data": {
+            "name_in_computer": "o3chem_l91",
+            "name_in_work": "o3chem_l91",
+            "type": "input",
+            "path_in_computer": "/work/ollie/jstreffi/input/oifs-43r3/43r3/climate/95_4",
+        }
+    }
 
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
 

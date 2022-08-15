@@ -15,8 +15,9 @@ import shutil
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
-from esm_parser import ConfigSetup, user_error
 from loguru import logger
+
+from esm_parser import ConfigSetup, user_error
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -191,15 +192,15 @@ class SimulationFile(dict):
             )
 
     @_allowed_to_be_missing
-    def ln(self, source_key: AnyStr, target_key: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source_key`` to the one by ``target_key``
+    def ln(self, source: AnyStr, target: AnyStr) -> None:
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``
 
         Parameters
         ----------
-        source_key : str
+        source : str
             key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
-        target_key : str
+        target : str
             key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
         Returns
@@ -218,8 +219,8 @@ class SimulationFile(dict):
             - Target path already exists
         """
         # full paths: directory path / file name
-        source_path = self.locations[source_key] / self.names[source_key]
-        target_path = self.locations[target_key] / self.names[target_key]
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         points_to_itself = source_path == target_path
         if points_to_itself:

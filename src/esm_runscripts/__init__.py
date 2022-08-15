@@ -9,6 +9,7 @@ from .chunky_parts import *
 from .database import *
 from .database_actions import *
 from .dataprocess import *
+from .filedicts import *
 from .filelists import *
 from .last_minute import *
 from .namelists import *

@@ -385,9 +385,9 @@ def test_check_path_in_computer_is_abs(fs):
     # error needs to occur as the path is not absolute
     assert any(["ERROR: File Dictionaries" in line for line in output])
 
-def test_resolve_paths(fs):
+def test_resolve_abs_paths(fs):
     """
-    Tests ``_resolve_paths``
+    Tests ``_resolve_abs_paths``
     """
 
     dummy_config = """

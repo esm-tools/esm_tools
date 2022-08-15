@@ -60,14 +60,32 @@ class SimulationFile(dict):
         self.component = component = attrs_address.split(".")[0]
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
+        # possible paths for files:
+        location_keys = [
+        "computer", # pool/source directory (for input files) 
+        "exp_tree", # file in the category directory in experiment directory (eg. input, output, ...) 
+        "run_tree", # file in the experiment/run_<DATE>/<CATEGORY>/ directory
+        "work"      # file in the current work directory. Eg. experiment/run_<DATE>/work/
+        ]
+
+        # Explanation of the file keys:
+        # -----------------------------
+        # - LOCATION_KEY is one of the strings defined in LOCATION_KEY list
+        # 
+        # - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+        #   - eg. name_in_work
+        # - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY 
+        #   - eg. absolute_path_in_run_tree
+
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get("name_in_run_tree", self["name_in_computer"])
         self["name_in_exp_tree"] = self.get("name_in_exp_tree", self["name_in_computer"])
         if self["type"] not in ["restart", "outdata"]:
             self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
-
-        # Complete paths for all possible locations
-        self._resolve_paths()
+        
+        # initialize the locations and complete paths for all possible locations
+        locations = dict.fromkeys(location_keys, None)
+        self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least
         self._verbose = full_config.get("general", {}).get("verbose", True)
@@ -144,6 +162,9 @@ class SimulationFile(dict):
         source_path = self.locations[source_key] / self.names[source_key]
         target_path = self.locations[target_key] / self.names[target_key]
 
+        # Checks
+        self._check_source_and_target(source_path, target_path)
+
         points_to_itself = source_path == target_path
         if points_to_itself:
             err_msg = (
@@ -208,7 +229,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    def _resolve_paths(self) -> None:
+    def _resolve_abs_paths(self) -> None:
         """
         Builds the absolute paths of the file for the different locations
         (``computer``, ``work``, ``exp_tree``, ``run_tree``) using the information

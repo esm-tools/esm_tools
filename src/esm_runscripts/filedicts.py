@@ -1,6 +1,14 @@
 """
 The file-dictionary implementation
+
+Developer Notes
+---------------
+* Internal functions, decorators, and methods are prefixed with _. They should
+  only be used inside of this file.
+* Decorators should have names that map to an attribute of the object. See the
+  example in ``_allowed_to_be_missing``.
 """
+import functools
 import os
 import pathlib
 import shutil
@@ -10,6 +18,57 @@ import dpath.util
 from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
+
+
+# NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
+# this decorator should **only** be used inside of this file.
+def _allowed_to_be_missing(method):
+    """Allows to decorate a method with ``_allowed_to_be_missing``, causing it
+    to always return ``None``.
+
+    If a method is decorated with ``@_allowed_to_be_missing``, it will return
+    ``None`` instead of executing if the file has a attribute of
+    ``allowed_to_be_missing`` set to ``True. You get a warning via the logger
+    giving the full method name that was decorated and a representation of the
+    file that was trying to be moved, linked, or copied.
+
+    Usage Example
+    -------------
+    Given you have an instanciated simulation file under ``sim_file`` with the following property::
+        >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
+        True
+
+    And given that you have a decorated method foo, that would act on the file::
+        >>> rvalue = sim_file.foo(*args, **kwargs)  # doctest: +SKIP
+        >>> rvalue is None  # doctest: +SKIP
+        True
+        >>> print(rvalue)  # doctest: +SKIP
+        None
+
+    Programming Example
+    -------------------
+    class MyCoolClass:
+        def __init__(self):
+            self.allowed_to_be_missing = True
+
+        @_allowed_to_be_missing
+        def foo(self, *args, **kwargs):
+            # This method will always return None, the return below is never
+            # reached:
+            return 123
+    """
+
+    @functools.wraps(method)
+    def inner_method(self, *args, **kwargs):
+        if self.allowed_to_be_missing:
+            logger.warning(
+                f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
+            )
+            return None  # None is the default return, but let us be explicit here, as it is a bit confusing
+        else:
+            return method(self, *args, **kwargs)
+
+    return inner_method
 
 
 class SimulationFile(dict):
@@ -26,6 +85,7 @@ class SimulationFile(dict):
                     name_in_computer: T63CORE2_jan_surf.nc
                     name_in_work: unit.24
                     filetype: NetCDF
+                    allowed_to_be_missing: True
                     description: >
                         Initial values used for the simulation, including
                         properties such as geopotential, temperature, pressure
@@ -39,7 +99,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config, attrs_address):
+    def __init__(self, full_config: dict, attrs_address: dict):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -56,7 +116,7 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
-        self.name = name = attrs_address.split(".")[-1]
+        self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
@@ -78,8 +138,12 @@ class SimulationFile(dict):
         #   - eg. absolute_path_in_run_tree
 
         # Complete tree names if not defined by the user
-        self["name_in_run_tree"] = self.get("name_in_run_tree", self["name_in_computer"])
-        self["name_in_exp_tree"] = self.get("name_in_exp_tree", self["name_in_computer"])
+        self["name_in_run_tree"] = self.get(
+            "name_in_run_tree", self["name_in_computer"]
+        )
+        self["name_in_exp_tree"] = self.get(
+            "name_in_exp_tree", self["name_in_computer"]
+        )
         if self["type"] not in ["restart", "outdata"]:
             self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
         
@@ -93,6 +157,19 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
+    # This part allows for dot-access to allowed_to_be_missing:
+    @property
+    def allowed_to_be_missing(self):
+        """
+        Example
+        -------
+            >>> sim_file = SimulationFile(config, 'echam.files.jan_surf')  # doctest: +SKIP
+            >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
+            True
+        """
+        return self.get("allowed_to_be_missing", False)
+
+    @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
         """
         Copies the source file or folder to the target path. It changes the name of the
@@ -132,15 +209,16 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    def ln(self, source_key: AnyStr, target_key: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source_key`` to the one by ``target_key``
+    @_allowed_to_be_missing
+    def ln(self, source: AnyStr, target: AnyStr) -> None:
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``
 
         Parameters
         ----------
-        source_key : str
+        source : str
             key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
-        target_key : str
+        target : str
             key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
         Returns
@@ -159,8 +237,8 @@ class SimulationFile(dict):
             - Target path already exists
         """
         # full paths: directory path / file name
-        source_path = self.locations[source_key] / self.names[source_key]
-        target_path = self.locations[target_key] / self.names[target_key]
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         # Checks
         self._check_source_and_target(source_path, target_path)
@@ -196,6 +274,7 @@ class SimulationFile(dict):
 
         os.symlink(source_path, target_path)
 
+    @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
         """
         Moves (renames) the SimulationFile from it's location in ``source`` to
@@ -245,12 +324,12 @@ class SimulationFile(dict):
         self.locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
             "computer": pathlib.Path(self["path_in_computer"]),
-            "exp_tree": pathlib.Path(self._config[self.component][
-                f"experiment_{self['type']}_dir"
-            ]),
-            "run_tree": pathlib.Path(self._config[self.component][
-                f"thisrun_{self['type']}_dir"
-            ]),
+            "exp_tree": pathlib.Path(
+                self._config[self.component][f"experiment_{self['type']}_dir"]
+            ),
+            "run_tree": pathlib.Path(
+                self._config[self.component][f"thisrun_{self['type']}_dir"]
+            ),
         }
 
         for key, path in self.locations.items():
@@ -322,7 +401,9 @@ class SimulationFile(dict):
         # Target dir exists
         if not target_path_parent_type:
             # TODO: we might consider creating it
-            raise Exception(f"Target directory ``{target_path_parent_type}`` does not exist!")
+            raise Exception(
+                f"Target directory ``{target_path_parent_type}`` does not exist!"
+            )
 
 
 def copy_files(config):

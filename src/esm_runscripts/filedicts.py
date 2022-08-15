@@ -359,32 +359,43 @@ class SimulationFile(dict):
 
     def _check_file_info_is_complete(self):
         error_text = ""
-        missing_var = (
-            f"Please, complete the following vars for your file:\n\n"
-            f"{self.pretty_original_filedict}"
-        )
+        missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
 
         if "type" not in self.keys():
             error_text = (
+                f"{error_text}"
                 f"- the ``type`` variable is missing. Please define a ``type`` "
                 f"({types_text})\n"
             )
-            missing_var = (
-                f"{missing_var}    ``type``: forcing/input/restart/outdata/...\n"
+            missing_vars = (
+                f"{missing_vars}    ``type``: forcing/input/restart/outdata/...\n"
             )
+        else:
+            if self["type"] not in self.all_model_filetypes:
+                error_text = (
+                    f"{error_text}"
+                    f"- ``{self['type']}`` is not a supported ``type`` "
+                    f"(``files.{self.name}.type``), please choose one of the following "
+                    f"types: {types_text}\n"
+                )
+                self._original_filedict["type"] = f"``{self._original_filedict['type']}``"
 
+        missing_vars = (
+            f"Please, complete/correct the following vars for your file:\n\n"
+            f"{self.pretty_original_filedict}"
+            f"{missing_vars}"
+        )
         if error_text:
             error_text = (
-                f"The file ``{self.name}`` is missing relevant information:\n{error_text}"
+                f"The file dictionary ``{self.name}`` is missing relevant information "
+                f"or is incorrect:\n{error_text}"
             )
-            user_error("File Dictionaries", f"{error_text}\n{missing_var}")
+            user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     @property
     def pretty_original_filedict(self):
-        original_filedict_str = yaml.dump({"files": {self.name: self._original_filedict}})
-
-        return original_filedict_str
+        return yaml.dump({"files": {self.name: self._original_filedict}})
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():

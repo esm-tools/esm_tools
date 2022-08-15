@@ -122,19 +122,19 @@ class SimulationFile(dict):
 
         # possible paths for files:
         location_keys = [
-        "computer", # pool/source directory (for input files) 
-        "exp_tree", # file in the category directory in experiment directory (eg. input, output, ...) 
-        "run_tree", # file in the experiment/run_<DATE>/<CATEGORY>/ directory
-        "work"      # file in the current work directory. Eg. experiment/run_<DATE>/work/
+            "computer",  # pool/source directory (for input files)
+            "exp_tree",  # file in the category directory in experiment directory (eg. input, output, ...)
+            "run_tree",  # file in the experiment/run_<DATE>/<CATEGORY>/ directory
+            "work",  # file in the current work directory. Eg. experiment/run_<DATE>/work/
         ]
 
         # Explanation of the file keys:
         # -----------------------------
         # - LOCATION_KEY is one of the strings defined in LOCATION_KEY list
-        # 
+        #
         # - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
         #   - eg. name_in_work
-        # - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY 
+        # - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
         #   - eg. absolute_path_in_run_tree
 
         # Complete tree names if not defined by the user
@@ -146,7 +146,7 @@ class SimulationFile(dict):
         )
         if self["type"] not in ["restart", "outdata"]:
             self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
-        
+
         # initialize the locations and complete paths for all possible locations
         locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
@@ -317,9 +317,7 @@ class SimulationFile(dict):
         for key, path in self.locations.items():
             self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-
-
-    def convert_to_path(self, path: Union[str, pathlib.Path]) -> pathlib.Path: 
+    def convert_to_path(self, path: Union[str, pathlib.Path]) -> pathlib.Path:
         """
         Converts the ``path`` to pathlib.Path object since ESM-Tools uses pathlib instead of str. This is a low level function to be called before higher level file I/O functions
 
@@ -344,8 +342,9 @@ class SimulationFile(dict):
             return pathlib.Path(path)
         if not isinstance(path, (str, pathlib.Path)):
             datatype = type(path).__name__
-            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
-
+            raise TypeError(
+                f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected"
+            )
 
     def _path_type(self, path: pathlib.Path) -> Union[str, None]:
         """

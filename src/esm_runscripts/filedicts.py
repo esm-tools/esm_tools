@@ -191,7 +191,7 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # Checks
+        # general checks
         self._check_source_and_target(source_path, target_path)
 
         # Actual copy
@@ -240,7 +240,7 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # Checks
+        # general checks
         self._check_source_and_target(source_path, target_path)
 
         points_to_itself = source_path == target_path
@@ -276,7 +276,7 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # Checks
+        # general checks
         self._check_source_and_target(source_path, target_path)
 
         # Perform the movement:
@@ -318,7 +318,33 @@ class SimulationFile(dict):
             self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
 
-    # TODO: def to_path(): class method olabilir. Asagidaki type check leri buraya al
+
+    def convert_to_path(self, path: Union[str, pathlib.Path]) -> pathlib.Path: 
+        """
+        Converts the ``path`` to pathlib.Path object since ESM-Tools uses pathlib instead of str. This is a low level function to be called before higher level file I/O functions
+
+        Parameters
+        ----------
+        path : str, pathlib.Path
+            path to be checked
+
+        Returns
+        -------
+        path : pathlib.Path
+            converted path
+
+        Raises
+        ------
+        TypeError
+            - When input is not string or pathlike object. Eg. dict, integer, ...
+        """
+        if isinstance(path, pathlib.Path):
+            return path
+        if isinstance(path, str):
+            return pathlib.Path(path)
+        if not isinstance(path, (str, pathlib.Path)):
+            datatype = type(path).__name__
+            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
 
 
     def _path_type(self, path: pathlib.Path) -> Union[str, None]:
@@ -337,12 +363,11 @@ class SimulationFile(dict):
             If the path exists it returns its type as a string (``file``, ``dir``,
             ``link``). If it doesn't exist returns ``None``.
         """
+
+        # TODO: check docstring again
+
         # type check and casts
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-        elif not isinstance(path, (str, pathlib.Path)):
-            datatype = type(path).__name__
-            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
+        path = self.convert_to_path(path)
 
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         if not path.exists():
@@ -381,6 +406,10 @@ class SimulationFile(dict):
 
         # TODO: return True
         # TODO: add typing
+
+        # type check and casts
+        source_path = self.convert_to_path(source_path)
+        target_path = self.convert_to_path(target_path)
 
         # Types. Eg. file, dir, link, or None
         try:

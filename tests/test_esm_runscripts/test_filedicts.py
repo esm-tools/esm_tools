@@ -159,6 +159,23 @@ def test_filedicts_basics(fs):
     assert sim_file.locations["computer"] == Path("/work/ollie/pool/ECHAM/T63")
 
 
+def test_convert_to_path(simulation_file):
+    # Path goes in, Path goes out
+    path_str = "/foo/bar/fizz/buzz"
+    path_in = Path(path_str)
+    path_out = simulation_file.convert_to_path(path_in)
+    assert path_out == path_in 
+
+    # string goes in, Path goes out
+    path_out = simulation_file.convert_to_path(path_str)
+    assert path_out == path_in
+
+    # garbage in, exception out
+    path_str = 12345
+    with pytest.raises(TypeError):
+        path_out = simulation_file.convert_to_path(path_str)
+
+
 def test_path_type(simulation_file, fs):
     # check for incompatible type
     with pytest.raises(TypeError):

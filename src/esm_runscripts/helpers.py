@@ -6,6 +6,7 @@ import esm_parser
 import esm_plugin_manager
 import esm_tools
 import git
+from loguru import logger
 
 
 def vprint(message, config):
@@ -16,9 +17,9 @@ def vprint(message, config):
 # TODO: to be replaced by loguru. WIP (deniz)
 def print_datetime(config):
     """prints the datetime of the operation if `verbose_line_numbers` option is True"""
-    if (config["general"].get("verbose_datetime_info", False)):
+    if config["general"].get("verbose_datetime_info", False):
         print(datetime.now(), flush=True)
-                
+
 
 def evaluate(config, job_type, recipe_name):
 
@@ -330,6 +331,10 @@ def is_git_repo(path):
         return True
     except git.exc.InvalidGitRepositoryError:
         return False
+    except git.exc.NoSuchPathError:
+        logger.error("You specified a non-existant directory")
+        # Is False the right answer here? I am not 100% sure...
+        return False
 
 
 class GitDirtyError(git.exc.GitError):
@@ -379,7 +384,14 @@ def get_git_branch(path):
         The branch name
     """
     repo = git.Repo(path)
-    return repo.head.reference.name
+    if not repo.head.is_detached:
+        return repo.head.reference.name
+    commit = repo.head.commit
+    for tag in repo.tags:
+        if commit.hexsha == tag.commit.hexsha:
+            return f"DETACHED HEAD at tag {tag.name}"
+    else:
+        return f"DETACHED HEAD at commit {repo.head.commit.hexsha}"
 
 
 def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore.RED}):
@@ -396,8 +408,8 @@ def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore
 
     Returns
     -------
-    list :
-        The colorized list of strings.
+    str :
+        The (maybe) colorized difference as a multi-line string.
     """
     repo = git.Repo(path)
     diffs = repo.git.diff(repo.commit()).split("\n")
@@ -411,8 +423,8 @@ def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore
     # In case no diffs are detected, we still want to return an empty
     # list.
     if not diffs:
-        diffs = []
-    return diffs
+        diffs = "\n".join([])
+    return "\n".join(diffs)
 
 
 def get_all_git_info(path):
@@ -431,4 +443,3 @@ def get_all_git_info(path):
         "diffs": get_git_diffs(path, add_colors=False),
     }
     return git_info
-

@@ -9,9 +9,10 @@ Developer Notes
   example in ``_allowed_to_be_missing``.
 """
 import functools
+import os
 import pathlib
 import shutil
-from typing import Tuple, Union
+from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
 from esm_parser import ConfigSetup, user_error
@@ -90,11 +91,11 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])
+        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])  # doctest: +SKIP
 
     You could then copy the file to the experiment folder::
 
-        >>> sim_file.cp_to_exp_tree()
+        >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
     def __init__(self, full_config: dict, attrs_address: dict):
@@ -116,22 +117,21 @@ class SimulationFile(dict):
         self._config = full_config
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
-        self.locations = {
-            "work": pathlib.Path(full_config[component]["thisrun_work_dir"]),
-            "computer": pathlib.Path(self["path_in_computer"]),
-            # "exp_tree": pathlib.Path(full_config[component]["exp_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
-            # "run_tree": pathlib.Path(full_config[component]["thisrun_dir"]), # This name is incorrect and depends on the type of file (to be resolved somewhere else before feeding it here)
-        }
-        self.names = {
-            "work": pathlib.Path(self["name_in_work"]),
-            "computer": pathlib.Path(self["name_in_computer"]),
-        }
-        # Allow dot access:
-        self.work = self.locations["work"]
-        self.path_in_work = self.locations["work"]
-        self.path_in_computer = self.locations["computer"]
-        # self.path_exp_tree = self.locations["exp_tree"] # TODO: uncomment when lines above are fixed
-        # self.path_run_tree = self.locations["run_tree"] # TODO: uncomment when lines above are fixed
+        self.path_in_computer = pathlib.Path(self["path_in_computer"])
+
+        # Complete tree names if not defined by the user
+        self["name_in_run_tree"] = self.get(
+            "name_in_run_tree", self["name_in_computer"]
+        )
+        self["name_in_exp_tree"] = self.get(
+            "name_in_exp_tree", self["name_in_computer"]
+        )
+        if self["type"] not in ["restart", "outdata"]:
+            self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
+
+        # Complete paths for all possible locations
+        self._resolve_paths()
+
         # Verbose set to true by default, for now at least
         self._verbose = full_config.get("general", {}).get("verbose", True)
 
@@ -151,7 +151,7 @@ class SimulationFile(dict):
         return self.get("allowed_to_be_missing", False)
 
     @_allowed_to_be_missing
-    def cp(self, source, target) -> None:
+    def cp(self, source: str, target: str) -> None:
         """
         Copies the source file or folder to the target path. It changes the name of the
         target if ``self["name_in_<target>"]`` differs from ``self["name_in_<source>"].
@@ -165,21 +165,25 @@ class SimulationFile(dict):
             String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
-        # Build target and source paths
-        source_path = self.locations[source].joinpath(self.names[source])
-        target_path = self.locations[target].joinpath(self.names[target])
+        if source not in self.locations:
+            raise ValueError(
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         # Checks
         self._check_source_and_target(source_path, target_path)
-        source_path_type = self._path_type(source_path)
 
         # Actual copy
+        source_path_type = self._path_type(source_path)
         if source_path_type == "dir":
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
+            logger.success(f"Copied {source_path} --> {target_path}")
         except Exception as error:
             raise Exception(
                 f"Unable to copy {source_path} to {target_path}\n\n"
@@ -187,8 +191,66 @@ class SimulationFile(dict):
             )
 
     @_allowed_to_be_missing
-    def ln(self) -> None:
-        pass
+    def ln(self, source_key: AnyStr, target_key: AnyStr) -> None:
+        """creates symbolic links from the path retrieved by ``source_key`` to the one by ``target_key``
+
+        Parameters
+        ----------
+        source_key : str
+            key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
+
+        target_key : str
+            key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        FileNotFoundError
+            - Source path does not exist
+        OSError
+            - Target path is a directory
+            - Symbolic link is trying to link to itself
+            - Target path does not exist
+        FileExistsError
+            - Target path already exists
+        """
+        # full paths: directory path / file name
+        source_path = self.locations[source_key] / self.names[source_key]
+        target_path = self.locations[target_key] / self.names[target_key]
+
+        points_to_itself = source_path == target_path
+        if points_to_itself:
+            err_msg = (
+                f"Unable to create symbolic link: `{source_path}` is linking to itself"
+            )
+            raise OSError(err_msg)
+
+        if not os.path.exists(source_path):
+            err_msg = f"Unable to create symbolic link: source file `{source_path}` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        if os.path.isdir(target_path):
+            err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
+            raise OSError(err_msg)
+
+        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
+        if target_exists:
+            err_msg = (
+                f"Unable to create symbolic link: `{target_path}`. File already exists"
+            )
+            raise FileExistsError(err_msg)
+
+        target_parent = target_path.parent
+        if not target_parent.exists():
+            err_msg = (
+                f"Unable to create symbolic link: `{target_parent}` does not exist"
+            )
+            raise FileNotFoundError(err_msg)
+
+        os.symlink(source_path, target_path)
 
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
@@ -205,9 +267,10 @@ class SimulationFile(dict):
         """
         if source not in self.locations:
             raise ValueError(
-                f"source is incorrectly defined, and needs to be in {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
-        source_path, target_path = self._determine_names(source, target)
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
 
         # Checks
         self._check_source_and_target(source_path, target_path)
@@ -216,43 +279,39 @@ class SimulationFile(dict):
         try:
             source_path.rename(target_path)
             logger.success(f"Moved {source_path} --> {target_path}")
-        except IOError:
+        except IOError as error:
             # NOTE(PG): Re-raise IOError with our own message:
-            raise IOError(f"Unable to move {source_path} to {target_path}")
+            raise IOError(
+                f"Unable to move {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
 
-    def _determine_names(
-        self, source: str, target: str
-    ) -> Tuple[pathlib.Path, pathlib.Path]:
+    def _resolve_paths(self) -> None:
         """
-        Determines names for source and target, depending on name and path
+        Builds the absolute paths of the file for the different locations
+        (``computer``, ``work``, ``exp_tree``, ``run_tree``) using the information
+        about the experiment paths in ``self._config`` and the
+        ``self["path_in_computer"]``.
 
-        Source and target should be on of work, computer, exp_tree, or run_tree.
-        You need to specify name_in_`source` and name_in_`target` in the
-        object's attrs_dict.
-
-        Parameters
-        ----------
-        source : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
-        target : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
-
-        Returns
-        -------
-        tuple of pathlib.Path, pathlib.Path :
-           The calculated source path and target path.
-
+        It defines these new variables in the ``SimulationFile`` dictionary:
+        - ``self["absolute_path_in_work"]``
+        - ``self["absolute_path_in_computer"]``
+        - ``self["absolute_path_in_run_tree"]``
+        - ``self["absolute_path_in_exp_tree"]``
         """
-        # Figure out names in source and target:
-        source_name = self[f"name_in_{source}"]
-        target_name = self[f"name_in_{target}"]
-        # Relative path in source and target
-        source_relative_path = self.get(f"path_in_{source}", ".")
-        target_relative_path = self.get(f"path_in_{target}", ".")
-        # Build target and source paths:
-        source_path = self.locations[source].joinpath(source_relative_path, source_name)
-        target_path = self.locations[target].joinpath(target_relative_path, target_name)
-        return source_path, target_path
+        self.locations = {
+            "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
+            "computer": pathlib.Path(self["path_in_computer"]),
+            "exp_tree": pathlib.Path(
+                self._config[self.component][f"experiment_{self['type']}_dir"]
+            ),
+            "run_tree": pathlib.Path(
+                self._config[self.component][f"thisrun_{self['type']}_dir"]
+            ),
+        }
+
+        for key, path in self.locations.items():
+            self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
     def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
         """
@@ -287,8 +346,8 @@ class SimulationFile(dict):
                 "File Dictionaries",
                 "The path defined for "
                 f"``{self.component}.files.{self.name}.path_in_computer`` is not "
-                "absolute. Please, always define an absolute path for the "
-                "``path_in_computer`` variable.",
+                f"absolute (``{self.path_in_computer}``). Please, always define an "
+                "absolute path for the ``path_in_computer`` variable.",
             )
 
     def _check_source_and_target(self, source_path, target_path):
@@ -298,13 +357,9 @@ class SimulationFile(dict):
         Raises
         ------
         Exception
+            - If the ``source_path`` does not exist
             - If the ``target_path`` exists
             - If the parent dir of the ``target_path`` does not exist
-
-        Note
-        ----
-            - If the ``source_path`` does not exist adds it to a list of missing files
-              in the ``self._config`` (TODO)
         """
 
         # Types
@@ -316,19 +371,17 @@ class SimulationFile(dict):
         # ------
         # Source exists
         if not source_path_type:
-            if self._verbose:
-                print(
-                    f"Source file ``{source_path}`` does not exist!"
-                )  # I'll change this when we have loguru available
-            # TODO: Add the missing file to the config["<model>"]["missing_files"]
+            raise Exception(f"Source file ``{source_path}`` does not exist!")
         # Target exist
         if target_path_type:
             # TODO: Change this behavior
-            raise Exception("File already exists!")
+            raise Exception(f"File ``{target_path_type}`` already exists!")
         # Target dir exists
         if not target_path_parent_type:
             # TODO: we might consider creating it
-            raise Exception("Target directory does not exist!")
+            raise Exception(
+                f"Target directory ``{target_path_parent_type}`` does not exist!"
+            )
 
 
 def copy_files(config):

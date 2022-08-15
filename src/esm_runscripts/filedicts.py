@@ -8,10 +8,12 @@ Developer Notes
 * Decorators should have names that map to an attribute of the object. See the
   example in ``_allowed_to_be_missing``.
 """
+import copy
 import functools
 import os
 import pathlib
 import shutil
+import yaml
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
@@ -73,7 +75,7 @@ def _allowed_to_be_missing(method):
 
 class SimulationFile(dict):
     """
-    Desribes a file used within a ESM Simulation.
+    Describes a file used within a ESM Simulation.
 
     Given a config, you should be able to use this in YAML::
 
@@ -115,10 +117,24 @@ class SimulationFile(dict):
             full_config, attrs_address, separator=".", default={}
         )
         super().__init__(attrs_dict)
+        self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
+        self.all_model_filetypes = full_config["general"].get("all_model_filetypes", [
+            "bin",
+            "config",
+            "forcing",
+            "input",
+            "couple",
+            "log",
+            "outdata",
+            "restart",
+            "ignore",
+        ])
+
+        self._check_file_info_is_complete()
 
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get(
@@ -340,6 +356,35 @@ class SimulationFile(dict):
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
+
+    def _check_file_info_is_complete(self):
+        error_text = ""
+        missing_var = (
+            f"Please, complete the following vars for your file:\n\n"
+            f"{self.pretty_original_filedict}"
+        )
+        types_text = ", ".join(self.all_model_filetypes)
+
+        if "type" not in self.keys():
+            error_text = (
+                f"- the ``type`` variable is missing. Please define a ``type`` "
+                f"({types_text})\n"
+            )
+            missing_var = (
+                f"{missing_var}    ``type``: forcing/input/restart/outdata/...\n"
+            )
+
+        if error_text:
+            error_text = (
+                f"The file ``{self.name}`` is missing relevant information:\n{error_text}"
+            )
+            user_error("File Dictionaries", f"{error_text}\n{missing_var}")
+
+    @property
+    def pretty_original_filedict(self):
+        original_filedict_str = yaml.dump({"files": {self.name: self._original_filedict}})
+
+        return original_filedict_str
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():

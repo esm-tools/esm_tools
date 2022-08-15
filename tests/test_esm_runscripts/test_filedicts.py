@@ -412,6 +412,32 @@ def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs
 
 # ========== end of ln() tests ==========
 
+def test_check_file_info_is_complete():
+    """Tests for missing variables in the file"""
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    echam:
+        files:
+            jan_surf:
+                name_in_computer: T63CORE2_jan_surf.nc
+                name_in_work: unit.24
+                path_in_computer: /work/ollie/pool/ECHAM/T63/
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
+
+    # error needs to occur as the path is not absolute
+    assert any(["ERROR: File Dictionaries" in line for line in output])
 
 def test_check_path_in_computer_is_abs(fs):
     """

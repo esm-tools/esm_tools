@@ -228,11 +228,14 @@ def test_cp_folder(fs):
     assert os.path.exists(target)
 
 
-def test_resolve_file_movements(config):
-    # act
+def test_resolve_file_movements(config_tuple):
+    # arrange config-in
+    config = config_tuple.config
+    attr_address = config_tuple.attr_address
+    simulation_file = filedicts.SimulationFile(config, attr_address)
     config = filedicts.resolve_file_movements(config)
 
-    # assert
+    # check config-out
     assert isinstance(config, dict)
 
 

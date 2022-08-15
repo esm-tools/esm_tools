@@ -516,3 +516,19 @@ def test_resolve_paths_old_config():
     assert sim_file["absolute_path_in_run_tree"] == Path(
         "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/run_20000101-20000101/input/oifs/o3chem_l91"
     )
+
+
+def test_datestamp_attr():
+    assert False
+
+
+def test_add_datestamp_added_by_default():
+    assert False
+
+
+def test_datestamp_not_added_if_attr_set():
+    assert False
+
+
+def test_datestamp_not_added_if_in_filename():
+    assert False

@@ -193,6 +193,10 @@ def test_check_source_and_targets(simulation_file, fs):
     output = simulation_file._check_source_and_target(source_path, target_path)
     assert output == True
 
+    # check incompatible types for file paths
+    with pytest.raises(TypeError):
+        simulation_file._check_source_and_target(1234, 3.1415)
+
     # source does not exist
     source_path = Path("/this/does/not/exist")
     target_path = simulation_file.locations["work"]
@@ -204,9 +208,6 @@ def test_check_source_and_targets(simulation_file, fs):
     target_path = Path("/this/does/not/exist")
     with pytest.raises(FileNotFoundError):
         simulation_file._check_source_and_target(source_path, target_path)
-
-
-
 
 
 def test_allowed_to_be_missing_attr():

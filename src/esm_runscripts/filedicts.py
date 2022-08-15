@@ -341,7 +341,8 @@ class SimulationFile(dict):
         if isinstance(path, str):
             path = pathlib.Path(path)
         elif not isinstance(path, (str, pathlib.Path)):
-            raise TypeError(f"{path} has an incompatible type {type(path)}")
+            datatype = type(path).__name__
+            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
 
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         if not path.exists():
@@ -382,8 +383,12 @@ class SimulationFile(dict):
         # TODO: add typing
 
         # Types. Eg. file, dir, link, or None
-        source_path_type = self._path_type(source_path)
-        target_path_type = self._path_type(target_path)
+        try:
+            source_path_type = self._path_type(source_path)
+            target_path_type = self._path_type(target_path)
+        except TypeError as err:
+            print(err)
+            raise
 
         # Checks
         # ------

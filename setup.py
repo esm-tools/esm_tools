@@ -98,6 +98,6 @@ setup(
     tests_require=test_requirements,
     extras_require=extras,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.13.5",
+    version="6.13.6",
     zip_safe=False,
 )

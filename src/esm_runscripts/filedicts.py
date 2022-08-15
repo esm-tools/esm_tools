@@ -35,14 +35,14 @@ def _allowed_to_be_missing(method):
     Usage Example
     -------------
     Given you have an instanciated simulation file under ``sim_file`` with the following property::
-        >>> sim_file.allowed_to_be_missing
+        >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
         True
 
     And given that you have a decorated method foo, that would act on the file::
-        >>> rvalue = sim_file.foo(*args, **kwargs)
-        >>> rvalue is None
+        >>> rvalue = sim_file.foo(*args, **kwargs)  # doctest: +SKIP
+        >>> rvalue is None  # doctest: +SKIP
         True
-        >>> print(rvalue)
+        >>> print(rvalue)  # doctest: +SKIP
         None
 
     Programming Example
@@ -145,8 +145,8 @@ class SimulationFile(dict):
         """
         Example
         -------
-            >>> sim_file = SimulationFile(config['echam']['files']['jan_surf'])
-            >>> sim_file.allowed_to_be_missing
+            >>> sim_file = SimulationFile(config, 'echam.files.jan_surf')  # doctest: +SKIP
+            >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
             True
         """
         return self.get("allowed_to_be_missing", False)

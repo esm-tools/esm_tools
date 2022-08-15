@@ -49,6 +49,11 @@ Session = sessionmaker(bind=engine)
 Session.configure(bind=engine)
 session = Session()
 
+# close database connection
+session.close()
+connection.close()
+engine.dispose()
+
 
 def register(table_name, given_location, class_in):
     loc_id = 0

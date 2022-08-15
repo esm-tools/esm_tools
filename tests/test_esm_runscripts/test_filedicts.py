@@ -143,8 +143,8 @@ def test_allowed_to_be_missing_mv(fs):
         files:
             human_readable_tag_001:
                 allowed_to_be_missing: True
-                name_in_pool: foo
-                path_in_pool: /work/data/pool
+                name_in_computer: foo
+                path_in_computer: /work/data/pool
                 name_in_work: foo
                 path_in_work: .
                 movement_type: move
@@ -155,7 +155,7 @@ def test_allowed_to_be_missing_mv(fs):
     sim_file = esm_runscripts.filedicts.SimulationFile(
         config, "echam.files.human_readable_tag_001"
     )
-    sim_file.mv("pool", "work")
+    sim_file.mv("computer", "work")
     assert not os.path.exists(
         "/some/dummy/location/expid/run_18500101-18501231/work/foo"
     )

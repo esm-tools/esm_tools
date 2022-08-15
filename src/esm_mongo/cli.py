@@ -94,6 +94,11 @@ def mk():
     """Makes a new simulation from a USER_CONFIG and a FINISHED_TOTAL_CONFIG"""
     sims_commands.mk(interactive=True)
 
+@sims.command()
+@click.argument("name")
+def show(name):
+    sims_commands.show(name)
+    return 0
 
 @main.group()
 def auth():

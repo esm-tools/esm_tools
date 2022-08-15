@@ -159,6 +159,32 @@ def test_filedicts_basics(fs):
     assert sim_file.locations["computer"] == Path("/work/ollie/pool/ECHAM/T63")
 
 
+def test_path_type(simulation_file, fs):
+    # check for incompatible type
+    with pytest.raises(TypeError):
+        output = simulation_file._path_type(12312312)
+
+    # check for non-existent directory / file
+    path = "/this/path/does/not/exist" 
+    output = simulation_file._path_type(path)
+    assert output == None
+
+    # check for link
+    mylink = "/tmp/mylink"
+    fs.create_symlink(mylink, simulation_file["absolute_path_in_computer"])
+    output = simulation_file._path_type(mylink)
+    print("~~~~~~~~~~~~~~")
+    assert output == "link"
+
+    # check for file
+    output = simulation_file._path_type(simulation_file["absolute_path_in_computer"])
+    assert output == "file"
+
+    # check for directory
+    output = simulation_file._path_type(simulation_file.locations["work"])
+    assert output == "dir"
+
+
 def test_allowed_to_be_missing_attr():
     """Ensures the property allowed_to_be_missing works correctly"""
     dummy_config = """

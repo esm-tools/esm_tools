@@ -335,10 +335,10 @@ class SimulationFile(dict):
         for key, path in self.locations.items():
             self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
+    def _path_type(self, path: pathlib.Path) -> Union[str, None]:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
-        doesn't, returns ``False``.
+        doesn't, returns ``None``.
 
         Parameters
         ----------
@@ -347,20 +347,28 @@ class SimulationFile(dict):
 
         Returns
         -------
-        str or bool
+        str or None
             If the path exists it returns its type as a string (``file``, ``dir``,
-            ``link``). If it doesn't exist returns ``False``.
+            ``link``). If it doesn't exist returns ``None``.
         """
-        if path.is_file():
+        # type check and casts
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        elif not isinstance(path, (str, pathlib.Path)):
+            raise TypeError(f"{path} has an incompatible type {type(path)}")
+
+        # NOTE: is_symlink() needs to come first because it is also a is_file()
+        if not path.exists():
+            return None
+        elif path.is_symlink():
+            return "link"
+        elif path.is_file():
             return "file"
         elif path.is_dir():
             return "dir"
-        elif path.is_symlink():
-            return "link"
-        elif not path.exists():
-            return False
         else:
-            raise Exception(f"Cannot identify the path's type of {path}")
+            # probably, this will not happen
+            raise TypeError(f"{path} can not be identified")
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():
@@ -384,10 +392,11 @@ class SimulationFile(dict):
             - If the parent dir of the ``target_path`` does not exist
         """
 
-        # Types
+        # Types. Eg. file, dir, link, or not set
         source_path_type = self._path_type(source_path)
         target_path_type = self._path_type(target_path)
         target_path_parent_type = self._path_type(target_path.parent)
+            
 
         # Checks
         # ------

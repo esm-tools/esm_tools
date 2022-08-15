@@ -477,7 +477,6 @@ def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs
     with pytest.raises(FileNotFoundError):
         simulation_file.ln("computer", "work")
 
-
 # ========== end of ln() tests ==========
 
 
@@ -490,7 +489,6 @@ def test_check_path_in_computer_is_abs(simulation_file, fs):
     with pytest.raises(SystemExit):
         simulation_file._check_path_in_computer_is_abs()
 
-    # with pytest.raises(SystemExit):
 
 def test_resolve_abs_paths(fs):
     """

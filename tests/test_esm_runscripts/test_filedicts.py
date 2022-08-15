@@ -173,7 +173,6 @@ def test_path_type(simulation_file, fs):
     mylink = "/tmp/mylink"
     fs.create_symlink(mylink, simulation_file["absolute_path_in_computer"])
     output = simulation_file._path_type(mylink)
-    print("~~~~~~~~~~~~~~")
     assert output == "link"
 
     # check for file
@@ -183,6 +182,31 @@ def test_path_type(simulation_file, fs):
     # check for directory
     output = simulation_file._path_type(simulation_file.locations["work"])
     assert output == "dir"
+
+
+def test_check_source_and_targets(simulation_file, fs):
+    # successful return
+    path_str = "/home/ollie/dural/test_dir"
+    fs.create_dir(path_str)
+    source_path = simulation_file.locations["computer"] 
+    target_path = Path(f"{path_str}/file.txt")
+    output = simulation_file._check_source_and_target(source_path, target_path)
+    assert output == True
+
+    # source does not exist
+    source_path = Path("/this/does/not/exist")
+    target_path = simulation_file.locations["work"]
+    with pytest.raises(FileNotFoundError):
+        simulation_file._check_source_and_target(source_path, target_path)
+
+    # target does not exist
+    source_path = simulation_file.locations["computer"] 
+    target_path = Path("/this/does/not/exist")
+    with pytest.raises(FileNotFoundError):
+        simulation_file._check_source_and_target(source_path, target_path)
+
+
+
 
 
 def test_allowed_to_be_missing_attr():

@@ -250,27 +250,9 @@ class SimulationFile(dict):
             )
             raise OSError(err_msg)
 
-        if not os.path.exists(source_path):
-            err_msg = f"Unable to create symbolic link: source file `{source_path}` does not exist"
-            raise FileNotFoundError(err_msg)
-
         if os.path.isdir(target_path):
             err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
             raise OSError(err_msg)
-
-        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
-        if target_exists:
-            err_msg = (
-                f"Unable to create symbolic link: `{target_path}`. File already exists"
-            )
-            raise FileExistsError(err_msg)
-
-        target_parent = target_path.parent
-        if not target_parent.exists():
-            err_msg = (
-                f"Unable to create symbolic link: `{target_parent}` does not exist"
-            )
-            raise FileNotFoundError(err_msg)
 
         os.symlink(source_path, target_path)
 
@@ -335,6 +317,10 @@ class SimulationFile(dict):
         for key, path in self.locations.items():
             self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
+
+    # TODO: def to_path(): class method olabilir. Asagidaki type check leri buraya al
+
+
     def _path_type(self, path: pathlib.Path) -> Union[str, None]:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
@@ -392,27 +378,34 @@ class SimulationFile(dict):
             - If the parent dir of the ``target_path`` does not exist
         """
 
-        # Types. Eg. file, dir, link, or not set
+        # TODO: return True
+        # TODO: add typing
+
+        # Types. Eg. file, dir, link, or None
         source_path_type = self._path_type(source_path)
         target_path_type = self._path_type(target_path)
-        target_path_parent_type = self._path_type(target_path.parent)
-            
 
         # Checks
         # ------
-        # Source exists
-        if not source_path_type:
-            raise Exception(f"Source file ``{source_path}`` does not exist!")
-        # Target exist
+        # Source does not exist
+        if source_path_type is None:
+            err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
+            raise FileNotFoundError(err_msg)
+
+        # Target already exists
+        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
         if target_path_type:
-            # TODO: Change this behavior
-            raise Exception(f"File ``{target_path_type}`` already exists!")
-        # Target dir exists
-        if not target_path_parent_type:
+            err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
+            # TODO: ??? Change this behavior
+            raise FileExistsError(err_msg)
+
+        # Target parent directory does not exist
+        if not target_path.parent.exists():
             # TODO: we might consider creating it
-            raise Exception(
-                f"Target directory ``{target_path_parent_type}`` does not exist!"
-            )
+            err_msg = f"Unable to perform file operation. Parent directory of the target ``{target_path}`` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        return True
 
 
 def copy_files(config):

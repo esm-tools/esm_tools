@@ -535,7 +535,15 @@ def test_datestamp_method_attr(simulation_file):
 def test_datestamp_format_attr(simulation_file):
     assert hasattr(simulation_file, "datestamp_format")
     assert isinstance(simulation_file.datestamp_format, str)
-    assert simulation_file.datestamp_format in ["from_filename", "append"]
+    assert simulation_file.datestamp_format in ["check_from_filename", "append"]
+    with pytest.raises(ValueError, match="one of check_from"):
+        simulation_file['datestamp_format'] = "blah"
+    with pytest.raises(ValueError, match="one of "):
+        # NOTE(PG): you can use _ for capturing a variable you don't care about
+        simulation_file.datestamp_format = "blah"
+    with pytest.raises(ValueError, match="one of check_from"):
+        # NOTE(PG): you can use _ for capturing a variable you don't care about
+        simulation_file.update(dict(datestamp_format="blah"))
 
 
 def test_datestamp_added_by_default_mv(simulation_file):

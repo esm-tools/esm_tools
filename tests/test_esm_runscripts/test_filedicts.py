@@ -412,8 +412,8 @@ def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs
 
 # ========== end of ln() tests ==========
 
-def test_check_file_info_is_complete():
-    """Tests for missing variables in the file"""
+def test_check_file_syntax_type_missing():
+    """Tests for missing variables in the input file types"""
     dummy_config = """
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
@@ -421,9 +421,7 @@ def test_check_file_info_is_complete():
     echam:
         files:
             jan_surf:
-                name_in_computer: T63CORE2_jan_surf.nc
                 name_in_work: unit.24
-                path_in_computer: /work/ollie/pool/ECHAM/T63/
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
@@ -436,8 +434,85 @@ def test_check_file_info_is_complete():
                 config, "echam.files.jan_surf"
             )
 
-    # error needs to occur as the path is not absolute
-    assert any(["ERROR: File Dictionaries" in line for line in output])
+    error_text = "the \x1b[31mtype\x1b[0m variable is missing"
+    assert any([error_text in line for line in output])
+
+def test_check_file_syntax_type_incorrect():
+    """Tests for missing variables in the input file types"""
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    echam:
+        files:
+            jan_surf:
+                type: is_wrong
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
+
+    error_text = "is_wrong\x1b[0m is not a supported \x1b[31mtype"
+    assert any([error_text in line for line in output])
+
+def test_check_file_syntax_input():
+    """Tests for missing variables in the input file types"""
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    echam:
+        files:
+            jan_surf:
+                type: input
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
+
+    error_text = "the \x1b[31mpath_in_computer\x1b[0m variable is missing"
+    assert any([error_text in line for line in output])
+    error_text = "the \x1b[31mname_in_computer\x1b[0m variable is missing"
+    assert any([error_text in line for line in output])
+
+def test_check_file_syntax_output():
+    """Tests for missing variables in the input file types"""
+    dummy_config = """
+    general:
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    echam:
+        files:
+            jan_surf:
+                type: outdata
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+    """
+    config = yaml.safe_load(dummy_config)
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file = esm_runscripts.filedicts.SimulationFile(
+                config, "echam.files.jan_surf"
+            )
+
+    error_text = "the \x1b[31mname_in_work\x1b[0m variable is missing"
+    assert any([error_text in line for line in output])
 
 def test_check_path_in_computer_is_abs(fs):
     """

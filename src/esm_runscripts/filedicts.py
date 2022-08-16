@@ -121,7 +121,6 @@ class SimulationFile(dict):
         self._config = full_config
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
-        self.path_in_computer = pathlib.Path(self["path_in_computer"])
         self.all_model_filetypes = full_config["general"].get("all_model_filetypes", [
             "bin",
             "config",
@@ -134,7 +133,9 @@ class SimulationFile(dict):
             "ignore",
         ])
 
-        self._check_file_info_is_complete()
+        self._check_file_syntax()
+
+        self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get(
@@ -357,10 +358,14 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
-    def _check_file_info_is_complete(self):
+    def _check_file_syntax(self):
         error_text = ""
         missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
+        input_file_types = ["config", "forcing", "input"]
+        output_file_types = [
+            "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
+        ]
 
         if "type" not in self.keys():
             error_text = (
@@ -383,9 +388,43 @@ class SimulationFile(dict):
 
         missing_vars = (
             f"Please, complete/correct the following vars for your file:\n\n"
-            f"{self.pretty_original_filedict}"
+            f"{self.pretty_original_filedict()}"
             f"{missing_vars}"
         )
+        if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``path_in_computer`` variable is missing. Please define a "
+                f"``path_in_computer`` (i.e. the path to the file excluding its name)."
+                f" NOTE: this is only required for {', '.join(input_file_types)} file "
+                f"types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
+            )
+
+        if "name_in_computer" not in self.keys() and self.get("type") in input_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(input_file_types)} file types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
+            )
+
+        if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``name_in_work`` variable is missing. Please define a ``name_in_work`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(output_file_types)} file types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``name_in_work``: <name_of_file_in_work_dir>\n"
+            )
+
         if error_text:
             error_text = (
                 f"The file dictionary ``{self.name}`` is missing relevant information "
@@ -393,7 +432,6 @@ class SimulationFile(dict):
             )
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
-    @property
     def pretty_original_filedict(self):
         return yaml.dump({"files": {self.name: self._original_filedict}})
 

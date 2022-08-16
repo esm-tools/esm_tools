@@ -379,15 +379,14 @@ class SimulationFile(dict):
             missing_vars = (
                 f"{missing_vars}    ``type``: forcing/input/restart/outdata/...\n"
             )
-        else:
-            if self["type"] not in self.all_model_filetypes:
-                error_text = (
-                    f"{error_text}"
-                    f"- ``{self['type']}`` is not a supported ``type`` "
-                    f"(``files.{self.name}.type``), please choose one of the following "
-                    f"types: {types_text}\n"
-                )
-                this_filedict["type"] = f"``{this_filedict['type']}``"
+        elif self["type"] not in self.all_model_filetypes:
+            error_text = (
+                f"{error_text}"
+                f"- ``{self['type']}`` is not a supported ``type`` "
+                f"(``files.{self.name}.type``), please choose one of the following "
+                f"types: {types_text}\n"
+            )
+            this_filedict["type"] = f"``{this_filedict['type']}``"
 
         if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
             error_text = (

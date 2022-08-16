@@ -121,17 +121,7 @@ class SimulationFile(dict):
         self._config = full_config
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
-        self.all_model_filetypes = full_config["general"].get("all_model_filetypes", [
-            "bin",
-            "config",
-            "forcing",
-            "input",
-            "couple",
-            "log",
-            "outdata",
-            "restart",
-            "ignore",
-        ])
+        self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
 
         self._check_file_syntax()
 

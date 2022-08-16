@@ -51,6 +51,7 @@ def config_tuple():
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -103,6 +104,7 @@ def test_example(fs):
     config = """
     general:
         base_dir: /some/dummy/location/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -131,6 +133,7 @@ def test_filedicts_basics(fs):
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -166,6 +169,7 @@ def test_allowed_to_be_missing_attr():
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -204,6 +208,7 @@ def test_allowed_to_be_missing_mv(fs):
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -237,6 +242,7 @@ def test_cp_file(fs):
     dummy_config = """
     general:
         thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -276,6 +282,7 @@ def test_cp_folder(fs):
     dummy_config = """
     general:
         thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     oifs:
         files:
             o3_data:
@@ -327,6 +334,7 @@ def test_mv(fs):
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -418,6 +426,7 @@ def test_check_file_syntax_type_missing():
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -443,6 +452,7 @@ def test_check_file_syntax_type_incorrect():
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -468,6 +478,7 @@ def test_check_file_syntax_input():
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -495,6 +506,7 @@ def test_check_file_syntax_output():
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -525,6 +537,7 @@ def test_check_path_in_computer_is_abs(fs):
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:
@@ -557,6 +570,7 @@ def test_resolve_paths(fs):
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     echam:
         files:
             jan_surf:

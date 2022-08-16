@@ -349,9 +349,22 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     def _check_file_syntax(self):
+        """
+        Checks for missing variables:
+        - ``type``
+        - ``path_in_computer`` if the file it an input for the experiment
+        - ``name_in_computer`` if the file it an input for the experiment
+        - ``name_in_work`` if the file it an output of the experiment
+
+        It also checks whether ``type``'s value is correct.
+
+        It notifies the user about this errors in the syntacm using
+        ``esm_parser.error``.
+        """
         error_text = ""
         missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
+        this_filedict = copy.deepcopy(self._original_filedict)
         input_file_types = ["config", "forcing", "input"]
         output_file_types = [
             "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
@@ -374,13 +387,8 @@ class SimulationFile(dict):
                     f"(``files.{self.name}.type``), please choose one of the following "
                     f"types: {types_text}\n"
                 )
-                self._original_filedict["type"] = f"``{self._original_filedict['type']}``"
+                this_filedict["type"] = f"``{this_filedict['type']}``"
 
-        missing_vars = (
-            f"Please, complete/correct the following vars for your file:\n\n"
-            f"{self.pretty_original_filedict()}"
-            f"{missing_vars}"
-        )
         if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
             error_text = (
                 f"{error_text}"
@@ -415,15 +423,18 @@ class SimulationFile(dict):
                 f"{missing_vars}    ``name_in_work``: <name_of_file_in_work_dir>\n"
             )
 
+        missing_vars = (
+            f"Please, complete/correct the following vars for your file:\n\n"
+            f"{self.pretty_filedict(this_filedict)}"
+            f"{missing_vars}"
+        )
+
         if error_text:
             error_text = (
                 f"The file dictionary ``{self.name}`` is missing relevant information "
                 f"or is incorrect:\n{error_text}"
             )
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
-
-    def pretty_original_filedict(self):
-        return yaml.dump({"files": {self.name: self._original_filedict}})
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():
@@ -467,6 +478,22 @@ class SimulationFile(dict):
             raise Exception(
                 f"Target directory ``{target_path_parent_type}`` does not exist!"
             )
+
+    def pretty_filedict(self, filedict):
+        """
+        Returns a string in yaml format of the given file dictionary.
+
+        Parameters
+        ----------
+        dict
+            A file dictionary
+
+        Returns
+        -------
+        str
+            A string in yaml format of the given file dictionary
+        """
+        return yaml.dump({"files": {self.name: filedict}})
 
 
 def copy_files(config):

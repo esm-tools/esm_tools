@@ -421,7 +421,7 @@ def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs
 # ========== end of ln() tests ==========
 
 def test_check_file_syntax_type_missing():
-    """Tests for missing variables in the input file types"""
+    """Tests for ``type`` variable missing"""
     dummy_config = """
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
@@ -447,7 +447,7 @@ def test_check_file_syntax_type_missing():
     assert any([error_text in line for line in output])
 
 def test_check_file_syntax_type_incorrect():
-    """Tests for missing variables in the input file types"""
+    """Tests for ``type`` variable being incorrectly defined"""
     dummy_config = """
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
@@ -473,7 +473,9 @@ def test_check_file_syntax_type_incorrect():
     assert any([error_text in line for line in output])
 
 def test_check_file_syntax_input():
-    """Tests for missing variables in the input file types"""
+    """
+    Tests for missing ``name_in_computer`` and ``path_in_computer`` for input file types
+    """
     dummy_config = """
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
@@ -501,7 +503,7 @@ def test_check_file_syntax_input():
     assert any([error_text in line for line in output])
 
 def test_check_file_syntax_output():
-    """Tests for missing variables in the input file types"""
+    """Tests for missing ``name_in_work`` for output file types"""
     dummy_config = """
     general:
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"

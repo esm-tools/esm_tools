@@ -194,6 +194,9 @@ def test_check_source_and_targets(simulation_file, fs):
     assert output == True
 
     # check incompatible types for file paths
+    # TODO: when `_convert_to_path` was removed, these tests fail
+    with pytest.raises(TypeError):
+        simulation_file._check_source_and_target(Path("/usr/bin"), {"foo": 1})
     with pytest.raises(TypeError):
         simulation_file._check_source_and_target(1234, 3.1415)
 

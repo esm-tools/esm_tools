@@ -12,12 +12,11 @@ import functools
 import os
 import pathlib
 import shutil
-from typing import AnyStr, Tuple, Type, Union
+from typing import Any, AnyStr, Tuple, Type, Union
 
 import dpath.util
-from loguru import logger
-
 from esm_parser import ConfigSetup, user_error
+from loguru import logger
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -139,6 +138,18 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Checks when changing dot attributes for disallowed values:
+        if name == "datestamp_method":
+            self._check_datestamp_format_is_allowed(value)
+        return super().__setattr__(name, value)
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        # Checks for changing with sim_file["my_key"] = "new_value"
+        if key == "datestamp_method":
+            self._check_datestamp_format_is_allowed(value)
+        return super().__setitem__(key, value)
+
     # This part allows for dot-access to allowed_to_be_missing:
     @property
     def allowed_to_be_missing(self):
@@ -150,6 +161,28 @@ class SimulationFile(dict):
             True
         """
         return self.get("allowed_to_be_missing", False)
+
+    @property
+    def datestamp_method(self):
+        """
+        Defines which datestamp_method shall be used when possibly including
+        date stamps to the file. Valid choices are "never", "always",
+        "avoid_overwrite".
+        """
+        datestamp_method = self.get(
+            "datestamp_method", "avoid_overwrite"
+        )  # This is the old default behaviour
+        return datestamp_method
+
+    def update(self, *args, **kwargs):
+        """
+        Standard dictionary update method, enhanced by additional safe-guards
+        for particular values.
+        """
+        for k, v in dict(*args, **kwargs).items():
+            if k == "datestamp_method":
+                self._check_datestamp_format_is_allowed(v)
+            self[k] = v
 
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
@@ -285,6 +318,32 @@ class SimulationFile(dict):
             raise IOError(
                 f"Unable to move {source_path} to {target_path}\n\n"
                 f"Exception details:\n{error}"
+            )
+
+    _allowed_datestamp_methods = {"never", "always", "avoid_overwrite"}
+    """
+    Set containing the allowed datestamp methods which can be chosen from.
+
+    Notes on possible datestamp methods
+    -----------------------------------
+    never : str
+        This will never add a datestamp to a file. **WARNING** this will
+        cause you to possibly overwrite files.
+    always : str
+        This will always add a datestamp to a file, even if the canonical
+        target name would not suggest one.
+    avoid_overwrite : str
+        This will add a datestamp at the end of the file, if the during the
+        mv/cp/ln operation the file would be identically named.
+    """
+
+    def _check_datestamp_format_is_allowed(self, datestamp_method):
+        """
+        Ensures that the datestamp format is in the defined valid set.
+        """
+        if datestamp_method not in self._allowed_datestamp_methods:
+            raise ValueError(
+                "The datestamp_method must be defined as one of never, always, or avoid_overwrite"
             )
 
     def _resolve_paths(self) -> None:

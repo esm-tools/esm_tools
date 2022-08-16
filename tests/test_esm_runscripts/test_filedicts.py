@@ -518,17 +518,38 @@ def test_resolve_paths_old_config():
     )
 
 
-def test_datestamp_attr():
+def test_datestamp_method_attr(simulation_file):
+    assert hasattr(simulation_file, "datestamp_method")
+    assert isinstance(simulation_file.datestamp_method, str)
+    assert simulation_file.datestamp_method in ["never", "always", "avoid_overwrite"]
+    with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
+        simulation_file['datestamp_method'] = "blah"
+    with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
+        # NOTE(PG): you can use _ for capturing a variable you don't care about
+        simulation_file.datestamp_method = "blah"
+    with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
+        # NOTE(PG): you can use _ for capturing a variable you don't care about
+        simulation_file.update(dict(datestamp_method="blah"))
+
+
+def test_datestamp_format_attr(simulation_file):
+    assert hasattr(simulation_file, "datestamp_format")
+    assert isinstance(simulation_file.datestamp_format, str)
+    assert simulation_file.datestamp_format in ["from_filename", "append"]
+
+
+def test_datestamp_added_by_default_mv(simulation_file):
+    assert False
+
+def test_datestamp_added_by_default_ln(simulation_file):
+    assert False
+
+def test_datestamp_added_by_default_cp(simulation_file):
+    assert False
+
+def test_datestamp_not_added_if_attr_set(simulation_file):
     assert False
 
 
-def test_add_datestamp_added_by_default():
-    assert False
-
-
-def test_datestamp_not_added_if_attr_set():
-    assert False
-
-
-def test_datestamp_not_added_if_in_filename():
+def test_datestamp_not_added_if_in_filename(simulation_file):
     assert False

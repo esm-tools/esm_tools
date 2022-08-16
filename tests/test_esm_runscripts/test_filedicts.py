@@ -469,8 +469,14 @@ def test_check_path_in_computer_is_abs(simulation_file, fs):
     is not absolute
     """
     simulation_file.path_in_computer = Path("foo/bar")
-    with pytest.raises(SystemExit):
-        simulation_file._check_path_in_computer_is_abs()
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            simulation_file._check_path_in_computer_is_abs()
+
+    # error needs to occur as the path is not absolute
+    assert any(["ERROR: File Dictionaries" in line for line in output])
 
 
 def test_resolve_abs_paths(fs):

@@ -15,8 +15,9 @@ import shutil
 from typing import Any, AnyStr, Tuple, Type, Union
 
 import dpath.util
-from esm_parser import ConfigSetup, user_error
 from loguru import logger
+
+from esm_parser import ConfigSetup, user_error
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -70,6 +71,23 @@ def _allowed_to_be_missing(method):
     return inner_method
 
 
+def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
+    date_attrs = {
+        "%Y": "syear",
+        "%m": "smonth",
+        "%d": "sday",
+        "%H": "shour",
+        "%M": "sminute",
+        "%S": "ssecond",
+    }
+    required_attrs = [getattr(date, v) for k, v in date_attrs.items() if k in reqs]
+    # all(attr in fname for attr in required_attrs)
+    for attr in required_attrs:
+        if attr in fname:
+            fname = fname.replace(attr, "checked", 1)
+    return fname.count("checked") == len(reqs)
+
+
 class SimulationFile(dict):
     """
     Desribes a file used within a ESM Simulation.
@@ -115,6 +133,7 @@ class SimulationFile(dict):
         )
         super().__init__(attrs_dict)
         self._config = full_config
+        self._sim_date = full_config["general"]["current_date"]
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
@@ -224,6 +243,12 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+
         # Checks
         self._check_source_and_target(source_path, target_path)
 
@@ -273,6 +298,15 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # This will need to be moved once Deniz implements this function to be
+        # in the same style as the others.
+        #
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+
         points_to_itself = source_path == target_path
         if points_to_itself:
             err_msg = (
@@ -321,9 +355,18 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
         # Checks
         self._check_source_and_target(source_path, target_path)
 
@@ -361,7 +404,7 @@ class SimulationFile(dict):
 
     Notes on possible datestamp formats
     -----------------------------------
-    from_filename : str
+    check_from_filename : str
         This option will add a datestamp to a file, if the year, month, and day
         cannot be extracted from the standard declared filename.
     append : str
@@ -440,6 +483,38 @@ class SimulationFile(dict):
             return False
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
+
+    def _always_datestamp(self, fname):
+        if self.datestamp_format == "append":
+            return pathlib.Path(f"{fname}_{self._sim_date}")
+        if self.datestamp_format == "check_from_filename":
+            if _fname_has_date_stamp_info(fname, self._sim_date):
+                return fname
+            else:
+                return pathlib.Path(f"{fname}_{self._sim_date}")
+
+    def _avoid_override_datestamp(self, target: pathlib.Path) -> pathlib.Path:
+        """
+        If source and target are identical, adds the date stamp to the target.
+
+        This method is used in the case that the object's attribute
+        ``datestamp_method`` is set to ``avoid_overwrite``, and is called
+        before the checks of each of ln, cp, and mv.
+
+        Parameters
+        ----------
+        target : pathlib.Path
+
+        Returns
+        -------
+        pathlib.Path :
+            The new target that can be used
+        """
+        if target.exists():
+            if self.datestamp_format == "append":
+                target = pathlib.Path(f"{target}_{self._sim_date}")
+            # The other case ("check_from_filename") is meaningless?
+        return target
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():

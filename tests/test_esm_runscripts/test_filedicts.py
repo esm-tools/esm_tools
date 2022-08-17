@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+import esm_calendar
 import esm_runscripts.filedicts
 import esm_runscripts.filedicts as filedicts
 
@@ -69,7 +70,9 @@ def config_tuple():
         thisrun_input_dir: "/work/ollie/pgierz/some_exp/run_20000101-20000101/input/echam"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(config_str)
+    config["general"]["current_date"] = date
     attr_address = "echam.files.jan_surf"
     # create a named tuple since configuration and the attribute address is tightly coupled to each other
     Config_Tuple = namedtuple("Config_Tuple", ["config", "attr_address"])
@@ -93,6 +96,8 @@ def simulation_file(fs, config_tuple):
 
     fs.create_dir(fake_simulation_file.locations["work"])
     fs.create_dir(fake_simulation_file.locations["computer"])
+    fs.create_dir(fake_simulation_file.locations["exp_tree"])
+    fs.create_dir(fake_simulation_file.locations["run_tree"])
     fs.create_file(fake_simulation_file["absolute_path_in_computer"])
 
     yield fake_simulation_file
@@ -113,7 +118,9 @@ def test_example(fs):
                 type: input
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(config)
+    config["general"]["current_date"] = date
     # Create some fake files and directories you might want in your test
     fs.create_file("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
     fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")
@@ -147,7 +154,9 @@ def test_filedicts_basics(fs):
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
@@ -183,7 +192,10 @@ def test_allowed_to_be_missing_attr():
                 name_in_computer: "bar"
                 type: "input"
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    # Not needed for this test, just a demonstration:
     sim_file_001 = esm_runscripts.filedicts.SimulationFile(
         config, "echam.files.human_readable_tag_001"
     )
@@ -219,7 +231,9 @@ def test_allowed_to_be_missing_mv(fs):
                 path_in_work: .
                 movement_type: move
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
     fs.create_dir("/work/data/pool")
     fs.create_file("/work/data/pool/not_foo_at_all")
     sim_file = esm_runscripts.filedicts.SimulationFile(
@@ -247,7 +261,9 @@ def test_cp_file(fs):
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Set source and targets
     target_folder = config["general"]["thisrun_work_dir"]
@@ -283,10 +299,13 @@ def test_cp_folder(fs):
                 name_in_work: o3chem_l91
                 type: input
                 path_in_computer: /work/ollie/pool/OIFS/159_4
+                datestamp_method: never
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/oifs
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Set source and targets
     target_folder = config["general"]["thisrun_work_dir"]
@@ -340,7 +359,9 @@ def test_mv(fs):
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20010101/work")
     assert os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
@@ -434,7 +455,9 @@ def test_check_path_in_computer_is_abs(fs):
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -466,7 +489,9 @@ def test_resolve_paths(fs):
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
 
@@ -523,12 +548,10 @@ def test_datestamp_method_attr(simulation_file):
     assert isinstance(simulation_file.datestamp_method, str)
     assert simulation_file.datestamp_method in ["never", "always", "avoid_overwrite"]
     with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
-        simulation_file['datestamp_method'] = "blah"
+        simulation_file["datestamp_method"] = "blah"
     with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
-        # NOTE(PG): you can use _ for capturing a variable you don't care about
         simulation_file.datestamp_method = "blah"
     with pytest.raises(ValueError, match="one of never, always, or avoid_overwrite"):
-        # NOTE(PG): you can use _ for capturing a variable you don't care about
         simulation_file.update(dict(datestamp_method="blah"))
 
 
@@ -537,27 +560,56 @@ def test_datestamp_format_attr(simulation_file):
     assert isinstance(simulation_file.datestamp_format, str)
     assert simulation_file.datestamp_format in ["check_from_filename", "append"]
     with pytest.raises(ValueError, match="one of check_from"):
-        simulation_file['datestamp_format'] = "blah"
+        simulation_file["datestamp_format"] = "blah"
     with pytest.raises(ValueError, match="one of "):
-        # NOTE(PG): you can use _ for capturing a variable you don't care about
         simulation_file.datestamp_format = "blah"
     with pytest.raises(ValueError, match="one of check_from"):
-        # NOTE(PG): you can use _ for capturing a variable you don't care about
         simulation_file.update(dict(datestamp_format="blah"))
 
 
-def test_datestamp_added_by_default_mv(simulation_file):
-    assert False
+@pytest.mark.parametrize("movement_type", ["mv", "ln", "cp"])
+def test_datestamp_added_by_default_mv_ln_cp(simulation_file, fs, movement_type):
+    """
+    Checks that the simulation file gets a timestamp if a file already exists with that name
 
-def test_datestamp_added_by_default_ln(simulation_file):
-    assert False
+    Defaults checked:
+    -----------------
+        * datestamp_format: append
+        * datestamp_method: avoid_overwrite
+    """
+    simulation_file_meth = getattr(simulation_file, movement_type)
+    simulation_file2 = simulation_file  # Make a copy
+    simulation_file2_meth = getattr(simulation_file2, movement_type)
+    simulation_file_meth("computer", "work")
+    if movement_type == "mv":
+        assert not os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
+        # Recreate the moved file in computer (let's pretend we compied it):
+        fs.create_file(simulation_file2["absolute_path_in_computer"])
+    assert os.path.exists(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
+    )
+    simulation_file2_meth("computer", "work")
+    assert os.path.exists(
+        "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24_2000-01-01T00:00:00"
+    )
+    simulation_file_meth("work", "run_tree")
+    assert os.path.exists(
+        "/work/ollie/pgierz/some_exp/run_20000101-20000101/input/echam/T63CORE2_jan_surf.nc"
+    )
+    simulation_file_meth("run_tree", "exp_tree")
 
-def test_datestamp_added_by_default_cp(simulation_file):
-    assert False
 
 def test_datestamp_not_added_if_attr_set(simulation_file):
-    assert False
+    pass  # Still to be implemented
 
 
 def test_datestamp_not_added_if_in_filename(simulation_file):
-    assert False
+    pass  # Still to be implemented
+
+
+def test_fname_has_date_stamp_info():
+    fname = "blah_2000-01-01.nc"
+    fname2 = "blah_2000-01.nc"
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    assert filedicts._fname_has_date_stamp_info(fname, date) is True
+    assert filedicts._fname_has_date_stamp_info(fname2, date) is False

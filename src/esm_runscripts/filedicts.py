@@ -19,6 +19,17 @@ from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
 
+from enum import Enum, auto
+
+# Enumeration of file types
+class FileTypes(Enum):
+    FILE = auto()  # ordinary file
+    DIR = auto()   # directory
+    LINK = auto()  # symbolic link
+    EXISTS = auto() # object exists in the system
+    NOT_EXISTS = auto()  # file does not exist
+    BROKEN_LINK = auto() # target of the symbolic link does not exist
+
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
 # this decorator should **only** be used inside of this file.
@@ -198,7 +209,7 @@ class SimulationFile(dict):
 
         # Actual copy
         source_path_type = self._path_type(source_path)
-        if source_path_type == "dir":
+        if source_path_type == FileType.DIR:
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
@@ -312,7 +323,7 @@ class SimulationFile(dict):
         for key, path in self.locations.items():
             self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> Union[str, None]:
+    def _path_type(self, path: pathlib.Path) -> int:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
         doesn't, returns ``None``.
@@ -324,27 +335,34 @@ class SimulationFile(dict):
 
         Returns
         -------
-        str or None
-            If the path exists it returns its type as a string (``file``, ``dir``,
-            ``link``). If it doesn't exist returns ``None``.
+        Enum value
+            One of the values from FileType enumeration
 
         Raises
         ------
         TypeError
+          - when ``path`` has incompatible type
           - when ``path`` is not identified
         """
+        if not isinstance(path, (str, pathlib.Path)):
+            datatype = type(path).__name__
+            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
+
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
-            return "broken_link"
+            return FileTypes.BROKEN_LINK
         elif not path.exists():
-            return None
+            return FileTypes.NOT_EXISTS
         elif path.is_symlink():
-            return "link"
+            return FileTypes.LINK
         elif path.is_file():
-            return "file"
+            return FileTypes.FILE
         elif path.is_dir():
-            return "dir"
+            return FileTypes.DIR
         else:
             # probably, this will not happen
             raise TypeError(f"{path} can not be identified")
@@ -359,7 +377,7 @@ class SimulationFile(dict):
                 "absolute path for the ``path_in_computer`` variable.",
             )
 
-    def _check_source_and_target(self, source_path, target_path):
+    def _check_source_and_target(self, source_path: pathlib.Path, target_path: pathlib.Path) -> None:
         """
         Performs checks for file movements
 
@@ -385,12 +403,12 @@ class SimulationFile(dict):
         # Checks
         # ------
         # Source does not exist
-        if source_path_type is None:
+        if source_path_type == FileTypes.NOT_EXISTS:
             err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
             raise FileNotFoundError(err_msg)
 
         # Target already exists
-        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
+        target_exists = os.path.exists(target_path) or target_path_type == FileTypes.LINK
         if target_path_type:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
             # TODO: ??? Change this behavior
@@ -403,7 +421,7 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         # if source is a broken link. Ie. pointing to a non-existing file
-        if source_path_type == "broken_link":
+        if source_path_type == FileTypes.BROKEN_LINK:
             err_msg = (
                 f"Unable to create symbolic link: `{source_path}` points to a broken path: {source_path.resolve()}"
             )

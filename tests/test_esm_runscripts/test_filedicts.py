@@ -159,29 +159,36 @@ def test_filedicts_basics(fs):
     assert sim_file.locations["computer"] == Path("/work/ollie/pool/ECHAM/T63")
 
 
-def test_path_type(simulation_file, fs):
+# ===
+# tests for SimulationFile._path_type() method
+# ===
+def test_path_type_raises_exception_on_incompatible_input(simulation_file, fs):
     # check for incompatible type
     with pytest.raises(TypeError):
         output = simulation_file._path_type(12312312)
 
+def test_path_type_detects_non_existing_file(simulation_file, fs):
     # check for non-existent directory / file
     path = "/this/path/does/not/exist" 
     output = simulation_file._path_type(path)
-    assert output == None
+    assert output == filedicts.FileTypes.NOT_EXISTS
 
+def test_path_type_detects_symbolic_link(simulation_file, fs):
     # check for link
     mylink = "/tmp/mylink"
     fs.create_symlink(mylink, simulation_file["absolute_path_in_computer"])
     output = simulation_file._path_type(mylink)
-    assert output == "link"
+    assert output == filedicts.FileTypes.LINK
 
+def test_path_type_detects_file(simulation_file, fs):
     # check for file
     output = simulation_file._path_type(simulation_file["absolute_path_in_computer"])
-    assert output == "file"
+    assert output == filedicts.FileTypes.FILE
 
+def test_path_type_detects_directory(simulation_file, fs):
     # check for directory
     output = simulation_file._path_type(simulation_file.locations["work"])
-    assert output == "dir"
+    assert output == filedicts.FileTypes.DIR
 
 
 def test_check_source_and_targets(simulation_file, fs):

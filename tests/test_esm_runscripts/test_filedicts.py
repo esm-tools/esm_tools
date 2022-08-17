@@ -711,3 +711,93 @@ def test_globbing_cp(fs):
 
     for nf in new_files:
         assert os.path.exist(nf)
+
+def test_globbing_mv(fs):
+    """Tests globbing for moving"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    config = yaml.safe_load(dummy_config)
+    files = [
+        "input_expid_11_DATE_12.nc",
+        "input_expid_21_DATE_22.nc",
+        "input_expid_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    new_files = [
+        "new_input_expid_11_NEW_DATE_12.nc",
+        "new_input_expid_21_NEW_DATE_22.nc",
+        "new_input_expid_31_NEW_DATE_32.nc",
+    ]
+    expected_new_paths = []
+    for f in new_files:
+        expected_new_paths.append(
+            Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
+        )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file.mv("work", "exp_tree")
+
+    for nf in new_files:
+        assert os.path.exist(nf)
+
+def test_globbing_ln(fs):
+    """Tests globbing for linking"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    config = yaml.safe_load(dummy_config)
+    files = [
+        "input_expid_11_DATE_12.nc",
+        "input_expid_21_DATE_22.nc",
+        "input_expid_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    new_files = [
+        "new_input_expid_11_NEW_DATE_12.nc",
+        "new_input_expid_21_NEW_DATE_22.nc",
+        "new_input_expid_31_NEW_DATE_32.nc",
+    ]
+    expected_new_paths = []
+    for f in new_files:
+        expected_new_paths.append(
+            Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
+        )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file.ln("work", "exp_tree")
+
+    for nf in new_files:
+        assert os.path.exist(nf)

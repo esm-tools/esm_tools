@@ -129,14 +129,7 @@ class SimulationFile(dict):
         self._check_file_syntax()
 
         # Complete tree names if not defined by the user
-        if self["type"] in self.input_file_types:
-            default_name = self["name_in_computer"]
-        elif self["type"] in self.output_file_types:
-            default_name = self["name_in_work"]
-        self["name_in_computer"] = self.get("name_in_computer", default_name)
-        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
-        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
-        self["name_in_work"] = self.get("name_in_work", default_name)
+        self._complete_file_names()
 
         # Complete paths for all possible locations
         self._resolve_paths()
@@ -146,6 +139,20 @@ class SimulationFile(dict):
 
         # Checks
         self._check_path_in_computer_is_abs()
+
+    def _complete_file_names(self):
+        """
+        Complete missing names in the file with the default name, depending whether
+        the file is of type ``input`` or ``output``.
+        """
+        if self["type"] in self.input_file_types:
+            default_name = self["name_in_computer"]
+        elif self["type"] in self.output_file_types:
+            default_name = self["name_in_work"]
+        self["name_in_computer"] = self.get("name_in_computer", default_name)
+        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
+        self["name_in_work"] = self.get("name_in_work", default_name)
 
     # This part allows for dot-access to allowed_to_be_missing:
     @property
@@ -444,7 +451,7 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if self.path_in_computer and not self.path_in_computer.is_absolute():
+        if self.path_in_computer is not None and not self.path_in_computer.is_absolute():
             user_error(
                 "File Dictionaries",
                 "The path defined for "

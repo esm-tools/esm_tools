@@ -8,10 +8,12 @@ Developer Notes
 * Decorators should have names that map to an attribute of the object. See the
   example in ``_allowed_to_be_missing``.
 """
+import copy
 import functools
 import os
 import pathlib
 import shutil
+import yaml
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
@@ -73,7 +75,7 @@ def _allowed_to_be_missing(method):
 
 class SimulationFile(dict):
     """
-    Desribes a file used within a ESM Simulation.
+    Describes a file used within a ESM Simulation.
 
     Given a config, you should be able to use this in YAML::
 
@@ -115,9 +117,14 @@ class SimulationFile(dict):
             full_config, attrs_address, separator=".", default={}
         )
         super().__init__(attrs_dict)
+        self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
+        self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
+
+        self._check_file_syntax()
+
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
         # Complete tree names if not defined by the user
@@ -341,6 +348,93 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
+    def _check_file_syntax(self):
+        """
+        Checks for missing variables:
+        - ``type``
+        - ``path_in_computer`` if the file it an input for the experiment
+        - ``name_in_computer`` if the file it an input for the experiment
+        - ``name_in_work`` if the file it an output of the experiment
+
+        It also checks whether ``type``'s value is correct.
+
+        It notifies the user about this errors in the syntacm using
+        ``esm_parser.error``.
+        """
+        error_text = ""
+        missing_vars = ""
+        types_text = ", ".join(self.all_model_filetypes)
+        this_filedict = copy.deepcopy(self._original_filedict)
+        input_file_types = ["config", "forcing", "input"]
+        output_file_types = [
+            "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
+        ]
+
+        if "type" not in self.keys():
+            error_text = (
+                f"{error_text}"
+                f"- the ``type`` variable is missing. Please define a ``type`` "
+                f"({types_text})\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``type``: forcing/input/restart/outdata/...\n"
+            )
+        elif self["type"] not in self.all_model_filetypes:
+            error_text = (
+                f"{error_text}"
+                f"- ``{self['type']}`` is not a supported ``type`` "
+                f"(``files.{self.name}.type``), please choose one of the following "
+                f"types: {types_text}\n"
+            )
+            this_filedict["type"] = f"``{this_filedict['type']}``"
+
+        if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``path_in_computer`` variable is missing. Please define a "
+                f"``path_in_computer`` (i.e. the path to the file excluding its name)."
+                f" NOTE: this is only required for {', '.join(input_file_types)} file "
+                f"types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
+            )
+
+        if "name_in_computer" not in self.keys() and self.get("type") in input_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(input_file_types)} file types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
+            )
+
+        if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
+            error_text = (
+                f"{error_text}"
+                f"- the ``name_in_work`` variable is missing. Please define a ``name_in_work`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(output_file_types)} file types\n"
+            )
+            missing_vars = (
+                f"{missing_vars}    ``name_in_work``: <name_of_file_in_work_dir>\n"
+            )
+
+        missing_vars = (
+            f"Please, complete/correct the following vars for your file:\n\n"
+            f"{self.pretty_filedict(this_filedict)}"
+            f"{missing_vars}"
+        )
+
+        if error_text:
+            error_text = (
+                f"The file dictionary ``{self.name}`` is missing relevant information "
+                f"or is incorrect:\n{error_text}"
+            )
+            user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
+
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():
             user_error(
@@ -383,6 +477,22 @@ class SimulationFile(dict):
             raise Exception(
                 f"Target directory ``{target_path_parent_type}`` does not exist!"
             )
+
+    def pretty_filedict(self, filedict):
+        """
+        Returns a string in yaml format of the given file dictionary.
+
+        Parameters
+        ----------
+        dict
+            A file dictionary
+
+        Returns
+        -------
+        str
+            A string in yaml format of the given file dictionary
+        """
+        return yaml.dump({"files": {self.name: filedict}})
 
 
 def copy_files(config):

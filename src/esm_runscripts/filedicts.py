@@ -209,7 +209,7 @@ class SimulationFile(dict):
 
         # Actual copy
         source_path_type = self._path_type(source_path)
-        if source_path_type == FileType.DIR:
+        if source_path_type == FileTypes.DIR:
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
@@ -409,7 +409,7 @@ class SimulationFile(dict):
 
         # Target already exists
         target_exists = os.path.exists(target_path) or target_path_type == FileTypes.LINK
-        if target_path_type:
+        if target_exists:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
             # TODO: ??? Change this behavior
             raise FileExistsError(err_msg)

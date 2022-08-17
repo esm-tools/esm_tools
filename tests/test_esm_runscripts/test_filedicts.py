@@ -441,6 +441,7 @@ def test_ln_raises_exception_when_target_path_does_not_exist(simulation_file, fs
 
 # ========== end of ln() tests ==========
 
+
 def test_check_file_syntax_type_missing():
     """Tests for ``type`` variable missing"""
     dummy_config = """
@@ -455,7 +456,9 @@ def test_check_file_syntax_type_missing():
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -466,6 +469,7 @@ def test_check_file_syntax_type_missing():
 
     error_text = "the \x1b[31mtype\x1b[0m variable is missing"
     assert any([error_text in line for line in output])
+
 
 def test_check_file_syntax_type_incorrect():
     """Tests for ``type`` variable being incorrectly defined"""
@@ -481,7 +485,9 @@ def test_check_file_syntax_type_incorrect():
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -492,6 +498,7 @@ def test_check_file_syntax_type_incorrect():
 
     error_text = "is_wrong\x1b[0m is not a supported \x1b[31mtype"
     assert any([error_text in line for line in output])
+
 
 def test_check_file_syntax_input():
     """
@@ -509,7 +516,9 @@ def test_check_file_syntax_input():
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -522,6 +531,7 @@ def test_check_file_syntax_input():
     assert any([error_text in line for line in output])
     error_text = "the \x1b[31mname_in_computer\x1b[0m variable is missing"
     assert any([error_text in line for line in output])
+
 
 def test_check_file_syntax_output():
     """Tests for missing ``name_in_work`` for output file types"""
@@ -537,7 +547,9 @@ def test_check_file_syntax_output():
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
         thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
     """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
     config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -548,6 +560,7 @@ def test_check_file_syntax_output():
 
     error_text = "the \x1b[31mname_in_work\x1b[0m variable is missing"
     assert any([error_text in line for line in output])
+
 
 def test_check_path_in_computer_is_abs(fs):
     """

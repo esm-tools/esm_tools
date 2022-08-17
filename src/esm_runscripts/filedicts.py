@@ -205,6 +205,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # general checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Actual copy
@@ -254,6 +255,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # general checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         if os.path.isdir(target_path):
@@ -283,6 +285,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # general checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Perform the movement:
@@ -383,7 +386,19 @@ class SimulationFile(dict):
         self, source_path: pathlib.Path, target_path: pathlib.Path
     ) -> None:
         """
-        Performs checks for file movements
+        Performs common checks for file movements
+
+        Parameters
+        ----------
+        source_path : pathlib.Path
+            path of the file to be copied / linked / moved
+
+        target_path : pathlib.Path
+            path of the file to be generated
+
+        Returns
+        -------
+        True
 
         Raises
         ------
@@ -392,10 +407,6 @@ class SimulationFile(dict):
             - If the ``target_path`` exists
             - If the parent dir of the ``target_path`` does not exist
         """
-
-        # TODO: return True
-        # TODO: add typing
-
         # Types. Eg. file, dir, link, or None
         try:
             source_path_type = self._path_type(source_path)
@@ -417,12 +428,11 @@ class SimulationFile(dict):
         )
         if target_exists:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
-            # TODO: ??? Change this behavior
             raise FileExistsError(err_msg)
 
         # Target parent directory does not exist
         if not target_path.parent.exists():
-            # TODO: we might consider creating it
+            # TODO: we might consider creating it (Miguel)
             err_msg = f"Unable to perform file operation. Parent directory of the target ``{target_path}`` does not exist"
             raise FileNotFoundError(err_msg)
 

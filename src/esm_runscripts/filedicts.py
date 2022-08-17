@@ -172,7 +172,7 @@ class SimulationFile(dict):
         return super().__setattr__(name, value)
 
     def __setitem__(self, key: Any, value: Any) -> None:
-        # Checks for changing with sim_file["my_key"] = "new_value"
+        """Checks for changing with sim_file["my_key"] = "new_value""""
         if key == "datestamp_format":
             self._check_datestamp_format_is_allowed(value)
         if key == "datestamp_method":

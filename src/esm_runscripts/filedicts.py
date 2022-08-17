@@ -122,20 +122,14 @@ class SimulationFile(dict):
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
+        self.path_in_computer = self.get("path_in_computer")
+        if self.path_in_computer:
+            self.path_in_computer = pathlib.Path(self.path_in_computer)
 
         self._check_file_syntax()
 
-        self.path_in_computer = pathlib.Path(self["path_in_computer"])
-
         # Complete tree names if not defined by the user
-        self["name_in_run_tree"] = self.get(
-            "name_in_run_tree", self["name_in_computer"]
-        )
-        self["name_in_exp_tree"] = self.get(
-            "name_in_exp_tree", self["name_in_computer"]
-        )
-        if self["type"] not in ["restart", "outdata"]:
-            self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
+        self._complete_file_names()
 
         # Complete paths for all possible locations
         self._resolve_paths()
@@ -145,6 +139,20 @@ class SimulationFile(dict):
 
         # Checks
         self._check_path_in_computer_is_abs()
+
+    def _complete_file_names(self):
+        """
+        Complete missing names in the file with the default name, depending whether
+        the file is of type ``input`` or ``output``.
+        """
+        if self["type"] in self.input_file_types:
+            default_name = self["name_in_computer"]
+        elif self["type"] in self.output_file_types:
+            default_name = self["name_in_work"]
+        self["name_in_computer"] = self.get("name_in_computer", default_name)
+        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
+        self["name_in_work"] = self.get("name_in_work", default_name)
 
     # This part allows for dot-access to allowed_to_be_missing:
     @property
@@ -309,7 +317,7 @@ class SimulationFile(dict):
         """
         self.locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
-            "computer": pathlib.Path(self["path_in_computer"]),
+            "computer": self.path_in_computer, # Already Path type from _init_
             "exp_tree": pathlib.Path(
                 self._config[self.component][f"experiment_{self['type']}_dir"]
             ),
@@ -319,7 +327,10 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
+            if key=="computer" and path==None:
+                self[f"absolute_path_in_{key}"] = None
+            else:
+                self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
     def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
         """
@@ -365,8 +376,8 @@ class SimulationFile(dict):
         missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
         this_filedict = copy.deepcopy(self._original_filedict)
-        input_file_types = ["config", "forcing", "input"]
-        output_file_types = [
+        self.input_file_types = input_file_types = ["config", "forcing", "input"]
+        self.output_file_types = output_file_types = [
             "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
         ]
 
@@ -436,7 +447,7 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if not self.path_in_computer.is_absolute():
+        if self.path_in_computer is not None and not self.path_in_computer.is_absolute():
             user_error(
                 "File Dictionaries",
                 "The path defined for "

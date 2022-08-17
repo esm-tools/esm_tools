@@ -12,6 +12,7 @@ import functools
 import os
 import pathlib
 import shutil
+from enum import Enum, auto
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
@@ -19,16 +20,15 @@ from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
 
-from enum import Enum, auto
 
 # Enumeration of file types
 class FileTypes(Enum):
     FILE = auto()  # ordinary file
-    DIR = auto()   # directory
+    DIR = auto()  # directory
     LINK = auto()  # symbolic link
-    EXISTS = auto() # object exists in the system
+    EXISTS = auto()  # object exists in the system
     NOT_EXISTS = auto()  # file does not exist
-    BROKEN_LINK = auto() # target of the symbolic link does not exist
+    BROKEN_LINK = auto()  # target of the symbolic link does not exist
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -148,7 +148,7 @@ class SimulationFile(dict):
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
         # possible paths for files:
-        location_keys = [ "computer", "exp_tree", "run_tree", "work"]
+        location_keys = ["computer", "exp_tree", "run_tree", "work"]
 
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get(
@@ -346,7 +346,9 @@ class SimulationFile(dict):
         """
         if not isinstance(path, (str, pathlib.Path)):
             datatype = type(path).__name__
-            raise TypeError(f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected")
+            raise TypeError(
+                f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected"
+            )
 
         if isinstance(path, str):
             path = pathlib.Path(path)
@@ -377,7 +379,9 @@ class SimulationFile(dict):
                 "absolute path for the ``path_in_computer`` variable.",
             )
 
-    def _check_source_and_target(self, source_path: pathlib.Path, target_path: pathlib.Path) -> None:
+    def _check_source_and_target(
+        self, source_path: pathlib.Path, target_path: pathlib.Path
+    ) -> None:
         """
         Performs checks for file movements
 
@@ -408,7 +412,9 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         # Target already exists
-        target_exists = os.path.exists(target_path) or target_path_type == FileTypes.LINK
+        target_exists = (
+            os.path.exists(target_path) or target_path_type == FileTypes.LINK
+        )
         if target_exists:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
             # TODO: ??? Change this behavior
@@ -422,9 +428,7 @@ class SimulationFile(dict):
 
         # if source is a broken link. Ie. pointing to a non-existing file
         if source_path_type == FileTypes.BROKEN_LINK:
-            err_msg = (
-                f"Unable to create symbolic link: `{source_path}` points to a broken path: {source_path.resolve()}"
-            )
+            err_msg = f"Unable to create symbolic link: `{source_path}` points to a broken path: {source_path.resolve()}"
             raise FileNotFoundError(err_msg)
 
         return True

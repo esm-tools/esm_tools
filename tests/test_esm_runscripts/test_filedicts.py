@@ -634,33 +634,33 @@ def test_resolve_paths_old_config():
         "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/run_20000101-20000101/input/oifs/o3chem_l91"
     )
 
-def test_wild_card_renaming():
+def test_wild_card_check():
     """Tests that wild cards names are resolved correctly"""
-    source_path = "a_wild_card*name*.txt"
-    target_path = "another_wild/card*newname*.txt1"
+    source_name = "a_wild_card*name*.txt"
+    target_name = "another_wild_card*newname*.txt1"
 
     source_pattern, target_pattern = (
-        esm_runscripts.filedicts.SimulationFile.wild_card_renaming(
-            source_path, target_path
+        esm_runscripts.filedicts.SimulationFile.wild_card_check(
+            source_name, target_name
         )
     )
 
     assert(source_pattern==["a_wild_card", "name", ".txt"])
-    assert(targer_pattern==["another_wild/card", "newname", ".txt1"])
+    assert(target_pattern==["another_wild_card", "newname", ".txt1"])
 
-def test_wild_card_renaming_fails():
+def test_wild_card_check_fails():
     """
     Tests that, when given an incorrect wildcard pattern, a ``user_error`` is reported
     """
-    source_path = "a_wild_card*name*.txt"
-    target_path = "another_wild/cardnewname*.txt1"
+    source_name = "a_wild_card*name*.txt"
+    target_name = "another_wild_cardnewname*.txt1"
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
             source_pattern, target_pattern = (
-                esm_runscripts.filedicts.SimulationFile.wild_card_renaming(
-                    source_path, target_path
+                esm_runscripts.filedicts.SimulationFile.wild_card_check(
+                    source_name, target_name
                 )
             )
 

@@ -73,6 +73,24 @@ def _allowed_to_be_missing(method):
     return inner_method
 
 
+def globbing(method):
+    @functools.wraps(method)
+    def inner_method(self, source, target, *args, **kwargs):
+        source_name = self[f"name_in_{source}"]
+        target_name = self[f"name_in_{target}"]
+        if "*" in source_name or "*" in target_name:
+            source_pattern, target_pattern = self.wild_card_check(
+                source_name, target_name
+            )
+            print(source_name, target_name)
+            
+        else:
+            return method(self, source, target, *args, **kwargs)
+
+    return inner_method
+
+
+
 class SimulationFile(dict):
     """
     Describes a file used within a ESM Simulation.
@@ -166,6 +184,7 @@ class SimulationFile(dict):
         """
         return self.get("allowed_to_be_missing", False)
 
+    @globbing
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
         """
@@ -360,8 +379,22 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     @classmethod
-    def wild_card_renaming(self, source_path, target_path) -> Tuple[list, list]:
-        return [], []
+    def wild_card_check(self, source_name, target_name) -> Tuple[list, list]:
+        wild_card_source = source_name.split("*")
+        wild_card_target = target_name.split("*")
+        # Check for syntax mistakes
+        if len(wild_card_target) != len(wild_card_source):
+            user_error(
+                "Wild card",
+                (
+                    "The wild card pattern of the source "
+                    + f"{wild_card_source} does not match with the "
+                    + f"target {wild_card_target}. Make sure the "
+                    + f"that the number of * are the same in both "
+                    + f"sources and targets."
+                ),
+            )
+        return wild_card_source, wild_card_target
 
     def _check_file_syntax(self):
         """

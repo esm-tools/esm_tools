@@ -77,6 +77,7 @@ def _allowed_to_be_missing(method):
 def globbing(method):
     @functools.wraps(method)
     def inner_method(self, source, target, *args, **kwargs):
+        method_name = method.__name__
         source_name = self[f"name_in_{source}"]
         target_name = self[f"name_in_{target}"]
         if "*" in source_name or "*" in target_name:
@@ -118,7 +119,8 @@ def globbing(method):
                 glob_dict[f"name_in_{target}"] = glob_target_name
                 glob_file = SimulationFile(glob_config, self.attrs_address)
                 # Use method
-                method(glob_file, source, target, *args, **kwargs)
+                this_method = getattr(glob_file, method_name)
+                this_method(source, target, *args, **kwargs)
         else:
             return method(self, source, target, *args, **kwargs)
 

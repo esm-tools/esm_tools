@@ -164,7 +164,7 @@ class SimulationFile(dict):
         self._check_path_in_computer_is_abs()
 
     def __setattr__(self, name: str, value: Any) -> None:
-        # Checks when changing dot attributes for disallowed values:
+        """Checks when changing dot attributes for disallowed values"""
         if name == "datestamp_format":
             self._check_datestamp_format_is_allowed(value)
         if name == "datestamp_method":

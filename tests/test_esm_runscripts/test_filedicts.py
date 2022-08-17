@@ -709,8 +709,8 @@ def test_globbing_cp(fs):
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
     sim_file.cp("work", "exp_tree")
 
-    for nf in new_files:
-        assert os.path.exist(nf)
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)
 
 def test_globbing_mv(fs):
     """Tests globbing for moving"""
@@ -754,8 +754,8 @@ def test_globbing_mv(fs):
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
     sim_file.mv("work", "exp_tree")
 
-    for nf in new_files:
-        assert os.path.exist(nf)
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)
 
 def test_globbing_ln(fs):
     """Tests globbing for linking"""
@@ -799,5 +799,5 @@ def test_globbing_ln(fs):
     sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
     sim_file.ln("work", "exp_tree")
 
-    for nf in new_files:
-        assert os.path.exist(nf)
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)

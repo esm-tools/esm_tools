@@ -10,6 +10,7 @@ Developer Notes
 """
 import copy
 import functools
+import glob
 import os
 import pathlib
 import shutil
@@ -79,11 +80,45 @@ def globbing(method):
         source_name = self[f"name_in_{source}"]
         target_name = self[f"name_in_{target}"]
         if "*" in source_name or "*" in target_name:
+            # Check wild cards
             source_pattern, target_pattern = self.wild_card_check(
                 source_name, target_name
             )
-            print(source_name, target_name)
-            
+
+            # Obtain source files
+            glob_source_paths = glob.glob(str(self[f"absolute_path_in_{source}"]))
+
+            # Check that there are any source files available
+
+            # Extract globbing source names
+            glob_source_names = []
+            for glob_source_path in glob_source_paths:
+                glob_source_names.append(pathlib.Path(glob_source_path).name)
+
+            # Loop through the pieces of the wild cards to create
+            # the correct target name by substituting in the source
+            # name
+            glob_target_names = []
+            for glob_source_name in glob_source_names:
+                glob_target_name = glob_source_name
+                for sp, tp in zip(source_pattern, target_pattern):
+                    glob_target_name = glob_target_name.replace(sp, tp)
+                glob_target_names.append(glob_target_name)
+
+            # Loop through source files
+            for glob_source_name, glob_target_name in zip(
+                glob_source_names, glob_target_names
+            ):
+                # Create a new simulation file object for this specific glob file
+                glob_config = copy.deepcopy(self._config)
+                glob_dict = dpath.util.get(
+                    glob_config, self.attrs_address, separator=".", default={}
+                )
+                glob_dict[f"name_in_{source}"] = glob_source_name
+                glob_dict[f"name_in_{target}"] = glob_target_name
+                glob_file = SimulationFile(glob_config, self.attrs_address)
+                # Use method
+                method(glob_file, source, target, *args, **kwargs)
         else:
             return method(self, source, target, *args, **kwargs)
 
@@ -137,6 +172,7 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
+        self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
@@ -225,6 +261,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
+    @globbing
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
         """creates symbolic links from the path retrieved by ``source`` to the one by ``target``
@@ -287,6 +324,7 @@ class SimulationFile(dict):
 
         os.symlink(source_path, target_path)
 
+    @globbing
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
         """
@@ -388,9 +426,9 @@ class SimulationFile(dict):
                 "Wild card",
                 (
                     "The wild card pattern of the source "
-                    + f"{wild_card_source} does not match with the "
-                    + f"target {wild_card_target}. Make sure the "
-                    + f"that the number of * are the same in both "
+                    + f"``{wild_card_source}`` does not match with the "
+                    + f"target ``{wild_card_target}``. Make sure the "
+                    + f"that the number of ``*`` are the same in both "
                     + f"sources and targets."
                 ),
             )

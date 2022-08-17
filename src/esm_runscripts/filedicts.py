@@ -110,6 +110,22 @@ class SimulationFile(dict):
             The full simulation configuration
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
+
+        Note
+        ----
+        A file can be located in one of these categories (``LOCATION_KEYS``):
+        - computer: pool/source directory (for input files)
+        - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
+        - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
+        - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
+
+        LOCATION_KEY is one of the strings defined in LOCATION_KEY list
+        - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+          - eg. name_in_computer: T63CORE2_jan_surf.nc
+          - eg. name_in_work: unit.24
+        - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
+          - eg. absolute_path_in_run_tree:
+          - /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
         """
         attrs_dict = dpath.util.get(
             full_config, attrs_address, separator=".", default={}
@@ -121,21 +137,7 @@ class SimulationFile(dict):
         self.path_in_computer = pathlib.Path(self["path_in_computer"])
 
         # possible paths for files:
-        location_keys = [
-            "computer",  # pool/source directory (for input files)
-            "exp_tree",  # file in the category directory in experiment directory (eg. input, output, ...)
-            "run_tree",  # file in the experiment/run_<DATE>/<CATEGORY>/ directory
-            "work",  # file in the current work directory. Eg. experiment/run_<DATE>/work/
-        ]
-
-        # Explanation of the file keys:
-        # -----------------------------
-        # - LOCATION_KEY is one of the strings defined in LOCATION_KEY list
-        #
-        # - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
-        #   - eg. name_in_work
-        # - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
-        #   - eg. absolute_path_in_run_tree
+        location_keys = [ "computer", "exp_tree", "run_tree", "work"]
 
         # Complete tree names if not defined by the user
         self["name_in_run_tree"] = self.get(
@@ -148,7 +150,7 @@ class SimulationFile(dict):
             self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
 
         # initialize the locations and complete paths for all possible locations
-        locations = dict.fromkeys(location_keys, None)
+        self.locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least

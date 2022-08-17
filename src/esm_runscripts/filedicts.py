@@ -213,7 +213,7 @@ class SimulationFile(dict):
 
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``. ``source`` and ``target`` keys will be transformed into their corresponding absolute paths and ``target`` will be created.
 
         Parameters
         ----------
@@ -244,13 +244,6 @@ class SimulationFile(dict):
 
         # general checks
         self._check_source_and_target(source_path, target_path)
-
-        points_to_itself = source_path == target_path
-        if points_to_itself:
-            err_msg = (
-                f"Unable to create symbolic link: `{source_path}` is linking to itself"
-            )
-            raise OSError(err_msg)
 
         if os.path.isdir(target_path):
             err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
@@ -334,12 +327,17 @@ class SimulationFile(dict):
         str or None
             If the path exists it returns its type as a string (``file``, ``dir``,
             ``link``). If it doesn't exist returns ``None``.
+
+        Raises
+        ------
+        TypeError
+          - when ``path`` is not identified
         """
-
-        # TODO: check docstring again
-
         # NOTE: is_symlink() needs to come first because it is also a is_file()
-        if not path.exists():
+        # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
+        if path.is_symlink() and not path.exists():
+            return "broken_link"
+        elif not path.exists():
             return None
         elif path.is_symlink():
             return "link"
@@ -402,6 +400,13 @@ class SimulationFile(dict):
         if not target_path.parent.exists():
             # TODO: we might consider creating it
             err_msg = f"Unable to perform file operation. Parent directory of the target ``{target_path}`` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        # if source is a broken link. Ie. pointing to a non-existing file
+        if source_path_type == "broken_link":
+            err_msg = (
+                f"Unable to create symbolic link: `{source_path}` points to a broken path: {source_path.resolve()}"
+            )
             raise FileNotFoundError(err_msg)
 
         return True

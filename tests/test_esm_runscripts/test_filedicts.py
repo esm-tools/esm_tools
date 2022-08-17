@@ -429,10 +429,16 @@ def test_ln_links_file_from_computer_to_work(simulation_file, fs):
     assert os.path.exists(file_path_in_work)
 
 
-def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
-    with pytest.raises(OSError):
-        simulation_file.ln("computer", "computer")
+def test_ln_raises_exception_when_source_is_a_broken_link(simulation_file, fs):
+    # create a symbolic link that points to a non-existing file
+    broken_path_str = "/this/does/not/exist"
+    link_str = "/tmp/broken_link"
+    fs.create_symlink(link_str, broken_path_str)
+    # overwrite the path in computer with the link to trigger the exception
+    simulation_file["absolute_path_in_computer"] = Path(link_str).absolute()
 
+    with pytest.raises(FileNotFoundError):
+        simulation_file.ln("computer", "work")
 
 def test_ln_raises_exception_when_target_is_a_directory_and_not_a_file(
     simulation_file, fs

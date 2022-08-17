@@ -352,6 +352,10 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
+    @classmethod
+    def wild_card_renaming(self, source_path, target_path) -> Tuple[list, list]:
+        return [], []
+
     def _check_file_syntax(self):
         """
         Checks for missing variables:

@@ -447,7 +447,7 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if self.path_in_computer and not self.path_in_computer.is_absolute():
+        if self.path_in_computer is not None and not self.path_in_computer.is_absolute():
             user_error(
                 "File Dictionaries",
                 "The path defined for "

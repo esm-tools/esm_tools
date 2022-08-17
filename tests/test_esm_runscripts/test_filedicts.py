@@ -741,5 +741,5 @@ def test_fname_has_date_stamp_info():
     fname = "blah_2000-01-01.nc"
     fname2 = "blah_2000-01.nc"
     date = esm_calendar.Date("2000-01-01T00:00:00")
-    assert filedicts._fname_has_date_stamp_info(fname, date) is True
+    assert filedicts._fname_has_date_stamp_info(fname, date)
     assert filedicts._fname_has_date_stamp_info(fname2, date) is False

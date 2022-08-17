@@ -13,15 +13,12 @@ import functools
 import os
 import pathlib
 import shutil
-
 from typing import Any, AnyStr, Tuple, Type, Union
-import yaml
-
 
 import dpath.util
-from loguru import logger
-
+import yaml
 from esm_parser import ConfigSetup, user_error
+from loguru import logger
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -544,7 +541,14 @@ class SimulationFile(dict):
         this_filedict = copy.deepcopy(self._original_filedict)
         input_file_types = ["config", "forcing", "input"]
         output_file_types = [
-            "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
+            "analysis",
+            "couple",
+            "log",
+            "mon",
+            "outdata",
+            "restart",
+            "viz",
+            "ignore",
         ]
 
         if "type" not in self.keys():
@@ -565,7 +569,10 @@ class SimulationFile(dict):
             )
             this_filedict["type"] = f"``{this_filedict['type']}``"
 
-        if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "path_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``path_in_computer`` variable is missing. Please define a "
@@ -577,16 +584,17 @@ class SimulationFile(dict):
                 f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
             )
 
-        if "name_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "name_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
                 f"(i.e. name of the file in the work folder). NOTE: this is only required for "
                 f"{', '.join(input_file_types)} file types\n"
             )
-            missing_vars = (
-                f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
-            )
+            missing_vars = f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
 
         if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
             error_text = (
@@ -611,7 +619,6 @@ class SimulationFile(dict):
                 f"or is incorrect:\n{error_text}"
             )
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
-
 
     def _check_path_in_computer_is_abs(self):
         if not self.path_in_computer.is_absolute():

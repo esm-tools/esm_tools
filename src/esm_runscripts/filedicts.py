@@ -459,7 +459,6 @@ class SimulationFile(dict):
                 "absolute path for the ``path_in_computer`` variable.",
             )
 
-    @_allowed_to_be_missing
     def _check_source_and_target(self, source_path, target_path):
         """
         Performs checks for file movements

@@ -240,9 +240,8 @@ def test_allowed_to_be_missing_mv_if_exists(fs):
     dummy_config = """
     general:
         expid: expid
-        base_dir: /some/dummy/location/
+        base_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
-        exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:

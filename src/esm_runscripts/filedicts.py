@@ -83,7 +83,9 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
     date : esm_calendar.Date
         The date to be checked against
     reqs : list of str
-        A list of ``strftime`` compliant strings to determine which elements of the date to check. Compatible with %Y %m %d %H %M %S (year, month, day, hour, minute, second)
+        A list of ``strftime`` compliant strings to determine which elements of
+        the date to check. Compatible with %Y %m %d %H %M %S (year, month, day,
+        hour, minute, second)
         
     Returns
     -------
@@ -181,6 +183,10 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
+    ##############################################################################################
+    # Overrides of standard dict methods
+    ##############################################################################################
+
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""
         if name == "datestamp_format":
@@ -197,7 +203,22 @@ class SimulationFile(dict):
             self._check_datestamp_method_is_allowed(value)
         return super().__setitem__(key, value)
 
-    # This part allows for dot-access to allowed_to_be_missing:
+    def update(self, *args, **kwargs):
+        """
+        Standard dictionary update method, enhanced by additional safe-guards
+        for particular values.
+        """
+        for k, v in dict(*args, **kwargs).items():
+            if k == "datestamp_format":
+                self._check_datestamp_format_is_allowed(v)
+            if k == "datestamp_method":
+                self._check_datestamp_method_is_allowed(v)
+            self[k] = v
+    ##############################################################################################
+
+    ##############################################################################################
+    # Object Properities
+    ##############################################################################################
     @property
     def allowed_to_be_missing(self):
         """
@@ -233,18 +254,10 @@ class SimulationFile(dict):
         )  # This is the old default behaviour
         return datestamp_format
 
-    def update(self, *args, **kwargs):
-        """
-        Standard dictionary update method, enhanced by additional safe-guards
-        for particular values.
-        """
-        for k, v in dict(*args, **kwargs).items():
-            if k == "datestamp_format":
-                self._check_datestamp_format_is_allowed(v)
-            if k == "datestamp_method":
-                self._check_datestamp_method_is_allowed(v)
-            self[k] = v
 
+    ##############################################################################################
+    # Main Methods
+    ##############################################################################################
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
         """
@@ -509,6 +522,23 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     def _always_datestamp(self, fname):
+        """
+        Method called when ``always`` is the ``datestamp_method.
+
+        Appends the datestamp in any case if ``datestamp_format`` is
+        ``append``. Appends the datestamp only if it is not obviously in the
+        filename if the ``datestamp_format`` is ``check_from_filename``.
+        
+        Parameters
+        ----------
+        fname : pathlib.Path
+            The file who's name should be modified.
+
+        Returns
+        -------
+        pathlib.Path
+            A modified file with an added date stamp.
+        """
         if self.datestamp_format == "append":
             return pathlib.Path(f"{fname}_{self._sim_date}")
         if self.datestamp_format == "check_from_filename":

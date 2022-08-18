@@ -135,7 +135,7 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
-        self._sim_date = full_config["general"]["current_date"]
+        self._sim_date = full_config["general"]["current_date"] # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
         self.name = attrs_address.split(".")[-1]
         self.component = component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]

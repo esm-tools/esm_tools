@@ -232,7 +232,7 @@ def test_allowed_to_be_missing_mv(fs):
     )
     sim_file.mv("computer", "work")
     assert not os.path.exists(
-            "/work/olie/pgierz/some_exp/run_20010101-20011231/work/foo"
+            "/work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo"
     )
 
 def test_allowed_to_be_missing_mv_if_exists(fs):

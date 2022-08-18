@@ -102,7 +102,7 @@ def show(name):
 
 @main.group()
 def auth():
-    """Authetication with the database"""
+    """Authentication with the database"""
     return 0
 
 @auth.command()

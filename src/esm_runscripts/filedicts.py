@@ -75,11 +75,31 @@ def _allowed_to_be_missing(method):
 
 
 def globbing(method):
+    """
+    Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, that
+    enables globbing. If a ``*`` is found on the ``source`` or ``target`` the globbing
+    logic is activated, and consist of:
+    - run checks for globbing syntax
+    - check if any file matches the globbing pattern
+    - construct one instance of ``SimulationFile`` for each file matching the globbing
+    - run the ``method`` for that particular file
+
+    Parameters
+    ----------
+    method : method
+        The decorated method (``cp``, ``mv``, ``ln``)
+
+    Returns
+    -------
+    method : method
+        If no globbing is needed, returns the method as it was given originally.
+    """
     @functools.wraps(method)
     def inner_method(self, source, target, *args, **kwargs):
         method_name = method.__name__
         source_name = self[f"name_in_{source}"]
         target_name = self[f"name_in_{target}"]
+
         if "*" in source_name or "*" in target_name:
             # Get wildcard patterns
             source_pattern = source_name.split("*")
@@ -96,9 +116,7 @@ def globbing(method):
             for glob_source_path in glob_source_paths:
                 glob_source_names.append(pathlib.Path(glob_source_path).name)
 
-            # Loop through the pieces of the wild cards to create
-            # the correct target name by substituting in the source
-            # name
+            # Solve the globbing target names
             glob_target_names = []
             for glob_source_name in glob_source_names:
                 glob_target_name = glob_source_name
@@ -419,8 +437,23 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     @classmethod
-    def wild_card_check(self, source_pattern, target_pattern) -> Tuple[list, list]:
-        # Check for syntax mistakes
+    def wild_card_check(self, source_pattern: list, target_pattern: list) -> True:
+        """
+        Checks for syntax mistakes. If any were found, it notifies the user about these
+        errors in the syntax using ``esm_parser.error``.
+
+        Parameters
+        ----------
+        source_pattern : list
+            A list including the different pieces of the source name pattern
+        target_pattern : list
+            A list including the different pieces of the target name pattern
+
+        Returns
+        -------
+        True :
+            If no issues were found
+        """
         if len(target_pattern) != len(source_pattern):
             user_error(
                 "Wild card",
@@ -435,7 +468,21 @@ class SimulationFile(dict):
 
         return True
 
-    def find_globbing_files(self, location):
+    def find_globbing_files(self, location : str) -> list:
+        """
+        Lists the files matching the globbing path of the given ``location``, and
+        notifies the user if none were found, via ``esm_parser.error``.
+
+        Parameters
+        ----------
+        location : str
+            The location string (``work``, ``computer``, ``exp_tree``, ``run_tree``)
+
+        Returns
+        -------
+        glob_paths : list
+            List of paths found matching the globbing case for the ``location`` pattern
+        """
         absolute_path_in_location = str(self[f"absolute_path_in_{location}"])
         glob_paths = glob.glob(absolute_path_in_location)
 
@@ -449,7 +496,7 @@ class SimulationFile(dict):
 
         return glob_paths
 
-    def _check_file_syntax(self):
+    def _check_file_syntax(self) -> None:
         """
         Checks for missing variables:
         - ``type``
@@ -459,7 +506,7 @@ class SimulationFile(dict):
 
         It also checks whether ``type``'s value is correct.
 
-        It notifies the user about this errors in the syntacm using
+        It notifies the user about these errors in the syntax using
         ``esm_parser.error``.
         """
         error_text = ""

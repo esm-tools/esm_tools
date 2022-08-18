@@ -73,6 +73,24 @@ def _allowed_to_be_missing(method):
 
 
 def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
+    """
+    Checks if a particular file has all elements of a particular date in its name.
+    
+    Parameters
+    ----------
+    fname : str
+        The name of the file to check
+    date : esm_calendar.Date
+        The date to be checked against
+    reqs : list of str
+        A list of ``strftime`` compliant strings to determine which elements of the date to check. Compatible with %Y %m %d %H %M %S (year, month, day, hour, minute, second)
+        
+    Returns
+    -------
+    bool : 
+        True if all elements appear in the filename, False otherwise.
+    
+    """
     date_attrs = {
         "%Y": "syear",
         "%m": "smonth",

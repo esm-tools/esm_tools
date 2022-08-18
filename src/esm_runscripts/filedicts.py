@@ -63,10 +63,13 @@ def _allowed_to_be_missing(method):
     @functools.wraps(method)
     def inner_method(self, *args, **kwargs):
         if self.allowed_to_be_missing:
-            logger.warning(
-                f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
-            )
-            return None  # None is the default return, but let us be explicit here, as it is a bit confusing
+            try:
+                return method(self, *args, **kwargs)
+            except (FileNotFoundError, IOError):
+                logger.warning(
+                    f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
+                )
+                return None  # None is the default return, but let us be explicit here, as it is a bit confusing
         else:
             return method(self, *args, **kwargs)
 
@@ -456,6 +459,7 @@ class SimulationFile(dict):
                 "absolute path for the ``path_in_computer`` variable.",
             )
 
+    @_allowed_to_be_missing
     def _check_source_and_target(self, source_path, target_path):
         """
         Performs checks for file movements
@@ -477,15 +481,15 @@ class SimulationFile(dict):
         # ------
         # Source exists
         if not source_path_type:
-            raise Exception(f"Source file ``{source_path}`` does not exist!")
+            raise FileNotFoundError(f"Source file ``{source_path}`` does not exist!")
         # Target exist
         if target_path_type:
             # TODO: Change this behavior
-            raise Exception(f"File ``{target_path_type}`` already exists!")
+            raise FileNotFoundError(f"File ``{target_path_type}`` already exists!")
         # Target dir exists
         if not target_path_parent_type:
             # TODO: we might consider creating it
-            raise Exception(
+            raise FileNotFoundError(
                 f"Target directory ``{target_path_parent_type}`` does not exist!"
             )
 

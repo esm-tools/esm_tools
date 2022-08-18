@@ -5,7 +5,6 @@ import stat
 import copy
 
 import esm_environment
-import six
 
 from esm_parser import find_variable, user_error, user_note
 from . import helpers
@@ -532,6 +531,8 @@ class batch_system:
                     + " -r "
                     + str(config["general"]["run_number"])
                     + " -v "
+                    + " --last-jobtype "
+                    + config["general"]["jobtype"]
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[
@@ -585,13 +586,13 @@ class batch_system:
             os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
         if config["general"]["verbose"]:
-            six.print_("\n", 40 * "+ ")
-            six.print_("Contents of ", runfilename, ":")
+            print("\n", 40 * "+ ")
+            print("Contents of ", runfilename, ":")
             with open(runfilename, "r") as fin:
                 print(fin.read())
             if os.path.isfile(self.bs.filename):
-                six.print_("\n", 40 * "+ ")
-                six.print_("Contents of ", self.bs.filename, ":")
+                print("\n", 40 * "+ ")
+                print("Contents of ", self.bs.filename, ":")
                 with open(self.bs.filename, "r") as fin:
                     print(fin.read())
 
@@ -847,9 +848,9 @@ class batch_system:
         else:
 
 # kh 22.06.22 defensive (user_error/user_note could also be added here)
-            nproc = 1
-            cpus_per_proc = 1
-#           omp_num_threads = 1
+            nproc = 0
+            cpus_per_proc = 0
+#           omp_num_threads = 0
 
         # Number of nodes needed
         nodes = int(nproc * cpus_per_proc / cores_per_node) + (

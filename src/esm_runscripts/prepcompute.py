@@ -1,6 +1,5 @@
 import os
 import time
-import shutil
 import subprocess
 import copy
 
@@ -13,20 +12,17 @@ from .icb_apply_distribution_functions import *
 ######################################
 
 import f90nml
-import six
 import yaml
 import stat
 
-import esm_tools
 import esm_calendar
 import esm_parser
 import esm_runscripts
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
-from .helpers import end_it_all, evaluate, write_to_log
+from .helpers import evaluate 
 from .namelists import Namelist
-from loguru import logger
 
 #####################################################################
 #                                   compute jobs                    #
@@ -183,7 +179,7 @@ def modify_namelists(config):
     # Load and modify namelists:
 
     if config["general"]["verbose"]:
-        six.print_("\n" "- Setting up namelists for this run...")
+        print("\n" "- Setting up namelists for this run...")
         for index, model in enumerate(config["general"]["valid_model_names"]):
             print(f'{index+1}) {config[model]["model"]}')
         print()
@@ -208,11 +204,11 @@ def modify_namelists(config):
 
 def copy_files_to_thisrun(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING EXPERIMENT")
+        print("PREPARING EXPERIMENT")
         # Copy files:
-        six.print_("\n" "- File lists populated, proceeding with copy...")
-        six.print_("- Note that you can see your file lists in the config folder")
-        six.print_("- You will be informed about missing files")
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     counter = 0
     count_max = 90
@@ -226,11 +222,11 @@ def copy_files_to_thisrun(config):
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
-                        six.print_("File found: ", file)
+                        print("File found: ", file)
                         break
                     else:
-                        six.print_("Waiting for file: ", file)
-                        six.print_("Sleep for 10 seconds...")
+                        print("Waiting for file: ", file)
+                        print("Sleep for 10 seconds...")
                         time.sleep(10)
 
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
@@ -285,7 +281,7 @@ def update_icebergs(config):
 
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING WORK FOLDER")
+        print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
@@ -377,17 +373,17 @@ def _write_finalized_config(config):
 
 
 def _show_simulation_info(config):
-    six.print_()
-    six.print_(80 * "=")
-    six.print_("STARTING SIMULATION JOB!")
-    six.print_(f"Experiment ID = {config['general']['expid']}")
-    six.print_(f"Setup = {config['general']['setup_name']}")
+    print()
+    print(80 * "=")
+    print("STARTING SIMULATION JOB!")
+    print(f"Experiment ID = {config['general']['expid']}")
+    print(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        six.print_("This setup consists of:")
+        print("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            six.print_(f"- {model}")
-    six.print_("Experiment is installed in:")
-    six.print_(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    six.print_(80 * "=")
-    six.print_()
+            print(f"- {model}")
+    print("Experiment is installed in:")
+    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    print(80 * "=")
+    print()
     return config

@@ -4,10 +4,11 @@ A small wrapper that combines the shell interface and the Python interface
 """
 
 # Import from Python Standard Library
-import argparse
 from loguru import logger
 
+from .info import *
 from .initialization import *
+from .output import *
 from .read_shipped_data import *
 from .repos import *
 from .test_utilities import *
@@ -39,97 +40,18 @@ def main():
             diagnose=True,
         )
 
+    # Info instancing
+    info = Info()
+
     # Parsing
-    parser = argparse.ArgumentParser(description="Automatic testing for ESM-Tools devs")
-    parser.add_argument(
-        "-n",
-        "--no-user",
-        default=False,
-        help="Avoid loading user config",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-c",
-        "--check",
-        default=False,
-        help="Check mode on (does not compile or run, but produces some files that can "
-        + "be compared to previous existing files in 'last_tested' folder)",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-u",
-        "--update",
-        default=False,
-        help="Updates the resources with the release branch, including runscripts"
-        + "and last_tested files",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-d",
-        "--delete",
-        default=False,
-        help="Delete previous tests",
-        action="store_true",
-    )
-    # parser.add_argument(
-    #    "-k",
-    #    "--keep",
-    #    default=False,
-    #    help="Keep run_, outdata and restart folders for runs",
-    #    action="store_true",
-    # )
-    parser.add_argument(
-        "-s",
-        "--save",
-        default="Not defined",
-        help="Save files for comparisson in 'last_tested' folder",
-    )
-    parser.add_argument(
-        "-t",
-        "--state",
-        default=False,
-        help="Print the state stored in state.yaml",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-o",
-        "--hold",
-        default=False,
-        help="Hold before operation, to give time to check the output",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-b",
-        "--bulletpoints",
-        default=False,
-        help="bullet points for printing the results",
-        action="store_true",
-    )
-
-    args = vars(parser.parse_args())
-
-    save_flag = args["save"]
-    print_state = args["state"]
-    delete_tests = args["delete"]
-
-    info = {}
-
-    info["ignore_user_info"] = args["no_user"]
-    info["actually_compile"] = not args["check"]
-    info["actually_run"] = not args["check"]
-    # info["keep_run_folders"] = args["keep"]
-    info["hold"] = args["hold"]
-    info["bulletpoints"] = args["bulletpoints"]
-    info["repo_update"] = args["update"]
-
-    info["script_dir"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    info["this_computer"] = (
-        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
-    )
+    save_flag, print_state, delete_tests = info.argparse()
 
     # Update ``resources``
     update_resources_submodule(info)
 
+    info["this_computer"] = (
+        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
+    )
     info["last_tested_dir"] = get_last_tested_dir()
 
     # Predefined for later
@@ -142,12 +64,12 @@ def main():
         sys.exit(1)
 
     # Get user info for testing
-    info = user_config(info)
+    user_config(info)
 
-    # User-specific Info to remove from the files ``last_tested`` files
+    # User-specific info to remove from the files ``last_tested`` files
     info["rm_user_info"] = {
-        "ACCOUNT": info["user"]["account"],
         "TEST_DIR": info["user"]["test_dir"],
+        "HOME_DIR": f"{os.path.expanduser('~')}",
     }
 
     # Define lines to be ignored during comparison
@@ -160,6 +82,12 @@ def main():
             print(f)
         print(e)
         raise
+
+    # Special actions for running from GitHub servers
+    if info["in_github"]:
+        info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
+        # Ignore the globbing variables
+        info["ignore"]["finished_config"].append("_glob_[0-9]*: ")
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")
@@ -182,7 +110,12 @@ def main():
     run_test(info)
 
     # Print results
-    print_results(format_results(info), info)
+    results = format_results(info)
+    print_results(results, info)
+
+    # Check if all tests passed
+    if info["system_exit_on_errors"]:
+        check_perfect(info, results)
 
     # Save files
     if save_flag == "Not defined":

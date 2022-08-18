@@ -131,13 +131,19 @@ jobs:
         run: |
           git push;
           git push --tags
-          
-      # Merge PR-branch into `develop`
-      - name: merge into develop
+      - name: Call Publish
         run: |
-          echo ${{ steps.vars.outputs.current_branch }};
-          git checkout develop;
-          git merge ${{ steps.vars.outputs.current_branch }};
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+          # FIXME: Once this works, we need to change the @ to release, or a
+          # specific commit
+          uses: "esm-tools/esm_tools/.github/workflows/esm_tools_publish@fix/pypi_publish"  
+          secrets:
+            PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      # Merge PR-branch into `develop`
+      # - name: merge into develop
+      #   run: |
+      #     echo ${{ steps.vars.outputs.current_branch }};
+      #     git checkout develop;
+      #     git merge ${{ steps.vars.outputs.current_branch }};
+      #     git push
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  

@@ -1,0 +1,68 @@
+# ESM-Tests generalized workflow for computers
+# ============================================
+
+name: esm_tests_computer_workflow
+
+# Called from other workflows
+on:
+  workflow_call:
+    inputs:
+      computer:
+        required: true
+        type: string
+      update_esm_tests_info:
+        type: boolean
+        default: false
+      test_flags:
+        type: string
+        default: "-cngeu -s False"
+
+jobs:
+  computer:
+    name: ${{ inputs.computer }}
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    env:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+    container:
+      image: koldunovn/esm_test:latest
+      options: --hostname ${{ inputs.computer }}
+
+    # Service containers to run with `gfortran_ubuntu`
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+#    - name: checkout esm_tests_info
+#      uses: actions/checkout@v3
+#      with:
+#        repository: esm-tools/esm_tests_info
+#        path: src/esm_tests/resources
+#        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: add to the path
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: install esm-tools
+      run: |
+        ./install.sh
+    - name: run esm_tests
+      run: |
+        yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: update esm_tests info
+      if: ${{ inputs.update_esm_tests_info }}
+      run: |
+        cd src/esm_tests/resources;
+        git config --global user.name "${GITHUB_ACTOR}";
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
+        rm -rf automatic_testing; # cleanup the resources directory from tests
+        git add .;
+        git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git status;
+        git push;
+        

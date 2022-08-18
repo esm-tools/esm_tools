@@ -89,9 +89,7 @@ def globbing(method):
             self.wild_card_check(source_pattern, target_pattern)
 
             # Obtain source files
-            glob_source_paths = glob.glob(str(self[f"absolute_path_in_{source}"]))
-
-            # Check that there are any source files available
+            glob_source_paths = self.find_globbing_files(source)
 
             # Extract globbing source names
             glob_source_names = []
@@ -436,6 +434,20 @@ class SimulationFile(dict):
             )
 
         return True
+
+    def find_globbing_files(self, location):
+        absolute_path_in_location = str(self[f"absolute_path_in_{location}"])
+        glob_paths = glob.glob(absolute_path_in_location)
+
+        # Check that there are any source files available
+        if len(glob_paths)==0:
+            user_error(
+                "Globbing",
+                f"No files found for the globbing pattern "
+                f"``{absolute_path_in_location}``."
+            )
+
+        return glob_paths
 
     def _check_file_syntax(self):
         """

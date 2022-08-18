@@ -664,6 +664,45 @@ def test_wild_card_check_fails():
     # error needs to occur as the path is not absolute
     assert any(["The wild card pattern of the source" in line for line in output])
 
+def test_find_globbing_files(fs):
+    """
+    Tests for files with the globbing pattern not found
+    """
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+    config = yaml.safe_load(dummy_config)
+    files = [
+        "input_11_DATE_12.nc",
+        "input_21_DATE_22.nc",
+        "input_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+           sim_file.cp("work", "exp_tree")
+
+    # error needs to occur as the path is not absolute
+    assert any(["No files found for the globbing pattern" in line for line in output])
+
 def test_globbing_cp(fs):
     """Tests globbing for copying"""
 

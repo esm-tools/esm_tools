@@ -635,18 +635,15 @@ def test_resolve_paths_old_config():
     )
 
 def test_wild_card_check():
-    """Tests that wild cards names are resolved correctly"""
+    """Tests that wild card check is passed"""
     source_name = "a_wild_card*name*.txt"
     target_name = "another_wild_card*newname*.txt1"
+    source_pattern = source_name.split("*")
+    target_pattern = target_name.split("*")
 
-    source_pattern, target_pattern = (
-        esm_runscripts.filedicts.SimulationFile.wild_card_check(
-            source_name, target_name
-        )
-    )
-
-    assert(source_pattern==["a_wild_card", "name", ".txt"])
-    assert(target_pattern==["another_wild_card", "newname", ".txt1"])
+    assert(esm_runscripts.filedicts.SimulationFile.wild_card_check(
+        source_pattern, target_pattern
+    ))
 
 def test_wild_card_check_fails():
     """
@@ -654,14 +651,14 @@ def test_wild_card_check_fails():
     """
     source_name = "a_wild_card*name*.txt"
     target_name = "another_wild_cardnewname*.txt1"
+    source_pattern = source_name.split("*")
+    target_pattern = target_name.split("*")
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            source_pattern, target_pattern = (
-                esm_runscripts.filedicts.SimulationFile.wild_card_check(
-                    source_name, target_name
-                )
+            esm_runscripts.filedicts.SimulationFile.wild_card_check(
+                    source_pattern, target_pattern
             )
 
     # error needs to occur as the path is not absolute

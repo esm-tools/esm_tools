@@ -81,10 +81,12 @@ def globbing(method):
         source_name = self[f"name_in_{source}"]
         target_name = self[f"name_in_{target}"]
         if "*" in source_name or "*" in target_name:
-            # Check wild cards
-            source_pattern, target_pattern = self.wild_card_check(
-                source_name, target_name
-            )
+            # Get wildcard patterns
+            source_pattern = source_name.split("*")
+            target_pattern = target_name.split("*")
+
+            # Check wild cards syntax
+            self.wild_card_check(source_pattern, target_pattern)
 
             # Obtain source files
             glob_source_paths = glob.glob(str(self[f"absolute_path_in_{source}"]))
@@ -419,22 +421,21 @@ class SimulationFile(dict):
             raise Exception(f"Cannot identify the path's type of {path}")
 
     @classmethod
-    def wild_card_check(self, source_name, target_name) -> Tuple[list, list]:
-        wild_card_source = source_name.split("*")
-        wild_card_target = target_name.split("*")
+    def wild_card_check(self, source_pattern, target_pattern) -> Tuple[list, list]:
         # Check for syntax mistakes
-        if len(wild_card_target) != len(wild_card_source):
+        if len(target_pattern) != len(source_pattern):
             user_error(
                 "Wild card",
                 (
                     "The wild card pattern of the source "
-                    + f"``{wild_card_source}`` does not match with the "
-                    + f"target ``{wild_card_target}``. Make sure the "
+                    + f"``{source_pattern}`` does not match with the "
+                    + f"target ``{target_pattern}``. Make sure the "
                     + f"that the number of ``*`` are the same in both "
                     + f"sources and targets."
                 ),
             )
-        return wild_card_source, wild_card_target
+
+        return True
 
     def _check_file_syntax(self):
         """

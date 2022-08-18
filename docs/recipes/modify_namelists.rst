@@ -118,6 +118,34 @@ included in one ``namelist_changes`` block, but you can only have one
 ``namelist_changes`` block per model or component (see
 :ref:`yaml:Changing Namelists`).
 
+
+Unusual Namelists
+~~~~~~~~~~~~~~~~~
+
+Some times, you have strange namelists of the form:
+
+.. code-block:: fortran
+
+   sn_tracer(1)   = 'DET'   , 'Detritus                   '  , 'mmole-N/m3' ,  .false.
+   sn_tracer(2)   = 'ZOO'   , 'Zooplankton concentration  '  , 'mmole-N/m3' ,  .false.
+   sn_tracer(3)   = 'PHY'   , 'Phytoplankton concentration'  , 'mmole-N/m3' ,  .false.
+
+To correctly insert this via ``esm-tools``, you can use:
+
+.. code-block:: yaml
+
+    namelist_changes:
+          namelist_top_cfg:
+            namtrc:
+               sn_tracer: "remove_from_namelist"
+               sn_tracer(1)%clsname: DET
+               sn_tracer(2)%clsname: ZOO
+               sn_tracer(3)%clsname: PHY
+               sn_tracer(1)%cllname: "Detritus"
+               sn_tracer(2)%cllname: "Zooplankton concentration"
+               sn_tracer(3)%cllname: "Phytoplankton concentration"
+               sn_tracer(1:3)%clunit: "mmole-N/m3"
+
 See also
 ~~~~~~~~
 

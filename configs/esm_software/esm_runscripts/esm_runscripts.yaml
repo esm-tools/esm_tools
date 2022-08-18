@@ -32,6 +32,7 @@ choose_job_type:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
+                        - "check_config_for_warnings_errors"
 
         assemble:
                 recipe:
@@ -90,6 +91,8 @@ choose_job_type:
                         - "copy_files_to_work"
                           #- "write_simple_runscript"
                         - "report_missing_files"
+                        - "add_vcs_info"
+                        - "check_vcs_info_against_last_run"
                         - "_write_finalized_config"
                         - "database_entry"
                           #- "submit"

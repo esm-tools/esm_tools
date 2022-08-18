@@ -33,6 +33,8 @@ jobs:
       run: |
         pip install pytest
         pytest -v .
+        # For now, only test actual source code. Stuff like coupling scripts is ignored
+        pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*" 
 
     - name: run esm_master first time
       run: |

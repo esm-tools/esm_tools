@@ -138,21 +138,21 @@ Implement a New Model
                      [ ... ]
 
                      available_versions:
-                     - 2.0-o
-                     - 2.0-esm-interface
+                     - '2.0-o'
+                     - '2.0-esm-interface'
                      - '1.4'
-                     - '1.4-recom-mocsy-slp'
-                     - 2.0-esm-interface-yac
-                     - 2.0-paleodyn
-                     - 1.4-recom-awicm
+                     - '1.4-recom'
+                     - '1.4-recom-awicm'
+                     - '2.0-esm-interface-yac'
+                     - '2.0-paleodyn'
                      - '2.0'
                      - '2.0-r' # OG: temporarily here
                      choose_version:
                        '1.4-recom-awicm':
+                         branch: fesom_recom_1.4_master
                          destination: fesom-1.4
-                         branch: co2_coupling
-                       '1.4-recom-mocsy-slp':
-                         branch: fesom-recom-mocsy-slp
+                       '1.4-recom':
+                         branch: fesom_recom_1.4_master
                          destination: fesom-1.4
 
                      [ ... ]

@@ -210,7 +210,7 @@ class Slurm:
 #model:  hdmodel, nodes:  1
 
 # kh 24.06.22 workaround: filter hdmodel
-                if nodes and (model != "hdmodel"):
+                if nodes:
                     headers.append(f"{nodes_flag}={nodes}")
                     headers.append(this_batch_system["partition_flag"])
                     headers.append(this_batch_system["hetjob_flag"])
@@ -325,8 +325,12 @@ class Slurm:
                     or config[model].get("executable")
                 )
             ):
+                if "nproca" in config[model]:
+                    mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
+                else:
+                    mpi_tasks = config[model]["nproc"]
                 runfile.write(
-                    "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
+                    "mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n"
                 )
                 runfile.write(
                     "omp_threads_"

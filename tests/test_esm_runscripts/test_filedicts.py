@@ -205,15 +205,15 @@ def test_allowed_to_be_missing_mv(fs):
     general:
         expid: expid
         base_dir: /some/dummy/location/
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
         exp_dir: "/work/ollie/pgierz/some_exp"
-        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
-        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20011231/input/echam
         files:
             human_readable_tag_001:
                 type: input
@@ -232,7 +232,43 @@ def test_allowed_to_be_missing_mv(fs):
     )
     sim_file.mv("computer", "work")
     assert not os.path.exists(
-        "/some/dummy/location/expid/run_18500101-18501231/work/foo"
+            "/work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo"
+    )
+
+def test_allowed_to_be_missing_mv_if_exists(fs):
+    """Checks that a file which is allowed to be missing is still moved if it exists"""
+    dummy_config = """
+    general:
+        expid: expid
+        base_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    computer:
+        pool_dir: "/work/ollie/pool"
+    echam:
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20011231/input/echam
+        files:
+            human_readable_tag_001:
+                type: input
+                allowed_to_be_missing: True
+                name_in_computer: foo
+                path_in_computer: /work/data/pool
+                name_in_work: foo
+                path_in_work: .
+                movement_type: move
+    """
+    config = yaml.safe_load(dummy_config)
+    fs.create_dir("/work/data/pool")
+    fs.create_file("/work/data/pool/foo")
+    fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20011231/work")
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config, "echam.files.human_readable_tag_001"
+    )
+    sim_file.mv("computer", "work")
+    assert os.path.exists(
+            "/work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo"
     )
 
 

@@ -323,7 +323,7 @@ class SimulationFile(dict):
         # possible paths for files:
         location_keys = ["computer", "exp_tree", "run_tree", "work"]
         # initialize the locations and complete paths for all possible locations
-        self.locations = dict.fromkeys(location_keys, pathlib.Path("/dev/null"))
+        self.locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least

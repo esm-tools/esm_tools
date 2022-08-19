@@ -120,7 +120,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config: dict, attrs_address: dict, separator="."):
+    def __init__(self, full_config: dict, attrs_address: dict):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -154,10 +154,9 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
-        self._separator = separator
         self._attrs_address = attrs_address
-        self.name = attrs_address.split(separator)[-1]
-        self.component = component = attrs_address.split(separator)[0]
+        self.name = attrs_address.split(".")[-1]
+        self.component = component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
         self.path_in_computer = self.get("path_in_computer")
         if self.path_in_computer:
@@ -181,7 +180,7 @@ class SimulationFile(dict):
         self._check_path_in_computer_is_abs()
 
     def __str__(self):
-        address = " -> ".join(self._attrs_address.split(self._separator))
+        address = " -> ".join(self._attrs_address.split("."))
         return address
 
     def _complete_file_names(self):

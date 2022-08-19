@@ -14,6 +14,7 @@ import glob
 import os
 import pathlib
 import shutil
+import sys
 from enum import Enum, auto
 from typing import Any, AnyStr, Tuple, Type, Union
 
@@ -23,6 +24,10 @@ from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
 
+logger.remove()
+LEVEL = "ERROR" # "WARNING"  # "INFO"  # "DEBUG"
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
+logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 
 # Enumeration of file types
 class FileTypes(Enum):
@@ -260,10 +265,10 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
+        self.attrs_address = attrs_address
         self._sim_date = full_config["general"][
             "current_date"
         ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
-        self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
         self.component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
@@ -294,6 +299,10 @@ class SimulationFile(dict):
     ##############################################################################################
     # Overrides of standard dict methods
     ##############################################################################################
+
+    def __str__(self):
+        address = " -> ".join(self.attrs_address.split("."))
+        return address
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""
@@ -433,7 +442,7 @@ class SimulationFile(dict):
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
-            logger.success(f"Copied {source_path} --> {target_path}")
+            logger.debug(f"Copied {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to copy {source_path} to {target_path}\n\n"
@@ -494,6 +503,7 @@ class SimulationFile(dict):
 
         try:
             os.symlink(source_path, target_path)
+            logger.debug(f"Linked {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to link {source_path} to {target_path}\n\n"
@@ -540,7 +550,7 @@ class SimulationFile(dict):
         # Perform the movement:
         try:
             source_path.rename(target_path)
-            logger.success(f"Moved {source_path} --> {target_path}")
+            logger.debug(f"Moved {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to move {source_path} to {target_path}\n\n"
@@ -659,8 +669,10 @@ class SimulationFile(dict):
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
+            logger.warning(f"Broken link detected: {path}")
             return FileTypes.BROKEN_LINK
         elif not path.exists():
+            logger.warning(f"File does not exist: {path}")
             return FileTypes.NOT_EXISTS
         elif path.is_symlink():
             return FileTypes.LINK

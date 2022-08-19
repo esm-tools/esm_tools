@@ -167,10 +167,10 @@ def globbing(method):
             target_pattern = target_name.split("*")
 
             # Check wild cards syntax
-            self.wild_card_check(source_pattern, target_pattern)
+            self._wild_card_check(source_pattern, target_pattern)
 
             # Obtain source files
-            glob_source_paths = self.find_globbing_files(source)
+            glob_source_paths = self._find_globbing_files(source)
 
             # Extract globbing source names
             glob_source_names = [
@@ -373,19 +373,6 @@ class SimulationFile(dict):
     ##############################################################################################
     # Object Properities
     ##############################################################################################
-    def _complete_file_names(self):
-        """
-        Complete missing names in the file with the default name, depending whether
-        the file is of type ``input`` or ``output``.
-        """
-        if self["type"] in self.input_file_types:
-            default_name = self["name_in_computer"]
-        elif self["type"] in self.output_file_types:
-            default_name = self["name_in_work"]
-        self["name_in_computer"] = self.get("name_in_computer", default_name)
-        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
-        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
-        self["name_in_work"] = self.get("name_in_work", default_name)
 
     # This part allows for dot-access to allowed_to_be_missing:
     @property
@@ -487,6 +474,53 @@ class SimulationFile(dict):
 
     @globbing
     @_allowed_to_be_missing
+    def mv(self, source: str, target: str) -> None:
+        """
+        Moves (renames) the SimulationFile from it's location in ``source`` to
+        it's location in ``target``.
+
+        Parameters
+        ----------
+        source : str
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+        target : str
+            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+        """
+        if source not in self.locations:
+            raise ValueError(
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
+        source_path = self[f"absolute_path_in_{source}"]
+        target_path = self[f"absolute_path_in_{target}"]
+
+        # Create subfolders contained in ``name_in_{target}``
+        self._makedirs_in_name(target)
+
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+
+        # General Checks
+        self._check_source_and_target(source_path, target_path)
+
+        # Perform the movement:
+        try:
+            source_path.rename(target_path)
+            logger.debug(f"Moved {source_path} --> {target_path}")
+        except IOError as error:
+            raise IOError(
+                f"Unable to move {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
+
+    @globbing
+    @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
         """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
 
@@ -546,52 +580,27 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    @globbing
-    @_allowed_to_be_missing
-    def mv(self, source: str, target: str) -> None:
+    def pretty_filedict(self, filedict):
         """
-        Moves (renames) the SimulationFile from it's location in ``source`` to
-        it's location in ``target``.
+        Returns a string in yaml format of the given file dictionary.
 
         Parameters
         ----------
-        source : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
-        target : str
-            One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
+        dict :
+            A file dictionary
+
+        Returns
+        -------
+        str :
+            A string in yaml format of the given file dictionary
         """
-        if source not in self.locations:
-            raise ValueError(
-                f"Source is incorrectly defined, and needs to be in {self.locations}"
-            )
-        if target not in self.locations:
-            raise ValueError(
-                f"Target is incorrectly defined, and needs to be in {self.locations}"
-            )
-        source_path = self[f"absolute_path_in_{source}"]
-        target_path = self[f"absolute_path_in_{target}"]
+        return yaml.dump({"files": {self.name: filedict}})
 
-        # Create subfolders contained in ``name_in_{target}``
-        self._makedirs_in_name(target)
+    ##############################################################################################
 
-        # Datestamps
-        if self.datestamp_method == "always":
-            target_path = self._always_datestamp(target_path)
-        if self.datestamp_method == "avoid_overwrite":
-            target_path = self._avoid_override_datestamp(target_path)
-
-        # General Checks
-        self._check_source_and_target(source_path, target_path)
-
-        # Perform the movement:
-        try:
-            source_path.rename(target_path)
-            logger.debug(f"Moved {source_path} --> {target_path}")
-        except IOError as error:
-            raise IOError(
-                f"Unable to move {source_path} to {target_path}\n\n"
-                f"Exception details:\n{error}"
-            )
+    ##############################################################################################
+    # Private Methods, Attributes, and Class Variables
+    ##############################################################################################
 
     _allowed_datestamp_methods = {"never", "always", "avoid_overwrite"}
     """
@@ -772,6 +781,20 @@ class SimulationFile(dict):
             # The other case ("check_from_filename") is meaningless?
         return target
 
+    def _complete_file_names(self):
+        """
+        Complete missing names in the file with the default name, depending whether
+        the file is of type ``input`` or ``output``.
+        """
+        if self["type"] in self.input_file_types:
+            default_name = self["name_in_computer"]
+        elif self["type"] in self.output_file_types:
+            default_name = self["name_in_work"]
+        self["name_in_computer"] = self.get("name_in_computer", default_name)
+        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
+        self["name_in_work"] = self.get("name_in_work", default_name)
+
     @staticmethod
     def wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
@@ -804,7 +827,7 @@ class SimulationFile(dict):
 
         return True
 
-    def find_globbing_files(self, location: str) -> list:
+    def _find_globbing_files(self, location: str) -> list:
         """
         Lists the files matching the globbing path of the given ``location``, and
         notifies the user if none were found, via ``esm_parser.user_error``.
@@ -1037,22 +1060,6 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         return True
-
-    def pretty_filedict(self, filedict):
-        """
-        Returns a string in yaml format of the given file dictionary.
-
-        Parameters
-        ----------
-        dict :
-            A file dictionary
-
-        Returns
-        -------
-        str :
-            A string in yaml format of the given file dictionary
-        """
-        return yaml.dump({"files": {self.name: filedict}})
 
 
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:

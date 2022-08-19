@@ -225,7 +225,7 @@ def test_check_source_and_targets_raises_exception_on_nonexisting_directory(simu
     target_path = Path("/this/does/not/exist")
     with pytest.raises(FileNotFoundError):
         simulation_file._check_source_and_target(source_path, target_path)
-# === end of the tests for _path_type() method
+# === end of the tests for check_source_and_target() method
 
 
 def test_allowed_to_be_missing_attr():

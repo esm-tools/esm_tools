@@ -25,7 +25,7 @@ from loguru import logger
 from esm_parser import ConfigSetup, user_error
 
 logger.remove()
-LEVEL = "ERROR" # "WARNING"  # "INFO"  # "DEBUG"
+LEVEL = "ERROR"  # "WARNING"  # "INFO"  # "DEBUG"
 LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
 logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 

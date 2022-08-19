@@ -226,7 +226,25 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config: dict, attrs_address: str):
+    def __init__(self, absolute_path_in_computer, absolute_path_in_exp_tree, absolute_path_in_run_tree, absolute_path_in_work, allowed_to_be_missing=False, description="", filetype="", *args, **kwargs):
+        pass
+    # Current Attributes:
+    # {'absolute_path_in_computer': PosixPath('/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc'),
+    #  'absolute_path_in_exp_tree': PosixPath('/work/ollie/pgierz/some_exp/input/echam/T63CORE2_jan_surf.nc'),
+    #  'absolute_path_in_run_tree': PosixPath('/work/ollie/pgierz/some_exp/run_20000101-20000101/input/echam/T63CORE2_jan_surf.nc'),
+    #  'absolute_path_in_work': PosixPath('/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24'),
+    #  'allowed_to_be_missing': False,
+    #  'description': 'Initial values used for the simulation, including properties such as geopotential, temperature, pressure\n',
+    #  'filetype': 'NetCDF',
+    #  'name_in_computer': 'T63CORE2_jan_surf.nc',
+    #  'name_in_exp_tree': 'T63CORE2_jan_surf.nc',
+    #  'name_in_run_tree': 'T63CORE2_jan_surf.nc',
+    #  'name_in_work': 'unit.24',
+    #  'path_in_computer': '/work/ollie/pool/ECHAM/T63',
+    #  'type': 'input'}
+
+    @classmethod
+    def from_config(self, full_config: dict, attrs_address: str):
         """
         - Initiates the properties of the object
         - Triggers basic checks

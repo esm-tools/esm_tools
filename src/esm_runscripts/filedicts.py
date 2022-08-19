@@ -112,9 +112,7 @@ def globbing(method):
             glob_source_paths = self.find_globbing_files(source)
 
             # Extract globbing source names
-            glob_source_names = []
-            for glob_source_path in glob_source_paths:
-                glob_source_names.append(pathlib.Path(glob_source_path).name)
+            glob_source_names = [pathlib.Path(glob_source_path).name for glob_source_path in glob_source_paths]
 
             # Solve the globbing target names
             glob_target_names = []

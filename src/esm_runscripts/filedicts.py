@@ -13,15 +13,20 @@ import functools
 import os
 import pathlib
 import shutil
+import sys
 from enum import Enum, auto
-import yaml
 from typing import AnyStr, Tuple, Type, Union
 
 import dpath.util
+import yaml
 from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
 
+logger.remove()
+LEVEL = INFO  # "DEBUG"
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
+logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 
 # Enumeration of file types
 class FileTypes(Enum):
@@ -115,7 +120,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config: dict, attrs_address: dict):
+    def __init__(self, full_config: dict, attrs_address: dict, separator="."):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -149,8 +154,10 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
-        self.name = attrs_address.split(".")[-1]
-        self.component = component = attrs_address.split(".")[0]
+        self._separator = separator
+        self._attrs_address = attrs_address
+        self.name = attrs_address.split(separator)[-1]
+        self.component = component = attrs_address.split(separator)[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
         self.path_in_computer = self.get("path_in_computer")
         if self.path_in_computer:
@@ -172,6 +179,10 @@ class SimulationFile(dict):
 
         # Checks
         self._check_path_in_computer_is_abs()
+
+    def __str__(self):
+        address = " -> ".join(self._attrs_address.split(self._separator))
+        return address
 
     def _complete_file_names(self):
         """
@@ -233,7 +244,7 @@ class SimulationFile(dict):
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
-            logger.success(f"Copied {source_path} --> {target_path}")
+            logger.debug(f"Copied {source_path} --> {target_path}")
         except Exception as error:
             raise Exception(
                 f"Unable to copy {source_path} to {target_path}\n\n"
@@ -242,7 +253,7 @@ class SimulationFile(dict):
 
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``. 
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
 
         Parameters
         ----------
@@ -280,6 +291,7 @@ class SimulationFile(dict):
             raise OSError(err_msg)
 
         os.symlink(source_path, target_path)
+        logger.debug(f"Linked {source_path} --> {target_path}")
 
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
@@ -308,7 +320,7 @@ class SimulationFile(dict):
         # Perform the movement:
         try:
             source_path.rename(target_path)
-            logger.success(f"Moved {source_path} --> {target_path}")
+            logger.debug(f"Moved {source_path} --> {target_path}")
         except IOError as error:
             # NOTE(PG): Re-raise IOError with our own message:
             raise IOError(
@@ -331,7 +343,7 @@ class SimulationFile(dict):
         """
         self.locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
-            "computer": self.path_in_computer, # Already Path type from _init_
+            "computer": self.path_in_computer,  # Already Path type from _init_
             "exp_tree": pathlib.Path(
                 self._config[self.component][f"experiment_{self['type']}_dir"]
             ),
@@ -341,7 +353,7 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            if key=="computer" and path==None:
+            if key == "computer" and path == None:
                 self[f"absolute_path_in_{key}"] = None
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
@@ -379,8 +391,10 @@ class SimulationFile(dict):
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
+            logger.warning(f"Broken link detected: {path}")
             return FileTypes.BROKEN_LINK
         elif not path.exists():
+            logger.warning(f"File does not exist: {path}")
             return FileTypes.NOT_EXISTS
         elif path.is_symlink():
             return FileTypes.LINK
@@ -411,7 +425,14 @@ class SimulationFile(dict):
         this_filedict = copy.deepcopy(self._original_filedict)
         self.input_file_types = input_file_types = ["config", "forcing", "input"]
         self.output_file_types = output_file_types = [
-            "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
+            "analysis",
+            "couple",
+            "log",
+            "mon",
+            "outdata",
+            "restart",
+            "viz",
+            "ignore",
         ]
 
         if "type" not in self.keys():
@@ -432,7 +453,10 @@ class SimulationFile(dict):
             )
             this_filedict["type"] = f"``{this_filedict['type']}``"
 
-        if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "path_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``path_in_computer`` variable is missing. Please define a "
@@ -444,16 +468,17 @@ class SimulationFile(dict):
                 f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
             )
 
-        if "name_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "name_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
                 f"(i.e. name of the file in the work folder). NOTE: this is only required for "
                 f"{', '.join(input_file_types)} file types\n"
             )
-            missing_vars = (
-                f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
-            )
+            missing_vars = f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
 
         if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
             error_text = (
@@ -480,7 +505,10 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if self.path_in_computer is not None and not self.path_in_computer.is_absolute():
+        if (
+            self.path_in_computer is not None
+            and not self.path_in_computer.is_absolute()
+        ):
             user_error(
                 "File Dictionaries",
                 "The path defined for "

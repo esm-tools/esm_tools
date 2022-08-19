@@ -48,8 +48,7 @@ def _allowed_to_be_missing(method):
 
     Usage Example
     -------------
-    Given you have an instanciated simulation file under ``sim_file`` with the 
-    following property::
+    Given you have an instanciated simulation file under ``sim_file`` with the following property::
         >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
         True
 
@@ -80,12 +79,9 @@ def _allowed_to_be_missing(method):
                 return method(self, *args, **kwargs)
             except (FileNotFoundError, IOError):
                 logger.warning(
-                    f"Skipping {method.__qualname__} as this file ({self}) is"
-                    " allowed to be missing!"
+                    f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
                 )
-                # None is the default return, but let us be explicit here, as 
-                # it is a bit confusing
-                return None  
+                return None  # None is the default return, but let us be explicit here, as it is a bit confusing
         else:
             return method(self, *args, **kwargs)
 
@@ -121,9 +117,7 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
         "%M": "sminute",
         "%S": "ssecond",
     }
-    required_attrs = [
-        getattr(date, v) for k, v in date_attrs.items() if k in reqs
-    ]
+    required_attrs = [getattr(date, v) for k, v in date_attrs.items() if k in reqs]
     # all(attr in fname for attr in required_attrs)
     for attr in required_attrs:
         if attr in fname:
@@ -133,9 +127,9 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
 
 def globbing(method):
     """
-    Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, 
-    that enables globbing. If a ``*`` is found on the ``source`` or ``target``
-    the globbing logic is activated, and consist of:
+    Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, that
+    enables globbing. If a ``*`` is found on the ``source`` or ``target`` the globbing
+    logic is activated, and consist of:
     - run checks for globbing syntax
     - check if any file matches the globbing pattern
     - construct one instance of ``SimulationFile`` for each file matching the globbing
@@ -248,8 +242,7 @@ class SimulationFile(dict):
         ----
         A file can be located in one of these categories (``LOCATION_KEYS``):
         - computer: pool/source directory (for input files)
-        - exp_tree: file in the category directory in experiment directory 
-          (eg. input, output, ...)
+        - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
         - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
         - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
 
@@ -267,12 +260,9 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
-        # NOTE: we might have to change this in the future, depending on whether
-        # SimulationFile is access through tidy ("end_date") or 
-        # prepcompute ("start_date")
         self._sim_date = full_config["general"][
             "current_date"
-        ]  
+        ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
         self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
         self.component = attrs_address.split(".")[0]
@@ -301,9 +291,10 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
-    ############################################################################
+    ##############################################################################################
     # Overrides of standard dict methods
-    ############################################################################
+    ##############################################################################################
+
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""
         if name == "datestamp_format":
@@ -332,11 +323,11 @@ class SimulationFile(dict):
                 self._check_datestamp_method_is_allowed(v)
             self[k] = v
 
-    ############################################################################
+    ##############################################################################################
 
-    ############################################################################
+    ##############################################################################################
     # Object Properities
-    ############################################################################
+    ##############################################################################################
     def _complete_file_names(self):
         """
         Complete missing names in the file with the default name, depending whether
@@ -392,9 +383,9 @@ class SimulationFile(dict):
         )  # This is the old default behaviour
         return datestamp_format
 
-    ############################################################################
+    ##############################################################################################
     # Main Methods
-    ############################################################################
+    ##############################################################################################
     @globbing
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
@@ -405,21 +396,19 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            String specifying one of the following options: ``"computer"``, 
-            ``"work"``, ``"exp_tree"``, ``run_tree``
+            String specifying one of the following options: ``"computer"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
         target : str
-            String specifying one of the following options: ``"computer"``, 
-            ``"work"``, ``"exp_tree"``, ``run_tree``
+            String specifying one of the following options: ``"computer"``, ``"work"``,
+            ``"exp_tree"``, ``run_tree``
         """
         if source not in self.locations:
             raise ValueError(
-                "Source is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
         if target not in self.locations:
             raise ValueError(
-                "Target is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
             )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
@@ -452,18 +441,15 @@ class SimulationFile(dict):
     @globbing
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the 
-        one by ``target``.
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
 
         Parameters
         ----------
         source : str
-            key to retrieve the source from the file dictionary. Possible options: 
-            ``computer``, ``work``, ``exp_tree``, ``run_tree``
+            key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
         target : str
-            key to retrieve the target from the file dictionary. Possible options: 
-            ``computer``, ``work``, ``exp_tree``, ``run_tree``
+            key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
 
         Returns
         -------
@@ -482,13 +468,11 @@ class SimulationFile(dict):
         """
         if source not in self.locations:
             raise ValueError(
-                "Source is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
         if target not in self.locations:
             raise ValueError(
-                "Target is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
             )
         # full paths: directory path / file name
         source_path = self[f"absolute_path_in_{source}"]
@@ -527,13 +511,11 @@ class SimulationFile(dict):
         """
         if source not in self.locations:
             raise ValueError(
-                "Source is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
         if target not in self.locations:
             raise ValueError(
-                "Target is incorrectly defined, and needs to be in"
-                f" {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
             )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
@@ -594,8 +576,7 @@ class SimulationFile(dict):
         """
         if datestamp_method not in self._allowed_datestamp_methods:
             raise ValueError(
-                "The datestamp_method must be defined as one of never, always,"
-                " or avoid_overwrite"
+                "The datestamp_method must be defined as one of never, always, or avoid_overwrite"
             )
 
     def _check_datestamp_format_is_allowed(self, datestamp_format):
@@ -604,8 +585,7 @@ class SimulationFile(dict):
         """
         if datestamp_format not in self._allowed_datestamp_formats:
             raise ValueError(
-                "The datestamp_format must be defined as one of"
-                " check_from_filename or append"
+                "The datestamp_format must be defined as one of check_from_filename or append"
             )
 
     def _resolve_abs_paths(self) -> None:
@@ -636,9 +616,7 @@ class SimulationFile(dict):
             if key == "computer" and path is None:
                 self[f"absolute_path_in_{key}"] = None
             else:
-                self[f"absolute_path_in_{key}"] = path.joinpath(
-                    self[f"name_in_{key}"]
-                )
+                self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
     def _path_type(self, path: pathlib.Path) -> FileTypes:
         """
@@ -664,16 +642,14 @@ class SimulationFile(dict):
         if not isinstance(path, (str, pathlib.Path)):
             datatype = type(path).__name__
             raise TypeError(
-                f"Path ``{path}`` has an incompatible datatype ``{datatype}``."
-                " str or pathlib.Path is expected"
+                f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected"
             )
 
         if isinstance(path, str):
             path = pathlib.Path(path)
 
         # NOTE: is_symlink() needs to come first because it is also a is_file()
-        # NOTE: pathlib.Path().exists() also checks is the target of a symbolic 
-        # link exists or not
+        # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
             return FileTypes.BROKEN_LINK
         elif not path.exists():
@@ -743,8 +719,8 @@ class SimulationFile(dict):
     @staticmethod
     def wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
-        Checks for syntax mistakes. If any were found, it notifies the user 
-        about these errors in the syntax using ``esm_parser.error``.
+        Checks for syntax mistakes. If any were found, it notifies the user about these
+        errors in the syntax using ``esm_parser.error``.
 
         Parameters
         ----------
@@ -785,8 +761,7 @@ class SimulationFile(dict):
         Returns
         -------
         glob_paths : list
-            List of paths found matching the globbing case for the ``location``
-            pattern
+            List of paths found matching the globbing case for the ``location`` pattern
         """
         absolute_path_in_location = str(self[f"absolute_path_in_{location}"])
         glob_paths = glob.glob(absolute_path_in_location)
@@ -795,7 +770,7 @@ class SimulationFile(dict):
         if len(glob_paths) == 0:
             user_error(
                 "Globbing",
-                "No files found for the globbing pattern "
+                f"No files found for the globbing pattern "
                 f"``{absolute_path_in_location}``.",
             )
 
@@ -818,11 +793,7 @@ class SimulationFile(dict):
         missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
         this_filedict = copy.deepcopy(self._original_filedict)
-        self.input_file_types = input_file_types = [
-            "config",
-            "forcing",
-            "input",
-        ]
+        self.input_file_types = input_file_types = ["config", "forcing", "input"]
         self.output_file_types = output_file_types = [
             "analysis",
             "couple",
@@ -837,18 +808,18 @@ class SimulationFile(dict):
         if "type" not in self.keys():
             error_text = (
                 f"{error_text}"
-                "- the ``type`` variable is missing. Please define a ``type`` "
+                f"- the ``type`` variable is missing. Please define a ``type`` "
                 f"({types_text})\n"
             )
             missing_vars = (
-                f"{missing_vars}    ``type``:"
-                " forcing/input/restart/outdata/...\n"
+                f"{missing_vars}    ``type``: forcing/input/restart/outdata/...\n"
             )
         elif self["type"] not in self.all_model_filetypes:
             error_text = (
-                f"{error_text}- ``{self['type']}`` is not a supported ``type``"
-                f" (``files.{self.name}.type``), please choose one of the"
-                f" following types: {types_text}\n"
+                f"{error_text}"
+                f"- ``{self['type']}`` is not a supported ``type`` "
+                f"(``files.{self.name}.type``), please choose one of the following "
+                f"types: {types_text}\n"
             )
             this_filedict["type"] = f"``{this_filedict['type']}``"
 
@@ -857,10 +828,11 @@ class SimulationFile(dict):
             and self.get("type") in input_file_types
         ):
             error_text = (
-                f"{error_text}- the ``path_in_computer`` variable is missing."
-                " Please define a ``path_in_computer`` (i.e. the path to the"
-                " file excluding its name). NOTE: this is only required for"
-                f" {', '.join(input_file_types)} file types\n"
+                f"{error_text}"
+                f"- the ``path_in_computer`` variable is missing. Please define a "
+                f"``path_in_computer`` (i.e. the path to the file excluding its name)."
+                f" NOTE: this is only required for {', '.join(input_file_types)} file "
+                f"types\n"
             )
             missing_vars = (
                 f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
@@ -871,41 +843,34 @@ class SimulationFile(dict):
             and self.get("type") in input_file_types
         ):
             error_text = (
-                f"{error_text}- the ``name_in_computer`` variable is missing."
-                " Please define a ``name_in_computer`` (i.e. name of the file"
-                " in the work folder). NOTE: this is only required for"
-                f" {', '.join(input_file_types)} file types\n"
+                f"{error_text}"
+                f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(input_file_types)} file types\n"
             )
-            missing_vars = (
-                f"{missing_vars}    ``name_in_computer``:"
-                " <name_of_file_in_computer_dir>\n"
-            )
+            missing_vars = f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
 
-        if (
-            "name_in_work" not in self.keys()
-            and self.get("type") in output_file_types
-        ):
+        if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
             error_text = (
-                f"{error_text}- the ``name_in_work`` variable is missing."
-                " Please define a ``name_in_work`` (i.e. name of the file in"
-                " the work folder). NOTE: this is only required for"
-                f" {', '.join(output_file_types)} file types\n"
+                f"{error_text}"
+                f"- the ``name_in_work`` variable is missing. Please define a ``name_in_work`` "
+                f"(i.e. name of the file in the work folder). NOTE: this is only required for "
+                f"{', '.join(output_file_types)} file types\n"
             )
             missing_vars = (
-                f"{missing_vars}    ``name_in_work``:"
-                " <name_of_file_in_work_dir>\n"
+                f"{missing_vars}    ``name_in_work``: <name_of_file_in_work_dir>\n"
             )
 
         missing_vars = (
-            "Please, complete/correct the following vars for your file:\n\n"
+            f"Please, complete/correct the following vars for your file:\n\n"
             f"{self.pretty_filedict(this_filedict)}"
             f"{missing_vars}"
         )
 
         if error_text:
             error_text = (
-                f"The file dictionary ``{self.name}`` is missing relevant"
-                f" information or is incorrect:\n{error_text}"
+                f"The file dictionary ``{self.name}`` is missing relevant information "
+                f"or is incorrect:\n{error_text}"
             )
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
@@ -916,11 +881,10 @@ class SimulationFile(dict):
         ):
             user_error(
                 "File Dictionaries",
-                "The path defined for"
-                f" ``{self.component}.files.{self.name}.path_in_computer`` is"
-                f" not absolute (``{self.path_in_computer}``). Please, always"
-                " define an absolute path for the ``path_in_computer``"
-                " variable.",
+                "The path defined for "
+                f"``{self.component}.files.{self.name}.path_in_computer`` is not "
+                f"absolute (``{self.path_in_computer}``). Please, always define an "
+                "absolute path for the ``path_in_computer`` variable.",
             )
 
     def _check_source_and_target(
@@ -956,10 +920,7 @@ class SimulationFile(dict):
         # ------
         # Source does not exist
         if source_path_type == FileTypes.NOT_EXISTS:
-            err_msg = (
-                f"Unable to perform file operation. Source ``{source_path}``"
-                " does not exist!"
-            )
+            err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
             raise FileNotFoundError(err_msg)
 
         # Target already exists
@@ -967,27 +928,18 @@ class SimulationFile(dict):
             os.path.exists(target_path) or target_path_type == FileTypes.LINK
         )
         if target_exists:
-            err_msg = (
-                f"Unable to perform file operation. Target ``{target_path}``"
-                " already exists"
-            )
+            err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
             raise FileExistsError(err_msg)
 
         # Target parent directory does not exist
         if not target_path.parent.exists():
             # TODO: we might consider creating it (Miguel)
-            err_msg = (
-                "Unable to perform file operation. Parent directory of the"
-                f" target ``{target_path}`` does not exist"
-            )
+            err_msg = f"Unable to perform file operation. Parent directory of the target ``{target_path}`` does not exist"
             raise FileNotFoundError(err_msg)
 
         # if source is a broken link. Ie. pointing to a non-existing file
         if source_path_type == FileTypes.BROKEN_LINK:
-            err_msg = (
-                f"Unable to create symbolic link: ``{source_path}`` points to a"
-                f" broken path: {source_path.resolve()}"
-            )
+            err_msg = f"Unable to create symbolic link: ``{source_path}`` points to a broken path: {source_path.resolve()}"
             raise FileNotFoundError(err_msg)
 
         return True

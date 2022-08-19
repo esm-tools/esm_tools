@@ -647,7 +647,8 @@ def test_wild_card_check():
 
 def test_wild_card_check_fails():
     """
-    Tests that, when given an incorrect wildcard pattern, a ``user_error`` is reported
+    Tests that, when given an incorrect wildcard pattern (more wildcards in source than
+    in target), a ``user_error`` is reported
     """
     source_name = "a_wild_card*name*.txt"
     target_name = "another_wild_cardnewname*.txt1"

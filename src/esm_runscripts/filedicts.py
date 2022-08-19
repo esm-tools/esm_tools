@@ -467,7 +467,7 @@ class SimulationFile(dict):
     def find_globbing_files(self, location : str) -> list:
         """
         Lists the files matching the globbing path of the given ``location``, and
-        notifies the user if none were found, via ``esm_parser.error``.
+        notifies the user if none were found, via ``esm_parser.user_error``.
 
         Parameters
         ----------

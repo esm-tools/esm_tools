@@ -15,10 +15,10 @@ import os
 import pathlib
 import shutil
 from enum import Enum, auto
-import yaml
-from typing import AnyStr, Tuple, Type, Union
+from typing import Any, AnyStr, Tuple, Type, Union
 
 import dpath.util
+import yaml
 from loguru import logger
 
 from esm_parser import ConfigSetup, user_error
@@ -88,6 +88,43 @@ def _allowed_to_be_missing(method):
     return inner_method
 
 
+def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
+    """
+    Checks if a particular file has all elements of a particular date in its name.
+
+    Parameters
+    ----------
+    fname : str
+        The name of the file to check
+    date : esm_calendar.Date
+        The date to be checked against
+    reqs : list of str
+        A list of ``strftime`` compliant strings to determine which elements of
+        the date to check. Compatible with %Y %m %d %H %M %S (year, month, day,
+        hour, minute, second)
+
+    Returns
+    -------
+    bool :
+        True if all elements appear in the filename, False otherwise.
+
+    """
+    date_attrs = {
+        "%Y": "syear",
+        "%m": "smonth",
+        "%d": "sday",
+        "%H": "shour",
+        "%M": "sminute",
+        "%S": "ssecond",
+    }
+    required_attrs = [getattr(date, v) for k, v in date_attrs.items() if k in reqs]
+    # all(attr in fname for attr in required_attrs)
+    for attr in required_attrs:
+        if attr in fname:
+            fname = fname.replace(attr, "checked", 1)
+    return fname.count("checked") == len(reqs)
+
+
 def globbing(method):
     """
     Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, that
@@ -108,6 +145,7 @@ def globbing(method):
     method : method
         If no globbing is needed, returns the method as it was given originally.
     """
+
     @functools.wraps(method)
     def inner_method(self, source, target, *args, **kwargs):
         method_name = method.__name__
@@ -126,7 +164,10 @@ def globbing(method):
             glob_source_paths = self.find_globbing_files(source)
 
             # Extract globbing source names
-            glob_source_names = [pathlib.Path(glob_source_path).name for glob_source_path in glob_source_paths]
+            glob_source_names = [
+                pathlib.Path(glob_source_path).name
+                for glob_source_path in glob_source_paths
+            ]
 
             # Solve the globbing target names
             glob_target_names = []
@@ -157,7 +198,6 @@ def globbing(method):
     return inner_method
 
 
-
 class SimulationFile(dict):
     """
     Describes a file used within a ESM Simulation.
@@ -186,7 +226,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config: dict, attrs_address: dict):
+    def __init__(self, full_config: dict, attrs_address: str):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -220,11 +260,17 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
+        self._sim_date = full_config["general"][
+            "current_date"
+        ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
         self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
-        self.component = component = attrs_address.split(".")[0]
+        self.component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
         self.path_in_computer = self.get("path_in_computer")
+        self._datestamp_method = self.get(
+            "datestamp_method", "avoid_overwrite"
+        )  # This is the old default behaviour
         if self.path_in_computer:
             self.path_in_computer = pathlib.Path(self.path_in_computer)
 
@@ -245,6 +291,43 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
+    ##############################################################################################
+    # Overrides of standard dict methods
+    ##############################################################################################
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Checks when changing dot attributes for disallowed values"""
+        if name == "datestamp_format":
+            self._check_datestamp_format_is_allowed(value)
+        if name == "datestamp_method":
+            self._check_datestamp_method_is_allowed(value)
+        return super().__setattr__(name, value)
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """Checks for changing with sim_file['my_key'] = 'new_value'"""
+        if key == "datestamp_format":
+            self._check_datestamp_format_is_allowed(value)
+        if key == "datestamp_method":
+            self._check_datestamp_method_is_allowed(value)
+        return super().__setitem__(key, value)
+
+    def update(self, *args, **kwargs):
+        """
+        Standard dictionary update method, enhanced by additional safe-guards
+        for particular values.
+        """
+        for k, v in dict(*args, **kwargs).items():
+            if k == "datestamp_format":
+                self._check_datestamp_format_is_allowed(v)
+            if k == "datestamp_method":
+                self._check_datestamp_method_is_allowed(v)
+            self[k] = v
+
+    ##############################################################################################
+
+    ##############################################################################################
+    # Object Properities
+    ##############################################################################################
     def _complete_file_names(self):
         """
         Complete missing names in the file with the default name, depending whether
@@ -271,6 +354,38 @@ class SimulationFile(dict):
         """
         return self.get("allowed_to_be_missing", False)
 
+    @property
+    def datestamp_method(self):
+        """
+        Defines which datestamp_method shall be used when possibly including
+        date stamps to the file. Valid choices are "never", "always",
+        "avoid_overwrite".
+        """
+        return self._datestamp_method
+
+    @datestamp_method.setter
+    def datestamp_method(self, new_attr_value):
+        """
+        Sets a new value for datestamp method.
+        """
+        # NOTE(PG): The checks could go here
+        self._datestamp_method = new_attr_value
+
+    @property
+    def datestamp_format(self):
+        """
+        Defines which datestamp_format shall be used when possibly including
+        date stamps to the file. Valid choices are "check_from_filename" and
+        "append".
+        """
+        datestamp_format = self.get(
+            "datestamp_format", "append"
+        )  # This is the old default behaviour
+        return datestamp_format
+
+    ##############################################################################################
+    # Main Methods
+    ##############################################################################################
     @globbing
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
@@ -291,10 +406,20 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # general checks
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+
+        # General Checks
         # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
@@ -307,8 +432,8 @@ class SimulationFile(dict):
         try:
             copy_func(source_path, target_path)
             logger.success(f"Copied {source_path} --> {target_path}")
-        except Exception as error:
-            raise Exception(
+        except IOError as error:
+            raise IOError(
                 f"Unable to copy {source_path} to {target_path}\n\n"
                 f"Exception details:\n{error}"
             )
@@ -316,7 +441,7 @@ class SimulationFile(dict):
     @globbing
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``. 
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
 
         Parameters
         ----------
@@ -341,19 +466,34 @@ class SimulationFile(dict):
         FileExistsError
             - Target path already exists
         """
+        if source not in self.locations:
+            raise ValueError(
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         # full paths: directory path / file name
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # general checks
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+        # General Checks
         # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
-        if os.path.isdir(target_path):
-            err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
-            raise OSError(err_msg)
-
-        os.symlink(source_path, target_path)
+        try:
+            os.symlink(source_path, target_path)
+        except IOError as error:
+            raise IOError(
+                f"Unable to link {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
+            )
 
     @globbing
     @_allowed_to_be_missing
@@ -373,10 +513,19 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # general checks
+        # Datestamps
+        if self.datestamp_method == "always":
+            target_path = self._always_datestamp(target_path)
+        if self.datestamp_method == "avoid_overwrite":
+            target_path = self._avoid_override_datestamp(target_path)
+        # General Checks
         # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
@@ -385,10 +534,58 @@ class SimulationFile(dict):
             source_path.rename(target_path)
             logger.success(f"Moved {source_path} --> {target_path}")
         except IOError as error:
-            # NOTE(PG): Re-raise IOError with our own message:
             raise IOError(
                 f"Unable to move {source_path} to {target_path}\n\n"
                 f"Exception details:\n{error}"
+            )
+
+    _allowed_datestamp_methods = {"never", "always", "avoid_overwrite"}
+    """
+    Set containing the allowed datestamp methods which can be chosen from.
+
+    Notes on possible datestamp methods
+    -----------------------------------
+    never : str
+        This will never add a datestamp to a file. **WARNING** this will
+        cause you to possibly overwrite files.
+    always : str
+        This will always add a datestamp to a file, even if the canonical
+        target name would not suggest one.
+    avoid_overwrite : str
+        This will add a datestamp at the end of the file, if the during the
+        mv/cp/ln operation the file would be identically named.
+    """
+
+    _allowed_datestamp_formats = {"check_from_filename", "append"}
+    """
+    Set containing the allowed datestamp formats which can be chosen from.
+
+    Notes on possible datestamp formats
+    -----------------------------------
+    check_from_filename : str
+        This option will add a datestamp to a file, if the year, month, and day
+        cannot be extracted from the standard declared filename.
+    append : str
+        This will add a datestamp at the end of the file, regardless of if it
+        can be extracted from the file or not.
+    """
+
+    def _check_datestamp_method_is_allowed(self, datestamp_method):
+        """
+        Ensures that the datestamp method is in the defined valid set.
+        """
+        if datestamp_method not in self._allowed_datestamp_methods:
+            raise ValueError(
+                "The datestamp_method must be defined as one of never, always, or avoid_overwrite"
+            )
+
+    def _check_datestamp_format_is_allowed(self, datestamp_format):
+        """
+        Ensures that the datestamp format is in the defined valid set.
+        """
+        if datestamp_format not in self._allowed_datestamp_formats:
+            raise ValueError(
+                "The datestamp_format must be defined as one of check_from_filename or append"
             )
 
     def _resolve_abs_paths(self) -> None:
@@ -406,7 +603,7 @@ class SimulationFile(dict):
         """
         self.locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
-            "computer": self.path_in_computer, # Already Path type from _init_
+            "computer": self.path_in_computer,  # Already Path type from _init_
             "exp_tree": pathlib.Path(
                 self._config[self.component][f"experiment_{self['type']}_dir"]
             ),
@@ -416,7 +613,7 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            if key=="computer" and path==None:
+            if key == "computer" and path == None:
                 self[f"absolute_path_in_{key}"] = None
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
@@ -467,7 +664,59 @@ class SimulationFile(dict):
             # probably, this will not happen
             raise TypeError(f"{path} can not be identified")
 
-    @staticmethod 
+    def _always_datestamp(self, fname):
+        """
+        Method called when ``always`` is the ``datestamp_method.
+
+        Appends the datestamp in any case if ``datestamp_format`` is
+        ``append``. Appends the datestamp only if it is not obviously in the
+        filename if the ``datestamp_format`` is ``check_from_filename``. Only
+        appends to files or links, not directories.
+
+        Parameters
+        ----------
+        fname : pathlib.Path
+            The file who's name should be modified.
+
+        Returns
+        -------
+        pathlib.Path
+            A modified file with an added date stamp.
+        """
+        if fname.is_dir():
+            return fname
+        if self.datestamp_format == "append":
+            return pathlib.Path(f"{fname}_{self._sim_date}")
+        if self.datestamp_format == "check_from_filename":
+            if _fname_has_date_stamp_info(fname, self._sim_date):
+                return fname
+            else:
+                return pathlib.Path(f"{fname}_{self._sim_date}")
+
+    def _avoid_override_datestamp(self, target: pathlib.Path) -> pathlib.Path:
+        """
+        If source and target are identical, adds the date stamp to the target.
+
+        This method is used in the case that the object's attribute
+        ``datestamp_method`` is set to ``avoid_overwrite``, and is called
+        before the checks of each of ln, cp, and mv.
+
+        Parameters
+        ----------
+        target : pathlib.Path
+
+        Returns
+        -------
+        pathlib.Path :
+            The new target that can be used
+        """
+        if target.exists() and not target.is_dir():
+            if self.datestamp_format == "append":
+                target = pathlib.Path(f"{target}_{self._sim_date}")
+            # The other case ("check_from_filename") is meaningless?
+        return target
+
+    @staticmethod
     def wild_card_check(source_pattern: list, target_pattern: list) -> True:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
@@ -499,7 +748,7 @@ class SimulationFile(dict):
 
         return True
 
-    def find_globbing_files(self, location : str) -> list:
+    def find_globbing_files(self, location: str) -> list:
         """
         Lists the files matching the globbing path of the given ``location``, and
         notifies the user if none were found, via ``esm_parser.user_error``.
@@ -518,11 +767,11 @@ class SimulationFile(dict):
         glob_paths = glob.glob(absolute_path_in_location)
 
         # Check that there are any source files available
-        if len(glob_paths)==0:
+        if len(glob_paths) == 0:
             user_error(
                 "Globbing",
                 f"No files found for the globbing pattern "
-                f"``{absolute_path_in_location}``."
+                f"``{absolute_path_in_location}``.",
             )
 
         return glob_paths
@@ -546,7 +795,14 @@ class SimulationFile(dict):
         this_filedict = copy.deepcopy(self._original_filedict)
         self.input_file_types = input_file_types = ["config", "forcing", "input"]
         self.output_file_types = output_file_types = [
-            "analysis", "couple", "log", "mon", "outdata", "restart", "viz", "ignore"
+            "analysis",
+            "couple",
+            "log",
+            "mon",
+            "outdata",
+            "restart",
+            "viz",
+            "ignore",
         ]
 
         if "type" not in self.keys():
@@ -567,7 +823,10 @@ class SimulationFile(dict):
             )
             this_filedict["type"] = f"``{this_filedict['type']}``"
 
-        if "path_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "path_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``path_in_computer`` variable is missing. Please define a "
@@ -579,16 +838,17 @@ class SimulationFile(dict):
                 f"{missing_vars}    ``path_in_computer``: <path_to_file_dir>\n"
             )
 
-        if "name_in_computer" not in self.keys() and self.get("type") in input_file_types:
+        if (
+            "name_in_computer" not in self.keys()
+            and self.get("type") in input_file_types
+        ):
             error_text = (
                 f"{error_text}"
                 f"- the ``name_in_computer`` variable is missing. Please define a ``name_in_computer`` "
                 f"(i.e. name of the file in the work folder). NOTE: this is only required for "
                 f"{', '.join(input_file_types)} file types\n"
             )
-            missing_vars = (
-                f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
-            )
+            missing_vars = f"{missing_vars}    ``name_in_computer``: <name_of_file_in_computer_dir>\n"
 
         if "name_in_work" not in self.keys() and self.get("type") in output_file_types:
             error_text = (
@@ -615,7 +875,10 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if self.path_in_computer is not None and not self.path_in_computer.is_absolute():
+        if (
+            self.path_in_computer is not None
+            and not self.path_in_computer.is_absolute()
+        ):
             user_error(
                 "File Dictionaries",
                 "The path defined for "

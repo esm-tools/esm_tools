@@ -104,34 +104,6 @@ def simulation_file(fs, config_tuple):
     yield fake_simulation_file
 
 
-def test_example(fs):
-    # Make a fake config:
-    config = """
-    general:
-        base_dir: /some/dummy/location/
-        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
-    echam:
-        files:
-            jan_surf:
-                name: ECHAM Jan Surf File
-                path_in_computer: /work/ollie/pool/ECHAM
-                name_in_computer: T63CORE2_jan_surf.nc
-                name_in_work: unit.24
-                type: input
-        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
-    """
-    date = esm_calendar.Date("2000-01-01T00:00:00")
-    config = yaml.safe_load(config)
-    config["general"]["current_date"] = date
-    # Create some fake files and directories you might want in your test
-    fs.create_file("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
-    fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")
-    # This module also have functions for link files, globbing, etc.
-    config_out = esm_runscripts.filedicts.copy_files(config)
-    assert os.path.exists("/some/dummy/location/expid/run_18500101-18501231/work/")
-    assert os.path.exists("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
-
-
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
@@ -1068,3 +1040,40 @@ def test_globbing_ln(fs):
 
     for nf in expected_new_paths:
         assert os.path.exists(nf)
+
+def test_makedirs_in_name(fs):
+    """Tests for creating the subfolders included in the target name"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            ICMGG:
+                name_in_work: ICMGG_input_expid+in_work
+                name_in_exp_tree: out/date/folder/ICMGG_input_expid
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+
+    fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f"ICMGG_input_expid+in_work"))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    #config["oifs"]["experiment_outdata_dir"] = "/work/ollie/pgierz/some_exp/input/oif" 
+
+    expected_new_path = Path(config["oifs"]["experiment_outdata_dir"]).joinpath(
+        "out/date/folder/ICMGG_input_expid"
+    )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.ICMGG")
+    sim_file.cp("work", "exp_tree")
+
+    assert os.path.exists(expected_new_path)
+

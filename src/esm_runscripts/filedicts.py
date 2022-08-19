@@ -1,5 +1,5 @@
 """
-The file-dictionary implementation
+This module contains the description of a SimulationFile.
 
 Developer Notes
 ---------------
@@ -14,18 +14,27 @@ import glob
 import os
 import pathlib
 import shutil
+import sys
 from enum import Enum, auto
 from typing import Any, AnyStr
 
 import dpath.util
 import yaml
+from esm_parser import ConfigSetup, user_error
 from loguru import logger
 
-from esm_parser import ConfigSetup, user_error
-
+logger.remove()
+LEVEL = "ERROR"  # "WARNING"  # "INFO"  # "DEBUG"
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
+logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 
 # Enumeration of file types
 class FileTypes(Enum):
+    """
+    Describes which type a particular file might have, e.g. ``FILE``,
+    ``NOT_EXISTS``, ``BROKEN_LINK``.
+    """
+
     FILE = auto()  # ordinary file
     DIR = auto()  # directory
     LINK = auto()  # symbolic link
@@ -202,6 +211,38 @@ class SimulationFile(dict):
     """
     Describes a file used within a ESM Simulation.
 
+    A ``SimulationFile`` object describes one particular file used within an
+    ``esm-tools`` run. This description is similar to a standard Python
+    dictionary. Beyond the standard dictionary methods and attributes, there
+    are a variety of attributes that describe how the file should behave, as
+    well as a few additional methods you can use to relocate the file around on
+    the system. Please see the detailed documentation on each of the methods
+    for more specifics, but in summary, a ``SimulationFile`` has the following
+    additional functions::
+
+        >>> sim_file = SimulationFile(...)  # doctest: +SKIP
+        >>> sim_file.mv("computer", "work")  # doctest: +SKIP
+        >>> sim_file.ln("work", "run_tree")  # doctest: +SKIP
+        >>> sim_file.cp("run_tree", "exp_tree")  # doctest: +SKIP
+
+    You get extra functions for moving, copying, or linking a file from one
+    location to another. Location keys are desccribed in detail in the Notes
+    section.
+
+    Furthermore, there are a few attributes that you should be aware of. These
+    include:
+
+    * ``name`` : A human readable name for the file.
+    * ``allowed_to_be_missing`` : A ``bool`` value to set a certain file as
+      allowed to be missing or not. in case it is, the cp/ln/mv command will not
+      fail if the original file is not found.
+    * ``datestamp_method`` : Sets how a datestamp should be added. See
+      ``_allowed_datestamp_methods`` for more information.
+    * ``datestamp_format`` : Stes how a datestamp should be formatted. See
+      ``_allowed_datestamp_methods`` for more information.
+
+    Example
+    -------
     Given a config, you should be able to use this in YAML::
 
         $ cat dummy_config.yaml
@@ -224,6 +265,22 @@ class SimulationFile(dict):
     You could then copy the file to the experiment folder::
 
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
+
+    Notes
+    -----
+    A file can be located in one of these categories (``LOCATION_KEYS``):
+    - computer: pool/source directory (for input files)
+    - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
+    - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
+    - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
+
+    LOCATION_KEY is one of the strings defined in LOCATION_KEY list
+    - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+      - eg. name_in_computer: T63CORE2_jan_surf.nc
+      - eg. name_in_work: unit.24
+    - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
+      - eg. absolute_path_in_run_tree:
+      - /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
     """
 
     def __init__(self, full_config: dict, attrs_address: str):
@@ -237,22 +294,6 @@ class SimulationFile(dict):
             The full simulation configuration
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
-
-        Note
-        ----
-        A file can be located in one of these categories (``LOCATION_KEYS``):
-        - computer: pool/source directory (for input files)
-        - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
-        - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
-        - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
-
-        LOCATION_KEY is one of the strings defined in LOCATION_KEY list
-        - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
-          - eg. name_in_computer: T63CORE2_jan_surf.nc
-          - eg. name_in_work: unit.24
-        - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
-          - eg. absolute_path_in_run_tree:
-          - /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
         """
         attrs_dict = dpath.util.get(
             full_config, attrs_address, separator=".", default={}
@@ -260,10 +301,10 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
+        self.attrs_address = attrs_address
         self._sim_date = full_config["general"][
             "current_date"
         ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
-        self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
         self.component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
@@ -294,6 +335,10 @@ class SimulationFile(dict):
     ##############################################################################################
     # Overrides of standard dict methods
     ##############################################################################################
+
+    def __str__(self):
+        address = " -> ".join(self.attrs_address.split("."))
+        return address
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""
@@ -413,6 +458,9 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self._makedirs_in_name(target)
+
         # Datestamps
         if self.datestamp_method == "always":
             target_path = self._always_datestamp(target_path)
@@ -420,7 +468,6 @@ class SimulationFile(dict):
             target_path = self._avoid_override_datestamp(target_path)
 
         # General Checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Actual copy
@@ -431,7 +478,7 @@ class SimulationFile(dict):
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
-            logger.success(f"Copied {source_path} --> {target_path}")
+            logger.debug(f"Copied {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to copy {source_path} to {target_path}\n\n"
@@ -478,17 +525,21 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self._makedirs_in_name(target)
+
         # Datestamps
         if self.datestamp_method == "always":
             target_path = self._always_datestamp(target_path)
         if self.datestamp_method == "avoid_overwrite":
             target_path = self._avoid_override_datestamp(target_path)
+
         # General Checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         try:
             os.symlink(source_path, target_path)
+            logger.debug(f"Linked {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to link {source_path} to {target_path}\n\n"
@@ -520,19 +571,22 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self._makedirs_in_name(target)
+
         # Datestamps
         if self.datestamp_method == "always":
             target_path = self._always_datestamp(target_path)
         if self.datestamp_method == "avoid_overwrite":
             target_path = self._avoid_override_datestamp(target_path)
+
         # General Checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Perform the movement:
         try:
             source_path.rename(target_path)
-            logger.success(f"Moved {source_path} --> {target_path}")
+            logger.debug(f"Moved {source_path} --> {target_path}")
         except IOError as error:
             raise IOError(
                 f"Unable to move {source_path} to {target_path}\n\n"
@@ -651,8 +705,10 @@ class SimulationFile(dict):
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
+            logger.warning(f"Broken link detected: {path}")
             return FileTypes.BROKEN_LINK
         elif not path.exists():
+            logger.warning(f"File does not exist: {path}")
             return FileTypes.NOT_EXISTS
         elif path.is_symlink():
             return FileTypes.LINK
@@ -776,6 +832,34 @@ class SimulationFile(dict):
 
         return glob_paths
 
+    def _makedirs_in_name(self, name_type: str) -> None:
+        """
+        Creates subdirectories included in the ``name_in_<name_type>``, if any.
+
+        Raises
+        ------
+        FileNotFoundError
+            If ``self.locations[name_type]`` path does not exist
+        """
+        # Are there any subdirectories in ``name_in_<name_type>?
+        if "/" in self[f"name_in_{name_type}"]:
+            parent_path = self[f"absolute_path_in_{name_type}"].parent
+            # If the parent path does not exist check whether the file location
+            # exists
+            if not parent_path.exists():
+                location = self.locations[name_type]
+                if location.exists():
+                    # The location exists therefore the remaining extra directories
+                    # from the parent_path can be created
+                    os.makedirs(parent_path)
+                else:
+                    # The location does not exist, the role of this function is not
+                    # to create it, therefore, raise an error
+                    raise FileNotFoundError(
+                        f"Unable to perform file operation. Path for ``{name_type}`` "
+                        f"({location}) does not exist!"
+                    )
+
     def _check_file_syntax(self) -> None:
         """
         Checks for missing variables:
@@ -875,6 +959,16 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
+        """
+        Determines if the path for files stored in the computer (rather than
+        the experiment tree or the work folder) is an absolute path.
+
+        Raises
+        ------
+        user_error :
+            The user_error function will raises a sys.exit with a user message if the path for
+            the computer is not an absolute path.
+        """
         if (
             self.path_in_computer is not None
             and not self.path_in_computer.is_absolute()
@@ -950,26 +1044,31 @@ class SimulationFile(dict):
 
         Parameters
         ----------
-        dict
+        dict :
             A file dictionary
 
         Returns
         -------
-        str
+        str :
             A string in yaml format of the given file dictionary
         """
         return yaml.dump({"files": {self.name: filedict}})
 
 
-def copy_files(config: ConfigSetup) -> ConfigSetup:
-    """Copies files"""
-    # PG: No. We do not want this kind of general function. This is just to
-    # demonstrate how the test would work
-    return config
-
-
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
-    """Replaces former assemble() function"""
+    """
+    Runs all methods required to get files into their correct locations.
+
+    Parameters
+    ----------
+    config : ConfigSetup
+        The complete simulation configuration.
+
+    Returns
+    -------
+    config : ConfigSetup
+        The complete simulation configuration, potentially modified.
+    """
     # TODO: to be filled with functions
     # DONE: type annotation
     # DONE: basic unit test: test_resolve_file_movements

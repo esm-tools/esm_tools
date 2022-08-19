@@ -16,7 +16,7 @@ import pathlib
 import shutil
 import sys
 from enum import Enum, auto
-from typing import Any, AnyStr, Tuple, Type, Union
+from typing import Any, AnyStr
 
 import dpath.util
 import yaml
@@ -676,12 +676,12 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            if key == "computer" and path == None:
+            if key == "computer" and path is None:
                 self[f"absolute_path_in_{key}"] = None
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> int:
+    def _path_type(self, path: pathlib.Path) -> FileTypes:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
         doesn't, returns ``None``.
@@ -796,7 +796,7 @@ class SimulationFile(dict):
         self["name_in_work"] = self.get("name_in_work", default_name)
 
     @staticmethod
-    def _wild_card_check(source_pattern: list, target_pattern: list) -> True:
+    def wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
         errors in the syntax using ``esm_parser.error``.
@@ -820,8 +820,8 @@ class SimulationFile(dict):
                     "The wild card pattern of the source "
                     + f"``{source_pattern}`` does not match with the "
                     + f"target ``{target_pattern}``. Make sure the "
-                    + f"that the number of ``*`` are the same in both "
-                    + f"sources and targets."
+                    + "that the number of ``*`` are the same in both "
+                    + "sources and targets."
                 ),
             )
 
@@ -1006,7 +1006,7 @@ class SimulationFile(dict):
 
     def _check_source_and_target(
         self, source_path: pathlib.Path, target_path: pathlib.Path
-    ) -> None:
+    ) -> bool:
         """
         Performs common checks for file movements
 

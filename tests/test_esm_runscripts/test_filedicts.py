@@ -929,3 +929,36 @@ def test_globbing_ln(fs):
 
     for nf in expected_new_paths:
         assert os.path.exists(nf)
+
+def test_name_subfolders(fs):
+    """Tests for creating the subfolders included in the target name"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            ICMGG:
+                name_in_work: ICMGG_input_expid+in_work
+                name_in_exp_tree: out/date/folder/ICMGG_input_expid
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    config = yaml.safe_load(dummy_config)
+
+    fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f"ICMGG_input_expid+in_work"))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    expected_new_path = Path(config["oifs"]["experiment_outdata_dir"]).joinpath(
+        "out/date/folder/ICMGG_input_expid"
+    )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.ICMGG")
+    sim_file.cp("work", "exp_tree")
+
+    assert os.path.exists(expected_new_path)
+

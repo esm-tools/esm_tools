@@ -296,13 +296,13 @@ class SimulationFile(dict):
         # Checks
         self._check_path_in_computer_is_abs()
 
-    def __str__(self):
-        address = " -> ".join(self.attrs_address.split("."))
-        return address
-
     ##############################################################################################
     # Overrides of standard dict methods
     ##############################################################################################
+
+    def __str__(self):
+        address = " -> ".join(self.attrs_address.split("."))
+        return address
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""

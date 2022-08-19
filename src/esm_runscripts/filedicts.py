@@ -135,8 +135,10 @@ def globbing(method):
                 glob_dict[f"name_in_{target}"] = glob_target_name
                 glob_file = SimulationFile(glob_config, self.attrs_address)
                 # Use method
-                method = getattr(glob_file, method_name)
-        return method(self, source, target, *args, **kwargs)
+                this_method = getattr(glob_file, method_name)
+                this_method(source, target, *args, **kwargs)
+        else:
+            return method(self, source, target, *args, **kwargs)
 
     return inner_method
 

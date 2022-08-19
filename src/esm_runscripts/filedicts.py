@@ -423,7 +423,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # Create subfolders contained in ``name_in_{target}``
-        self.makedirs_in_name(target)
+        self._makedirs_in_name(target)
 
         # Datestamps
         if self.datestamp_method == "always":
@@ -490,7 +490,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # Create subfolders contained in ``name_in_{target}``
-        self.makedirs_in_name(target)
+        self._makedirs_in_name(target)
 
         # Datestamps
         if self.datestamp_method == "always":
@@ -536,7 +536,7 @@ class SimulationFile(dict):
         target_path = self[f"absolute_path_in_{target}"]
 
         # Create subfolders contained in ``name_in_{target}``
-        self.makedirs_in_name(target)
+        self._makedirs_in_name(target)
 
         # Datestamps
         if self.datestamp_method == "always":
@@ -796,7 +796,7 @@ class SimulationFile(dict):
 
         return glob_paths
 
-    def makedirs_in_name(self, name_type: str) -> None:
+    def _makedirs_in_name(self, name_type: str) -> None:
         """
         Creates subdirectories included in the ``name_in_<name_type>``, if any.
 

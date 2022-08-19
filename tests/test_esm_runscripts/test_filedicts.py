@@ -189,9 +189,13 @@ def test_path_type_detects_directory(simulation_file, fs):
     # check for directory
     output = simulation_file._path_type(simulation_file.locations["work"])
     assert output == filedicts.FileTypes.DIR
+# === end of the tests for _path_type() method
 
 
-def test_check_source_and_targets(simulation_file, fs):
+# ===
+# tests for SimulationFile._check_source_and_target() method
+# ===
+def test_check_source_and_targets_works_as_expected(simulation_file, fs):
     # successful return
     path_str = "/home/ollie/dural/test_dir"
     fs.create_dir(path_str)
@@ -200,6 +204,8 @@ def test_check_source_and_targets(simulation_file, fs):
     output = simulation_file._check_source_and_target(source_path, target_path)
     assert output == True
 
+
+def test_check_source_and_targets_raises_exception_on_incompatible_input_type(simulation_file, fs):
     # check incompatible types for file paths
     # TODO: when `_convert_to_path` was removed, these tests fail
     with pytest.raises(TypeError):
@@ -207,6 +213,7 @@ def test_check_source_and_targets(simulation_file, fs):
     with pytest.raises(TypeError):
         simulation_file._check_source_and_target(1234, 3.1415)
 
+def test_check_source_and_targets_raises_exception_on_nonexisting_directory(simulation_file, fs):
     # source does not exist
     source_path = Path("/this/does/not/exist")
     target_path = simulation_file.locations["work"]
@@ -218,6 +225,7 @@ def test_check_source_and_targets(simulation_file, fs):
     target_path = Path("/this/does/not/exist")
     with pytest.raises(FileNotFoundError):
         simulation_file._check_source_and_target(source_path, target_path)
+# === end of the tests for _path_type() method
 
 
 def test_allowed_to_be_missing_attr():

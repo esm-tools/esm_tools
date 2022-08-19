@@ -1055,13 +1055,6 @@ class SimulationFile(dict):
         return yaml.dump({"files": {self.name: filedict}})
 
 
-def copy_files(config):
-    """Copies files"""
-    # PG: No. We do not want this kind of general function. This is just to
-    # demonstrate how the test would work
-    return config
-
-
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     """
     Runs all methods required to get files into their correct locations.

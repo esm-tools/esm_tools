@@ -473,7 +473,7 @@ class SimulationFile(dict):
             # probably, this will not happen
             raise TypeError(f"{path} can not be identified")
 
-    @staticmethod 
+    @staticmethod
     def wild_card_check(source_pattern: list, target_pattern: list) -> True:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
@@ -533,14 +533,29 @@ class SimulationFile(dict):
 
         return glob_paths
 
-    def makedirs_in_name(self, name_type):
+    def makedirs_in_name(self, name_type: str) -> None:
+        """
+        Creates subdirectories included in the ``name_in_<name_type>``, if any.
+
+        Raises
+        ------
+        FileNotFoundError
+            If ``self.locations[name_type]`` path does not exist
+        """
+        # Are there any subdirectories in ``name_in_<name_type>?
         if "/" in self[f"name_in_{name_type}"]:
             parent_path = self[f"absolute_path_in_{name_type}"].parent
+            # If the parent path does not exist check whether the file location
+            # exists
             if not parent_path.exists():
                 location = self.locations[name_type]
                 if location.exists():
+                    # The location exists therefore the remaining extra directories
+                    # from the parent_path can be created
                     os.makedirs(parent_path)
                 else:
+                    # The location does not exist, the role of this function is not
+                    # to create it, therefore, raise an error
                     raise FileNotFoundError(
                         f"Unable to perform file operation. Path for ``{name_type}`` "
                         f"({location}) does not exist!"

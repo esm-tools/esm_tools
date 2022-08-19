@@ -930,7 +930,7 @@ def test_globbing_ln(fs):
     for nf in expected_new_paths:
         assert os.path.exists(nf)
 
-def test_name_subfolders(fs):
+def test_makedirs_in_name(fs):
     """Tests for creating the subfolders included in the target name"""
 
     dummy_config = """

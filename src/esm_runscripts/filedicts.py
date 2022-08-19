@@ -432,8 +432,8 @@ class SimulationFile(dict):
         else:
             raise Exception(f"Cannot identify the path's type of {path}")
 
-    @classmethod
-    def wild_card_check(self, source_pattern: list, target_pattern: list) -> True:
+    @staticmethod 
+    def wild_card_check(source_pattern: list, target_pattern: list) -> True:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
         errors in the syntax using ``esm_parser.error``.

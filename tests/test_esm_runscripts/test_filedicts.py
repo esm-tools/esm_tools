@@ -848,3 +848,223 @@ def test_fname_has_date_stamp_info():
     date = esm_calendar.Date("2000-01-01T00:00:00")
     assert filedicts._fname_has_date_stamp_info(fname, date)
     assert not filedicts._fname_has_date_stamp_info(fname2, date)
+
+
+def test_wild_card_check():
+    """Tests that wild card check is passed"""
+    source_name = "a_wild_card*name*.txt"
+    target_name = "another_wild_card*newname*.txt1"
+    source_pattern = source_name.split("*")
+    target_pattern = target_name.split("*")
+
+    assert esm_runscripts.filedicts.SimulationFile.wild_card_check(
+        source_pattern, target_pattern
+    )
+
+
+def test_wild_card_check_fails():
+    """
+    Tests that, when given an incorrect wildcard pattern (more wildcards in source than
+    in target), a ``user_error`` is reported
+    """
+    source_name = "a_wild_card*name*.txt"
+    target_name = "another_wild_cardnewname*.txt1"
+    source_pattern = source_name.split("*")
+    target_pattern = target_name.split("*")
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            esm_runscripts.filedicts.SimulationFile.wild_card_check(
+                source_pattern, target_pattern
+            )
+
+    # error needs to occur as the path is not absolute
+    assert any(["The wild card pattern of the source" in line for line in output])
+
+
+def test_find_globbing_files(fs):
+    """
+    Tests for files with the globbing pattern not found
+    """
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    # These files are incorrect since they do not have input_expid and instead have input_<NUMBER>
+    files = [
+        "input_11_DATE_12.nc",
+        "input_21_DATE_22.nc",
+        "input_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+
+    # Captures output (i.e. the user-friendly error)
+    with Capturing() as output:
+        with pytest.raises(SystemExit) as error:
+            sim_file.cp("work", "exp_tree")
+
+    # error needs to occur as the path is not absolute
+    assert any(["No files found for the globbing pattern" in line for line in output])
+
+
+def test_globbing_cp(fs):
+    """Tests globbing for copying"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    files = [
+        "input_expid_11_DATE_12.nc",
+        "input_expid_21_DATE_22.nc",
+        "input_expid_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    new_files = [
+        "new_input_expid_11_NEW_DATE_12.nc",
+        "new_input_expid_21_NEW_DATE_22.nc",
+        "new_input_expid_31_NEW_DATE_32.nc",
+    ]
+    expected_new_paths = []
+    for f in new_files:
+        expected_new_paths.append(
+            Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
+        )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file.cp("work", "exp_tree")
+
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)
+
+
+def test_globbing_mv(fs):
+    """Tests globbing for moving"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    files = [
+        "input_expid_11_DATE_12.nc",
+        "input_expid_21_DATE_22.nc",
+        "input_expid_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    new_files = [
+        "new_input_expid_11_NEW_DATE_12.nc",
+        "new_input_expid_21_NEW_DATE_22.nc",
+        "new_input_expid_31_NEW_DATE_32.nc",
+    ]
+    expected_new_paths = []
+    for f in new_files:
+        expected_new_paths.append(
+            Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
+        )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file.mv("work", "exp_tree")
+
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)
+
+
+def test_globbing_ln(fs):
+    """Tests globbing for linking"""
+
+    dummy_config = """
+    general:
+        thisrun_work_dir: /work/ollie/mandresm/awiesm/run_20010101-20010101/work/
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    oifs:
+        files:
+            oifsnc:
+                name_in_work: input_expid_*_DATE_*.nc
+                name_in_exp_tree: new_input_expid_*_NEW_DATE_*.nc
+                type: outdata
+        experiment_outdata_dir: /work/ollie/pgierz/some_exp/input/oifs
+        thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
+    """
+
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    files = [
+        "input_expid_11_DATE_12.nc",
+        "input_expid_21_DATE_22.nc",
+        "input_expid_31_DATE_32.nc",
+    ]
+    for f in files:
+        fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f))
+
+    fs.create_dir(config["oifs"]["experiment_outdata_dir"])
+
+    new_files = [
+        "new_input_expid_11_NEW_DATE_12.nc",
+        "new_input_expid_21_NEW_DATE_22.nc",
+        "new_input_expid_31_NEW_DATE_32.nc",
+    ]
+    expected_new_paths = []
+    for f in new_files:
+        expected_new_paths.append(
+            Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
+        )
+
+    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file.ln("work", "exp_tree")
+
+    for nf in expected_new_paths:
+        assert os.path.exists(nf)

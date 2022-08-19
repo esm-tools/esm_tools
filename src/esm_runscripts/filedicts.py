@@ -10,6 +10,7 @@ Developer Notes
 """
 import copy
 import functools
+import glob
 import os
 import pathlib
 import shutil
@@ -124,6 +125,79 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
     return fname.count("checked") == len(reqs)
 
 
+def globbing(method):
+    """
+    Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, that
+    enables globbing. If a ``*`` is found on the ``source`` or ``target`` the globbing
+    logic is activated, and consist of:
+    - run checks for globbing syntax
+    - check if any file matches the globbing pattern
+    - construct one instance of ``SimulationFile`` for each file matching the globbing
+    - run the ``method`` for that particular file
+
+    Parameters
+    ----------
+    method : method
+        The decorated method (``cp``, ``mv``, ``ln``)
+
+    Returns
+    -------
+    method : method
+        If no globbing is needed, returns the method as it was given originally.
+    """
+
+    @functools.wraps(method)
+    def inner_method(self, source, target, *args, **kwargs):
+        method_name = method.__name__
+        source_name = self[f"name_in_{source}"]
+        target_name = self[f"name_in_{target}"]
+
+        if "*" in source_name or "*" in target_name:
+            # Get wildcard patterns
+            source_pattern = source_name.split("*")
+            target_pattern = target_name.split("*")
+
+            # Check wild cards syntax
+            self.wild_card_check(source_pattern, target_pattern)
+
+            # Obtain source files
+            glob_source_paths = self.find_globbing_files(source)
+
+            # Extract globbing source names
+            glob_source_names = [
+                pathlib.Path(glob_source_path).name
+                for glob_source_path in glob_source_paths
+            ]
+
+            # Solve the globbing target names
+            glob_target_names = []
+            for glob_source_name in glob_source_names:
+                glob_target_name = glob_source_name
+                for sp, tp in zip(source_pattern, target_pattern):
+                    glob_target_name = glob_target_name.replace(sp, tp)
+                glob_target_names.append(glob_target_name)
+
+            # Loop through source files
+            for glob_source_name, glob_target_name in zip(
+                glob_source_names, glob_target_names
+            ):
+                # Create a new simulation file object for this specific glob file
+                glob_config = copy.deepcopy(self._config)
+                glob_dict = dpath.util.get(
+                    glob_config, self.attrs_address, separator=".", default={}
+                )
+                glob_dict[f"name_in_{source}"] = glob_source_name
+                glob_dict[f"name_in_{target}"] = glob_target_name
+                glob_file = SimulationFile(glob_config, self.attrs_address)
+                # Use method
+                this_method = getattr(glob_file, method_name)
+                this_method(source, target, *args, **kwargs)
+        else:
+            return method(self, source, target, *args, **kwargs)
+
+    return inner_method
+
+
 class SimulationFile(dict):
     """
     Describes a file used within a ESM Simulation.
@@ -189,6 +263,7 @@ class SimulationFile(dict):
         self._sim_date = full_config["general"][
             "current_date"
         ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
+        self.attrs_address = attrs_address
         self.name = attrs_address.split(".")[-1]
         self.component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
@@ -311,6 +386,7 @@ class SimulationFile(dict):
     ##############################################################################################
     # Main Methods
     ##############################################################################################
+    @globbing
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
         """
@@ -362,6 +438,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
+    @globbing
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
         """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
@@ -418,6 +495,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
+    @globbing
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
         """
@@ -638,7 +716,67 @@ class SimulationFile(dict):
             # The other case ("check_from_filename") is meaningless?
         return target
 
-    def _check_file_syntax(self):
+    @staticmethod
+    def wild_card_check(source_pattern: list, target_pattern: list) -> True:
+        """
+        Checks for syntax mistakes. If any were found, it notifies the user about these
+        errors in the syntax using ``esm_parser.error``.
+
+        Parameters
+        ----------
+        source_pattern : list
+            A list including the different pieces of the source name pattern
+        target_pattern : list
+            A list including the different pieces of the target name pattern
+
+        Returns
+        -------
+        True :
+            If no issues were found
+        """
+        if len(target_pattern) != len(source_pattern):
+            user_error(
+                "Wild card",
+                (
+                    "The wild card pattern of the source "
+                    + f"``{source_pattern}`` does not match with the "
+                    + f"target ``{target_pattern}``. Make sure the "
+                    + f"that the number of ``*`` are the same in both "
+                    + f"sources and targets."
+                ),
+            )
+
+        return True
+
+    def find_globbing_files(self, location: str) -> list:
+        """
+        Lists the files matching the globbing path of the given ``location``, and
+        notifies the user if none were found, via ``esm_parser.user_error``.
+
+        Parameters
+        ----------
+        location : str
+            The location string (``work``, ``computer``, ``exp_tree``, ``run_tree``)
+
+        Returns
+        -------
+        glob_paths : list
+            List of paths found matching the globbing case for the ``location`` pattern
+        """
+        absolute_path_in_location = str(self[f"absolute_path_in_{location}"])
+        glob_paths = glob.glob(absolute_path_in_location)
+
+        # Check that there are any source files available
+        if len(glob_paths) == 0:
+            user_error(
+                "Globbing",
+                f"No files found for the globbing pattern "
+                f"``{absolute_path_in_location}``.",
+            )
+
+        return glob_paths
+
+    def _check_file_syntax(self) -> None:
         """
         Checks for missing variables:
         - ``type``
@@ -648,7 +786,7 @@ class SimulationFile(dict):
 
         It also checks whether ``type``'s value is correct.
 
-        It notifies the user about this errors in the syntacm using
+        It notifies the user about these errors in the syntax using
         ``esm_parser.error``.
         """
         error_text = ""

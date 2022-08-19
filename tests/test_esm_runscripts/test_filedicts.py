@@ -210,7 +210,6 @@ def test_check_source_and_targets_works_as_expected(simulation_file, fs):
 
 def test_check_source_and_targets_raises_exception_on_incompatible_input_type(simulation_file, fs):
     # check incompatible types for file paths
-    # TODO: when `_convert_to_path` was removed, these tests fail
     with pytest.raises(TypeError):
         simulation_file._check_source_and_target(Path("/usr/bin"), {"foo": 1})
     with pytest.raises(TypeError):

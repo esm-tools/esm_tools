@@ -282,7 +282,7 @@ class SimulationFile(dict):
         # possible paths for files:
         location_keys = ["computer", "exp_tree", "run_tree", "work"]
         # initialize the locations and complete paths for all possible locations
-        self.locations = dict.fromkeys(location_keys, None)
+        self.locations = dict.fromkeys(location_keys, pathlib.Path("dev/null"))
         self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least
@@ -618,7 +618,7 @@ class SimulationFile(dict):
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> int:
+    def _path_type(self, path: pathlib.Path) -> FileTypes:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
         doesn't, returns ``None``.
@@ -717,7 +717,7 @@ class SimulationFile(dict):
         return target
 
     @staticmethod
-    def wild_card_check(source_pattern: list, target_pattern: list) -> True:
+    def wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
         errors in the syntax using ``esm_parser.error``.
@@ -889,7 +889,7 @@ class SimulationFile(dict):
 
     def _check_source_and_target(
         self, source_path: pathlib.Path, target_path: pathlib.Path
-    ) -> None:
+    ) -> bool:
         """
         Performs common checks for file movements
 
@@ -961,7 +961,7 @@ class SimulationFile(dict):
         return yaml.dump({"files": {self.name: filedict}})
 
 
-def copy_files(config):
+def copy_files(config: ConfigSetup) -> ConfigSetup:
     """Copies files"""
     # PG: No. We do not want this kind of general function. This is just to
     # demonstrate how the test would work

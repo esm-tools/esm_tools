@@ -438,7 +438,7 @@ class SimulationFile(dict):
 
         # if source is a broken link. Ie. pointing to a non-existing file
         if source_path_type == FileTypes.BROKEN_LINK:
-            err_msg = f"Unable to create symbolic link: `{source_path}` points to a broken path: {source_path.resolve()}"
+            err_msg = f"Unable to create symbolic link: ``{source_path}`` points to a broken path: {source_path.resolve()}"
             raise FileNotFoundError(err_msg)
 
         return True

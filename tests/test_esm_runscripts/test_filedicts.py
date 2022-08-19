@@ -171,6 +171,87 @@ def test_filedicts_basics(fs):
     assert sim_file.locations["computer"] == Path("/work/ollie/pool/ECHAM/T63")
 
 
+# ===
+# tests for SimulationFile._path_type() method
+# ===
+def test_path_type_raises_exception_on_incompatible_input(simulation_file, fs):
+    # check for incompatible type
+    with pytest.raises(TypeError):
+        output = simulation_file._path_type(12312312)
+
+
+def test_path_type_detects_non_existing_file(simulation_file, fs):
+    # check for non-existent directory / file
+    path = "/this/path/does/not/exist"
+    output = simulation_file._path_type(path)
+    assert output == filedicts.FileTypes.NOT_EXISTS
+
+
+def test_path_type_detects_symbolic_link(simulation_file, fs):
+    # check for link
+    mylink = "/tmp/mylink"
+    fs.create_symlink(mylink, simulation_file["absolute_path_in_computer"])
+    output = simulation_file._path_type(mylink)
+    assert output == filedicts.FileTypes.LINK
+
+
+def test_path_type_detects_file(simulation_file, fs):
+    # check for file
+    output = simulation_file._path_type(simulation_file["absolute_path_in_computer"])
+    assert output == filedicts.FileTypes.FILE
+
+
+def test_path_type_detects_directory(simulation_file, fs):
+    # check for directory
+    output = simulation_file._path_type(simulation_file.locations["work"])
+    assert output == filedicts.FileTypes.DIR
+
+
+# === end of the tests for _path_type() method
+
+
+# ===
+# tests for SimulationFile._check_source_and_target() method
+# ===
+def test_check_source_and_targets_works_as_expected(simulation_file, fs):
+    # successful return
+    path_str = "/home/ollie/dural/test_dir"
+    fs.create_dir(path_str)
+    source_path = simulation_file.locations["computer"]
+    target_path = Path(f"{path_str}/file.txt")
+    output = simulation_file._check_source_and_target(source_path, target_path)
+    assert output == True
+
+
+def test_check_source_and_targets_raises_exception_on_incompatible_input_type(
+    simulation_file, fs
+):
+    # check incompatible types for file paths
+    with pytest.raises(TypeError):
+        simulation_file._check_source_and_target(Path("/usr/bin"), {"foo": 1})
+    with pytest.raises(TypeError):
+        simulation_file._check_source_and_target(1234, 3.1415)
+
+
+def test_check_source_and_targets_raises_exception_on_nonexisting_directory(
+    simulation_file, fs
+):
+    # source does not exist
+    source_path = Path("/this/does/not/exist")
+    target_path = simulation_file.locations["work"]
+    with pytest.raises(FileNotFoundError):
+        simulation_file._check_source_and_target(source_path, target_path)
+
+    # target does not exist
+    source_path = simulation_file.locations["computer"]
+    target_path = Path("/this/does/not/exist")
+    with pytest.raises(FileNotFoundError):
+        simulation_file._check_source_and_target(source_path, target_path)
+
+
+# === end of the tests for check_source_and_target() method
+
+
 def test_allowed_to_be_missing_attr():
     """Ensures the property allowed_to_be_missing works correctly"""
     dummy_config = """
@@ -217,15 +298,15 @@ def test_allowed_to_be_missing_mv(fs):
     general:
         expid: expid
         base_dir: /some/dummy/location/
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
         exp_dir: "/work/ollie/pgierz/some_exp"
-        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
         experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
-        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20011231/input/echam
         files:
             human_readable_tag_001:
                 type: input
@@ -246,8 +327,45 @@ def test_allowed_to_be_missing_mv(fs):
     )
     sim_file.mv("computer", "work")
     assert not os.path.exists(
-        "/some/dummy/location/expid/run_18500101-18501231/work/foo"
+        "/work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo"
     )
+
+
+def test_allowed_to_be_missing_mv_if_exists(fs):
+    """Checks that a file which is allowed to be missing is still moved if it exists"""
+    dummy_config = """
+    general:
+        expid: expid
+        base_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+    computer:
+        pool_dir: "/work/ollie/pool"
+    echam:
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20011231/input/echam
+        files:
+            human_readable_tag_001:
+                type: input
+                allowed_to_be_missing: True
+                name_in_computer: foo
+                path_in_computer: /work/data/pool
+                name_in_work: foo
+                path_in_work: .
+                movement_type: move
+    """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    fs.create_dir("/work/data/pool")
+    fs.create_file("/work/data/pool/foo")
+    fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20011231/work")
+    sim_file = esm_runscripts.filedicts.SimulationFile(
+        config, "echam.files.human_readable_tag_001"
+    )
+    sim_file.mv("computer", "work")
+    assert os.path.exists("/work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo")
 
 
 def test_cp_file(fs):
@@ -386,7 +504,7 @@ def test_mv(fs):
 # + 1) check if function is callable
 # + 2) check if linking occurs
 # + 3) check for self pointing
-# + 4) check if target path is a directory and not a file
+# + 4) check if target path is a directory and not a file # <-- PG NO!!!
 # + 5) check if target file already exists or a symlink
 # + 6) check if source file does not exists
 # + 8) check if target directory does not exist
@@ -404,9 +522,16 @@ def test_ln_links_file_from_computer_to_work(simulation_file, fs):
     assert os.path.exists(file_path_in_work)
 
 
-def test_ln_raises_exception_when_pointing_to_itself(simulation_file, fs):
-    with pytest.raises(OSError):
-        simulation_file.ln("computer", "computer")
+def test_ln_raises_exception_when_source_is_a_broken_link(simulation_file, fs):
+    # create a symbolic link that points to a non-existing file
+    broken_path_str = "/this/does/not/exist"
+    link_str = "/tmp/broken_link"
+    fs.create_symlink(link_str, broken_path_str)
+    # overwrite the path in computer with the link to trigger the exception
+    simulation_file["absolute_path_in_computer"] = Path(link_str).absolute()
+
+    with pytest.raises(FileNotFoundError):
+        simulation_file.ln("computer", "work")
 
 
 def test_ln_raises_exception_when_target_is_a_directory_and_not_a_file(
@@ -422,6 +547,7 @@ def test_ln_raises_exception_when_target_path_exists(simulation_file, fs):
     file_path_in_work = simulation_file["absolute_path_in_work"]
     # create the target file so that it will raise an exception
     fs.create_file(file_path_in_work)
+    simulation_file.datestamp_method = "never"
 
     with pytest.raises(FileExistsError):
         simulation_file.ln("computer", "work")
@@ -562,46 +688,25 @@ def test_check_file_syntax_output():
     assert any([error_text in line for line in output])
 
 
-def test_check_path_in_computer_is_abs(fs):
+def test_check_path_in_computer_is_abs(simulation_file, fs):
     """
     Tests that ``esm_parser.user_error`` is used when the ``path_in_computer``
     is not absolute
     """
-
-    dummy_config = """
-    general:
-        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
-        exp_dir: "/work/ollie/pgierz/some_exp"
-        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
-        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
-    echam:
-        files:
-            jan_surf:
-                type: input
-                name_in_computer: T63CORE2_jan_surf.nc
-                name_in_work: unit.24
-                path_in_computer: pool/ECHAM/T63
-        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
-        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam
-    """
-    date = esm_calendar.Date("2000-01-01T00:00:00")
-    config = yaml.safe_load(dummy_config)
-    config["general"]["current_date"] = date
+    simulation_file.path_in_computer = Path("foo/bar")
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(
-                config, "echam.files.jan_surf"
-            )
+            simulation_file._check_path_in_computer_is_abs()
 
     # error needs to occur as the path is not absolute
     assert any(["ERROR: File Dictionaries" in line for line in output])
 
 
-def test_resolve_paths(fs):
+def test_resolve_abs_paths(fs):
     """
-    Tests ``_resolve_paths``
+    Tests ``_resolve_abs_paths``
     """
 
     dummy_config = """

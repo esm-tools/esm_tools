@@ -13,12 +13,24 @@ import functools
 import os
 import pathlib
 import shutil
+from enum import Enum, auto
 from typing import Any, AnyStr, Tuple, Type, Union
 
 import dpath.util
 import yaml
-from esm_parser import ConfigSetup, user_error
 from loguru import logger
+
+from esm_parser import ConfigSetup, user_error
+
+
+# Enumeration of file types
+class FileTypes(Enum):
+    FILE = auto()  # ordinary file
+    DIR = auto()  # directory
+    LINK = auto()  # symbolic link
+    EXISTS = auto()  # object exists in the system
+    NOT_EXISTS = auto()  # file does not exist
+    BROKEN_LINK = auto()  # target of the symbolic link does not exist
 
 
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
@@ -62,10 +74,13 @@ def _allowed_to_be_missing(method):
     @functools.wraps(method)
     def inner_method(self, *args, **kwargs):
         if self.allowed_to_be_missing:
-            logger.warning(
-                f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
-            )
-            return None  # None is the default return, but let us be explicit here, as it is a bit confusing
+            try:
+                return method(self, *args, **kwargs)
+            except (FileNotFoundError, IOError):
+                logger.warning(
+                    f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
+                )
+                return None  # None is the default return, but let us be explicit here, as it is a bit confusing
         else:
             return method(self, *args, **kwargs)
 
@@ -75,7 +90,7 @@ def _allowed_to_be_missing(method):
 def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
     """
     Checks if a particular file has all elements of a particular date in its name.
-    
+
     Parameters
     ----------
     fname : str
@@ -86,12 +101,12 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
         A list of ``strftime`` compliant strings to determine which elements of
         the date to check. Compatible with %Y %m %d %H %M %S (year, month, day,
         hour, minute, second)
-        
+
     Returns
     -------
-    bool : 
+    bool :
         True if all elements appear in the filename, False otherwise.
-    
+
     """
     date_attrs = {
         "%Y": "syear",
@@ -137,7 +152,7 @@ class SimulationFile(dict):
         >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
     """
 
-    def __init__(self, full_config: dict, attrs_address: dict):
+    def __init__(self, full_config: dict, attrs_address: str):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -148,6 +163,22 @@ class SimulationFile(dict):
             The full simulation configuration
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
+
+        Note
+        ----
+        A file can be located in one of these categories (``LOCATION_KEYS``):
+        - computer: pool/source directory (for input files)
+        - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
+        - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
+        - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
+
+        LOCATION_KEY is one of the strings defined in LOCATION_KEY list
+        - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+          - eg. name_in_computer: T63CORE2_jan_surf.nc
+          - eg. name_in_work: unit.24
+        - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
+          - eg. absolute_path_in_run_tree:
+          - /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
         """
         attrs_dict = dpath.util.get(
             full_config, attrs_address, separator=".", default={}
@@ -155,27 +186,29 @@ class SimulationFile(dict):
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
         self._config = full_config
-        self._sim_date = full_config["general"]["current_date"] # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
+        self._sim_date = full_config["general"][
+            "current_date"
+        ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
         self.name = attrs_address.split(".")[-1]
-        self.component = component = attrs_address.split(".")[0]
+        self.component = attrs_address.split(".")[0]
         self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
+        self.path_in_computer = self.get("path_in_computer")
+        self._datestamp_method = self.get(
+            "datestamp_method", "avoid_overwrite"
+        )  # This is the old default behaviour
+        if self.path_in_computer:
+            self.path_in_computer = pathlib.Path(self.path_in_computer)
 
         self._check_file_syntax()
 
-        self.path_in_computer = pathlib.Path(self["path_in_computer"])
-
         # Complete tree names if not defined by the user
-        self["name_in_run_tree"] = self.get(
-            "name_in_run_tree", self["name_in_computer"]
-        )
-        self["name_in_exp_tree"] = self.get(
-            "name_in_exp_tree", self["name_in_computer"]
-        )
-        if self["type"] not in ["restart", "outdata"]:
-            self["name_in_work"] = self.get("name_in_work", self["name_in_computer"])
+        self._complete_file_names()
 
-        # Complete paths for all possible locations
-        self._resolve_paths()
+        # possible paths for files:
+        location_keys = ["computer", "exp_tree", "run_tree", "work"]
+        # initialize the locations and complete paths for all possible locations
+        self.locations = dict.fromkeys(location_keys, None)
+        self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least
         self._verbose = full_config.get("general", {}).get("verbose", True)
@@ -214,11 +247,27 @@ class SimulationFile(dict):
             if k == "datestamp_method":
                 self._check_datestamp_method_is_allowed(v)
             self[k] = v
+
     ##############################################################################################
 
     ##############################################################################################
     # Object Properities
     ##############################################################################################
+    def _complete_file_names(self):
+        """
+        Complete missing names in the file with the default name, depending whether
+        the file is of type ``input`` or ``output``.
+        """
+        if self["type"] in self.input_file_types:
+            default_name = self["name_in_computer"]
+        elif self["type"] in self.output_file_types:
+            default_name = self["name_in_work"]
+        self["name_in_computer"] = self.get("name_in_computer", default_name)
+        self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
+        self["name_in_exp_tree"] = self.get("name_in_exp_tree", default_name)
+        self["name_in_work"] = self.get("name_in_work", default_name)
+
+    # This part allows for dot-access to allowed_to_be_missing:
     @property
     def allowed_to_be_missing(self):
         """
@@ -237,10 +286,15 @@ class SimulationFile(dict):
         date stamps to the file. Valid choices are "never", "always",
         "avoid_overwrite".
         """
-        datestamp_method = self.get(
-            "datestamp_method", "avoid_overwrite"
-        )  # This is the old default behaviour
-        return datestamp_method
+        return self._datestamp_method
+
+    @datestamp_method.setter
+    def datestamp_method(self, new_attr_value):
+        """
+        Sets a new value for datestamp method.
+        """
+        # NOTE(PG): The checks could go here
+        self._datestamp_method = new_attr_value
 
     @property
     def datestamp_format(self):
@@ -253,7 +307,6 @@ class SimulationFile(dict):
             "datestamp_format", "append"
         )  # This is the old default behaviour
         return datestamp_format
-
 
     ##############################################################################################
     # Main Methods
@@ -277,6 +330,10 @@ class SimulationFile(dict):
             raise ValueError(
                 f"Source is incorrectly defined, and needs to be in {self.locations}"
             )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
@@ -286,27 +343,28 @@ class SimulationFile(dict):
         if self.datestamp_method == "avoid_overwrite":
             target_path = self._avoid_override_datestamp(target_path)
 
-        # Checks
+        # General Checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Actual copy
         source_path_type = self._path_type(source_path)
-        if source_path_type == "dir":
+        if source_path_type == FileTypes.DIR:
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
         try:
             copy_func(source_path, target_path)
             logger.success(f"Copied {source_path} --> {target_path}")
-        except Exception as error:
-            raise Exception(
+        except IOError as error:
+            raise IOError(
                 f"Unable to copy {source_path} to {target_path}\n\n"
                 f"Exception details:\n{error}"
             )
 
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
 
         Parameters
         ----------
@@ -331,49 +389,34 @@ class SimulationFile(dict):
         FileExistsError
             - Target path already exists
         """
+        if source not in self.locations:
+            raise ValueError(
+                f"Source is incorrectly defined, and needs to be in {self.locations}"
+            )
+        if target not in self.locations:
+            raise ValueError(
+                f"Target is incorrectly defined, and needs to be in {self.locations}"
+            )
         # full paths: directory path / file name
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
-        # This will need to be moved once Deniz implements this function to be
-        # in the same style as the others.
-        #
         # Datestamps
         if self.datestamp_method == "always":
             target_path = self._always_datestamp(target_path)
         if self.datestamp_method == "avoid_overwrite":
             target_path = self._avoid_override_datestamp(target_path)
+        # General Checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
+        self._check_source_and_target(source_path, target_path)
 
-        points_to_itself = source_path == target_path
-        if points_to_itself:
-            err_msg = (
-                f"Unable to create symbolic link: `{source_path}` is linking to itself"
+        try:
+            os.symlink(source_path, target_path)
+        except IOError as error:
+            raise IOError(
+                f"Unable to link {source_path} to {target_path}\n\n"
+                f"Exception details:\n{error}"
             )
-            raise OSError(err_msg)
-
-        if not os.path.exists(source_path):
-            err_msg = f"Unable to create symbolic link: source file `{source_path}` does not exist"
-            raise FileNotFoundError(err_msg)
-
-        if os.path.isdir(target_path):
-            err_msg = f"Unable to create symbolic link: `{target_path}` is a directory"
-            raise OSError(err_msg)
-
-        target_exists = os.path.exists(target_path) or os.path.islink(target_path)
-        if target_exists:
-            err_msg = (
-                f"Unable to create symbolic link: `{target_path}`. File already exists"
-            )
-            raise FileExistsError(err_msg)
-
-        target_parent = target_path.parent
-        if not target_parent.exists():
-            err_msg = (
-                f"Unable to create symbolic link: `{target_parent}` does not exist"
-            )
-            raise FileNotFoundError(err_msg)
-
-        os.symlink(source_path, target_path)
 
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
@@ -404,7 +447,8 @@ class SimulationFile(dict):
             target_path = self._always_datestamp(target_path)
         if self.datestamp_method == "avoid_overwrite":
             target_path = self._avoid_override_datestamp(target_path)
-        # Checks
+        # General Checks
+        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Perform the movement:
@@ -412,7 +456,6 @@ class SimulationFile(dict):
             source_path.rename(target_path)
             logger.success(f"Moved {source_path} --> {target_path}")
         except IOError as error:
-            # NOTE(PG): Re-raise IOError with our own message:
             raise IOError(
                 f"Unable to move {source_path} to {target_path}\n\n"
                 f"Exception details:\n{error}"
@@ -467,7 +510,7 @@ class SimulationFile(dict):
                 "The datestamp_format must be defined as one of check_from_filename or append"
             )
 
-    def _resolve_paths(self) -> None:
+    def _resolve_abs_paths(self) -> None:
         """
         Builds the absolute paths of the file for the different locations
         (``computer``, ``work``, ``exp_tree``, ``run_tree``) using the information
@@ -482,7 +525,7 @@ class SimulationFile(dict):
         """
         self.locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
-            "computer": pathlib.Path(self["path_in_computer"]),
+            "computer": self.path_in_computer,  # Already Path type from _init_
             "exp_tree": pathlib.Path(
                 self._config[self.component][f"experiment_{self['type']}_dir"]
             ),
@@ -492,12 +535,15 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
+            if key == "computer" and path == None:
+                self[f"absolute_path_in_{key}"] = None
+            else:
+                self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> Union[str, bool]:
+    def _path_type(self, path: pathlib.Path) -> int:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
-        doesn't, returns ``False``.
+        doesn't, returns ``None``.
 
         Parameters
         ----------
@@ -506,20 +552,39 @@ class SimulationFile(dict):
 
         Returns
         -------
-        str or bool
-            If the path exists it returns its type as a string (``file``, ``dir``,
-            ``link``). If it doesn't exist returns ``False``.
+        Enum value
+            One of the values from FileType enumeration
+
+        Raises
+        ------
+        TypeError
+          - when ``path`` has incompatible type
+          - when ``path`` is not identified
         """
-        if path.is_file():
-            return "file"
-        elif path.is_dir():
-            return "dir"
-        elif path.is_symlink():
-            return "link"
+        if not isinstance(path, (str, pathlib.Path)):
+            datatype = type(path).__name__
+            raise TypeError(
+                f"Path ``{path}`` has an incompatible datatype ``{datatype}``. str or pathlib.Path is expected"
+            )
+
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        # NOTE: is_symlink() needs to come first because it is also a is_file()
+        # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
+        if path.is_symlink() and not path.exists():
+            return FileTypes.BROKEN_LINK
         elif not path.exists():
-            return False
+            return FileTypes.NOT_EXISTS
+        elif path.is_symlink():
+            return FileTypes.LINK
+        elif path.is_file():
+            return FileTypes.FILE
+        elif path.is_dir():
+            return FileTypes.DIR
         else:
-            raise Exception(f"Cannot identify the path's type of {path}")
+            # probably, this will not happen
+            raise TypeError(f"{path} can not be identified")
 
     def _always_datestamp(self, fname):
         """
@@ -527,8 +592,9 @@ class SimulationFile(dict):
 
         Appends the datestamp in any case if ``datestamp_format`` is
         ``append``. Appends the datestamp only if it is not obviously in the
-        filename if the ``datestamp_format`` is ``check_from_filename``.
-        
+        filename if the ``datestamp_format`` is ``check_from_filename``. Only
+        appends to files or links, not directories.
+
         Parameters
         ----------
         fname : pathlib.Path
@@ -539,6 +605,8 @@ class SimulationFile(dict):
         pathlib.Path
             A modified file with an added date stamp.
         """
+        if fname.is_dir():
+            return fname
         if self.datestamp_format == "append":
             return pathlib.Path(f"{fname}_{self._sim_date}")
         if self.datestamp_format == "check_from_filename":
@@ -564,7 +632,7 @@ class SimulationFile(dict):
         pathlib.Path :
             The new target that can be used
         """
-        if target.exists():
+        if target.exists() and not target.is_dir():
             if self.datestamp_format == "append":
                 target = pathlib.Path(f"{target}_{self._sim_date}")
             # The other case ("check_from_filename") is meaningless?
@@ -587,8 +655,8 @@ class SimulationFile(dict):
         missing_vars = ""
         types_text = ", ".join(self.all_model_filetypes)
         this_filedict = copy.deepcopy(self._original_filedict)
-        input_file_types = ["config", "forcing", "input"]
-        output_file_types = [
+        self.input_file_types = input_file_types = ["config", "forcing", "input"]
+        self.output_file_types = output_file_types = [
             "analysis",
             "couple",
             "log",
@@ -669,7 +737,10 @@ class SimulationFile(dict):
             user_error("File Dictionaries", f"{error_text}\n{missing_vars}")
 
     def _check_path_in_computer_is_abs(self):
-        if not self.path_in_computer.is_absolute():
+        if (
+            self.path_in_computer is not None
+            and not self.path_in_computer.is_absolute()
+        ):
             user_error(
                 "File Dictionaries",
                 "The path defined for "
@@ -678,9 +749,23 @@ class SimulationFile(dict):
                 "absolute path for the ``path_in_computer`` variable.",
             )
 
-    def _check_source_and_target(self, source_path, target_path):
+    def _check_source_and_target(
+        self, source_path: pathlib.Path, target_path: pathlib.Path
+    ) -> None:
         """
-        Performs checks for file movements
+        Performs common checks for file movements
+
+        Parameters
+        ----------
+        source_path : pathlib.Path
+            path of the file to be copied / linked / moved
+
+        target_path : pathlib.Path
+            path of the file to be generated
+
+        Returns
+        -------
+        True
 
         Raises
         ------
@@ -689,27 +774,37 @@ class SimulationFile(dict):
             - If the ``target_path`` exists
             - If the parent dir of the ``target_path`` does not exist
         """
-
-        # Types
+        # Types. Eg. file, dir, link, or None
         source_path_type = self._path_type(source_path)
         target_path_type = self._path_type(target_path)
-        target_path_parent_type = self._path_type(target_path.parent)
 
         # Checks
         # ------
-        # Source exists
-        if not source_path_type:
-            raise Exception(f"Source file ``{source_path}`` does not exist!")
-        # Target exist
-        if target_path_type:
-            # TODO: Change this behavior
-            raise Exception(f"File ``{target_path_type}`` already exists!")
-        # Target dir exists
-        if not target_path_parent_type:
-            # TODO: we might consider creating it
-            raise Exception(
-                f"Target directory ``{target_path_parent_type}`` does not exist!"
-            )
+        # Source does not exist
+        if source_path_type == FileTypes.NOT_EXISTS:
+            err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
+            raise FileNotFoundError(err_msg)
+
+        # Target already exists
+        target_exists = (
+            os.path.exists(target_path) or target_path_type == FileTypes.LINK
+        )
+        if target_exists:
+            err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
+            raise FileExistsError(err_msg)
+
+        # Target parent directory does not exist
+        if not target_path.parent.exists():
+            # TODO: we might consider creating it (Miguel)
+            err_msg = f"Unable to perform file operation. Parent directory of the target ``{target_path}`` does not exist"
+            raise FileNotFoundError(err_msg)
+
+        # if source is a broken link. Ie. pointing to a non-existing file
+        if source_path_type == FileTypes.BROKEN_LINK:
+            err_msg = f"Unable to create symbolic link: ``{source_path}`` points to a broken path: {source_path.resolve()}"
+            raise FileNotFoundError(err_msg)
+
+        return True
 
     def pretty_filedict(self, filedict):
         """

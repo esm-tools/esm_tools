@@ -953,6 +953,8 @@ def test_name_subfolders(fs):
 
     fs.create_dir(config["oifs"]["experiment_outdata_dir"])
 
+    #config["oifs"]["experiment_outdata_dir"] = "/work/ollie/pgierz/some_exp/input/oif" 
+
     expected_new_path = Path(config["oifs"]["experiment_outdata_dir"]).joinpath(
         "out/date/folder/ICMGG_input_expid"
     )

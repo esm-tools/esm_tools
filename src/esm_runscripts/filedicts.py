@@ -294,8 +294,10 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self.makedirs_in_name(target)
+
         # general checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Actual copy
@@ -345,8 +347,10 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self.makedirs_in_name(target)
+
         # general checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         if os.path.isdir(target_path):
@@ -376,8 +380,10 @@ class SimulationFile(dict):
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
 
+        # Create subfolders contained in ``name_in_{target}``
+        self.makedirs_in_name(target)
+
         # general checks
-        # TODO (deniz): need to add higher level exception handler (eg. user_error)
         self._check_source_and_target(source_path, target_path)
 
         # Perform the movement:
@@ -526,6 +532,19 @@ class SimulationFile(dict):
             )
 
         return glob_paths
+
+    def makedirs_in_name(self, name_type):
+        if "/" in self[f"name_in_{name_type}"]:
+            parent_path = self[f"absolute_path_in_{name_type}"].parent
+            if not parent_path.exists():
+                location = self.locations[name_type]
+                if location.exists():
+                    os.makedirs(parent_path)
+                else:
+                    raise FileNotFoundError(
+                        f"Unable to perform file operation. Path for ``{name_type}`` "
+                        f"({location}) does not exist!"
+                    )
 
     def _check_file_syntax(self) -> None:
         """

@@ -684,6 +684,7 @@ def test_find_globbing_files(fs):
         thisrun_outdata_dir: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/oifs
     """
     config = yaml.safe_load(dummy_config)
+    # These files are incorrect since they do not have input_expid and instead have input_<NUMBER>
     files = [
         "input_11_DATE_12.nc",
         "input_21_DATE_22.nc",

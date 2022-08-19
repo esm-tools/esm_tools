@@ -104,34 +104,6 @@ def simulation_file(fs, config_tuple):
     yield fake_simulation_file
 
 
-def test_example(fs):
-    # Make a fake config:
-    config = """
-    general:
-        base_dir: /some/dummy/location/
-        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
-    echam:
-        files:
-            jan_surf:
-                name: ECHAM Jan Surf File
-                path_in_computer: /work/ollie/pool/ECHAM
-                name_in_computer: T63CORE2_jan_surf.nc
-                name_in_work: unit.24
-                type: input
-        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
-    """
-    date = esm_calendar.Date("2000-01-01T00:00:00")
-    config = yaml.safe_load(config)
-    config["general"]["current_date"] = date
-    # Create some fake files and directories you might want in your test
-    fs.create_file("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
-    fs.create_dir("/some/dummy/location/expid/run_18500101-18501231/work")
-    # This module also have functions for link files, globbing, etc.
-    config_out = esm_runscripts.filedicts.copy_files(config)
-    assert os.path.exists("/some/dummy/location/expid/run_18500101-18501231/work/")
-    assert os.path.exists("/work/ollie/pool/ECHAM/T63CORE2_jan_surf.nc")
-
-
 def test_filedicts_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 

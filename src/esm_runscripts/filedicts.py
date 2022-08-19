@@ -15,7 +15,7 @@ import os
 import pathlib
 import shutil
 from enum import Enum, auto
-from typing import Any, AnyStr, Tuple, Type, Union
+from typing import Any, AnyStr
 
 import dpath.util
 import yaml
@@ -282,7 +282,7 @@ class SimulationFile(dict):
         # possible paths for files:
         location_keys = ["computer", "exp_tree", "run_tree", "work"]
         # initialize the locations and complete paths for all possible locations
-        self.locations = dict.fromkeys(location_keys, pathlib.Path("dev/null"))
+        self.locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least
@@ -613,7 +613,7 @@ class SimulationFile(dict):
         }
 
         for key, path in self.locations.items():
-            if key == "computer" and path == None:
+            if key == "computer" and path is None:
                 self[f"absolute_path_in_{key}"] = None
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
@@ -741,8 +741,8 @@ class SimulationFile(dict):
                     "The wild card pattern of the source "
                     + f"``{source_pattern}`` does not match with the "
                     + f"target ``{target_pattern}``. Make sure the "
-                    + f"that the number of ``*`` are the same in both "
-                    + f"sources and targets."
+                    + "that the number of ``*`` are the same in both "
+                    + "sources and targets."
                 ),
             )
 

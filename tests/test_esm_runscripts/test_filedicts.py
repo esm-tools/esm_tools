@@ -1041,6 +1041,7 @@ def test_globbing_ln(fs):
     for nf in expected_new_paths:
         assert os.path.exists(nf)
 
+
 def test_makedirs_in_name(fs):
     """Tests for creating the subfolders included in the target name"""
 
@@ -1062,11 +1063,15 @@ def test_makedirs_in_name(fs):
     config = yaml.safe_load(dummy_config)
     config["general"]["current_date"] = date
 
-    fs.create_file(Path(config["general"]["thisrun_work_dir"]).joinpath(f"ICMGG_input_expid+in_work"))
+    fs.create_file(
+        Path(config["general"]["thisrun_work_dir"]).joinpath(
+            f"ICMGG_input_expid+in_work"
+        )
+    )
 
     fs.create_dir(config["oifs"]["experiment_outdata_dir"])
 
-    #config["oifs"]["experiment_outdata_dir"] = "/work/ollie/pgierz/some_exp/input/oif" 
+    # config["oifs"]["experiment_outdata_dir"] = "/work/ollie/pgierz/some_exp/input/oif"
 
     expected_new_path = Path(config["oifs"]["experiment_outdata_dir"]).joinpath(
         "out/date/folder/ICMGG_input_expid"
@@ -1076,4 +1081,3 @@ def test_makedirs_in_name(fs):
     sim_file.cp("work", "exp_tree")
 
     assert os.path.exists(expected_new_path)
-

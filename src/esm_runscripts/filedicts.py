@@ -20,8 +20,9 @@ from typing import Any, AnyStr
 
 import dpath.util
 import yaml
-from esm_parser import ConfigSetup, user_error
 from loguru import logger
+
+from esm_parser import ConfigSetup, user_error
 
 logger.remove()
 LEVEL = "ERROR"  # "WARNING"  # "INFO"  # "DEBUG"

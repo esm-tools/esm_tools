@@ -158,12 +158,11 @@ class SimulationFile(dict):
 
         self._check_file_syntax()
 
-        # possible paths for files:
-        location_keys = ["computer", "exp_tree", "run_tree", "work"]
-
         # Complete tree names if not defined by the user
         self._complete_file_names()
 
+        # possible paths for files:
+        location_keys = ["computer", "exp_tree", "run_tree", "work"]
         # initialize the locations and complete paths for all possible locations
         self.locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
@@ -243,7 +242,7 @@ class SimulationFile(dict):
 
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
-        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``. ``source`` and ``target`` keys will be transformed into their corresponding absolute paths and ``target`` will be created.
+        """creates symbolic links from the path retrieved by ``source`` to the one by ``target``. 
 
         Parameters
         ----------
@@ -516,12 +515,8 @@ class SimulationFile(dict):
             - If the parent dir of the ``target_path`` does not exist
         """
         # Types. Eg. file, dir, link, or None
-        try:
-            source_path_type = self._path_type(source_path)
-            target_path_type = self._path_type(target_path)
-        except TypeError as err:
-            print(err)
-            raise
+        source_path_type = self._path_type(source_path)
+        target_path_type = self._path_type(target_path)
 
         # Checks
         # ------

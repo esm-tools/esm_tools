@@ -829,7 +829,7 @@ def test_wild_card_check():
     source_pattern = source_name.split("*")
     target_pattern = target_name.split("*")
 
-    assert esm_runscripts.filedicts.SimulationFile.wild_card_check(
+    assert esm_runscripts.filedicts.SimulationFile._wild_card_check(
         source_pattern, target_pattern
     )
 
@@ -847,7 +847,7 @@ def test_wild_card_check_fails():
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            esm_runscripts.filedicts.SimulationFile.wild_card_check(
+            esm_runscripts.filedicts.SimulationFile._wild_card_check(
                 source_pattern, target_pattern
             )
 

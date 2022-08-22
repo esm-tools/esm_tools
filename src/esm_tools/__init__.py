@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.13.4"
+__version__ = "6.13.7"
 
 import functools
 import inspect
@@ -34,10 +34,9 @@ import shutil
 import site
 import sys
 
-from loguru import logger
 import pkg_resources
 import yaml
-
+from loguru import logger
 
 # Setup Loguru for the following cases:
 # A) If user sets

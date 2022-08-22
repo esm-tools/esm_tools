@@ -697,7 +697,13 @@ def add_vcs_info(config):
     vcs_versions = {}
     all_models = config.get("general", {}).get("models", [])
     for model in all_models:
-        model_dir = config[model]["model_dir"]
+        logger.debug(f"Locating {model}")
+        try:
+            model_dir = config[model]["model_dir"]
+        except KeyError:
+            # XIOS does not seem to define model_dir? Jan? What?
+            vcs_versions[model] = f"Unable to locate model_dir for {model}."
+            continue
         if helpers.is_git_repo(model_dir):
             vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:
@@ -707,7 +713,7 @@ def add_vcs_info(config):
     # this may at least be a good start:
     esm_tools_repo = config.get("general", {}).get("esm_function_dir")
     if esm_tools_repo is not None:
-        vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
+        vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
         esm_parser.user_error("esm_tools doesn't know where it's own install location is. Something is very seriously wrong.")

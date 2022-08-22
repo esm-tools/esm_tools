@@ -7,7 +7,6 @@ import pathlib
 
 import f90nml
 import questionary
-import six
 import yaml
 from colorama import Fore, Back, Style, init
 
@@ -144,7 +143,7 @@ def modify_namelists(config):
     # Load and modify namelists:
 
     if config["general"]["verbose"]:
-        six.print_("\n" "- Setting up namelists for this run...")
+        print("\n" "- Setting up namelists for this run...")
         for index, model in enumerate(config["general"]["valid_model_names"]):
             print(f'{index+1}) {config[model]["model"]}')
         print()
@@ -169,11 +168,11 @@ def modify_namelists(config):
 
 def copy_files_to_thisrun(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING EXPERIMENT")
+        print("PREPARING EXPERIMENT")
         # Copy files:
-        six.print_("\n" "- File lists populated, proceeding with copy...")
-        six.print_("- Note that you can see your file lists in the config folder")
-        six.print_("- You will be informed about missing files")
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -185,7 +184,7 @@ def copy_files_to_thisrun(config):
 
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING WORK FOLDER")
+        print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
@@ -641,17 +640,17 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
 
 
 def _show_simulation_info(config):
-    six.print_()
-    six.print_(80 * "=")
-    six.print_("STARTING SIMULATION JOB!")
-    six.print_(f"Experiment ID = {config['general']['expid']}")
-    six.print_(f"Setup = {config['general']['setup_name']}")
+    print()
+    print(80 * "=")
+    print("STARTING SIMULATION JOB!")
+    print(f"Experiment ID = {config['general']['expid']}")
+    print(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        six.print_("This setup consists of:")
+        print("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            six.print_(f"- {model}")
-    six.print_("Experiment is installed in:")
-    six.print_(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    six.print_(80 * "=")
-    six.print_()
+            print(f"- {model}")
+    print("Experiment is installed in:")
+    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    print(80 * "=")
+    print()
     return config

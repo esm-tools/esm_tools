@@ -2,8 +2,9 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
 from os import getenv
+
+from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -28,7 +29,6 @@ requirements = [
     "pyyaml==5.1",
     "questionary==1.10.0",
     "semver==2.13.0",
-    "six==1.16.0",  # NOTE(PG): Should be removed during cleanup
     "sqlalchemy==1.4.39",
     "tabulate==0.8.10",
     "tqdm==4.64.0",
@@ -91,6 +91,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.12.5",
+    version="6.13.7",
     zip_safe=False,
 )

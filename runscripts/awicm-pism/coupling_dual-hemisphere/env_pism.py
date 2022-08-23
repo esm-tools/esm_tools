@@ -37,7 +37,10 @@ def prepare_environment(config):
             "iterative_coupling_atmosphere_pism_ablation_method": config[config["general"]["setup_name"]]["ablation_method"],
             "DEBM_EXE": config[config["general"]["setup_name"]]["debm_path"],
             "MY_OBLIQUITY": config[config["general"]["setup_name"]]["debm_obl"], 
+            "DEBM_BETA": config[config["general"]["setup_name"]].get("debm_beta", 10),
             "iterative_coupling_atmosphere_pism_regrid_method": config[config["general"]["setup_name"]].get("regrid_method", "DOWNSCALE"), 
+            "REDUCE_TEMP": int(config[config["general"]["setup_name"]].get("reduce_temp", 0)), 
+            "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "PISM_HEMISPHERE": config["general"]["setup_name"],
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
@@ -54,6 +57,7 @@ def prepare_environment(config):
             #"pism_solidearth_initialize_dummyrun_file": config[config["general"]["setup_name"]].get("solidearth_initialize_dummyrun_file", ""),
             #"INPUT_GRID_pism": config[config["general"]["setup_name"]].get("input_grid", default_input_grid),
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
+            "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
             #"YR0_INI_pism": config["general"]["initial_date"].syear,
             #"NYEAR_pism_standalone": config["general"]["nyear"],
             #"latest_ex_file_pism": config[config["general"]["setup_name"]]["outdata_targets"]["ex_file"],

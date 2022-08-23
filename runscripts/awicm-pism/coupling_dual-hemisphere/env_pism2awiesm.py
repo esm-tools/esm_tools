@@ -18,6 +18,7 @@ def prepare_environment(config):
             "EXE_pism": config[config["general"]["setup_name"]]["executable"],
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
             "RUN_NUMBER_pism": config["general"]["run_number"],
+            "EX_INT": config["pism"]["ex_interval"],
 
             "YR0_pism": config["general"]["start_date"].syear,
             "M0_pism": config["general"]["start_date"].smonth,
@@ -26,7 +27,9 @@ def prepare_environment(config):
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "END_MONTH_pism": config["general"]["end_date"].smonth,
             "END_DAY_pism": config["general"]["end_date"].sday,
-            
+            "MIN_MON_SELECT": int(config["pism"].get("select_min_glacial_depth", True)),
+
+            "CRITICAL_THK_FOR_MASK_pism": config["pism"].get("thk_threshold", 5.0), 
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "OUTPUT_DIR_pism": config[config["general"]["setup_name"]]["experiment_outdata_dir"],

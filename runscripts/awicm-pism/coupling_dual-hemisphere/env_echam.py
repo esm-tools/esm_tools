@@ -4,7 +4,7 @@ def prepare_environment(config):
             "ECHAM_TO_ICE": int(config["general"]["last_run_in_chunk"]),
             "ECHAM_TO_ISM_multiyear_mean": 1,
             "ISM_TO_ECHAM_update_orography": 1, 
-            "ISM_TO_ECHAM_update_glacial_mask": 1, 
+            "ISM_TO_ECHAM_update_glacial_mask": int(config["echam"].get("update_glacial_mask", True)), 
             "ISM_TO_ECHAM_update_land_runoff": 1,
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "RES_echam": config["echam"]["resolution"], 
@@ -29,6 +29,8 @@ def prepare_environment(config):
             "HOSING_FILE_LANDICE_LOSS": config["fesom"].get("fwf_path", config["general"]["experiment_couple_dir"]),
             "HOSING_CORRECTION": int(config["echam"].get("hosing_correction", True)),
             "CELL_AREA_FESOM_FILE": config["fesom"].get("fesom_cell_area_file", "fesom.mesh.diag.nc"),
+            "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
+            "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

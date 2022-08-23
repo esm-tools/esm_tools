@@ -192,15 +192,6 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-        #if [ "$MACHINE" == "ollie" ]; then
-        #    module unload netcdf
-        #    module unload hdf5/1.10.2_gnu
-        #    module load netcdf/4.6.0_gnu
-        #fi
-        #echo $(module list)
-        #module purge
-        #module unload netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
-        #module unload netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
         export LD_LIBRARY_PATH=/sw/spack-levante.2022-02-17/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
 
         echo "PWD = $(pwd)"
@@ -1085,6 +1076,7 @@ distribute_total_discharge_over_ocean() {
         CELL_AREA_FESOM_FILE=${CELL_AREA_FESOM_FILE:-"fesom.mesh.diag.nc"}
         echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE} ${HOSING_FILE_LANDICE_LOSS} "
         module load python3
+        echo "LA DEBUG: HOSING_FILE_LANDICE_LOSS = ${HOSING_FILE_LANDICE_LOSS}"
         if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
             rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
         fi

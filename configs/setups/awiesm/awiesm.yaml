@@ -393,10 +393,12 @@ oasis3mct:
 
         coupling_time_step: 3600
         # Example for input fields:
-        #coupling_input_fields:
-        #    gfw_atmo:
-        #        freq: 86400
-        #        field_filepath: "foo/bar.nc"
+        choose_echam.lgfw:
+                True:
+                        coupling_input_fields:
+                                gfw_atmo:
+                                        freq: 86400
+                                        field_filepath: "gfw_atmo.nc"
         coupling_target_fields:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'

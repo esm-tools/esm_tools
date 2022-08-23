@@ -29,9 +29,10 @@ def parse_arguments():
     parser.add_argument("--FESOM_MESH", nargs="+")
     parser.add_argument("--FESOM_YEARS", nargs="+")
     parser.add_argument("--FESOM_OUTPUT", nargs="*", default='fesom_output.nc4')
-    parser.add_argument("--FESOM_MESH_ALPHA", type=int, default=50)
-    parser.add_argument("--FESOM_MESH_BETA",  type=int, default=15)
-    parser.add_argument("--FESOM_MESH_GAMMA", type=int, default=-90)
+    parser.add_argument("--FESOM_MESH_ROTATED", nargs="*", required=True)
+    #parser.add_argument("--FESOM_MESH_ALPHA", type=int, default=50)
+    #parser.add_argument("--FESOM_MESH_BETA",  type=int, default=15)
+    #parser.add_argument("--FESOM_MESH_GAMMA", type=int, default=-90)
     return parser.parse_args()
 
 args = parse_arguments()
@@ -69,7 +70,12 @@ print('* Start at '+time.ctime(time.time()))
 # mesh
 print('* Read the mesh MESHPATH=' + " ".join(args.FESOM_MESH))
 
-euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
+#euler_angle = [args.FESOM_MESH_ALPHA, args.FESOM_MESH_BETA, args.FESOM_MESH_GAMMA]
+if not args.FESOM_MESH_ROTATED:
+    euler_angle = [50, 15, -90]
+else:
+    euler_angle = [0, 0, 0]
+print("* Using Euler angles ", euler_angle)
 
 mesh = pf.load_mesh(*args.FESOM_MESH, abg=euler_angle, usepickle=False)
 print("*** mesh.zlev = ", mesh.zlev)
@@ -178,7 +184,8 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
 #
 print('*   Create file "'+args.FESOM_OUTPUT[0]+'"')
 #OK: OCE_OUT = Dataset("".join(args.FESOM_OUTPUT), "w", format="NETCDF3_64BIT_OFFSET")
-OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF4") #format="NETCDF3_64BIT_OFFSET")
+#OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF4") #format="NETCDF3_64BIT_OFFSET")
+OCE_OUT = Dataset(args.FESOM_OUTPUT[0], "w", format="NETCDF3_64BIT_OFFSET") #format="NETCDF3_64BIT_OFFSET")
 
 print('*     Create dimensions and define variables')
 #
@@ -244,8 +251,8 @@ lon_var.units = "degrees east"
 lat_var.long_name = "latitude"
 lat_var.units = "degrees north"
 
-temp_var.long_name = "temperature"
-temp_var.units = "degree celcius" #FID.variables[args.FESOM_VARIABLE[0]].units
+temp_var.long_name = FID.get(args.FESOM_VARIABLE[0]).long_name
+temp_var.units = FID.get(args.FESOM_VARIABLE[0]).units
 temp_var.coordinates = "longitude latitude"
 temp_var.description = "" #FID.variables[args.FESOM_VARIABLE[0]].description
 #temp_var.missing_value = NAN_REPLACE
@@ -255,7 +262,7 @@ temp_var.description = "" #FID.variables[args.FESOM_VARIABLE[0]].description
 #
 print('*     Write the small fields')
 # -- axis variables
-time_var[:] = time_out
+#time_var[:] = time_out
 level_var[:] = np.arange(0, sizeVert, dtype=np.int32)
 hori_var[:] = np.arange(0, sizeHori, dtype=np.int32)
 

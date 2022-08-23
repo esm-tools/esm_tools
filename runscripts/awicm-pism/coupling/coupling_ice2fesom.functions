@@ -3,7 +3,7 @@
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***)"
 
-    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    . ${FUNCTION_PATH}/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
     . ${FUNCTION_PATH}/coupling_ocean2pism.functions
 
@@ -199,47 +199,62 @@ function iterative_coupling_ice_fesom_rename_vars {
 ########################################################################
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # iceberg coupling LA
-    latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+
+    counter=0
+    COUNT_MAX=12
+    while [ ${counter} -lt ${COUNT_MAX} ]
+    do
+        echo "          * inside while loop "
+        if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+            break
+        fi
+
+        echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not foung. Waiting for 10 seconds ..."
+        sleep 10
+        counter=$((counter+1))
+    done
+
+    latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
     if [[ -f ${latest_pism_output} ]]; then
-        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+        pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
         #pism_discharge_file=${latest_pism_output}
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}
     fi
 
-    COUPLE_DIR=${COUPLE_DIR}
+    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
     echo "COUPLE_DIR: ${COUPLE_DIR}"
     echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
-    if [[ -d ${COUPLE_DIR} ]]; then
-        mv ${COUPLE_DIR}/LON.dat ${COUPLE_DIR}/LON.dat.${CURRENT_YEAR_pism}
-        mv ${COUPLE_DIR}/LAT.dat ${COUPLE_DIR}/LAT.dat.${CURRENT_YEAR_pism}
-        mv ${COUPLE_DIR}/LENGTH.dat ${COUPLE_DIR}/LENGTH.dat.${CURRENT_YEAR_pism}
-        mv ${COUPLE_DIR}/HEIGHT.dat ${COUPLE_DIR}/HEIGHT.dat.${CURRENT_YEAR_pism}
-        mv ${COUPLE_DIR}/buoys_track.nc ${COUPLE_DIR}/buoys_track.nc.${CURRENT_YEAR_pism}
-    fi
 
-    cdo mulc,${CHUNK_SIZE_pism_standalone} \
-            -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
     
     module unload python
-    #module load python3
-    module load python3/3.7.7_intel2020u2
-    
+    if [ "$MACHINE" == "ollie" ]; then
+        module load python3/3.7.7_intel2020u2
+    elif [ "$MACHINE" == "mistral" ]; then
+        module load anaconda3/bleeding_edge
+    fi
+    if [ -f ${COUPLE_DIR}/num_non_melted_icb_file ]; then
+        rm ${COUPLE_DIR}/num_non_melted_icb_file
+    fi
+
     if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
         if [[ ! -f ${COUPLE_DIR}/nod2d.out.rot ]]; then
             python ${FUNCTION_PATH}/utils/rotate_mesh.py ${MESH_DIR_fesom} ${COUPLE_DIR}
             cp ${MESH_DIR_fesom}/elem2d.out ${COUPLE_DIR}/elem2d.out
         fi
-        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR}
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR} ${BASIN_FILE}
     else
-        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR}
+        python ${FUNCTION_PATH}/utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR} ${BASIN_FILE}
     fi
 
-    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
+    echo; echo "    * Finished iceberg generation"
+    if [ -f ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM ]; then
+        wc -l ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM | awk '{ print $1 }' > ${COUPLE_DIR}/num_non_melted_icb_file
+    fi
     use_icesheet_coupling=1
-
-#    get_ib_num_after_ice_sheet_coupling
 }
 
 #function get_ib_num_after_ice_sheet_coupling {

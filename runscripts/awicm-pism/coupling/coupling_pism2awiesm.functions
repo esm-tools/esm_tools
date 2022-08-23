@@ -1,16 +1,46 @@
-#!/bin/ksh
+#!/usr/bin/ksh
 pism2awiesm() {
-    latest_pism_ex_file=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-    if [ -f ${latest_pism_ex_file} ]; then
-        ln -fs ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
-    else
-        echo "*** ${latest_pism_ex_file} not found ***"
-        exit 42
+    if [ "$MACHINE" == "mistral" ]; then
+        module purge
+        module load defaults
+        module unload netcdf_c/4.3.2-gcc48
+        module load anaconda3
+    fi
+    echo $(module list)
+    . ${FUNCTION_PATH}/general_lists.functions
+    . ${FUNCTION_PATH}/general_helpers.functions
+    . ${FUNCTION_PATH}/coupling_general.functions
+
+    if [ -f ${COUPLE_DIR}/latest_gfw_atmo.nc ]; then
+        rm ${COUPLE_DIR}/latest_gfw_atmo.nc
+    fi
+    
+    #if [ -f ${COUPLE_DIR}/latest_jsbach_init_file.nc ]; then
+    #    rm ${COUPLE_DIR}/latest_jsbach_init_file.nc
+    #fi
+    #
+    #if [ -f ${COUPLE_DIR}/latest_jsbach_restart_file.nc ]; then
+    #    rm ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+    #fi
+    #
+    #if [ -f ${COUPLE_DIR}/latest_veg_restart_file.nc ]; then
+    #    rm ${COUPLE_DIR}/latest_veg_restart_file.nc
+    #fi
+    
+    if [ -f ${COUPLE_DIR}/latest_target_orography.nc ]; then
+        rm ${COUPLE_DIR}/latest_target_orography.nc
     fi
 
+    #echo "LA DEBUG: MIN_MON_SELECT=${MIN_MON_SELECT}"
+    #if [ "x${MIN_MON_SELECT}" == "x1" ]; then
+    #    echo "LA DEBUG: Hier"
     . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
+    #else
+    #    echo "LA DEBUG: Oder hier"
+    #    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions.origin
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
 
-    pism2atmosphere
+    echo "*** Starting pis2atmosphere ***"
+    pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
     #pism2ocean
 }

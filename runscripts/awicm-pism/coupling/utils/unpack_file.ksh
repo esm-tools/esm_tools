@@ -20,7 +20,7 @@ if [[ $(uname -n | cut -c1-6) == mlogin || $(uname -n | cut -c1-9) == mistralpp 
     export LD_LIBRARY_PATH="/sw/rhel6-x64/hdf5/hdf5-1.8.14-threadsafe-gcc48/lib:/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-gcc48/lib:/sw/rhel6-x64/sys/libaec-0.3.2-gcc48/lib"
 else
     #module load cdo/1.7.2-gccsys
-    module load cdo/1.7.2
+    module load cdo #/1.7.2
 fi
 #------------------------------------------------------------------------------
 

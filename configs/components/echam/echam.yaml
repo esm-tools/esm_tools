@@ -575,9 +575,9 @@ forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
         # deniz: TODO: write comment
-        aerocoarse_kinne_1850: "aero_coarse_@YEAR_1850@.nc"
-        aerofarir_kinne_1850: "aero_farir_@YEAR_1850@.nc"
-        aerofin_kinne_1850: "aero_fine_@YEAR_1850@.nc"
+        aerocoarse_kinne_1850: "aero_coarse_@YEAR@.nc"
+        aerofarir_kinne_1850: "aero_farir_@YEAR@.nc"
+        aerofin_kinne_1850: "aero_fine_@YEAR@.nc"
         # ok this is another crazy ECHAM6 speciality
         # every year the background aerosol files for 1849 to 1851 
         # need to be linked to the same file for historical/scenario runs

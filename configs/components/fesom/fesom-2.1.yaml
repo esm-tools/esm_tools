@@ -249,32 +249,46 @@ choose_use_icebergs:
             choose_update_icebergs:
                     true:
                             add_input_sources:
-                            longitude: "${iceberg_dir}/LON.dat"
-                            latitude: "${iceberg_dir}/LAT.dat"
-                            length: "${iceberg_dir}/LENGTH.dat"
-                            height: "${iceberg_dir}/HEIGHT.dat"
-                            scaling: "${iceberg_dir}/SCALING.dat"
+                                    longitude: "${iceberg_dir}/LON.dat"
+                                    latitude: "${iceberg_dir}/LAT.dat"
+                                    length: "${iceberg_dir}/LENGTH.dat"
+                                    height: "${iceberg_dir}/HEIGHT.dat"
+                                    scaling: "${iceberg_dir}/SCALING.dat"
+                   
+                            input_in_work:
+                                    latitude: "icb_latitude.dat"
+                                    longitude: "icb_longitude.dat"
+                                    length: "icb_length.dat"
+                                    height: "icb_height.dat"
+                                    scaling: "icb_scaling.dat"
+
+                            add_input_files:
+                                    latitude: "latitude"
+                                    longitude: "longitude"
+                                    length: "length"
+                                    height: "height"
+                                    scaling: "scaling"
                     false:
-                            input_sources:
+                            add_input_sources:
                                     length:    "${iceberg_dir}/icb_length.dat_@YEAR@0101-@YEAR@1231"
                                     latitude:  "${iceberg_dir}/icb_latitude.dat_@YEAR@0101-@YEAR@1231"
                                     longitude: "${iceberg_dir}/icb_longitude.dat_@YEAR@0101-@YEAR@1231"
                                     height:    "${iceberg_dir}/icb_height.dat_@YEAR@0101-@YEAR@1231"
                                     scaling:   "${iceberg_dir}/icb_scaling.dat_@YEAR@0101-@YEAR@1231"
             
-            input_in_work:
-                    longitude: "icb_longitude.dat"
-                    latitude: "icb_latitude.dat"
-                    length: "icb_length.dat"
-                    height: "icb_height.dat"
-                    scaling: "icb_scaling.dat"
+                            input_in_work:
+                                    latitude: "icb_latitude.dat"
+                                    longitude: "icb_longitude.dat"
+                                    length: "icb_length.dat"
+                                    height: "icb_height.dat"
+                                    scaling: "icb_scaling.dat"
 
-            input_files:
-                    longitude: "longitude"
-                    latitude: "latitude"
-                    length: "length"
-                    height: "height"
-                    scaling: "scaling"
+                            add_input_files:
+                                    latitude: "latitude"
+                                    longitude: "longitude"
+                                    length: "length"
+                                    height: "height"
+                                    scaling: "scaling"
 
 log_files:
         clock: clock

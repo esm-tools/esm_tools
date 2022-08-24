@@ -484,19 +484,14 @@ class Namelist:
                         ib_num_old = [
                             int(line.strip()) for line in f.readlines() if line.strip()
                         ][0]
-                    iceberg_dir = config["fesom"].get("iceberg_dir")
-                elif config["general"].get("chunk_number", 0) == 1 or config["general"]["run_number"] == 1:
+                elif config["general"]["run_number"] == 1:
                     ib_num_old = 0
-                    iceberg_dir = config["fesom"].get("ini_iceberg_dir")
                 else:
                     print("Something went wrong! Continue without old icebergs.")
                     ib_num_old = 0
-                    iceberg_dir = config["fesom"].get("iceberg_dir")
 
-                #print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                print(" * iceberg_dir = ", iceberg_dir)
-                #ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
-                ib_num_new = sum(1 for line in open(iceberg_dir + "/LON.dat"))
+                print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
+                ib_num_new = sum(1 for line in open(config["fesom"]["input_sources"].get("length")))
                 icebergs["ib_num"] = ib_num_old + ib_num_new
                 nml["icebergs"] = icebergs
         return config

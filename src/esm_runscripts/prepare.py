@@ -697,7 +697,13 @@ def add_vcs_info(config):
     vcs_versions = {}
     all_models = config.get("general", {}).get("models", [])
     for model in all_models:
-        model_dir = config[model]["model_dir"]
+        logger.debug(f"Locating {model}")
+        try:
+            model_dir = config[model]["model_dir"]
+        except KeyError:
+            # XIOS does not seem to define model_dir? Jan? What?
+            vcs_versions[model] = f"Unable to locate model_dir for {model}."
+            continue
         if helpers.is_git_repo(model_dir):
             vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:
@@ -707,7 +713,7 @@ def add_vcs_info(config):
     # this may at least be a good start:
     esm_tools_repo = config.get("general", {}).get("esm_function_dir")
     if esm_tools_repo is not None:
-        vcs_versions["esm_tools"] = helpers.get_git_hash(f"{esm_tools_repo}/../")
+        vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
         esm_parser.user_error("esm_tools doesn't know where it's own install location is. Something is very seriously wrong.")
@@ -738,18 +744,29 @@ def check_vcs_info_against_last_run(config):
     config : dict
         The experiment configuration
     """
-    if config['general']['run_number'] == 1:
+    # FIXME(PG): Sometimes general.run_number is None (shows up as null in the
+    # config), so this check is absolutely the worst way of doing it, but
+    # whatever...
+    if config['general']['run_number'] == 1 or config["general"]["run_number"] is None:
         return config  # No check needed on the very first run
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
     # FIXME(PG): This file might not exist if people erase every run folder...
     last_exp_vcs_info_file = f"{config['prev_run']['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
 
-    with open(exp_vcs_info_file, "r") as f:
-        current_vcs_info = yaml.safe_load(f)
-    with open(last_exp_vcs_info_file, "r") as f:
-        last_vcs_info = yaml.safe_load(f)
+    try:
+        with open(exp_vcs_info_file, "r") as f:
+            current_vcs_info = yaml.safe_load(f)
+    except IOError:
+        logger.warning(f"Unable to open {exp_vcs_info_file}, skipping check...")
+        return config
+    try:
+        with open(last_exp_vcs_info_file, "r") as f:
+            last_vcs_info = yaml.safe_load(f)
+    except IOError:
+        logger.warning(f"Unable to open {last_exp_vcs_info_file}, skipping_check...")
+        return config
     if not config["general"].get("allow_vcs_differences", False) and current_vcs_info != last_vcs_info:
-        esm_parser.user_error("""
+        esm_parser.user_error("VCS Differences", """
             You have differences in either the model code or in the esm-tools between two runs! 
 
             If you are **sure** that this is OK, you can set 'general.allow_vcs_differences' to True to avoid this check.

@@ -10,7 +10,6 @@ import sys
 import time
 
 import f90nml
-import six
 import yaml
 
 import esm_parser
@@ -117,9 +116,7 @@ def rename_sources_to_targets(config):
                         )
                     else:
                         config[model][filetype + "_targets"] = {}
-                        for descrip, name in six.iteritems(
-                            config[model][filetype + "_sources"]
-                        ):
+                        for descrip, name in config[model][filetype + "_sources"].items():
                             config[model][filetype + "_targets"].update(
                                 {descrip: os.path.basename(name)}
                             )
@@ -230,7 +227,7 @@ def choose_needed_files(config):
                 continue
 
             new_sources = new_targets = {}
-            for category, name in six.iteritems(config[model][filetype + "_files"]):
+            for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
                 if not name in config[model][filetype + "_sources"]:
                     print(
@@ -265,10 +262,7 @@ def globbing(config):
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 # oldconf = copy.deepcopy(config[model])
-                for descr, filename in six.iteritems(
-                    copy.deepcopy(config[model][filetype + "_sources"])
-                    # oldconf[filetype + "_sources"]
-                ):  # * only in targets if denotes subfolder
+                for descr, filename in copy.deepcopy(config[model][filetype + "_sources"]).items():
                     if "*" in filename:
                         del config[model][filetype + "_sources"][descr]
                         # Save the wildcard string for later use when copying to target
@@ -309,9 +303,8 @@ def target_subfolders(config):
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_targets" in config[model]:
-                for descr, filename in six.iteritems(
-                    config[model][filetype + "_targets"]
-                ):  # * only in targets if denotes subfolder
+                for descr, filename in config[model][filetype + "_targets"].items():
+                    # * only in targets if denotes subfolder
                     # TODO: change with user_error()
                     if not descr in config[model][filetype + "_sources"]:
                         esm_parser.user_error(
@@ -1001,7 +994,7 @@ def copy_files(config, filetypes, source, target):
         if not "files_missing_when_preparing_run" in config["general"]:
             config["general"]["files_missing_when_preparing_run"] = {}
         if config["general"]["verbose"]:
-            six.print_("\n\nWARNING: These files were missing:")
+            print("\n\nWARNING: These files were missing:")
             for missing_file in missing_files:
                 print(f"- missing source: {missing_files[missing_file]}", flush=True)
                 print(f"- missing target: {missing_file}", flush=True)
@@ -1093,7 +1086,7 @@ def report_missing_files(config):
             print(f"- missing target: {missing_file}", flush=True)
             helpers.print_datetime(config)
         if not config["general"]["files_missing_when_preparing_run"] == {}:
-            six.print_(80 * "=")
+            print(80 * "=")
         print()
     return config
 

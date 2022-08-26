@@ -45,8 +45,8 @@ general:
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
-            #- "add_vcs_info"
-            #- "check_vcs_info_against_last_run"
+            - "add_vcs_info"
+            - "check_vcs_info_against_last_run"
             - "_write_finalized_config"
             - "database_entry"
 
@@ -85,7 +85,7 @@ general:
         with_icebergs: false
         with_bootstrap: false
 
-        scenario: "PALEO"
+        scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -102,6 +102,7 @@ general:
 #########################################################################################
 
 echam:
+        scenario: ${general.scenario}
         restart_firstlast: "first"
         namelist_changes:
                 namelist.echam:

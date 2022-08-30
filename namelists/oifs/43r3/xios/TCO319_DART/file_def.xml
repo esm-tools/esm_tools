@@ -192,6 +192,9 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
+                <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+                <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
             </field_group>
         </file>
 
@@ -210,6 +213,22 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <field field_ref="cp" name="cp" long_name="Convective precipitation"/>
+                <field field_ref="lsp" name="lsp" long_name="Large-scale precipitation"/>
+                <field field_ref="ttr" name="ttr" long_name="Top net thermal radiation"/>
+                <field field_ref="sshf" name="sshf" long_name="Surface sensible heat flux"/>
+                <field field_ref="slhf" name="slhf" long_name="Surface latent heat flux"/>
+                <field field_ref="ssr" name="ssr" long_name="Surface net solar radiation"/>
+                <field field_ref="str" name="str" long_name="Surface net thermal radiation"/>
+                <field field_ref="ssrc" name="ssrc" long_name="Surface net solar radiation, clear sky"/>
+                <field field_ref="strc" name="strc" long_name="Surface net thermal radiation, clear sky"/>
+                <field field_ref="mx2t" name="mx2t" long_name="Maximum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="mn2t" name="mn2t" long_name="Minimum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
+                <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+                <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
+                <field field_ref="ewss" name="ewss" long_name="Eastward turbulent surface stress"/>
+                <field field_ref="nsss" name="nsss" long_name="Northward turbulent surface stress"/>
             </field_group>
         </file>
 
@@ -319,6 +338,8 @@
                 <field field_ref="q_pl" name="q"/>
                 <field field_ref="w_pl" name="w"/>
                 <field field_ref="r_pl" name="r"/>
+                <field field_ref="clwc_pl" name="clwc"/>
+                <field field_ref="ciwc_pl" name="ciwc"/>
             </field_group>
         </file>
 

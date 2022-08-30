@@ -9,12 +9,12 @@ ldiag_DVD        =.false.
 ldiag_forc       =.true.
 /
 
-&nml_listsize
-io_listsize=100 !number of streams to allocate. shallbe large or equal to the number of streams in &nml_list
+&nml_output_settings
+    keep_nth_level = 2
 /
 
-&nml_output_settings
-keep_nth_level=2 ! set to >1 if levels should be skipped in 3d output
+&nml_listsize
+io_listsize=100 !number of streams to allocate. shallbe large or equal to the number of streams in &nml_list
 /
 
 ! for sea ice related variables use_ice should be true, otherewise there will be no output
@@ -23,7 +23,7 @@ keep_nth_level=2 ! set to >1 if levels should be skipped in 3d output
 ! 'otracers' - all other tracers if applicable
 ! for 'dMOC' to work ldiag_dMOC must be .true. otherwise no output
 &nml_list
-io_list =  'sst       ',1, 'd', 4,
+io_list =  'sst       ',90,'s', 4,
            'sss       ',1, 'd', 4,
     	   'ssh       ',1, 'd', 4,
            'uice      ',1, 'd', 4,
@@ -35,13 +35,13 @@ io_list =  'sst       ',1, 'd', 4,
            'MLD2      ',1, 'm', 4,
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-           'temp      ',1, 'm', 4,
-           'salt      ',1, 'm', 4,
-           'N2        ',1, 'y', 4,
+           'temp      ',1, 'd', 4,
+           'salt      ',1, 'd', 4,
+           'N2        ',1, 'm', 4,
            'Kv        ',1, 'y', 4,
-           'u         ',1, 'y', 4,
-           'v         ',1, 'y', 4,
-           'w         ',1, 'y', 4,
+           'u         ',1, 'd', 4,
+           'v         ',1, 'd', 4,
+           'w         ',1, 'd', 4,
            'Av        ',1, 'y', 4,
            'bolus_u   ',1, 'y', 4,
            'bolus_v   ',1, 'y', 4,

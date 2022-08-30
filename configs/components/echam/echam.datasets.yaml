@@ -94,7 +94,7 @@ forcing_sources:
                         to: 1850
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
-                        to: 2008
+                        #to: 2008
         "ozone_hist_scenario":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
                         to: 1850

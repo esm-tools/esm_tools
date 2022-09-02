@@ -87,7 +87,7 @@ nemo:
          #namsbc:
          #   nn_fsbc: 1
          namsbc_rnf:
-            rn_rfact: 0.0
+            rn_rfact: 1.0
    
 rnfmap:
    nproc: 1

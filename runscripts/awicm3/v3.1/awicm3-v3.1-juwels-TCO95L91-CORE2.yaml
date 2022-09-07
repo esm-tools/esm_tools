@@ -8,8 +8,8 @@ general:
     final_date: "2010-01-01"
     base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
-    nmonth: 0
-    nyear: 10
+    nmonth: 1
+    nyear: 0
 
 awicm3:
     postprocessing: false
@@ -20,12 +20,12 @@ fesom:
     resolution: "CORE2"
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
-    restart_rate: 10
-    restart_unit: "y"
-    restart_first: 10
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 432
+    nproc: 48
 
 oifs:
     resolution: "TCO95"
@@ -37,10 +37,6 @@ oifs:
     time_step: 3600
     nproc: 48
     omp_num_threads: 1
-    add_namelist_changes:
-        fort.4:
-            NAMSURF:
-                RALBSEAD: 0.045
 
 oasis3mct:
     lresume: true # Set to false to generate the rst files for first leg
@@ -50,6 +46,6 @@ oasis3mct:
 xios:
     with_model: oifs
     nproc: 2
-    omp_num_threads: 48
+    omp_num_threads: 24
 
 

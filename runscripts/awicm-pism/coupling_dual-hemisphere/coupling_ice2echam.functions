@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/usr/bin/ksh
 
 ## @fn ice2echam_1st() 
 ice2echam_1st() {
@@ -172,18 +172,11 @@ update_orography_prepare_calnoro() {
 ## @fn update_orography_run_calnoro() 
 update_orography_run_calnoro() {
         echo; echo "                *   running CALNORO"
-        
-        #if [ "${MACHINE}" == "ollie" ]; then
-        #    module unload netcdf
-        #    module load hdf5/1.10.2_gnu
-        #    module load netcdf/4.6.2_gnu
-        #fi
-
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
                 if [ ! -f ${FUNCTION_PATH}/calnoro ]; then
                         echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
-                        echo "                   !!!   Looking in: ${FUNCTION_PATH}/"
+                        echo "                   !!!   Looking in: ${FUNCTION_PATH}/iterative_coupling/"
                         echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
                         exit 42
                 else
@@ -196,12 +189,9 @@ update_orography_run_calnoro() {
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
-	echo "RES_echam = ${RES_echam/T/}"
         echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
         #rm sso_par_fil.srv topodata.nc
-        #module load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
-        #module load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
         if [ "$MACHINE" == "ollie" ]; then
             module unload netcdf/4.6.0_gnu
             module load netcdf/4.6.0_intel
@@ -313,7 +303,7 @@ set_glacial_mask_echam_restart_file_1st() {
         dfile=${dfile%.*}_${RES_echam}grid.nc
 
         cdo -s -setmisstoc,0 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile 
-        cdo -s -gec,0.5 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
+        cdo -s -gec,${ECHAM_GLACIAL_THRESHOLD} $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
 
         change_lonlat $ifile ice_mask
         change_lonlat $dfile ice_domain
@@ -342,7 +332,8 @@ set_glacial_mask_echam_restart_file_2nd() {
         just_glac_new.tmp.nc
         ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc 
 
-        mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        ncatted -a history_of_appended_files,global,d,, echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
         ncrename -v ice_mask,glac $ifile
         rm just_glac_new.nc
         rm just_glac_new.tmp.nc
@@ -362,7 +353,8 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
                 tmp && mv tmp dummy_jan_surf.nc
         # Fix Albedo where there are glaciers:
-        echam_albedo_on_glaciers=0.7
+        #echam_albedo_on_glaciers=0.7
+        echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS}
         cdo -s \
                 -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
@@ -647,7 +639,6 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
         echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
         echo "$(module list)"
-        echo "pwd = $(pwd)"
         ${FUNCTION_PATH}/utils/unpack_file.ksh \
                 $(basename $newest_jsbach_restart_file) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \

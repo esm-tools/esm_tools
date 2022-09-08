@@ -209,6 +209,7 @@ ic_atm2pism_regrid_dyn_downscale() {
     ic_atm2pism_regrid_dyn_downscale_split_names
     ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference
     ic_atm2pism_regrid_dyn_downscale_temperature
+    ic_atm2pism_regrid_dyn_downscale_temperature_below_firn
     ic_atm2pism_regrid_dyn_downscale_precipitation
     ic_atm2pism_regrid_dyn_downscale_shortwave_downward_radiation
     ic_atm2pism_regrid_dyn_downscale_TOAshortwave
@@ -242,6 +243,7 @@ ic_atm2pism_regrid_downscale() {
     ic_atm2pism_regrid_downscale_split_names
     ic_atm2pism_regrid_downscale_generate_elevation_difference
     ic_atm2pism_regrid_downscale_temperature
+    ic_atm2pism_regrid_downscale_temperature_below_firn
     ic_atm2pism_regrid_downscale_precipitation
     ic_atm2pism_regrid_downscale_shortwave_downward_radiation
     ic_atm2pism_regrid_downscale_TOAshortwave
@@ -262,6 +264,7 @@ ic_atm2pism_regrid_downscale() {
 ic_atm2pism_regrid_interpolate() {
     echo; echo -e "\t\tInterpolating atmosphere forcing..."
     ic_atm2pism_regrid_interpolate_temperature
+    ic_atm2pism_regrid_interpolate_temperature_below_firn
     ic_atm2pism_regrid_interpolate_precipitation
     ic_atm2pism_regrid_interpolate_shortwave_downward_radiation
     ic_atm2pism_regrid_interpolate_TOAshortwave
@@ -281,6 +284,7 @@ ic_atm2pism_regrid_interpolate() {
 ic_atm2pism_regrid_remap() {
     echo; echo -e "\t\tRemapping atmosphere forcing..."
     ic_atm2pism_regrid_remap_temperature
+    ic_atm2pism_regrid_remap_temperature_below_firn
     ic_atm2pism_regrid_remap_precipitation
     ic_atm2pism_regrid_remap_shortwave_downward_radiation
     ic_atm2pism_regrid_remap_TOAshortwave
@@ -400,8 +404,7 @@ ic_atm2pism_prepare_clean_missing_values() {
     echo; echo -e "\t\t* Cleaning up missing values from atmosphere_file_for_ice.nc (If any are found)"
 
     missing_value_filler=0
-    #variables_in_atmosphere_file_for_ice=$(cdo -s pardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk '{print $2}')
-    variables_in_atmosphere_file_for_ice=$(cdo -s showvar ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ') # | awk '{print $2}')
+    variables_in_atmosphere_file_for_ice=$(cdo -s vardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk '{print $2}')
     cdo -s splitvar ${COUPLE_DIR}/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice_
     for var in ${variables_in_atmosphere_file_for_ice}; do
         current_min=$(cdo -s \
@@ -486,8 +489,7 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
         fi
         #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
         INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
-        #if ${cdo} -L -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
-        if ${cdo} -L -s showvar ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
+        if ${cdo} -L -s vardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
                 echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
                 ${cdo} -s -seltimestep,-1 usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
@@ -508,6 +510,13 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
 	cdo settbounds,1mon -setreftime,1850-01-01,00:00:00 -setunit,m tmp.nc surface_altitude_coarse_resolution.nc
 
 	cleanup_list="$cleanup_list ${COUPLE_DIR}/${PISM_HEMISPHERE}/elev_hi.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/elev_lo.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/elev_hi_minus_lo.nc"
+}
+
+ic_atm2pism_regrid_dyn_downscale_temperature_below_firn() {
+	echo""; echo -e "\t\t*   dynamical downscaling temperature below firn"
+        echo -e "\t\t-   falling back to bilinear interpolation for temperature!"
+        echo -e "\t\t-   PISM will internally apply lapse rates to this field!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc ${COUPLE_DIR}/temperature_below_firn.nc
 }
 
 ic_atm2pism_regrid_dyn_downscale_temperature() {
@@ -647,12 +656,12 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         fi
         #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
         INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
-        #if ${cdo} -s pardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
-        if ${cdo} -s showvar ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
+        if ${cdo} -s vardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism | grep -q usurf; then
                 ${cdo} -s -seltimestep,-1 ${INPUT_FILE_pism} usurf.tmp.nc
                 ${cdo} -s -selvar,usurf usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
+                echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 ${cdo} -s -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -setrtoc,-10000,0,0 \
@@ -728,6 +737,35 @@ ic_atm2pism_regrid_downscale_temperature() {
                 echo -e "\t\t-   falling back to bilinear interpolation for temperature!"
                 # Take the already bilinearly interpolated file
                 mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc
+        fi
+}
+
+ic_atm2pism_regrid_downscale_temperature_below_firn() {
+        DOWNSCALE_TEMP=${DOWNSCALE_TEMP:-1}
+        if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
+                echo ""; echo "                *  downscaling temperature_below_firn"
+                DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"} #old value = -0.007
+                if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
+                        echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
+                        echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
+                        exit 6
+                fi
+                echo "                -  Lapse rate applied was Γ=${DOWNSCALING_LAPSE_RATE} (K/km)"
+                ${cdo} -s -f nc \
+                        -add ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc \
+                        -mulc,${DOWNSCALING_LAPSE_RATE} \
+                        ${COUPLE_DIR}/elev_hi_minus_lo.nc \
+                        ${COUPLE_DIR}/temp_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                echo "                -  corrections applied (time mean of difference Hi-Res - Lo-Res) "
+                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc)"
+                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc)"
+                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc)"
+                mv ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/temperature_below_firn.nc
+        else
+                echo ""; echo -e "\t\t*   NOT downscaling temperature_below_firn"
+                echo -e "\t\t-   falling back to bilinear interpolation for temperature_below_firn!"
+                # Take the already bilinearly interpolated file
+                mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc ${COUPLE_DIR}/temperature_below_firn.nc
         fi
 }
 
@@ -873,6 +911,25 @@ ic_atm2pism_regrid_interpolate_temperature() {
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
 }
 
+ic_atm2pism_regrid_interpolate_temperature_below_firn() {
+        atmosphere_file=${1:-${COUPLE_DIR}/atmosphere_file_for_ice.nc}
+        echo ""; echo -e "\t\t* Regridding temperature_below_firn bilinearly from atmosphere_file_for_ice.nc"
+
+        if [ "x$debug_ic_atm2pism_regrid_interpolate_temperature_below_firn" == "x1" ]; then
+                echo -e "\t\t Command is:"
+                echo " ${cdo} -v -f nc -P 8 \
+                        -remapbil,${COUPLE_DIR}/ice.griddes \
+                        -selvar,${atmosphere_name_temperature_below_firn} \
+                        ${atmosphere_file} ${COUPLE_DIR}/temperature_below_firn.nc \
+                        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism"
+        fi
+
+        ${cdo} -s -f nc -P 8 \
+                -remapbil,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_temperature_below_firn} \
+                ${atmosphere_file} \
+                ${COUPLE_DIR}/temperature_below_firn.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
 
 ## @fn ic_atm2pism_regrid_interpolate_precipitation()
 ## @brief
@@ -972,6 +1029,14 @@ ic_atm2pism_regrid_remap_temperature() {
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
 }
 
+ic_atm2pism_regrid_remap_temperature_below_firn() {
+        echo ""; echo -e "\t\t* Regridding temperature_below_firn conservatively from atmosphere_file_for_ice.nc"
+        ${cdo} -s -f nc  \
+                -remapcon,${COUPLE_DIR}/ice.griddes   \
+                -selvar,${atmosphere_name_temperature_below_firn} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/temperature_below_firn.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
 
 ## @fn ic_atm2pism_regrid_remap_precipitation()
 ## @brief
@@ -1247,6 +1312,7 @@ ic_atm2pism_ablation_pdd_set_time_axis() {
 ic_atm2debm_ablation_debm_make_forcing() {
         echo; echo -e "\t\t* Preparing forcing file from atmosphere_file_for_ice.nc for the dEBM Mass Balance Model"
         ic_atm2debm_ablation_debm_make_forcing_set_temperature_units
+        ic_atm2debm_ablation_debm_make_forcing_set_temperature_below_firn_units
         ic_atm2debm_ablation_debm_make_forcing_set_precipitation_units
         ic_atm2debm_ablation_debm_make_forcing_set_cloud_cover_units
         ic_atm2debm_ablation_debm_make_forcing_set_shortwave_units
@@ -1307,6 +1373,24 @@ ic_atm2debm_ablation_debm_make_forcing_set_precipitation_units() {
         echo -e "\t\t-   setting precipitation units and variable names"
         ncrename -v ${atmosphere_name_precipitation},precipitation ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc
         ncatted -a units,precipitation,o,c,"kg m-2 second-1" ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc
+        echo -e "\t\t- LA DEBUG: Use anomaly coupling = ${PREC_ANOM}"
+        if [[ "x${PREC_ANOM}" == "x1" ]]; then
+             echo -e "\t\t-  use bias correction from this file ${PREC_BIAS_FILE}"
+
+             ${cdo} -s -f nc -P 8 \
+                     -remapbil,${COUPLE_DIR}/ice.griddes   \
+                     ${PREC_BIAS_FILE} \
+                     ${COUPLE_DIR}/remapped.precbias_file.nc
+             ${cdo} -s -P 8 \
+                    -setmisstoc,0 
+                    -ifthen -gtc,0 ${COUPLE_DIR}/remapped.precbias_file.nc
+                    ${COUPLE_DIR}/remapped.precbias_file.nc tmp.nc
+             mv tmp.nc ${COUPLE_DIR}/remapped.precbias_file.nc
+
+             ${COUPLE_DIR}/temperature.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+             cdo -s -sub ${COUPLE_DIR}/precipitation.nc ${COUPLE_DIR}/remapped.precbias_file.nc ${COUPLE_DIR}/precipitation.tmp.nc
+             mv ${COUPLE_DIR}/precipitation.tmp.nc ${COUPLE_DIR}/precipitation.nc
+        fi
 }
 
 
@@ -1425,6 +1509,7 @@ latitude_varname='lat'
 time_varname='time'
 stddev=3.5
 obliquity=${obliquity_value}
+beta=${DEBM_BETA}
 /
 EOF
 #        cat -> ${COUPLE_DIR}/namelist.debm << EOF
@@ -1442,7 +1527,9 @@ EOF
 # time_varname                          = 'time'
 # stddev                                =  3.5
 # obliquity                             =  ${obliquity_value}
+# beta                                  =  ${DEBM_BETA}
 #/
+#EOF
 
 echo -e "\t\t- Namelist used in this dEBM run was:"
 cat ${COUPLE_DIR}/${PISM_HEMISPHERE}/namelist.debm
@@ -1574,11 +1661,17 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 echo -e "\t\t@ DEBUG: Getting air temperature"
         fi
         # select air_temperature
+        #LA: change timmean to ymonmean
         cdo -s \
-                -timmean \
-                -selvar,air_temp \
-                ${COUPLE_DIR}/${PISM_HEMISPHERE}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
-                tmp0 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
+                -ymonmean \
+                -selvar,tsurf \
+                ${COUPLE_DIR}/temperature_below_firn.nc \
+                tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+                #-timmean \
+                #-selvar,air_temp \
+                #${COUPLE_DIR}/${PISM_HEMISPHERE}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+                #tmp0 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Determining temperature scale Kelvin vs Celsius" 
@@ -1599,15 +1692,17 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Duplicating array 12x" 
         fi
-        #  copy this array 12x so you have one for each month
-        cdo -s \
-                cat \
-                tmp1 tmp1 tmp1 tmp1 tmp1 tmp1 \
-                tmp6 1>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism 2>&1
-        cdo -s \
-                cat \
-                tmp6 tmp6 \
-                tmp12 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
+        ##  copy this array 12x so you have one for each month
+        #LA: Not necessary anymore as we have now monthly output
+        #cdo -s \
+        #        cat \
+        #        tmp1 tmp1 tmp1 tmp1 tmp1 tmp1 \
+        #        tmp6 1>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism 2>&1
+        #cdo -s \
+        #        cat \
+        #        tmp6 tmp6 \
+        #        tmp12 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
+        cp tmp1 tmp12
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Setting time axis" 
@@ -1616,7 +1711,8 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 -settaxis,1000-01-16,12:00:00,1mon \
                 tmp12 \
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/air_temp_copy.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism
-        rm tmp0 tmp tmp1 tmp6 tmp12 
+        #rm tmp0 tmp tmp1 tmp6 tmp12 
+        rm tmp0 tmp tmp1 tmp12 
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Multi-year monthly means" 
@@ -1673,11 +1769,13 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         mv tmp ${mask_file}
 
         # apply mask
+        #for var in SNH MELT SMB REFR A air_temp; do
         for var in SNH MELT SMB REFR A air_temp; do
                 #cdo -s -f nc ifthen ${mask_file} -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism 2>&1
         done
-        cdo -s -O merge SNH MELT SMB REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_atm2pism 2>&1
+        #cdo -s -O merge SNH MELT SMB REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        cdo -s -O merge SNH MELT SMB REFR A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
         # TODO/BUG (sxu): For right now, Paul is just filling in any missing
         # values with a setmisstodis, maybe there is a better way to solve
@@ -1689,7 +1787,8 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         # way we can have a debug step print it out if anything needs to get
         # checked.
         # make clean
-        rm SNH MELT SMB REFR A air_temp
+        #rm SNH MELT SMB REFR A air_temp
+        rm SNH MELT SMB REFR A tsurf
         rm smb.nc
         if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${mask_file} ]; then
                 mv ${mask_file} ${COUPLE_DIR}/${PISM_HEMISPHERE}/
@@ -1718,7 +1817,8 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_temperature_varname_and_unit
         echo -e "\t\t- Setting variable name and unit for temperature"
         echo -e "\t\t- In surface_given variant, this corresponds to firn temperature"
 
-        debm_ice_temp_varname="air_temp"
+        #debm_ice_temp_varname="air_temp"
+        debm_ice_temp_varname="tsurf"
         pism_ice_temp_varname="ice_surface_temp"
         ncrename \
                 -v ${debm_ice_temp_varname},${pism_ice_temp_varname} \

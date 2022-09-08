@@ -268,7 +268,7 @@ class Namelist:
 
                 try:
                     forcing_table = pd.read_csv(
-                        config["echam"]["transient_forcing_table"], sep=";", index_col=0
+                        config["echam"]["transient_forcing_table"], sep=";", index_col=0, header=None, 
                     )
                     co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
                         config["general"]["current_date"].year

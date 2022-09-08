@@ -403,6 +403,29 @@ choose_icb_code:
                     use_icesheet_coupling: "${use_icesheet_coupling}"
                     steps_per_ib_step: 8
 
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+                
+                fwf_path: "${general.experiment_couple_dir}" 
+                
+                #choose_echam.hosing_correction:
+                #        true:
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${fwf_path}" 
+        '*':
+                use_landice_water: False
+
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
 choose_currentday:

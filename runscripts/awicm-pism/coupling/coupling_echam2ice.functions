@@ -166,8 +166,8 @@ echam_ice_construct_input_list() {
         echam6_file_list_for_ice=""
         for year in $(seq $start_year_couple $end_year_couple ); do
                 for month in $(seq -f "%02g" 1 12); do
-                        if [ -f "${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam" ]; then
-                            current_file="${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam"
+                        if [ -f "${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_ism" ]; then
+                            current_file="${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_ism"
                         elif [ -f "${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam" ]; then
                             current_file="${DATA_DIR_echam}/${EXP_ID}_${year}${month}.01_echam"
                         else

@@ -5,7 +5,6 @@ import stat
 import copy
 
 import esm_environment
-import six
 
 from esm_parser import find_variable, user_error, user_note
 from . import helpers
@@ -223,6 +222,11 @@ class batch_system:
 
                 else:
                     continue
+
+                # seb-wahl: add support for ECHAM6's parallel I/O feature
+                # namelist parctl in namelist.echam
+                if "nprocio" in config[model]:
+                    config[model]["tasks"] += config[model].get("nprocio",0)
 
                 nproc = config[model]["tasks"]
                 if cluster == "compute":
@@ -587,13 +591,13 @@ class batch_system:
             os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
         if config["general"]["verbose"]:
-            six.print_("\n", 40 * "+ ")
-            six.print_("Contents of ", runfilename, ":")
+            print("\n", 40 * "+ ")
+            print("Contents of ", runfilename, ":")
             with open(runfilename, "r") as fin:
                 print(fin.read())
             if os.path.isfile(self.bs.filename):
-                six.print_("\n", 40 * "+ ")
-                six.print_("Contents of ", self.bs.filename, ":")
+                print("\n", 40 * "+ ")
+                print("Contents of ", self.bs.filename, ":")
                 with open(self.bs.filename, "r") as fin:
                     print(fin.read())
 

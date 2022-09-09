@@ -1,26 +1,17 @@
 import os
 import shutil
-import subprocess
 import sys
-import copy
 import pathlib
 
-import six
 import questionary
-import yaml
-from esm_calendar import Date
-from colorama import Fore, Back, Style, init
+from colorama import Fore
 
 import esm_tools
 import esm_parser
 
 from .batch_system import batch_system
-from .filelists import copy_files, log_used_files
 from .helpers import end_it_all, evaluate, write_to_log
-from .namelists import Namelist
 from loguru import logger
-
-from colorama import Fore
 
 
 def run_job(config):

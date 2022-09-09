@@ -2,10 +2,10 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "v3.1"
-    account: "hhb20"
+    account: "hhb21"
     compute_time: "00:20:00"
     initial_date: "2000-01-01"
-    final_date: "2000-03-01"
+    final_date: "2000-01-03"
     base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 1
     nmonth: 0
@@ -25,7 +25,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 432
+    nproc: 144
 
 oifs:
     resolution: "TCO95"

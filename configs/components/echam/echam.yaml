@@ -730,7 +730,7 @@ namelist_changes:
                         dt_stop:
                                 - ${pseudo_end_date!syear}
                                 - ${pseudo_end_date!smonth}
-                                - ${pseudo_start_date!sday}
+                                - ${pseudo_end_date!sday}
                         dt_resume:
                                 - ${pseudo_resume_date!syear}
                                 - ${pseudo_resume_date!smonth}

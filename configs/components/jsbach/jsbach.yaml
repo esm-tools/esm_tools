@@ -18,14 +18,18 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
 cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
-pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
+choose_computer.name:
+        levante:
+                pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
+        ollie:
+                pool_dir_awi: "${computer.pool_directories.pool}/JSBACH"
 input_dir_awi: "${pool_dir_awi}/input/${dataset}"
 
 dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
-scenario_type: ${echam.scenario}
+scenario: ${echam.scenario}
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -265,6 +269,10 @@ choose_version:
                                         LU_trans: LU_trans_none
 
 # common options for scenarios, eg. CMIP6
+Ndepo_cmip6: Ndepo_hist_scenario
+popdens_cmip6: popdens
+cover_fract_cmip6: cover_fract.@YEAR@.nc
+
 choose_scenario_type:
         cmip6:
                 add_input_files:
@@ -272,10 +280,12 @@ choose_scenario_type:
                 forcing_files:
                         LU: LU_hist_scenario
                         LU_trans: LU_trans_hist_scenario
-                        Ndepo: Ndepo_hist_scenario
+                        Ndepo: ${Ndepo_cmip6}
                         a_nd_file: a_nd_file
                         lightning: lightning
-                        popdens: popdens
+                        popdens: ${popdens_cmip6}
+                        cover_fract: ${cover_fract_cmip6}
+
 
 # For ssp scenarios find the pathway first 4 characters
 scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
@@ -285,10 +295,9 @@ choose_scenario_is_ssp:
                 # SSP scenarios share common paths. They are grouped under cmip6 and
                 # further options are given under `choose_scenario_type` section
                 scenario_type: cmip6
-                add_forcing_files:
-                            Ndepo: Ndepo_ssp
-                            popdens: popdens_ssp
-                            cover_fract: cover_fract_ssp
+                Ndepo_cmip6: Ndepo_ssp
+                popdens_cmip6: popdens_ssp
+                cover_fract_cmip6: cover_fract_ssp
 
         False:
                 ssp_num: null

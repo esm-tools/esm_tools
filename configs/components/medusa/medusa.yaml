@@ -61,10 +61,6 @@ executable: medusa_recom_paleo
 
 lresume: false
 
-#YY: compiler-dependent changes in Makefile -> choose_compiler/machine?
-#include/ifort or mpiifort, lib/ifort or mpiifort
-
-
 namelists:
     - medusa_recom_paleo_files.nml
     - medusa_recom_paleo_forcing.nml

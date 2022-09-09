@@ -22,17 +22,22 @@ choose_version:
       branch: main
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
- directory for code and libraries
+# directory for code and libraries
 model_dir: "${general.esm_master.dir}/medusa-${version}" 
 #lib_dir: "${model_dir}/lib"
 #inc_dir: "${model_dir}/include"
 #code_dir: "${model_dir}/medmbm/trunk4mcg"
 # directory of applications
-setup_dir: "${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_paleo"
+#setup_dir: "${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_paleo"
 # directory of executables
-bin_dir: "${model_dir}/work/exe_files"
+#bin_dir: "${model_dir}/work/exe_files"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
 #data_path: ""
+
+environment_changes:
+        add_module_actions:
+                - "unload netcdf"
+                - "load netcdf/4.4.0_intel"
 
 clean_command: ${defaults.clean_command}
 comp_command: "mkdir -p lib; mkdir -p include; 
@@ -46,25 +51,25 @@ comp_command: "mkdir -p lib; mkdir -p include;
     make usetemplates;
     make libmedusa.a;
     cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; make;" 
-    
-executable: medusa_recom_paleo
-#install_bins: "bin/medusa_recom_paleo"
+#YY: compiler-dependent changes needed in Makefile -> choose_compiler/machine?
+#now the _mpiifort ones copied during compilation
+#original medusa code: include/ifort or mpiifort, lib/ifort or mpiifort created
+
+executable: medusa_recom_paleo 
+# exe saved in ${model_dir}/medmbm/trunk4mcg/work
+# should be copied into medusa run directory 
+
 lresume: false
 
 #YY: compiler-dependent changes in Makefile -> choose_compiler/machine?
 #include/ifort or mpiifort, lib/ifort or mpiifort
 
 
-#scenario: "paleo"
-
-namelist_dir: ""
-
 namelists:
     - medusa_recom_paleo_files.nml
     - medusa_recom_paleo_forcing.nml
     - medusa_seafloor_init.nml
+    - medusa.rrp
+    - medusa.tsi # medusa time step, will be changed after each medusa run (like 'fesom.clock') 
 
 
-
-#namelist_changes        
-     

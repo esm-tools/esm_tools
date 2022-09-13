@@ -18,11 +18,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
 cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
-choose_computer.name:
-        levante:
-                pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
-        ollie:
-                pool_dir_awi: "${computer.pool_directories.pool}/JSBACH"
+pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
 input_dir_awi: "${pool_dir_awi}/input/${dataset}"
 
 dynamic_vegetations: False

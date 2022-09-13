@@ -84,8 +84,7 @@ choose_dataset:
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
                         # Files used by AWI-CM1 and AWI-CM1-REcoM in Levante for ssp scenarios
                         "popdens_ssp":
-                                "/work/ollie/mandresm/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
-                                #"${input_dir_awi}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
+                                "${input_dir_awi}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "cover_fract_HIST":
@@ -109,8 +108,7 @@ choose_dataset:
                         "cover_fract_ssp":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
-                                "/work/ollie/mandresm/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
-                                #"${input_dir}/${echam.resolution}/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
+                                "${input_dir}/${echam.resolution}/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
                                         to: 2300
 

@@ -101,7 +101,7 @@ choose_version:
                         false:
                                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
-                                dynveg: "_no_dynveg"
+                                dynveg: "_no-dynveg"
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:

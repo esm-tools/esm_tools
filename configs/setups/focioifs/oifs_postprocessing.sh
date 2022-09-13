@@ -4,6 +4,8 @@
 # based on the Postprocessing from the old mkexp based runtime environment
 # Sebastian Wahl 06/2021
 #
+# Modified for OpenIFS by Joakim Kjellsson
+#
 
 #################################################################################
 # default settings for the variables that can be changed via the command line
@@ -17,10 +19,10 @@ run_monitoring="no"
 
 module load nco || module load NCO
 
-OCEAN_CHECK_NETCDF4=false
+ATM_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
-OCEAN_CONVERT_NETCDF4=true 
-OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T"
+ATM_CONVERT_NETCDF4=true 
+ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_ml reduced_sfc reduced_pv reduced_pl reduced_ml"
 
 # Other settings
 day="01"
@@ -46,7 +48,7 @@ while getopts "h?md:r:s:e:p:x" opt; do
         echo "                   -s startyear                        (startyear, default is $startyear)"
         echo "                   -e endyear                          (endyear,   default is $endyear)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
-        echo "                   -m run nemo_monitoring.sh           "
+        echo "                   -m run oifs_monitoring.sh           "
         echo
         exit 0
         ;;
@@ -107,7 +109,7 @@ RESTART_DIR=${basedir}/${EXP_ID}/restart
 debug=0
 
 # Component directories/names
-ocemod=nemo
+atmmod=oifs
 
 #
 # Default options for Unix commands
@@ -193,110 +195,115 @@ rm -r $post_dir
 mkdir $post_dir
 
 #
-# Convert NEMO netcdf3 output to netcdf4 using the chunking algorithm
+# Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
 # developed by Willi Rath, GEOMAR (convert_to_deflated_nc4classic_with_small_chunks.sh)
-# Converts any NEMO netCDF file to deflated (level 1) netCDF4-classic with
-# (1,1,100,100)=(t,z,y,x) chunks.
+# Converts any OpenIFS netCDF file to deflated (level 1) netCDF4-classic with
+# (1,1,100,100)=(t,plev,lat,lon) chunks.
 # needs ncdump and a recent (4.3.7 or newer) nco
 #
-print 'NEMO netcdf4 conversion started'
-outmod=${DATA_DIR}/${ocemod}
+print 'OpenIFS netcdf4 conversion started'
+outmod=${DATA_DIR}/${atmmod}
 
 mkdir ${outmod}
 cd ${outmod}
 mkdir nc3
 
-filetags="${OCEAN_FILE_TAGS}"
-steps="${EXP_ID}_1h ${EXP_ID}_3h ${EXP_ID}_6h ${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1h 1_${EXP_ID}_3h 1_${EXP_ID}_6h 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
+filetags="${ATM_FILE_TAGS}"
+
+#steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
+steps="1ts 1h 3h 6h 1d 1m 1y"
 tchunk=1; zchunk=1; ychunk=100; xchunk=100
 
 echo 0 > $post_dir/status
-if ${OCEAN_CONVERT_NETCDF4} ; then
+if ${ATM_CONVERT_NETCDF4} ; then
 	for ((year=startyear; year<=endyear; ++year))
 	do
 		for filetag in $filetags
 		do
    		for s in $steps
-      	do
-				input=${s}_${year}0101_${year}1231_${filetag}.nc3
-		    	output=${s}_${year}0101_${year}1231_${filetag}.nc
-				# !!! output files will have the same name as the old input file !!! 
-      	  	if [[ -f $output ]] ; then
-					mv $output $input
-               
-					# If too many jobs run at the same time, wait
-					while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
-					(
-						trap 'echo $? > $post_dir/status' ERR
-						print "converting " $input " to " $output
-						if [[ ! -f $output ]]; then
-							ncks -7 $sortoption -L 1 \
-								--cnk_dmn time,${tchunk} --cnk_dmn time_counter,${tchunk} \
-								--cnk_dmn z,${zchunk} --cnk_dmn depthu,${zchunk} --cnk_dmn depthv,${zchunk} --cnk_dmn depthw,${zchunk} --cnk_dmn deptht,${zchunk} \
-								--cnk_dmn x,${xchunk} --cnk_dmn y,${ychunk} \
-							$input $output 
-							if [[ $? -eq 0 ]]; then
-								print "Conversion of $input to $output OK, now checking file with cdo diff"
-								${OCEAN_CHECK_NETCDF4} && cdo -s diff $input $output > ${output}.check
-								if ${OCEAN_CHECK_NETCDF4} && [[ $? -eq 0 ]] && [[ $(wc -l ${output}.check | awk '{print$1}') -eq 0 ]]; then
-									print "cdo diff $input $output OK"
-									rm -f ${output}.check
-									mv -v $input nc3/
-									rm nc3/$input
-								else
-									if ${OCEAN_CHECK_NETCDF4} ; then
-										echo "ERROR: $input and $output differ"
-										mv -v $input nc3/                    
-									else
-										echo "cdo diff check switched off (OCEAN_CHECK_NETCDF4 = ${OCEAN_CHECK_NETCDF4})"
-										mv -v $input nc3/
-										rm nc3/$input
-									fi
-								fi
-							else
-								echo "ERROR during conversion of $input to $output"
-								mv -v $input nc3/                    
-							fi
-						else
-							echo "ERROR: $output exists. This should not happen."
-							mv -v $input nc3/                    
-						fi
-					) &
+      	        do
+                        # Name of output from model (always ECE3...)
+                        input_orig=ECE3_${s}_${year}0101_${filetag}.nc
+                        # Rename to this
+			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc3
+                        # Name of final compressed file
+		    	output=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
+                        			
+      	  	        if [[ -f $input_orig ]] ; then
+			    mv $input_orig $input
+                            # If too many jobs run at the same time, wait
+			    while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+			    (
+			    trap 'echo $? > $post_dir/status' ERR
+			    print "converting " $input " to " $output
+			    if [[ ! -f $output ]]; then
+			        ncks -7 $sortoption -L 1 \
+				--cnk_dmn time,${tchunk} --cnk_dmn time_counter,${tchunk} \
+				--cnk_dmn z,${zchunk} --cnk_dmn depthu,${zchunk} \
+                                --cnk_dmn depthv,${zchunk} --cnk_dmn depthw,${zchunk} --cnk_dmn deptht,${zchunk} \
+				--cnk_dmn x,${xchunk} --cnk_dmn y,${ychunk} \
+				$input $output 
+				if [[ $? -eq 0 ]]; then
+				    print "Conversion of $input to $output OK, now checking file with cdo diff"
+				    ${ATM_CHECK_NETCDF4} && cdo -s diff $input $output > ${output}.check
+                                    if ${ATM_CHECK_NETCDF4} && [[ $? -eq 0 ]] && [[ $(wc -l ${output}.check | awk '{print$1}') -eq 0 ]]; then
+                                        print "cdo diff $input $output OK"
+					rm -f ${output}.check
+					mv -v $input nc3/
+					rm nc3/$input
+                                     else
+					if ${ATM_CHECK_NETCDF4} ; then
+                                            echo "ERROR: $input and $output differ"
+					    mv -v $input nc3/                    
+					else
+					    echo "cdo diff check switched off (ATM_CHECK_NETCDF4 = ${ATM_CHECK_NETCDF4})"
+    	                                    mv -v $input nc3/
+					    rm nc3/$input
+					fi
+				    fi
+				else
+				    echo "ERROR during conversion of $input to $output"
+				    mv -v $input nc3/                    
 				fi
-			done #steps
+			    else
+				echo "ERROR: $output exists. This should not happen."
+				mv -v $input nc3/                    
+			    fi
+			    ) &
+			fi
+		done #steps
 		done #filetags
 	done #years
 fi 
 wait
 [[ $(<$post_dir/status) -eq 0 ]]
 
-print 'NEMO netcdf4 conversion finished'
+print 'OpenIFS netcdf4 conversion finished'
 
 #
 # Calculate yearly means from nemo output and place in ym/ subdirectory 
 #
 
-print 'NEMO ym calculation started'
+print 'OpenIFS ym calculation started'
 
-steps="${EXP_ID}_1m ${EXP_ID}_5d ${EXP_ID}_1d 1_${EXP_ID}_1m 1_${EXP_ID}_5d 1_${EXP_ID}_1d"
+# Use only daily and monthly output
+steps="1d 1m"
 cd ${outmod}
 
 echo 0 > $post_dir/status
 mkdir ym
 
-for ((year=startyear; year<=endyear; ++year))
-do
+if ${ATM_CONVERT_NETCDF4} ; then
+    for ((year=startyear; year<=endyear; ++year))
+    do
 	for filetag in $filetags
 	do
 		for s in $steps
 		do
 			# !!! output files will have the same name as the old input file !!! 
-			input=${s}_${year}0101_${year}1231_${filetag}.nc
-			if [[ "$s" =~ ^1_.*$ ]] ; then
-				output=1_${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
-			else
-				output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
-			fi     
+			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
+			output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
+
 			if [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 
 				touch ym/$output 
@@ -328,62 +335,72 @@ done
 wait
 [[ $(<$post_dir/status) -eq 0 ]]
 
-print 'NEMO ym calculation finished'
-#
-# put NEMO restart files from previous year in one tar file
-#
-print 'NEMO restart postprocessing started'
-cd ${RESTART_DIR}/${ocemod}
+print 'OpenIFS ym calculation finished'
 
-for ((year=startyear-1; year<endyear; ++year)) ; do
-	if ls *${EXP_ID}_*_restart*_${year}1231_*.nc > /dev/null 2>&1 ; then
-		# If too many jobs run at the same time, wait
-		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
-		(
-			trap 'echo $? > $post_dir/status' ERR
-			print "Processing year $year"
-			tar czf ${EXP_ID}_restart_${year}1231.tar.gz *${EXP_ID}_*_restart*_${year}1231_*.nc 
-			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${year}1231_*.nc 
-		) &
+fi 
+
+#
+# put OpenIFS restart files from previous year in one tar file
+#
+
+
+#print 'OpenIFS restart postprocessing started'
+#cd ${RESTART_DIR}/${atmmod}
+#
+#for ((year=startyear-1; year<endyear; ++year)) ; do
+#	if ls ${year}1231 > /dev/null 2>&1 ; then
+#		# If too many jobs run at the same time, wait
+#		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+#		(
+#			trap 'echo $? > $post_dir/status' ERR
+#			print "Processing year $year"
+#			tar czf ${EXP_ID}_restart_${year}1231.tar.gz *${EXP_ID}_*_restart*_${year}1231_*.nc 
+#			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${year}1231_*.nc 
+#		) &
+#	fi
+#	wait
+#done
+#wait
+
+#[[ $(<$post_dir/status) -eq 0 ]]
+#print 'NEMO restart postprocessing finished'
+#
+
+# Make mask and cell size info 
+# * If we have _fx_ output, then take lsm and other stuff
+# * Use cdo gridarea to generate areacella 
+cd ${DATA_DIR}/${atmmod}
+for ((year=startyear-1; year<endyear; ++year)) ; do 
+    if [[ -f "ECE3_fx_${year}0101_regular_sfc.nc" ]] ; then
+        if [[ ! -f "areacella.nc" ]] ; then
+            # Get grid cell area
+            cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_regular_sfc.nc areacella.nc
+        fi 
+        if [[ ! -f "lsm.nc" ]] ; then
+            # Get lsm
+            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc 
+        fi
+    fi
+    
+    if [[ -f "ECE3_fx_${year}0101_reduced_sfc.nc" ]] ; then
+        if [[ !-f "areacella_reduced.nc" ]] ; then
+            # Get grid cell area
+            cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_reduced_sfc.nc areacella_reduced.nc
+        fi
+	if [[ !-f "lsm_reduced.nc" ]] ; then
+            # Get lsm
+	    cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_reduced_sfc.nc lsm_reduced.nc
 	fi
-	wait
+    fi
 done
-wait
 
-[[ $(<$post_dir/status) -eq 0 ]]
-print 'NEMO restart postprocessing finished'
-#
-# Store land sea mask information separately
-# merge mesh_mask.nc files 
-# TODO: nocscombine needs to be compiled with NEMO 
-cd ${DATA_DIR}/${ocemod}
-if [[ $(type -P nocscombinev2.x) ]] && [[ ! -f mesh_mask.nc ]] && [[ -f mesh_mask_0000.nc ]]; then
-	nocscombinev2.x -f mesh_mask_0000.nc 
-	if [[ $? -eq 0 ]] && [[ -f mesh_mask.nc ]]; then
-		print "nocscombinev2.x finished sucessfully"
-		rm mesh_mask_????.nc
-	   test -d $DATA_DIR/fx || mkdir -p $DATA_DIR/fx
-		mv mesh_mask.nc $DATA_DIR/fx/
-	fi
-else
-	print "nocscombinev2.x is missing or"
-	print "mesh_mask.nc already available or"
-	print "mesh_mask_0000.nc missing"
+if [[ -f "areacella.nc" ]] && [[ -f "lsm.nc" ]] ; then
+    rm *_fx_*_regular_sfc.nc 
 fi
-if [[ $(type -P nocscombinev2.x) ]] && [[ ! -f 1_mesh_mask.nc ]] && [[ -f 1_mesh_mask_0000.nc ]]; then
-	nocscombinev2.x -f 1_mesh_mask_0000.nc 
-	if [[ $? -eq 0 ]] && [[ -f 1_mesh_mask.nc ]]; then
-		print "nocscombinev2.x finished sucessfully"
-		rm 1_mesh_mask_????.nc
-	   test -d $DATA_DIR/fx || mkdir -p $DATA_DIR/fx
-		mv 1_mesh_mask.nc $DATA_DIR/fx/
-	fi
-else
-	print "nocscombinev2.x is missing or"
-	print "1_mesh_mask.nc already available or"
-	print "1_mesh_mask_0000.nc missing"
+if [[ -f "areacella_reduced.nc"]] && [[ -f "lsm_reduced.nc" ]] ; then
+    rm *_fx_*_reduced_sfc.nc
 fi
-print 'NEMO storing of static data finished'
+
 #
 # Epilogue
 #
@@ -396,9 +413,9 @@ print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
 
-if [[ "$run_monitoring" == "yes" ]] ; then
-    print "will now run NEMO monitoring for $startdate-$enddate"
-   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
-else
-   print "NEMO monitoring switched off, use -m to activate it"
-fi
+#if [[ "$run_monitoring" == "yes" ]] ; then
+#    print "will now run NEMO monitoring for $startdate-$enddate"
+#   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+#else
+#   print "OpenIFS monitoring switched off, use -m to activate it"
+#fi

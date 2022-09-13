@@ -65,6 +65,9 @@ choose_version:
   fociagrif:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
+  EM21:
+    branch: runoff
+        
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 
@@ -79,6 +82,14 @@ install_libs:
 # for handling restarts
 # this could be _19900101-19901231 for example
 oasis_date_stamp: ""
+
+#
+# some default settings for remapping
+# GAUSWGT with 9 neighbours and weight 2.0
+# is fine when resolutions are similar
+#
+nb_of_neighbours_a2o: 9
+weight_a2o: 2.0
 
 log_files:
         nout: nout

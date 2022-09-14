@@ -1,10 +1,10 @@
 general:
     setup_name: medusa
     compute_time: "00:08:00"
-    initial_date: '3000-01-01'
-    final_date: '3051-01-01'
+    initial_date: '2002-01-01'
+    final_date: '2002-12-31'
     base_dir: "/work/ollie/mandresm/"
-    nyear: 51
+    nyear: 1
     nmonth: 0
     nday: 0
 
@@ -13,4 +13,5 @@ medusa:
         model_dir: /work/ollie/mandresm/model_codes/medusa-2.0/
         nproc: 1
         lresume: false
-        forcing_dir: /work/ollie/yye/fesom2/output/run_low2_coupled2_lb_new/input4medusa
+        forcing_dir: /work/ollie/yye/medusa_work/run_mbcorr_equil/
+        input_dir: /work/ollie/yye/medusa_work/

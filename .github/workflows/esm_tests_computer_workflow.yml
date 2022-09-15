@@ -37,13 +37,6 @@ jobs:
         submodules: true
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-    
-#    - name: checkout esm_tests_info
-#      uses: actions/checkout@v3
-#      with:
-#        repository: esm-tools/esm_tests_info
-#        path: src/esm_tests/resources
-#        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: add to the path
       run: |
@@ -54,9 +47,15 @@ jobs:
     - name: run esm_tests
       run: |
         yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: checkout esm_tests_info
+      uses: actions/checkout@v3
+      with:
+        repository: esm-tools/esm_tests_info
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
+        ls ${GITHUB_WORKSPACE};
         cd src/esm_tests/resources;
         git config --global user.name ${GITHUB_ACTOR};
         git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;
@@ -65,5 +64,3 @@ jobs:
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
         git status;
         git push;
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

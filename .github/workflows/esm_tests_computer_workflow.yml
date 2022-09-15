@@ -93,6 +93,6 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.ESM_TOOLS_BOT }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: release
         repository: esm-tools/esm_tests_info

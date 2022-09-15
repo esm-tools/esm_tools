@@ -38,7 +38,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-#        persist-credientials: false
+        persist-credientials: false
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -90,6 +90,6 @@ jobs:
       if: ${{ inputs.update_esm_tests_info }}
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.ESM_TOOLS_BOT }}
         branch: release
         repository: esm-tools/esm_tests_info

@@ -18,19 +18,7 @@ on:
         default: "-cngeu -s False"
         
 permissions:
-  actions: write
-  checks: write
   contents: write
-  deployments: write
-  id-token: read
-  issues: write
-  metadata: read
-  packages: write
-  pages: write
-  pull-requests: write
-  repository-projects: write
-  security-events: write
-  statuses: write
 
 jobs:
   computer:

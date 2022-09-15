@@ -71,6 +71,7 @@ jobs:
         echo "CURRENT:";
         ls;
         cd src/esm_tests/resources;
+        rm -rf automatic_testing; # cleanup the resources directory from tests
         echo "PWD:";
         pwd;
         git status;
@@ -79,9 +80,3 @@ jobs:
         git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git push https://${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git;
- #       rm -rf automatic_testing; # cleanup the resources directory from tests
- #       git add .;
- #       git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
- #       git status;
- #       git push;

@@ -80,3 +80,4 @@ jobs:
         git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
+        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git

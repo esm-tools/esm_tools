@@ -55,7 +55,8 @@ jobs:
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
-        ls ${GITHUB_WORKSPACE};
+        echo "HOME:"
+        ls ~/;
         cd src/esm_tests/resources;
         git config --global user.name ${GITHUB_ACTOR};
         git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;

@@ -44,22 +44,19 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-#    - name: run esm_tests
-#      run: |
-#        yes Y | esm_tests ${{ inputs.test_flags }}
-    - name: change directory
+    - name: run esm_tests
       run: |
-        cd /__w/;
-        mkdir esm_tests_info;
-        cd esm_tests_info;
-        pwd;
+        yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: store last tested in a different directory
+      run: |
+        cp -r src/esm_tests/resources /__w/esm_tests_info;
+        ls /__w/esm_tests_info;
     - name: checkout esm_tests_info
       if: ${{ inputs.update_esm_tests_info }}
       uses: actions/checkout@v3
       with:
         repository: esm-tools/esm_tests_info
         token: ${{ secrets.GITHUB_TOKEN }}
-        path: /__w/esm_tests_info
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
@@ -69,6 +66,9 @@ jobs:
         pwd;
         echo "HOME:";
         ls ~/;
+        cp -r /__w/esm_tests_info/last_tested ./;
+        cp /__w/esm_tests_info/status.yaml ./;
+        git status;
  #       cd src/esm_tests/resources;
  #       git config --global user.name ${GITHUB_ACTOR};
  #       git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;

@@ -64,6 +64,7 @@ jobs:
       env:
         ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
       run: |
+        git config --local --unset-all "http.https://github.com/.extraheader"
         git config --global user.name esmtools-bot;
         git config --global user.email esmtools-bot@users.noreply.github.com;
         echo $ESM_TOOLS_BOT;

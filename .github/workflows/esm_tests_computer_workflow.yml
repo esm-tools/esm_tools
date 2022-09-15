@@ -44,40 +44,41 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-    - name: run esm_tests
-      run: |
-        yes Y | esm_tests ${{ inputs.test_flags }}
+#    - name: run esm_tests
+#      run: |
+#        yes Y | esm_tests ${{ inputs.test_flags }}
         
-    - name: store last tested in a different directory
-      if: ${{ inputs.update_esm_tests_info }}
-      run: |
-        cp -r src/esm_tests/resources /__w/esm_tests_info;
-        ls /__w/esm_tests_info;
-    - name: checkout esm_tests_info
-      if: ${{ inputs.update_esm_tests_info }}
-      uses: actions/checkout@v3
-      with:
-        repository: esm-tools/esm_tests_info
-        token: ${{ secrets.GITHUB_TOKEN }}
+#    - name: store last tested in a different directory
+#      if: ${{ inputs.update_esm_tests_info }}
+#      run: |
+#        cp -r src/esm_tests/resources /__w/esm_tests_info;
+#        ls /__w/esm_tests_info;
+#    - name: checkout esm_tests_info
+#      if: ${{ inputs.update_esm_tests_info }}
+#      uses: actions/checkout@v3
+#      with:
+#        repository: esm-tools/esm_tests_info
+#        token: ${{ secrets.GITHUB_TOKEN }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
+      env:
+        ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
       run: |
-        git config --global user.name ${GITHUB_ACTOR};
-        git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;
+        git config --global user.name esmtools-bot;
+        git config --global user.email esmtools-bot@users.noreply.github.com;
+        echo $ESM_TOOLS_BOT;
         echo "CURRENT:";
         ls;
+        cd src/esm_tests/resources;
         echo "PWD:";
         pwd;
-        cp -r /__w/esm_tests_info/last_tested ./;
-        cp /__w/esm_tests_info/state.yaml ./;
         git status;
         git stash;
         git pull;
         git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git push;
- #       cd src/esm_tests/resources;
+        git push https://${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git;
  #       rm -rf automatic_testing; # cleanup the resources directory from tests
  #       git add .;
  #       git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";

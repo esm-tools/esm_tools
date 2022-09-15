@@ -38,7 +38,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-        persist-credientials: false
+#        persist-credientials: false
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,4 +85,9 @@ jobs:
         git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git
+#        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}

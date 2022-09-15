@@ -44,9 +44,9 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-    - name: run esm_tests
-      run: |
-        yes Y | esm_tests ${{ inputs.test_flags }}
+#    - name: run esm_tests
+#      run: |
+#        yes Y | esm_tests ${{ inputs.test_flags }}
     - name: checkout esm_tests_info
       uses: actions/checkout@v3
       with:
@@ -55,15 +55,17 @@ jobs:
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
       run: |
-        echo "HOME:";
-        ls ~/;
+        echo "CURRENT:";
+        ls;
         echo "PWD:";
         pwd;
-        cd src/esm_tests/resources;
-        git config --global user.name ${GITHUB_ACTOR};
-        git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;
-        rm -rf automatic_testing; # cleanup the resources directory from tests
-        git add .;
-        git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git status;
-        git push;
+        echo "HOME:";
+        ls ~/;
+ #       cd src/esm_tests/resources;
+ #       git config --global user.name ${GITHUB_ACTOR};
+ #       git config --global user.email ${GITHUB_ACTOR}@users.noreply.github.com;
+ #       rm -rf automatic_testing; # cleanup the resources directory from tests
+ #       git add .;
+ #       git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
+ #       git status;
+ #       git push;

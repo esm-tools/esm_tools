@@ -87,8 +87,9 @@ jobs:
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
 #        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git
     - name: Push changes
+      if: ${{ inputs.update_esm_tests_info }}
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: release
-        repository: esm-tools/esm_tests_info.git
+        repository: esm-tools/esm_tests_info

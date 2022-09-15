@@ -69,7 +69,7 @@ jobs:
         echo "HOME:";
         ls ~/;
         cp -r /__w/esm_tests_info/last_tested ./;
-        cp /__w/esm_tests_info/status.yaml ./;
+        cp /__w/esm_tests_info/state.yaml ./;
         git status;
  #       cd src/esm_tests/resources;
  #       git config --global user.name ${GITHUB_ACTOR};

@@ -27,7 +27,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 2400
-    nproc: 384
+    nproc: 128
 
 oifs:
     resolution: "TCO95"
@@ -37,7 +37,7 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 384
+    nproc: 128
     omp_num_threads: 1
 
 rnfmap:

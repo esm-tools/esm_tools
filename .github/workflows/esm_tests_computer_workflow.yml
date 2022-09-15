@@ -3,6 +3,21 @@
 
 name: esm_tests_computer_workflow
 
+permissions:
+  actions: read/write
+  checks: read/write
+  contents: read/write
+  deployments: read/write
+  id-token: read
+  issues: read/write
+  metadata: read
+  packages: read/write
+  pages: read/write
+  pull-requests: read/write
+  repository-projects: read/write
+  security-events: read/write
+  statuses: read/write
+
 # Called from other workflows
 on:
   workflow_call:

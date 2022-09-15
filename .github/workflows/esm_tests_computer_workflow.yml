@@ -44,9 +44,9 @@ jobs:
     - name: install esm-tools
       run: |
         ./install.sh
-#    - name: run esm_tests
-#      run: |
-#        yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: run esm_tests
+      run: |
+        yes Y | esm_tests ${{ inputs.test_flags }}
         
 #    - name: store last tested in a different directory
 #      if: ${{ inputs.update_esm_tests_info }}

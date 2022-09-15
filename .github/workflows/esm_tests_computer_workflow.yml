@@ -47,7 +47,13 @@ jobs:
 #    - name: run esm_tests
 #      run: |
 #        yes Y | esm_tests ${{ inputs.test_flags }}
+    - name: change directory
+      run: |
+        cd /__w/;
+        mkdir esm_tests_info;
+        cd esm_tests_info;
     - name: checkout esm_tests_info
+      if: ${{ inputs.update_esm_tests_info }}
       uses: actions/checkout@v3
       with:
         repository: esm-tools/esm_tests_info

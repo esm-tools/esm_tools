@@ -79,7 +79,7 @@ jobs:
         git config user.name esmtools-bot;
         git config user.email esmtools-bot@users.noreply.github.com;
         echo "USER:";
-        git config --local user.name
+        git config user.name
         echo "CURRENT:";
         ls;
         rm -rf automatic_testing; # cleanup the resources directory from tests

@@ -18,7 +18,7 @@ on:
         default: "-cngeu -s False"
     secrets:
       ESM_TOOLS_BOT:
-        required: true
+        required: false
         
 permissions:
   contents: write

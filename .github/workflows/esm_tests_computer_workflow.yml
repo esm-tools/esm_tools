@@ -32,32 +32,32 @@ jobs:
     container:
       image: koldunovn/esm_test:latest
       options: --hostname ${{ inputs.computer }}
-
-    # Service containers to run with `gfortran_ubuntu`
-    steps:    
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-        fetch-depth: 0
     
-    # Set the user to author the git actions of the runner    
-    - name: set user
-      run: |
-        git config --global user.name "${GITHUB_ACTOR}";
-        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-    - name: install hub
-      run: yes Y | apt install hub
+    steps:
     # Checkout PR-branch (I could not find an easier way to do this and it seems
     # many people are struggling with the same problem when your event is triggered
     # by `issue_comment`)
-    - name: checkout PR origin branch
+    - name: PR branch
       run: |
         PR_URL="${{ github.event.issue.pull_request.url }}";
-        PR_NUM=${PR_URL##*/}; echo "$PR_URL and $PR_NUM}"; 
-        hub pr checkout $PR_NUM;
-        git status
+        BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref);
+        echo "::set-output name=this_branch::${BRANCH}"
+      id: this_branch
+      
+    - name: deleteme
+      run: |
+        echo ${THIS_BRANCH}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        THIS_BRANCH: ${{ steps.this_branch.outputs.this_branch }}
+
+    # Service containers to run with `gfortran_ubuntu`
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        persist-credientials: false
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ steps.this_branch.outputs.this_branch }}
 
     - name: add to the path
       run: |

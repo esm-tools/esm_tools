@@ -39,6 +39,7 @@ jobs:
     # by `issue_comment`)
     - name: PR branch
       run: |
+        apt install -y jq;
         PR_URL="${{ github.event.issue.pull_request.url }}";
         BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref);
         echo "::set-output name=this_branch::${BRANCH}"

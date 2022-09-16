@@ -41,7 +41,7 @@ jobs:
       run: |
         apt install -y jq;
         PR_URL="${{ github.event.issue.pull_request.url }}";
-        BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref);
+        BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref | xargs);
         echo "::set-output name=this_branch::${BRANCH}"
       id: this_branch
       

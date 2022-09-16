@@ -24,6 +24,7 @@ jobs:
           computer: ollie1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+          this_branch: ${{ github.ref_name }}
         secrets:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   levante:
@@ -34,6 +35,7 @@ jobs:
           computer: levante1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+          this_branch: ${{ github.ref_name }}
         secrets:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   juwels:
@@ -44,6 +46,7 @@ jobs:
           computer: jwlogin01.juwels
           update_esm_tests_info: true
           test_flags: -cngu -s True
+          this_branch: ${{ github.ref_name }}
         secrets:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   aleph:
@@ -54,6 +57,7 @@ jobs:
           computer: elogin1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+          this_branch: ${{ github.ref_name }}
         secrets:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   blogin:
@@ -64,5 +68,6 @@ jobs:
           computer: blogin1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+          this_branch: ${{ github.ref_name }}
         secrets:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}

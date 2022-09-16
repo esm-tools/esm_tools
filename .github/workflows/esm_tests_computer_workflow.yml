@@ -72,13 +72,14 @@ jobs:
         ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
         USERNAME: esmtools-bot
       run: |
-        git config --local --unset-all "http.https://github.com/.extraheader"
-        git config --global user.name esmtools-bot;
-        git config --global user.email esmtools-bot@users.noreply.github.com;
-        echo $ESM_TOOLS_BOT;
+        cd src/esm_tests/resources;
+        git config --unset-all "http.https://github.com/.extraheader"
+        git config user.name esmtools-bot;
+        git config user.email esmtools-bot@users.noreply.github.com;
+        echo "USER:";
+        git config --local user.name
         echo "CURRENT:";
         ls;
-        cd src/esm_tests/resources;
         rm -rf automatic_testing; # cleanup the resources directory from tests
         echo "PWD:";
         pwd;
@@ -88,11 +89,11 @@ jobs:
         git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-#        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git
-    - name: Push changes
-      if: ${{ inputs.update_esm_tests_info }}
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: release
-        repository: esm-tools/esm_tests_info
+        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git;
+#    - name: Push changes
+#      if: ${{ inputs.update_esm_tests_info }}
+#      uses: ad-m/github-push-action@master
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#        branch: release
+#        repository: esm-tools/esm_tests_info

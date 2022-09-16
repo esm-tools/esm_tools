@@ -16,6 +16,9 @@ on:
       test_flags:
         type: string
         default: "-cngeu -s False"
+    secrets:
+      ESM_TOOLS_BOT:
+        required: true
         
 permissions:
   contents: write

@@ -46,7 +46,7 @@ jobs:
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
     - name: install hub
-      run: pip install hub
+      run: apt install hub
     # Checkout PR-branch (I could not find an easier way to do this and it seems
     # many people are struggling with the same problem when your event is triggered
     # by `issue_comment`)

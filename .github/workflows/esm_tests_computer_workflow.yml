@@ -30,7 +30,7 @@ jobs:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
     container:
-      image: koldunovn/esm_test:latest
+#      image: koldunovn/esm_test:latest
       options: --hostname ${{ inputs.computer }}
 
     # Service containers to run with `gfortran_ubuntu`
@@ -48,8 +48,6 @@ jobs:
     # Checkout PR-branch (I could not find an easier way to do this and it seems
     # many people are struggling with the same problem when your event is triggered
     # by `issue_comment`)
-    - name: install hub
-      run: sudo apt install hub
     - name: checkout PR origin branch
       run: |
         PR_URL="${{ github.event.issue.pull_request.url }}";

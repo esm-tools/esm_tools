@@ -1,0 +1,32 @@
+&JSBACH_CTL
+  STANDALONE = .false.
+  ! --- number of tiles ---
+  NTILES = 11
+  USE_BETHY = .true.
+  USE_PHENOLOGY = .true.
+  USE_ALBEDO = .true.
+  WITH_YASSO = .true.
+  WITH_HD = .true.
+  USE_ROUGHNESS_LAI = .true.
+  USE_ROUGHNESS_ORO = .false.
+  VEG_AT_1200 = .false.
+  USE_DYNVEG = .false.
+  USE_DISTURBANCE = .false.
+  WITH_NITROGEN = .false.
+  ! --- output options ---
+  LCC_FORCING_TYPE = transitions
+  LCC_SCHEME = 2
+  TEST_CCONSERVATION = .true.
+  TEST_NCONSERVATION = .false.
+/
+&SOIL_CTL
+  NSOIL = 5
+/
+&CBALANCE_CTL
+  READ_NDEPO = .false.
+/
+&HYDROLOGY_CTL
+  GETHD = 192, 'steps', 'exact', 0
+  PUTHD = 192, 'steps', 'exact', -450
+  DIAG_WATER_BUDGET = .true.
+/

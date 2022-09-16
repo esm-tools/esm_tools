@@ -297,6 +297,10 @@ choose_version:
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
+                        # new scenario NUDG for ECHAM6-wiso nudged simulations (M. Werner, 09/2022)
+                        NUDG:
+                                add_input_files:
+                                        jsbach: jsbach_1976
 
 # common options for scenarios, eg. CMIP6
 choose_scenario_type:

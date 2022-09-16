@@ -1,7 +1,6 @@
 # MEDUSA-2.0 YAML CONFIGURATION FILE
 #
 model: medusa
-branch: read_fesom_standalone 
 version: '2.0'
 apps: 'medusa_recom_awiesm'
 
@@ -19,7 +18,7 @@ and teaching <https://doi.org/10.5194/gmd-14-3603-2021>"
 
 choose_version:
     '2.0':
-      branch: main
+      branch: read_fesom_standalone
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 # directory for code and libraries
@@ -83,14 +82,24 @@ fluxes:
     - POC
     - PON
 
-add_variables:
-    - DIC_13
-    - DIC_14
-add_fluxes:
-    - POC13
-    - POC14
-    - Cal13
-    - Cal14
+C_fluxes: []
+
+choose_with_ciso:
+    true:
+        add_variables:
+            - DIC_13
+            - DIC_14
+        add_fluxes:
+            - Cal13
+            - Cal14
+        add_C_fluxes:
+            - C13
+            - C14
+        add_namelist_changes:
+            medusa_recom_paleo_forcing.nml:
+                recom_file_list:
+                    cfn_sinkPOC13: sinkC13.${forcing_name}.${start_date!year}-${end_date!year}.nc
+                    cfn_sinkPOC14: sinkC14.${forcing_name}.${start_date!year}-${end_date!year}.nc
 
 choose_lresume:
     true:
@@ -106,10 +115,12 @@ input_sources:
 forcing_files:
     "[[variables-->VAR]]": "VAR"
     "[[fluxes-->FLX]]": "FLX"
+    "[[C_fluxes-->POC]]": "POC"
     dust: dust
 forcing_sources:
     "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
+    "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     dust: ${forcing_dir}/DustClimYearlyAlbani_pi-mesh.nc
 
 config_files:

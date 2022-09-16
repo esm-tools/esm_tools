@@ -19,12 +19,6 @@ on:
     secrets:
       ESM_TOOLS_BOT:
         required: false
-        
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  repository-projects: write
 
 jobs:
   computer:
@@ -41,12 +35,10 @@ jobs:
 
     # Service containers to run with `gfortran_ubuntu`
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v2
       with:
         submodules: true
-        persist-credientials: false
         fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
     
     # Set the user to author the git actions of the runner    
     - name: set user

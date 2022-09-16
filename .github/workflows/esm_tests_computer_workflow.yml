@@ -30,7 +30,7 @@ jobs:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
     container:
-#      image: koldunovn/esm_test:latest
+      image: koldunovn/esm_test:latest
       options: --hostname ${{ inputs.computer }}
 
     # Service containers to run with `gfortran_ubuntu`
@@ -45,6 +45,8 @@ jobs:
       run: |
         git config --global user.name "${GITHUB_ACTOR}";
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+    - name: install hub
+      run: pip install hub
     # Checkout PR-branch (I could not find an easier way to do this and it seems
     # many people are struggling with the same problem when your event is triggered
     # by `issue_comment`)

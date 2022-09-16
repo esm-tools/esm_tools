@@ -76,7 +76,6 @@ jobs:
         USERNAME: esmtools-bot
       run: |
         cd src/esm_tests/resources;
-        git config --unset-all "http.https://github.com/.extraheader"
         git config user.name esmtools-bot;
         git config user.email esmtools-bot@users.noreply.github.com;
         echo "USER:";
@@ -87,6 +86,7 @@ jobs:
         echo "PWD:";
         pwd;
         git status;
+        git diff;
         git stash;
         git pull;
         git stash pop;

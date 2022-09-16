@@ -1,7 +1,7 @@
 # MEDUSA-2.0 YAML CONFIGURATION FILE
 #
 model: medusa
-branch: main
+branch: read_fesom_standalone 
 version: '2.0'
 apps: 'medusa_recom_awiesm'
 
@@ -83,27 +83,14 @@ fluxes:
     - POC
     - PON
 
-fluxes_long:
-    - Calc
-    - Opal
-    - POC
-    - PON
-
-choose_with_ciso:
-    true:
-        add_variables:
-            - DIC_13
-            - DIC_14
-        add_fluxes:
-            - C13
-            - C14
-            - Cal13
-            - Cal14
-        add_fluxes_long:
-            - POC13
-            - POC14
-            - Cal13
-            - Cal14
+add_variables:
+    - DIC_13
+    - DIC_14
+add_fluxes:
+    - POC13
+    - POC14
+    - Cal13
+    - Cal14
 
 choose_lresume:
     true:
@@ -119,11 +106,10 @@ input_sources:
 forcing_files:
     "[[variables-->VAR]]": "VAR"
     "[[fluxes-->FLX]]": "FLX"
-    "[[fluxes_long-->FLX_L]]": "FLX_L"
     dust: dust
 forcing_sources:
     "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${start_date!year}-${end_date!year}.nc"
-    "[[fluxes_long-->FLX_L]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
+    "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     dust: ${forcing_dir}/DustClimYearlyAlbani_pi-mesh.nc
 
 config_files:
@@ -170,6 +156,6 @@ namelist_changes:
     medusa_recom_paleo_forcing.nml:
         recom_file_list:
             cfn_[[variables-->VAL]]: VAL.${forcing_name}.${start_date!year}-${end_date!year}.nc
-            cfn_sink[[fluxes_long-->FLX_L]]: sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc
+            cfn_sink[[fluxes-->FLX]]: sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc
 
 

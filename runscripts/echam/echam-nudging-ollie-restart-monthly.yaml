@@ -1,0 +1,258 @@
+general:
+    setup_name: "echam"
+    version: "6.3.05p2-wiso"
+    #compute_time: "01:30:00"
+    compute_time: "00:20:00"
+    initial_date: "2000-01-01"
+    final_date: "2010-01-31"
+    model_dir: "/home/ollie/mwerner/codes/echam-6.3.05p2-wiso/"
+    base_dir: "/work/ollie/mwerner/echam6-wiso-nudging/T63L47"
+    nmonth: 1
+    nyear: 0
+    with_wiso: True
+    use_venv: False
+    clean_old_rundirs_except: 3
+
+echam:
+    scenario: "NUDG"
+    res: T63
+    restart_rate: 1
+    restart_unit: "months"
+    lresume: True
+    ini_parent_date: 19991231
+    ini_parent_exp_id: "NUDGING_ERA5_T63L47_v1.2"
+    ini_parent_dir: "/work/ollie/mwerner/echam6-wiso-nudging/T63L47/NUDGING_ERA5_T63L47_acauquoin/restart/echam6/"
+    nproca: 24
+    nprocb:  24
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+
+    add_streams: #put these output files into output directory instead of "unknown"
+      - wiso
+      - accw_wiso
+      - nudg
+      
+    remove_streams:
+      - g3bid
+      - g3bim
+      - g3bday
+      - g3b1hi
+      - glday
+      - aclcim
+      - rad
+      - sp6h
+      - glim
+      - spim
+      
+    forcing_sources:
+    
+        # ERA5 fording files
+        
+        era5_atm: "/work/ollie/paleodyn/nudging/ERA5/atmos/T63/era5${echam.res}${echam.levels}_${echam.current_date!syear}${echam.current_date!smonth}.nc"
+        
+        sst_previous: "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sst_$(( ${echam.current_date!syear} - 1 )).nc"
+        sst_current:  "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sst_${echam.current_date!syear}.nc"
+        sst_next:     "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sst_$(( ${echam.current_date!syear} + 1 )).nc"       
+        sst_next2:    "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sst_$(( ${echam.current_date!syear} + 2 )).nc"       
+        sic_previous: "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sic_$(( ${echam.current_date!syear} - 1 )).nc"
+        sic_current:  "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sic_${echam.current_date!syear}.nc"
+        sic_next:     "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sic_$(( ${echam.current_date!syear} + 1 )).nc"
+        sic_next2:    "/work/ollie/paleodyn/nudging/ERA5/sea/T63/T63_era5sic_$(( ${echam.current_date!syear} + 2 )).nc"
+        
+        # further ECHAM6 forcing files
+        
+        swflux_previous: "/work/ollie/pool/ECHAM6/input/r0007/solar_irradiance/swflux_14band_$(( ${echam.current_date!syear} - 1 )).nc"
+        swflux_current:  "/work/ollie/pool/ECHAM6/input/r0007/solar_irradiance/swflux_14band_${echam.current_date!syear}.nc"
+        swflux_next:     "/work/ollie/pool/ECHAM6/input/r0007/solar_irradiance/swflux_14band_$(( ${echam.current_date!syear} + 1 )).nc"
+        swflux_next2:     "/work/ollie/pool/ECHAM6/input/r0007/solar_irradiance/swflux_14band_$(( ${echam.current_date!syear} + 2 )).nc"
+        
+        aero_coarse: "/work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_coa.nc"
+        aero_fine:   "/work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_sw_b14_fin_1865.nc"
+        aero_farir:  "/work/ollie/pool/ECHAM6/input/r0007/T63/aero/T63_aeropt_kinne_lw_b16_coa.nc"
+        
+        # NOTE: For years after 2014, these forcing files do not exist in the ECHAM6 pool input directory!
+        strat_aero_sw_previous: "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_sw_T63_$(( ${echam.current_date!syear} - 1 )).nc"
+        strat_aero_sw_current:  "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_sw_T63_${echam.current_date!syear}.nc"
+        strat_aero_sw_next:     "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_sw_T63_$(( ${echam.current_date!syear} + 1 )).nc"
+        
+        strat_aero_ir_previous: "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_ir_T63_$(( ${echam.current_date!syear} - 1 )).nc"
+        strat_aero_ir_current:  "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_ir_T63_${echam.current_date!syear}.nc"
+        strat_aero_ir_next:     "/work/ollie/pool/ECHAM6/input/r0007/T63/volcano_aerosols/strat_aerosol_ir_T63_$(( ${echam.current_date!syear} + 1 )).nc"
+    
+        # NOTE: For years after 2014, these forcing files do not exist in the ECHAM6 pool input directory!
+        ozone_previous: "/work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_historical_$(( ${echam.current_date!syear} - 1 )).nc"
+        ozone_current:  "/work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_historical_${echam.current_date!syear}.nc"
+        ozone_next:     "/work/ollie/pool/ECHAM6/input/r0007/T63/ozone/T63_ozone_historical_$(( ${echam.current_date!syear} + 1 )).nc"
+
+        MAC_SP: "/work/ollie/pool/ECHAM6/input/r0007/MAC-SP.nc"
+        greenhouse_gases: "/work/ollie/pool/ECHAM6/greenhouse.nc"
+
+        # further JSBACH forcing files
+        
+        # NOTE: For years after 2010, these forcing files do not exist in the ECHAM6 pool input directory!
+        landuse_transition_previous: "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_transitions_T63_$(( ${echam.current_date!syear} - 1 )).nc"
+        landuse_transition_current:  "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_transitions_T63_${echam.current_date!syear}.nc"
+        landuse_transition_next:     "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_transitions_T63_$(( ${echam.current_date!syear} + 1 )).nc"
+        landuse_harvest_previous:    "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_harvest_T63_$(( ${echam.current_date!syear} - 1 )).nc"
+        landuse_harvest_current:     "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_harvest_T63_${echam.current_date!syear}.nc"
+        landuse_harvest_next:        "/work/ollie/pool/JSBACH/T63/New_Hampshire_LCC/hist/LUH_harvest_T63_$(( ${echam.current_date!syear} + 1 )).nc"
+
+        rmp_hd_default: "/work/ollie/pool/JSBACH/input/r0009/HD/rmp_T63_to_hd.nc"
+
+        # water isotope fording file
+        
+        wiso_sw_observed: "/home/ollie/mwerner/model_input/ECHAM6-wiso/PI_ctrl/T63/T63_wisosw_d.nc"
+        
+    add_forcing_files:
+    
+        era5_previous: era5_atm
+        era5_current:  era5_atm
+        era5_next:     era5_atm
+        
+        sst_previous: sst_previous
+        sst_current:  sst_current
+        sst_next:     sst_next
+        sst_next2:    sst_next2        
+        sic_previous: sic_previous
+        sic_current:  sic_current
+        sic_next:     sic_next
+        sic_next2:    sic_next2
+        
+        swflux_previous: swflux_previous
+        swflux_current:  swflux_current
+        swflux_next:     swflux_next
+        swflux_next2:     swflux_next2
+        
+        aero_coarse_previous: aero_coarse
+        aero_coarse_current:  aero_coarse
+        aero_coarse_next:     aero_coarse
+        aero_fine_previous:   aero_fine
+        aero_fine_current:    aero_fine
+        aero_fine_next:       aero_fine
+        aero_farir_previous:  aero_farir
+        aero_farir_current:   aero_farir
+        aero_farir_next:      aero_farir
+        
+        strat_aero_sw_previous:  strat_aero_sw_previous
+        strat_aero_sw_current:   strat_aero_sw_current
+        strat_aero_sw_next:      strat_aero_sw_next
+        strat_aero_ir_previous:  strat_aero_ir_previous
+        strat_aero_ir_current:   strat_aero_ir_current
+        strat_aero_ir_next:      strat_aero_ir_next
+        
+        ozone_previous: ozone_previous
+        ozone_current:  ozone_current
+        ozone_next:     ozone_next
+
+        MAC_SP: MAC_SP
+        greenhouse_gases: greenhouse_gases
+
+        landuse_transition_previous: landuse_transition_previous
+        landuse_transition_current:  landuse_transition_current
+        landuse_transition_next:     landuse_transition_next
+        landuse_harvest_previous:    landuse_harvest_previous
+        landuse_harvest_current:     landuse_harvest_current
+        landuse_harvest_next:        landuse_harvest_next
+                
+        rmp_hd: rmp_hd_default
+        
+        wiso_sw: wiso_sw_observed
+
+    forcing_in_work:
+    
+        era5_previous: ndg${echam.prev_date!syear}${echam.prev_date!smonth}.nc
+        era5_current: ndg${echam.current_date!syear}${echam.current_date!smonth}.nc
+        era5_next: ndg${echam.next_date!syear}${echam.next_date!smonth}.nc
+        
+        sst_previous: "sst$(( ${echam.current_date!syear} - 1 ))"
+        sst_current:  "sst${echam.current_date!syear}"
+        sst_next:     "sst$(( ${echam.current_date!syear} + 1 ))"
+        sst_next2:    "sst$(( ${echam.current_date!syear} + 2 ))"
+        sic_previous: "ice$(( ${echam.current_date!syear} - 1 ))"
+        sic_current:  "ice${echam.current_date!syear}"
+        sic_next:     "ice$(( ${echam.current_date!syear} + 1 ))"
+        sic_next2:    "ice$(( ${echam.current_date!syear} + 2 ))"
+        
+        swflux_previous: "swflux_$(( ${echam.current_date!syear} - 1 )).nc"
+        swflux_current:  "swflux_${echam.current_date!syear}.nc"
+        swflux_next:     "swflux_$(( ${echam.current_date!syear} + 1 )).nc"
+        swflux_next2:     "swflux_$(( ${echam.current_date!syear} + 2 )).nc"
+        
+        aero_coarse_previous: "aero_coarse_1849.nc"
+        aero_coarse_current:  "aero_coarse_1850.nc"
+        aero_coarse_next:     "aero_coarse_1851.nc"
+        aero_fine_previous:   "aero_fine_1849.nc"
+        aero_fine_current:    "aero_fine_1850.nc"
+        aero_fine_next:       "aero_fine_1851.nc"
+        aero_farir_previous:  "aero_farir_1849.nc"
+        aero_farir_current:   "aero_farir_1850.nc"
+        aero_farir_next:      "aero_farir_1851.nc"
+        
+        strat_aero_sw_previous: "strat_aerosol_sw_$(( ${echam.current_date!syear} - 1 )).nc"
+        strat_aero_sw_current:  "strat_aerosol_sw_${echam.current_date!syear}.nc"
+        strat_aero_sw_next:     "strat_aerosol_sw_$(( ${echam.current_date!syear} + 1 )).nc"
+        strat_aero_ir_previous: "strat_aerosol_ir_$(( ${echam.current_date!syear} - 1 )).nc"
+        strat_aero_ir_current:  "strat_aerosol_ir_${echam.current_date!syear}.nc"
+        strat_aero_ir_next:     "strat_aerosol_ir_$(( ${echam.current_date!syear} + 1 )).nc"
+        
+        ozone_previous: "ozon$(( ${echam.current_date!syear} - 1 ))"
+        ozone_current:  "ozon${echam.current_date!syear}"
+        ozone_next:     "ozon$(( ${echam.current_date!syear} + 1 ))"
+
+        MAC_SP: "MAC-SP.nc"
+        greenhouse_gases: "greenhouse_gases.nc"
+
+        landuse_transition_previous: "landuseTransitions.$(( ${echam.current_date!syear} - 1 )).nc"
+        landuse_transition_current:  "landuseTransitions.${echam.current_date!syear}.nc"
+        landuse_transition_next:     "landuseTransitions.$(( ${echam.current_date!syear} + 1 )).nc"
+        landuse_harvest_previous:    "landuseHarvest.$(( ${echam.current_date!syear} - 1 )).nc"
+        landuse_harvest_current:     "landuseHarvest.${echam.current_date!syear}.nc"
+        landuse_harvest_next:        "landuseHarvest.$(( ${echam.current_date!syear} + 1 )).nc"
+                
+        rmp_hd: "rmp_hd.nc"
+        
+        wiso_sw: "unit.25"
+
+    add_namelist_changes:
+        namelist.echam:
+            runctl:
+                default_output: False
+            ndgctl:
+                dt_nudg_start: 
+                  - ${echam.current_date!syear}
+                  - ${echam.current_date!smonth}
+                  - ${echam.current_date!sday}
+                dt_nudg_stop: 
+                  - ${echam.next_date!syear}
+                  - ${echam.next_date!smonth}
+                  - ${echam.next_date!sday}
+
+jsbach:
+    forcing_sources:
+        jsbach_bin_default: "/work/ollie/pool/JSBACH/input/r0010/T63/jsbach_T63GR15_11tiles_5layers_1976_no-dynveg.nc"
+    add_forcing_files:
+        jsbach_bin: jsbach_bin_default
+    forcing_in_work:
+        jsbach_bin: "jsbach.nc"    
+    remove_streams:
+      - land
+      - la_wiso
+      - jsbid
+      - nitro
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+
+hdmodel:
+    file_movements:
+        forcing:
+            all_directions: "link"
+        input:
+            all_directions: "link"
+
+    

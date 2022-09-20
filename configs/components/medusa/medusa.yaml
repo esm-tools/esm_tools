@@ -128,13 +128,11 @@ config_files:
     recom_paleo_forcing: recom_paleo_forcing
     seafloor_init: seafloor_init
     rrp: rrp
-    #tsi: tsi
 config_sources:
     recom_paleo_files: ${namelist_dir}/medusa_recom_paleo_files.nml
     recom_paleo_forcing: ${namelist_dir}/medusa_recom_paleo_forcing.nml
     seafloor_init: ${namelist_dir}/medusa_seafloor_init.nml
     rrp: ${namelist_dir}/medusa.rrp
-    #tsi: ${namelist_dir}/medusa.tsi
 
 create_config:
     medusa.tsi:
@@ -169,4 +167,46 @@ namelist_changes:
             cfn_[[variables-->VAL]]: VAL.${forcing_name}.${start_date!year}-${end_date!year}.nc
             cfn_sink[[fluxes-->FLX]]: sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc
 
+outdata_sources:
+    aux: "medusa_aux.nc"
+    bc: "medusa_bc.${end_date!year}.nc"
+    procrate: "medusa_procrate.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+    reaction: "medusa_reaction.${end_date!year}.nc"
 
+outdata_in_work:
+    aux: "medusa_aux.nc"
+    bc: "medusa_bc.${end_date!year}.nc"
+    procrate: "medusa_procrate.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+    reaction: "medusa_reaction.${end_date!year}.nc"
+
+restart_in_sources:
+    fluxes: "medusa_flux2fesom.${prev_date!year}.nc"
+    flx: "medusa_flx.${prev_date!year}.nc"
+
+restart_in_in_work:
+    fluxes: "medusa_flux2fesom.${prev_date!year}.nc"
+    flx: "medusa_flx.${prev_date!year}.nc"
+
+restart_out_sources:
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
+    flx: "medusa_flx.${end_date!year}.nc"
+
+restart_out_in_work:
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
+    flx: "medusa_flx.${end_date!year}.nc"
+
+log_sources:
+    log: "medusa.log"
+    convergence: "medusa-convergence.log"
+    dbg: "medusa.dbg"
+    err: "medusa.err"
+    tsi: "medusa.tsi"
+
+log_in_work:
+    log: "medusa.log"
+    convergence: "medusa-convergence.log"
+    dbg: "medusa.dbg"
+    err: "medusa.err"
+    tsi: "medusa.tsi"

@@ -186,8 +186,8 @@ restart_in_sources:
     flx: "medusa_flx.${prev_date!year}.nc"
 
 restart_in_in_work:
-    fluxes: "medusa_flux2fesom.${prev_date!year}.nc"
-    flx: "medusa_flx.${prev_date!year}.nc"
+    fluxes: "medusa_flux2fesom.nc"
+    flx: "medusa_flx.nc"
 
 restart_out_sources:
     fluxes: "medusa_flux2fesom.${end_date!year}.nc"

@@ -26,6 +26,7 @@ dynamic_vegetations: False
 version: "3.20"
 dataset: r0009
 scenario: ${echam.scenario}
+scenario_type: ${scenario}
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"

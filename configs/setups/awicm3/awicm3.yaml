@@ -455,6 +455,7 @@ oasis3mct:
         ini_parent_date: "19500101" # not used, but needs to be present
         ini_parent_exp_id: "khw0030" # not used, but needs to be present
         ini_restart_dir: "${input_dir}"
+        ini_parent_dir: "${input_dir}"
 
         output_exchanged_vars: false
 
@@ -624,7 +625,10 @@ oasis3mct:
                         # If ini_restart_dir is not specified in the runscript and, therefore,
                         # it is not a branched off experiment add the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        load_restart_from_pool: "$((
+                            '${input_dir}' == '${ini_restart_dir}' and
+                            '${input_dir}' == '${ini_parent_dir}' and
+                            ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
                                         add_restart_in_sources:
@@ -634,8 +638,8 @@ oasis3mct:
 
         restart_in_sources:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
+                rstas.nc: rstas.nc${oasis_date_stamp}
+                rstos.nc: rstos.nc${oasis_date_stamp}
 
         restart_out_files:
                 rmp: rmp

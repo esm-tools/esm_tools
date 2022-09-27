@@ -240,7 +240,7 @@ class PrevRunInfo(dict):
                 # Dates don't match
                 if calc_prev_date_stamp != prev_date_stamp and self.warn:
                     esm_parser.user_note(
-                        f"End date of the previous configuration file for '{component}'"
+                        f"End date of the previous configuration file for ``{component}``"
                         + " not coinciding:",
                         (
                             f"    File loaded: {prev_run_config_file}\n"
@@ -329,13 +329,13 @@ class PrevRunInfo(dict):
                     esm_parser.user_error(
                         "'prev_run_config_file' not defined",
                         "You are trying to run a branchoff experiment that uses the "
-                        + f"'prev_run' functionality for '{component}' without "
+                        + f"``prev_run`` functionality for ``{component}`` without "
                         + "specifying the path to the previous config file. "
                         + "Please, add to your runscript the following:\n\n"
                         + f"{component}:\n"
                         + "\tprev_run_config_file: <path_to_config_file>\n\n"
                         + "Note: the path to the config file from the parent "
-                        + "is '<path_to_parent_exp>/configs/*_finished_*.yaml_<DATE>'.",
+                        + "is ``<path_to_parent_exp>/config/*_finished_*.yaml_<DATE>``.",
                     )
                 # Resolve for variables in the provided path
                 if "${" in user_prev_run_config_full_path:

@@ -782,12 +782,12 @@ choose_wam:
 
 # For coupled setups we can use ocean currents
 choose_use_ocean_currents:
-        1:
+        True:
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:
                                         LECURR: ".true."
-        0:
+        False:
                 add_namelist_changes:
                         fort.4:
                                 NAEPHY:

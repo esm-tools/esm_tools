@@ -220,8 +220,8 @@ read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
 post_processing: 0
-use_ocean_currents: 0
-solarspectrum: 0
+use_ocean_currents: False
+solarspectrum: False
 pextra: 0
 dr_hook_ignore_signals: -1
 

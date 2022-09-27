@@ -792,15 +792,6 @@ choose_use_ocean_currents:
                         fort.4:
                                 NAEPHY:
                                         LECURR: ".false."
-
-# For 43r3v2 we can choose solar spectrum
-#choose_solarspectrum: 
-#        1:
-#                add_namelist_changes:
-#                        fort.4:
-#                                NAERAD:  
-#                                        NSOLARSPECTRUM: 1
-
 ##
 ## mass conservation / mass fixer
 ## 0 - no mass fixer

@@ -891,7 +891,7 @@ choose_version:
 # If 1, use Coddington spectrum which reduced stratospheric warm bias
 # Only available in 43r3-v2
 choose_solarspectrum:
-        1: 
+        True:
                 add_namelist_changes:
                         fort.4:
                                 NAERAD:                         

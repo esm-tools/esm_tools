@@ -1,0 +1,40 @@
+general:
+    setup_name: medusa
+    compute_time: "00:30:00"
+    initial_date: '2002-01-01'
+    final_date: '2002-12-31'
+    base_dir: "/work/ollie/yye/medusa_work/"
+    nyear: 1
+    nmonth: 0
+    nday: 0
+
+medusa:
+        version: 2.0
+        model_dir: /home/ollie/yye/awiesm_code/medusa-2.0/
+        nproc: 1
+        lresume: false
+        forcing_dir: /work/ollie/yye/medusa_work/medusa_forcing/
+        input_dir: /work/ollie/yye/medusa_work/
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: postprocessing_fesom.sh
+                                script_dir: /work/ollie/yye/esm_tools/runscripts/medusa
+                                call_function: ???
+                                enc_preparation: env_medusa.py???
+                                run_only: ???
+                                skip_chunk_number: 1??
+                        couple_out: # postprocessing script not needed!
+                                nproc: 1
+                                run_after: tidy
+                                script: postprocessing_medusa.sh
+                                script_dir: /work/ollie/yye/esm_tools/runscripts/medusa
+                                call_function: ???
+                                enc_preparation: env_medusa.py???
+                                run_only: ???
+                                

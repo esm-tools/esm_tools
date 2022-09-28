@@ -1,7 +1,6 @@
 general:
         iterative_coupling: True
-        project_base: !ENV ${PROJECT_BASE}
-        base_dir: "${project_base}/experiments/"
+        base_dir: "/work/ollie/mandresm/"
         use_venv: False
 
 model1:
@@ -10,7 +9,11 @@ model1:
         chunk_size: 100
         chunk_unit: "years"
 model2:
-        setup_name: fesom-recom #'fesom-recom' exists in setups/
+        setup_name: fesom
+            #YY: 'fesom-recom' exists in setups/
+            #MA: yes, it exists but your version of fesom-recom was never configured as
+            #    standalone. Therefore, we need to add the changes done in AWIESM into
+            #    the fesom-recom-run.yaml runscript
         runscript: fesom-recom-run.yaml
         chunk_size: 100
         chunk_unit: "years"

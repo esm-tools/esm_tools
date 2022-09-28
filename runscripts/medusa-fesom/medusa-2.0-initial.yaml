@@ -41,5 +41,4 @@ medusa:
                                 #MA: I don't think these are needed
                                 #call_function:
                                 #env_preparation:
-                                run_only: last_run_in_chu
                                 run_only: last_run_in_chunk

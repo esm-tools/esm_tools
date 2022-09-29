@@ -1,0 +1,69 @@
+general:
+        base_dir: "/work/ollie/mandresm/"
+        initial_date: 3500-01-01
+        final_date: 3600-01-01
+        setup_name: fesom
+        version: "2.1-recom"
+        branch: awiesm2-recom-wiso-mass
+        compute_time: 00:30:00
+        nyear: 1
+        use_venv: False
+        #submit_to_batch_system: False
+
+fesom:
+        model_dir: /home/ollie/yye/awiesm_code/awiesm-2.1-recom/fesom-2.1/
+        lresume: False
+        resolution: pi
+        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
+                        #MA: I think this can be deleted
+                        #couple_in:
+                        #        nproc: 1
+                        #        run_before: prepcompute
+                        #        script:
+                        #        #medusa output renaming is already done during medusa run
+                        #        #what needs to be done here?
+                        #        script_dir: /work/ollie/yye/esm_tools/runscripts/medusa/
+                        #        call_function:
+                        #        env_preparation:
+                        #        run_only: first_run_in_chunk
+                        #        #skip_chunk_number: 1
+
+                        couple_out:
+                                #nproc: 1
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script: postprocessing_fesom.sh # We are going to need the parameters here as well
+                                script_dir: ${general.esm_function_dir}/components/medusa/
+                                #MA: I don't think these are needed
+                                #call_function:
+                                #env_preparation:
+                                run_only: last_run_in_chunk
+
+        # FESOM-RECOM BLOCK ###########################################################
+        # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone
+        # version
+        # TODO: eventually move this to fesom-2.1.yaml?
+        version: "2.1-recom"
+        ALE_scheme: 'zstar'
+
+        num_tracers: 33
+        namelist_dir: ${fesom.model_dir}/config/
+        add_config_sources:
+                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
+        add_config_in_work:
+                oce:     namelist.oce
+        remove_namelist_changes.namelist.config: [inout]
+        add_namelist_changes:
+                namelist.config:
+                        restart_log:
+                                restart_length: "${restart_rate}"
+                                restart_length_unit: "${restart_unit}"
+                namelist.oce:
+                        oce_tra:
+                                num_tracers: "${num_tracers}"
+        # END FESOM-RECOM BLOCK #######################################################

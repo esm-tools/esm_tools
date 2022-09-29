@@ -1,7 +1,7 @@
 general:
-        base_dir: "/work/ollie/mandresm/"
-        initial_date: 3500-01-01
-        final_date: 3600-01-01
+        base_dir: "/work/ollie/yye/AWIESM_runs"
+        initial_date: "2000-01-01"
+        final_date: "2001-01-01"
         setup_name: fesom
         version: "2.1-recom"
         branch: awiesm2-recom-wiso-mass
@@ -14,42 +14,43 @@ fesom:
         model_dir: /home/ollie/yye/awiesm_code/awiesm-2.1-recom/fesom-2.1/
         lresume: False
         resolution: pi
-        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
-
-        workflow:
-                next_run_triggered_by: couple_out
-
-                subjobs:
-                        #MA: I think this can be deleted
-                        #couple_in:
-                        #        nproc: 1
-                        #        run_before: prepcompute
-                        #        script:
-                        #        #medusa output renaming is already done during medusa run
-                        #        #what needs to be done here?
-                        #        script_dir: /work/ollie/yye/esm_tools/runscripts/medusa/
-                        #        call_function:
-                        #        env_preparation:
-                        #        run_only: first_run_in_chunk
-                        #        #skip_chunk_number: 1
-
-                        couple_out:
-                                #nproc: 1
-                                batch_or_shell: shell
-                                run_after: tidy
-                                script: postprocessing_fesom.sh
-                                            #${experiment_dir}/outdata/fesom/? = forcing_dir in runscripts/medusa-fesom/medusa-2.0-initial.yaml? 
-                                            /work/ollie/yye/fesom2/output/fesom_output_postproc/ #fesom yearly output copied there for testing
-                                            #${experiment_dir}/input/medusa/?
-                                            /work/ollie/yye/medusa_work/medusa_forcing/
-                                            3101 #$((${current_date!syear}-100years(length of fesom run)))
-                                            3103 #${current_date!syear}                                 
-                                # We are going to need the parameters here as well
-                                script_dir: ${general.esm_function_dir}/components/medusa/
-                                #MA: I don't think these are needed
-                                #call_function:
-                                #env_preparation:
-                                run_only: last_run_in_chunk
+        mesh_dir: /work/ollie/dsidoren/input/fesom2.0/meshes/pi_mesh/pi-grid/
+#        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
+#
+#        workflow:
+#                next_run_triggered_by: couple_out
+#
+#                subjobs:
+#                        #MA: I think this can be deleted
+#                        #couple_in:
+#                        #        nproc: 1
+#                        #        run_before: prepcompute
+#                        #        script:
+#                        #        #medusa output renaming is already done during medusa run
+#                        #        #what needs to be done here?
+#                        #        script_dir: /work/ollie/yye/esm_tools/runscripts/medusa/
+#                        #        call_function:
+#                        #        env_preparation:
+#                        #        run_only: first_run_in_chunk
+#                        #        #skip_chunk_number: 1
+#
+#                        couple_out:
+#                                #nproc: 1
+#                                batch_or_shell: shell
+#                                run_after: tidy
+#                                script: postprocessing_fesom.sh
+#                                            #${experiment_dir}/outdata/fesom/? = forcing_dir in runscripts/medusa-fesom/medusa-2.0-initial.yaml? 
+#                                            /work/ollie/yye/fesom2/output/fesom_output_postproc/ #fesom yearly output copied there for testing
+#                                            #${experiment_dir}/input/medusa/?
+#                                            /work/ollie/yye/medusa_work/medusa_forcing/
+#                                            3101 #$((${current_date!syear}-100years(length of fesom run)))
+#                                            3103 #${current_date!syear}                                 
+#                                # We are going to need the parameters here as well
+#                                script_dir: ${general.esm_function_dir}/components/medusa/
+#                                #MA: I don't think these are needed
+#                                #call_function:
+#                                #env_preparation:
+#                                run_only: last_run_in_chunk
 
         # FESOM-RECOM BLOCK ###########################################################
         # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone
@@ -64,6 +65,17 @@ fesom:
                 oce:     "${namelist_dir}/namelist.oce.recom.ciso"
         add_config_in_work:
                 oce:     namelist.oce
+        namelist_changes:
+                namelist.config:
+                        geometry:
+                            force_rotation: true
+                        paths:
+                            ClimateDataPath: "/work/ollie/yye/fesom2/initial_files/pi_init/"
+                            ForcingDataPath: remove_from_namelist
+                            OpbndPath: remove_from_namelist
+                            TideForcingPath: remove_from_namelist
+        config_sources:
+                io: "${namelist_dir}/namelist.io.recom.ciso"
         remove_namelist_changes.namelist.config: [inout]
         add_namelist_changes:
                 namelist.config:
@@ -73,4 +85,36 @@ fesom:
                 namelist.oce:
                         oce_tra:
                                 num_tracers: "${num_tracers}"
+
+
+recom:
+    lresume: 0
+    bgc_num: 31
+    benthos_num: 8
+    bottflx_num: 8
+    add_namelist_changes:
+        namelist.recom:
+            pavariables:
+                benthos_num: "${benthos_num}"
+                bottflx_num: "${bottflx_num}"
+    data_path: /work/ollie/yye/fesom2/initial_files/pi_init/dust_pimesh/
+    restart_name: "restart."
+    remove_namelist_changes.namelist.recom.pavariables:
+        - constant_CO2
+        - firstyearoffesomcycle
+        - lastyearoffesomcycle
+        - numofCO2cycles
+        - currentCO2cycle
+        - REcoM_PI
+    remove_namelist_changes.namelist.recom.paco2_flux_param:
+        - CO2_for_spinup
+
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                DIC_PI: false
+                ciso: true
+                
+                use_atbox: true
+
         # END FESOM-RECOM BLOCK #######################################################

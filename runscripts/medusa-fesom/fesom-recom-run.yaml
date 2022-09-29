@@ -37,7 +37,14 @@ fesom:
                                 #nproc: 1
                                 batch_or_shell: shell
                                 run_after: tidy
-                                script: postprocessing_fesom.sh # We are going to need the parameters here as well
+                                script: postprocessing_fesom.sh
+                                            #${experiment_dir}/outdata/fesom/? = forcing_dir in runscripts/medusa-fesom/medusa-2.0-initial.yaml? 
+                                            /work/ollie/yye/fesom2/output/fesom_output_postproc/ #fesom yearly output copied there for testing
+                                            #${experiment_dir}/input/medusa/?
+                                            /work/ollie/yye/medusa_work/medusa_forcing/
+                                            3101 #$((${current_date!syear}-100years(length of fesom run)))
+                                            3103 #${current_date!syear}                                 
+                                # We are going to need the parameters here as well
                                 script_dir: ${general.esm_function_dir}/components/medusa/
                                 #MA: I don't think these are needed
                                 #call_function:

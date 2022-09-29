@@ -1,23 +1,19 @@
-import sys
 import os
-import six
 
-from . import batch_system
 from . import logfiles
 from . import helpers
 from . import chunky_parts
 from . import workflow
-import esm_parser
 
 
 def submit(config):
     if config["general"]["verbose"]:
-        six.print_("\n", 40 * "+ ")
+        print("\n", 40 * "+ ")
     print("Submitting jobscript to batch system...")
     print()
     print(f"Output written by {config['computer']['batch_system']}:")
     if config["general"]["verbose"]:
-        six.print_("\n", 40 * "+ ")
+        print("\n", 40 * "+ ")
         for command in config["general"]["submit_command"]:
             print(command)
     for command in config["general"]["submit_command"]:

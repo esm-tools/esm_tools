@@ -1,0 +1,112 @@
+# =============================================================================
+# test runscript for 
+# - setup: awicm1-recom
+# - machine: mistral
+# - scenario: HIST
+# - initial run
+# =============================================================================
+general:
+    setup_name: 'awicm'
+    post_processing: 0
+    # account: <your account>
+    account: ab0995
+    compute_time: "00:45:00"
+    use_database: false
+    use_venv: false
+    version: "1.0-recom"
+    scenario: "HIST"
+    # model_dir: <your model directory>
+    model_dir: "/home/a/a271096/model_codes/LEVANTE_OPTIMIZATION_FORKS/scratch/awicm-1.0-recom"
+    # base_dir: <your base directory>
+    base_dir: "/work/ab0995/a271096/levante_tests/awicm-recom_hist"
+    pool_dir: "/pool/data/"
+    lresume: False
+    # lresume: True
+    initial_date: "2007-01-01"
+    final_date: "2007-03-31"
+    first_initial_year: "${general.initial_date!syear}" 
+    # ini_parent_date: "2006-12-31"
+    # ini_parent_exp_id: <your parent experiment ID> 
+    # ini_parent_dir: <your parent experiment directory>
+    # ini_restart_dir: "${general.ini_parent_dir}"
+    nyear: 0    # Number of years per run
+    nmonth: 1
+
+echam:
+    resolution: "T63"
+    nproca: 24
+    nprocb: 24
+    levels: "L47"
+    post_processing: False
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/echam/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}" 
+    restart_unit: "months"
+    dataset: r0007
+    # namelist from Christopher Danek (AWI)
+    # namelist_dir: "/pf/a/a270073/esm/namelists/echam/6.3.04p1/HIST-CMIP6/"
+    namelist_dir: "/home/a/a270073/esm/namelists/echam/6.3.04p1/HIST-CMIP6/"
+
+jsbach:
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/jsbach/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}" 
+    dynamic_vegetations: True
+    dynveg_file_ending: "_dynveg" # DYNVEG_jsbach="dynveg"
+    dataset: r0010
+    add_input_sources:
+        # "jsbach_1850": /work/ab0995/a270046/meshes_default/core/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc # dynveg true
+        "jsbach_1850": "/work/ab0995/from_Mistral/ab0995/a270046/meshes_default/core/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+hdmodel:
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/hdmodel/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}" 
+
+
+fesom:
+    resolution: CORE2
+    mesh_dir: "/pool/data/AWICM/FESOM1/MESHES/core/"
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/fesom/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}" 
+    nproc: 384
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    # pool_dir: "/work/ab0995/a270046/iceberg-input/"
+    pool_dir: "/work/ab0995/from_Mistral/ab0995/a270046/iceberg-input/"
+    # uncomment the following to use a custom output stream
+    further_reading: "fesom_recom_output.yaml"
+    namelist_changes:
+        namelist.oce:
+            viscdiff:
+                Kh0: 800.0
+
+recom:
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/recom/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}"   
+    f_year_fesom_cycle: "${general.initial_date!syear}"
+    l_year_fesom_cycle: "${general.final_date!syear}"
+    num_CO2_cycles: 1
+    current_CO2_cycle: 1
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                # for the default case only 2 diagnostic 3d tracers will be used
+                diags3d_num: 2
+
+oasis3mct:
+    time_step: 10800
+    cf_name_dir: "${general.model_dir}/oasis"
+    cf: "${cf_name_dir}/cf_name_table.txt"
+    lresume: "${general.lresume}"
+    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+    # ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    # ini_parent_date: "${general.ini_parent_date}" 

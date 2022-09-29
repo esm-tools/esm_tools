@@ -5,6 +5,7 @@ time_step: 900 # changed by coupled setup anyway
 norestart: F
 use_lucia: False
 mct_version: "2.8" # TODO: set mct_version = version (can't do at the moment as version is a string)
+git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 
 config_files:
         cf: cf
@@ -28,6 +29,7 @@ available_versions:
 - '4.0-oifsdeck'
 - '4.0-awicm-frontiers'
 - '4.0-awicm-3.0'
+- '4.0-awicm-3.1'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8mct-awiesm-2.1'
@@ -39,7 +41,7 @@ choose_version:
     git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
     
   '2.8':
-    branch: '2.8'
+    branch: 'v2.8'
   '3.0':
     branch: '3.0'
   '4.0':
@@ -49,6 +51,8 @@ choose_version:
     branch: '4.0'
   4.0-awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
+  4.0-awicm-3.1:
+    branch: awicm-3.1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
   ec-earth:
@@ -63,7 +67,6 @@ clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 
 destination: oasis
-git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 install_libs:
 - build/lib/psmile/libpsmile.a
 - build/lib/psmile/mct/libmct.a

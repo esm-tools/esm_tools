@@ -192,7 +192,6 @@ config_sources:
 config_in_work:
         recom: "namelist.recom"
 
-#4.7.22 Ying: why deleting 'restart' in filename?
 restart_name: ""
 
 restart_in_files:

@@ -59,14 +59,9 @@ par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
 choose_fesom.par_tracers:
     True:
         namelist_dir: "${model_dir}/config/"
-        # kh 21.02.22 use uppercase here
-        #forcing_data_dir: "${pool_dir}/FORCING/"
-        # kh 21.02.22
-        #asforcing: CORE2
+        asforcing: CORE2
         # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
         #remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
-        # kh 14.04.22 last used for core2 resolution on levante
-        # kh 19.04.22 disable for haralds's tests
         nproc: 1024
         # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
         #remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
@@ -75,14 +70,6 @@ choose_fesom.par_tracers:
         #    nm_sss_data_file]
         # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
         #remove_fesom.config_files: [cvmix, icepack]
-        # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
-#        add_config_files:
-#                recom:   recom
-#                io.recom.ciso: io.recom.ciso
-        # kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
-#        add_config_sources:
-#                recom:   "${namelist_dir}/namelist.recom"
-#                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
 #-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
 
 destination: "fesom-2.1"
@@ -129,12 +116,11 @@ choose_computer.name:
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
-# YY 28.06.2022: why doubled here (climate, forcing and mesh)? Does the following exist on levante?
-#climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/" 
-#forcing_data_dir: "${pool_dir}/forcing/"
-#mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
+climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
+forcing_data_dir: "${pool_dir}/forcing/"
+mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
-#namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
+namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
 
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
@@ -151,6 +137,8 @@ namelists:
         - namelist.io
         - namelist.cvmix
         - namelist.icepack
+
+
 
 choose_resolution:
         CORE2:

@@ -98,8 +98,6 @@ scenario: "PI-CTRL"
 
 time_step: 1800
 
-bgc_num: 22
-
 use_ciso: false
 
 choose_use_ciso:

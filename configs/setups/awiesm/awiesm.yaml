@@ -155,8 +155,6 @@ echam:
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
                                         grid: atmo
-
-# kh 09.06.22
                 "2.1-recom-par-tracers":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}

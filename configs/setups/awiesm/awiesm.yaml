@@ -285,8 +285,6 @@ fesom:
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
                                         grid: feom
-
-# kh 08.06.22
                 "2.1-recom-par-tracers":
                         version: "2.1-recom-par-tracers"
                         ALE_scheme: 'zstar'

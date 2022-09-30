@@ -467,7 +467,7 @@ oasis3mct:
                                         - 'i2_oce <--distwgt-- i2_atm'
                                         - 'i3_oce <--distwgt-- i3_atm'
         choose_general.with_recom:
-                "True": # MA: after merging in FESOM by Martin B. this can be removed
+                True: # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_target_fields:
                                 add_o2a_flux:
                                         - 'o18_atmo <--distwgt-- o18_feom'

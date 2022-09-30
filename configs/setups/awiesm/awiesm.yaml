@@ -73,10 +73,12 @@ general:
             couplings:
             - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
             fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
           '2.1-wiso':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso
             fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
           '2.1-recom':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso+recom-2.0
@@ -93,7 +95,6 @@ general:
             with_recom: true
 
         with_wiso: false
-        with_recom: false
         with_pico: false
         with_icebergs: false
         with_bootstrap: false

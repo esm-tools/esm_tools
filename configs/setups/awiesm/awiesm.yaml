@@ -411,8 +411,6 @@ recom:
 
                         namelist_dir: ${fesom.model_dir}/config/
 
-#                        use_ciso: false
-# kh 08.06.22
                 "*":
                         not_used: ""
 

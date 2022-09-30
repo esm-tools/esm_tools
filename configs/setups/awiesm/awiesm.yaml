@@ -207,7 +207,7 @@ echam:
         # with_recom switch
         # -----------------
         # Settings for running with REcoM
-        choose_general.with_wiso:
+        choose_general.with_recom:
             True:
                 wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
                 add_coupling_fields:

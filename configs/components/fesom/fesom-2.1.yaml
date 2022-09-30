@@ -47,7 +47,6 @@ choose_version:
     branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-#   destination: fesom-2.1-recom-par_tracers_mpi
 # kh 08.03.22 todo: merge conflict (if enabled)
 #   include_models:
 #       - recom

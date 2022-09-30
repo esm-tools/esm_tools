@@ -290,7 +290,6 @@ fesom:
                         ALE_scheme: 'zstar'
                         #5.7.22 Ying: par-tracers only with ciso
                         use_ciso: true
-#                        num_tracers: 33
                         namelist_dir: ${fesom.model_dir}/config/
                         remove_namelist_changes.namelist.config: [inout]
                         add_namelist_changes:

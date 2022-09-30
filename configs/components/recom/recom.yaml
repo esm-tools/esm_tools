@@ -162,7 +162,6 @@ choose_scenario:
                         ask_user_to_continue: True
 
 namelist_sce: ""
-namelist_dir: "${esm_namelist_dir}/${model}" # TODO:Decide for one of them
 namelist_dir: "${general.model_dir}/recom/"
 
 namelists:

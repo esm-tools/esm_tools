@@ -82,8 +82,6 @@ general:
             - recom
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
             with_recom: true
-
-# kh 08.06.22
           '2.1-recom-par-tracers':
             couplings:
             - fesom-2.1-recom-par_tracers_mpi+echam-6.3.05p2-wiso+recom-2.0

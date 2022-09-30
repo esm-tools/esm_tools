@@ -258,6 +258,7 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
+        use_ciso: false
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------

@@ -29,6 +29,8 @@
 # general.with_wiso: controls the choose_ blocks that trigger the necessary changes
 #       in the namelists to activate/deactivate WISO, and therefore, it is meant to be
 #       edited in the runscript.
+#
+# general.with_recom: switches on the REcoM-specific configurations
 
 general:
         prepcompute_recipe:
@@ -91,6 +93,7 @@ general:
             with_recom: true
 
         with_wiso: false
+        with_recom: false
         with_pico: false
         with_icebergs: false
         with_bootstrap: false

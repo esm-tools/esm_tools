@@ -64,8 +64,6 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
-
-# kh 07.06.22
         - '2.1-recom-par-tracers'
 
         choose_version:

@@ -374,7 +374,7 @@ fesom:
         # use_ciso switch
         # ---------------
         # num_tracers only changed if ``with_recom: true``)
-        choose_recom.use_ciso:
+        choose_fesom.use_ciso:
                 true:
                         namelist_ciso_sufix: ".ciso"
                         num_tracers: 33

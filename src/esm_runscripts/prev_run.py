@@ -197,9 +197,7 @@ class PrevRunInfo(dict):
         )
         # Check for interactive, or submitted from a computing node, to avoid
         # using ``input()`` or ``questionaries`` in the second case
-        self.isinteractive = (
-            self._config["general"].get("last_jobtype", "") == "command_line"
-        )
+        self.isinteractive = self._config["general"].get("isinteractive", False)
 
         # Loop through components
         components = self._components

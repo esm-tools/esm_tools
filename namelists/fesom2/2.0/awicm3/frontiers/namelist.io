@@ -9,6 +9,10 @@ ldiag_DVD        =.false.
 ldiag_forc       =.true.
 /
 
+&nml_output_settings
+    keep_nth_level = 1
+/
+
 &nml_listsize
 io_listsize=100 !number of streams to allocate. shallbe large or equal to the number of streams in &nml_list
 /
@@ -31,8 +35,8 @@ io_list =  'sst       ',1, 'm', 4,
            'MLD2      ',1, 'm', 4,
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-           'temp      ',1, 'y', 4,
-           'salt      ',1, 'y', 4,
+           'temp      ',1, 'm', 4,
+           'salt      ',1, 'm', 4,
            'N2        ',1, 'y', 4,
            'Kv        ',1, 'y', 4,
            'u         ',1, 'y', 4,

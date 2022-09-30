@@ -9,4 +9,5 @@ coupling_changes:
   - sed -i '/RECOM_LIBRARY/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
   - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
   - sed -i '/ECHAM6_COUPLED_RECOM/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
-
+  # remove commented-out __cpl_echam
+  - sed -i 's/#[ \t]*\(target_compile_definitions.*__cpl_echam.*$\)/\1/g' recom/CMakeLists.txt

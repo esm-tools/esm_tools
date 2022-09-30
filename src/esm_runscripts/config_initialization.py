@@ -102,6 +102,9 @@ def get_user_config_from_command_line(command_line_config):
     user_config["general"].update(command_line_config)
     if deupdate_use_venv:
         user_config["general"]["use_venv"] = user_use_venv
+    user_config["general"]["isinteractive"] = command_line_config.get(
+        "last_jobtype", ""
+    )=="command_line"
     return user_config
 
 

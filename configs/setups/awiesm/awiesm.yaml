@@ -29,6 +29,8 @@
 # general.with_wiso: controls the choose_ blocks that trigger the necessary changes
 #       in the namelists to activate/deactivate WISO, and therefore, it is meant to be
 #       edited in the runscript.
+#
+# general.with_recom: switches on the REcoM-specific configurations
 
 general:
         prepcompute_recipe:
@@ -45,6 +47,8 @@ general:
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
+            #- "add_vcs_info"
+            #- "check_vcs_info_against_last_run"
             - "_write_finalized_config"
             - "database_entry"
 
@@ -62,8 +66,6 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
-
-# kh 07.06.22
         - '2.1-recom-par-tracers'
 
         choose_version:
@@ -82,8 +84,6 @@ general:
             - recom
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
             with_recom: true
-
-# kh 08.06.22
           '2.1-recom-par-tracers':
             couplings:
             - fesom-2.1-recom-par_tracers_mpi+echam-6.3.05p2-wiso+recom-2.0
@@ -93,11 +93,12 @@ general:
             with_recom: true
 
         with_wiso: false
+        with_recom: false
         with_pico: false
         with_icebergs: false
         with_bootstrap: false
 
-        scenario: "PALEO"
+        scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -114,6 +115,7 @@ general:
 #########################################################################################
 
 echam:
+        scenario: ${general.scenario}
         restart_firstlast: "first"
         namelist_changes:
                 namelist.echam:
@@ -152,19 +154,9 @@ echam:
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
-                        wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_fields:
-                                "[[wiso_fields-->FIELD]]":
-                                        grid: atmo
-
-# kh 09.06.22
                 "2.1-recom-par-tracers":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
-                        wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_fields:
-                                "[[wiso_fields-->FIELD]]":
-                                        grid: atmo
 
         # Resolution switch
         # -----------------
@@ -212,6 +204,17 @@ echam:
                                         submodelctl:
                                             lupdate_orog: True
 
+        # with_recom switch
+        # -----------------
+        # Settings for running with REcoM
+        choose_general.with_wiso:
+            True:
+                wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
+                add_coupling_fields:
+                    "[[wiso_fields-->FIELD]]":
+                        grid: atmo
+
+
 
 
 
@@ -219,6 +222,7 @@ echam:
 
 
 jsbach:
+        dynamic_vegetations: True
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         choose_jsbach.dataset:
                 "r0009":
@@ -254,6 +258,7 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
+        use_ciso: false
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -268,44 +273,13 @@ fesom:
                 "2.1-recom":
                         version: "2.1-recom"
                         ALE_scheme: 'zstar'
-                        num_tracers: 24
                         namelist_dir: ${fesom.model_dir}/config/
-                        add_config_sources:
-                                #5.7.22 Ying: default withtout ciso
-                                oce:    "${namelist_dir}/namelist.oce.recom"
-                                io:     "${namelist_dir}/namelist.io.recom"
-                        remove_namelist_changes.namelist.config: [inout]
-                        add_namelist_changes:
-                                namelist.config:
-                                        restart_log:
-                                                restart_length: "${restart_rate}"
-                                                restart_length_unit: "${restart_unit}"
-                                namelist.oce:
-                                        oce_tra:
-                                                num_tracers: "${num_tracers}"
-                        wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_fields:
-                                "[[wiso_fields-->FIELD]]":
-                                        grid: feom
-
-# kh 08.06.22
                 "2.1-recom-par-tracers":
                         version: "2.1-recom-par-tracers"
                         ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
                         #5.7.22 Ying: par-tracers only with ciso
                         use_ciso: true
-#                        num_tracers: 33
-                        namelist_dir: ${fesom.model_dir}/config/
-                        remove_namelist_changes.namelist.config: [inout]
-                        add_namelist_changes:
-                                namelist.config:
-                                        restart_log:
-                                                restart_length: "${restart_rate}"
-                                                restart_length_unit: "${restart_unit}"
-                        wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_fields:
-                                "[[wiso_fields-->FIELD]]":
-                                        grid: feom
 
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
@@ -375,13 +349,39 @@ fesom:
             "*":
                 is: invalid
 
+        # with_recom switch
+        # -----------------
+        # Settings for running with REcoM
+        choose_general.with_recom:
+            True:
+                add_config_sources:
+                    oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+                    io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+                remove_namelist_changes.namelist.config: [inout]
+                add_namelist_changes:
+                    namelist.config:
+                        restart_log:
+                            restart_length: "${restart_rate}"
+                            restart_length_unit: "${restart_unit}"
+                    namelist.oce:
+                        oce_tra:
+                            num_tracers: "${num_tracers}"
+                wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
+                add_coupling_fields:
+                    "[[wiso_fields-->FIELD]]":
+                        grid: feom
+
         # use_ciso switch
+        # ---------------
+        # num_tracers only changed if ``with_recom: true``)
         choose_recom.use_ciso:
                 true:
-                        add_config_sources: 
-                                io: "${namelist_dir}/namelist.io.recom.ciso"
-                                oce: "${namelist_dir}/namelist.oce.recom.ciso"
-                        num_tracers: 33 
+                        namelist_ciso_sufix: ".ciso"
+                        num_tracers: 33
+                false:
+                        namelist_ciso_sufix: ""
+                        num_tracers: 24
+
 #########################################################################################
 
 
@@ -389,21 +389,16 @@ recom:
         choose_general.with_recom:
                 True:
                         version: "2.0"
-#                        bgc_num: 31
-#                        benthos_num: 8
-#                        bottflx_num: 8
-#                        add_namelist_changes:
-#                            namelist.recom:
-#                                pavariables:
-#                                    benthos_num: "${benthos_num}"
-#                                    bottflx_num: "${bottflx_num}"
 
-                        data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
+                        add_choose_computer.name:
+                            levante:
+                                data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
+                            ollie:
+                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
 
                         remove_namelist_changes.namelist.recom.pavariables:
-                            - bgc_num
                             - constant_CO2
                             - firstyearoffesomcycle
                             - lastyearoffesomcycle
@@ -414,11 +409,6 @@ recom:
                             - CO2_for_spinup
 
                         namelist_dir: ${fesom.model_dir}/config/
-
-#                        use_ciso: false
-# kh 08.06.22
-                "*":
-                        not_used: ""
 
 
 #########################################################################################
@@ -474,8 +464,8 @@ oasis3mct:
                                         - 'i1_oce <--distwgt-- i1_atm'
                                         - 'i2_oce <--distwgt-- i2_atm'
                                         - 'i3_oce <--distwgt-- i3_atm'
-        choose_general.version:
-                "2.1-recom": # MA: after merging in FESOM by Martin B. this can be removed
+        choose_general.with_recom:
+                "True": # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_target_fields:
                                 add_o2a_flux:
                                         - 'o18_atmo <--distwgt-- o18_feom'
@@ -489,20 +479,6 @@ oasis3mct:
                                         - 'i2_oce <--distwgt-- i2_atm'
                                         - 'i3_oce <--distwgt-- i3_atm'
 
-# kh 08.06.22
-                "2.1-recom-par-tracers": # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_target_fields:
-                                add_o2a_flux:
-                                        - 'o18_atmo <--distwgt-- o18_feom'
-                                        - 'hdo_atmo <--distwgt-- hdo_feom'
-                                        - 'o16_atmo <--distwgt-- o16_feom'
-                                add_a2o_flux:
-                                        - 'w1_oce <--distwgt-- w1_atm'
-                                        - 'w2_oce <--distwgt-- w2_atm'
-                                        - 'w3_oce <--distwgt-- w3_atm'
-                                        - 'i1_oce <--distwgt-- i1_atm'
-                                        - 'i2_oce <--distwgt-- i2_atm'
-                                        - 'i3_oce <--distwgt-- i3_atm'
 
         coupling_directions:
                 'feom->atmo':

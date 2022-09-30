@@ -61,11 +61,19 @@
 /
 &set_stream
     stream = 'jsbach'
+<<<<<<< HEAD
     lpost = 0
 /
 &set_stream
     stream = 'land'
     lpost = 0
+=======
+    lpost = 1
+/
+&set_stream
+    stream = 'land'
+    lpost = 1
+>>>>>>> 99e58af12b79649a45868fd0df4b22525c66235b
 /
 &set_stream
     stream = 'veg'

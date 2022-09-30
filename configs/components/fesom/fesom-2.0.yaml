@@ -24,13 +24,18 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-master:
-    branch: master
+    branch: refactoring
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-5
+    branch: AWI-CM3_v3.0
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-awicm-3.1:
+    branch: AWI-CM3_v3.1
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -146,6 +151,15 @@ choose_resolution:
                 nx: 912469
         DART:
                 nx: 3160340
+        ROS2:
+                nx: 26306560
+        HR:
+                nx: 1306775
+        jane:
+                nx: 33348172
+        SO3: 
+                nx: 11087062
+
 mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
@@ -346,6 +360,10 @@ coupling_fields:
         sie_feom:
                 grid: feom
         snt_feom:
+                grid: feom
+        u_feom:
+                grid: feom
+        v_feom:
                 grid: feom
         taux_oce:
                 grid: feom

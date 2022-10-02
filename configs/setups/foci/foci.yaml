@@ -471,8 +471,8 @@ nemo:
                                                 script: "
                                                     nemo_postprocessing.sh -m 
                                                     -r ${general.expid}
-                                                    -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -s ${start_date}
+                                                    -e ${end_date}"
                                                 nproc: 1
 
 

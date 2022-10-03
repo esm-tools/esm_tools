@@ -259,7 +259,6 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
-        use_ciso: false
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -279,8 +278,6 @@ fesom:
                         version: "2.1-recom-par-tracers"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
-                        #5.7.22 Ying: par-tracers only with ciso
-                        use_ciso: true
 
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
@@ -374,14 +371,14 @@ fesom:
 
         # use_ciso switch
         # ---------------
-        # num_tracers only changed if ``with_recom: true``)
-        choose_fesom.use_ciso:
-                true:
-                        namelist_ciso_sufix: ".ciso"
-                        num_tracers: 33
-                false:
-                        namelist_ciso_sufix: ""
-                        num_tracers: 24
+        # num_tracers only changed if ``with_recom: true``, i.e. indentation)
+                choose_recom.use_ciso:
+                        True:
+                                namelist_ciso_sufix: ".ciso"
+                                num_tracers: 33
+                        False:
+                                namelist_ciso_sufix: ""
+                                num_tracers: 24
 
 #########################################################################################
 
@@ -390,6 +387,11 @@ recom:
         choose_general.with_recom:
                 True:
                         version: "2.0"
+
+                        choose_general.version:
+                            "2.1-recom-par-tracers":
+                                #5.7.22 Ying: par-tracers only with ciso
+                                use_ciso: true
 
                         add_choose_computer.name:
                             levante:

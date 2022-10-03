@@ -99,6 +99,8 @@ oifs:
 
         mip: "cmip6"
         scenario: "historical"
+        # AWI-CM3 uses preconfigured namelists and this switch is not needed
+        o3_scheme: null
 
         prepifs_expid: h6mv
         input_expid: awi3   # This cannot be longer than 4 characters

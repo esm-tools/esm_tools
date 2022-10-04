@@ -270,7 +270,7 @@ oasis3mct:
 
         restart_in_sources:
                 rmp: rmp_*.nc
-                rstos.nc: rstos.nc
+                rstos.nc: rstos.nc${oasis_date_stamp}
 
         restart_out_files:
                 rmp: rmp

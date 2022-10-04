@@ -71,7 +71,7 @@ install_libs:
 # for handling restarts
 # this could be _19900101-19901231 for example
 oasis_date_stamp: ""
-# It the the simulation branches off from another one (lresume: True and run_number: 1)
+# If the simulation branches off from another one (lresume: True and run_number: 1)
 # automatically calculate ``oasis_date_stamp`` using the dates from the previous run.
 # This avoids the problem of loading the incorrect fluxes from the parent simulation
 # due to the linking. ``oasis_date_stamp`` needs to be used in the

@@ -472,10 +472,10 @@ oasis3mct:
                 masks: masks_${oifs.resolution}_${nemo.resolution}_frac.nc
                 grids: grids_${oifs.resolution}_${nemo.resolution}_frac.nc
 
-                sstocean: sstocean
-                flxatmos: flxatmos
-                rnfatm: rnfatm
-                rnrunoff: rnrunoff
-                atmtau: atmtau
-                atmflx: atmflx
+                sstocean: sstocean${oasis_date_stamp}
+                flxatmos: flxatmos${oasis_date_stamp}
+                rnfatm: rnfatm${oasis_date_stamp}
+                rnrunoff: rnrunoff${oasis_date_stamp}
+                atmtau: atmtau${oasis_date_stamp}
+                atmflx: atmflx${oasis_date_stamp}
 

@@ -1065,19 +1065,22 @@ oasis3mct:
                 #rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 #rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
                 
-                sstocean: sstocean${this_oasis_date_stamp}
-                flxatmos: flxatmos${this_oasis_date_stamp}
-                rnfatm: rnfatm${this_oasis_date_stamp}
-                rnrunoff: rnrunoff${this_oasis_date_stamp}
-                atmtau: atmtau${this_oasis_date_stamp}
-                atmflx: atmflx${this_oasis_date_stamp}
+                # If the simulation restarts from the middle of a parent experiment, we
+                # need to take the time-stamped flux files, instead of the not
+                # time-stamped, because they are links to the last flux files
+                sstocean: sstocean${this_oasis_date_stamp}${oasis_date_stamp}
+                flxatmos: flxatmos${this_oasis_date_stamp}${oasis_date_stamp}
+                rnfatm: rnfatm${this_oasis_date_stamp}${oasis_date_stamp}
+                rnrunoff: rnrunoff${this_oasis_date_stamp}${oasis_date_stamp}
+                atmtau: atmtau${this_oasis_date_stamp}${oasis_date_stamp}
+                atmflx: atmflx${this_oasis_date_stamp}${oasis_date_stamp}
                 
-                sstocean1: sstocean_1${this_oasis_date_stamp}
-                flxatmos1: flxatmos_1${this_oasis_date_stamp}
-                atmtau1: atmtau_1${this_oasis_date_stamp}
-                atmflx1: atmflx_1${this_oasis_date_stamp}
-                rnrunoff1: rnrunoff_1${this_oasis_date_stamp}
-                agrifspg: agrifspg${this_oasis_date_stamp}
+                sstocean1: sstocean_1${this_oasis_date_stamp}${oasis_date_stamp}
+                flxatmos1: flxatmos_1${this_oasis_date_stamp}${oasis_date_stamp}
+                atmtau1: atmtau_1${this_oasis_date_stamp}${oasis_date_stamp}
+                atmflx1: atmflx_1${this_oasis_date_stamp}${oasis_date_stamp}
+                rnrunoff1: rnrunoff_1${this_oasis_date_stamp}${oasis_date_stamp}
+                agrifspg: agrifspg${this_oasis_date_stamp}${oasis_date_stamp}
 
 # Set up CPU layout
 choose_partitions.compute.cores_per_node:

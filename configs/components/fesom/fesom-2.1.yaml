@@ -53,24 +53,13 @@ choose_version:
 # YY: 29.04.22 to compile wiso code
     wiso_code: true
 
-# MA: changes specific to PAR-TRACERS go here so they don't destroy other working versions of FESOM-2.1)
-# TODO: remove this block when PAR-TRACERS is generalized!
+# PAR-TRACERS specific configurations
 par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
 choose_fesom.par_tracers:
     True:
         namelist_dir: "${model_dir}/config/"
         asforcing: CORE2
-        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        #remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
         nproc: 1024
-        # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
-        #remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
-        #    nm_xwind_file, nm_ywind_file, nm_humi_file, nm_qsr_file, nm_qlw_file,
-        #    nm_tair_file, nm_prec_file, nm_snow_file, nm_mslp_file, nm_runoff_file,
-        #    nm_sss_data_file]
-        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        #remove_fesom.config_files: [cvmix, icepack]
-#-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x

@@ -221,7 +221,9 @@ nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
-o3_scheme: "cmip6"
+# this needs to be default for now
+# since cmip6 option only works from v2 onward
+o3_scheme: "default"
 scenario: "amip-prepifs"
 output: "default"
 
@@ -957,6 +959,11 @@ choose_o3_scheme:
                                         LEPO3RA: '.true.' # use progn O3 in radiation
                                         LCMIP6O3: '.true.'                                        
                                         NGHGRAD: 20       # overwrite O3 by progn O3
+        default:
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        NGHGRAD: 21
          
 choose_restart_type:
         eternal:

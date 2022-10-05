@@ -1,6 +1,6 @@
 components:
 - echam-6.3.05p2-wiso
-- fesom-2.1-recom-par_tracers_mpi
+- fesom-2.1-recom
 
 # kh 09.06.22
 - oasis3mct-2.8-paleodyn-multi-group-support

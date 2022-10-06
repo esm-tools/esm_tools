@@ -9,14 +9,18 @@ use_hyperthreading: False
 choose_use_hyperthreading:
         "1":
                 hyperthreading_flag: ""
+                mt_launcher_flag: ""
         True:
                 hyperthreading_flag: ""
+                mt_launcher_flag: ""
         "0":
                 choose_heterogeneous_parallelization:
                         False:
                                 hyperthreading_flag: "--ntasks-per-core=1"
+                                mt_launcher_flag: "--hint=nomultithread "
                         True:
                                 hyperthreading_flag: ""
+                                mt_launcher_flag: "--hint=nomultithread "
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -26,8 +30,10 @@ choose_use_hyperthreading:
                 choose_heterogeneous_parallelization:
                         False:
                                 hyperthreading_flag: "--ntasks-per-core=1"
+                                mt_launcher_flag: "--hint=nomultithread "
                         True:
                                 hyperthreading_flag: ""
+                                mt_launcher_flag: "--hint=nomultithread "
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -76,6 +82,11 @@ module_actions:
         - "load cdo/2.0.5-gcc-11.2.0"
         - "load nco/5.0.6-gcc-11.2.0"
 
+# kh 31.05.22 enable for ddt
+#       - "load arm-forge/21.1.3-gcc-11.2.0"
+
+
+
 export_vars:
         # Locale Settings
         LC_ALL: en_US.UTF-8
@@ -101,6 +112,11 @@ export_vars:
         UCX_NET_DEVICES: mlx5_0:1
         UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
         UCX_UNIFIED_MODE: y
+
+# kh 16.06.22 set appropriate pinning for OpenMP
+        KMP_LIBRARY: turnaround
+        KMP_AFFINITY: "granularity=fine,scatter"
+
 
 # Variables needed exclusively during runtime
 # NOTE: runtime_environment_changes does not work from the machine files
@@ -275,7 +291,12 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "-l --distribution=plane=128 --cpu-bind=${cpu_bind}"
+# kh 23.06.22 do not use --distribution=plane=128 for hybrid (MPI + OpenMP) jobs
+# launcher_flags: "-l --distribution=plane=128 --cpu-bind=${cpu_bind}"
+
+# kh 23.06.22 should be set generally in accordance with 
+# the tips from DKRZ-TechTalk "From Mistral to Levante" June 22, 2022
+launcher_flags: "-l" # --distribution=block:cyclic"
 
 further_reading:
         - batch_system/slurm.yaml

@@ -35,12 +35,12 @@ class runfile:
 
         self.submit_command = self.get_submit_command(runfilename)
 
-        six.print_("\n", 40 * "+ ")
-        six.print_("Contents of ", runfilename, ":")
+        print("\n", 40 * "+ ")
+        print("Contents of ", runfilename, ":")
         with open(runfilename, "r") as fin:
             print(fin.read())
         if os.path.isfile(self.batch.bs.filename):
-            six.print_("\n", 40 * "+ ")
-            six.print_("Contents of ", self.batch.bs.filename, ":")
+            print("\n", 40 * "+ ")
+            print("Contents of ", self.batch.bs.filename, ":")
             with open(self.batch.bs.filename, "r") as fin:
                 print(fin.read())

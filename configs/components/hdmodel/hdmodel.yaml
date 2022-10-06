@@ -16,7 +16,7 @@ license_text: |
 pool_dir: "${computer.pool_directories.pool}/JSBACH/input/${jsbach.dataset}/HD"
 input_dir: "${pool_dir}"
 
-executable: NONE
+executable: null
 
 input_files :
         hdstart: hdstart
@@ -35,7 +35,6 @@ input_sources:
         rmp_hd: "${input_dir}/rmp_${echam.resolution}_to_hd.nc"
         hdstart: "${input_dir}/hdstart.nc"
 
-
 choose_echam.version:
         6.3.05p2-wiso:
                 add_restart_in_files:
@@ -48,7 +47,6 @@ choose_echam.version:
                 restart_out_sources:
                         hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
                         hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart_wiso.nc
-
 
 restart_in_in_work:
         hdrestart: hdrestart.nc
@@ -73,12 +71,10 @@ restart_out_sources:
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist
 
-
 choose_hdpara_file:
         "*":
                 add_input_sources:
                         hdpara: ${hdpara_file}
-
 
 further_reading:
         - hdmodel/hdmodel.inherit.yaml

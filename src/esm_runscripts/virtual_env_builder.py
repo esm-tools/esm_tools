@@ -10,15 +10,15 @@ import sys
 import venv
 
 esm_tools_modules = [
-    "esm_calendar",
-    "esm_database",
-    "esm_environment",
-    "esm_master",
-    "esm_parser",
-    "esm_runscripts",
+#    "esm_calendar",
+#    "esm_database",
+#    "esm_environment",
+#    "esm_master",
+#    "esm_parser",
+#    "esm_runscripts",
     "esm_tools",
-    "esm_plugin_manager",
-    "esm_version_checker",
+#    "esm_plugin_manager",
+#    "esm_version_checker",
 ]
 
 

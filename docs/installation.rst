@@ -16,6 +16,24 @@ $ git clone https://github.com/esm-tools/esm_tools.git
 
 This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines, etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
 
+Installing in an encapuslated environment
+-----------------------------------------
+
+Based on an alternative installation procedure, that provides an esm-tools installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of esm-tools alongside each other. These different installations do not impact each others' configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific esm-tools version that you install. There is no dependency on configurations outside the installation directory of a specific esm-tools version, mitigating the potential for side effects if another version of esm tools is installed in parallel. To install esm-tools as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of direnv, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of esm-tools will be installed, and installing the the esm-tools via pip.
+The commands to be executed are (note comments for further explanation)::
+
+    $ curl -sfL https://direnv.net/install.sh | bash # install direnv if not yet done - this enables encapsulation and parallel use of different esm-tools versions
+    $ mkdir esm_tools_v6.1.10 #adjust version number as appropriate
+    $ cd esm_tools_v6.1.10/
+      #create .envrc (e.g. via direnv edit .) and add information matching the result of the cat command below
+    $ cat .envrc
+      module load python3
+      layout python
+      module load gcc
+    $ pip install -U pip wheel
+    $ pip install esm-tools
+
+
 Accessing components in DKRZ server
 -----------------------------------
 
@@ -29,21 +47,6 @@ Some of the ``esm_tools`` components are hosted in the gitlab.dkrz.de servers. T
 
 .. include:: ../README.rst
 
-Configuration
--------------
-
-If you have installed ``esm_tools`` you need to configure it before the first use to setup the hidden file ``$HOME/.esmtoolsrc`` correctly. This configuration will set required user information that are needed by both ``esm_master`` and ``esm_runscripts`` to work correctly. Such information are your user accounts on the different software repositories, your account on the machines you want to compute on, and some basic settings for the esm_runscripts.
-
-To configure esm_master you should run the executable::
-
-$ esm_master
-
-Running it for the first time after installation, you will be asked to type in your user settings. This interactive configuration includes the following steps::
-
-$ Please enter your username for gitlab.dkrz.de (default: anonymous)
-$ Please enter your username for swrepo1.awi.de (default: anonymous)
-
-Note that you will need to manually edit the file ``~/.esmtoolsrc``, if you mistakenly spelled any of the user names required for accessing the repositories, or you selected the default user name (``anonymous``).
 
 Upgrade ESM-Tools
 -----------------
@@ -68,14 +71,14 @@ $ esm_versions upgrade esm_parser
 Uninstall ESM-Tools
 -------------------
 
-To uninstall your current installation make sure you have the most recent version of
+We are sorry to see you go! To uninstall your current installation make sure you have the most recent version of
 ``pip`` available for your system::
 
 $ python3 -m pip install -U pip
 
 Then, you can use use the following command to uninstall all `ESM-Tools` packages::
 
-$ esm_versions clean
+$ pip freeze | grep esm | xargs pip uninstall -y
 
 You can also choose to manually uninstall. In order to do that, remove the installed Python packages and delete the ``esm_*`` executables. The following commands will do the trick if you installed with the ``install.sh`` script or installed using ``pip`` with ``user`` mode ::
 
@@ -86,5 +89,5 @@ Note that you may have a different Python version, so the second command might n
 
 $ pip uninstall [--user] esm-tools
 
-The ``--user`` flag may be required when using ``pip``.
+The ``--user`` flag may be required when using ``pip`` if you are not uninstalling in either a virtual environment or a global install (you would need to be root in that case).
 

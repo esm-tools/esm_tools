@@ -66,7 +66,6 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
-        - '2.1-recom-par-tracers'
 
         choose_version:
           '2.1':
@@ -80,13 +79,6 @@ general:
             fesom_Dflags: "-DFESOM_COUPLED=ON"
             with_recom: false
           '2.1-recom':
-            couplings:
-            - fesom-2.1-wiso+echam-6.3.05p2-wiso+recom-2.0
-            add_include_models:
-            - recom
-            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
-            with_recom: true
-          '2.1-recom-par-tracers':
             couplings:
             - fesom-2.1-recom-par_tracers_mpi+echam-6.3.05p2-wiso+recom-2.0
             add_include_models:
@@ -153,9 +145,6 @@ echam:
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
                 "2.1-recom":
-                        version: "6.3.05p2-wiso"
-                        model_dir: ${general.model_dir}/echam-${echam.version}
-                "2.1-recom-par-tracers":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
 
@@ -274,10 +263,6 @@ fesom:
                         version: "2.1-recom"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
-                "2.1-recom-par-tracers":
-                        version: "2.1-recom-par-tracers"
-                        ALE_scheme: 'zstar'
-                        namelist_dir: ${fesom.model_dir}/config/
 
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
@@ -388,10 +373,8 @@ recom:
                 True:
                         version: "2.0"
 
-                        choose_general.version:
-                            "2.1-recom-par-tracers":
-                                #5.7.22 Ying: par-tracers only with ciso
-                                use_ciso: true
+                        #5.7.22 Ying: par-tracers only with ciso
+                        use_ciso: true
 
                         add_choose_computer.name:
                             levante:

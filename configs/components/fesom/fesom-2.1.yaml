@@ -33,33 +33,14 @@ choose_version:
   2.1-wiso:
     branch: wiso
     wiso_code: true
-  2.1-recom:
-    branch: awiesm2-recom-wiso-mass
-    wiso_code: true
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.1-recom-par_tracers: # MA: for Kai testing ESM-Tools in Levante
-    branch: feature/par_tracers
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    destination: fesom-2.1-recom-par_tracers
-  2.1-recom-par_tracers_mpi: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
+  2.1-recom: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
     branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-# kh 08.03.22 todo: merge conflict (if enabled)
-#   include_models:
-#       - recom
-# YY: 29.04.22 to compile wiso code
     wiso_code: true
-
-# PAR-TRACERS specific configurations
-par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
-choose_fesom.par_tracers:
-    True:
-        namelist_dir: "${model_dir}/config/"
-        asforcing: CORE2
-        nproc: 1024
+    namelist_dir: "${model_dir}/config/"
+    asforcing: CORE2
+    nproc: 1024
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x

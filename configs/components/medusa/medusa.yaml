@@ -2,6 +2,7 @@
 #
 model: medusa
 version: '2.0'
+branch: 2.0-fesom
 apps: 'medusa_recom_awiesm'
 
 metadata:
@@ -18,7 +19,9 @@ and teaching <https://doi.org/10.5194/gmd-14-3603-2021>"
 
 choose_version:
     '2.0':
-      branch: read_fesom_standalone
+      branch: main #coupled with awiesm-2.1-recom
+    '2.0-fesom':
+      branch: read_fesom_standalone # coupled with fesom-2.1
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 # directory for code and libraries
@@ -33,10 +36,25 @@ model_dir: "${general.esm_master.dir}/medusa-${version}"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
 #data_path: ""
 
+computer.name: levante
+
 environment_changes:
-        add_module_actions:
+    choose_computer.name:
+        ollie:
+            add_module_actions:
                 - "unload netcdf"
                 - "load netcdf/4.6.1_intel"
+                - "load intel.compiler intel.mpi"
+#            add_export_vars:
+#                ...
+        levante:
+            add_module_actions:
+                - "load intel-oneapi-compilers"
+                - "load intel-oneapi-mpi"
+                - "unload netcdf"
+                - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
+#            add_export_vars:
+#                ...
 
 clean_command: ${defaults.clean_command}
 comp_command: "mkdir -p lib; mkdir -p include;

@@ -209,7 +209,7 @@ nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
 mip: "cmip5"
-o3_scheme: "cmip6"
+o3_scheme: "default"
 scenario: "amip-prepifs"
 output: "default"
 
@@ -780,18 +780,6 @@ choose_wam:
 # OTHER CONFIGS AND SWITCHES
 #======================================================================================
 
-# For coupled setups we can use ocean currents
-choose_use_ocean_currents:
-        True:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".true."
-        False:
-                add_namelist_changes:
-                        fort.4:
-                                NAEPHY:
-                                        LECURR: ".false."
 ##
 ## mass conservation / mass fixer
 ## 0 - no mass fixer
@@ -894,20 +882,25 @@ choose_solarspectrum:
         True:
                 add_namelist_changes:
                         fort.4:
-                                NAERAD:                         
+                                NAERAD:
                                         NSOLARSPECTRUM: 1
 
 # There are two different O3 concentrations in OpenIFS:
 # One is used for output, and one that is used by radiation scheme
-# By default, the two are NOT the same. 
+# By default, the two are NOT the same.
 # By default, prognostic O3 from the Cariolle scheme is written to output
 # but climatology is used by radiation scheme
-# 
+#
 # Here the scheme can be changed in two ways:
 # cmip6: Use O3 from CMIP6 (input4MIP) for picontrol, historical or scenarios
 # cariolle: Use the prognostic O3 from Cariolle in radiation
 choose_o3_scheme:
-        cmip6:                
+        default:
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        NGHGRAD: 21
+        cmip6:
                 # For CMIP6 O3 we set
                 # LCMIP6O3 to true
                 # LEO3VAR to true
@@ -934,9 +927,9 @@ choose_o3_scheme:
                                         LEO3CH: '.true.'
                                 NAERAD:
                                         LEPO3RA: '.true.' # use progn O3 in radiation
-                                        LCMIP6O3: '.true.'                                        
+                                        LCMIP6O3: '.true.'
                                         NGHGRAD: 20       # overwrite O3 by progn O3
-         
+
 choose_restart_type:
         eternal:
                 nfrres: 1

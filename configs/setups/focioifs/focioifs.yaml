@@ -188,6 +188,19 @@ oifs:
                                 # Turn on coupling
                                 # TODO: Add variable for AGRIF coupling
                                 FOCI_CPL_NEMO_LIM: ".true." 
+
+        # For coupled setups we can use ocean currents
+        choose_use_ocean_currents:
+                True:
+                        add_namelist_changes:
+                                fort.4:
+                                        NAEPHY:
+                                                LECURR: ".true."
+                False:
+                        add_namelist_changes:
+                                fort.4:
+                                        NAEPHY:
+                                                LECURR: ".false."
                 
         
         choose_resolution:

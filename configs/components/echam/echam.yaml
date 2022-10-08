@@ -401,6 +401,16 @@ choose_scenario_is_ssp:
                             missing for ssp simulations in that dataset. It's
                             recommended that you use the ``r0008`` dataset instead."
                         ask_user_to_continue: True
+        after_2014: "$(( ${start_date!year} > 2014 ))" # TODO: double check with Sebastian, Antonio, Pengyang, Tido
+        choose_after_2014:
+            True:
+                iaero: 9
+            False:
+                iaero: 8
+        add_namelist_changes:
+            echam.namelist:
+                radctl:
+                    iaero: "${iaero}"
 
 choose_scenario_type:
         cmip6:

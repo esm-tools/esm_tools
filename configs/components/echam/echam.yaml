@@ -399,7 +399,11 @@ choose_scenario_is_ssp:
                             You are trying to run a ``ssp`` simulation with the
                             ``echam.dataset: ${dataset}``. Some input files might be
                             missing for ssp simulations in that dataset. It's
-                            recommended that you use the ``r0008`` dataset instead."
+                            recommended that you use the ``r0008`` dataset instead.\n\n
+                            If you wish to continue with the current dataset answer
+                            ``Y`` to the question. If you want to switch to
+                            ``r0008`` dataset, answer ``n`` and modify your runscript
+                            accordingly (``echam.dataset: r0008``)"
                         ask_user_to_continue: True
         after_2014: "$(( ${start_date!year} > 2014 ))" # TODO: double check with Sebastian, Antonio, Pengyang, Tido
         choose_after_2014:

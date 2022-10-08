@@ -412,7 +412,7 @@ choose_scenario_is_ssp:
             False:
                 iaero: 8
         add_namelist_changes:
-            echam.namelist:
+            namelist.echam:
                 radctl:
                     iaero: "${iaero}"
 

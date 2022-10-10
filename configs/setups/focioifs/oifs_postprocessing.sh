@@ -198,7 +198,7 @@ mkdir $post_dir
 # Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
 # developed by Willi Rath, GEOMAR (convert_to_deflated_nc4classic_with_small_chunks.sh)
 # Converts any OpenIFS netCDF file to deflated (level 1) netCDF4-classic with
-# (1,1,100,100)=(t,plev,lat,lon) chunks.
+# (1,1,96,96)=(t,plev,lat,lon) chunks.
 # needs ncdump and a recent (4.3.7 or newer) nco
 #
 print 'OpenIFS netcdf4 conversion started'
@@ -212,7 +212,7 @@ filetags="${ATM_FILE_TAGS}"
 
 #steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
 steps="1ts 1h 3h 6h 1d 1m 1y"
-tchunk=1; zchunk=1; ychunk=100; xchunk=100
+tchunk=1; zchunk=1; ychunk=96; xchunk=96
 
 echo 0 > $post_dir/status
 if ${ATM_CONVERT_NETCDF4} ; then

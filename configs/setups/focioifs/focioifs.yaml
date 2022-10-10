@@ -190,6 +190,7 @@ oifs:
                                 FOCI_CPL_NEMO_LIM: ".true." 
 
         # For coupled setups we can use ocean currents
+        use_ocean_currents: False
         choose_use_ocean_currents:
                 True:
                         add_namelist_changes:

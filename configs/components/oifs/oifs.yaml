@@ -220,7 +220,6 @@ read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
 post_processing: 0
-use_ocean_currents: False
 solarspectrum: False
 pextra: 0
 dr_hook_ignore_signals: -1
@@ -652,7 +651,7 @@ outdata_in_work:
         MPP: MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        atm: atm_*
 
 outdata_sources:
         # old grib based output
@@ -662,7 +661,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        atm: atm_*
 
 
 #======================================================================================

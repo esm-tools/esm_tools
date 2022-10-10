@@ -666,7 +666,7 @@ outdata_in_work:
         MPP: MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        #atm: atm* # what is this???
 
 outdata_sources:
         # old grib based output
@@ -676,7 +676,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        #atm: atm*
 
 
 #======================================================================================
@@ -709,7 +709,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-                        atm: atm
+                        #atm: atm
         0:
                 outdata_files:
                         ICMGG: ICMGG

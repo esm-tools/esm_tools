@@ -1,3 +1,5 @@
+# Mac finder files
+.DS_Store
 # Direnv stuff
 .envrc
 .direnv/

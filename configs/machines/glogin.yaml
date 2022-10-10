@@ -77,6 +77,8 @@ pool_dir:  "/scratch/usr/hbkawi"
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
+# to compile nemo standalone, comment the line above and uncomment the one below
+#compiler_mpi: intel2019_impi2019_nemo4 
 #iolibraries: system_libs
 #
 # for FOCIOIFS use
@@ -95,6 +97,7 @@ module_actions:
    - "load sw.skl"
    - "load cmake"
    - "load cdo nco"
+   - "load git"
 
 export_vars:
    LC_ALL: en_US.UTF-8

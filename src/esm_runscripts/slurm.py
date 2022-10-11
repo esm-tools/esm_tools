@@ -325,8 +325,12 @@ class Slurm:
                     or config[model].get("executable")
                 )
             ):
+                if "nproca" in config[model]:
+                    mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
+                else:
+                    mpi_tasks = config[model]["nproc"]
                 runfile.write(
-                    "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
+                    "mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n"
                 )
                 runfile.write(
                     "omp_threads_"

@@ -252,10 +252,11 @@ choose_version:
         6.3.05p2-wiso:
                 wiso_code: true
                 concurrent_radiation_code: true
+                default_output: True
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
-                                        default_output: True
+                                        default_output: "${default_output}"
 
         6.3.05p2-concurrent_radiation:
                 concurrent_radiation_code: true

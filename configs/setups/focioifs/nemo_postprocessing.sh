@@ -398,7 +398,7 @@ print "post-processing finished for $startdate-$enddate"
 
 if [[ "$run_monitoring" == "yes" ]] ; then
     print "will now run NEMO monitoring for $startdate-$enddate"
-   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} -p $basedir 
 else
    print "NEMO monitoring switched off, use -m to activate it"
 fi

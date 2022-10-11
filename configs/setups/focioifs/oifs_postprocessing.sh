@@ -370,24 +370,31 @@ fi
 # * If we have _fx_ output, then take lsm and other stuff
 # * Use cdo gridarea to generate areacella 
 cd ${DATA_DIR}/${atmmod}
-for ((year=startyear-1; year<endyear; ++year)) ; do 
+for ((year=startyear; year<endyear; ++year)) ; do 
+    echo " Use ECE3_fx_${year}0101_regular_sfc.nc to make grid file for regular grid "
     if [[ -f "ECE3_fx_${year}0101_regular_sfc.nc" ]] ; then
         if [[ ! -f "areacella.nc" ]] ; then
+            echo " Make areacella.nc "
             # Get grid cell area
             cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_regular_sfc.nc areacella.nc
+        else
+            echo " areacella.nc already exists "
         fi 
         if [[ ! -f "lsm.nc" ]] ; then
+            echo " Make lsm.nc "
             # Get lsm
-            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc 
+            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc  
+        else
+            echo " lsm.nc already exists "
         fi
     fi
     
     if [[ -f "ECE3_fx_${year}0101_reduced_sfc.nc" ]] ; then
-        if [[ !-f "areacella_reduced.nc" ]] ; then
+        if [[ ! -f "areacella_reduced.nc" ]] ; then
             # Get grid cell area
             cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_reduced_sfc.nc areacella_reduced.nc
         fi
-	if [[ !-f "lsm_reduced.nc" ]] ; then
+	if [[ ! -f "lsm_reduced.nc" ]] ; then
             # Get lsm
 	    cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_reduced_sfc.nc lsm_reduced.nc
 	fi
@@ -395,9 +402,10 @@ for ((year=startyear-1; year<endyear; ++year)) ; do
 done
 
 if [[ -f "areacella.nc" ]] && [[ -f "lsm.nc" ]] ; then
+    echo " areacella.nc and lsm.nc exist, so removing fx files "
     rm *_fx_*_regular_sfc.nc 
 fi
-if [[ -f "areacella_reduced.nc"]] && [[ -f "lsm_reduced.nc" ]] ; then
+if [[ -f "areacella_reduced.nc" ]] && [[ -f "lsm_reduced.nc" ]] ; then
     rm *_fx_*_reduced_sfc.nc
 fi
 

@@ -282,7 +282,8 @@ oifs:
                                                     oifs_postprocessing.sh -m
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -e ${end_date!syear}
+                                                    -p ${general.base_dir}"
                                                 nproc: 1
 
 nemo:
@@ -397,7 +398,8 @@ nemo:
                                                     nemo_postprocessing.sh -m
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -e ${end_date!syear}
+                                                    -p ${general.base_dir}"
                                                 nproc: 1        
 
 

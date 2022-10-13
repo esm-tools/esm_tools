@@ -6,7 +6,7 @@
 #
 # How to install esm_tools using a conda environment
 # --------------------------------------------------
-# 1. ``conda env create -f environment.yaml -n esm_tools``
+# 1. ``conda env create -f utils/environment.yaml -n esm_tools``
 # 2. Clone ESM-Tools from the github repository and use the ``./install.sh`` script
 #    (that script uses pip, because ESM-Tools is not in a conda repository, however
 #    most of the important dependencies for ESM-Tools are already defined in this

@@ -382,25 +382,40 @@ choose_scenario:
                         swflux: histswflux
                         MAC-SP: MAC-SP
 
-        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-        # under the choose_scenario_type block
-        ssp585:
-                scenario_type: cmip6
-
-        ssp370:
-                scenario_type: cmip6
-
-        ssp126:
-                scenario_type: cmip6
-
-        ssp245:
-                scenario_type: cmip6
-
-        ssp534os:
-                scenario_type: cmip6
-
         cmip6hist:
                 scenario_type: cmip6
+
+# Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+# under the choose_scenario_type block
+scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
+choose_scenario_is_ssp:
+    True:
+        scenario_type: cmip6
+        data_set_not_r0008: "$(( '${dataset}' != 'r0008' ))"
+        choose_data_set_not_r0008:
+            True:
+                add_warning:
+                    "echam dataset":
+                        message: "
+                            You are trying to run a ``ssp`` simulation with the
+                            ``echam.dataset: ${dataset}``. Some input files might be
+                            missing for ssp simulations in that dataset. It's
+                            recommended that you use the ``r0008`` dataset instead.\n\n
+                            If you wish to continue with the current dataset answer
+                            ``Y`` to the question. If you want to switch to
+                            ``r0008`` dataset, answer ``n`` and modify your runscript
+                            accordingly (``echam.dataset: r0008``)"
+                        ask_user_to_continue: True
+        after_2014: "$(( ${start_date!year} > 2014 ))" # TODO: double check with Sebastian, Antonio, Pengyang, Tido
+        choose_after_2014:
+            True:
+                iaero: 9
+            False:
+                iaero: 8
+        add_namelist_changes:
+            namelist.echam:
+                radctl:
+                    iaero: "${iaero}"
 
 choose_scenario_type:
         cmip6:

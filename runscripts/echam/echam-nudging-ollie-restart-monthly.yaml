@@ -49,7 +49,7 @@ echam:
       
     forcing_sources:
     
-        # ERA5 fording files
+        # ERA5 forcing files
         
         era5_atm: "/work/ollie/paleodyn/nudging/ERA5/atmos/T63/era5${echam.res}${echam.levels}_${echam.current_date!syear}${echam.current_date!smonth}.nc"
         

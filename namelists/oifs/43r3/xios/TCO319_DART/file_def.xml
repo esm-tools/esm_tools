@@ -195,6 +195,7 @@
                 <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
                 <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
                 <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
+                <field field_ref="sstk" name="sst" long_name="Sea surface temperature"/>
             </field_group>
         </file>
 

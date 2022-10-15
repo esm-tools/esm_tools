@@ -2,7 +2,7 @@
 ldiag_solver     =.false.
 lcurt_stress_surf=.false.
 ldiag_curl_vel3  =.false.
-ldiag_energy     =.false.
+ldiag_energy     =.true.
 ldiag_salt3D     =.false.
 ldiag_dMOC       =.false.
 ldiag_DVD        =.false.
@@ -10,7 +10,7 @@ ldiag_forc       =.true.
 /
 
 &nml_output_settings
-    keep_nth_level = 2
+    keep_nth_level = 1
 /
 
 &nml_listsize
@@ -25,7 +25,7 @@ io_listsize=100 !number of streams to allocate. shallbe large or equal to the nu
 &nml_list
 io_list =  'sst       ',90,'s', 4,
            'sss       ',1, 'd', 4,
-    	   'ssh       ',1, 'd', 4,
+           'ssh       ',1, 'd', 4,
            'uice      ',1, 'd', 4,
            'vice      ',1, 'd', 4,
            'a_ice     ',1, 'd', 4,
@@ -35,14 +35,18 @@ io_list =  'sst       ',90,'s', 4,
            'MLD2      ',1, 'm', 4,
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-           'temp      ',1, 'd', 4,
-           'salt      ',1, 'd', 4,
+           'temp      ',1, 'm', 4,
+           'salt      ',1, 'm', 4,
            'N2        ',1, 'm', 4,
-           'Kv        ',1, 'y', 4,
-           'u         ',1, 'd', 4,
-           'v         ',1, 'd', 4,
-           'w         ',1, 'd', 4,
-           'Av        ',1, 'y', 4,
+           'Kv        ',1, 'm', 4,
+           'u         ',1, 'm', 4,
+           'v         ',1, 'm', 4,
+           'w         ',1, 'm', 4,
+           'temp1-31  ',1, 'd', 4,
+           'salt1-31  ',1, 'd', 4,
+           'u1-31     ',1, 'd', 4,
+           'v1-31     ',1, 'd', 4,
+           'w1-31     ',1, 'd', 4,
            'bolus_u   ',1, 'y', 4,
            'bolus_v   ',1, 'y', 4,
            'bolus_w   ',1, 'y', 4,

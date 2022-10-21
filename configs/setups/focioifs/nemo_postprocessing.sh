@@ -12,6 +12,7 @@ basedir=~/esm/esm-experiments/ # change via -p
 EXP_ID="test_experiment"        # change via -r
 startyear=1850                  # change via -s
 endyear=1850                    # change via -e
+yearstep=1                      # change via -y
 envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
 run_monitoring="no"
 
@@ -35,7 +36,7 @@ max_jobs=12
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?md:r:s:e:p:x" opt; do
+while getopts "h?md:r:s:e:y:p:x" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -45,6 +46,7 @@ while getopts "h?md:r:s:e:p:x" opt; do
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
         echo "                   -s startyear                        (startyear, default is $startyear)"
         echo "                   -e endyear                          (endyear,   default is $endyear)"
+        echo "                   -y yearstep                         (yearstep, default is 1)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         echo "                   -m run nemo_monitoring.sh           "
         echo
@@ -57,6 +59,8 @@ while getopts "h?md:r:s:e:p:x" opt; do
     s)  startyear=$OPTARG
         ;;
     e)  endyear=$OPTARG
+        ;;
+    y)  yearstep=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
@@ -212,14 +216,18 @@ tchunk=1; zchunk=1; ychunk=100; xchunk=100
 
 echo 0 > $post_dir/status
 if ${OCEAN_CONVERT_NETCDF4} ; then
-	for ((year=startyear; year<=endyear; ++year))
+	for ((year=startyear; year<=endyear; year=year+${yearstep}))
 	do
+                # Files are for these years 
+                year1=${year}
+                year2=$(( ${year} + ${yearstep} - 1 ))
+                
 		for filetag in $filetags
 		do
    		for s in $steps
       	do
-				input=${s}_${year}0101_${year}1231_${filetag}.nc3
-		    	output=${s}_${year}0101_${year}1231_${filetag}.nc
+				input=${s}_${year1}0101_${year2}1231_${filetag}.nc3
+		    	output=${s}_${year1}0101_${year2}1231_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
       	  	if [[ -f $output ]] ; then
 					mv $output $input
@@ -291,11 +299,11 @@ do
 		for s in $steps
 		do
 			# !!! output files will have the same name as the old input file !!! 
-			input=${s}_${year}0101_${year}1231_${filetag}.nc
+			input=${s}_${year1}0101_${year2}1231_${filetag}.nc
 			if [[ "$s" =~ ^1_.*$ ]] ; then
-				output=1_${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
+				output=1_${EXP_ID}_1y_${year1}0101_${year2}1231_${filetag}.nc
 			else
-				output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
+				output=${EXP_ID}_1y_${year1}0101_${year2}1231_${filetag}.nc
 			fi     
 			if [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 

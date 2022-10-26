@@ -19,12 +19,12 @@ module load nco || module load NCO
 
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
-OCEAN_CONVERT_NETCDF4=true 
-OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T"
+OCEAN_CONVERT_NETCDF4=true
+OCEAN_FILE_TAGS="grid_W grid_T grid_U grid_V icemod ptrc_T"
 
 # Other settings
 day="01"
-max_jobs=12
+max_jobs=20
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -66,7 +66,7 @@ while getopts "h?md:r:s:e:p:x" opt; do
         ;;
     esac
 done
-
+#set -x
 shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
 envfile="$basedir/$EXP_ID/scripts/env.sh"
@@ -81,7 +81,7 @@ if [[ ! -r $envfile ]] ; then
 	exit 1
 else
   # module purge in envfile writes non-printable chars to log
-   source $envfile | tee
+   source $envfile > >(tee) 
 fi
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
@@ -304,7 +304,7 @@ do
 				while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 				(	
 					trap 'echo $? > $post_dir/status' ERR
-					cdo yearmean $input ym/$output 
+					cdo -L yearmean $input ym/$output 
 					cd ym
 					mv $output ${output}3
 					ncks -7 $sortoption -L 1 \
@@ -318,7 +318,7 @@ do
 					cd ..
 				) &
 				# file from cdo must be available for [[ ! -f ym/$output ]] in case of e.g. 5d and 1m output
-				sleep 5
+				sleep 1
 			fi
 		done #steps
 	done
@@ -346,7 +346,6 @@ for ((year=startyear-1; year<endyear; ++year)) ; do
 			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${year}1231_*.nc 
 		) &
 	fi
-	wait
 done
 wait
 

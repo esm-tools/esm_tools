@@ -36,8 +36,6 @@ model_dir: "${general.esm_master.dir}/medusa-${version}"
 # input data e.g. fesom.mesh.diag.nc needed for medusa
 #data_path: ""
 
-computer.name: levante
-
 environment_changes:
     choose_computer.name:
         ollie:

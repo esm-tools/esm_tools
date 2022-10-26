@@ -16,8 +16,8 @@ fesom:
         model_dir: /work/ab0995/a270152/model_codes/fesom-2.1/
         resolution: CORE2
         mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
-        climate_data_dir: "/home/a/a270108/esm_input/pin/" #"/work/ollie/yye/fesom2/initial_files/pi_init/"
-
+        #        climate_data_dir: "/home/a/a270108/esm_input/pin/" #"/work/ollie/yye/fesom2/initial_files/pi_init/"
+        climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
 
 #        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
 #

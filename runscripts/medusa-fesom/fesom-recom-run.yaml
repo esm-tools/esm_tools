@@ -1,20 +1,24 @@
 general:
-        base_dir: "/work/ollie/yye/AWIESM_runs"
+        base_dir: !ENV ${WORKCD}
         initial_date: "2000-01-01"
         final_date: "2001-01-01"
         setup_name: fesom
         version: "2.1-recom"
-        branch: awiesm2-recom-wiso-mass
         compute_time: 00:30:00
         nyear: 1
-        use_venv: False
+        account: ab0995
+        #use_venv: False
         #submit_to_batch_system: False
 
 fesom:
-        model_dir: /home/ollie/yye/awiesm_code/awiesm-2.1-recom/fesom-2.1/
+        nproc: 128
         lresume: False
-        resolution: pi
-        mesh_dir: /work/ollie/dsidoren/input/fesom2.0/meshes/pi_mesh/pi-grid/
+        model_dir: /work/ab0995/a270152/model_codes/fesom-2.1/
+        resolution: CORE2
+        mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
+        climate_data_dir: "/home/a/a270108/esm_input/pin/" #"/work/ollie/yye/fesom2/initial_files/pi_init/"
+
+
 #        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
 #
 #        workflow:
@@ -56,40 +60,20 @@ fesom:
         # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone
         # version
         # TODO: eventually move this to fesom-2.1.yaml?
-        version: "2.1-recom"
+        #version: "2.1-recom"
         ALE_scheme: 'zstar'
 
-        num_tracers: 33
-        namelist_dir: ${fesom.model_dir}/config/
-        add_config_sources:
-                oce:     "${namelist_dir}/namelist.oce.recom.ciso"
-        add_config_in_work:
-                oce:     namelist.oce
-        namelist_changes:
-                namelist.config:
-                        geometry:
-                            force_rotation: true
-                        paths:
-                            ClimateDataPath: "/work/ollie/yye/fesom2/initial_files/pi_init/"
-                            ForcingDataPath: remove_from_namelist
-                            OpbndPath: remove_from_namelist
-                            TideForcingPath: remove_from_namelist
-        config_sources:
-                io: "${namelist_dir}/namelist.io.recom.ciso"
-        remove_namelist_changes.namelist.config: [inout]
-        add_namelist_changes:
-                namelist.config:
-                        restart_log:
-                                restart_length: "${restart_rate}"
-                                restart_length_unit: "${restart_unit}"
-                namelist.oce:
-                        oce_tra:
-                                num_tracers: "${num_tracers}"
+#        namelist_changes:
+#                namelist.config:
+#                        paths:
+#                            ForcingDataPath: remove_from_namelist
+#                            OpbndPath: remove_from_namelist
+#                            TideForcingPath: remove_from_namelist
 
 
 recom:
-    lresume: 0
-    bgc_num: 31
+    with_ciso: true
+    lresume: false
     benthos_num: 8
     bottflx_num: 8
     add_namelist_changes:
@@ -97,7 +81,7 @@ recom:
             pavariables:
                 benthos_num: "${benthos_num}"
                 bottflx_num: "${bottflx_num}"
-    data_path: /work/ollie/yye/fesom2/initial_files/pi_init/dust_pimesh/
+    data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
     restart_name: "restart."
     remove_namelist_changes.namelist.recom.pavariables:
         - constant_CO2
@@ -113,8 +97,6 @@ recom:
         namelist.recom:
             pavariables:
                 DIC_PI: false
-                ciso: true
-                
                 use_atbox: true
 
         # END FESOM-RECOM BLOCK #######################################################

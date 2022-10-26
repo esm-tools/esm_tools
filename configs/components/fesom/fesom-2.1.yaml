@@ -17,6 +17,7 @@ use_icesheet_coupling: False        # initializes new icebergs every restart
 icb_code: False
 
 with_wiso: false
+with_recom: false
 wiso_code: false
 
 choose_version:
@@ -41,6 +42,10 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
     asforcing: CORE2
     nproc: 1024
+    with_recom: true
+    include_models: ["recom"]
+    fesom_Dflags: "-DRECOM_COUPLED=ON"
+
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
@@ -488,6 +493,33 @@ choose_with_wiso:
                         "[[wiso_fields-->FIELD]]":
                                 grid: feom
 
+# with_recom switch
+# -----------------
+# Settings for running with REcoM
+choose_fesom.with_recom:
+    add_config_sources:
+        oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+        io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+    remove_namelist_changes.namelist.config: [inout]
+    add_namelist_changes:
+        namelist.config:
+            restart_log:
+                restart_length: "${restart_rate}"
+                restart_length_unit: "${restart_unit}"
+        namelist.oce:
+            oce_tra:
+                num_tracers: "${num_tracers}"
+
+    # use_ciso switch
+    # ---------------
+    # num_tracers only changed if ``with_recom: true``, i.e. indentation)
+    choose_recom.use_ciso:
+            True:
+                    namelist_ciso_sufix: ".ciso"
+                    num_tracers: 33
+            False:
+                    namelist_ciso_sufix: ""
+                    num_tracers: 24
 
 grids:
         feom:

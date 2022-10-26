@@ -162,6 +162,15 @@ choose_scenario:
 namelist_sce: ""
 namelist_dir: "${general.model_dir}/recom/"
 
+# FESOM-2 standalone + REcoM options
+fesom2_standalone: "$((
+        '${general.setup_name}' == 'fesom' and
+        '2.' in '${general.version}'
+    ))"
+choose_fesom2_standalone:
+    True:
+        namelist_dir: "${fesom.model_dir}/config/"
+
 namelists:
         - namelist.recom
 

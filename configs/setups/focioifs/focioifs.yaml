@@ -282,7 +282,7 @@ oifs:
                                                     oifs_postprocessing.sh -m
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
-                                                    -e ${end_date!syear}
+                                                    -e ${end_date!syear}                                                    
                                                     -p ${general.base_dir}"
                                                 nproc: 1
 
@@ -399,6 +399,7 @@ nemo:
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}
+                                                    -y ${general.nyear} 
                                                     -p ${general.base_dir}"
                                                 nproc: 1        
 
@@ -423,6 +424,13 @@ rnfmap:
                 "*":
                         runoff_method: "old"
                         version: focioifs1
+        
+        add_outdata_files: 
+                runoff_out: runoff_out
+        add_outdata_in_work: 
+                runoff_out: runoff_out.nc 
+        add_outdata_sources:
+                runoff_out: runoff_out.nc 
 
 #########################################################################################
 
@@ -439,6 +447,13 @@ oasis3mct:
                 - oifs
                 - rnfmap
                 - xios
+        
+        file_movements:
+                input:
+                        init_to_exp: copy
+                        exp_to_run: copy
+                        run_to_work: copy
+                        work_to_run: link
         
         # settings for restarting from another run
         # for oasis we always do a (fake) restart

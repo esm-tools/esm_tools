@@ -110,6 +110,7 @@ debug=0
 
 # Component directories/names
 atmmod=oifs
+rnfmod=rnfmap
 
 #
 # Default options for Unix commands
@@ -279,6 +280,29 @@ wait
 [[ $(<$post_dir/status) -eq 0 ]]
 
 print 'OpenIFS netcdf4 conversion finished'
+
+# 
+# Post process output from runoff (if existing)
+#
+outrnf=${DATA_DIR}/${rnfmod}
+print 'Runoff post processing started'
+
+if [[ -d $outrnf ]] ; then
+cd ${outrnf}
+if [[ -f runoff_out.nc ]] ; then
+   
+   # make time axis
+   cdo -settunits,seconds -settaxis,${startyear}-01-01,00:00,3h runoff_out.nc runoff_out_time.nc 
+   
+   # day, month and year means
+   cdo daymean runoff_out_time.nc ${EXP_ID}_1d_${startyear}0101_${endyear}1231_rnf.nc
+   cdo monmean runoff_out_time.nc ${EXP_ID}_1m_${startyear}0101_${endyear}1231_rnf.nc
+   cdo yearmean runoff_out_time.nc ${EXP_ID}_1y_${startyear}0101_${endyear}1231_rnf.nc
+   
+   rm runoff_out.nc runoff_out_time.nc 
+   
+fi 
+fi
 
 #
 # Calculate yearly means from nemo output and place in ym/ subdirectory 

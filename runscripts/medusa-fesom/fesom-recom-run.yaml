@@ -64,7 +64,10 @@ fesom:
         #version: "2.1-recom"
         ALE_scheme: 'zstar'
 
-#        namelist_changes:
+        namelist_changes:
+            namelist.forcing:
+                nam_sbc:
+                    y_perpetual: false
 #                namelist.config:
 #                        paths:
 #                            ForcingDataPath: remove_from_namelist

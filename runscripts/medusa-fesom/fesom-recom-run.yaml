@@ -1,30 +1,31 @@
 general:
-        base_dir: !ENV ${WORKCD}
+        base_dir: "/work/bm1030/a270105/awiesm-output" 
         initial_date: "2000-01-01"
-        final_date: "2001-01-01"
+        final_date: "2002-01-01"
         setup_name: fesom
         version: "2.1-recom"
-        compute_time: 00:30:00
+        compute_time: 05:30:00
         nyear: 1
-        account: ab0995
+        nmonth: 0
+        account: bm1030
         #use_venv: False
         #submit_to_batch_system: False
 
 fesom:
-        nproc: 128
+        nproc: 1024
+        mpi_num_groups: 2
         lresume: False
-        model_dir: /work/ab0995/a270152/model_codes/fesom-2.1/
+        model_dir: /work/ab0995/a270105/esm_code/fesom-2.1
         resolution: CORE2
         mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
-        #        climate_data_dir: "/home/a/a270108/esm_input/pin/" #"/work/ollie/yye/fesom2/initial_files/pi_init/"
         climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
 
-#        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
-#
-#        workflow:
-#                next_run_triggered_by: couple_out
-#
-#                subjobs:
+        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
 #                        #MA: I think this can be deleted
 #                        #couple_in:
 #                        #        nproc: 1
@@ -38,23 +39,23 @@ fesom:
 #                        #        run_only: first_run_in_chunk
 #                        #        #skip_chunk_number: 1
 #
-#                        couple_out:
-#                                #nproc: 1
-#                                batch_or_shell: shell
-#                                run_after: tidy
-#                                script: postprocessing_fesom.sh
-#                                            #${experiment_dir}/outdata/fesom/? = forcing_dir in runscripts/medusa-fesom/medusa-2.0-initial.yaml? 
-#                                            /work/ollie/yye/fesom2/output/fesom_output_postproc/ #fesom yearly output copied there for testing
-#                                            #${experiment_dir}/input/medusa/?
-#                                            /work/ollie/yye/medusa_work/medusa_forcing/
-#                                            3101 #$((${current_date!syear}-100years(length of fesom run)))
-#                                            3103 #${current_date!syear}                                 
+                        couple_out:
+                                #nproc: 1
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script: "postprocessing_fesom.sh
+                                        /work/bm1030/a270105/awiesm-output/fesom-standalone-1/outdata/fesom/
+                                        /work/bm1030/a270105/medusa-output/fesom-medusa-1/
+                                        ave
+                                        ${current_date!syear}-${initial_date!syear}
+                                        ${initial_date!syear}
+                                        ${final_date!syear}" 
 #                                # We are going to need the parameters here as well
-#                                script_dir: ${general.esm_function_dir}/components/medusa/
+                                script_dir: ${general.esm_function_dir}/components/medusa/
 #                                #MA: I don't think these are needed
 #                                #call_function:
 #                                #env_preparation:
-#                                run_only: last_run_in_chunk
+                                run_only: last_run_in_chunk
 
         # FESOM-RECOM BLOCK ###########################################################
         # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone

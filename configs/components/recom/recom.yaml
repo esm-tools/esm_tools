@@ -71,6 +71,7 @@ choose_scenario:
                 numofCO2cycles: "${num_CO2_cycles}"
                 currentCO2cycle: "${current_CO2_cycle}"
 
+test
 
 namelist_dir: "${esm_namelist_dir}/${model}"
 

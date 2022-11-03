@@ -15,6 +15,6 @@ model2:
             #    standalone. Therefore, we need to add the changes done in AWIESM into
             #    the fesom-recom-run.yaml runscript
         runscript: fesom-recom-run.yaml
-        chunk_size: 100
+        chunk_size: 2
         chunk_unit: "years"
 

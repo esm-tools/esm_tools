@@ -137,7 +137,7 @@ forcing_sources:
     "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${start_date!year}-${end_date!year}.nc"
-    dust: ${forcing_dir}/DustClimYearlyAlbani_pi-mesh.nc
+    dust: ${forcing_dir}/DustClimYearlyAlbani_core2mesh.nc #TODO: switch between meshes by choose_resolution
 
 config_files:
     recom_paleo_files: recom_paleo_files

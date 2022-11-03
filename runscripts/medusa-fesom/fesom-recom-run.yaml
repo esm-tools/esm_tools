@@ -19,8 +19,9 @@ fesom:
         resolution: CORE2
         mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
         climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
+        run_length: 1
 
-        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
+        #        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
 
         workflow:
                 next_run_triggered_by: couple_out
@@ -40,22 +41,22 @@ fesom:
 #                        #        #skip_chunk_number: 1
 #
                         couple_out:
-                                #nproc: 1
                                 batch_or_shell: shell
                                 run_after: tidy
-                                script: "postprocessing_fesom.sh
+                                script: "
+                                        postprocessing_fesom.sh
                                         /work/bm1030/a270105/awiesm-output/fesom-standalone-1/outdata/fesom/
                                         /work/bm1030/a270105/medusa-output/fesom-medusa-1/
                                         ave
                                         ${current_date!syear}-${initial_date!syear}
                                         ${initial_date!syear}
                                         ${final_date!syear}" 
-#                                # We are going to need the parameters here as well
-                                script_dir: ${general.esm_function_dir}/components/medusa/
+                                script_dir: ${general.esm_function_dir}/components/medusa
 #                                #MA: I don't think these are needed
 #                                #call_function:
 #                                #env_preparation:
                                 run_only: last_run_in_chunk
+                                nproc: 1
 
         # FESOM-RECOM BLOCK ###########################################################
         # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone

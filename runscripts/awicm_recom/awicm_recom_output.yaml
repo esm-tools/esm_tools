@@ -71,6 +71,28 @@ fesom:
         - wto
         - zossq
         # end of the FESOM yearly outputs. Next comes the RECOM yearly outputs.
+        - diags3d05
+        - diags3d06
+        - diags3d07
+        - diags3d08
+        - diags3d09
+        - diags3d10
+        - diags3d11
+        - diags3d12
+        - diags3d13
+        - diags3d14
+        - diags3d15
+        - diags3d16
+        - diags3d17
+        - diags3d18
+        - diags3d19
+        - diags3d20
+        - diags3d21
+        - diags3d22
+        - diags3d23
+        - diags3d26
+        - diags3d27
+        - diags3d28
 
     monthly_outputs:
         - evap
@@ -124,29 +146,54 @@ fesom:
         - bgc20
         - bgc21
         - bgc22
+        - bgc23
+        - bgc24
+        - bgc25
+        - bgc26
+        - bgc27
+        - bgc28
+	- bgc29
+	- bgc30
+	- bgc31
+	- CO2
         - CO2f
         - CO2y
+	- CO3
         - denb
         - diags3d01
         - diags3d02
+        - diags3d03
+        - diags3d04
+        - diags3d24
+        - diags3d25
         - dpCO2s
         - GNAd
         - GNAn
+	- GNAc
         - GPPd
         - GPPn
+	- GPPc
+	- HCO3
         - Hp
+	- kspc
         - Kw
         - NNAd
         - NNAn
+	- NNAc
         - NPPd
         - NPPn
+	- NPPc
+	- OmegaC
         - O2f
         - PAR
+	- pCO2
         - pCO2s
+	- pH
         - rDIN
         - rDOC
         - rDON
         - rDSi
+	- rhoSW
         - slp
         - virtual_alk
         - virtual_dfe

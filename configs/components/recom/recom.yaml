@@ -26,7 +26,7 @@ available_versions:
     - 2.0-recom-awicm
 
 choose_version:
-    '2.0':
+    '2.0-recom-awicm':
         branch: oxygen
         # additional recom output if fesom runs standalone
         # (see default output at the bottom)
@@ -35,33 +35,37 @@ choose_version:
         add_yearly_outputs:
             - AGGdia3d
             - AGGphy3d
+            - AGGcoc3d
             - calcdiss
             - calcif3d
             - EXCdia3d
             - EXCphy3d
+            - EXCcoc3d
+            - GNAc
             - GNAsdia3d
             - GNAsphy3d
+            - GNAscoc3d
             - GPPdia3d
             - GPPphy3d
+            - GPPcoc3d
             - GRAZdia3d
             - GRAZphy3d
+            - GRAZcoc3d
+            - NNAc
             - NNAsdia3d
             - NNAsphy3d
+            - NNAscoc3d
             - NPPdia3d
             - NPPphy3d
+            - NPPcoc3d
+            - ResP
+            - ResD
+            - ResC
             - RESdia3d
             - RESphy3d
+            - REScoc3d
             - RESzoo3d
             - TotGraz3d
-        add_monthly_outputs:
-            - bgc23
-            - bgc24
-            - bgc25
-            - bgc26
-            - bgc27
-            - bgc28
-            - diags3d03
-            - diags3d04
             - diags3d05
             - diags3d06
             - diags3d07
@@ -78,10 +82,40 @@ choose_version:
             - diags3d18
             - diags3d19
             - diags3d20
+            - diags3d21
+            - diags3d22
+            - diags3d23
+            - diags3d26
+            - diags3d27
+            - diags3d28
+        add_monthly_outputs:
+            - bgc23
+            - bgc24
+            - bgc25
+            - bgc26
+            - bgc27
+            - bgc28
+            - bgc29
+            - bgc30
+            - bgc31
+            - CO2
+            - CO3
+            - diags3d03
+            - diags3d04
+            - diags3d24
+            - diags3d25
+            - GPPc
+            - HCO3
+            - kspc
+            - NPPc
+            - OmegaC
+            - pCO2
+            - pH
+            - rhoSW
     2.0-r:
         # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
         branch: recom-update
-    2.0-recom-awicm:
+    2.0:
         branch: oxygen
 
 clean_command: ${defaults.clean_command}

@@ -9,26 +9,36 @@ monthly_outputs:
     - aCO2
     - aFe
     - aN
+    - CO2
     - CO2y
     - CO2f
+    - CO3
     - dpCO2s
     - evap
     - GPPd
     - GPPn
+    - GPPc
+    - HCO3
     - hfds # net heat flux
+    - kspc
     - lwrd
     - mlotst # mld by density thr
     - NPPd
     - NPPn
+    - NPPc
     - O2f
     - olat 
-    - olwout 
+    - olwout
+    - OmegaC
     - omldamax # mld by mixing scheme
     - osen
     - PAR
+    - pCO2
     - pCO2s
+    - pH
     - relax_salt # if namelist.oce:&boundary:restore_s_surf != 0
     - rho
+    - rhoSW
     - rsdo # shortwave down
     - runoff
     - shum
@@ -66,6 +76,7 @@ monthly_outputs:
 yearly_outputs:
     - AGGdia3d
     - AGGphy3d
+    - AGGcoc3d
     - alphaCO2
     - benC
     - benCalc
@@ -99,6 +110,9 @@ yearly_outputs:
     - bgc26
     - bgc27
     - bgc28
+    - bgc29
+    - bgc30
+    - bgc31
     - calcdiss
     - calcif3d
     - denb
@@ -122,25 +136,41 @@ yearly_outputs:
     - diags3d18
     - diags3d19
     - diags3d20
+    - diags3d21
+    - diags3d22
+    - diags3d23
+    - diags3d24
+    - diags3d25
+    - diags3d26
+    - diags3d27
+    - diags3d28
     - EXCdia3d
+    - EXCcoc3d
     - flice
     - fsitherm
     - GNAd
     - GNAn
+    - GNAc
     - GNAsdia3d
     - GNAsphy3d
+    - GNAscoc3d
     - GPPdia3d
     - GPPphy3d
+    - GPPcoc3d
     - GRAZdia3d
     - GRAZphy3d
+    - GRAZcoc3d
     - Hp
     - Kw
     - NNAd
     - NNAn
+    - NNAc
     - NNAsdia3d
     - NNAsphy3d
+    - NNAscoc3d
     - NPPdia3d
     - NPPphy3d
+    - NPPcoc3d
     - opottemptend
     - pbo
     - prlq
@@ -151,6 +181,7 @@ yearly_outputs:
     - rDSi
     - RESdia3d
     - RESphy3d
+    - REScoc3d
     - RESzoo3d
     - sidmasssi
     - sidmassth

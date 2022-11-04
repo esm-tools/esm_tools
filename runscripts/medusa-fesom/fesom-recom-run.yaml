@@ -45,12 +45,10 @@ fesom:
                                 run_after: tidy
                                 script: "
                                         postprocessing_fesom.sh
-                                        /work/bm1030/a270105/awiesm-output/fesom-standalone-1/outdata/fesom/
-                                        /work/bm1030/a270105/medusa-output/fesom-medusa-1/
-                                        ave
-                                        ${current_date!syear}-${initial_date!syear}
+                                        ${experiment_outdata_dir}
+                                        /work/bm1030/a270105/medusa-output/fesom-medusa/
                                         ${initial_date!syear}
-                                        ${final_date!syear}" 
+                                        $((${initial_date!syear}+1))" 
                                 script_dir: ${general.esm_function_dir}/components/medusa
 #                                #MA: I don't think these are needed
 #                                #call_function:

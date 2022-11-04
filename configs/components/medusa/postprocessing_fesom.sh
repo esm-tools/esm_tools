@@ -7,12 +7,10 @@
 # define directories
 indir=$1     
 #fesom output: /work/ollie/yye/AWIESM_runs/PI_echamcold_nociso/outdata/fesom
-outid=$2     
+outdir=$2     
 #save postprocessed files: experiment_dir/input/medusa?
-outexpid=$3  #what for are outexpid and inexpid?
-outidate=$4  #date of postprocessed files: $startdate-$enddate(current fesom year)
-startdate=$5 #date of the first fesom file to be postprocessed
-enddate=$6   #date of the last fesom file: same as the current fesom year
+startdate=$3 #date of the first fesom file to be postprocessed
+enddate=$4   #date of the last fesom file: same as the current fesom year
 
 #source .../scripts/env.sh
 

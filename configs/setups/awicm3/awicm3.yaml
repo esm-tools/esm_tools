@@ -160,6 +160,10 @@ oifs:
                                                 NSOLARSPECTRUM: "1"
                                         NAMMCC:
                                                 RALBSEAD_NML: 0.045
+                                        NAMORB:
+                                                LCORBMD: "true"
+                                                ORBMODE: "fixed_year"
+                                                ORBIY: ${start_date!syear}
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data

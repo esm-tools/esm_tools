@@ -3,7 +3,7 @@
 #
 
 model: oifs
-executable: oifs
+executable: OpenIFS
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 type: atmosphere
@@ -109,11 +109,12 @@ compile_infos:
             destination: 40r1
           43r3-master:
             requires:
-            - oasis3mct-4.0-awicm-frontiers
-            branch: master
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
+            - oasis3mct-5.0-smhi
+            branch: development/2022/awi-cm3-integration
+            executable: OpenIFS
+            comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
+            git-repository: https://git.smhi.se/jan.streffing/oifs43r3/
+            install_bins: make/esm/oifs/bin/OpenIFS
             destination: oifs-43r3
             with_xios: true
           43r3-awicm-3.0:
@@ -224,8 +225,8 @@ supercooled_liquid_could_fix: 0
 perturb: 1
 ensemble_id: 1
 
-orb_switch: False
-orb_mode: "variable_year"
+orb_switch: True
+orb_mode: "fixed_year"
 orb_iyear: ${start_date!syear}
 
 restart: 1

@@ -20,6 +20,7 @@ available_versions:
 - awicm-3.0
 - awicm-3.1
 - awicm-frontiers
+- smhi
 - focioifs
 - focioifs1
 
@@ -42,6 +43,8 @@ choose_version:
     branch: esm-tools-focioifs
   focioifs1:
     branch: esm-tools-focioifs
+  smhi:
+    branch: smhi
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git

@@ -497,29 +497,30 @@ choose_with_wiso:
 # -----------------
 # Settings for running with REcoM
 choose_fesom.with_recom:
-    add_config_sources:
-        oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
-        io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
-    remove_namelist_changes.namelist.config: [inout]
-    add_namelist_changes:
-        namelist.config:
-            restart_log:
-                restart_length: "${restart_rate}"
-                restart_length_unit: "${restart_unit}"
-        namelist.oce:
-            oce_tra:
-                num_tracers: "${num_tracers}"
+    True:
+        add_config_sources:
+            oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+            io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+        remove_namelist_changes.namelist.config: [inout]
+        add_namelist_changes:
+            namelist.config:
+                restart_log:
+                    restart_length: "${restart_rate}"
+                    restart_length_unit: "${restart_unit}"
+            namelist.oce:
+                oce_tra:
+                    num_tracers: "${num_tracers}"
 
-    # use_ciso switch
-    # ---------------
-    # num_tracers only changed if ``with_recom: true``, i.e. indentation)
-    choose_recom.use_ciso:
-            True:
-                    namelist_ciso_sufix: ".ciso"
-                    num_tracers: 33
-            False:
-                    namelist_ciso_sufix: ""
-                    num_tracers: 24
+        # use_ciso switch
+        # ---------------
+        # num_tracers only changed if ``with_recom: true``, i.e. indentation)
+        choose_recom.use_ciso:
+                True:
+                        namelist_ciso_sufix: ".ciso"
+                        num_tracers: 33
+                False:
+                        namelist_ciso_sufix: ""
+                        num_tracers: 24
 
 grids:
         feom:

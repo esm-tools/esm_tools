@@ -374,8 +374,6 @@ namelist_changes:
                 NAERAD:
                         CRTABLEDIR: "${rtables_dir}"
                         LECOMPGRID: "${lecompgrid}"
-                NAMCLDP:
-                        SCLCT_SWITCH: "${sclct_switch}"
                 NAMFPG:
                         NFPLEV: "${nlev}"
                         NFPMAX: "${res_number}"
@@ -398,6 +396,7 @@ namelist_changes:
                         ORBMODE: "${orb_mode}"
                         ORBIY: "${orb_iyear}"
 
+
 lresume: false
 restart_rate: 1
 restart_unit: "months"
@@ -418,6 +417,7 @@ file_movements:
 
 # TODO: expand comment
 massfixer: 2
+cloudfixer: 1
 nfrmasscon: 1
 
 oasis_grid_name_a: "A${oasis_grid_name}"
@@ -802,6 +802,14 @@ choose_massfixer:
                                         YI_NL%LMASSFIX: ".true."
                                         YL_NL%LMASSFIX: ".true."
                                         YQ_NL%LMASSFIX: ".true."
+
+
+choose_cloudfixer:
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMCLDP:
+                                        SCLCT_SWITCH: "${sclct_switch}"
 
 ##
 ## specifics for 40r1 and 43r3

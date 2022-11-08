@@ -143,6 +143,8 @@ oifs:
                 "master":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/master
+                        executable: OpenIFS
+                        cloudfixer: 0
 
                         add_namelist_changes:
                                 fort.4:
@@ -158,12 +160,13 @@ oifs:
                                                 LECURR: true
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
-                                        NAMMCC:
-                                                RALBSEAD_NML: 0.045
+                                        #NAMMCC:
+                                        #        RALBSEAD_NML: 0.045
                                         NAMORB:
                                                 LCORBMD: "true"
                                                 ORBMODE: "fixed_year"
                                                 ORBIY: ${start_date!syear}
+
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -404,7 +407,11 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 xios:
-        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+        choose_general.version:
+                "master":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/smhi"
+                "*":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
 
@@ -432,6 +439,13 @@ rnfmap:
                         oasis_grid_type: "LR"
         input_files:
                 runoff_maps: runoff_maps
+
+        choose_general.version:
+                "master":
+                        add_namelist_changes:
+                                namelist.runoffmapper:
+                                        NAMRNFMAP:
+                                                LCalvingEnthalpy: True
 
 
 #########################################################################################

@@ -99,6 +99,7 @@ scenario: "PI-CTRL"
 time_step: 1800
 
 use_ciso: false
+use_medusa: false
 
 choose_use_ciso:
         true:
@@ -110,7 +111,14 @@ choose_use_ciso:
         false:
                 recom_namelist:  "namelist.recom"
 
-
+choose_use_medusa:
+        true: 
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        use_MEDUSA: true
+                                        sedflx_num: 7
+                                        add_loopback: true
 choose_scenario:
         PI-CTRL:
                 constant_CO2: true

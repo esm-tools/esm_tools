@@ -78,6 +78,7 @@ fesom:
 
 recom:
     use_ciso: true
+    use_medusa: true
     lresume: false
     benthos_num: 8
     bottflx_num: 8

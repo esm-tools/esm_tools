@@ -145,6 +145,9 @@ oifs:
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/master
                         executable: OpenIFS
                         cloudfixer: 0
+                        mip: " "
+                        context_xml: context_oifs.xml
+
 
                         add_namelist_changes:
                                 fort.4:
@@ -410,8 +413,39 @@ xios:
         choose_general.version:
                 "master":
                         xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/smhi"
+                        config_sources:
+                                domain_def: ${xml_dir}/domain_def_oifs.xml
+                                field_def_raw: ${xml_dir}/field_def_oifs_raw.xml
+                                field_def_cmip6: ${xml_dir}/field_def_oifs_cmip6.xml
+                                field_def_noncmip6: ${xml_dir}/field_def_oifs_noncmip6.xml
+                                file_def_default: ${xml_dir}/file_def_oifs_default.xml
+                                file_def_orig: ${xml_dir}/file_def_oifs_orig.xml
+                                io_def: ${xml_dir}/iodef.xml
+                                axis_def: ${xml_dir}/axis_def_oifs.xml
+                                grid_def: ${xml_dir}/grid_def_oifs.xml
+                                ifs_xml: ${xml_dir}/ifs_xml/*
+                                context_ifs: ${xml_dir}/context_oifs.xml
+
+
+                        add_config_files:
+                                context_ifs: context_ifs
+                                ifs_xml: ifs_xml
+                                domain_def: domain_def
+                                field_def_raw: field_def_raw
+                                field_def_cmip6: field_def_cmip6
+                                field_def_noncmip6: field_def_noncmip6
+                                file_def_default: file_def_default
+                                file_def_orig: file_def_orig
+                                axis_def: axis_def
+                                grid_def: grid_def
+                        remove_config_files:
+                                - file_def
+                                - field_def
                 "*":
                         xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+
+
+
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
 

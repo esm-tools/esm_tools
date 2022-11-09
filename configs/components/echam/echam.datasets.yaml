@@ -118,6 +118,9 @@ forcing_sources:
                 # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
                         from: 2015
+                        to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc":
+                        from: 2100
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"

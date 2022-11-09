@@ -124,7 +124,7 @@ transient_advance_forcing: false
 ocean_resolution: 'GR15'
 disturbance: "1.000001"
 lresume: false
-dataset: "r0007"
+
 
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
@@ -211,7 +211,7 @@ choose_version:
                 wiso_code: true
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
@@ -224,7 +224,7 @@ choose_version:
                 dataset: r0007
         6.3.05p2:
                 repo_tag: 6.3.05p2
-                dataset: r0007
+                dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
@@ -241,7 +241,7 @@ choose_version:
         6.3.05p2-concurrent_radiation-paleodyn:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -250,6 +250,7 @@ choose_version:
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
+                dataset: r0008
                 wiso_code: true
                 concurrent_radiation_code: true
                 default_output: True
@@ -261,7 +262,7 @@ choose_version:
         6.3.05p2-concurrent_radiation:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:

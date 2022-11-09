@@ -352,9 +352,6 @@ choose_scenario:
                         swflux: 1950swflux
                         volcir: 1950volcir
                         volcsw: 1950volcsw
-        # new scenario NUDG for ECHAM6-wiso nudged simulations (M. Werner, 09/2022)
-        NUDG:
-                dataset: r0007
         # old hist settings --> need to discuss with deniz whether this is
         # still needed
         HIST:

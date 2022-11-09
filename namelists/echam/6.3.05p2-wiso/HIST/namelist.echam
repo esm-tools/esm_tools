@@ -1,44 +1,36 @@
 &runctl
-    dt_start = 2013, 12, 31, 23, 52, 30
-    dt_stop = 2019, 12, 31, 23, 52, 30
+    dt_start = 1850, 1, 1, 0, 0, 0
+    dt_stop = 2402, 1, 1, 0, 0, 0
     putrerun = 1, 'months', 'last', 0
+    default_output = .false.
+    lcouple = .true.
+    lcouple_co2 = .true.
     lfractional_mask = .false.
     lresume = .true.
-    out_datapath = './'
-    out_expname = 'NUDGING_ERA5_T63L47'
+    out_expname = 'TST'
+    out_datapath = '/work/bk0988/awicm/a270062/fesom_echam/glob//cpl_work_test/'
     rerun_filetype = 4
-    delta_time = 450
-    putdata = 6, 'hours', 'last', 0
-    lamip = .true.
-    lnudge = .true.
-    lcouple = .false.
-    lcouple_co2 = .false.
-    default_output = .false.
-    l_orbvsop87 = .true.
+    getocean = 1, 'days', 'last', 0
+    putocean = 1, 'days', 'last', 0
 /
-&ndgctl
-    dt_nudg_start = 2013, 12, 31, 23, 52, 30
-    dt_nudg_stop  = 2019, 12, 31, 23, 52, 30
-    inudgformat = 2
-    ndg_file_nc = 'ndg%y4%m2.nc'
-    nsstinc = 0
-    lnudgcli = .false.
-    lnudgini = .false.
-/
+
 &wisoctl
     lwiso = .false.
     lwiso_rerun = .false.
     nwiso = 0
 /
+
 &parctl
     nproca = 24
     nprocb = 24
     nprocar = 0
     nprocbr = 0
 /
+
 &submodelctl
     lmethox = .true.
 /
+
 &mvstreamctl ! 'default spm glm g3bm'
     filetag = 'echam'
     source = 'sp', 'gl', 'g3b'
@@ -71,6 +63,19 @@
     filetag = 'yasso'
     source = 'yasso'
 /
+&mvstreamctl ! 'default wisom'
+    filetag = 'wiso'
+    source = 'wiso'
+/
+&mvstreamctl ! 'default la_wisom'
+    filetag = 'la_wiso'
+    source = 'la_wiso'
+/
+&mvstreamctl ! 'default js_wisom'
+    filetag = 'js_wiso'
+    source = 'js_wiso'
+/
+
 &set_stream ! 'default jsbach'
     stream = 'jsbach'
     lpost = 0
@@ -85,6 +90,18 @@
 /
 &set_stream ! 'default yasso'
     stream = 'yasso'
+    lpost = 0
+/
+&set_stream ! 'default wiso'
+    stream = 'wiso'
+    lpost = 0
+/
+&set_stream ! 'default js_wiso'
+    stream = 'js_wiso'
+    lpost = 0
+/
+&set_stream ! 'default la_wiso'
+    stream = 'la_wiso'
     lpost = 0
 /
 &radctl
@@ -104,28 +121,4 @@
 /
 &co2ctl
     lco2_scenario = .true.
-/
-&mvstreamctl ! 'default wisom'
-    filetag = 'wiso'
-    source = 'wiso'
-/
-&mvstreamctl ! 'default la_wisom'
-    filetag = 'la_wiso'
-    source = 'la_wiso'
-/
-&mvstreamctl ! 'default js_wisom'
-    filetag = 'js_wiso'
-    source = 'js_wiso'
-/
-&set_stream ! 'default wiso'
-    stream = 'wiso'
-    lpost = 0
-/
-&set_stream ! 'default js_wiso'
-    stream = 'js_wiso'
-    lpost = 0
-/
-&set_stream ! 'default la_wiso'
-    stream = 'la_wiso'
-    lpost = 0
 /

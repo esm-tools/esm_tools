@@ -129,6 +129,10 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
   ! NCEXTR = 0,
 /
 
+&NAMAFN
+    TFP_FUA(1)%LLGP = false,
+/
+
 ! -----------------------------------------------------------------------------
 ! * NAMRES: Restart control
 ! -----------------------------------------------------------------------------
@@ -490,3 +494,4 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAETLDIAG
 /
 
+! vi:syntax=fortran

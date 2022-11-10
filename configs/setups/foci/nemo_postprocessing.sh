@@ -274,7 +274,7 @@ wait
 [[ $(<$post_dir/status) -eq 0 ]]
 
 print 'NEMO netcdf4 conversion finished'
-exit
+
 #
 # Calculate yearly means from nemo output and place in ym/ subdirectory 
 #
@@ -288,7 +288,7 @@ echo 0 > $post_dir/status
 mkdir ym
 
 nextdate=$startdate
-while [[ $nextdate -lt $enddate ]] 
+while [[ $nextdate -lt $enddate ]] && [[ $freq="y" ]] 
 do
    # treat special case of 18930401, see echam_postprocessing.sh
 	if [[ $freq == "m" ]] ; then
@@ -351,15 +351,39 @@ print 'NEMO ym calculation finished'
 print 'NEMO restart postprocessing started'
 cd ${RESTART_DIR}/${ocemod}
 
-for ((year=startyear-1; year<endyear; ++year)) ; do
-	if ls *${EXP_ID}_*_restart*_${year}1231_*.nc > /dev/null 2>&1 ; then
+# treat special case of 18930401, see echam_postprocessing.sh
+if [[ $freq == "m" ]] ; then
+	prevdate=$(date --date="$startdate - 1 month" "+%Y%m%d")
+	prevenddate=$(date --date="$prevdate + 1 month -1 day" "+%Y%m%d")
+else
+	prevdate=$(date --date="$startdate - 1 year" "+%Y%m%d")	
+	prevenddate=$(date --date="$prevdate + 1 year - 1 day" "+%Y%m%d")
+fi
+nextdate=$prevdate
+echo "nextdate=$nextdate / prevenddate=$prevenddate / enddate=$enddate"
+
+while [[ $nextdate -lt $prevenddate ]] 
+do
+   # treat special case of 18930401, see echam_postprocessing.sh
+	if [[ $freq == "m" ]] ; then
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + 1 month - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + 1 month" "+%Y%m%d")
+	else
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+	fi
+
+	# output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
+	if ls *${EXP_ID}_*_restart*_${currdate2}_*.nc > /dev/null 2>&1 ; then
 		# If too many jobs run at the same time, wait
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
 			print "Processing year $year"
-			tar czf ${EXP_ID}_restart_${year}1231.tar.gz *${EXP_ID}_*_restart*_${year}1231_*.nc 
-			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${year}1231_*.nc 
+			tar czf ${EXP_ID}_restart_${currdate2}.tar.gz *${EXP_ID}_*_restart*_${currdate2}_*.nc 
+			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 		) &
 	fi
 done

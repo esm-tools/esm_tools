@@ -383,11 +383,11 @@ for ((year=startyear-1; year<endyear; ++year)) ; do
     fi
     
     if [[ -f "ECE3_fx_${year}0101_reduced_sfc.nc" ]] ; then
-        if [[ !-f "areacella_reduced.nc" ]] ; then
+        if [[ ! -f "areacella_reduced.nc" ]] ; then
             # Get grid cell area
             cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_reduced_sfc.nc areacella_reduced.nc
         fi
-	if [[ !-f "lsm_reduced.nc" ]] ; then
+	if [[ ! -f "lsm_reduced.nc" ]] ; then
             # Get lsm
 	    cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_reduced_sfc.nc lsm_reduced.nc
 	fi
@@ -397,7 +397,7 @@ done
 if [[ -f "areacella.nc" ]] && [[ -f "lsm.nc" ]] ; then
     rm *_fx_*_regular_sfc.nc 
 fi
-if [[ -f "areacella_reduced.nc"]] && [[ -f "lsm_reduced.nc" ]] ; then
+if [[ -f "areacella_reduced.nc" ]] && [[ -f "lsm_reduced.nc" ]] ; then
     rm *_fx_*_reduced_sfc.nc
 fi
 

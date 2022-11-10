@@ -1,7 +1,7 @@
 general:
         base_dir: "/work/bm1030/a270105/awiesm-output" 
         initial_date: "2000-01-01"
-        final_date: "2002-01-01"
+        final_date: "2003-01-01"
         setup_name: fesom
         version: "2.1-recom"
         compute_time: 05:30:00
@@ -14,7 +14,7 @@ general:
 fesom:
 #        version: "2.1-recom"
         with_recom: true
-        nproc: 1024
+        nproc: 512
         mpi_num_groups: 2
         lresume: False
         model_dir: /work/ab0995/a270105/esm_code/fesom-2.1
@@ -23,38 +23,20 @@ fesom:
         climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
         run_length: 1
 
-        #        coupled_to_medusa: true # use_MEDUSA: true, sedflx=7
-
         workflow:
                 next_run_triggered_by: couple_out
 
                 subjobs:
-#                        #MA: I think this can be deleted
-#                        #couple_in:
-#                        #        nproc: 1
-#                        #        run_before: prepcompute
-#                        #        script:
-#                        #        #medusa output renaming is already done during medusa run
-#                        #        #what needs to be done here?
-#                        #        script_dir: /work/ollie/yye/esm_tools/runscripts/medusa/
-#                        #        call_function:
-#                        #        env_preparation:
-#                        #        run_only: first_run_in_chunk
-#                        #        #skip_chunk_number: 1
-#
                         couple_out:
                                 batch_or_shell: shell
                                 run_after: tidy
                                 script: "
                                         postprocessing_fesom.sh
                                         ${experiment_outdata_dir}
-                                        /work/bm1030/a270105/medusa-output/fesom-medusa/
+                                        ${experiment_outdata_dir}
                                         ${initial_date!syear}
-                                        $((${initial_date!syear}+1))" 
+                                        $((${initial_date!syear}+${nyear}))" 
                                 script_dir: ${general.esm_function_dir}/components/medusa
-#                                #MA: I don't think these are needed
-#                                #call_function:
-#                                #env_preparation:
                                 run_only: last_run_in_chunk
                                 nproc: 1
 
@@ -78,6 +60,7 @@ fesom:
 
 recom:
     use_ciso: true
+    use_medusa: true
     lresume: false
     benthos_num: 8
     bottflx_num: 8

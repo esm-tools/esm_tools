@@ -113,12 +113,28 @@ choose_use_ciso:
 
 choose_use_medusa:
         true: 
-                add_namelist_changes:
-                        namelist.recom:
-                                pavariables:
-                                        use_MEDUSA: true
-                                        sedflx_num: 7
-                                        add_loopback: true
+                choose_lresume:
+                        true:
+                              add_namelist_changes:
+                                        namelist.recom:
+                                                pavariables:
+                                                        use_MEDUSA: true
+                                                        sedflx_num: 7
+                                                        add_loopback: true
+                              add_input_sources:
+                                      flux2fesom: ${experiment_outdata_dir}/../medusa/medusa_flux2fesom.${prev_date!syear}.nc
+                              add_input_files:
+                                      flux2fesom: flux2fesom
+                              add_input_in_work:
+                                      flux2fesom: "medusa_flux2fesom.nc"
+                        false:
+                              add_namelist_changes:
+                                      namelist.recom:
+                                              pavariables:
+                                                      use_MEDUSA: true
+                                                      sedflx_num: 0
+                                                      add_loopback: false
+              
 choose_scenario:
         PI-CTRL:
                 constant_CO2: true

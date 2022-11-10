@@ -14,7 +14,6 @@ medusa:
         model_dir: /work/ab0995/a270105/esm_code/medusa-2.0/
         nproc: 1
         lresume: false
-        forcing_dir: /work/bm1030/a270105/medusa-input/ #TODO: change to get the files from FESOM automatically
         input_dir: /work/bm1030/a270105/medusa-input/ 
 
         ##############################################################

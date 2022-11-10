@@ -76,7 +76,7 @@ executable: medusa_recom_paleo
 # Defaults
 lresume: false
 with_ciso: true
-forcing_dir: ""
+forcing_dir: ${experiment_outdata_dir}/../fesom/
 input_dir: ""
 forcing_name: "fesom.ave"
 namelist_dir: ${model_dir}/medmbm/trunk4mcg/nml/
@@ -127,7 +127,12 @@ choose_lresume:
 
 input_sources:
     fesom.mesh.diag: ${input_dir}/fesom.mesh.diag.nc
-
+    choose_fesom.resolution:
+        CORE2:
+                dust: ${input_dir}/DustClimYearlyAlbani_core2mesh.nc
+        pi:
+                dust: ${input_dir}/DustClimYearlyAlbani_pi-mesh.nc
+    
 forcing_files:
     "[[variables-->VAR]]": "VAR"
     "[[fluxes-->FLX]]": "FLX"
@@ -137,7 +142,6 @@ forcing_sources:
     "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${start_date!year}-${end_date!year}.nc"
-    dust: ${forcing_dir}/DustClimYearlyAlbani_core2mesh.nc #TODO: switch between meshes by choose_resolution
 
 config_files:
     recom_paleo_files: recom_paleo_files
@@ -189,6 +193,7 @@ outdata_sources:
     procrate: "medusa_procrate.${end_date!year}.nc"
     reaclay: "medusa_reaclay.${end_date!year}.nc"
     reaction: "medusa_reaction.${end_date!year}.nc"
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
 
 outdata_in_work:
     aux: "medusa_aux.nc"
@@ -196,22 +201,23 @@ outdata_in_work:
     procrate: "medusa_procrate.${end_date!year}.nc"
     reaclay: "medusa_reaclay.${end_date!year}.nc"
     reaction: "medusa_reaction.${end_date!year}.nc"
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
 
 restart_in_sources:
-    fluxes: "medusa_flux2fesom.${prev_date!year}.nc"
     flx: "medusa_flx.${prev_date!year}.nc"
+    reaclay: "medusa_reaclay.${prev_date!year}.nc"
 
 restart_in_in_work:
-    fluxes: "medusa_flux2fesom.nc"
-    flx: "medusa_flx.nc"
+    flx: "medusa_flx_restart.nc"
+    reaclay: 'medusa_reaclay_restart.nc'
 
 restart_out_sources:
-    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
     flx: "medusa_flx.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
 
 restart_out_in_work:
-    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
     flx: "medusa_flx.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
 
 log_sources:
     log: "medusa.log"

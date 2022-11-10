@@ -117,7 +117,11 @@ echam:
 
         # Default namelist types provided with ESM-Tools. To see a list of supported
         # ``namelist_type`` options ``ls <PATH>/esm_tools/namelist/echam/<version>/
-        namelist_type: "production"
+        choose_scenario_is_ssp: # Automatically calculated from the scenario variable
+            False:
+                namelist_type: "production"
+            True:
+                namelist_type: ${scenario_type}
 
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
 

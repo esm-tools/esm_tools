@@ -44,7 +44,7 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 ! ----------------------------------------------------------------------------
     NCONF = 1,
     LSLAG = true,
-    CNMEXP = 'RE22',
+    CNMEXP = 'awi3',
     UTSTEP = 3600.0,                        ! Time step in seconds
     CUSTOP = 'd1', ! txx = timesteps, hxx = hours, dxx = days.
 ! ============================================================================
@@ -61,11 +61,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
     YQ_NL%LGPINGP = true,
     YR_NL%NREQIN = -1,
     YS_NL%NREQIN = -1,
-    YS_NL%LMASSFIX = true,
-    YR_NL%LMASSFIX = true,
-    YI_NL%LMASSFIX = true,
-    YL_NL%LMASSFIX = true,
-    YQ_NL%LMASSFIX = true,
     LTRCMFMG = true,
 /
 
@@ -116,7 +111,7 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 
 &NAERAD
     NRPROMA = -8,
-    CRTABLEDIR = "./rtables/",  ! Modify this for your installation, note trailing /
+    CRTABLEDIR = "/p/project/chhb19/streffing1/input/oifs-43r3/rtables/",  ! Modify this for your installation, note trailing /
 /
 
 &NAMGEM
@@ -129,24 +124,14 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
   ! NCEXTR = 0,
 /
 
-! -----------------------------------------------------------------------------
-! * NAMRES: Restart control
-! -----------------------------------------------------------------------------
-&NAMRES
-    NFRRES = 1,             ! Restart file intervall
-
-                               ! NRESTS = List of restart times
-    NRESTS = 1,24,
-                               !   NRESTS(1) = NR (positive): NRESTS(2..)*NR define *time-steps* for restart file creation
-                               !   NRESTS(1) = NR (negative): NRESTS(2..)*NR define *hours* for restart file creation
-
-                               ! LSDHM = .TRUE. if time stamp is written as 'ddddhhmm'
-                               !                else time stamp is controlled by LINC (NAMOPH)
-
-                               ! LDELRES = .TRUE. if old restart files are deleted
-                               ! COPY = "cp" used for moving restart
+&NAMAFN
+    TFP_FUA(1)%LLGP = false,
 /
 
+&NAMRES
+    NFRRES = 1
+    NRESTS = -1, -24
+/
 &NAMPPC
     LRSACC = true,             ! reset accumulated fields to zero at model output frequency
 /
@@ -168,8 +153,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAM_DISTRIBUTED_VECTORS
 /
 &NAM926
-/
-&NAMAFN
 /
 &NAMANA
 /
@@ -211,13 +194,9 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 /
 &NAMDIF
 /
-&NAMDIM
-/
 &NAMDIMO
 /
 &NAMDMSP
-/
-&NAMDPHY
 /
 &NAMDYNA
 /
@@ -230,8 +209,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAMFA
 /
 &NAMFFT
-/
-&NAMFPC
 /
 &NAMFPD
 /
@@ -262,8 +239,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAMFPSC2_DEP
 /
 &NAMFY2
-/
-&NAMGEM
 /
 &NAMGMS
 /
@@ -301,8 +276,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 /
 &NAMLFI
 /
-&NAMMCC
-/
 &NAMMCUF
 /
 &NAMMETEOSAT
@@ -334,8 +307,6 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAMOPTCMEM
 /
 &NAMPARAR
-/
-&NAMPAR1
 /
 &NAMPHY
 /
@@ -476,3 +447,4 @@ ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
 &NAETLDIAG
 /
 
+! vi:syntax=fortran

@@ -153,14 +153,30 @@ compile_infos:
             install_bins: make/esm/oifs/bin/oifs
             with_xios: false
           43r3-foci:
-            branch: master
+            branch: 43r3v1-foci
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910
+          43r3-foci21:
+            branch: master
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            install_bins: make/esm/oifs/bin/oifs
+            requires:
+            - oasis3mct-EM21
+            - xios-2.5_r1910
           43r3-v1:
+            branch: 43r3v1-foci
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            install_bins: make/esm/oifs/bin/oifs
+            requires:
+            - oasis3mct-4.0
+            - xios-2.5_r1910_oifs
+          43r3-v2:
             branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
@@ -195,6 +211,7 @@ prepifs_expid: gu5a
 prepifs_startdate: 19820101
 usemip: 1
 mip: "cmip5"
+o3_scheme: "default"
 scenario: "amip-prepifs"
 output: "default"
 
@@ -205,6 +222,7 @@ read_icmcl: 0
 generate_namelist: 1
 ensemble: 0
 post_processing: 0
+solarspectrum: False
 pextra: 0
 dr_hook_ignore_signals: -1
 
@@ -638,7 +656,7 @@ outdata_in_work:
         MPP: MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        atm: atm_*
 
 outdata_sources:
         # old grib based output
@@ -648,7 +666,7 @@ outdata_sources:
         MPP: ${out_date_folder}/MPP*
         # XIOS output
         oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
-        atm: atm*
+        atm: atm_*
 
 
 #======================================================================================
@@ -869,6 +887,61 @@ choose_version:
                 add_outdata_files:
                         ICMUA: ICMUA
 
+
+# If 1, use Coddington spectrum which reduced stratospheric warm bias
+# Only available in 43r3-v2
+choose_solarspectrum:
+        True:
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        NSOLARSPECTRUM: 1
+
+# There are two different O3 concentrations in OpenIFS:
+# One is used for output, and one that is used by radiation scheme
+# By default, the two are NOT the same.
+# By default, prognostic O3 from the Cariolle scheme is written to output
+# but climatology is used by radiation scheme
+#
+# Here the scheme can be changed in two ways:
+# cmip6: Use O3 from CMIP6 (input4MIP) for picontrol, historical or scenarios
+# cariolle: Use the prognostic O3 from Cariolle in radiation
+choose_o3_scheme:
+        default:
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        NGHGRAD: 21
+        cmip6:
+                # For CMIP6 O3 we set
+                # LCMIP6O3 to true
+                # LEO3VAR to true
+                # LEPO3RA to false (otherwise prognostic O3 is used)
+                add_namelist_changes:
+                        fort.4:
+                                NAMGFL:
+                                        YO3_NL%LGP: '.true.' # O3 is a tracer
+                                NAEPHY:
+                                        LEO3CH: '.true.' # turn on O3 scheme
+                                NAERAD:
+                                        LEPO3RA: '.false.' # dont use progn O3 in radiation
+                                        LCMIP6O3: '.true.' # use CMIP6 O3
+                                        LEO3VAR: '.true.'  # allow time-varying O3 (not climatology)
+                                        NGHGRAD: 21        # dont overwrite by progn O3
+
+        cariolle:
+                # For Cariolle
+                add_namelist_changes:
+                        fort.4:
+                                NAMGFL:
+                                        YO3_NL%LGP: '.true.'
+                                NAEPHY:
+                                        LEO3CH: '.true.'
+                                NAERAD:
+                                        LEPO3RA: '.true.' # use progn O3 in radiation
+                                        LCMIP6O3: '.true.'
+                                        NGHGRAD: 20       # overwrite O3 by progn O3
+
 choose_restart_type:
         eternal:
                 nfrres: 1
@@ -1056,6 +1129,13 @@ choose_output:
                                 NAMCT0:
                                         NFRPOS: 12
                                         NFRHIS: 12
+         
+        "1hr":
+                 add_namelist_changes:
+                        fort.4:
+                                NAMCT0:
+                                        NFRPOS: "$(( 3600 / ${time_step} * 1 ))"
+                                        NFRHIS: "$(( 3600 / ${time_step} * 1 ))"
 #======================================================================================
 # PREPROCESS: eternal runs
 #======================================================================================
@@ -1183,7 +1263,8 @@ prepcompute_recipe:
    - "modify_files"
    - "copy_files_to_work"
    - "report_missing_files"
-   #- "add_vcs_info"
+   # see https://github.com/esm-tools/esm_tools/discussions/774
+   # - "add_vcs_info"
    #- "check_vcs_info_against_last_run"
    - "database_entry"
 # this does not work as expected, solution is work in progress

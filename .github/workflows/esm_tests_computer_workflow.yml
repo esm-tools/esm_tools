@@ -16,6 +16,9 @@ on:
       test_flags:
         type: string
         default: "-cngeu -s False"
+    secrets:
+      ESM_TOOLS_BOT:
+        required: false
 
 jobs:
   computer:
@@ -29,21 +32,32 @@ jobs:
     container:
       image: koldunovn/esm_test:latest
       options: --hostname ${{ inputs.computer }}
+    
+    steps:
+    # Checkout PR-branch (I could not find an easier way to do this and it seems
+    # many people are struggling with the same problem when your event is triggered
+    # by `issue_comment`)
+    - name: PR branch
+      run: |
+        apt install -y jq;
+        PR_URL="${{ github.event.issue.pull_request.url }}";
+        BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref | xargs);
+        echo "::set-output name=this_branch::${BRANCH}"
+      id: this_branch
+      
+    - name: deleteme
+      run: |
+        echo ${THIS_BRANCH}
+      env:
+        THIS_BRANCH: ${{ steps.this_branch.outputs.this_branch }}
 
     # Service containers to run with `gfortran_ubuntu`
-    steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-    
-#    - name: checkout esm_tests_info
-#      uses: actions/checkout@v3
-#      with:
-#        repository: esm-tools/esm_tests_info
-#        path: src/esm_tests/resources
-#        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ steps.this_branch.outputs.this_branch }}
 
     - name: add to the path
       run: |
@@ -53,16 +67,48 @@ jobs:
         ./install.sh
     - name: run esm_tests
       run: |
+        git status;
         yes Y | esm_tests ${{ inputs.test_flags }}
+        
+#    - name: store last tested in a different directory
+#      if: ${{ inputs.update_esm_tests_info }}
+#      run: |
+#        cp -r src/esm_tests/resources /__w/esm_tests_info;
+#        ls /__w/esm_tests_info;
+#    - name: checkout esm_tests_info
+#      if: ${{ inputs.update_esm_tests_info }}
+#      uses: actions/checkout@v3
+#      with:
+#        repository: esm-tools/esm_tests_info
+#        token: ${{ secrets.GITHUB_TOKEN }}
     - name: update esm_tests info
       if: ${{ inputs.update_esm_tests_info }}
+      env:
+        ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
       run: |
         cd src/esm_tests/resources;
-        git config --global user.name "${GITHUB_ACTOR}";
-        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com";
+        git config --unset-all "http.https://github.com/.extraheader";
+        git config user.name esmtools-bot;
+        git config user.email esmtools-bot@users.noreply.github.com;
+        echo "USER:";
+        git config user.name
+        echo "CURRENT:";
+        ls;
         rm -rf automatic_testing; # cleanup the resources directory from tests
+        echo "PWD:";
+        pwd;
+        git status;
+        git diff;
+        git stash;
+        git pull;
+        git stash pop;
         git add .;
         git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git status;
-        git push;
-        
+        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git;
+#    - name: Push changes
+#      if: ${{ inputs.update_esm_tests_info }}
+#      uses: ad-m/github-push-action@master
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#        branch: release
+#        repository: esm-tools/esm_tests_info

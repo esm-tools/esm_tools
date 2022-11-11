@@ -36,6 +36,7 @@ general:
         
         available_versions:
         - default
+        - default_autotools
         - fs
         - default_oasismct4
         - agrif 
@@ -44,6 +45,9 @@ general:
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          default_autotools:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_autotools+echam-6.3.05p2-foci_autotools
           fs:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS+echam-6.3.05p2-foci
@@ -131,6 +135,8 @@ echam:
 
         choose_general.version:
                 default:
+                        version: "6.3.05p2-foci"
+                default_autotools:
                         version: "6.3.05p2-foci"
                 fs:
                         version: "6.3.05p2-foci"
@@ -333,6 +339,20 @@ echam:
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}"
                                                 nproc: 1
+                                        echam_monitoring:
+                                                batch_or_shell: shell
+                                                order_in_cluster: sequential 
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: echam_postprocessing 
+                                                script_dir: ${general.esm_function_dir}/setups/foci
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    echam_monitoring.sh
+                                                    -r ${general.expid}
+                                                    -i ${initial_date!syear}
+                                                    -o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
+                                                    "
+                                                nproc: 1
 
 hdmodel:
         pool_dir: "${computer.pool_directories.focipool}/JSBACH/input/${jsbach.dataset}/HD"
@@ -414,6 +434,8 @@ nemo:
         choose_general.version:
                 default:
                         version: "ORCA05_LIM2_KCM_AOW"
+                default_autotools:
+                        version: "ORCA05_LIM2_KCM_AOW_autotools"
                 fs:
                         version: "ORCA05_LIM2_KCM_AOW_FS"
                 agrif:
@@ -489,6 +511,33 @@ oasis3mct:
                 default:
                         version: "foci"
                         export_mode_a2o: EXPORTED     
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                default_autotools:
+                        version: "foci"
+                        export_mode_a2o: EXPORTED
 
                         coupling_target_fields:
                            sstocean:

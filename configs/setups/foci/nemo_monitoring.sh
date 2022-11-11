@@ -63,7 +63,8 @@ if [[ ! -r $envfile ]] ; then
    exit 1
 else
   # module purge in envfile writes non-printable chars to log
-   source $envfile | tee
+  # TODO: tee "kills" the source command, need to find a workaround
+   source $envfile # | tee
 fi
 
 EXP_DIR=${basedir}/${EXP_ID}

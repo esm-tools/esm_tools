@@ -1,0 +1,21 @@
+name: jupyter_mon 
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python 
+  - cartopy 
+  - cf_units 
+  - cftime 
+  - ipython 
+  - matplotlib 
+  - netCDF4 
+  - numpy 
+  - pandas 
+  - seaborn 
+  - xarray 
+  - ipykernel
+  - papermill
+  - nbconvert
+  - python-cdo
+  - cdo

@@ -109,9 +109,11 @@ oifs:
         choose_general.version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
+                        wam: true
                 "v3.1":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.1
+                        wam: true
                         add_namelist_changes:
                                 fort.4:
                                         NAMCT0:
@@ -130,6 +132,7 @@ oifs:
                 "frontiers-xios":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        wam: true
                         add_namelist_changes:
                                 fort.4:
                                         NAMCT0:
@@ -143,6 +146,7 @@ oifs:
                 "master":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/master
+                        wam: false
                         executable: OpenIFS
                         cloudfixer: 0
                         usemip: 0
@@ -198,8 +202,6 @@ oifs:
                 TCO159_CORE2:
                         nproc: 36
 
-        # Wave model switch
-        wam: true
 
         perturb: 0
         ensemble_id: 1
@@ -502,8 +504,6 @@ rnfmap:
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
-        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
-        mct_version: 4.0
         norestart: "F"
 
         process_ordering:
@@ -539,11 +539,15 @@ oasis3mct:
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.version:
                 'frontiers-xios':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         add_process_ordering:
                                 - xios
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
                 'v3.1':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
                         add_process_ordering:
@@ -552,6 +556,8 @@ oasis3mct:
                                 add_rstos.nc:
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'master':
+                        mct_version: 5.0
+                        input_dir: ${pool_dir}/cy${oifs.version}-master/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
                         add_process_ordering:
@@ -560,6 +566,8 @@ oasis3mct:
                                 add_rstos.nc:
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 '*':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
 

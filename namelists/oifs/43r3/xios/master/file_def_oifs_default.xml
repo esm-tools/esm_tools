@@ -4,7 +4,7 @@
         type="one_file"
         format="netcdf4"
         par_access="collective"
-        name="output/oifs/RE22_atm_cmip6"
+        name="atm"
         split_freq="1y"
     >
         <!-- Monthly 2d fields -->

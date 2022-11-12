@@ -406,7 +406,9 @@ class PrevRunInfo(dict):
         # one without timestamp (the case for run 1 in spinup).
         if len(potential_prev_configs) == 0 and run_number > 1:
             prev_run_config_file = (
-                self._config["general"]["expid"] + "_finished_config.yaml"
+                f"{self._config['general']['expid']}_"
+                f"{self._config['general']['iterative_coupled_model']}"
+                "finished_config.yaml"
             )
         # Continuing run, not branched off, and one potential file. That's our file!
         elif len(potential_prev_configs) == 1 and run_number > 1:

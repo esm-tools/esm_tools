@@ -779,7 +779,8 @@ def log_used_files(config):
         # this file contains the files used in the experiment
         flist_file = (
             f"{config[model]['thisrun_config_dir']}"
-            f"/{config['general']['expid']}_filelist_"
+            f"/{config['general']['expid']}_"
+            f"{config['general']['iterative_coupled_model']}filelist_"
             f"{config['general']['run_datestamp']}"
         )
 

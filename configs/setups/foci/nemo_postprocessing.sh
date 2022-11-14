@@ -41,10 +41,11 @@ while getopts "h?md:r:s:e:p:x:" opt; do
         echo
         echo " Valid options are -h or -? for this help"
         echo "                   -d for more output (useful for debugging, not used at the moment)"
-        echo "                   -p path to data                     (basedir,  default is $basedir)"
+        echo "                   -p path to data                     (basedir,   default is $basedir)"
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
         echo "                   -s startdate                        (startdate, default is $startdate)"
         echo "                   -e enddate                          (enddate,   default is $enddate)"
+        echo "                   -y increment                        (increment,  default is calculated automagially, see code for details)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         echo "                   -m run nemo_monitoring.sh           "
         echo
@@ -57,6 +58,8 @@ while getopts "h?md:r:s:e:p:x:" opt; do
     s)  startdate=$OPTARG
         ;;
     e)  enddate=$OPTARG
+        ;;
+    y)  increment=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
@@ -168,7 +171,20 @@ fi
 # Computation of frequency, currently y for yearly and m for monthly are supported 
 startmonth=$(date --date="$startdate" "+%m")
 endmonth=$(date --date="$enddate" "+%m")
+startyear=$(date --date="$startdate" "+%Y")
+endyear=$(date --date="$enddate" "+%Y")
+
 [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] && freq="y"
+
+# calculate increment if not set, set to 1 to postprocess multiple years of 
+# simulation that ran in multiyear intervals.
+if [[ -z $increment ]] ; then
+   if [[ $startyear == $endyear ]] ; then
+      increment=$((endmonth - startmonth + 1)) 
+	else
+      increment=$((endyear - startyear + 1)) 
+   fi
+fi
 
 # Temporary directory
 id=$$
@@ -188,7 +204,6 @@ mkdir $post_dir
 print 'NEMO netcdf4 conversion started'
 outmod=${DATA_DIR}/${ocemod}
 
-# TODO: test
 mkdir ${outmod}
 cd ${outmod}
 mkdir nc3
@@ -206,12 +221,12 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 	   # treat special case of 18930401, see echam_postprocessing.sh
 		if [[ $freq == "m" ]] ; then
 			currdate1=$nextdate
-			currdate2=$(date --date="$currdate1 + 1 month - 1 day" "+%Y%m%d")	
-			nextdate=$(date --date="$currdate1 + 1 month" "+%Y%m%d")
+			currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} month" "+%Y%m%d")
 		else
 			currdate1=$nextdate
-			currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
-			nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
 		fi
 
 		for filetag in $filetags
@@ -222,7 +237,6 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
       	  	if [[ -f $output ]] ; then
-					#TODO: test
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -231,13 +245,11 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 						trap 'echo $? > $post_dir/status' ERR
 						print "converting " $input " to " $output
 						if [[ ! -f $output ]]; then
-							#TODO: test
 							ncks -7 $sortoption -L 1 \
 								--cnk_dmn time,${tchunk} --cnk_dmn time_counter,${tchunk} \
 								--cnk_dmn z,${zchunk} --cnk_dmn depthu,${zchunk} --cnk_dmn depthv,${zchunk} --cnk_dmn depthw,${zchunk} --cnk_dmn deptht,${zchunk} \
 								--cnk_dmn x,${xchunk} --cnk_dmn y,${ychunk} \
 							$input $output 
-							#echo "$output"
 							if [[ $? -eq 0 ]]; then
 								print "Conversion of $input to $output OK, now checking file with cdo diff"
 								${OCEAN_CHECK_NETCDF4} && cdo -s diff $input $output > ${output}.check
@@ -334,7 +346,7 @@ do
 					cd ..
 				) &
 				# file from cdo must be available for [[ ! -f ym/$output ]] in case of e.g. 5d and 1m output
-				sleep 1
+				sleep 3
 			fi
 		done #steps
 	done

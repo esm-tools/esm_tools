@@ -337,7 +337,8 @@ echam:
                                                     echam_postprocessing.sh
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -e ${end_date!syear}
+                                                    -p ${general.base_dir}"
                                                 nproc: 1
                                         echam_monitoring:
                                                 batch_or_shell: shell
@@ -472,7 +473,8 @@ nemo:
                                                     nemo_postprocessing.sh -m 
                                                     -r ${general.expid}
                                                     -s ${start_date}
-                                                    -e ${end_date}"
+                                                    -e ${end_date}
+                                                    -p ${general.base_dir}"
                                                 nproc: 1
 
 

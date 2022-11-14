@@ -527,20 +527,20 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-                        choose_mip:
-                                "cmip5":
-                                        cmip5_data_dir_nml: ./cmip5_data/
-                                        add_forcing_files:
-                                                PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
-                                                RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
-                                                RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
-                                                RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                                                RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-                                "cmip6":
-                                        cmip6_data_dir_nml: ./cmip6_data/
-                                        add_forcing_files:
-                                                # Add CO2 etc for all scenarios and years
-                                                CMIP6DATA: CMIP6DATA
+                choose_mip:
+                        "cmip5":
+                                cmip5_data_dir_nml: ./cmip5_data/
+                                add_forcing_files:
+                                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                        "cmip6":
+                                cmip6_data_dir_nml: ./cmip6_data/
+                                add_forcing_files:
+                                        # Add CO2 etc for all scenarios and years
+                                        CMIP6DATA: CMIP6DATA
 
         false:
                 forcing_files: {}

@@ -99,7 +99,6 @@ oifs:
         restart_rate: 12
         ocean_resolution: "${fesom.resolution}"
 
-        mip: "cmip6"
         scenario: "historical"
 
         prepifs_expid: h6mv
@@ -111,10 +110,12 @@ oifs:
         choose_general.version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
+                        mip: "cmip6"
                         wam: true
                 "v3.1":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.1
+                        mip: "cmip6"
                         wam: true
                         add_namelist_changes:
                                 fort.4:
@@ -134,6 +135,7 @@ oifs:
                 "frontiers-xios":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        mip: "cmip6"
                         wam: true
                         add_namelist_changes:
                                 fort.4:
@@ -148,10 +150,10 @@ oifs:
                 "master":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/master
+                        mip: "false"
                         wam: false
                         executable: OpenIFS
                         cloudfixer: 0
-                        usemip: 0
                         append_icmcl: "
                             ${general.esm_function_dir}/components/oifs/append_icmcl_file.sh
                                 ${thisrun_input_dir}/

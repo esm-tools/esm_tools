@@ -209,7 +209,6 @@ levels: L91
 nlev: ${levels_number}
 prepifs_expid: gu5a
 prepifs_startdate: 19820101
-usemip: 1
 mip: "cmip5"
 o3_scheme: "default"
 scenario: "amip-prepifs"
@@ -528,22 +527,20 @@ choose_copy_forcing:
                         O3PI: O3PI
                         O3HIST: O3HIST
                         O3SCEN: O3SCEN
-                choose_usemip: 
-                        "1":
-                                choose_mip:
-                                        "cmip5":
-                                                cmip5_data_dir_nml: ./cmip5_data/
-                                                add_forcing_files:
-                                                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
-                                                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
-                                                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
-                                                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
-                                                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
-                                        "cmip6":
-                                                cmip6_data_dir_nml: ./cmip6_data/
-                                                add_forcing_files:
-                                                        # Add CO2 etc for all scenarios and years
-                                                        CMIP6DATA: CMIP6DATA
+                        choose_mip:
+                                "cmip5":
+                                        cmip5_data_dir_nml: ./cmip5_data/
+                                        add_forcing_files:
+                                                PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC
+                                                RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC
+                                                RCP45_MIDYR_CONC: RCP45_MIDYR_CONC
+                                                RCP6_MIDYR_CONC: RCP6_MIDYR_CONC
+                                                RCP85_MIDYR_CONC: RCP85_MIDYR_CONC
+                                "cmip6":
+                                        cmip6_data_dir_nml: ./cmip6_data/
+                                        add_forcing_files:
+                                                # Add CO2 etc for all scenarios and years
+                                                CMIP6DATA: CMIP6DATA
 
         false:
                 forcing_files: {}
@@ -967,31 +964,29 @@ restart_type: "ifs_default"
 # evaluate one of the branches
 # NOTE 2: Im leaving CMIP5 in here, but I dont think we will ever use it
 
-choose_usemip:
-        "1":
-                choose_mip:
-                        "cmip5":
+choose_mip:
+        "cmip5":
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
+        "cmip6":
+                add_namelist_changes:
+                        fort.4:
+                                NAERAD:
+                                        LCMIP6: ".true."
+                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
+                choose_scenario:
+                        "piControl":
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
-                                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
-                        "cmip6":
+                                                        NCMIPFIXYR: 1850
+                        "SSP5-8.5":
                                 add_namelist_changes:
                                         fort.4:
                                                 NAERAD:
-                                                        LCMIP6: ".true."
-                                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
-                                choose_scenario:
-                                        "piControl":
-                                                add_namelist_changes:
-                                                        fort.4:
-                                                                NAERAD:
-                                                                        NCMIPFIXYR: 1850
-                                        "SSP5-8.5":
-                                                add_namelist_changes:
-                                                        fort.4:
-                                                                NAERAD:
-                                                                        SSPNAME: "SSP5-8.5"
+                                                        SSPNAME: "SSP5-8.5"
 
 #choose_o3_scheme:
 #        "prescribed":
@@ -1041,18 +1036,16 @@ input_sources:
 
 forcing_sources:
         # GHG data
-        choose_usemip:
-                "1":
-                        PRE2005_MIDYR_CONC: ${cmip5_data_dir}/PRE2005_MIDYR_CONC.txt
-                        RCP3PD_MIDYR_CONC: ${cmip5_data_dir}/RCP3PD_MIDYR_CONC.txt
-                        RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
-                        RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
-                        RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
-                        # CMIP6
-                        CMIP6DATA: ${cmip6_data_dir}/*
-                        O3PI: ${cmip6_data_dir}/o3_pi/*
-                        O3HIST: ${cmip6_data_dir}/o3_histo/*
-                        O3SCEN: ${cmip6_data_dir}/o3_scenarios/*
+        PRE2005_MIDYR_CONC: ${cmip5_data_dir}/PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: ${cmip5_data_dir}/RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: ${cmip5_data_dir}/RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: ${cmip5_data_dir}/RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: ${cmip5_data_dir}/RCP85_MIDYR_CONC.txt
+        # CMIP6
+        CMIP6DATA: ${cmip6_data_dir}/*
+        O3PI: ${cmip6_data_dir}/o3_pi/*
+        O3HIST: ${cmip6_data_dir}/o3_histo/*
+        O3SCEN: ${cmip6_data_dir}/o3_scenarios/*
         # ICMCL
         ICMCL_INIT: ${icmcl_dir}/${icmcl_file}
 
@@ -1074,17 +1067,15 @@ input_in_work:
         o3_data: ${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_in_work:
-        choose_usemip:
-                "1":
-                        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
-                        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
-                        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
-                        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
-                        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
-                        CMIP6DATA: cmip6_data/*
-                        O3PI: cmip6_data/o3_pi/*
-                        O3HIST: cmip6_data/o3_histo/*
-                        O3SCEN: cmip6_data/o3_scenarios/*
+        PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
+        RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
+        RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
+        RCP6_MIDYR_CONC: RCP6_MIDYR_CONC.txt
+        RCP85_MIDYR_CONC: RCP85_MIDYR_CONC.txt
+        CMIP6DATA: cmip6_data/*
+        O3PI: cmip6_data/o3_pi/*
+        O3HIST: cmip6_data/o3_histo/*
+        O3SCEN: cmip6_data/o3_scenarios/*
         ICMCL_INIT: ICMCL${oifs.input_expid}INIT
 
 

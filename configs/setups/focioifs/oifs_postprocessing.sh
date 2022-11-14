@@ -110,6 +110,7 @@ debug=0
 
 # Component directories/names
 atmmod=oifs
+rnfmod=rnfmap
 
 #
 # Default options for Unix commands
@@ -198,7 +199,7 @@ mkdir $post_dir
 # Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
 # developed by Willi Rath, GEOMAR (convert_to_deflated_nc4classic_with_small_chunks.sh)
 # Converts any OpenIFS netCDF file to deflated (level 1) netCDF4-classic with
-# (1,1,100,100)=(t,plev,lat,lon) chunks.
+# (1,1,96,96)=(t,plev,lat,lon) chunks.
 # needs ncdump and a recent (4.3.7 or newer) nco
 #
 print 'OpenIFS netcdf4 conversion started'
@@ -212,7 +213,7 @@ filetags="${ATM_FILE_TAGS}"
 
 #steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
 steps="1ts 1h 3h 6h 1d 1m 1y"
-tchunk=1; zchunk=1; ychunk=100; xchunk=100
+tchunk=1; zchunk=1; ychunk=96; xchunk=96
 
 echo 0 > $post_dir/status
 if ${ATM_CONVERT_NETCDF4} ; then
@@ -279,6 +280,29 @@ wait
 [[ $(<$post_dir/status) -eq 0 ]]
 
 print 'OpenIFS netcdf4 conversion finished'
+
+# 
+# Post process output from runoff (if existing)
+#
+outrnf=${DATA_DIR}/${rnfmod}
+print 'Runoff post processing started'
+
+if [[ -d $outrnf ]] ; then
+cd ${outrnf}
+if [[ -f runoff_out.nc ]] ; then
+   
+   # make time axis
+   cdo -settunits,seconds -settaxis,${startyear}-01-01,00:00,3h runoff_out.nc runoff_out_time.nc 
+   
+   # day, month and year means
+   cdo daymean runoff_out_time.nc ${EXP_ID}_1d_${startyear}0101_${endyear}1231_rnf.nc
+   cdo monmean runoff_out_time.nc ${EXP_ID}_1m_${startyear}0101_${endyear}1231_rnf.nc
+   cdo yearmean runoff_out_time.nc ${EXP_ID}_1y_${startyear}0101_${endyear}1231_rnf.nc
+   
+   rm runoff_out.nc runoff_out_time.nc 
+   
+fi 
+fi
 
 #
 # Calculate yearly means from nemo output and place in ym/ subdirectory 
@@ -370,15 +394,22 @@ fi
 # * If we have _fx_ output, then take lsm and other stuff
 # * Use cdo gridarea to generate areacella 
 cd ${DATA_DIR}/${atmmod}
-for ((year=startyear-1; year<endyear; ++year)) ; do 
+for ((year=startyear; year<endyear; ++year)) ; do 
+    echo " Use ECE3_fx_${year}0101_regular_sfc.nc to make grid file for regular grid "
     if [[ -f "ECE3_fx_${year}0101_regular_sfc.nc" ]] ; then
         if [[ ! -f "areacella.nc" ]] ; then
+            echo " Make areacella.nc "
             # Get grid cell area
             cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_regular_sfc.nc areacella.nc
+        else
+            echo " areacella.nc already exists "
         fi 
         if [[ ! -f "lsm.nc" ]] ; then
+            echo " Make lsm.nc "
             # Get lsm
-            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc 
+            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc  
+        else
+            echo " lsm.nc already exists "
         fi
     fi
     
@@ -395,6 +426,7 @@ for ((year=startyear-1; year<endyear; ++year)) ; do
 done
 
 if [[ -f "areacella.nc" ]] && [[ -f "lsm.nc" ]] ; then
+    echo " areacella.nc and lsm.nc exist, so removing fx files "
     rm *_fx_*_regular_sfc.nc 
 fi
 if [[ -f "areacella_reduced.nc" ]] && [[ -f "lsm_reduced.nc" ]] ; then

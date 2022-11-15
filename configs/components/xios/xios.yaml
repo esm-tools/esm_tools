@@ -90,7 +90,8 @@ choose_version:
     use_oasis: '' 
     branch: 2.5_r1910
   2.5_smhi:
-    git-repository: https://git.smhi.se/ec-earth/vendor/xios/xios2
+    git-repository: https://git.smhi.se/jan.streffing/xios2.git
+    branch: arch_for_esm_tools
     archfile: ESMTOOLS_generic_oasis_intel
     choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
       cray_mpich:
@@ -105,7 +106,6 @@ choose_version:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
     use_oasis: --use_oasis oasis3_mct
-    branch: main
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
 comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x

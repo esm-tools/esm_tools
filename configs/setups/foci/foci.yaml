@@ -63,26 +63,6 @@ general:
             #add_include_models:
             #- xios
 
-        file_movements:
-           forcing:
-              all_directions: link
-           input:
-              all_directions: link
-           restart_in:
-              # seb-wahl: need to copy restart files by default
-              # as oasis modifies the restart file !!!!
-              init_to_exp: copy
-              exp_to_run: copy
-              run_to_work: copy
-              work_to_run: link
-           restart_out:
-              all_directions: copy
-           #config:
-           #   init_to_exp: copy
-           #   exp_to_run: copy
-           #   run_to_work: link
-           #   work_to_run: link
-        
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -157,11 +137,25 @@ echam:
 
         # do we want to link files or copy. For ECHAM6 we can't link the restart file
         # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
-        #file_movements:
-        #   forcing:
-        #      all_directions: "link"
-        #   forcing:
-        #      all_directions: "link"
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: link 
+           restart_out:
+              all_directions: move 
 
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
@@ -363,6 +357,29 @@ hdmodel:
         restart_out_sources:
                 hdrestart: restart_${general.expid}_hd_${other_date!syear!smonth!sday}.nc
 
+        # do we want to link files or copy. For the HD model we can't link the restart file
+        # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: copy 
+           restart_out:
+              all_directions: copy 
+
+
 jsbach:
         version: "3.20p1"
         # directories
@@ -373,6 +390,26 @@ jsbach:
                       no_dynveg_file_ending: ""
 
         dynamic_vegetations: True
+
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: link 
+           restart_out:
+              all_directions: move 
 
         # settings for restarting from another run
         lresume: ${general.lresume}
@@ -446,6 +483,23 @@ nemo:
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
+
+        # file handling settings
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
 
         # settings for restarting from another run
         lresume: ${general.lresume}

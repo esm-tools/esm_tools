@@ -41,7 +41,7 @@ file_movements:
       all_directions: copy
    input:
       all_directions: link
-   output:
+   outdata:
       all_directions: move 
 
 runoff_method: "old"
@@ -1026,6 +1026,13 @@ choose_generation:
                                         ln_closea: '.false.'
                                 namtsd: 
                                         ln_tsd_dmp: ${ln_tsd_tradmp}
+                choose_free_surface:
+                   # for linear we use the default (false), so no settings required
+                   nonlinear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_sco: '.true.'
         "3.6":
                 add_namelist_changes:
                         namelist_cfg:
@@ -1037,36 +1044,27 @@ choose_generation:
                                         jpnij: ${nproc}
                                 namtsd: 
                                         ln_tsd_tradmp: ${ln_tsd_tradmp}
+                choose_free_surface:
+                   linear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_zps: '.true.'
+                               ln_hpg_sco: '.false.'
+                               ln_dynhpg_imp: '.true.'
+                   nonlinear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_zps: '.false.'
+                               ln_hpg_sco: '.true.'
+                               ln_dynhpg_imp: '.false.'
                 
-
 choose_leapyear:
         False:
               nn_leapy: 0 
         True:
               nn_leapy: 1 
-
-choose_free_surface:
-        linear:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namdyn_hpg:
-                                        ln_hpg_zps: '.true.'
-                                        ln_hpg_sco: '.false.'
-                                        ln_dynhpg_imp: '.true.'
-        nonlinear:
-                choose_generation:
-                     "3.6":
-                           add_namelist_changes:
-                                 namelist_cfg:
-                                        namdyn_hpg:
-                                             ln_hpg_zps: '.false.'
-                                             ln_hpg_sco: '.true.'
-                                             ln_dynhpg_imp: '.false.'
-                     "4.2":
-                           add_namelist_changes:
-                                 namelist_cfg:
-                                        namdyn_hpg:
-                                             ln_hpg_sco: '.true.'
 
 choose_hosing:
         true:

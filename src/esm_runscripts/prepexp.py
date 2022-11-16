@@ -267,7 +267,8 @@ def initialize_experiment_logfile(config):
     if "trace_sink" in dir(logger):
         logfile_path = (
             f"{config['general']['experiment_dir']}/log"
-            f"/{config['general']['expid']}_esm_runscripts_"
+            f"/{config['general']['expid']}_"
+            f"{config['general']['iterative_coupled_model']}esm_runscripts_"
             f"{config['general']['run_datestamp']}.log"
         )
 

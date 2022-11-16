@@ -282,7 +282,8 @@ def initialize_experiment_logfile(config):
     if "trace_sink" in dir(logger):
         logfile_path = (
             f"{config['general']['experiment_dir']}/log"
-            f"/{config['general']['expid']}_esm_runscripts_"
+            f"/{config['general']['expid']}_"
+            f"{config['general']['iterative_coupled_model']}esm_runscripts_"
             f"{config['general']['run_datestamp']}.log"
         )
 
@@ -357,7 +358,8 @@ def _write_finalized_config(config):
 
     config_file_path = (
         f"{config['general']['thisrun_config_dir']}"
-        f"/{config['general']['expid']}_finished_config.yaml"
+        f"/{config['general']['expid']}_"
+        f"{config['general']['iterative_coupled_model']}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file

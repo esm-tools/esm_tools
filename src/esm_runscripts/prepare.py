@@ -395,7 +395,8 @@ def find_last_prepared_run(config):
         )
 
         if os.path.isdir(
-            base_dir + "/" + config["general"]["expid"] + "/run_" + datestamp
+            f'{base_dir}/{config["general"]["expid"]}/run_'
+            f'{config["general"]["iterative_coupled_model"]}{datestamp}'
         ):
             config["general"]["current_date"] = current_date
             return config
@@ -506,9 +507,9 @@ def _add_all_folders(config):
     config = helpers.update_reusable_filetypes(config)
 
     config["general"]["thisrun_dir"] = (
-        config["general"]["experiment_dir"]
-        + "/run_"
-        + config["general"]["run_datestamp"]
+        f'{config["general"]["experiment_dir"]}/run_'
+        f'{config["general"]["iterative_coupled_model"]}'
+        f'{config["general"]["run_datestamp"]}'
     )
 
     for filetype in all_filetypes:
@@ -814,7 +815,8 @@ def initialize_coupler(config):
                 config["general"]["coupler_config_dir"] = (
                     f"{config['general']['base_dir']}"
                     f"/{config['general']['expid']}"
-                    f"/run_{config['general']['run_datestamp']}"
+                    f"/run_{config['general']['iterative_coupled_model']}"
+                    f"{config['general']['run_datestamp']}"
                     f"/config/{model}/"
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)

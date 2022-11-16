@@ -95,6 +95,7 @@ module_actions:
    - "load sw.skl"
    - "load cmake"
    - "load cdo nco"
+   - "load git"
 
 export_vars:
    LC_ALL: en_US.UTF-8

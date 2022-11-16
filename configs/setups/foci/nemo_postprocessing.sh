@@ -35,7 +35,7 @@ max_jobs=20
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?md:r:s:e:p:x:" opt; do
+while getopts "h?md:r:s:e:p:x:i:" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -45,7 +45,7 @@ while getopts "h?md:r:s:e:p:x:" opt; do
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
         echo "                   -s startdate                        (startdate, default is $startdate)"
         echo "                   -e enddate                          (enddate,   default is $enddate)"
-        echo "                   -y increment                        (increment,  default is calculated automagially, see code for details)"
+        echo "                   -i increment                        (increment,  default is calculated automagially, see code for details)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         echo "                   -m run nemo_monitoring.sh           "
         echo
@@ -59,7 +59,7 @@ while getopts "h?md:r:s:e:p:x:" opt; do
         ;;
     e)  enddate=$OPTARG
         ;;
-    y)  increment=$OPTARG
+    i)  increment=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
@@ -305,12 +305,12 @@ do
    # treat special case of 18930401, see echam_postprocessing.sh
 	if [[ $freq == "m" ]] ; then
 		currdate1=$nextdate
-		currdate2=$(date --date="$currdate1 + 1 month - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate1 + 1 month" "+%Y%m%d")
+		currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + ${increment}  month" "+%Y%m%d")
 	else
 		currdate1=$nextdate
-		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+		currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
 	fi
 
 	for filetag in $filetags

@@ -5,12 +5,12 @@ general:
         clean_runs: 2
         
         setup_name: oifs
-        compute_time: "10:00:00"
+        compute_time: "01:30:00"
         account: shk00018
         initial_date: "1979-01-01T00:00:00"
-        final_date: "2015-01-01T00:00:00"
-        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
-        base_dir: /scratch/usr/shkjocke/esm-slask/
+        final_date: "1980-01-01T00:00:00"
+        model_dir: /home/shkjocke/esm/models/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-experiments/
         nyear: 1
         nmonth: 0
         nday: 0
@@ -21,6 +21,7 @@ oifs:
         version: 43r3
         with_xios: True 
         time_step: 1800 
+        omp_num_threads: 4
         pool_dir: /scratch/usr/shkjocke/foci_input2
         input_dir: ${pool_dir}/OPENIFS43R3-TCO199/
         rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
@@ -38,7 +39,7 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 0
-        nproc: 480
+        nproc: 576
         perturb: 0
         ensemble_id: 1
         pextra: 0

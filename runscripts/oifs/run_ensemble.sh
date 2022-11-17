@@ -10,11 +10,11 @@
 # If you have > 10 concurrent jobs the admin usually gets angry 
 # and before you know it you are on trial for sabotaging government property
 
-rs=oifs-43r3-tco95-1850-amip.yaml
-expid="OIFS-1850"
+rs=oifs-43r3-tco95-sochic_blogin.yaml
+expid="OIFS-BJK002"
 
 # Dont do more than approx 10 in one go
-for (( e=1 ; e<=10 ; e++ )) 
+for (( e=51 ; e<=100 ; e++ )) 
 do
     # Runs will be labelled as "rip"
     # r = realisation

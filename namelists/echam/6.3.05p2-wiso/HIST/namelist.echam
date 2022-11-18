@@ -1,0 +1,124 @@
+&runctl
+    dt_start = 1850, 1, 1, 0, 0, 0
+    dt_stop = 2402, 1, 1, 0, 0, 0
+    putrerun = 1, 'months', 'last', 0
+    default_output = .false.
+    lcouple = .true.
+    lcouple_co2 = .true.
+    lfractional_mask = .false.
+    lresume = .true.
+    out_expname = 'TST'
+    out_datapath = '/work/bk0988/awicm/a270062/fesom_echam/glob//cpl_work_test/'
+    rerun_filetype = 4
+    getocean = 1, 'days', 'last', 0
+    putocean = 1, 'days', 'last', 0
+/
+
+&wisoctl
+    lwiso = .false.
+    lwiso_rerun = .false.
+    nwiso = 0
+/
+
+&parctl
+    nproca = 24
+    nprocb = 24
+    nprocar = 0
+    nprocbr = 0
+/
+
+&submodelctl
+    lmethox = .true.
+/
+
+&mvstreamctl ! 'default spm glm g3bm'
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+&mvstreamctl ! 'default co2m'
+    filetag = 'co2'
+    source = 'co2'
+/
+&mvstreamctl ! 'default surfm'
+    filetag = 'surf'
+    source = 'surf'
+/
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+/
+&mvstreamctl ! 'default jsbachm'
+    filetag = 'jsbach'
+    source = 'jsbach'
+/
+&mvstreamctl ! 'default landm'
+    filetag = 'land'
+    source = 'land'
+/
+&mvstreamctl ! 'default vegm'
+    filetag = 'veg'
+    source = 'veg'
+/
+&mvstreamctl ! 'default yassom'
+    filetag = 'yasso'
+    source = 'yasso'
+/
+&mvstreamctl ! 'default wisom'
+    filetag = 'wiso'
+    source = 'wiso'
+/
+&mvstreamctl ! 'default la_wisom'
+    filetag = 'la_wiso'
+    source = 'la_wiso'
+/
+&mvstreamctl ! 'default js_wisom'
+    filetag = 'js_wiso'
+    source = 'js_wiso'
+/
+
+&set_stream ! 'default jsbach'
+    stream = 'jsbach'
+    lpost = 0
+/
+&set_stream ! 'default land'
+    stream = 'land'
+    lpost = 0
+/
+&set_stream ! 'default veg'
+    stream = 'veg'
+    lpost = 0
+/
+&set_stream ! 'default yasso'
+    stream = 'yasso'
+    lpost = 0
+/
+&set_stream ! 'default wiso'
+    stream = 'wiso'
+    lpost = 0
+/
+&set_stream ! 'default js_wiso'
+    stream = 'js_wiso'
+    lpost = 0
+/
+&set_stream ! 'default la_wiso'
+    stream = 'la_wiso'
+    lpost = 0
+/
+&radctl
+    iaero = 8
+    io3 = 4
+    isolrad = 1
+    ich4 = 4
+    ico2 = 4
+    in2o = 4
+    icfc = 4
+    ighg = 1
+    co2vmr = 336.52e-06
+    ch4vmr = 1530.2e-09
+    n2ovmr = 300.74e-09
+    cfcvmr(1) = 148.80e-12
+    cfcvmr(2) = 270.50e-12
+/
+&co2ctl
+    lco2_scenario = .true.
+/

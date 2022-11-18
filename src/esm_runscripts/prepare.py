@@ -393,10 +393,11 @@ def find_last_prepared_run(config):
         base_dir = esm_parser.find_variable(
             ["general", "base_dir"], config["general"]["base_dir"], config, [], True
         )
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
 
         if os.path.isdir(
-            f'{base_dir}/{config["general"]["expid"]}/run_'
-            f'{config["general"]["iterative_coupled_model"]}{datestamp}'
+            f"{base_dir}/{expid}/run_{it_coupled_model_name}{datestamp}"
         ):
             config["general"]["current_date"] = current_date
             return config
@@ -506,10 +507,11 @@ def _add_all_folders(config):
     # Apply changes from ``--update-files`` flag
     config = helpers.update_reusable_filetypes(config)
 
+    experiment_dir = config["general"]["experiment_dir"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
     config["general"]["thisrun_dir"] = (
-        f'{config["general"]["experiment_dir"]}/run_'
-        f'{config["general"]["iterative_coupled_model"]}'
-        f'{config["general"]["run_datestamp"]}'
+        f"{experiment_dir}/run_{it_coupled_model_name}{datestamp}"
     )
 
     for filetype in all_filetypes:
@@ -810,14 +812,15 @@ def initialize_coupler(config):
     if config["general"]["standalone"] == False:
         from . import coupler
 
+        base_dir = config["general"]["base_dir"]
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
+        datestamp = config["general"]["run_datestamp"]
         for model in list(config):
             if model in coupler.known_couplers:
                 config["general"]["coupler_config_dir"] = (
-                    f"{config['general']['base_dir']}"
-                    f"/{config['general']['expid']}"
-                    f"/run_{config['general']['iterative_coupled_model']}"
-                    f"{config['general']['run_datestamp']}"
-                    f"/config/{model}/"
+                    f"{base_dir}/{expid}/"
+                    f"run_{it_coupled_model_name}{datestamp}/config/{model}/"
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break

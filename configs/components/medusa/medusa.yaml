@@ -125,14 +125,17 @@ choose_lresume:
         cfn_ncin_init: "remove_from_namelist"
         cfn_ncin_flx: "remove_from_namelist"
 
+fesom_resolution: CORE2
+
+choose_fesom_resolution:
+    CORE2:
+        dust_file: ${input_dir}/DustClimYearlyAlbani_core2mesh.nc
+    pi:
+        dust_file: ${input_dir}/DustClimYearlyAlbani_pi-mesh.nc
+
 input_sources:
     fesom.mesh.diag: ${input_dir}/fesom.mesh.diag.nc
-    choose_fesom.resolution:
-        CORE2:
-                dust: ${input_dir}/DustClimYearlyAlbani_core2mesh.nc
-        pi:
-                dust: ${input_dir}/DustClimYearlyAlbani_pi-mesh.nc
-    
+
 forcing_files:
     "[[variables-->VAR]]": "VAR"
     "[[fluxes-->FLX]]": "FLX"
@@ -142,7 +145,8 @@ forcing_sources:
     "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${start_date!year}-${end_date!year}.nc"
-
+    dust: ${dust_file}
+    
 config_files:
     recom_paleo_files: recom_paleo_files
     recom_paleo_forcing: recom_paleo_forcing

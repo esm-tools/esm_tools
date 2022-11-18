@@ -18,7 +18,7 @@ fesom:
         mpi_num_groups: 2
         lresume: False
         model_dir: /work/ab0995/a270105/esm_code/fesom-2.1
-        resolution: CORE2
+        resolution: ${general.fesom_resolution} 
         mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
         climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
         run_length: 1

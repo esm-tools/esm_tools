@@ -15,12 +15,8 @@ medusa:
         nproc: 1
         lresume: false
         input_dir: /work/bm1030/a270105/medusa-input/ 
+        fesom_resolution: ${general.fesom_resolution}
 
-        ##############################################################
-        #Ying: medusa needs to restart from the last medusa run      #
-        #      change atime in medusa.tsi and names of forcing files #
-        #      in medusa_recom_paleo_forcing.nml                     #
-        ##############################################################              
         #        workflow:
         #                next_run_triggered_by: couple_out
         #

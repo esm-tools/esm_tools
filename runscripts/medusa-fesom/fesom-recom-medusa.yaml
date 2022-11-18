@@ -2,10 +2,12 @@ general:
         iterative_coupling: True
         base_dir: "/work/bm1030/a270105/awiesm-output/"
         use_venv: False
+        fesom_resolution: CORE2
+
 model1:
         setup_name: fesom
         runscript: fesom-recom-run.yaml
-        chunk_size: 2
+        chunk_size: 1
         chunk_unit: "years"
 model2:
         setup_name: medusa

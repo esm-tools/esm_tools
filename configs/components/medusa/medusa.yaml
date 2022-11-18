@@ -97,6 +97,16 @@ fluxes:
 
 C_fluxes: []
 
+# Find if it's part of an offline coupled system
+ave_start_year: "${start_date!year}"
+ave_end_year: "${end_date!year}"
+choose_general.iterative_coupling:
+    True:
+        ave_start_year: "${chunk_start_date!year}"
+        ave_end_year: "${chunk_end_date!year}"
+    "*":
+        pass: ""
+
 choose_with_ciso:
     true:
         add_variables:
@@ -111,8 +121,8 @@ choose_with_ciso:
         add_namelist_changes:
             medusa_recom_paleo_forcing.nml:
                 recom_file_list:
-                    cfn_sinkPOC13: sinkC13.${forcing_name}.${chunk_start_date!year}-${chunk_end_date!year}.nc
-                    cfn_sinkPOC14: sinkC14.${forcing_name}.${chunk_start_date!year}-${chunk_end_date!year}.nc
+                    cfn_sinkPOC13: sinkC13.${forcing_name}.${ave_start_year}-${ave_end_year}.nc
+                    cfn_sinkPOC14: sinkC14.${forcing_name}.${ave_start_year}-${ave_end_year}.nc
 
 choose_lresume:
     true:
@@ -139,9 +149,9 @@ forcing_files:
     "[[C_fluxes-->POC]]": "POC"
     dust: dust
 forcing_sources:
-    "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${chunk_start_date!year}-${chunk_end_date!year}.nc"
-    "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${chunk_start_date!year}-${chunk_end_date!year}.nc"
-    "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${chunk_start_date!year}-${chunk_end_date!year}.nc"
+    "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
+    "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
+    "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
     dust: ${dust_file}
 
 config_files:

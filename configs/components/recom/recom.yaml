@@ -189,7 +189,7 @@ namelist_dir: "${general.model_dir}/recom/"
 # FESOM-2 standalone + REcoM options
 fesom2_standalone: "$((
         '${general.setup_name}' == 'fesom' and
-        '2.' in '${general.version}'
+        '2.' in '${fesom.version}'
     ))"
 choose_fesom2_standalone:
     True:
@@ -336,3 +336,10 @@ outdata_sources:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+check_error:
+        "ERROR: CANNOT READ runoff FILE CORRECTLY":
+                frequency: 30
+                method: "kill"
+                message: "REcoM ERROR: CANNOT READ runoff FILE CORRECTLY"
+                file: "stdout"

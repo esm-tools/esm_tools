@@ -34,8 +34,8 @@ fesom:
                                         postprocessing_fesom.sh
                                         ${experiment_outdata_dir}
                                         ${experiment_outdata_dir}
-                                        ${initial_date!syear}
-                                        $((${initial_date!syear}+${nyear}))" 
+                                        ${chunk_start_date!syear}
+                                        ${chunk_end_date!syear}"
                                 script_dir: ${general.esm_function_dir}/components/medusa
                                 run_only: last_run_in_chunk
                                 nproc: 1

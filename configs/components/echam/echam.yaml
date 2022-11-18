@@ -164,6 +164,7 @@ choose_switch:
 
 with_wiso: false
 wiso_code: false
+with_lco2_emis: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -495,6 +496,33 @@ choose_yr_perp_off:
                                         yr_perp: "remove_from_namelist"
                                 runctl:
                                         l_orbsvop87: ".false."
+
+choose_with_lco2_emis:
+    True:
+        add_namelist_changes:
+            namelist.echam:
+                submodelctl:
+                    lco2: true # co2 submodel interacting with jsbach; true for emission-driven; if true, lco2_scenario will be set false during model run
+                radctl:
+                    ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
+                co2ctl:
+                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
+                    lco2_2perc: true
+        add_input_sources:
+            carbon_emissions_ssp370: "/pool/data/ECHAM6/input/r0008/T63/T63_carbon_emissions_ssp370.nc"
+            carbon_emissions_ssp585: "/pool/data/ECHAM6/input/r0008/T63/T63_carbon_emissions_ssp585.nc"
+        add_input_files:
+            carbon_emissions: carbon_emissions_ssp370
+        add_input_in_work:
+            carbon_emissions: "carbon_emissions.nc"
+        # todo:
+        # add_choose_scenario:
+        #    HIST:
+        #        add_input_files:
+        #            carbon_emissions: carbon_emissions_ssp370
+        #    ssp585:
+        #        add_input_files:
+        #            carbon_emissions: carbon_emissions_ssp585
 
 choose_wiso_code:
         True:

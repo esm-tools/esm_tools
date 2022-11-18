@@ -166,8 +166,10 @@ if __name__ == "__main__":
 
     motd = MessageOfTheDayHandler()
     # Uncomment the following lines For testing using the local motd.yaml
-    # print(local_motd)
-    # with open(local_motd, "r") as motdfile:
+    #import os
+    #local_motd = f"{os.path.dirname(__file__)}/../../esm_tools/motd/motd.yaml"
+    #print(local_motd)
+    #with open(local_motd, "r") as motdfile:
     #    motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
     motd.motd_handler(mypackage, myversion)
     sys.exit(0)

@@ -45,6 +45,7 @@ choose_version:
     with_recom: true
     include_models: ["recom"]
     fesom_Dflags: "-DRECOM_COUPLED=ON"
+    mpi_num_groups: 1
 
 
 destination: "fesom-2.1"
@@ -507,6 +508,8 @@ choose_fesom.with_recom:
                 restart_log:
                     restart_length: "${restart_rate}"
                     restart_length_unit: "${restart_unit}"
+                run_config:
+                    num_fesom_groups: "${mpi_num_groups}"
             namelist.oce:
                 oce_tra:
                     num_tracers: "${num_tracers}"

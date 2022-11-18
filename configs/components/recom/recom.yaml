@@ -198,6 +198,7 @@ choose_fesom2_standalone:
 namelists:
         - namelist.recom
 
+use_atbox: "remove_from_namelists"
 namelist_changes:
         namelist.recom:
                 pavariables:
@@ -209,6 +210,7 @@ namelist_changes:
                         currentCO2cycle: "${currentCO2cycle}"
                         REcoM_PI: "${REcoM_PI}"
                         recom_restart: "${recom.lresume}"  # this was in the feat/ssp branch
+                        use_atbox: "${use_atbox}"
                 paco2_flux_param:
                         CO2_for_spinup: "${CO2_for_spinup}"
 

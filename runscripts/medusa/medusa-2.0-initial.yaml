@@ -16,6 +16,7 @@ medusa:
         lresume: false
         forcing_dir: /work/bm1030/a270105/medusa-input/ #TODO: change to get the files from FESOM automatically
         input_dir: /work/bm1030/a270105/medusa-input/ 
+        fesom_resolution: CORE2
 
         #        workflow:
         #                next_run_triggered_by: couple_out

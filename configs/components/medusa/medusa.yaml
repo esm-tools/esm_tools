@@ -2,7 +2,6 @@
 #
 model: medusa
 version: '2.0'
-branch: 2.0-fesom
 apps: 'medusa_recom_awiesm'
 
 metadata:
@@ -20,8 +19,6 @@ and teaching <https://doi.org/10.5194/gmd-14-3603-2021>"
 choose_version:
     '2.0':
       branch: main #coupled with awiesm-2.1-recom
-    '2.0-fesom':
-      branch: read_fesom_standalone # coupled with fesom-2.1
 
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 # directory for code and libraries
@@ -47,7 +44,7 @@ environment_changes:
 #                ...
         levante:
             add_module_actions:
-                - "load intel-oneapi-compilers"
+                - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
                 - "load intel-oneapi-mpi"
                 - "unload netcdf"
                 - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
@@ -146,7 +143,7 @@ forcing_sources:
     "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${start_date!year}-${end_date!year}.nc"
     dust: ${dust_file}
-    
+
 config_files:
     recom_paleo_files: recom_paleo_files
     recom_paleo_forcing: recom_paleo_forcing

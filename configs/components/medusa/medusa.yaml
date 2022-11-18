@@ -62,7 +62,7 @@ comp_command: "mkdir -p lib; mkdir -p include;
     cd ${model_dir}/medmbm/trunk4mcg/src-med; cp Makefile_mpiifort ./Makefile; make;
     make usetemplates;
     make libmedusa.a;
-    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; make;"
+    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; cp Makefile.nompi ./Makefile make;"
 #YY: compiler-dependent changes needed in Makefile -> choose_compiler/machine?
 #now the _mpiifort ones copied during compilation
 #original medusa code: include/ifort or mpiifort, lib/ifort or mpiifort created

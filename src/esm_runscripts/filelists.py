@@ -775,11 +775,11 @@ def log_used_files(config):
     if config["general"]["verbose"]:
         print("\n::: Logging used files", flush=True)
     filetypes = config["general"]["relevant_filetypes"]
-    thisrun_config_dir = config[model]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     for model in config["general"]["valid_model_names"] + ["general"]:
+        thisrun_config_dir = config[model]["thisrun_config_dir"]
         # this file contains the files used in the experiment
         flist_file = (
             f"{thisrun_config_dir}/"

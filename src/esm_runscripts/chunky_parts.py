@@ -10,7 +10,7 @@ def setup_correct_chunk_config(config):
     if not config["general"].get("iterative_coupling", False):
         return config
 
-    print("Starting the iterative coupling business")
+    print("Initializing iterative coupling")
 
     chunk_config = _restore_original_config(config)
     chunk_config = _initialize_chunk_date_file(

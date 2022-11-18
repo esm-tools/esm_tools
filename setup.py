@@ -22,9 +22,9 @@ requirements = [
     "gfw-creator==0.2.2",
     "gitpython==3.1.20",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
-    "numpy==1.20.3",  # Maximum version for Python 3.6 support
+    "numpy==1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
-    "pandas>=1.0.0",  # Correct compatiability with xarray for Python 3.6
+    "pandas==1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
     "pyyaml==5.1",
     "questionary==1.10.0",
@@ -38,11 +38,21 @@ requirements = [
 
 setup_requirements = []
 
-test_requirements = ["pyfakefs==4.6.0",]
+test_requirements = [
+    "pyfakefs==4.6.0",
+]
 
 setup(
-    author="Dirk Barbi",
-    author_email="dirk.barbi@awi.de",
+    author="The ESM Tools Team",
+    author_email=[
+        "dirk.barbi@awi.de",
+        "paul.gierz@awi.de",
+        "miguel.andres-martinez@awi.de",
+        "deniz.ural@awi.de",
+        "jan.streffing@awi.de",
+        "sebastian.wahl@geomar.de",
+	"kai.himstedt@dkrz.de",
+    ],
     python_requires=">=3.6, <3.10",
     classifiers=[
         "Development Status :: 3 - Alpha",

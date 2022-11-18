@@ -36,6 +36,9 @@ choose_version:
     wiso_code: true
   2.1-recom: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
     branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
+    choose_general.setup_name:
+        fesom:
+            destination: "fesom-2.1-recom"
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     wiso_code: true

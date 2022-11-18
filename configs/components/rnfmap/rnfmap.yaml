@@ -20,8 +20,10 @@ available_versions:
 - awicm-3.0
 - awicm-3.1
 - awicm-frontiers
+- smhi
 - focioifs
 - focioifs1
+- focioifs21
 
 runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -42,6 +44,11 @@ choose_version:
     branch: esm-tools-focioifs
   focioifs1:
     branch: esm-tools-focioifs
+  smhi:
+    branch: smhi
+  focioifs21:
+    branch: runoff
+
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
@@ -106,7 +113,7 @@ coupling_fields:
                 grid: opaf
 
 choose_runoff_method:
-        'new':
+        'EM21':
                 runoff_fields_recv: [R_Runoff_atm]
                 runoff_fields_send: [R_Runoff_oce]
                 calving_fields_send: [R_Calving_oce]

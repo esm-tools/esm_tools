@@ -10,6 +10,7 @@ import math
 from tqdm import tqdm
 import pyfesom2 as pf
 #from icb_helper import *
+import time
 
 class IcebergCalving:
     def __init__(self, ifile, mesh_path, icb_path, basin_file, 
@@ -202,11 +203,11 @@ class IcebergCalving:
 
     def _get_full_cells(self):
         df = pd.read_csv(self.latest_restart_file, header=None, delim_whitespace=True)
-        df_group  = df[[1,2,18]].groupby(18)
+        df_group  = df[[1,2,18,24]].groupby(18)
         full_elems_tmp = []
 
         for felem in df_group:
-            ai = felem[1][1] * felem[1][2]
+            ai = felem[1][1] * felem[1][2] * felem[1][24]
             af = self.mesh.voltri[felem[0]-1]
             if ai.sum() >= af:
                 print("*** FESOM element is full: ", felem[0])
@@ -258,6 +259,9 @@ class IcebergCalving:
     # input:    data frame for one basin: discharge and FESOM cell corners (p1, p2, p3)
     # output:   iceberg volume array
     ######################################
+        # maximal time in seconds to wait for iceberg generation to finish (for one basin)
+        dtime_MAX = 30
+        
         # mu and sigma for lognormal distribution after Tournadre et al. (2011)
         mu, sigma = 12.3, 1.55**0.5
    
@@ -281,7 +285,6 @@ class IcebergCalving:
         # smallest class. Get total number of icebergs with share of smallest class (WEIGHTS_N)
         # and mean size within smalles class (SMEAN_1). Get number of icebergs of each other class
         # with corresponding share. 
-   
         N = int(area_tot / median)
 
         # generates random variates of power law distribution
@@ -308,8 +311,8 @@ class IcebergCalving:
         vol_sum_0 = sum(vol)
         #x_sum_0 = sum(x)
         
-        x = x[x>xmin]
-        x = x[x<self.area_max]
+        x = x[x>=xmin]
+        x = x[x<=self.area_max]
         if sum(x) == 0:
             print(" * no icebegs")
             return pd.DataFrame()
@@ -325,14 +328,18 @@ class IcebergCalving:
         x = x * corr
 
         x_tot = x
+        tstart = time.time()
         while N > 0:
             N = int((vol_sum_0 - vol_sum_1) / vol_sum_0 * N)
+            print(" N = ", str(N))
             if N==0:
                 break
             vrs = powerlaw.Power_Law(xmin=xmin, xmax=self.area_max, parameters=[a]).generate_random(N)
             x = vrs
-            x = x[x>xmin]
-            x = x[x<self.area_max]
+            x_too_small = x[x<xmin]
+            x_too_large = x[x>self.area_max]
+            x = x[x>=xmin]
+            x = x[x<=self.area_max]
             x_tot = np.concatenate([x_tot, x])
             if sum(x_tot) == 0:
                 print(" * no icebegs")
@@ -345,6 +352,12 @@ class IcebergCalving:
             corr = disch_tot / sum(vol)
             #corr = area_tot / sum(x_tot)
             x_tot = x_tot * corr
+            tend = time.time()
+            dtime = tend - tstart
+            if dtime >= dtime_MAX:
+                print("elapsed time = ", str(tend - tstart))
+                print("start iceberg generation again for this basin")
+                return -1
             
         # correction with respect to iceberg volume and not iceberg area
         vol = x_tot * thick
@@ -571,85 +584,92 @@ class IcebergCalving:
     
         with tqdm(total=len(self.df_agg), file=sys.stdout, desc='go through basins') as pbar:
             for index in self.df_agg.index:
-                b = self.df_agg.loc[index]
-                print("*****************************")
-                print("*** BASIN = ", index)
+                # inner loop to enable redo if generation of icebergs takes too long
+                # https://stackoverflow.com/questions/36573486/redo-for-loop-iteration-in-python
+                while True:
+                    b = self.df_agg.loc[index]
+                    print("*****************************")
+                    print("*** BASIN = ", index)
 
-                # create icebergs for basin [m3]
-                ib_tmp = self._create_icebergs_within_basin(b)
-                if ib_tmp.empty:
-                    continue
-                ib_elems = self._scale_icebergs(ib_tmp)
+                    # create icebergs for basin [m3]
+                    ib_tmp = self._create_icebergs_within_basin(b)
+                    if isinstance(ib_tmp, int):
+                        if ib_tmp == -1:
+                            continue            # equivalent to redo
+                    elif ib_tmp.empty:
+                        break                   # now equivalent to continue
+                    ib_elems = self._scale_icebergs(ib_tmp)
 
-                # make list of fesom elements and it's neighbours
-                felems = list(b.elems)
-                for n in b["neigh."]:
-                    felems = felems + list(n)
-                felems = list(set(felems))
+                    # make list of fesom elements and it's neighbours
+                    felems = list(b.elems)
+                    for n in b["neigh."]:
+                        felems = felems + list(n)
+                    felems = list(set(felems))
   
-                ##############################################################
-                # exclude coastal nodes (and full cells)
-                elems_to_drop = self.full_elems
-                
-                for felem in felems:
-                    nodes = self.elem2d.iloc[felem].values
-                    coastal = False
-                    for node in nodes:
-                        lon, lat, tmp = self.nod2d.loc[node]
-                        if (tmp == 1 or coastal == 1):
-                            coastal = True
+                    ##############################################################
+                    # exclude coastal nodes (and full cells)
+                    elems_to_drop = self.full_elems
                     
-                    if coastal == 1:
-                        elems_to_drop.append(felem)
+                    for felem in felems:
+                        nodes = self.elem2d.iloc[felem].values
+                        coastal = False
+                        for node in nodes:
+                            lon, lat, tmp = self.nod2d.loc[node]
+                            if (tmp == 1 or coastal == 1):
+                                coastal = True
+                        
+                        if coastal == 1:
+                            elems_to_drop.append(felem)
 
-                print(" * drop these elements: ", elems_to_drop) 
-                new_felems = [elem for elem in felems if elem not in elems_to_drop]
-                felems = new_felems
-                ##############################################################
+                    print(" * drop these elements: ", elems_to_drop) 
+                    new_felems = [elem for elem in felems if elem not in elems_to_drop]
+                    felems = new_felems
+                    ##############################################################
 
-                if len(felems) != 0:
-                    tmp = felems * int(len(ib_elems) / len(felems)) + felems[:len(ib_elems)%len(felems)]
-                    felems = tmp
+                    if len(felems) != 0:
+                        tmp = felems * int(len(ib_elems) / len(felems)) + felems[:len(ib_elems)%len(felems)]
+                        felems = tmp
    
-                    with tqdm(total=len(self.df_agg), file=sys.stdout, desc='initialize icebergs') as pbar:
-                        for felem, index in zip(felems, ib_elems.index):
-                            ib_elem = ib_elems.loc[index]
-                            
-                            nod1, nod2, nod3 = self.elem2d.iloc[felem].values
-                            lon1, lat1, tmp = self.nod2d.loc[nod1].values
-                            lon2, lat2, tmp = self.nod2d.loc[nod2].values
-                            lon3, lat3, tmp = self.nod2d.loc[nod3].values
+                        with tqdm(total=len(self.df_agg), file=sys.stdout, desc='initialize icebergs') as pbar:
+                            for felem, index in zip(felems, ib_elems.index):
+                                ib_elem = ib_elems.loc[index]
+                                
+                                nod1, nod2, nod3 = self.elem2d.iloc[felem].values
+                                lon1, lat1, tmp = self.nod2d.loc[nod1].values
+                                lon2, lat2, tmp = self.nod2d.loc[nod2].values
+                                lon3, lat3, tmp = self.nod2d.loc[nod3].values
 
-                            r1 = random.random()
-                            r2 = random.random()
-                            
-                            lower_bound = 0.25
-                            upper_bound = 0.75
+                                r1 = random.random()
+                                r2 = random.random()
+                                
+                                lower_bound = 0.25
+                                upper_bound = 0.75
     
-                            r1 = r1 * (upper_bound - lower_bound) + lower_bound
-                            r2 = r2 * (upper_bound - lower_bound) + lower_bound
-                            #https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle
-                            try:
-                                lon = (1-np.sqrt(r1))*lon1 + (np.sqrt(r1)*(1-r2))*lon2 + (r2*np.sqrt(r1))*lon3
-                                lat = (1-np.sqrt(r1))*lat1 + (np.sqrt(r1)*(1-r2))*lat2 + (r2*np.sqrt(r1))*lat3
-                            except:
-                                continue
-                           
-                            if ib_elems_loc.empty:
-                                ib_elems_loc = pd.DataFrame({"length": [ib_elem.length], 
-                                                            "depth": [ib_elem.depth],
-                                                            "scaling": [ib_elem.scaling],
-                                                            "lon": [lon], "lat": [lat],
-                                                            "felem": [felem]})
-                            else:
-                                ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": [ib_elem.length], 
-                                                                                    "depth": [ib_elem.depth],
-                                                                                    "scaling": [ib_elem.scaling],
-                                                                                    "lon": [lon], "lat": [lat],
-                                                                                    "felem": [felem]})])
-                            pbar.update(1)
-                pbar.update(1)
-   
+                                r1 = r1 * (upper_bound - lower_bound) + lower_bound
+                                r2 = r2 * (upper_bound - lower_bound) + lower_bound
+                                #https://math.stackexchange.com/questions/18686/uniform-random-point-in-triangle
+                                try:
+                                    lon = (1-np.sqrt(r1))*lon1 + (np.sqrt(r1)*(1-r2))*lon2 + (r2*np.sqrt(r1))*lon3
+                                    lat = (1-np.sqrt(r1))*lat1 + (np.sqrt(r1)*(1-r2))*lat2 + (r2*np.sqrt(r1))*lat3
+                                except:
+                                    continue
+                               
+                                if ib_elems_loc.empty:
+                                    ib_elems_loc = pd.DataFrame({"length": [ib_elem.length], 
+                                                                "depth": [ib_elem.depth],
+                                                                "scaling": [ib_elem.scaling],
+                                                                "lon": [lon], "lat": [lat],
+                                                                "felem": [felem]})
+                                else:
+                                    ib_elems_loc = pd.concat([ib_elems_loc, pd.DataFrame({"length": [ib_elem.length], 
+                                                                                        "depth": [ib_elem.depth],
+                                                                                        "scaling": [ib_elem.scaling],
+                                                                                        "lon": [lon], "lat": [lat],
+                                                                                        "felem": [felem]})])
+                                pbar.update(1)
+                    pbar.update(1)
+                    break
+
         if not ib_elems_loc.empty:
             np.savetxt(os.path.join(self.icb_path, "LON.dat"), ib_elems_loc.lon.values)
             np.savetxt(os.path.join(self.icb_path, "LAT.dat"), ib_elems_loc.lat.values)

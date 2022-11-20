@@ -178,8 +178,8 @@ restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+        icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
 
 restart_out_files:
         oce_restart: oce_restart
@@ -194,8 +194,27 @@ restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+
+#choose_use_icebergs:
+#        True:
+#                restart_in_intermediate:
+#                        icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+#                        icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+#                
+#                restart_in_targets:
+#                        #oce_restart: fesom.${end_date!syear}.oce.restart.nc
+#                        #ice_restart: fesom.${end_date!syear}.ice.restart.nc
+#                        #wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+#                        icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+#                        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+#                restart_out_targets:
+#                        #oce_restart: fesom.${end_date!syear}.oce.restart.nc
+#                        #ice_restart: fesom.${end_date!syear}.ice.restart.nc
+#                        #wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+#                        icb_restart: iceberg.restart_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+#                        icb_restart_ISM: iceberg.restart.ISM_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -214,6 +233,16 @@ choose_use_icebergs:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
 
+            restart_in_intermediate:
+                    icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+                    icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+            restart_in_targets:
+                    icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+                    icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+            restart_out_targets:
+                    icb_restart: iceberg.restart_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+                    icb_restart_ISM: iceberg.restart.ISM_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+            
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
 
@@ -230,12 +259,12 @@ choose_use_icebergs:
                             choose_general.run_number:
                                     1:
                                             iceberg_dir: "${ini_iceberg_dir}"
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
+                                            #input_sources:
+                                            #        num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
                                     "*":
                                             iceberg_dir: "${general.experiment_couple_dir}"
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
+                                            #input_sources:
+                                            #        num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
 
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
@@ -254,6 +283,8 @@ choose_use_icebergs:
                                     length: "${iceberg_dir}/LENGTH.dat"
                                     height: "${iceberg_dir}/HEIGHT.dat"
                                     scaling: "${iceberg_dir}/SCALING.dat"
+                                    felem: "${iceberg_dir}/FELEM.dat"
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
                    
                             input_in_work:
                                     latitude: "icb_latitude.dat"
@@ -261,6 +292,8 @@ choose_use_icebergs:
                                     length: "icb_length.dat"
                                     height: "icb_height.dat"
                                     scaling: "icb_scaling.dat"
+                                    felem: "icb_felem.dat"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
                             add_input_files:
                                     latitude: "latitude"
@@ -268,6 +301,8 @@ choose_use_icebergs:
                                     length: "length"
                                     height: "height"
                                     scaling: "scaling"
+                                    felem: "felem"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
                     false:
                             add_input_sources:
                                     length:    "${iceberg_dir}/icb_length.dat_@YEAR@0101-@YEAR@1231"
@@ -275,6 +310,8 @@ choose_use_icebergs:
                                     longitude: "${iceberg_dir}/icb_longitude.dat_@YEAR@0101-@YEAR@1231"
                                     height:    "${iceberg_dir}/icb_height.dat_@YEAR@0101-@YEAR@1231"
                                     scaling:   "${iceberg_dir}/icb_scaling.dat_@YEAR@0101-@YEAR@1231"
+                                    felem:   "${iceberg_dir}/icb_felem.dat_@YEAR@0101-@YEAR@1231"
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
             
                             input_in_work:
                                     latitude: "icb_latitude.dat"
@@ -282,6 +319,8 @@ choose_use_icebergs:
                                     length: "icb_length.dat"
                                     height: "icb_height.dat"
                                     scaling: "icb_scaling.dat"
+                                    felem: "icb_felem.dat"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
                             add_input_files:
                                     latitude: "latitude"
@@ -289,6 +328,8 @@ choose_use_icebergs:
                                     length: "length"
                                     height: "height"
                                     scaling: "scaling"
+                                    felem: "felem"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
 log_files:
         clock: clock

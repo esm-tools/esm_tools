@@ -8,6 +8,7 @@ import shlex  # contains shlex.split that respects quoted strings
 import pathlib
 
 from .software_package import software_package
+from esm_parser import user_error
 
 import esm_environment
 import esm_plugin_manager
@@ -456,7 +457,12 @@ class Task:
                     )
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
+
+        # Calculate the number of get commands for this esm_master operation
+        self.num_of_get_commands()
+        # Loop through the commands
         for command in self.command_list:
+            repo = self.get_repo_properties_from_command(command)
             if command.startswith("mkdir"):
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
@@ -476,6 +482,15 @@ class Task:
                     pipe_command.split(), stdin=curl_process.stdout
                 )
                 curl_process.wait()
+            elif repo["is_repo_operation"]:
+                command_spl = shlex.split(command)
+                try:
+                    subprocess.run(command_spl, check=not ignore_errors)
+                except subprocess.CalledProcessError as error:
+                    self.add_repo_error(command, repo, error)
+                if repo["is_last_repo"]:
+                    self.report_repo_errors(repo)
+                    self.report_destination_path_errors(repo)
             else:
                 # os.system(command)
                 # deniz: I personally did not like the iterator and the list
@@ -534,3 +549,103 @@ class Task:
             print("    Executing commands in this order:")
             for command in self.shown_command_list:
                 print("        ", command)
+
+    # Repository methods
+    # ------------------
+    def num_of_get_commands(self):
+        self.num_get_commands = 0
+        for command in self.command_list:
+            for subtask in self.subtasks:
+                if command in subtask.package.command_list.get("get", []):
+                    self.num_get_commands += 1
+                    break
+
+    def get_repo_properties_from_command(self, command):
+        if not hasattr(self, "executed_repo_commands"):
+            self.executed_repo_commands = []
+        repo = {"is_repo_operation": False, "is_last_repo": False}
+        get_commands = self.package.command_list.get("get")
+        if self.package.repo and get_commands:
+            if command in get_commands:
+                repo["package"] = self.package
+                repo["is_repo_operation"] = True
+                repo["is_last_repo"] = True
+        else:
+            for subtask in self.subtasks:
+                get_commands = subtask.package.command_list.get("get")
+                if command in get_commands:
+                    repo ["package"]= subtask.package
+                    repo["is_repo_operation"] = True
+                    self.executed_repo_commands.append(command)
+                    if self.num_get_commands == len(self.executed_repo_commands):
+                        repo["is_last_repo"] = True
+                    break
+
+        return repo
+
+    def add_repo_error(self, command, repo, error):
+        if not hasattr(self, "repo_errors"):
+            self.repo_errors = {}
+
+        destination = repo["package"].destination
+        if os.path.isdir(destination):
+            error = "destination path exists"
+        for folder in self.folders_after_download:
+            if destination in folder:
+                full_destination = folder
+        if error:
+            self.repo_errors[command] = {
+                "model": repo["package"].model,
+                "repo": repo["package"].repo,
+                "contact": repo["package"].contact,
+                "destination": full_destination,
+                "error": error,
+            }
+
+    def report_repo_errors(self, repo):
+        if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
+            return
+
+        problematic_repos = ""
+        for command, repo_error in self.repo_errors.items():
+            error = repo_error["error"]
+            if error != "destination path exists":
+                problematic_repos += (
+                    f"``{repo_error['model']}``: {repo_error['repo']}\n"
+                    f"    ``contact``: {repo_error['contact']}\n"
+                    f"    failed command: ``{command}``\n"
+                    f"    error message:\n{error}\n"
+                )
+
+        if problematic_repos:
+            user_error(
+                "Download error",
+                "There were problems downloading some of the components involved in "
+                f"the operation ``{self.raw_name}``. Make sure the ``user names`` and "
+                "``passwords`` you introduced are correct. Also, check that you have "
+                "access and reading permissions to the repositories listed below. If "
+                "you don't, contact the person in charge of that particular repository "
+                "(see ``contact`` in the repository list below).\n\n"
+                f"Repositories with problems:\n{problematic_repos}"
+            )
+
+    def report_destination_path_errors(self, repo):
+        if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
+            return
+
+        problematic_destinations = ""
+        for command, repo_error in self.repo_errors.items():
+            error = repo_error["error"]
+            if error == "destination path exists":
+                problematic_destinations += f"- ``{repo_error['destination']}``\n"
+
+        if problematic_destinations:
+            user_error(
+                "destination already exists",
+                "Some coponents couldn't be downloaded because their destination paths "
+                f"already exists (see list below). If you want to download again the "
+                "model consider deleting that folder. If instead, you want to keep "
+                "that, you can use other esm_master commands (e.g. esm_master folder, "
+                "comp-<model>-<version>). Destinations already present:\n"
+                f"{problematic_destinations}\n"
+            )

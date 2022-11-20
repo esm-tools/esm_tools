@@ -214,7 +214,6 @@ def copy_files_to_thisrun(config):
         six.print_("- Note that you can see your file lists in the config folder")
         six.print_("- You will be informed about missing files")
 
-    counter = 0
     count_max = 90
     if (
         config["general"].get("iterative_coupling", False)
@@ -222,6 +221,7 @@ def copy_files_to_thisrun(config):
     ):
         if "files_to_wait_for" in config["general"]:
             for file_base in config['general'].get('files_to_wait_for'):
+                counter = 0
                 file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:
                     counter = counter + 1
@@ -245,7 +245,7 @@ def copy_files_to_thisrun(config):
                     with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
                         f.write("0")
             else:
-                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["experiment_restart_in_dir"], "iceberg.restart.ISM")))
+                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["restart_in_sources"]["icb_restart_ISM"])))
                 with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
                     f.write(str(num_lines))
 

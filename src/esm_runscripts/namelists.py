@@ -474,12 +474,15 @@ class Namelist:
             icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
             # Determine if icesheet coupling is enabled:
             if config["fesom"].get("use_icesheet_coupling", False):
+                print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                 icebergs["use_icesheet_coupling"] = True
                 if os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
+                    config["fesom"]["input_sources"]["num_non_melted_icb_file"]
                 ):
+                    print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                     with open(
-                        config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
+                        config["fesom"]["input_sources"]["num_non_melted_icb_file"]
+                        #config["fesom"]["iceberg_dir"] + "/num_non_melted_icb_file"
                     ) as f:
                         ib_num_old = [
                             int(line.strip()) for line in f.readlines() if line.strip()

@@ -130,7 +130,6 @@ gray_list = []
 constant_blacklist = [r"PATH", r"LD_LIBRARY_PATH", r"NETCDFF_ROOT", r"I_MPI_ROOT"]
 
 constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
-print("LA DEBUG: constant_blacklist = ", constant_blacklist)
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
@@ -3063,3 +3062,4 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
         recursive_run_function([], config, "atomic", purify_booleans, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
+

@@ -185,7 +185,8 @@ update_orography_run_calnoro() {
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
-        export LD_LIBRARY_PATH=/sw/spack-levante.2022-02-17/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
+        #export LD_LIBRARY_PATH=/sw/spack-levante.2022-02-17/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=/sw/spack-levante/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
 
         echo "PWD = $(pwd)"
         echo "ls = $(ls)"
@@ -349,6 +350,14 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         # glacial mask", construct a dummy one from the restart
 	#CLEANUP cp ${BASE_DIR}/${EXP_ID}/awicm/input/echam/unit.24 dummy_jan_surf.nc
         cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
+        # Fix Lu: ---------------------------
+        if [[ ${DOMAIN_pism} == "nhem" ]]; then
+                cdo setclonlatbox,0,0,360,0,90 -selvar,GLAC dummy_jan_surf.nc tmp
+                cdo -replace dummy_jan_surf.nc tmp dummy_jan_surf.nc2
+                mv dummy_jan_surf.nc2 dummy_jan_surf.nc
+                rm tmp
+        fi
+        # Fix Lu: ---------------------------
         cdo -s replace dummy_jan_surf.nc \
                 ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
                 tmp && mv tmp dummy_jan_surf.nc

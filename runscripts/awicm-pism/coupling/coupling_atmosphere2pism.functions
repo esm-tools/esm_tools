@@ -1370,9 +1370,7 @@ ic_atm2debm_ablation_debm_make_forcing_set_temperature_units() {
                 ${cdo} -s -f nc -P 8 \
                         -remapbil,${COUPLE_DIR}/ice.griddes   \
                         ${TEMP2_BIAS_FILE} \
-                        ${COUPLE_DIR}/remapped.temp2bias_file.nc
-        
-                ${COUPLE_DIR}/temperature.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        ${COUPLE_DIR}/remapped.temp2bias_file.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 cdo -s -sub ${COUPLE_DIR}/temperature.nc ${COUPLE_DIR}/remapped.temp2bias_file.nc ${COUPLE_DIR}/temperature.tmp.nc
                 mv ${COUPLE_DIR}/temperature.tmp.nc ${COUPLE_DIR}/temperature.nc
             else

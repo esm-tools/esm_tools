@@ -43,6 +43,7 @@ How to approve changes on a GitHub Pull-Request
 
       .. image:: images/esm_tests4.png
 
+
 3. If there are no problematic differences, and the pull-request has been already
    reviewed and is just ready to be merged, write a message on the PR containing
    ``#approve-changes``. This will commit the new files from the tests as the

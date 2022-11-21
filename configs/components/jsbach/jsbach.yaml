@@ -89,7 +89,7 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
-                        ssp585:
+                        cmip6hist:
                                 scenario_type: cmip6
 
                         ssp370:
@@ -103,8 +103,8 @@ choose_version:
 
                         ssp534os:
                                 scenario_type: cmip6
-
-                        cmip6hist:
+                        
+                        ssp585:
                                 scenario_type: cmip6
 
 
@@ -201,6 +201,9 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
+                        cmip6hist:
+                                scenario_type: cmip6
+
                         ssp126:
                                 scenario_type: cmip6
 
@@ -216,8 +219,6 @@ choose_version:
                         ssp585:
                                 scenario_type: cmip6
 
-                        cmip6hist:
-                                scenario_type: cmip6
 
         "3.10":
                 dataset: r0007

@@ -394,22 +394,17 @@ choose_scenario:
 
         # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
         # under the choose_scenario_type block
-        ssp585:
+        cmip6hist:
                 scenario_type: cmip6
-
-        ssp370:
-                scenario_type: cmip6
-
         ssp126:
                 scenario_type: cmip6
-
         ssp245:
                 scenario_type: cmip6
-
+        ssp370:
+                scenario_type: cmip6
         ssp534os:
                 scenario_type: cmip6
-
-        cmip6hist:
+        ssp585:
                 scenario_type: cmip6
 
 choose_scenario_type:
@@ -499,6 +494,9 @@ choose_yr_perp_off:
 
 choose_with_lco2_emis:
     True:
+        # Run "emission-driven" echam experiment (in cmip6 context e.g. `esm-piControl` or `esm-hist`) where
+        # atmosheric CO2 concentration is not prescribed but calculated by the model setup.
+        # CO2 emissions need to be provided as forcing file (`carbon_emissions.nc`).
         add_namelist_changes:
             namelist.echam:
                 submodelctl:
@@ -507,22 +505,32 @@ choose_with_lco2_emis:
                     ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
                 co2ctl:
                     lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
-                    lco2_2perc: true
-        add_input_sources:
-            carbon_emissions_ssp370: "/pool/data/ECHAM6/input/r0008/T63/T63_carbon_emissions_ssp370.nc"
-            carbon_emissions_ssp585: "/pool/data/ECHAM6/input/r0008/T63/T63_carbon_emissions_ssp585.nc"
-        add_input_files:
-            carbon_emissions: carbon_emissions_ssp370
-        add_input_in_work:
+                    lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
+        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            HIST:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_hist
+            ssp126:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp126
+            ssp245:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp245
+            ssp370:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp370
+            ssp534os:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp534os
+            ssp585:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp585
+            "*":
+                add_error:
+                    "missing_scenario":
+                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+        add_forcing_in_work:
             carbon_emissions: "carbon_emissions.nc"
-        # todo:
-        # add_choose_scenario:
-        #    HIST:
-        #        add_input_files:
-        #            carbon_emissions: carbon_emissions_ssp370
-        #    ssp585:
-        #        add_input_files:
-        #            carbon_emissions: carbon_emissions_ssp585
 
 choose_wiso_code:
         True:

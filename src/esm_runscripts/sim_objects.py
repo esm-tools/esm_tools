@@ -1,19 +1,13 @@
 """
 Documentation goes here
 """
-import sys
 import os
-
-from . import config_initialization
-from . import prepare
-from . import prepexp
-from . import workflow
-from . import resubmit
-from . import helpers
-from . import logfiles
-from . import prev_run
+import sys
 
 import esm_parser
+
+from . import (config_initialization, helpers, logfiles, prepare, prepexp,
+               prev_run, resubmit, workflow)
 
 
 class SimulationSetup(object):
@@ -165,13 +159,7 @@ class SimulationSetup(object):
     def viz(self):
         """
         Starts the Viz job.
-
-        Parameters
-        ----------
-        kill_after_submit: bool
-            Default ``True``. If set, the entire Python instance is killed with ``sys.exit()``.
         """
-        # NOTE(PG): Local import, not everyone will have viz yet...
-        import esm_viz as viz
+        from . import viz
 
         self.config = viz.run_job(self.config)

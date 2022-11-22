@@ -14,7 +14,7 @@ from .slurm import Slurm
 from .pbs import Pbs
 
 known_batch_systems = ["slurm", "pbs"]
-reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
+reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect", "viz"]
 
 
 class UnknownBatchSystemError(Exception):
@@ -127,7 +127,7 @@ class batch_system:
             "overcommit_flag",
         ]
         # ??? Do we need the exclusive flag?
-        if config["general"]["jobtype"] in ["prepcompute", "tidy"]:
+        if config["general"]["jobtype"] in ["prepcompute", "tidy", "viz"]:
             conditional_flags.append("exclusive_flag")
         for flag in conditional_flags:
             if flag in this_batch_system:
@@ -280,8 +280,6 @@ class batch_system:
 
     @staticmethod
     def get_environment(config, subjob):
-        environment = []
-
         env = esm_environment.environment_infos("runtime", config)
         commands = env.commands
         if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy

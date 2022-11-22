@@ -103,7 +103,6 @@ choose_version:
 
                         ssp534os:
                                 scenario_type: cmip6
-                        
                         ssp585:
                                 scenario_type: cmip6
 

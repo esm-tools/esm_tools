@@ -13,6 +13,27 @@ of selected runscripts and model builds just by using one single command:
 ``esm_tests``. It can also perform dry actions (i.e. check compilations and check
 runs).
 
+Glossary
+--------
+
+.. glossary::
+
+   esm_tests_info
+    The repository where the files of the ``last-state`` and the ``runscripts`` for
+    testing are stored. This repository is clone as a submodel of `ESM-Tools` whenever
+    ``esm_tests`` command is run for the first time. The repository is cloned locally
+    into the ``esm_tools/src/esm_tests/resources`` folder.
+
+   last-state
+    Set of configuration files, both from compilation and runtime, that represent the
+    last approved configuration of the testing runscripts. This set of files is kept
+    for comparison with the equivalent files of future pull-requests, to ensure the
+    stability of the configurations. `ESM-Tests` always compares the new files to the
+    ``last-state`` files automatically, both in actual compilation/runs or check
+    compilation/runs.
+
+.. add the files here
+
 ESM-Tests cookbook
 ------------------
 

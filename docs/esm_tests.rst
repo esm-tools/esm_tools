@@ -22,7 +22,8 @@ Glossary
     The repository where the files of the ``last-state`` and the ``runscripts`` for
     testing are stored. This repository is clone as a submodel of `ESM-Tools` whenever
     ``esm_tests`` command is run for the first time. The repository is cloned locally
-    into the ``esm_tools/src/esm_tests/resources`` folder.
+    into the ``esm_tools/src/esm_tests/resources`` folder. You can activate the submodule 
+    manually via ``git submodule init`` followed by ``git submodule sync``.
 
    last-state
     Set of configuration files, both from compilation and runtime, that represent the

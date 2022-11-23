@@ -446,7 +446,7 @@ class Task:
     def validate(self):
         self.check_requirements()
 
-    def execute(self, ignore_errors=False):
+    def generate_task_script(self):
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
@@ -456,7 +456,11 @@ class Task:
                     )
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
+
+    def execute(self, ignore_errors=False):
         for command in self.command_list:
+            import pdb
+            pdb.set_trace()
             if command.startswith("mkdir"):
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
@@ -488,6 +492,7 @@ class Task:
                     # example: sed -i '/COUPLENEMOFOCI = /s/.FALSE./.TRUE./g' oifs-43r3-foci/src/ifs/module/yommcc.F90
                     # will fail if the "'" is removed
                     command_spl = shlex.split(command)
+                    print(f"PG DEBUG --> {command_spl=}")
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
                     else:

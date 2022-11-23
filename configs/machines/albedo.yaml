@@ -24,7 +24,6 @@ partitions:
 logical_cpus_per_core: 2
 threads_per_core: 1
 
-
 pool_directories:
         pool: "/dev/null"
         projects: "/dev/null"
@@ -59,20 +58,20 @@ module_actions:
         # Ensure a clean environment before start:
         - "purge"
         # Use my test modules (to be removed)
-        - "use ~pgierz/esm_tools_albedo"
+        - "use /albedo/work/user/pgierz/SciComp/Projects/Model_Runtime/modulefiles"
         # Compilers:
-        - "load intel.compiler"
+        - "load intel-oneapi-compilers/2022.1.0"
         # Build tools:
-        - "load cmake"
-        - "load automake"
+        - "load cmake-3.24.2-gcc-8.5.0-yaafrj6"
+        - "load automake-1.16.5-gcc-8.5.0-7bskgwg"
         # Libraries:
-        - "load udunits"
-        - "load netcdf"
-        - "load hdf5"
+        - "load udunits-2.2.28-gcc-8.5.0-oblwmiu"
+        - "load netcdf-c-4.9.0-gcc-8.5.0-vxogm7d"
+        - "load hdf5-1.12.2-gcc-8.5.0-2vrm2b3" 
         # General Tools:
-        - "load cdo"
-        - "load nco"
-        - "load git"
+        # - "load cdo"  # No module file?
+        - "load nco-5.0.1-gcc-8.5.0-3wgzhgq "
+        - "load git-2.38.1-gcc-8.5.0-b3vnboi"
         # Show what is there in the log:
         - "list"
 
@@ -108,15 +107,12 @@ export_vars:
 
 choose_useMPI:
         intelmpi:
-                add_module_actions:
-                        - "unload intel.mpi"
-                        - "load intel.mpi"
-                fc: '"mpiifort -mkl"'
-                f77: '"mpiifort -mkl"'
-                mpifc: mpiifort
-                mpicc: mpiicc
-                cc: mpiicc
-                cxx: mpiicpc
+                fc: '"ifort -mkl"'
+                f77: '"ifort -mkl"'
+                mpifc: ifort
+                mpicc: icc
+                cc: icc
+                cxx: icpc
 
                 add_export_vars:
                         MPIROOT: ${I_MPI_ROOT}/intel64

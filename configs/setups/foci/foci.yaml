@@ -170,7 +170,7 @@ echam:
 
         # Allows ssp scenarios to start before the ssp period with historical settings
         # (i.e. historical to ssp simulations)
-        allow_hist2ssp_transition: False
+        allow_hist2ssp_transition: True
 
         # some datamath for to be able to change the coupling step easily
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${echam.time_step}))

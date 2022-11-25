@@ -411,7 +411,7 @@ choose_scenario_is_ssp:
                 add_error:
                     "Initial date out of the ssp period":
                         message: "
-                            You are trying to run an ``ssp`` scenario (``${scenario}``)
+                            You are trying to run a ``ssp`` scenario (``${scenario}``)
                             with an initial date that does not correspond to an ssp
                             period. Consider running a historical scenario until the
                             end of 2014, and then branch off a new experiment for the

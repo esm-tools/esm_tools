@@ -67,7 +67,7 @@ release5.1_esm_tools:
                     - esm_parser
                     - esm_environment
                     - esm_rcfiles
- GGGGGGGGGGGGG                   - esm_version_checker
+                    - esm_version_checker
                     - esm_tools
                 To get this updates simply run 'esm_versions upgrade'.
 

@@ -168,6 +168,10 @@ echam:
         ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/echam6/"
 
+        # Allows ssp scenarios to start before the ssp period with historical settings
+        # (i.e. historical to ssp simulations)
+        allow_hist2ssp_transition: False
+
         # some datamath for to be able to change the coupling step easily
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${echam.time_step}))
 

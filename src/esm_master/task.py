@@ -564,6 +564,7 @@ class Task:
                 if command in subtask.package.command_list.get("get", []):
                     self.num_get_commands += 1
                     break
+        return self.num_get_commands # (Not strictly needed, but might be nice?)
 
     def get_repo_properties_from_command(self, command):
         """

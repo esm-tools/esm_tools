@@ -626,7 +626,9 @@ class Task:
         - ``error``: "destination path exist" if the destination exist, and the value
           of the ``error`` parameter if it the destination does not exist
 
-        Note: because the ``error`` is caught from an ``except`` of a ``subprocess``
+        Note
+        ---- 
+        Since the ``error`` is caught from an ``except`` of a ``subprocess``
         command, the actual error that occurred during the execution of the ``command``
         by ``subprocess.run`` is not caught. That means that we cannot evaluate which
         type of error occurred during the repo command (i.e. was an error related to

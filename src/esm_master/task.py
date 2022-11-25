@@ -488,9 +488,10 @@ class Task:
                     subprocess.run(command_spl, check=not ignore_errors)
                 except subprocess.CalledProcessError as error:
                     self.add_repo_error(command, repo, error)
+                # If it's the last repo command, check for errors and report them back
                 if repo["is_last_repo"]:
-                    self.report_repo_errors(repo)
-                    self.report_destination_path_errors(repo)
+                    self.report_repo_errors()
+                    self.report_destination_path_errors()
             else:
                 # os.system(command)
                 # deniz: I personally did not like the iterator and the list
@@ -553,6 +554,10 @@ class Task:
     # Repository methods
     # ------------------
     def num_of_get_commands(self):
+        """
+        Defines ``self.num_get_commands`` which accounts for the total number of get
+        commands for the current ``esm_master`` operation
+        """
         self.num_get_commands = 0
         for command in self.command_list:
             for subtask in self.subtasks:
@@ -561,15 +566,38 @@ class Task:
                     break
 
     def get_repo_properties_from_command(self, command):
+        """
+        If the current command is a repo action (e.g. cloning) collects the repo
+        information associated to that command
+
+        Parameters
+        ----------
+        command : str
+            The shell command to be evaluated
+
+        Returns
+        -------
+        repo : dict
+            A dictionary containing the following information:
+            - ``package``: the package object that contains all the package info
+            - ``is_repo_operation``: boolean that indicates whether ``command`` is a
+              repo operation
+            - ``is_last_repo``: boolean that indicates whether this is the last repo
+              operation or not
+        """
+        # Initializes the list of executed repo commands
         if not hasattr(self, "executed_repo_commands"):
             self.executed_repo_commands = []
+
         repo = {"is_repo_operation": False, "is_last_repo": False}
         get_commands = self.package.command_list.get("get")
+        # This is true for standalone models
         if self.package.repo and get_commands:
             if command in get_commands:
                 repo["package"] = self.package
                 repo["is_repo_operation"] = True
                 repo["is_last_repo"] = True
+        # This block here is for coupled setups (loops through each subtask -> model)
         else:
             for subtask in self.subtasks:
                 get_commands = subtask.package.command_list.get("get")
@@ -584,15 +612,57 @@ class Task:
         return repo
 
     def add_repo_error(self, command, repo, error):
+        """
+        If an error occurred during the repo ``command``, then stores information about
+        the error, and the associated package. The information about the error is
+        saved in the attribute ``self.repo_errors`` (if it doesn't exist, it creates
+        it).
+
+        The ``repo_errors`` attribute itself is a ``dict`` with keys being the failed
+        ``command``s, each of them containing the following variables:
+        - ``model``: model name
+        - ``repo``: url of the repo
+        - ``destination``: destination folder
+        - ``error``: "destination path exist" if the destination exist, and the value
+          of the ``error`` parameter if it the destination does not exist
+
+        Note: because the ``error`` is caught from an ``except`` of a ``subprocess``
+        command, the actual error that occurred during the execution of the ``command``
+        by ``subprocess.run`` is not caught. That means that we cannot evaluate which
+        type of error occurred during the repo command (i.e. was an error related to
+        access to the repo, or was it the error that happens when the folder already
+        exist?). To compensate for this problem, this method also checks whether the
+        destination folder exist or not to save a ``"destination path exist"`` error
+        description or to keep the same error string as reported by ``error``
+        (permission problem). This approach is not ideal. It would be possible to catch
+        the ``subprocess`` error, by capturing the stdout/stderr of the ``subprocess``
+        command, but then, the downloading progress is also captured and not displayed
+        to the user, which might make the users wonder if ESM-Tools is stalling.
+
+        Parameters
+        ----------
+        command : str
+            Repo command for which the error might have occur
+        repo : dict
+            Information associated to the repo ``command``, including tha ``package``
+            object
+        error : str
+            Error caught from ``except``
+        """
+        # Initializes the list of executed repo commands
         if not hasattr(self, "repo_errors"):
             self.repo_errors = {}
 
         destination = repo["package"].destination
+        # Checks whether the destination path exists to save a "destination path exist"
+        # error
         if os.path.isdir(destination):
             error = "destination path exists"
         for folder in self.folders_after_download:
             if destination in folder:
                 full_destination = folder
+
+        # If an error occured, store the information in the ``repo_errors`` atribute
         if error:
             self.repo_errors[command] = {
                 "model": repo["package"].model,
@@ -602,7 +672,11 @@ class Task:
                 "error": error,
             }
 
-    def report_repo_errors(self, repo):
+    def report_repo_errors(self):
+        """
+        Reports an ``esm_parser.user_error`` summarizing all the information about
+        the repo permission errors associated to the ``esm_master`` command.
+        """
         if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
             return
 
@@ -629,7 +703,12 @@ class Task:
                 f"Repositories with problems:\n{problematic_repos}"
             )
 
-    def report_destination_path_errors(self, repo):
+    def report_destination_path_errors(self):
+        """
+        Reports an ``esm_parser.user_error`` summarizing all the information about
+        the ``"destination path exist"`` errors associated to the ``esm_master``
+        command.
+        """
         if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
             return
 

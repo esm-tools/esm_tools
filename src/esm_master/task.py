@@ -727,7 +727,7 @@ class Task:
                 "Some coponents couldn't be downloaded because their destination paths "
                 f"already exists (see list below). If you want to download again the "
                 "model consider deleting that folder. If instead, you want to keep "
-                "that, you can use other esm_master commands (e.g. esm_master folder, "
+                "that, you can use other esm_master commands (e.g. esm_master "
                 "comp-<model>-<version>). Destinations already present:\n"
                 f"{problematic_destinations}\n"
             )

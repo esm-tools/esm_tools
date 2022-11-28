@@ -704,7 +704,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-                        #atm: atm
+                        atm: atm
         0:
                 outdata_files:
                         ICMGG: ICMGG

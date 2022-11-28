@@ -1,5 +1,11 @@
 #!/bin/bash
-
+# 
+# This script can be used to produce restart conditions from an OpenIFS output file
+#
+# Author/Contact: Joakim Kjellsson, GEOMAR, jkjellsson@geomar.de
+# No support will be provided by the ESM-Tools development team w.r.t this script
+# Please contact the author Joakim Kjellsson if you need help using this tool
+#
 # How to create restart files from OpenIFS output
 # Step 1: Restart the model but only run one day and set LXIOS=false in fort.4
 # Step 2: Set indir to the workdir where the GRIB output now is
@@ -8,7 +14,7 @@
 # Step 5: You can now use the produced ICM* files as initial conditions for 
 #         OpenIFS to restart the model. 
 # Note: This does not produce a true restart, but its pretty darn close...
-
+#
 # This script needs ecCodes or grib_api installed
 # This works on blogin, but not glogin
 # On glogin you can find grib binaries in 

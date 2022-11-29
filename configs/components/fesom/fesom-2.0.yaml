@@ -67,6 +67,7 @@ install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
 - https://gitlab.dkrz.de/FESOM/fesom2.git
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 choose_computer.name:

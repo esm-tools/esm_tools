@@ -36,7 +36,7 @@ Glossary
         - namelists
         - namcouple
         - finished_config
-        - batch scripts (`.run`)
+        - batch scripts (``.run``)
 
 Usage
 -----
@@ -81,6 +81,7 @@ How to approve changes on a GitHub Pull-Request
    changes, you can jump directly to step 4.
 2. If any of the tests labelled as ``esm_tests`` failed (click on the triangles to
    expand screen captures):
+
    .. collapse:: Click on Details
 
       .. image:: images/esm_tests1.png
@@ -99,6 +100,7 @@ How to approve changes on a GitHub Pull-Request
       namcouple files
 
       .. image:: images/esm_tests4.png
+
 
 
 3. If there are no problematic differences, and the pull-request has been already

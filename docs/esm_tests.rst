@@ -22,7 +22,7 @@ Glossary
     The repository where the files of the ``last-state`` and the ``runscripts`` for
     testing are stored. This repository is clone as a submodel of `ESM-Tools` whenever
     ``esm_tests`` command is run for the first time. The repository is cloned locally
-    into the ``esm_tools/src/esm_tests/resources`` folder. You can activate the submodule 
+    into the ``esm_tools/src/esm_tests/resources`` folder. You can activate the submodule
     manually via ``git submodule init`` followed by ``git submodule sync``.
 
    last-state
@@ -31,9 +31,45 @@ Glossary
     for comparison with the equivalent files of future pull-requests, to ensure the
     stability of the configurations. `ESM-Tests` always compares the new files to the
     ``last-state`` files automatically, both in actual compilation/runs or check
-    compilation/runs.
+    compilation/runs. The files stored in the ``last-state`` are:
+    - compilation scripts (``comp-*.sh``)
+    - namelists
+    - namcouple
+    - finished_config
+    - batch scripts (`.run`)
 
-.. add the files here
+Usage
+-----
+
+::
+
+    esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e]
+
+Arguments
+---------
+
+====================================================== ==========================================================
+Optional arguments                                     Description
+====================================================== ==========================================================
+  -h, --help                                           Show this help message and exit
+  -n, --no-user                                        Avoid loading user config (for check tests in GitHub)
+  -c, --check                                          Check mode on (does not compile or run, but produces
+                                                       some files that can be compared to previous existing
+                                                       files in ``last_tested`` folder)
+  -u, --update                                         Updates the resources with the release branch,
+                                                       including runscriptsand last_tested files
+  -d, --delete                                         Delete previous tests
+  -s SAVE, --save SAVE                                 Save files for comparisson in ``last_tested`` folder
+  -t, --state                                          Print the state stored in ``state.yaml``
+  -o, --hold                                           Hold before operation, to give time to check the output
+  -b, --bulletpoints                                   Bullet points for printing the state and copy/paste as
+                                                       markdown text
+  -g, --github                                         Use this flag when running in GitHub servers (i.e.
+                                                       adds syntax for collapsing compare sections of the
+                                                       output for GitHub Actions)
+  -e, --system-exit-on-errors                          Trigger a system exit on errors or file differences
+                                                       so that GitHub actions can catch that as a failing test
+====================================================== ==========================================================
 
 ESM-Tests cookbook
 ------------------

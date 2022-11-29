@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<simulation>
+
+  <context id="xios">
+    <variable_definition>
+
+      <variable id="info_level" type="int">5</variable>
+      <variable id="print_file" type="bool">false</variable>
+
+      <variable id="optimal_buffer_size" type="string">performance</variable>
+
+      <variable id="using_server" type="bool">true</variable>
+      <variable id="using_oasis" type="bool">true</variable>
+      <variable id="call_oasis_enddef" type="bool">false</variable>
+      <variable id="oasis_codes_id" type="string">OpenIFS</variable>
+
+    </variable_definition>
+  </context>
+
+  <context id="oifs" src="./context_oifs.xml"/>
+
+</simulation>

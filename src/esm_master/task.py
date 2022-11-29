@@ -459,8 +459,6 @@ class Task:
 
     def execute(self, ignore_errors=False):
         for command in self.command_list:
-            import pdb
-            pdb.set_trace()
             if command.startswith("mkdir"):
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
@@ -492,7 +490,6 @@ class Task:
                     # example: sed -i '/COUPLENEMOFOCI = /s/.FALSE./.TRUE./g' oifs-43r3-foci/src/ifs/module/yommcc.F90
                     # will fail if the "'" is removed
                     command_spl = shlex.split(command)
-                    print(f"PG DEBUG --> {command_spl=}")
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
                     else:

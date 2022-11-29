@@ -39,7 +39,7 @@ Glossary
     for comparison with the equivalent files of future pull-requests, to ensure the
     stability of the configurations. `ESM-Tests` always compares the new files to the
     ``last-state`` files automatically, both in actual compilation/runs or check
-    compilation/runs.
+    compilation/runs. See :ref:`esm_tests:Last-state`.
 
    runscripts
     The runscripts to run the tests. Runscripts define the test simulation details as
@@ -58,16 +58,16 @@ Glossary
 Usage
 -----
 
-`ESM-Tests` is design to compile and run tests **just with one single command**, without
-additional arguments: ``esm_tests``, so that launching a suite of tests in a supported
-HPC is straight forward. Higher granularity in the control of the tests is enabled via:
+`ESM-Tests` is designed to compile and run tests **just with one single command**,
+without additional arguments: ``esm_tests``, so that launching a suite of tests in a
+supported HPC is straight forward. Higher granularity in the control of the tests is
+enabled via:
 - :ref:`esm_tests:Arguments`
 - Runscripts via the usual ``esm_parser`` syntax (e.g. ``choose_computer.name``)
 - :ref:`esm_tests:Model control files (\`\`config.yaml\`\`)`
 - :ref:`esm_tests:Local test configuration (\`\`test_config.yaml\`\`)`
-The basic usage of `ESM-Tests` -> configure files
 
-::
+The commands syntax is as follows::
 
     esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e]
 
@@ -193,6 +193,20 @@ dictionary (``{}``).
 
 ESM-Tests cookbook
 ------------------
+
+How to include a new model/runscript
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+How to include a new platform for in an existing model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. In the corresponding `Model control file`
+   (``esm_tools/src/esm_tests/resources/runscripts/<model>/config.yaml``), add
+   the name of the platform to the ``computers`` list
+2. In the runscripts
+   (``esm_tools/src/esm_tests/resources/runscripts/<model>/<runscript>.yaml``), add
+   the necessary case to the ``choose_computer.name`` to specify pool directories,
+   forcing files, ``nproc``, etc.
 
 How to approve changes on a GitHub Pull-Request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

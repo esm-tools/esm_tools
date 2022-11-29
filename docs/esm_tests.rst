@@ -62,6 +62,7 @@ Usage
 without additional arguments: ``esm_tests``, so that launching a suite of tests in a
 supported HPC is straight forward. Higher granularity in the control of the tests is
 enabled via:
+
 - :ref:`esm_tests:Arguments`
 - Runscripts via the usual ``esm_parser`` syntax (e.g. ``choose_computer.name``)
 - :ref:`esm_tests:Model control files (\`\`config.yaml\`\`)`

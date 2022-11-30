@@ -61,7 +61,7 @@ module_actions:
         # Compilers:
         - "load intel-oneapi-compilers/2022.1.0"
         - "load intel-oneapi-mkl/2022.1.0"
-        - "load intel-oneapi-mpi/2021.6.0"
+        - "load intel-oneapi-mpi/2022.1.0"
         # Build tools:
         - "load 1.16.1-oneapi2022.1.0"
         # General Tools:

@@ -1,6 +1,7 @@
 click
 colorama
 coloredlogs
+docutils
 emoji
 numpy
 loguru

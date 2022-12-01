@@ -119,7 +119,7 @@ with open("API.rst", "w") as rst:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
     'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs',
-    'sphinx_toolbox.collapse', 'sphinx_rtd_theme']
+    'sphinx_toolbox.collapse']
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
 

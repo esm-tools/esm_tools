@@ -22,6 +22,7 @@ clean_command: cd Fortran-v1.0; rm -rf build CMakeCache.txt
 comp_command: cd Fortran-v1.0; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
 git-repository: https://github.com/ukrebska/dEBM
 install_bins: Fortran-v1.0/bin/debm
+contact: ukrebska(at)awi.de
 
 metadata:
     Institute: AWI

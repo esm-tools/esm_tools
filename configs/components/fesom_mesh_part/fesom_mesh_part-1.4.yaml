@@ -11,6 +11,7 @@ git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: fesom_mesh_partitioning/build/fesom_ini
 comp_command: cd fesom_mesh_partitioning; mkdir build -p; cd build; cmake ..; make -j `nproc --all`
 clean_command: rm -rf bin/fesom_ini fesom_mesh_partitioning/build mesh_part/CMakeCache.txt
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 

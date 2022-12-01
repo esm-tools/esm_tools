@@ -242,6 +242,7 @@ def look_for_file(model, item, all_config=None):
 
 
 def initialize_from_yaml(filepath):
+    user_config = {}
     for file_ending in YAML_AUTO_EXTENSIONS:
         if filepath.endswith(file_ending) and not file_ending == "":
             user_config = yaml_file_to_dict(filepath)
@@ -252,6 +253,13 @@ def initialize_from_yaml(filepath):
             user_config["general"]["runscript_abspath"] = filepath
 
             user_config = complete_config(user_config)
+    if not user_config:
+        user_error(
+            "Incorrect extension",
+            f"The runscript provided (``{filepath}``) does not have a valid file "
+            "extension. The following are valid file extensions for runscripts: "
+            f"{YAML_AUTO_EXTENSIONS[1:]}"
+        )
     return user_config
 
 

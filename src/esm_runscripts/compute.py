@@ -280,10 +280,13 @@ def initialize_experiment_logfile(config):
 
     # Write trace-log file now that we know where to do that
     if "trace_sink" in dir(logger):
+        experiment_dir = config["general"]["experiment_dir"]
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
+        datestamp = config["general"]["run_datestamp"]
         logfile_path = (
-            f"{config['general']['experiment_dir']}/log"
-            f"/{config['general']['expid']}_esm_runscripts_"
-            f"{config['general']['run_datestamp']}.log"
+            f"{experiment_dir}/log/"
+            f"{expid}_{it_coupled_model_name}esm_runscripts_{datestamp}.log"
         )
 
         logger.trace_sink.def_path(logfile_path)
@@ -355,9 +358,12 @@ def _write_finalized_config(config):
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
+    thisrun_config_dir = config["general"]["thisrun_config_dir"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
     config_file_path = (
-        f"{config['general']['thisrun_config_dir']}"
-        f"/{config['general']['expid']}_finished_config.yaml"
+        f"{thisrun_config_dir}/"
+        f"{expid}_{it_coupled_model_name}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file

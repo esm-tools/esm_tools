@@ -26,6 +26,8 @@ archfile: ESMTOOLS_generic_oasis_intel
 destination: ${version}
 install_bins: BLD/bin/oceanx
 
+contact: "swahl(at)geomar.de"
+
 available_versions:
 - ORCA05_LIM2_KCM_AOW
 - ORCA05_LIM2_KCM_AOW_autotools

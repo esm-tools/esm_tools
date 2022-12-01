@@ -97,6 +97,7 @@ Optional arguments                                     Description
                                                        output for GitHub Actions)
   -e, --system-exit-on-errors                          Trigger a system exit on errors or file differences
                                                        so that GitHub actions can catch that as a failing test
+  -r BRANCH, --branch BRANCH                           use the given esm_tests_info branch
 ====================================================== ==========================================================
 
 Last-state

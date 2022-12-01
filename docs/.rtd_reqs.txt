@@ -9,6 +9,7 @@ pyyaml
 questionary
 sphinxcontrib-napoleon
 sphinx-copybutton
+sphinx-rtd-theme
 sphinx-tabs
 sphinx-toolbox
 sqlalchemy

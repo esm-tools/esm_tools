@@ -140,6 +140,7 @@ the ``config.yaml`` is contained:
 ``esm_tools/src/esm_tests/resources/runscripts/<model>/``).
 
 Within this file you can control:
+
 * which files need to be present for considering an ``actual compilation test``
   successful (``comp.actual.files``)
 * which files need to be present for considering an ``actual run test``

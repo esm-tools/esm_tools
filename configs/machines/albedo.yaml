@@ -61,7 +61,8 @@ module_actions:
         # NOTE(PG): Should probably be behind a choose block
         # Compilers:
         - "load intel-oneapi-compilers/2022.1.0"
-        - "load openmpi/4.1.3"
+        - "load intel-oneapi-mkl/2022.1.0"
+        - "load ${module_mpi}"
         # Build tools:
         - "load automake/1.16.1-oneapi2022.1.0"
         # General Tools:
@@ -71,9 +72,10 @@ module_actions:
         # Libraries:
         # FIXME(PG): @sebhinck needs to get a specific udunits version here as well, maybe?
         - "load udunits/2.2.28"
-        - "load netcdf-c/4.8.1-openmpi4.1.3-oneapi2022.1.0"
-        - "load netcdf-fortran/4.5.4-openmpi4.1.3-oneapi2022.1.0"
-        - "load hdf5/1.12.2-openmpi4.1.3-oneapi2022.1.0" 
+        - "load ${module_netcdf-c}"
+        - "load ${module_netcdf-fortran}"
+        - "load ${module_hdf5}"
+        - "load python/3.10.4"
         # Show what is there in the log:
         - "list"
 
@@ -95,6 +97,8 @@ export_vars:
 
         # HDF5 exported environment variables:
         HDF5ROOT: /albedo/soft/sw/spack-sw/hdf5/1.12.2-fknnmx5/
+        HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+        HDF5_ROOT: $HDF5ROOT
 
         # NetCDF exported environment variables:
         NETCDFFROOT: /albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-lzqfsg3/
@@ -115,6 +119,11 @@ choose_useMPI:
                 mpicc: mpiicc
                 cc: mpiicc
                 cxx: mpiicpc
+
+                module_mpi: intel-oneapi-mpi/2021.6.0
+                module_netcdf-c: netcdf-c/4.8.1-oneapi2022.1.0
+                module_netcdf-fortran: netcdf-fortran/4.5.4-oneapi2022.1.0
+                module_hdf5: hdf5/1.12.2-oneapi2022.1.0
         openmpi:
                 fc: mpif90
                 f77: mpif90
@@ -122,3 +131,8 @@ choose_useMPI:
                 mpicc: mpicc
                 cc: mpicc
                 cxx: mpicxx
+
+                module_mpi: openmpi/4.1.3
+                module_netcdf-fortran: netcdf-fortran/4.5.4-openmpi4.1.3-oneapi2022.1.0
+                module_netcdf-c: netcdf-c/4.8.1-openmpi4.1.3-oneapi2022.1.0
+                module_hdf5: hdf5/1.12.2-openmpi4.1.3-oneapi2022.1.0

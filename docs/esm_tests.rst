@@ -63,10 +63,10 @@ without additional arguments: ``esm_tests``, so that launching a suite of tests 
 supported HPC is straight forward. Higher granularity in the control of the tests is
 enabled via:
 
-- :ref:`esm_tests:Arguments`
-- Runscripts via the usual ``esm_parser`` syntax (e.g. ``choose_computer.name``)
-- :ref:`esm_tests:Model control file (\`\`config.yaml\`\`)`
-- :ref:`esm_tests:Local test configuration (\`\`test_config.yaml\`\`)`
+* :ref:`esm_tests:Arguments`
+* Runscripts via the usual ``esm_parser`` syntax (e.g. ``choose_computer.name``)
+* :ref:`esm_tests:Model control file (\`\`config.yaml\`\`)`
+* :ref:`esm_tests:Local test configuration (\`\`test_config.yaml\`\`)`
 
 The commands syntax is as follows::
 
@@ -144,8 +144,8 @@ Within this file you can control:
   successful (``comp.actual.files``)
 * which files need to be present for considering an ``actual run test``
   successful (``run.actual.files``)
-* which messages from the execution of ``esm_runscripts`` should trigger an error in
-  an ``actual run test`` (``run.actual.errors``)
+* which messages from the execution of ``esm_runscripts`` should trigger an error
+  in an ``actual run test`` (``run.actual.errors``)
 * which ``computers`` are supported for this set of tests (``computers``)
 
 The file should contain this structure:

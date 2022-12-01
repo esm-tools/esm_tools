@@ -65,7 +65,7 @@ enabled via:
 
 - :ref:`esm_tests:Arguments`
 - Runscripts via the usual ``esm_parser`` syntax (e.g. ``choose_computer.name``)
-- :ref:`esm_tests:Model control files (\`\`config.yaml\`\`)`
+- :ref:`esm_tests:Model control file (\`\`config.yaml\`\`)`
 - :ref:`esm_tests:Local test configuration (\`\`test_config.yaml\`\`)`
 
 The commands syntax is as follows::
@@ -105,11 +105,11 @@ Last-state
 
 The ``last-state`` files are https://github.com/esm-tools/esm_tets_info repository, in
 the ``release`` branch. The files stored in the ``last-state`` are:
-- compilation scripts (``comp-*.sh``)
-- namelists
-- namcouple
-- finished_config
-- batch scripts (``.run``)
+* compilation scripts (``comp-*.sh``)
+* namelists
+* namcouple
+* finished_config
+* batch scripts (``.run``)
 
 Check test status
 -----------------
@@ -128,13 +128,106 @@ state by running::
 
     esm_tests -t
 
-Model control files (``config.yaml``)
--------------------------------------
+Model control file (``config.yaml``)
+------------------------------------
 
 **File location:** ``esm_tools/src/esm_tests/resources/runscripts/<model>/config.yaml``
 **Versioned**: Yes, distributed with ``esm_tests_info``
 
-Something here
+The `Model control file` gives you control over `ESM-Tests` setups for the set of
+runscripts for a given model (the model which name is the same as the folder where
+the ``config.yaml`` is contained:
+``esm_tools/src/esm_tests/resources/runscripts/<model>/``).
+
+Within this file you can control:
+* which files need to be present for considering an ``actual compilation test``
+  successful (``comp.actual.files``)
+* which files need to be present for considering an ``actual run test``
+  successful (``run.actual.files``)
+* which messages from the execution of ``esm_runscripts`` should trigger an error in
+  an ``actual run test`` (``run.actual.errors``)
+* which ``computers`` are supported for this set of tests (``computers``)
+
+The file should contain this structure:
+
+.. code-block:: yaml
+
+   comp:
+           actual:
+                   files:
+                       - "file/path" # Typically the binaries
+           check: {}
+   run:
+           actual:
+                   errors:
+                       - "error message to mark the test as not successful # Typically "MISSING FILES"
+                   files: # Typically restart files and outdata files
+                       - "path/to/file1"
+                       - "globbing/path/*/to*files"
+           check: {}
+   computers:
+           - <computer1>
+           - <cimputer2>
+
+In the ``files`` sections, **globbing is supported**.
+
+The file's paths should be relative to the compilation folder or the experiment folder.
+
+Each file name can be followed by the syntax ``in/except [<model_version1>,
+<model_version2>, ...]`` to only check for that file ``in`` that set of model versions,
+or to exclude (``except``) that file from being check for a set of model versions.
+
+**Example**
+
+.. code-block:: yaml
+
+   comp:
+           actual:
+                   files:
+                       - "bin/fesom*"
+                       - "bin/oifs"
+                       - "bin/rnfma"
+           check: {}
+   run:
+           actual:
+                   errors:
+                       - "MISSING FILES"
+                   files:
+                       - "restart/fesom/fesom.*.oce.restart/hnode.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/salt.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/ssh_rhs_old.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/temp.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/urhs_AB.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/vrhs_AB.nc*"
+                       - "restart/fesom/fesom.*.oce.restart/w_impl.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/area.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/hice.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/hsnow.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/ice_albedo.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/ice_temp.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/uice.nc*"
+                       - "restart/fesom/fesom.*.ice.restart/vice.nc*"
+                       - "restart/oasis3mct/rmp_*"
+                       - "restart/oasis3mct/rstas.nc*"
+                       - "restart/oasis3mct/rstos.nc*"
+                       - "restart/oifs/*/BLS*"
+                       - "restart/oifs/*/LAW*"
+                       - "restart/oifs/*/rcf"
+                       - "restart/oifs/*/srf*"
+                       - "restart/oifs/*/waminfo*"
+                       - "outdata/oifs/*/ICMGG* except [frontiers-xios, v3.1]"
+                       - "outdata/oifs/*/ICMSH* except [frontiers-xios, v3.1]"
+                       - "outdata/oifs/*/ICMUA* except [frontiers-xios, v3.1]"
+                       - "outdata/oifs/atm_remapped* in [frontiers-xios, v3.1]"
+                       - "outdata/fesom/*.fesom.*.nc"
+           check: {}
+   computers:
+           - ollie
+           - mistral
+           - juwels
+           - aleph
+           - blogin
+           - levante
 
 Local test configuration (``test_config.yaml``)
 -----------------------------------------------
@@ -198,6 +291,33 @@ ESM-Tests cookbook
 
 How to include a new model/runscript
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Add the given runscript to ``esm_tools/src/esm_tests/resources/runscripts/<model>/``
+2. Make sure your runscript has a meaningful name
+3. Make sure your runscript has the correct model ``version`` defined, for a standalone
+   model in the section of the model (not in ``general``), and for a coupled setup,
+   both in the ``general`` section and in the coupled setup section (e.g. ``awiesm``
+   section). This version will be used by `ESM-Test` for the ``esm_master`` command to
+   compile
+4. Modify the following variables to take the environment variables setup by `ESM-Tests`:
+
+   .. code-block:: yaml
+
+      general:
+          account: !ENV ${ACCOUNT}
+          base_dir: !ENV ${ESM_TESTING_DIR}
+      <standalone-model/setup>:
+          model_dir: !ENV ${MODEL_DIR}
+
+5. Generalize the runscript to be able to run in the computers where you'd want it
+   to be supported (i.e. add the necessary ``choose_computer.name`` switches)
+6. Create the `Model control file`
+   (``esm_tools/src/esm_tests/resources/runscripts/<model>/config.yaml``). See
+   ref:`esm_tests:Model control file (\`\`config.yaml\`\`)` for details about the
+   content
+7. If you are using the :ref:`Local test configuration (\`\`test_config.yaml\`\`)`
+   to exclude some models, make sure the current model is included, so that your
+   tests can be run locally.
 
 How to include a new platform for in an existing model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

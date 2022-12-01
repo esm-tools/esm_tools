@@ -52,7 +52,7 @@ unset_vars:
         - "SLURM_MEM_PER_NODE"
         - "SLURM_MEM_PER_CPU"
 
-useMPI: intel-oneapi-mpi
+useMPI: openmpi
 
 module_actions:
         # Ensure a clean environment before start:

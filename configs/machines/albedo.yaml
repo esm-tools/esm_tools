@@ -52,16 +52,16 @@ unset_vars:
         - "SLURM_MEM_PER_NODE"
         - "SLURM_MEM_PER_CPU"
 
-useMPI: intel-oneapi-mpi
+useMPI: openmpi
 
 module_actions:
         # Ensure a clean environment before start:
         - "purge"
         # Globally available already:
+        # NOTE(PG): Should probably be behind a choose block
         # Compilers:
         - "load intel-oneapi-compilers/2022.1.0"
-        - "load intel-oneapi-mkl/2022.1.0"
-        - "load intel-oneapi-mpi/2021.6.0"
+        - "load openmpi/4.1.3"
         # Build tools:
         - "load automake/1.16.1-oneapi2022.1.0"
         # General Tools:
@@ -71,9 +71,9 @@ module_actions:
         # Libraries:
         # FIXME(PG): @sebhinck needs to get a specific udunits version here as well, maybe?
         - "load udunits/2.2.28"
-        - "load netcdf-c/4.8.1-oneapi2022.1.0"
-        - "load netcdf-fortran/4.5.4-oneapi2022.1.0"
-        - "load hdf5/1.12.2-oneapi2022.1.0" 
+        - "load netcdf-c/4.8.1-openmpi4.1.3-oneapi2022.1.0"
+        - "load netcdf-fortran/4.5.4-openmpi4.1.3-oneapi2022.1.0"
+        - "load hdf5/1.12.2-openmpi4.1.3-oneapi2022.1.0" 
         # Show what is there in the log:
         - "list"
 
@@ -115,3 +115,10 @@ choose_useMPI:
                 mpicc: mpiicc
                 cc: mpiicc
                 cxx: mpiicpc
+        openmpi:
+                fc: mpif90
+                f77: mpif90
+                mpifc: mpif90
+                mpicc: mpicc
+                cc: mpicc
+                cxx: mpicxx

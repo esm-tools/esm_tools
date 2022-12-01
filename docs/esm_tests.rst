@@ -70,7 +70,7 @@ enabled via:
 
 The commands syntax is as follows::
 
-    esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e]
+    esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e] [-r BRANCH]
 
 Arguments
 ---------

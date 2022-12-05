@@ -53,14 +53,15 @@ unset_vars:
   - "SLURM_MEM_PER_NODE"
   - "SLURM_MEM_PER_CPU"
 
-useMPI: openmpi
-choose_useMPI:
+mpi_implementation: openmpi
+choose_mpi_implementation:
   intel-oneapi-mpi:
     mpi_implementation_module: intel-oneapi-mpi/2021.6.0
     mpi_implementation_suffix: intel-oneapi-mpi2021.6.0
   openmpi:
     mpi_implementation_module: openmpi/4.1.3
     mpi_implementation_suffix: openmpi4.1.3
+
 compiler_suite: gcc
 choose_compiler_suite:
   gcc:
@@ -123,58 +124,17 @@ export_vars:
   MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
   MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-  # NetCDF environment Variables:
+  # HDF5 exported environment variables:
+  HDF5ROOT: "$(module show hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix} | CMAKE_PREFIX_PATH | cut -d " " -f 2)"
+  HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+  HDF5_ROOT: $HDF5ROOT
+
+  # NetCDF environment variables:
+  NETCDFFROOT: "$(module show netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix} | CMAKE_PREFIX_PATH | cut -d " " -f 2)"
+  NETCDFROOT: "$(module show netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix} | CMAKE_PREFIX_PATH | cut -d " " -f 2)"
   NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
   NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
   NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
-  choose_netcdf_c_version:
-    "4.8.1":
-      choose_mpi_implementation:
-        "openmpi":
-          choose_compiler_suite:
-            gcc:
-              NETCDFROOT: /albedo/soft/sw/spack-sw/netcdf-c/4.8.1-i5n4n63
-            intel-oneapi:
-              NETCDFROOT: /albedo/soft/sw/spack-sw/netcdf-c/4.8.1-5ewdrxn
-        "intel-oneapi-mpi":
-          choose_compiler_suite:
-            gcc:
-              NETCDFROOT: /albedo/soft/sw/spack-sw/netcdf-c/4.8.1-czsk6pk
-            intel-oneapi:
-              NETCDFROOT: /albedo/soft/sw/spack-sw/netcdf-c/4.8.1-sp3ulf4
-  choose_fortran_version:
-    "4.5.4":
-      choose_mpi_implementation:
-        "openmpi":
-          choose_compiler_suite:
-            gcc:
-              NETCDFFROOT: /albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-yb7woqz  # NOTE: Double F in NetCDF for FORTRAN
-            intel-oneapi:
-              NETCDFFROOT: /albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-lzqfsg3  # NOTE: Double F in NetCDF for FORTRAN
-        "intel-oneapi-mpi":
-          choose_compiler_suite:
-            gcc:
-              NETCDFFROOT: /albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-tfoqnic
-            intel-oneapi:
-              NETCDFFROOT: /albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-vmvv2ho  # NOTE: Double F in NetCDF for FORTRAN
-  # HDF5 exported environment variables:
-  choose_hdf5_version:
-    "1.12.2":
-      choose_mpi_implementation:
-        "openmpi":
-          choose_compiler_suite:
-            gcc:
-              HDF5ROOT: /albedo/soft/sw/spack-sw/hdf5/1.12.2-rgostku
-            intel-oneapi:
-              HDF5ROOT: /albedo/soft/sw/spack-sw/hdf5/1.12.2-fknnmx5
-        "intel-oneapi-mpi":
-          choose_compiler_suite:
-            gcc: 
-              HDF5ROOT: /albedo/soft/sw/spack-sw/hdf5/1.12.2-lnfmhhc
-            intel-oneapi:
-              HDF5ROOT: /albedo/soft/sw/spack-sw/hdf5/1.12.2-mt53hvh
 
-  HDF5_ROOT: $HDF5ROOT
-  HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
   # Linear-Algebra Library environment variables:
   LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'

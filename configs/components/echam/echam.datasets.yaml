@@ -82,22 +82,30 @@ forcing_sources:
 
         # greenhouse
         # TODO: currently only r0008 contains the greenhouse_ssp* files
-        "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
+        "histgreenh":
+                "${greenhouse_dir}/greenhouse_historical.nc":
+                        to: 2013
+                # - use any SSP file for the historical scenario to have GHG values for year 2015,
+                #   necessary for Echams year+1 interpolation for last historical year 2014
+                # - all historical years <= 2014 are identical throughout all SSP GHG files
+                # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
+                #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
+                "${greenhouse_dir}/greenhouse_ssp370.nc":
+                        from: 2014
         "greenhouse_hist_scenario":
                 "${greenhouse_dir}/greenhouse_historical.nc":
-                        to: 2014
-                "${greenhouse_dir}/greenhouse_${scenario}.nc":
-                        from: 2015
+                        to: 2013
+                # - use any SSP file for the historical scenario to have GHG values for year 2015,
+                #   necessary for Echams year+1 interpolation for last historical year 2014
+                # - all historical years <= 2014 are identical throughout all SSP GHG files
+                # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
+                #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
+                "${greenhouse_dir}/greenhouse_ssp370.nc":
+                        from: 2014
 
         # TODO: greenhouse files differ
         # greenhouse
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
-        #"histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
-        # - use any SSP file for the historical scenario to have GHG values for year 2015,
-        #   necessary for Echams year+1 interpolation for last historical year 2014
-        # - all historical years <= 2014 are identical throughout all SSP GHG files
-        # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
-        #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
 
         # radiation
         "histswflux":
@@ -115,8 +123,7 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc": # ssp370 used for cmip6 awi-cm-1-1-mr and awi-esm-1-1-lr runs
                         from: 2015
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
@@ -126,10 +133,22 @@ forcing_sources:
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
 
-        "MAC-SP": "${input_dir}/MAC-SP.nc"
-
+        "MAC-SP":
+                 "${input_dir}/MAC-SP.nc":
+                         to: 2014
+                 "${input_dir}/MAC-SP_${scenario}.nc":
+                         from: 2015
         "MAC-SP_hist_scenario":
                  "${input_dir}/MAC-SP.nc":
                          to: 2014
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
+        
+        # carbon emissions for echam6:with_lco2_emis
+        carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc" # all ssp* identical from 1849 to 2015
+        carbon_emissions_ssp126: "${forcing_dir}/${resolution}_carbon_emissions_ssp126.nc"
+        carbon_emissions_ssp245: "${forcing_dir}/${resolution}_carbon_emissions_ssp245.nc"
+        carbon_emissions_ssp370: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc"
+        carbon_emissions_ssp534os: "${forcing_dir}/${resolution}_carbon_emissions_ssp534.nc"
+        carbon_emissions_ssp585: "${forcing_dir}/${resolution}_carbon_emissions_ssp585.nc"
+

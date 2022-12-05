@@ -132,7 +132,7 @@ export_vars:
   # NetCDF environment variables:
   NETCDFFROOT: "$(module show netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
   NETCDFROOT: "$(module show netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+  NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
   NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
   NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 

@@ -294,6 +294,13 @@ choose_concurrent_radiation_code:
                             add_export_vars:
                                 NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
                                 LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+                    # FIXME(PG): This belongs somewhere else, but both the ECHAM-6.3.05p2-wiso
+                    # and AWIESM-2.1 ECHAM version both have concurrent radiation code, so this
+                    # is a quick place to cover both cases:
+                    albedo:
+                      compiletime_environment_changes:
+                        add_export_vars:
+                          configure_opts: "'--without-regard-for-quality'"
                 add_namelist_changes:
                         namelist.echam:
                                 parctl:

@@ -84,6 +84,7 @@ choose_compiler_suite:
     cxx: mpiicpc
 
 netcdf_c_version: "4.8.1"
+netcdf_cxx_version: "4.2"
 netcdf_fortran_version: "4.5.4"
 hdf5_version: "1.12.2"
 
@@ -97,9 +98,11 @@ module_actions:
         # Libraries:
         # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
         - "load udunits/2.2.28"
-        - "load netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-        - "load netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-        - "load hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+        # NOTE(PG): The module versions **with** mpi in the module name are for parallel NetCDF, not needed in many cases
+        - "load netcdf-c/${netcdf_c_version}-${compiler_suffix}"
+        - "load netcdf-cxx/${netcdf_cxx_version}-${compiler_suffix}"
+        - "load netcdf-fortran/${netcdf_fortran_version}-${compiler_suffix}"
+        - "load hdf5/${hdf5_version}-${compiler_suffix}"
         # General Tools:
         - "load cdo/2.0.5"
         - "load nco/5.0.1"
@@ -123,18 +126,6 @@ export_vars:
   # Message Passing Interface (MPI) environment variables:
   MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
   MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
-
-  # HDF5 exported environment variables:
-  HDF5ROOT: "$(module show hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
-  HDF5_ROOT: $HDF5ROOT
-
-  # NetCDF environment variables:
-  NETCDFFROOT: "$(module show netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  NETCDFROOT: "$(module show netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-  NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-  NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 
   # Linear-Algebra Library environment variables:
   LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'

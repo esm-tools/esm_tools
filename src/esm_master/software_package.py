@@ -78,6 +78,7 @@ class software_package:
             setup_info, vcs
         )
         self.destination = setup_info.get_config_entry(self, "destination")
+        self.contact = setup_info.get_config_entry(self, "contact")
         self.clone_destination = setup_info.get_config_entry(self, "clone_destination")
         if not self.destination:
             self.destination = self.raw_name

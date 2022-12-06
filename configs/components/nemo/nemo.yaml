@@ -306,6 +306,7 @@ choose_version:
     branch: master 
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
 
     # use tracer in AGRIF?
     use_tracer_agrif: true
@@ -320,6 +321,7 @@ choose_version:
        # grids and coefficients 
        coordinates: coordinates
        subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
@@ -418,6 +420,7 @@ choose_version:
     branch: esm-tools
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
     
     # use tracer in AGRIF?
     use_tracer_agrif: true
@@ -432,6 +435,7 @@ choose_version:
        # grids and coefficients 
        coordinates: coordinates
        subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus

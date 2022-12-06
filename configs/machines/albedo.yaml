@@ -12,14 +12,14 @@ sh_interpreter: "/usr/bin/bash"
 batch_system: "slurm"
 accounting: true
 further_reading:
-  - batch_system/slurm.yaml
+    - batch_system/slurm.yaml
 partitions:
-  compute:
-    name: mpp
-    cores_per_node: 36
-  pp:
-    name: smp
-    cores_per_node: 1
+    compute:
+        name: mpp
+        cores_per_node: 36
+    pp:
+        name: smp
+        cores_per_node: 1
 
 # compute node hardware information:
 logical_cpus_per_core: 2
@@ -27,114 +27,114 @@ threads_per_core: 1
 
 # pool directory information:
 pool_directories:
-  pool: "/albedo/pool"
-  projects: "/albedo/work/projects"
-  focipool: "/dev/null"
+    pool: "/albedo/pool"
+    projects: "/albedo/work/projects"
+    focipool: "/dev/null"
 pool_dir: "${computer.pool_directories.pool}"
 
 hyper_flag: "" # No hyperthreading on albedo is supported in esm-tools (yet)!
 choose_heterogeneous_parallelization:
-  True:
-    choose_taskset:
-      False:
-          add_export_vars:
-              I_MPI_SLURM_EXT: 0
-      "*":
-          taskset_chs: ""
-    add_unset_vars:
-      - "SLURM_DISTRIBUTION"
-      - "SLURM_NTASKS"
-      - "SLURM_NPROCS"
-      - "SLURM_ARBITRARY_NODELIST"
+    True:
+        choose_taskset:
+            False:
+                add_export_vars:
+                    I_MPI_SLURM_EXT: 0
+            "*":
+                taskset_chs: ""
+        add_unset_vars:
+            - "SLURM_DISTRIBUTION"
+            - "SLURM_NTASKS"
+            - "SLURM_NPROCS"
+            - "SLURM_ARBITRARY_NODELIST"
 
 hetjob_flag: packjob
 
 unset_vars:
-  - "SLURM_MEM_PER_NODE"
-  - "SLURM_MEM_PER_CPU"
+    - "SLURM_MEM_PER_NODE"
+    - "SLURM_MEM_PER_CPU"
 
 mpi_implementation: openmpi
 choose_mpi_implementation:
-  intel-oneapi-mpi:
-    mpi_implementation_module: intel-oneapi-mpi/2021.6.0
-    mpi_implementation_suffix: intel-oneapi-mpi2021.6.0
-  openmpi:
-    mpi_implementation_module: openmpi/4.1.3
-    mpi_implementation_suffix: openmpi4.1.3
+    intel-oneapi-mpi:
+        mpi_implementation_module: intel-oneapi-mpi/2021.6.0
+        mpi_implementation_suffix: intel-oneapi-mpi2021.6.0
+    openmpi:
+        mpi_implementation_module: openmpi/4.1.3
+        mpi_implementation_suffix: openmpi4.1.3
 
 compiler_suite: gcc
 choose_compiler_suite:
-  gcc:
-    compiler_module: gcc/12.1.0
-    compiler_suffix: gcc12.1.0
-    fc: mpifort
-    f77: mpifort
-    mpifc: mpifort
-    mpicc: mpicc
-    cc: mpicc
-    cxx: mpicxx
-  intel-oneapi:
-    compiler_module: intel-oneapi-compilers/2022.1.0
-    compiler_suffix: oneapi2022.1.0
-    fc: '"ifort -mkl"'
-    f77: '"ifort -mkl"'
-    mpifc: mpiifort
-    mpicc: mpiicc
-    cc: mpiicc
-    cxx: mpiicpc
+    gcc:
+        compiler_module: gcc/12.1.0
+        compiler_suffix: gcc12.1.0
+        fc: mpifort
+        f77: mpifort
+        mpifc: mpifort
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpicxx
+    intel-oneapi:
+        compiler_module: intel-oneapi-compilers/2022.1.0
+        compiler_suffix: oneapi2022.1.0
+        fc: '"ifort -mkl"'
+        f77: '"ifort -mkl"'
+        mpifc: mpiifort
+        mpicc: mpiicc
+        cc: mpiicc
+        cxx: mpiicpc
 
 netcdf_c_version: "4.8.1"
 netcdf_fortran_version: "4.5.4"
 hdf5_version: "1.12.2"
 
 module_actions:
-        # Ensure a clean environment before start:
-        - "purge"
-        # Compilers:
-        - "load ${compiler_module}"
-        # MPI Implementation:
-        - "load ${mpi_implementation_module}"
-        # Libraries:
-        # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
-        - "load udunits/2.2.28"
-        - "load netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-        - "load netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-        - "load hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-        # General Tools:
-        - "load cdo/2.0.5"
-        - "load nco/5.0.1"
-        - "load git/2.35.2"
-        - "load python/3.10.4"
-        # Show what is there in the log:
-        - "list"
+    # Ensure a clean environment before start:
+    - "purge"
+    # Compilers:
+    - "load ${compiler_module}"
+    # MPI Implementation:
+    - "load ${mpi_implementation_module}"
+    # Libraries:
+    # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
+    - "load udunits/2.2.28"
+    - "load netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    - "load netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    - "load hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    # General Tools:
+    - "load cdo/2.0.5"
+    - "load nco/5.0.1"
+    - "load git/2.35.2"
+    - "load python/3.10.4"
+    # Show what is there in the log:
+    - "list"
 
 export_vars:
-  # Basics:
-  LC_ALL: en_US.UTF-8
+    # Basics:
+    LC_ALL: en_US.UTF-8
 
-  # Compilers:
-  FC: ${fc}
-  F77: ${f77}
-  MPIFC: ${mpifc}
-  MPICC: ${mpicc}
-  CC: ${cc}
-  CXX: ${cxx}
+    # Compilers:
+    FC: ${fc}
+    F77: ${f77}
+    MPIFC: ${mpifc}
+    MPICC: ${mpicc}
+    CC: ${cc}
+    CXX: ${cxx}
 
-  # Message Passing Interface (MPI) environment variables:
-  MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-  MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+    # Message Passing Interface (MPI) environment variables:
+    MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+    MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-  # HDF5 exported environment variables:
-  HDF5ROOT: "$(module show hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
-  HDF5_ROOT: $HDF5ROOT
+    # HDF5 exported environment variables:
+    HDF5ROOT: "$(module show hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
+    HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+    HDF5_ROOT: $HDF5ROOT
 
-  # NetCDF environment variables:
-  NETCDFFROOT: "$(module show netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  NETCDFROOT: "$(module show netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
-  NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-  NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-  NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+    # NetCDF environment variables:
+    NETCDFFROOT: "$(module show netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
+    NETCDFROOT: "$(module show netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix} | grep CMAKE_PREFIX_PATH | cut -d ' ' -f 2)"
+    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+    NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+    NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 
-  # Linear-Algebra Library environment variables:
-  LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
+    # Linear-Algebra Library environment variables:
+    LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'

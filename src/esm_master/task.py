@@ -463,10 +463,10 @@ class Task:
         # Loop through the commands
         for command in self.command_list:
             repo = self.get_repo_properties_from_command(command)
-            if command.startswith("mkdir"):
+            if command.startswith("mkdir") and ";" not in command:
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
-            elif command.startswith("cp "):
+            elif command.startswith("cp ") and ";" not in command:
                 subprocess.run(command.split(), check=not ignore_errors)
             elif command.startswith("cd ") and ";" not in command:
                 os.chdir(command.replace("cd ", ""))

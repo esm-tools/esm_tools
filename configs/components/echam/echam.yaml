@@ -301,6 +301,8 @@ choose_concurrent_radiation_code:
                       compiletime_environment_changes:
                         add_export_vars:
                           configure_opts: "'--without-regard-for-quality'"
+                          FFLAGS: "'-fallow-argument-mismatch -w'"
+                          FCFLAGS: "'-fallow-argument-mismatch -w'"
                 add_namelist_changes:
                         namelist.echam:
                                 parctl:

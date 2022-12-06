@@ -67,21 +67,9 @@ choose_compiler_suite:
   gcc:
     compiler_module: gcc/12.1.0
     compiler_suffix: gcc12.1.0
-    fc: mpifort
-    f77: mpifort
-    mpifc: mpifort
-    mpicc: mpicc
-    cc: mpicc
-    cxx: mpicxx
   intel-oneapi:
     compiler_module: intel-oneapi-compilers/2022.1.0
     compiler_suffix: oneapi2022.1.0
-    fc: '"ifort -mkl"'
-    f77: '"ifort -mkl"'
-    mpifc: mpiifort
-    mpicc: mpiicc
-    cc: mpiicc
-    cxx: mpiicpc
 
 netcdf_c_version: "4.8.1"
 netcdf_cxx_version: "4.2"
@@ -95,6 +83,8 @@ module_actions:
         - "load ${compiler_module}"
         # MPI Implementation:
         - "load ${mpi_implementation_module}"
+        # Build Tools:
+        - "load /albedo/soft/modules/spack-modules/cmake/3.23.1-gcc12.1.0-o42z"
         # Libraries:
         # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
         - "load udunits/2.2.28"
@@ -103,6 +93,8 @@ module_actions:
         - "load netcdf-cxx/${netcdf_cxx_version}-${compiler_suffix}"
         - "load netcdf-fortran/${netcdf_fortran_version}-${compiler_suffix}"
         - "load hdf5/${hdf5_version}-${compiler_suffix}"
+        # - "load intel-oneapi-mkl/2022.1.0"  # Math Kernel Library
+        - "load /albedo/soft/modules/spack-modules/intel-oneapi-mkl/2022.1.0-gcc12.1.0-akth"
         # General Tools:
         - "load cdo/2.0.5"
         - "load nco/5.0.1"
@@ -116,16 +108,18 @@ export_vars:
   LC_ALL: en_US.UTF-8
 
   # Compilers:
-  FC: ${fc}
-  F77: ${f77}
-  MPIFC: ${mpifc}
-  MPICC: ${mpicc}
-  CC: ${cc}
-  CXX: ${cxx}
+  # FC: ${fc}
+  # F77: ${f77}
+  # MPIFC: ${mpifc}
+  # MPICC: ${mpicc}
+  # CC: ${cc}
+  # CXX: ${cxx}
 
   # Message Passing Interface (MPI) environment variables:
-  MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-  MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+  # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+  MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
   # Linear-Algebra Library environment variables:
-  LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
+  # FIXME(PG): This would be nicer...
+  # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
+  LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 

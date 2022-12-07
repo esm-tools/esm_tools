@@ -6,6 +6,7 @@ standalone_model: True
 repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
 # git-repository: ${repository}
 git-repository: https://gitlab.dkrz.de/modular_esm/ICON-ATM.git
+contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 #description: |
 #        The ICON atmosphere model, major version 2

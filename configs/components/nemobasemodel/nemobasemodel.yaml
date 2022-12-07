@@ -34,3 +34,5 @@ choose_version:
     git-repository: https://git.geomar.de/jan-klaus-rieck/NEMOGCM.git 
 
 destination: nemo-${nemo.version}
+
+contact: "swahl(at)geomar.de"

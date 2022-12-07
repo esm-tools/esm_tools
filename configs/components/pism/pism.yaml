@@ -62,6 +62,7 @@ comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -
   \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=OFF\
   \ \\\n        -DPism_USE_PROJ4:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
   \ \\\n        ..; make -j4; make install;\n"
+contact: "paul.gierz(at)awi.de"
 
 
 executable: pismr

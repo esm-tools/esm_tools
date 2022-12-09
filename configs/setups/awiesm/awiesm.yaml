@@ -180,6 +180,11 @@ echam:
                 OASIS3MCT_FC_LIB: "$(pwd)/lib/"
                 OASIS3MCTROOT: "$(pwd)/oasis/"
                 configure_opts: "'--with-coupler=oasis3-mct --without-regard-for-quality'"
+            # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
+            add_unset_vars:
+              - FFLAGS
+              - FCFLAGS
+
 
         # Bootstrap switch
         # ----------------

@@ -32,7 +32,6 @@ oifs:
     levels: "L91"
     prepifs_expid: aack
     input_expid: awi3
-    wam: true
     lresume: false
     time_step: 3600
     nproc: 48

@@ -446,9 +446,6 @@ ignore_sources:
         gf: goodfile
         chloro: Chl_Sweeney.dat
 
-compiletime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom1
 choose_computer.name:
         mistral:
                 add_compiletime_environment_changes:

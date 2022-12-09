@@ -179,7 +179,7 @@ echam:
                 OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
                 OASIS3MCT_FC_LIB: "$(pwd)/lib/"
                 OASIS3MCTROOT: "$(pwd)/oasis/"
-                configure_opts: '--with-coupler=oasis3-mct'
+                configure_opts: "'--with-coupler=oasis3-mct --without-regard-for-quality'"
 
         # Bootstrap switch
         # ----------------

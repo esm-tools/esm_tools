@@ -67,12 +67,27 @@ choose_compiler_suite:
   gcc:
     compiler_module: gcc/12.1.0
     compiler_suffix: gcc12.1.0
+    # FIXME(SOMEONE PLEASE): The module you load determines which compilers you 
+    # want to use. This sort of information should (in my view) *NOT* be hard-coded
+    # into our generated compile script.
+    fc: "gfortran"
+    add_export_vars:
+      # NOTE(PG):
+      #
+      # I am not sure if the intel compilers need the same flags.
+      #
+      # The gfortran used on albedo is rather strict and we have many models 
+      # with legacy code which does not follow the newest standards, thus we 
+      # need to turn a few errors into just warnings in the compiler. It would 
+      # be better to fix the code of the individual models so this is not 
+      # needed:
+      FFLAGS: "'-fallow-argument-mismatch'"
   intel-oneapi:
     compiler_module: intel-oneapi-compilers/2022.1.0
     compiler_suffix: oneapi2022.1.0
 
 netcdf_c_version: "4.8.1"
-netcdf_cxx_version: "4.2"
+netcdf_cxx4_version: "4.3.1"
 netcdf_fortran_version: "4.5.4"
 hdf5_version: "1.12.2"
 
@@ -83,18 +98,17 @@ module_actions:
         - "load ${compiler_module}"
         # MPI Implementation:
         - "load ${mpi_implementation_module}"
-        # Build Tools:
-        - "load /albedo/soft/modules/spack-modules/cmake/3.23.1-gcc12.1.0-o42z"
         # Libraries:
         # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
         - "load udunits/2.2.28"
-        # NOTE(PG): The module versions **with** mpi in the module name are for parallel NetCDF, not needed in many cases
+        # NOTE(PG): The module versions **with** mpi in the module name are for parallel NetCDF, 
+        # not needed in many cases
         - "load netcdf-c/${netcdf_c_version}-${compiler_suffix}"
-        - "load netcdf-cxx/${netcdf_cxx_version}-${compiler_suffix}"
+        - "load netcdf-cxx4/${netcdf_cxx4_version}-${compiler_suffix}"
         - "load netcdf-fortran/${netcdf_fortran_version}-${compiler_suffix}"
         - "load hdf5/${hdf5_version}-${compiler_suffix}"
-        # - "load intel-oneapi-mkl/2022.1.0"  # Math Kernel Library
-        - "load /albedo/soft/modules/spack-modules/intel-oneapi-mkl/2022.1.0-gcc12.1.0-akth"
+        # Math Kernel Library:
+        - "load intel-oneapi-mkl/2022.1.0-${compiler_suffix}"
         # General Tools:
         - "load cdo/2.0.5"
         - "load nco/5.0.1"
@@ -107,6 +121,7 @@ export_vars:
   # Basics:
   LC_ALL: en_US.UTF-8
 
+  # NOTE(PG): All Compilers are set via the module files!
   # Compilers:
   # FC: ${fc}
   # F77: ${f77}
@@ -117,9 +132,11 @@ export_vars:
 
   # Message Passing Interface (MPI) environment variables:
   # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+  # NOTE(PG): I do not like this....should be set via module file, or fixed in model
   MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
   # Linear-Algebra Library environment variables:
   # FIXME(PG): This would be nicer...
   # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
+  # NOTE(PG): I do not like this....should be set via module file, or fixed in model
   LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 

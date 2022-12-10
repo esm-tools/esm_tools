@@ -26,7 +26,7 @@ class IcebergCalving:
         self.latest_restart_file = latest_restart_file
         self.abg = abg
         self.name_of_discharge = "tendency_of_ice_amount_due_to_discharge" #"tendency_of_ice_amount_due_to_calving"
-        self.rho_ice = 920
+        self.rho_ice = 850
         #self.bins = [0.01, 0.1, 1, 10, 100, 1000]
         #self.weights_area = [0.0005, 0.0005, 0.008, 0.025, 0.074, 0.893]
         #self.weights_dist = [0.4, 0.2, 0.15, 0.175, 0.05, 0.025]
@@ -40,7 +40,6 @@ class IcebergCalving:
         self.min_disch_in_cell = 0.0   #[kg m-2 year-1]
         #self.scaling_factor = np.array([1000, 100, 10, 1, 1, 1])
         self.scaling_factor = np.array(scaling_factor)
-        print("LA DEBUG: scaling_factor = ", self.scaling_factor)
         self.thick = np.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
         self.thick_max = 0.25
         self.depth = self.thick * 7/8
@@ -207,8 +206,10 @@ class IcebergCalving:
         full_elems_tmp = []
 
         for felem in df_group:
+            if felem[0] == 0.0:
+                continue
             ai = felem[1][1] * felem[1][2] * felem[1][24]
-            af = self.mesh.voltri[felem[0]-1]
+            af = self.mesh.voltri[int(felem[0])-1]
             if ai.sum() >= af:
                 print("*** FESOM element is full: ", felem[0])
                 print(" element area = ", af)

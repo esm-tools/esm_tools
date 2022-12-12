@@ -54,9 +54,12 @@ general:
           default_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
-          agrif:
+          agrif_noaow:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
+          agrif:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
           agrif_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+echam-6.3.05p2-foci_oasismct4
@@ -85,6 +88,7 @@ echam:
                 compiler_mpi: intel2019_impi2019
              glogin:
                 compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019_nemo4
              nesh:
                 compiler_mpi: intel2019_impi2019
 
@@ -106,6 +110,7 @@ echam:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              glogin:
                 compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
@@ -476,8 +481,10 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AOW_autotools"
                 fs:
                         version: "ORCA05_LIM2_KCM_AOW_FS"
-                agrif:
+                agrif_aow:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
+                agrif:
+                        version: "ORCA05_LIM2_FOCI_AGRIF"
                 agrif_oasismct4:
                         version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
 

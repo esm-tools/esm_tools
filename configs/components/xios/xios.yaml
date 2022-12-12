@@ -5,6 +5,7 @@
 model: xios
 version: 2.0r982
 executable: xios.x
+xml_dir: ""
 
 metadata:
         Institute: IPSL and CEA

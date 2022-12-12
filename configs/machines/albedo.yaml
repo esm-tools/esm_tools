@@ -82,6 +82,7 @@ choose_compiler_suite:
       # be better to fix the code of the individual models so this is not 
       # needed:
       FFLAGS: "'-fallow-argument-mismatch'"
+      FCLAGS: "'-fallow-argument-mismatch'"
   intel-oneapi:
     compiler_module: intel-oneapi-compilers/2022.1.0
     compiler_suffix: oneapi2022.1.0

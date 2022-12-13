@@ -164,7 +164,7 @@ choose_version:
     generation: "4.2"
     resolution: ORCA05
     use_tracer: false 
-    nn_leapy: 0  
+    leapyear: false  
     free_surface: nonlinear
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
 
@@ -314,6 +314,7 @@ choose_version:
     # use LIM2 in AGRIF?
     use_lim2_agrif: true
     free_surface: linear
+    leapyear: true  
 
     add_input_files:
        # reference namelists
@@ -427,6 +428,7 @@ choose_version:
     # use LIM2 in AGRIF?
     use_lim2_agrif: true
     free_surface: linear
+    leapyear: true  
 
     add_input_files:
        # reference namelists
@@ -541,6 +543,7 @@ choose_version:
     # use LIM2 in AGRIF?
     use_lim2_agrif: true
     free_surface: linear
+    leapyear: true  
     
     add_input_files:
        # reference namelists
@@ -675,6 +678,7 @@ choose_version:
     branch: master
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    leapyear: true  
 
     add_input_files:
        # reference namelists
@@ -700,6 +704,7 @@ choose_version:
     branch: master_autotools
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
+    leapyear: true  
 
     add_input_files:
        # reference namelists
@@ -728,6 +733,7 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
     free_surface: nonlinear
+    leapyear: true  
 
     add_input_files:
        # reference namelists
@@ -781,6 +787,7 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
     free_surface: nonlinear
+    leapyear: true  
 
     add_input_files:
        # reference namelists

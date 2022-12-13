@@ -74,14 +74,14 @@ choose_compiler_suite:
         cc: mpicc
         cxx: mpicxx
     intel-oneapi:
-        compiler_module: intel-oneapi-compilers/2022.1.0
+        compiler_module: intel-oneapi-compilers/2022.1.0 intel-oneapi-mkl/2022.1.0
         compiler_suffix: oneapi2022.1.0
-        fc: '"ifort -mkl"'
-        f77: '"ifort -mkl"'
-        mpifc: mpiifort
-        mpicc: mpiicc
-        cc: mpiicc
-        cxx: mpiicpc
+        fc: mpif90
+        f77: mpif90
+        mpifc: mpif90
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpic++
 
 netcdf_c_version: "4.8.1"
 netcdf_cxx_version: "4.2"
@@ -106,6 +106,7 @@ module_actions:
     - "load cdo/2.0.5"
     - "load nco/5.0.1"
     - "load git/2.35.2"
+    #- "load perl/5.35.0-gcc12.1.0"
     - "load python/3.10.4"
     # Show what is there in the log:
     - "list"
@@ -127,7 +128,16 @@ export_vars:
     MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
     # HDF5 exported environment variables:
-    HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+    #HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+
+    #PSMPIFLAGS: '"-lrt -lm -ldl"'
 
     # Linear-Algebra Library environment variables:
-    LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
+    LAPACK_LIB: "'-mkl=sequential'"
+    #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
+
+    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+    # PERL library
+    #PERL5LIB: "/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib/5.35.0/"
+    PERL5LIB: "/albedo/home/mandresm/my_libs/perl-5.32.0/lib/5.32.0/"

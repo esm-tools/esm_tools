@@ -1,20 +1,22 @@
 <file_definition>
 
     <file_group
-        type="one_file"
+        type="multiple_file"
         format="netcdf4"
         par_access="collective"
-        name="atm"
+        name="atm_remapped"
         split_freq="1y"
+        compression_level="1"
     >
         <!-- Monthly 2d fields -->
         <file
+            timeseries="only"
             enabled="true"
             output_freq="1mo"
             name_suffix="_1m"
-            description="ECE4/OIFS monthly surface fields"
+            description="OIFS monthly surface fields"
         >
-            <field_group operation="average">
+            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
                 <!-- CMIP6 compliant output fields -->
                 <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
                 <field field_ref="air_temperature__tasmin"/>  <!-- Daily Minimum Near-Surface Air Temperature [K] -->
@@ -56,14 +58,58 @@
             </field_group>
         </file>
 
+        <!-- 6hourly 2d fields (example) -->
+        <file
+            timeseries="only"
+            enabled="true"
+            output_freq="6h"
+            name_suffix="_6h"
+            description="OIFS 6hourly surface fields"
+        >
+            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
+                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
+                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
+                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+
+            </field_group>
+        </file>
+
+        <!-- daily 2d fields (example) -->
+        <file
+            timeseries="only"
+            enabled="false"
+            output_freq="1d"
+            name_suffix="_1d"
+            description="OIFS daily surface fields"
+        >
+            <field_group grid_ref="regular_sfc" freq_op="6h"  operation="average">
+                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
+                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
+                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
+                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <!-- fields from field_def_oifs_cmip6.xml can be added here -->
+            </field_group>
+        </file>
+
+    </file_group>
         <!-- Monthly pressure level fields -->
         <file
-            enabled="false"
+            timeseries="only"
+            enabled="true"
             output_freq="1mo"
-            name_suffix="_pl_1m"
-            description="ECE4/OIFS monthly pressure level fields"
+            name_suffix="_1m_pl"
+            description="OIFS monthly pressure level fields"
         >
-            <field_group operation="average">
+            <field_group  grid_ref="regular_pl" freq_op="6h" operation="average">
                 <!-- CMIP6 compliant output fields -->
                 <field field_ref="air_temperature__ta"/>  <!-- Air Temperature [K] -->
                 <field field_ref="specific_humidity__hus"/>  <!-- Specific Humidity [1] -->
@@ -71,35 +117,28 @@
                 <field field_ref="eastward_wind__ua"/>  <!-- Eastward Wind [m s-1] -->
                 <field field_ref="northward_wind__va"/>  <!-- Northward Wind [m s-1] -->
                 <field field_ref="geopotential_height__zg"/>  <!-- Geopotential Height [m] -->
+                <field field_ref="vo_pl" name="vo"/>
             </field_group>
         </file>
 
-        <!-- 6hourly 2d fields (example) -->
+        <!-- 6hourly pressure level fields -->
         <file
-            enabled="false"
+            timeseries="only"
+            enabled="true"
             output_freq="6h"
-            name_suffix="_6h"
-            description="ECE4/OIFS 6hourly surface fields"
+            name_suffix="_6h_pl"
+            description="OIFS 6hourly pressure level fields"
         >
-            <field_group operation="average">
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <!-- fields from field_def_oifs_cmip6.xml can be added here -->
+            <field_group  grid_ref="regular_pl" freq_op="6h" operation="instant">
+                <!-- CMIP6 compliant output fields -->
+                <field field_ref="air_temperature__ta"/>  <!-- Air Temperature [K] -->
+                <field field_ref="specific_humidity__hus"/>  <!-- Specific Humidity [1] -->
+                <field field_ref="relative_humidity__hur"/>  <!-- Relative Humidity [%] -->
+                <field field_ref="eastward_wind__ua"/>  <!-- Eastward Wind [m s-1] -->
+                <field field_ref="northward_wind__va"/>  <!-- Northward Wind [m s-1] -->
+                <field field_ref="geopotential_height__zg"/>  <!-- Geopotential Height [m] -->
+                <field field_ref="vo_pl" name="vo"/>
             </field_group>
         </file>
-
-        <!-- daily 2d fields (example) -->
-        <file
-            enabled="false"
-            output_freq="1d"
-            name_suffix="_1d"
-            description="ECE4/OIFS daily surface fields"
-        >
-            <field_group operation="average">
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <!-- fields from field_def_oifs_cmip6.xml can be added here -->
-            </field_group>
-        </file>
-
-    </file_group>
 
 </file_definition>

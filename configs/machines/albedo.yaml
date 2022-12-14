@@ -124,7 +124,7 @@ hdf5_version: "1.12.2"
 #         - "list"
 
 spack_actions:
-  - "activate esm-tools-albedo"
+  - "env activate esm-tools-albedo"
 
 
 export_vars:

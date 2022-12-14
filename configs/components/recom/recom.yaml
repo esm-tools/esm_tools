@@ -122,6 +122,7 @@ clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
 install_libs:
   - build/librecom.a
+contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"

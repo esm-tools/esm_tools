@@ -77,7 +77,7 @@ choose_version:
         gcc:
             archfile: ESMTOOLS_generic_oasis_gcc
         intel-oneapi:
-            archfile: ESMTOOLS_generic_oasis_intel
+            archfile: ESMTOOLS_levante_oasis_intel
         "*":
             foo: bar
     choose_computer.name:

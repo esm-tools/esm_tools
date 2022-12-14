@@ -9,7 +9,7 @@ general:
    
    compute_time: "12:00:00"
    initial_date: "4000-01-01T00:00:00"       # Initial exp. date
-   final_date: "4100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "4010-01-01T00:00:00"         # Final date of the experiment
    
    nyear: 10
    nmonth: 0
@@ -22,10 +22,11 @@ general:
 
    lresume: True
    ini_parent_exp_id: "FOCI_GJK006"
-   ini_string_parent_date: "4000-01-01"
-   ini_nemo_restart_steps: 20161344
+   ini_string_parent_date: "3500-01-01" #"4000-01-01"
+   ini_nemo_restart_steps: 11395536 #20161344
    ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
-   oasis_date_stamp: "_39900101-39991231"
+   #oasis_date_stamp: "_39900101-39991231"
+   oasis_date_stamp: "_34900101-34991231"
    # We will not restart OpenIFS, techinically speaking
    # with the eternal restart feature, the complete yaml of the previous run needs to be available:
    prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
@@ -34,6 +35,7 @@ general:
    postprocessing: 1
 
 computer:
+   #partition_name: "standard96:eoptimized"
    additional_flags: '--qos=preempt'
 
 focioifs:
@@ -46,7 +48,7 @@ oifs:
    prev_run_config_file: "${general.prev_run_config_file}"
    ini_parent_exp_id: "${general.ini_parent_exp_id}"
    ini_parent_dir: "${general.ini_parent_dir}/oifs/"
-   ini_parent_date: "${prev_date}"
+   ini_parent_date: "3499-12-31T23:00:00" #"${prev_date}"
    
    version: "43r3"
    with_xios: True
@@ -79,10 +81,11 @@ oifs:
    sclct_switch: 2
    initial_date_cold: "4000-01-01"
 
-   #add_namelist_changes:
-   #    fort.4:
-   #        NAMMCC:
-   #            RALBSEAD_NML: 0.045
+   add_namelist_changes:
+       fort.4:
+           NAMMCC:
+               #RALBSEAD_NML: 0.045
+               RALBSCALE_AR: 0.8
 
 oasis3mct:
    lresume: ${general.lresume}
@@ -92,7 +95,7 @@ oasis3mct:
    # Use FOCI_GJK006 4000-01-01
    ini_parent_exp_id: "${general.ini_parent_exp_id}"
    ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/oasis3mct/"
-   ini_parent_date: "${prev_date}"
+   ini_parent_date: "3499-12-31T23:45:00" #"${prev_date}"
 
    norestart: F
    use_lucia: True
@@ -100,15 +103,15 @@ oasis3mct:
    debug_level: 5
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
-   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct"
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
    
 nemo:
    lresume: ${general.lresume}
    ini_parent_exp_id: "${general.ini_parent_exp_id}"
-   ini_parent_dir: "${general.ini_parent_dir}/nemo/"
-   ini_parent_date: "${prev_date}"
+   ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/nemo/"
+   ini_parent_date: "3499-12-31T23:30:00" #"${prev_date}"
 
    resolution: "ORCA05"
    jpni: 24
@@ -119,6 +122,7 @@ nemo:
            namrun:
                cn_ocerst_indir: ${parent_restart_dir}
                cn_ocerst_outdir: ${experiment_restart_out_dir}
+               #ln_single_prec_send: ".true." 
            namtra_ldf:
                rn_aht_0: 600
            namsbc_rnf:

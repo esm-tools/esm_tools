@@ -527,6 +527,13 @@ oasis3mct:
                         # Suggested by Eric Maisonnave for Tco95 -> VIKING10
                         nb_of_neighbours_a2o: 15
                         weight_a2o: 0.1
+                TCO399_ORCA12: 
+                        # We take nb 25 and variance 0.1 from TL799 VIKING10
+                        # see: https://cerfacs.fr/wp-content/uploads/2019/11/GlobC-TR-Maisonnave-odus_report_4-1.pdf
+                        # Error goes down until nb 25, then constant
+                        # Error also goes up for variance above 0.1 
+                        nb_of_neighbours_a2o: 25
+                        weight_a2o: 0.1 
         
         coupling_target_fields:
                 # Coupling ocean fields to atm

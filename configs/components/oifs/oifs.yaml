@@ -109,11 +109,12 @@ compile_infos:
             destination: 40r1
           43r3-master:
             requires:
-            - oasis3mct-4.0-awicm-frontiers
-            branch: master
-            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
-            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-            install_bins: make/esm/oifs/bin/oifs
+            - oasis3mct-5.0-smhi
+            branch: development/2022/awi-cm3-integration
+            executable: OpenIFS
+            comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
+            git-repository: https://git.smhi.se/jan.streffing/oifs43r3/
+            install_bins: make/esm/oifs/bin/OpenIFS
             destination: oifs-43r3
             with_xios: true
           43r3-awicm-3.0:
@@ -399,8 +400,6 @@ namelist_changes:
                 NAERAD:
                         CRTABLEDIR: "${rtables_dir}"
                         LECOMPGRID: "${lecompgrid}"
-                NAMCLDP:
-                        SCLCT_SWITCH: "${sclct_switch}"
                 NAMFPG:
                         NFPLEV: "${nlev}"
                         NFPMAX: "${res_number}"
@@ -423,6 +422,7 @@ namelist_changes:
                         ORBMODE: "${orb_mode}"
                         ORBIY: "${orb_iyear}"
 
+
 lresume: false
 restart_rate: 1
 restart_unit: "months"
@@ -443,6 +443,7 @@ file_movements:
 
 # TODO: expand comment
 massfixer: 2
+cloudfixer: 1
 nfrmasscon: 1
 
 oasis_grid_name_a: "A${oasis_grid_name}"
@@ -548,6 +549,7 @@ choose_copy_forcing:
                                 add_forcing_files:
                                         # Add CO2 etc for all scenarios and years
                                         CMIP6DATA: CMIP6DATA
+
         false:
                 forcing_files: {}
 
@@ -702,7 +704,7 @@ choose_with_xios:
                                         LXIOS: ".true."
                 outdata_files:
                         oifsnc: oifsnc
-                        #atm: atm
+                        atm: atm
         0:
                 outdata_files:
                         ICMGG: ICMGG
@@ -827,6 +829,14 @@ choose_massfixer:
                                         YI_NL%LMASSFIX: ".true."
                                         YL_NL%LMASSFIX: ".true."
                                         YQ_NL%LMASSFIX: ".true."
+
+
+choose_cloudfixer:
+        1:
+                add_namelist_changes:
+                        fort.4:
+                                NAMCLDP:
+                                        SCLCT_SWITCH: "${sclct_switch}"
 
 ##
 ## specifics for 40r1 and 43r3
@@ -986,7 +996,6 @@ choose_mip:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
 
-
 #choose_o3_scheme:
 #        "prescribed":
 #                choose_mip:
@@ -1066,7 +1075,6 @@ input_in_work:
         o3_data: ${res_number_tl}/o3chem_l${nlev}/*
 
 forcing_in_work:
-        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
         PRE2005_MIDYR_CONC: PRE2005_MIDYR_CONC.txt
         RCP3PD_MIDYR_CONC: RCP3PD_MIDYR_CONC.txt
         RCP45_MIDYR_CONC: RCP45_MIDYR_CONC.txt
@@ -1076,6 +1084,7 @@ forcing_in_work:
         O3PI: cmip6_data/o3_pi/*
         O3HIST: cmip6_data/o3_histo/*
         O3SCEN: cmip6_data/o3_scenarios/*
+        ICMCL_INIT: ICMCL${oifs.input_expid}INIT
 
 
 #======================================================================================
@@ -1161,12 +1170,14 @@ choose_eternal_run_number:
                         ${oifs.nx}
                         ${oifs.ensemble_id};
                     ${slice_icml}
+                    ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
                     ${slice_icml}
+                    ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
                 pseudo_initial_date: "${prev_run.general.start_date}"
@@ -1190,11 +1201,13 @@ choose_eternal_run_number:
                         ${oifs.start_ndays}
                         ${oifs.wam};
                     ${slice_icml}
+                    ${append_icmcl}
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
                 choose_eternal_run_number:
                         0:
                                 branchoff: true
+
 
 choose_general.standalone:
         True:
@@ -1208,6 +1221,8 @@ choose_general.standalone:
                         ${work_dir};"
         False:
                 slice_icml: ""
+
+append_icmcl: ""
 
 preprocess:
         preprocess_shell:

@@ -19,7 +19,6 @@ general:
            - "modify_files"
            - "copy_files_to_work"
            - "report_missing_files"
-
            # not working, bug already reported at https://github.com/esm-tools/esm_tools/discussions/774
            # - "add_vcs_info"
            # - "check_vcs_info_against_last_run"
@@ -297,8 +296,8 @@ oifs:
                                                 script: "
                                                     oifs_postprocessing.sh -m
                                                     -r ${general.expid}
-                                                    -s ${start_date!syear}
-                                                    -e ${end_date!syear}                                                    
+                                                    -s ${start_date}
+                                                    -e ${end_date}
                                                     -p ${general.base_dir}"
                                                 nproc: 1
 
@@ -416,10 +415,9 @@ nemo:
                                                 script: "
                                                     nemo_postprocessing.sh -m
                                                     -r ${general.expid}
-                                                    -s ${start_date!syear}
-                                                    -e ${end_date!syear}
-                                                    -y ${general.nyear} 
-                                                    -p ${general.base_dir}"
+                                                    -s ${start_date}
+                                                    -e ${end_date}
+                                                    -p ${general.base_dir}" 
                                                 nproc: 1        
 
 

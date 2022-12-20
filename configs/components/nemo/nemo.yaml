@@ -6,11 +6,12 @@ model: nemo
 generation: "3.6"
 executable:     oceanx
 version: GYRE_XIOS
+reference_expid: EXP00 
 include_models:
 - xios
 
-runoff_method: "old"
-
+# compilation settings
+# 
 clean_command: cp cfg.inc ../cfg.txt; cd ../
    ./makenemo -n ${nemo.version} -m ${archfile} clean;
    cd ..
@@ -22,9 +23,30 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ;
 
 archfile: ESMTOOLS_generic_oasis_intel
 
-
 destination: ${version}
 install_bins: BLD/bin/oceanx
+
+contact: "swahl(at)geomar.de"
+
+#############################################################
+# file handling settings
+file_movements:
+   default:
+      all_directions: copy
+   config:
+      init_to_exp: copy
+      exp_to_run: link
+      run_to_work: link
+   forcing:
+      all_directions: link
+   log:
+      all_directions: copy
+   input:
+      all_directions: link
+   outdata:
+      all_directions: move 
+
+runoff_method: "old"
 
 available_versions:
 - ORCA05_LIM2_KCM_AOW
@@ -37,6 +59,7 @@ available_versions:
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 - GYRE_PISCES
+- 'ORCA05.z75.ICE.JRA' 
 
 choose_version:
 
@@ -87,6 +110,7 @@ choose_version:
         namelist_pisces_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_pisces_ref
         namelist_pisces_cfg: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/namelist_pisces_cfg
     add_input_files:
+       namelist_ref: namelist_ref
        namelist_top_ref: namelist_top_ref
        namelist_pisces_ref: namelist_pisces_ref
        namelist_pisces_cfg: namelist_pisces_cfg
@@ -94,10 +118,11 @@ choose_version:
     generation: "4.2"
     resolution: "R4"
 
-  UNCOUPLED_MARKUS:
+  'ORCA05.z75.ICE.JRA': 
     # uncoupled test setup from Markus
     # will be renamed once the name of the config is available
     # from Markus Scheinert
+    # version: 'ORCA05.z75.ICE.JRA-KMST001'
 
     # this should work but it does not if you run 
     # the setting below are ignored
@@ -119,49 +144,158 @@ choose_version:
     - xios-trunk
     - nemobasemodel-4.2.0
 
+    branch: esm-tools_v4.2.0 
+    reference_expid: KSWT001
+    clone_destination: nemo-${nemo.version}/cfgs/${nemo.version}
+    git-repository: https://git.geomar.de/mscheinert/${nemo.version}-KMST001.git 
+
     # TODO: include arch repo as separate component
     comp_command: export NEMO_TOPLEVEL=${model_dir} ; export XIOS_TOPLEVEL=${model_dir}/../xios; 
                   test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
-                  ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${nemo.version}/BLD/bin/oceanx
+                  cp cfgs/${nemo.version}/work_cfgs.inc cfgs/ref_cfgs.txt;
+                  ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; 
+                  cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
     clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
     archfile: ESMTOOLS_generic_intel
     destination: nemo-${nemo.version}
     install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
 
-    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/
+    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/${reference_expid}/
 
     generation: "4.2"
-    resolution: "R4"
-    use_tracer: true 
+    resolution: ORCA05
+    use_tracer: false 
+    nn_leapy: 0  
+    free_surface: nonlinear
+    input_dir: ${pool_dir}/NEMO4_${resolution}/input
+
+    # override hardcoded path to runoff forcing
+    add_namelist_changes:
+       namelist_cfg:
+          namsbc_blk:
+             cn_dir: "./"
     
     add_input_sources:
         namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-        namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
-        namelist_pisces_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_pisces_ref
-        namelist_pisces_cfg: ${nemo.model_dir}/cfgs/${nemo.version}/EXPREF/namelist_pisces_cfg
+        namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
     add_input_files:
-       namelist_top_ref: namelist_top_ref
-       namelist_pisces_ref: namelist_pisces_ref
-       namelist_pisces_cfg: namelist_pisces_cfg
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
 
-       # NEMO 4.2.x input files
-       bfr_coef: bfr_coef
-       domain_cfg_ExclClosedSeas: domain_cfg_ExclClosedSeas 
-       domain_cfg_InclClosedSeas:
+       # NEMO ORCA05 4.2.x input files
+       bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
+       coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
+       bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
+       subbasins_orca05_nemo4: subbasins_orca05_nemo4
+       domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
+      
+       reshape_jra_orca05_nemo4_bicub: reshape_jra_orca05_nemo4_bicub
+       reshape_jra_orca05_nemo4_bilin: reshape_jra_orca05_nemo4_bilin
+
+       # inital data
+       data_tem_orca05_nemo4: data_tem_orca05_nemo4
+       data_sal_orca05_nemo4: data_sal_orca05_nemo4
+       sss_orca05_nemo4: sss_orca05_nemo4
+       runoff_orca05_nemo4: runoff_orca05_nemo4
+
+       # NEMO eORCA025 4.2.x input files
+       #bfr_coef: bfr_coef
+       #domain_cfg_ExclClosedSeas: domain_cfg_ExclClosedSeas 
+       #domain_cfg_InclClosedSeas:
        # TODO: this file still needs to be generated by Markus
-       domain_cfg_CaspianSea: domain_cfg_CaspianSea
+       #domain_cfg_CaspianSea: domain_cfg_CaspianSea
        # we probably never need this one
-       domain_cfg_UKmasks: domain_cfg_UKmasks 
-       ghflux_v2.0: ghflux_v2.0
-       reshape_ghflux2: reshape_ghflux2
-       reshape_jra55do_bicub: reshape_jra55do_bicub
-       reshape_jra55do_bilin: reshape_jra55do_bilin
-       subbasins_eORCA025: subbasins_eORCA025
-       sn_tem_woa13_omip_eORCA025: sn_tem_woa13_omip_eORCA025
-       sn_sal_woa13_omip_eORCA025: sn_sal_woa13_omip_eORCA025
+       #domain_cfg_UKmasks: domain_cfg_UKmasks 
+       #ghflux_v2.0: ghflux_v2.0
+       #reshape_ghflux2: reshape_ghflux2
+       #reshape_jra55do_bicub: reshape_jra55do_bicub
+       #reshape_jra55do_bilin: reshape_jra55do_bilin
+       #subbasins_eORCA025: subbasins_eORCA025
+       #sn_tem_woa13_omip_eORCA025: sn_tem_woa13_omip_eORCA025
+       #sn_sal_woa13_omip_eORCA025: sn_sal_woa13_omip_eORCA025
     
     # TODO: add correct links in work dir if required
-    # input_in_work:
+    input_in_work:
+       # NEMO ORCA05 4.2.x input files
+       bathy_meter_orca05_nemo4: bathy_meter.nc 
+       coordinates_orca05_nemo4: coordinates.nc
+       coef-G70: bfr_coef.nc
+       bfr_coef_orca05_nemo4: bfr_coef.nc 
+       subbasins_orca05_nemo4: subbasins.nc
+       #domain_cfg_orca05_nemo4: domain_cfg__ORCA05_zps_noclo.nc
+      
+       #reshape_jra_orca05_nemo4_bicub: 
+       #reshape_jra_orca05_nemo4_bilin: 
+
+       # inital data
+       data_tem_orca05_nemo4: data_tem.nc
+       data_sal_orca05_nemo4: data_sal.nc
+       sss_orca05_nemo4: SSS.nc 
+       runoff_orca05_nemo4: RUNOFF.nc
+    
+    # surface forcing for uncoupled NEMO4
+    forcing_files:
+      # forcing data
+      sn_wndi: sn_wndi
+      sn_wndj: sn_wndj
+      sn_qsr: sn_qsr
+      sn_qlw: sn_qlw
+      sn_tair: sn_tair
+      sn_humi: sn_humi
+      sn_prec: sn_prec
+      sn_snow: sn_snow
+      #sn_rnf: sn_rnf
+
+    forcing_in_work:
+        sn_wndi: "uas-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_wndj: "vas-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_qsr: "rsds-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_qlw: "rlds-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_tair: "tas-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_humi: "huss-drowned_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_prec: "prra_JRA55do-1.5.0_y@YEAR@.nc"
+        sn_snow: "prsn_JRA55do-1.5.0_y@YEAR@.nc"
+        #sn_rnf: "sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc"
+
+    forcing_sources:
+        # JRA55-do drowned forcing
+        sn_wndi:
+          "${jra55_forcing_dir}/uas-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_wndj:
+          "${jra55_forcing_dir}/vas-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_qsr:
+          "${jra55_forcing_dir}/rsds-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_qlw:
+          "${jra55_forcing_dir}/rlds-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_tair:
+          "${jra55_forcing_dir}/tas-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_humi:
+          "${jra55_forcing_dir}/huss-drowned_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_prec:
+          "${jra55_forcing_dir}/prra_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        sn_snow:
+          "${jra55_forcing_dir}/prsn_JRA55do-1.5.0_y@YEAR@.nc":
+             from: 1980
+             to: 1984
+        #sn_rnf:
+        #  "${jra55_runoff_dir}/sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc":
+        #     from: 1980
+        #     to: 1984
+
     
   ORCA05_LIM2_FOCI_AGRIF_AOW:
     requires:
@@ -182,6 +316,12 @@ choose_version:
     free_surface: linear
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       coordinates: coordinates
+       subbasins: subbasins
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
@@ -216,12 +356,6 @@ choose_version:
        1_namelist_ice_cfg: 1_namelist_ice_cfg
        1_namelist_top_cfg: 1_namelist_top_cfg
 
-    add_restart_in_sources:    
-       restart_in_nest: 1_${parent_expid}_${prevstep_formatted_nest}_restart*_${parent_date!syear!smonth!sday}_*.nc
-
-    add_restart_out_sources:
-       restart_out_nest: 1_${expid}_${newstep_formatted_nest}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
-
     add_namelist_changes:
        1_namelist_cfg:
           namrun:
@@ -230,9 +364,9 @@ choose_version:
              nn_itend: ${newstep_nest}
              nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
              cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag} 
-             cn_ocerst_indir: '${work_dir}/'
+             cn_ocerst_indir: '${parent_restart_dir}/'
              cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
-             cn_ocerst_outdir: '${work_dir}/'
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
              nn_stock: ${newstep_nest}
              nn_leapy: ${nn_leapy} 
              nn_rstctl: ${nn_rstctl} 
@@ -294,6 +428,12 @@ choose_version:
     free_surface: linear
     
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       coordinates: coordinates
+       subbasins: subbasins
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
@@ -327,12 +467,6 @@ choose_version:
        1_namelist_ice_cfg: 1_namelist_ice_cfg
        1_namelist_top_cfg: 1_namelist_top_cfg
 
-    add_restart_in_sources:
-       restart_in_nest: 1_${parent_expid}_${prevstep_formatted_nest}_restart*_${parent_date!syear!smonth!sday}_*.nc
-
-    add_restart_out_sources:
-       restart_out_nest: 1_${expid}_${newstep_formatted_nest}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
-
     add_namelist_changes:
        1_namelist_cfg:
           namrun:
@@ -341,9 +475,9 @@ choose_version:
              nn_itend: ${newstep_nest}
              nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
              cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag}
-             cn_ocerst_indir: '${work_dir}/'
+             cn_ocerst_indir: '${parent_restart_dir}/'
              cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
-             cn_ocerst_outdir: '${work_dir}/'
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
              nn_stock: ${newstep_nest}
              nn_leapy: ${nn_leapy}
              nn_rstctl: ${nn_rstctl}
@@ -427,11 +561,18 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -445,11 +586,18 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -466,11 +614,18 @@ choose_version:
     free_surface: nonlinear
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -485,11 +640,18 @@ choose_version:
     git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -505,11 +667,18 @@ choose_version:
     free_surface: nonlinear
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -538,11 +707,17 @@ choose_version:
     levels: L75
 
     add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
        # init and (if used) damping data
        sn_tem: sn_tem_EN4_ORCA12
        sn_sal: sn_sal_EN4_ORCA12
        ice_init: ice_init_orca12
-       cn_batmeter: bathy_meter 
 
     input_in_work:
        ice_init: Ice_initialization.nc
@@ -612,16 +787,13 @@ choose_version:
 
     add_input_files:
        # reference namelists
-       #namelist_ref: namelist_ref
-       #namelist_ice_ref: namelist_ice_ref
-       # TODO: do we need top namelist
-       #namelist_top_ref: namelist_top_ref
-
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
        # grids and coefficients 
        cn_batmeter: bathy_meter 
-       #coordinates: coordinates
-       #subbasins: subbasins
-       #coef-G70: coef-G70
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
        reshape_jra_orca05_bicub: reshape_jra_orca05_bicub 
        reshape_jra_orca05_bilin: reshape_jra_orca05_bilin
 
@@ -748,13 +920,14 @@ use_tracer_agrif:   false
 use_lim2_agrif:     false
 
 # calendar:
-leapyear: True
-nn_leapy: 1 
+leapyear: False 
 
 # Restart or initial run settings
 # values below will be set to false if lresume = true
 ln_tsd_init: true 
 ln_limini: true 
+# in NEMO4.x limini is called ln_iceini
+ln_iceini: ${ln_limini} 
 ln_limini_agrif: false
 nn_msh: 1
 ln_meshmask: true
@@ -779,7 +952,7 @@ bin_dir: ${setup_dir}/bin
 agrif_dir: ${pool_dir}/AGRIF/agrif_${nest1}
 
 # forcing for uncoupled setups
-jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test 
+jra55_forcing_dir: ${pool_dir}/JRA55-do/v1.5
 jra55_runoff_dir: ${pool_dir}/NEMO_ORCA05_JRA_runoff_forcing 
 
 # start_date_m1: $((${start_date} - ${time_step}seconds))
@@ -827,10 +1000,10 @@ namelist_changes:
                         nn_it000: ${thisstep}
                         nn_itend: ${newstep}
                         nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
-                        cn_ocerst_in: ${parent_expid}_${prevstep_formatted}_restart_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
-                        cn_ocerst_indir: '${work_dir}/'
+                        cn_ocerst_in: ${parent_expid}_${prevstep_formatted}_restart_${parent_date!syear!smonth!sday}${global_tag} 
+                        cn_ocerst_indir: '${parent_restart_dir}/'
                         cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
-                        cn_ocerst_outdir: '${work_dir}/'
+                        cn_ocerst_outdir: '${experiment_restart_out_dir}/'
                         nn_stock: ${newstep}
                         nn_leapy: ${nn_leapy} 
                         nn_rstctl: ${nn_rstctl} 
@@ -855,6 +1028,13 @@ choose_generation:
                                         ln_closea: '.false.'
                                 namtsd: 
                                         ln_tsd_dmp: ${ln_tsd_tradmp}
+                choose_free_surface:
+                   # for linear we use the default (false), so no settings required
+                   nonlinear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_sco: '.true.'
         "3.6":
                 add_namelist_changes:
                         namelist_cfg:
@@ -866,27 +1046,27 @@ choose_generation:
                                         jpnij: ${nproc}
                                 namtsd: 
                                         ln_tsd_tradmp: ${ln_tsd_tradmp}
+                choose_free_surface:
+                   linear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_zps: '.true.'
+                               ln_hpg_sco: '.false.'
+                               ln_dynhpg_imp: '.true.'
+                   nonlinear:
+                      add_namelist_changes:
+                         namelist_cfg:
+                            namdyn_hpg:
+                               ln_hpg_zps: '.false.'
+                               ln_hpg_sco: '.true.'
+                               ln_dynhpg_imp: '.false.'
                 
-
 choose_leapyear:
         False:
+              nn_leapy: 0 
+        True:
               nn_leapy: 1 
-
-choose_free_surface:
-        linear:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namdyn_hpg:
-                                        ln_hpg_zps: '.true.'
-                                        ln_hpg_sco: '.false.'
-                                        ln_dynhpg_imp: '.true.'
-        nonlinear:
-                add_namelist_changes:
-                        namelist_cfg:
-                                namdyn_hpg:
-                                        ln_hpg_zps: '.false.'
-                                        ln_hpg_sco: '.true.'
-                                        ln_dynhpg_imp: '.false.'
 
 choose_hosing:
         true:
@@ -925,21 +1105,6 @@ choose_resolution:
                 _ny: 511
                 time_step: 1800
                 
-                # default input files currently used in all COUPLED setups
-                # developed in FB1-ME
-                # standalone setups use slightly different files
-                input_files:
-                        # reference namelists
-                        namelist_ref: namelist_ref
-                        namelist_ice_ref: namelist_ice_ref
-                        namelist_top_ref: namelist_top_ref
-                        # grids and coefficients 
-                        coordinates: coordinates
-                        subbasins: subbasins
-                        coef-G70: coef-G70
-                add_input_sources:
-                        subbasins: ${input_dir}/orca05_subbasins_3.6.nc 
-        
         ORCA12:
                 _nx: 4322
                 _ny: 3059
@@ -948,7 +1113,6 @@ choose_resolution:
                 input_files:
                         namelist_ref: namelist_ref
                         namelist_ice_ref: namelist_ice_ref
-                        namelist_top_ref: namelist_top_ref
                         coordinates: coordinates
                         subbasins: subbasins
                         rnfmask: rnfmask          
@@ -1042,15 +1206,29 @@ choose_use_lim2:
       add_config_files:
          namelist_ice_cfg: namelist_ice_cfg
 
-      add_namelist_changes:
-         namelist_ice_cfg:
-            namicerun:
-               cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
-               cn_icerst_indir: '${work_dir}'
-               cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-               cn_icerst_outdir: '${work_dir}'
-            namiceini:
-               ln_limini: ${ln_limini} 
+      choose_generation:
+         "3.6":
+            add_namelist_changes:
+               namelist_ice_cfg:
+                  namicerun:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                     cn_icerst_indir: '${parent_restart_dir}/'
+                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                  namiceini:
+                     ln_limini: ${ln_limini} 
+         "4.2":
+            add_namelist_changes:
+               namelist_ice_cfg:
+                  nampar:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                     cn_icerst_indir: '${parent_restart_dir}/'
+                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                  namini:
+                     ln_iceini: ${ln_iceini} 
+                     # initialize sea ice based on SSTs
+                     nn_iceini_file: 0
 
       choose_use_lim2_agrif:
          true:
@@ -1060,23 +1238,25 @@ choose_use_lim2:
                1_namelist_ice_cfg:
                   namicerun:
                      cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
-                     cn_icerst_indir: '${work_dir}'
+                     cn_icerst_indir: '${parent_restart_dir}/'
                      cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-                     cn_icerst_outdir: '${work_dir}'
+                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
                   namiceini:
                      ln_limini: ${ln_limini_agrif} 
 
 choose_use_tracer:
    true:
+      add_input_files:
+         namelist_top_ref: namelist_top_ref
       add_config_files:
          namelist_top_cfg: namelist_top_cfg
       add_namelist_changes:
          namelist_top_cfg:
             namtrc_run:
                cn_trcrst_in: ${parent_expid}_${prevstep_formatted}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
-               cn_trcrst_indir: '${work_dir}'
+               cn_trcrst_indir: '${parent_restart_dir}/'
                cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
-               cn_trcrst_outdir: '${work_dir}'
+               cn_trcrst_outdir: '${experiment_restart_out_dir}/'
                ln_rsttr: ${ln_rsttr} 
                nn_rsttr : ${nn_rsttr}
             namtrc:
@@ -1092,9 +1272,9 @@ choose_use_tracer:
                1_namelist_top_cfg:
                   namtrc_run:
                      cn_trcrst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_trc_${parent_date!syear!smonth!sday}${global_tag}  #${restart_in}
-                     cn_trcrst_indir: '${work_dir}'
+                     cn_trcrst_indir: '${parent_restart_dir}/'
                      cn_trcrst_out: restart_trc_${end_date_m1!syear!smonth!sday}
-                     cn_trcrst_outdir: '${work_dir}'
+                     cn_trcrst_outdir: '${experiment_restart_out_dir}/'
                      ln_rsttr: ${ln_rsttr} 
                      nn_rsttr : ${nn_rsttr}
                   namtrc:
@@ -1117,6 +1297,8 @@ input_sources:
         coordinates: ${input_dir}/coordinates.nc
         #subbasins: ${input_dir}/orca05_subbasins_3.6.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
+        subbasins: ${input_dir}/orca05_subbasins_3.6.nc 
+
         reshape_jra_orca05_bicub: ${input_dir}/reshape_jra_bicub__3.6.0_ORCA05_Kv1.0.0.nc 
         reshape_jra_orca05_bilin: ${input_dir}/reshape_jra_bilin__3.6.0_ORCA05_Kv1.0.0.nc
 
@@ -1164,22 +1346,39 @@ input_sources:
         1_namelist_ice_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_ice_lim2_ref
         1_namelist_top_ref: ${nemo.model_dir}/CONFIG/SHARED/namelist_top_ref
 
-        # NEMO 4.2.x input files
-        bfr_coef: bfr_coef_eORCA025_r4.2.0.nc
+        # NEMO 4.2.x eORCA025 input files
+        bfr_coef: ${input_dir}/bfr_coef_eORCA025_r4.2.0.nc
         # coordinates_eORCA025_r4.2.0__v1.0.nc
-        domain_cfg_ExclClosedSeas: domain_cfg_eORCA025_r4.2.0__ExclClosedSeas.nc
-        domain_cfg_InclClosedSeas: domain_cfg_eORCA025_r4.2.0__InclClosedSeas.nc
+        domain_cfg_ExclClosedSeas: ${input_dir}/domain_cfg_eORCA025_r4.2.0__ExclClosedSeas.nc
+        domain_cfg_InclClosedSeas: ${input_dir}/domain_cfg_eORCA025_r4.2.0__InclClosedSeas.nc
         # TODO: this file still needs to be generated by Markus
-        domain_cfg_CaspianSea: domain_cfg_eORCA025_r4.2.0__CaspianSea.nc
+        domain_cfg_CaspianSea: ${input_dir}/domain_cfg_eORCA025_r4.2.0__CaspianSea.nc
         # we probably never need this one
-        domain_cfg_UKmasks: domain_cfg_eORCA025_r4.2.0__UKmasks.nc
-        ghflux_v2.0: ghflux_v2.0.nc
-        reshape_ghflux2: reshape_ghflux2_eORCA025_r4.2.0_bilin.nc
-        reshape_jra55do_bicub: reshape_jra55do_eORCA025_r4.2.0_bicub.nc
-        reshape_jra55do_bilin: reshape_jra55do_eORCA025_r4.2.0_bilin.nc
-        subbasins_eORCA025: subbasins_eORCA025_r4.2.0.nc
-        sn_tem_woa13_omip_eORCA025: woa13_decav_ptemp_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
-        sn_sal_woa13_omip_eORCA025: woa13_decav_salt_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
+        domain_cfg_UKmasks: ${input_dir}/domain_cfg_eORCA025_r4.2.0__UKmasks.nc
+        ghflux_v2.0: ${input_dir}/ghflux_v2.0.nc
+        reshape_ghflux2: ${input_dir}/reshape_ghflux2_eORCA025_r4.2.0_bilin.nc
+        reshape_jra55do_bicub: ${input_dir}/reshape_jra55do_eORCA025_r4.2.0_bicub.nc
+        reshape_jra55do_bilin: ${input_dir}/reshape_jra55do_eORCA025_r4.2.0_bilin.nc
+        subbasins_eORCA025: ${input_dir}/subbasins_eORCA025_r4.2.0.nc
+        sn_tem_woa13_omip_eORCA025: ${input_dir}/woa13_decav_ptemp_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
+        sn_sal_woa13_omip_eORCA025: ${input_dir}/woa13_decav_salt_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
+
+        # NEMO 4.2.x ORCA05 input files
+        # grids and coefficients
+        bathy_meter_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
+        coordinates_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
+        bfr_coef_orca05_nemo4: ${input_dir}/bfr_coef__4.2.0_ORCA05.nc
+        subbasins_orca05_nemo4: ${input_dir}/subbasins__4.2.0_ORCA05.nc
+        domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
+       
+        reshape_jra_orca05_nemo4_bicub: ${input_dir}/reshape_jra_bicub__4.2.0_ORCA05_v1.0.0.nc
+        reshape_jra_orca05_nemo4_bilin: ${input_dir}/reshape_jra_bilin__4.2.0_ORCA05_v1.0.0.nc
+
+        # inital data
+        data_tem_orca05_nemo4: ${input_dir}/Tpot_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
+        data_sal_orca05_nemo4: ${input_dir}/Salt_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
+        sss_orca05_nemo4: ${input_dir}/SSS_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
+        runoff_orca05_nemo4: ${input_dir}/runoff_12month__4.2.0_ORCA05_Kv1.0.0.nc
 
 #forcing_files:
 
@@ -1213,12 +1412,8 @@ namelists:
         - 1_namelist_ice_cfg
 
 ############## restart files:
-#
-restart_in_sources:
-        restart_in: ${parent_expid}_${prevstep_formatted}_restart*_${parent_date!syear!smonth!sday}_*.nc
-
-restart_out_sources:
-        restart_out: ${expid}_${newstep_formatted}_restart*_${end_date_m1!syear!smonth!sday}_*.nc
+# restart files are handled by namelist_cfg and written to / read from the 
+# permanent restart directory directly
 
 ############## output files:
 

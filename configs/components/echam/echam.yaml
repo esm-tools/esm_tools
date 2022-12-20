@@ -418,15 +418,18 @@ choose_scenario_is_ssp:
                             experiment for the ssp period. Alternatively, you can set
                             ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
                             against that!)."
-        choose_after_2014:
-            True:
-                iaero: 9
+            # Automatic switching of iaero if simulations are allowed to run from
+            # historical to ssp periods
             False:
-                iaero: 8
-        add_namelist_changes:
-            namelist.echam:
-                radctl:
-                    iaero: "${iaero}"
+                choose_after_2014:
+                    True:
+                        iaero: 9
+                    False:
+                        iaero: 8
+                add_namelist_changes:
+                    namelist.echam:
+                        radctl:
+                            iaero: "${iaero}"
 
 choose_scenario_type:
         cmip6:

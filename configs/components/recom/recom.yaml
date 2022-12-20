@@ -111,30 +111,37 @@ choose_use_ciso:
         false:
                 recom_namelist:  "namelist.recom"
 
+chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds )) 
+
 choose_use_medusa:
-        true: 
+        true:
+                add_namelist_changes:
+                         namelist.recom:
+                                pavariables:
+                                        use_MEDUSA: true
+                                        sedflx_num: 7
+                                        add_loopback: true
                 choose_lresume:
                         true:
-                              add_namelist_changes:
-                                        namelist.recom:
-                                                pavariables:
-                                                        use_MEDUSA: true
-                                                        sedflx_num: 7
-                                                        add_loopback: true
-                              add_input_sources:
-                                      flux2fesom: ${experiment_outdata_dir}/../medusa/medusa_flux2fesom.${prev_date!syear}.nc
-                              add_input_files:
-                                      flux2fesom: flux2fesom
-                              add_input_in_work:
-                                      flux2fesom: "medusa_flux2fesom.nc"
-                        false:
-                              add_namelist_changes:
-                                      namelist.recom:
-                                              pavariables:
-                                                      use_MEDUSA: true
-                                                      sedflx_num: 0
-                                                      add_loopback: false
-              
+                                choose_general.chunk_number:
+                                        1:
+                                                add_input_sources:
+                                                        flux2fesom: ${data_path}/medusa_flux2fesom.init.nc
+                                        "*":
+                                                add_input_sources:
+                                                        flux2fesom: ${experiment_outdata_dir}/../medusa/medusa_flux2fesom.${chunk_prev_date!syear}.nc
+                                add_input_files:
+                                        flux2fesom: flux2fesom
+                                add_input_in_work:
+                                        flux2fesom: "medusa_flux2fesom.nc"
+        false:
+                add_namelist_changes:
+                        namelist.recom:
+                              pavariables:
+                                      use_MEDUSA: true
+                                      sedflx_num: 0
+                                      add_loopback: false
+
 choose_scenario:
         PI-CTRL:
                 constant_CO2: true

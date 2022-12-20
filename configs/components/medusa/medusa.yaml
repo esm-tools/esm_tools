@@ -52,22 +52,23 @@ environment_changes:
 #                ...
 
 clean_command: ${defaults.clean_command}
+#Ying: makefiles exist for ollie and levante (src-med, src-mcg and appa)
+#to be chosen by choose_computer.name?
 comp_command: "mkdir -p lib; mkdir -p include;
     cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
     mv libthdyct.a ${model_dir}/lib;
     cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
     make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
     cp modmxm.h *.mod ${model_dir}/include;
-    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; cp Makefile_mpiifort ./Makefile; make;
-    cd ${model_dir}/medmbm/trunk4mcg/src-med; cp Makefile_mpiifort ./Makefile; make;
+    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; 
+    cp Makefile_mpiifort_levante ./Makefile; make;
+    cd ${model_dir}/medmbm/trunk4mcg/src-med; 
+    cp Makefile_mpiifort_levante ./Makefile; make;
     make usetemplates;
     make libmedusa.a;
-    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm_mpi; make;"
+    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm_mpi;
+    cp Makefile_mpiifort_levante ./Makefile; make;"
 #    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; cp Makefile.nompi ./Makefile; make;
-
-#YY: compiler-dependent changes needed in Makefile -> choose_compiler/machine?
-#now the _mpiifort ones copied during compilation
-#original medusa code: include/ifort or mpiifort, lib/ifort or mpiifort created
 
 install_bins: medmbm/trunk4mcg/work/medusa_recom_paleo
 executable: medusa_recom_paleo

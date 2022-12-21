@@ -216,6 +216,8 @@ choose_version:
         6.3.04p1:
                 repo_tag: 6.3.04p1
                 dataset: r0007
+        6.3.04p1-recom-awicm:
+                dataset: r0007
         6.3.04p1-paleodyn:
                 repo_tag: 6.3.04p1
                 dataset: r0007

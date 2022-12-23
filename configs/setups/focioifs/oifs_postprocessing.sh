@@ -338,16 +338,31 @@ mkdir ym
 # TODO: only works for yearly restart intervals at the moment
 # can be improved, see nemo_postprocessing.sh
 if ${ATM_CONVERT_NETCDF4} ; then
-    for ((year=startyear; year<=endyear; ++year))
-    do
-	for filetag in $filetags
+   
+   nextdate=$startdate 
+   while [[ $nextdate -lt $enddate ]] 
 	do
-		for s in $steps
+	   # treat special case of 18930401, see echam_postprocessing.sh
+		if [[ $freq == "m" ]] ; then
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} month" "+%Y%m%d")
+		else
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		fi
+	
+        for filetag in $filetags
+	do
+                # first we try to compute annual means from monthly files
+		for s in 1m 5d 1d 
 		do
 			# !!! output files will have the same name as the old input file !!! 
-			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
-			output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
-
+		    	input=${EXP_ID}_${s}_${currdate1}_${currdate2}_${filetag}.nc
+			output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
+ 
+                        # if we already compute annual means using 1m, then doing it for 5d or 1d wont happen
 			if [[ "$freq" == "y" ]] && [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 
 				touch ym/$output 

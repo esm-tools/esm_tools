@@ -358,24 +358,14 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
-                        #
                         ozone: 1950ozone
                         swflux: 1950swflux
                         volcir: 1950volcir
                         volcsw: 1950volcsw
-        # old hist settings --> need to discuss with deniz whether this is
-        # still needed
         HIST:
-                # NOTE: r0007 (default dataset) has upto 2014 but r0008 has
-                # upto 2024 (used by FOCI)
                 dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
-                        # aerocoarse: piaerocoarse
-                        # aerofarir: piaerofarir
-                        # aerofin: histaerofin
-                        sst: amipsst
-                        sic: amipsic
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse
                         aerocoarse_1851: piaerocoarse
@@ -385,31 +375,21 @@ choose_scenario:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist
+                        MAC-SP: MAC-SP_hist
+                        ozone: ozone_hist
+                        swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP
-
-        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-        # under the choose_scenario_type block
-        ssp585:
-                scenario_type: cmip6
-
-        ssp370:
-                scenario_type: cmip6
-
         ssp126:
                 scenario_type: cmip6
-
         ssp245:
                 scenario_type: cmip6
-
+        ssp370:
+                scenario_type: cmip6
         ssp534os:
                 scenario_type: cmip6
-
-        cmip6hist:
+        ssp585:
                 scenario_type: cmip6
 
 choose_scenario_type:
@@ -425,12 +405,12 @@ choose_scenario_type:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario
+                        greenhouse: greenhouse_scenario
+                        MAC-SP: MAC-SP_scenario
+                        ozone: ozone_scenario
+                        swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP_hist_scenario
 
 choose_lresume:
         False:
@@ -560,39 +540,29 @@ input_in_work:
         "vltclim": "unit.90"
 
 forcing_in_work:
-        sic: "unit.96"
-        sst: "unit.20"
-        # ok this is another crazy ECHAM6 speciality
-        # every year the background aerosol files for 1849 to 1851 
-        # need to be linked to the same file for historical/scenario runs
-        # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
-        # MAC-SP describes aerosol w.r.t. piControl conditions.
+        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerocoarse_1849: "aero_coarse_1849.nc"
         aerocoarse_1850: "aero_coarse_1850.nc"
         aerocoarse_1851: "aero_coarse_1851.nc"
-        aerofin_1849: "aero_fine_1849.nc"
-        aerofin_1850: "aero_fine_1850.nc"
-        aerofin_1851: "aero_fine_1851.nc"
+        aerofarir: "aero_farir_@YEAR@.nc"
         aerofarir_1849: "aero_farir_1849.nc"
         aerofarir_1850: "aero_farir_1850.nc"
         aerofarir_1851: "aero_farir_1851.nc"
-        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
-        aerofarir: "aero_farir_@YEAR@.nc"
-        ozone: "ozon@YEAR@"
+        aerofin_1849: "aero_fine_1849.nc"
+        aerofin_1850: "aero_fine_1850.nc"
+        aerofin_1851: "aero_fine_1851.nc"
         greenhouse: "greenhouse_gases.nc"
+        "MAC-SP": "MAC-SP.nc"
+        ozone: "ozon@YEAR@"
+        sic: "unit.96"
+        sst: "unit.20"
+        swflux: "swflux_@YEAR@.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
-        swflux: "swflux_@YEAR@.nc"
-        "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
         aerocoarse:
-                - need_year_before
-                - need_year_after
-                - need_2years_before
-                - need_2years_after
-        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -602,13 +572,15 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        ozone:
+        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        # deniz: added these 3 variables. They were present in the esm-tools r4
-        volcsw:
+        ozone:
+                - need_year_before
+                - need_year_after
+        swflux:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -618,7 +590,7 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        swflux:
+        volcsw:
                 - need_year_before
                 - need_year_after
                 - need_2years_before

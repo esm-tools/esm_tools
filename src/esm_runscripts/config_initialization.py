@@ -44,6 +44,8 @@ def init_first_user_config(command_line_config, user_config):
         user_config["general"]["iterative_coupled_model"] = (
             f"{user_config['general']['setup_name']}_"
         )
+        # Extract information about the models run in the previous chunk
+        chunky_parts.prev_chunk_info(user_config)
 
     if user_config["general"].get("debug_obj_init", False):
         pdb.set_trace()

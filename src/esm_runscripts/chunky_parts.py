@@ -1,7 +1,14 @@
-import os, copy
+import copy
+import glob
+import os
 import sys
 import yaml
 import esm_parser
+
+from loguru import logger
+
+from esm_calendar import Date
+from esm_runscripts import prev_run
 
 
 def setup_correct_chunk_config(config):
@@ -176,6 +183,33 @@ def update_command_line_config(config):
     return config
 
 
+def prev_chunk_info(config):
+    expid = config["general"]["expid"]
+    base_dir = config["general"]["base_dir"]
+    chunk_number = config["general"]["chunk_number"]
+    model_named_queue = config["general"]["model_named_queue"]
+    setup_name = config["general"]["setup_name"]
+
+    if chunk_number <= 1:
+        return
+
+    prev_chunk_models = []
+    for model in model_named_queue:
+        if model == setup_name:
+            continue
+
+        # prev_chunk finished_config
+        model_date, run_number = _read_model_date_file(config, model)
+        finished_config = _find_model_finished_config(config, model, model_date)
+
+        # Load prev_chunk info
+        # TODO: this needs to be an instantiation ofr prev_run, once prev_run is
+        # generalized
+        if finished_config:
+            with open(finished_config, "r") as fc:
+                config[f"prev_chunk_{model}"] = yaml.load(fc, Loader=yaml.FullLoader)
+
+
 ########################################   END OF API ###############################################
 
 
@@ -240,6 +274,36 @@ def _read_chunk_date_file_if_exists(config):
             index += 1
 
     return config
+
+
+def _read_model_date_file(config, model):
+    expid = config["general"]["expid"]
+    base_dir = config["general"]["base_dir"]
+    model_date_file = f"{base_dir}/{expid}/scripts/{expid}_{model}.date"
+
+    if os.path.isfile(model_date_file):
+        with open(model_date_file, "r") as model_dates:
+            model_date, run_number = model_dates.read().split()
+
+        return model_date, run_number
+
+
+def _find_model_finished_config(config, model, model_date):
+    expid = config["general"]["expid"]
+    base_dir = config["general"]["base_dir"]
+    file_path = f"{base_dir}/{expid}/config/{expid}_{model}_finished_config.yaml"
+    time_stamps = [f"_*-{model_date[:8]}", f"_*-{model_date}", ""]
+
+    for time_stamp in time_stamps:
+        full_file_path = glob.glob(f"{file_path}{time_stamp}")
+        if len(full_file_path) == 1:
+            return full_file_path[0]
+
+        elif len(full_file_path) > 1:
+            logger.error(
+                "There is more than one finished_config file matching the criteria: "
+                "{full_file_path}")
+            raise
 
 
 def _initialize_chunk_date_file(config):

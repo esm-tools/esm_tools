@@ -105,8 +105,15 @@ ave_start_year: "${start_date!year}"
 ave_end_year: "${end_date!year}"
 choose_general.iterative_coupling:
     True:
-        ave_start_year: "${chunk_start_date!year}"
-        ave_end_year: "${chunk_end_date!year}"
+        ave_start_year: "${prev_chunk_awiesm.general.chunk_start_date}"
+        ave_end_year: "${prev_chunk_awiesm.general.chunk_end_date}"
+#        choose_run_number:
+#                1:
+#                        add_input_sources:
+#                                flux2fesom: ${data_path}/medusa_flux2fesom.init.nc
+#                "*":
+#                        add_input_sources:
+#                                flux2fesom: ${experiment_outdata_dir}/medusa/medusa_flux2fesom.${ave_end_year}.nc
     "*":
         pass: ""
 

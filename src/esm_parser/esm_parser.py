@@ -53,7 +53,6 @@ until nothing is left.
 Specific documentation for classes and functions are given below:
 """
 # Python 2 and 3 version agnostic compatiability:
-from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
@@ -63,7 +62,6 @@ import pdb
 # Python Standard Library imports
 import collections
 import copy
-import logging
 import os
 import re
 import shutil
@@ -84,6 +82,7 @@ import numpy
 import coloredlogs
 import colorama
 import yaml
+from loguru import logger
 
 # functions reading in dict from file
 from .yaml_to_dict import *
@@ -93,17 +92,6 @@ from esm_calendar import Date
 
 # Loader for package yamls
 import esm_tools
-
-# Logger and related constants
-logger = logging.getLogger("root")
-DEBUG_MODE = logger.level == logging.DEBUG
-FORMAT = (
-    "[%(asctime)s,%(msecs)03d:%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-)
-# f_handler = logging.FileHandler("file.log")
-# f_handler.setFormatter(FORMAT)
-# logger.addHandler(f_handler)
-
 
 # Module Constants:
 CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
@@ -333,7 +321,7 @@ def pprint_config(config):  # pragma: no cover
     if "prev_run" in config_to_print:  # PrevRunInfo
         del config_to_print["prev_run"]  # PrevRunInfo
     yaml.Dumper.ignore_aliases = lambda *args: True
-    print(yaml.dump(config_to_print, default_flow_style=False))
+    logger.info(yaml.dump(config_to_print, default_flow_style=False))
 
 
 def attach_to_config_and_reduce_keyword(
@@ -433,7 +421,7 @@ def attach_to_config_and_reduce_keyword(
                 if not include_path:
                     include_path, needs_load = look_for_file(model, model)
                 if not include_path:
-                    print(
+                    logger.info(
                         f"attach_to_config_and_reduce: File {item} of model {model} could not be found. Sorry."
                     )
                     sys.exit(-1)
@@ -477,7 +465,7 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     elif os.path.isfile(path + "/" + attach_value):
         attachable_config = yaml_file_to_dict(path + "/" + attach_value)
     else:
-        print("Could not find ", path + "/" + attach_value)
+        logger.info("Could not find ", path + "/" + attach_value)
         sys.exit(1)
     # DB this is a try:
     dict_merge(config, attachable_config, **kwargs)
@@ -773,20 +761,20 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
                 if verbose:
                     space = "    "
                     path_str = " -> ".join(key_path)
-                    print(f"::: Overwriting the path:    [{path_str}]")
-                    print("::: value before:")
+                    logger.info(f"::: Overwriting the path:    [{path_str}]")
+                    logger.info("::: value before:")
                     before_str = f"{space}{yaml.dump(value_before, indent=4)}"
                     before_str = before_str.replace("\n", f"\n{space}")
                     before_str = re.sub(r"\n[ \t]*$", "", before_str)
-                    print(before_str)
-                    print("---")
+                    logger.info(before_str)
+                    logger.info("---")
 
-                    print("::: value after:")
+                    logger.info("::: value after:")
                     after_str = f"{space}{yaml.dump(receiver[key], indent=4)}"
                     after_str = after_str.replace("\n", f"\n{space}")
                     after_str = re.sub(r"\n[ \t]*$", "", after_str)
-                    print(after_str)
-                    print()
+                    logger.info(after_str)
+                    logger.info()
             else:
                 # enter into recursion using the current dictionary values. Keep
                 # track of the recursion path and depth
@@ -880,7 +868,7 @@ def remove_entry_from_chapter(
         Setup-specific general configuration.
     """
 
-    logging.debug("%s, %s", remove_entries, remove_chapter)
+    logger.debug("%s, %s", remove_entries, remove_chapter)
     # Check that the the user entry is a list, if not rise an exception
     if not isinstance(remove_entries, list):
         raise TypeError("Please put all entries to remove as a list")
@@ -938,7 +926,7 @@ def remove_entries_from_chapter_in_config(
 ):
     config = model_config
     for model in valid_model_names:
-        logging.debug(model)
+        logger.debug(model)
         all_removes_for_model = find_remove_entries_in_config(
             config[model], model, config.keys()
         )
@@ -1032,16 +1020,16 @@ def add_entry_to_chapter(
     else:
         cource_config = setup_config
 
-    logging.debug(model_to_add_to)
-    logging.debug(add_chapter)
+    logger.debug(model_to_add_to)
+    logger.debug(add_chapter)
     if add_chapter in source_config[model_with_add_statement]:
         source_chapter = add_chapter
     else:
         source_chapter = add_chapter.replace(model_to_add_to + ".", "")
 
     # If the desired chapter doesn't exist yet, just put it there
-    logging.debug(model_to_add_to)
-    logging.debug(add_chapter)
+    logger.debug(model_to_add_to)
+    logger.debug(add_chapter)
 
     # Eg. add_general.mylist -> mylist
     chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
@@ -1078,8 +1066,8 @@ def add_entry_to_chapter(
     if list_counter > 1:
         pass
         # pdb.set_trace()
-    logging.debug(model_with_add_statement)
-    logging.debug(source_chapter)
+    logger.debug(model_with_add_statement)
+    logger.debug(source_chapter)
     # del source_config[model_with_add_statement][source_chapter.replace("add_", "")]
 
 
@@ -1102,7 +1090,7 @@ def add_entries_to_chapter_in_config(
 ):
     config = model_config
     for model in list(config):
-        logging.debug(model)
+        logger.debug(model)
         all_adds_for_model = find_add_entries_in_config(config[model], model)
         for add_chapter, add_entries in all_adds_for_model:
             model_to_add_to = add_chapter.split(".")[0].replace("add_", "")
@@ -1188,7 +1176,7 @@ def find_value_for_nested_key(mapping, key_of_interest, tree=[]):
     """
     original_mapping = mapping
     logger.debug("Looking for key %s", key_of_interest)
-    logging.debug("Looking in %s", mapping)
+    logger.debug("Looking in %s", mapping)
     logger.debug("Using tree %s", tree)
     if tree:
         for leaf in tree:
@@ -1196,7 +1184,7 @@ def find_value_for_nested_key(mapping, key_of_interest, tree=[]):
         else:
             tree = [None]
     for leaf in reversed(tree):
-        logging.debug("Looking in bottommost leaf %s", leaf)
+        logger.debug("Looking in bottommost leaf %s", leaf)
         for key, value in mapping.items():
             if key == key_of_interest:
                 return value
@@ -1220,21 +1208,21 @@ def basic_choose_blocks(config_to_resolve, config_to_search, isblacklist=True):
             )
 
         task_list = choose_key = basic_find_one_independent_choose(all_set_variables)
-        logging.debug("The task list is: %s", task_list)
-        logging.debug("all_set_variables: %s", all_set_variables)
+        logger.debug("The task list is: %s", task_list)
+        logger.debug("all_set_variables: %s", all_set_variables)
         resolve_basic_choose(config_to_search, config_to_resolve, choose_key)
         del all_set_variables[choose_key]
         for key in list(all_set_variables):
             if not all_set_variables[key]:
                 del all_set_variables[key]
-        logging.debug("Remaining all_set_variables=%s", all_set_variables)
+        logger.debug("Remaining all_set_variables=%s", all_set_variables)
 
     basic_add_entries_to_chapter_in_config(config_to_resolve)
     basic_remove_entries_from_chapter_in_config(config_to_resolve)
 
 
 def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
-    logging.debug("Top of list_all_keys_starting_with_choose")
+    logger.debug("Top of list_all_keys_starting_with_choose")
     all_chooses = []
     for key, value in mapping.items():
         if (
@@ -1247,7 +1235,7 @@ def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
             and not determine_regex_list_match(key, constant_blacklist)
         ):
             all_chooses.append((key, value))
-    logging.debug("Will return %s", all_chooses)
+    logger.debug("Will return %s", all_chooses)
     return all_chooses
 
 
@@ -1270,11 +1258,11 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
         A dictionary containing all key, value pairs starting with
         ``"choose_"``.
     """
-    logging.debug("Top of list_all_keys_starting_with_choose")
+    logger.debug("Top of list_all_keys_starting_with_choose")
     all_chooses = []
     if not isinstance(mapping, dict):
-        print(">>>>>>>>>>>>>>>>>>>> PG")
-        print(locals())
+        logger.info(">>>>>>>>>>>>>>>>>>>> PG")
+        logger.info(locals())
         import pdb
 
         pdb.set_trace()
@@ -1296,7 +1284,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
                 del mapping[old_key]
                 mapping[key] = value
             all_chooses.append((key, value))
-    logging.debug("Will return %s", all_chooses)
+    logger.debug("Will return %s", all_chooses)
     return all_chooses
 
 
@@ -1338,7 +1326,7 @@ def determine_set_variables_in_choose_block(config, valid_model_names, model_nam
     set_variables = []
     for k, v in config.items():
         if isinstance(k, str) and k in valid_model_names:
-            logging.debug(k)
+            logger.debug(k)
             model_name = k
         if isinstance(v, dict):  # and isinstance(k, str) and k.startswith("choose_"):
             # Go in further
@@ -1377,7 +1365,7 @@ def basic_find_one_independent_choose(all_set_variables):
         task_list = basic_add_more_important_tasks(
             choose_keyword, all_set_variables, task_list
         )
-        logging.debug(task_list)
+        logger.debug(task_list)
         return task_list[0]
 
 
@@ -1409,7 +1397,7 @@ def find_one_independent_choose(all_set_variables):
             task_list = add_more_important_tasks(
                 choose_keyword, all_set_variables, task_list
             )
-            logging.debug(task_list)
+            logger.debug(task_list)
             return task_list[0]
 
 
@@ -1428,17 +1416,17 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             choice = find_variable(
                 [config_to_replace_in["model"]], choice, config, [], True
             )
-            # print("BEEEEE CALM, resolved: " + choice)
+            # logger.info("BEEEEE CALM, resolved: " + choice)
         except:
-            # print("BEEEEE CAREFUL, did not resolve: " + choose_key)
-            # logging.warning("Variable %s as a choice, skipping...", choice)
+            # logger.info("BEEEEE CAREFUL, did not resolve: " + choose_key)
+            # logger.warning("Variable %s as a choice, skipping...", choice)
             # del config_to_replace_in[choose_key]
             gray_list.append(re.compile(choose_key))
             return
     # Evaluates the mathematical expressions in the choose_ blocks
     if isinstance(choice, str) and "$((" in choice:
         choice = do_math_in_entry([False], choice, config)
-    logging.debug(choice)
+    logger.debug(choice)
 
     # This allows users to use version numbers (floats) and integers as choices inside
     # the choose_blocks, instead of having to specify the choices as strings
@@ -1478,13 +1466,13 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
-        logging.debug("Found a * case!")
+        logger.debug("Found a * case!")
         for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
         # Those two are too noisy
-        # logging.warning("Choice %s could not be resolved", choice)
-        # logging.warning("Key was key=%s", choose_key)
+        # logger.warning("Choice %s could not be resolved", choice)
+        # logger.warning("Key was key=%s", choose_key)
         pass
 
     del config_to_replace_in[choose_key]
@@ -1508,10 +1496,10 @@ def resolve_choose(model_with_choose, choose_key, config):
 
     if key in config_to_search_in[model_name]:
         choice = config_to_search_in[model_name][key]
-        logging.debug(model_with_choose)
-        logging.debug(choice)
+        logger.debug(model_with_choose)
+        logger.debug(choice)
 
-        logging.debug("key=%s", key)
+        logger.debug("key=%s", key)
 
 
 def resolve_choose_with_var(
@@ -1639,7 +1627,7 @@ def basic_add_more_important_tasks(choose_keyword, all_set_variables, task_list)
     """
     keyword = choose_keyword.replace("choose_", "")
     for choose_thing in all_set_variables:
-        logging.debug("Choose_thing = %s", choose_thing)
+        logger.debug("Choose_thing = %s", choose_thing)
         for keyword_that_is_set in all_set_variables[choose_thing]:
             if keyword_that_is_set == keyword:
                 if choose_thing not in task_list:
@@ -1680,7 +1668,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
         pass  # pdb.set_trace()
     for model in all_set_variables:
         for choose_thing in all_set_variables[model]:
-            # logging.debug("Choose_thing = %s", choose_thing)
+            # logger.debug("Choose_thing = %s", choose_thing)
             for (host, keyword_that_is_set) in all_set_variables[model][choose_thing]:
                 if (
                     keyword_that_is_set == keyword
@@ -1736,14 +1724,14 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """
 
     if len(tree) > 100:
-        print("Maximum recursion depth exceeded.")
-        print(tree)
-        print(func)
-        print(right)
+        logger.info("Maximum recursion depth exceeded.")
+        logger.info(tree)
+        logger.info(func)
+        logger.info(right)
         sys.exit(-1)
 
-    # logging.debug("Top of function")
-    # logging.debug("tree=%s", tree)
+    # logger.debug("Top of function")
+    # logger.debug("tree=%s", tree)
     if level == "mappings":
         do_func_for = [dict, list]
     elif level == "atomic":
@@ -1755,8 +1743,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     else:
         do_func_for = []
 
-    logging.debug("Type right: %s", type(right))
-    logging.debug("Do func for: %s", do_func_for)
+    logger.debug("Type right: %s", type(right))
+    logger.debug("Do func for: %s", do_func_for)
 
     if level == "keys" and isinstance(right, dict):
         keys = list(right)
@@ -1772,8 +1760,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             keys = list(right)
             for key in keys:
                 value = right[key]
-                logging.debug("Deleting key %s", key)
-                logging.debug(
+                logger.debug("Deleting key %s", key)
+                logger.debug(
                     "Start func %s with %s, %s sent from us",
                     func.__name__,
                     tree + [key],
@@ -1853,7 +1841,7 @@ def recursive_get(config_to_search, config_elements):
         ``actually_recursive_get``, which is needed to pop off standalone model
         configurations.
     """
-    logging.debug("Incoming config elements: %s", config_elements)
+    logger.debug("Incoming config elements: %s", config_elements)
     my_config_elements = copy.deepcopy(config_elements)
     this_config = my_config_elements.pop(0)
 
@@ -1861,7 +1849,12 @@ def recursive_get(config_to_search, config_elements):
     logger.debug("config_to_search=%s", config_to_search)
     try:
         result = config_to_search[this_config]
-    except:
+    except KeyError:
+        if "recursive_get" in os.environ.get("ESM_PARSER_BREAKPOINTS"):
+            logger.info(f"Could not find an answer for: {my_config_elements}")
+            logger.info("Entering debugger...")
+            import pdb
+            pdb.set_trace()
         raise ValueError(
             "Exactly None! Couldn't find an answer for:", my_config_elements
         )
@@ -1875,9 +1868,9 @@ def recursive_get(config_to_search, config_elements):
 def determine_regex_list_match(test_str, regex_list):
     result = []
     for regex in regex_list:
-        logging.debug("Checking %s against %s", test_str, regex)
+        logger.debug("Checking %s against %s", test_str, regex)
         result.append(regex.match(test_str))
-    logging.debug("Will return %s" % any(result))
+    logger.debug("Will return %s" % any(result))
     return any(result)
 
 
@@ -1953,7 +1946,7 @@ class EsmParserError(Exception):
 def actually_find_variable(tree, rhs, full_config):
     config_elements = rhs.split(".")
     valid_names = list(full_config)
-    logging.debug(valid_names)
+    logger.debug(valid_names)
     if config_elements[0] not in valid_names:
         config_elements.insert(0, tree[0])
 
@@ -1972,7 +1965,7 @@ def actually_find_variable(tree, rhs, full_config):
         # Maybe it is in the general:
         try:
             config_elements = original_config_elements
-            logging.debug(config_elements)
+            logger.debug(config_elements)
             config_elements[0] = "general"
             var_result = recursive_get(full_config, config_elements)
             # return var_result
@@ -2228,11 +2221,11 @@ def determine_computer_from_hostname():
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
                         return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
-    logging.warning(
+    logger.warning(
         "The yaml file for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
-    logging.warning("Continuing with generic settings...")
+    logger.warning("Continuing with generic settings...")
     return CONFIG_PATH + "/machines/generic.yaml"
 
     # raise FileNotFoundError(
@@ -2351,7 +2344,7 @@ def mark_dates(tree, rhs, config):
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    logging.debug(entry)
+    logger.debug(entry)
     # if "${" in str(entry):
     #    return entry
     if isinstance(lhs, str) and lhs.endswith("date"):
@@ -2548,7 +2541,7 @@ def list_all_keys_with_priority_marker(config):
                 all_keys.append(key)
             if isinstance(config[key], dict):
                 list_all_keys_with_priority_marker(config[key])
-    logging.critical(all_keys)
+    logger.critical(all_keys)
     return all_keys
 
 
@@ -2594,8 +2587,8 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
                 del all_set_variables[key]
         if not all_set_variables:
             break
-        logging.debug("The task list is: %s", task_list)
-        logging.debug("all_set_variables: %s", all_set_variables)
+        logger.debug("The task list is: %s", task_list)
+        logger.debug("all_set_variables: %s", all_set_variables)
         if model_with_choose in list(blackdict):
             resolve_basic_choose(
                 config,
@@ -2606,7 +2599,7 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
         else:
             resolve_basic_choose(config, config[model_with_choose], choose_key, {})
         del all_set_variables[model_with_choose][choose_key]
-        logging.debug("Remaining all_set_variables=%s", all_set_variables)
+        logger.debug("Remaining all_set_variables=%s", all_set_variables)
 
     add_entries_to_chapter_in_config(config, all_names, config, all_names)
     remove_entries_from_chapter_in_config(config, all_names, config, all_names)
@@ -2727,8 +2720,8 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``
         note_text = re.sub(
             f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
         )
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
-    print(f"{note_text}\n")
+    logger.info(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
+    logger.info(f"{note_text}\n")
 
 
 def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
@@ -2753,6 +2746,9 @@ class GeneralConfig(dict):  # pragma: no cover
     """All configs do this!"""
 
     def __init__(self, model, version, user_config):
+        if "GeneralConfig.__init__" in os.environ.get("ESM_PARSER_BREAKPOINTS"):
+            import pdb
+            pdb.set_trace()
         super(dict, self).__init__()
 
         if os.path.isfile(model + "-" + version):
@@ -2765,7 +2761,7 @@ class GeneralConfig(dict):  # pragma: no cover
             if not include_path:
                 include_path, needs_load = look_for_file(model, model)
             if not include_path:
-                print(f"GeneralConfig: Couldn't find file for model {model}")
+                logger.info(f"GeneralConfig: Couldn't find file for model {model}")
                 sys.exit(-1)
 
         if needs_load:
@@ -2934,7 +2930,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
 
         if old_model_list:
-            # print (old_model_list)
+            # logger.info (old_model_list)
             setup_config["general"]["models"] = old_model_list
 
         if "models" in setup_config["general"]:
@@ -2983,8 +2979,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # model_config should be ok now
         # merge everything
 
-        logging.debug("Valid Setup Names = %s", valid_setup_names)
-        logging.debug("Valid Model Names = %s", valid_model_names)
+        logger.debug("Valid Setup Names = %s", valid_setup_names)
+        logger.debug("Valid Model Names = %s", valid_model_names)
 
         self._blackdict = blackdict = priority_merge_dicts(
             user_config, setup_config, priority="first"
@@ -3006,9 +3002,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             key_path=[],
             verbose=self.config["general"].get("verbose", False),
         )
-
-        # pprint_config(self.config)
-        # sys.exit(0)
 
     def check_user_defined_versions(self, user_config={}, setup_config={}):
         """
@@ -3059,7 +3052,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         del self._blackdict
 
     def run_recursive_functions(self, config, isblacklist=True):
-        logging.debug("Top of run recursive functions")
+        logger.debug("Top of run recursive functions")
         recursive_run_function([], config, "atomic", mark_dates, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
         recursive_run_function(

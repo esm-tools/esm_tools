@@ -1,5 +1,6 @@
 import os
 import re
+import pathlib
 import sys
 
 import yaml
@@ -37,10 +38,10 @@ class EsmConfigFileError(Exception):
 
         # Message to return
         if len(report) == 0:
-            # If no tabs are found print the original error message
-            print("\n\n\n" + yaml_error)
+            # If no tabs are found log the original error message
+            logger.error("\n\n\n" + yaml_error)
         else:
-            # If tabs are found print the report
+            # If tabs are found log the report
             self.message = (
                 "\n\n\n"
                 f"Your file {fpath} has tabs, please use ONLY spaces!\n"
@@ -101,16 +102,12 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
         # current line without the newline at the end
         cur_line = file_lines[line_num].rstrip()
 
-        # Print extra debug messages if ESM_PARSER_DEBUG environment variable is set
-        if os.getenv("ESM_PARSER_DEBUG"):
-            print()
-            print("===== esm_parser -> yaml_to_dict.py -> create_env_loader() =====")
-            print(f"::: Reading the file: {fname}")
-            print("::: Reading the line:")
-            print(f">>>{cur_line}<<<")
-            print(f"::: found the match: >>>{cur_line[column_start:column_end]}<<<")
-            print("==================== END OF ESM_PARSER_DEBUG ===================")
-            print()
+        logger.debug("===== esm_parser -> yaml_to_dict.py -> create_env_loader() =====")
+        logger.debug(f"::: Reading the file: {fname}")
+        logger.debug("::: Reading the line:")
+        logger.debug(f">>>{cur_line}<<<")
+        logger.debug(f"::: found the match: >>>{cur_line[column_start:column_end]}<<<")
+        logger.debug("==================== END OF ESM_PARSER_DEBUG ===================")
 
         value = loader.construct_scalar(node)
 
@@ -214,9 +211,9 @@ def yaml_file_to_dict(filepath):
             esm_parser.user_error(
                 "Yaml syntax",
                 f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}")
-    raise FileNotFoundError(
-        "All file extensions tried and none worked for %s" % filepath
-    )
+    esm_parser.user_error(
+            "File not found",
+            f" The file {filepath} could not be located!")
 
 
 def check_changes_duplicates(yamldict_all, fpath):
@@ -565,13 +562,13 @@ class EsmConfigFileError(Exception):
 
         # Message to return
         if len(report) == 0:
-            # If no tabs are found print the original error message
+            # If no tabs are found log the original error message
             try:
-                print("\n\n\n" + yaml_error)
+                logger.error("\n\n\n" + yaml_error)
             except:
                 self.message = ("\n\n A syntax error has been found in "+fpath+"\n")
         else:
-            # If tabs are found print the report
+            # If tabs are found log the report
             self.message = (
                 "\n\n\n"
                 f"Your file {fpath} has tabs, please use ONLY spaces!\n"

@@ -102,9 +102,12 @@ forcing_sources:
         "ozone_scenario":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 2014
-                        to: 2014 
+                        to: 2014
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc": 
                         from: 2015
+                        to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc": 
+                        from: 2100
 
         # plume parameterization
         "MAC-SP_hist":

@@ -1,0 +1,92 @@
+model: fesom_mesh_part
+version: "2.1"
+
+
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+namelist_dir: "${esm_namelist_dir}/fesom2/"
+
+
+branch: 2.1.0
+git-repository:
+    - https://github.com/FESOM/fesom2.git
+install_bins: mesh_part/build/fesom_ini
+comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make -j `nproc --all`
+clean_command: rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
+
+
+climate_data_dir: "${pool_dir}/hydrography/"
+forcing_data_dir: "${pool_dir}/forcing/"
+
+pool_dir: "${computer.pool_directories.pool}"
+mesh_dir: "${pool_dir}/meshes/mesh_CORE2_final/"
+
+opbnd_dir: "somepath"
+tide_forcing_dir: "somepath"
+
+nproc: 8
+
+time_step: 1800
+steps_per_day: "$(( 86400 / ${time_step} ))"
+
+executable: fesom_ini
+namelists:
+    - "namelist.config"
+
+bin_in_work:
+    fesom_ini: "${executable}"
+
+bin_sources:
+    fesom_ini: ${bin_dir}/${executable}
+
+input_files:
+    aux3d: aux3d
+    nod2d: nod2d
+    elem2d: elem2d
+    nodhn: nodhn
+
+input_sources:
+    aux3d: ${mesh_dir}/aux3d.out
+    nod2d: ${mesh_dir}/nod2d.out
+    elem2d: ${mesh_dir}/elem2d.out
+    nodhn: ${mesh_dir}/nodhn.out
+
+config_files:
+        config:  config
+
+config_sources:
+        config:  "${namelist_dir}/namelist.config"
+
+config_in_work:
+        config:  "namelist.config"
+
+restart_rate: "12"
+restart_unit: "m"
+restart_first: 12
+restart_flag: "last"
+
+namelist_changes:
+        namelist.config:
+                clockinit:
+                        yearnew: "${initial_date!syear}"
+                paths:
+                        ForcingDataPath: "${forcing_data_dir}"
+                        MeshPath: "${mesh_dir}"
+                        OpbndPath: "${opbnd_dir}"
+                        ClimateDataPath: "${climate_data_dir}"
+                        TideForcingPath: "${tide_forcing_dir}"
+                        ResultPath: "${work_dir}"
+                timestep:
+                        step_per_day: "${steps_per_day}"
+                        run_length: "${restart_rate}"
+                        run_length_unit: "${restart_unit}"
+                inout:
+                        restartflag: "${restart_flag}"
+                        output_length: "${restart_rate}"
+                        output_length_unit: "${restart_unit}"
+                        restart_length: "${restart_rate}"
+                        restart_length_unit: "${restart_unit}"
+                machine:
+                        n_levels: 1
+                        n_part: 288

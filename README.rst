@@ -17,11 +17,10 @@ ollie.awi.de::
     $ module load git
     $ module load python3
 
-mistral.dkrz.de::
+levante.dkrz.de::
 
     $ module load git
-    $ module unload netcdf_c
-    $ module load anaconda3
+    $ module load python3
 
 glogin.hlrn.de / blogin.hlrn.de::
 
@@ -67,7 +66,3 @@ Installing
         $ ./install.sh
 
 You should now have the command line tools ``esm_master`` and ``esm_runscripts``, which replace the old version.
-
-You may have to add the installation path to your ``PATH`` variable::
-
-    $ export PATH=~/.local/bin:$PATH

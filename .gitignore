@@ -1,3 +1,6 @@
+# Mac finder files
+.DS_Store
+# Direnv stuff
 .envrc
 .direnv/
 # Pickle file from the esm master
@@ -6,8 +9,15 @@
 comp*.sh
 dummy_script.sh
 
+# Mac finder files
+.DS_Store
+
 # pkl files, deniz
 *.pkl
+
+# direnv files
+.envrc
+.direnv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

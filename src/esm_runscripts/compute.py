@@ -1,18 +1,18 @@
 import os
 import shutil
 import subprocess
+import sys
 import copy
 import pathlib
 
 import f90nml
-import six
+import questionary
 import yaml
 from colorama import Fore, Back, Style, init
 
 import esm_tools
 import esm_calendar
 import esm_parser
-import esm_rcfile
 import esm_runscripts
 
 from .batch_system import batch_system
@@ -143,7 +143,7 @@ def modify_namelists(config):
     # Load and modify namelists:
 
     if config["general"]["verbose"]:
-        six.print_("\n" "- Setting up namelists for this run...")
+        print("\n" "- Setting up namelists for this run...")
         for index, model in enumerate(config["general"]["valid_model_names"]):
             print(f'{index+1}) {config[model]["model"]}')
         print()
@@ -153,6 +153,9 @@ def modify_namelists(config):
         config[model] = Namelist.nmls_remove(config[model])
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
+            config = Namelist.echam_transient_forcing(config)
+        if model == "fesom":
+            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]
@@ -165,11 +168,11 @@ def modify_namelists(config):
 
 def copy_files_to_thisrun(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING EXPERIMENT")
+        print("PREPARING EXPERIMENT")
         # Copy files:
-        six.print_("\n" "- File lists populated, proceeding with copy...")
-        six.print_("- Note that you can see your file lists in the config folder")
-        six.print_("- You will be informed about missing files")
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -181,7 +184,7 @@ def copy_files_to_thisrun(config):
 
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING WORK FOLDER")
+        print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
@@ -277,10 +280,13 @@ def initialize_experiment_logfile(config):
 
     # Write trace-log file now that we know where to do that
     if "trace_sink" in dir(logger):
+        experiment_dir = config["general"]["experiment_dir"]
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
+        datestamp = config["general"]["run_datestamp"]
         logfile_path = (
-            f"{config['general']['experiment_dir']}/log"
-            f"/{config['general']['expid']}_esm_runscripts_"
-            f"{config['general']['run_datestamp']}.log"
+            f"{experiment_dir}/log/"
+            f"{expid}_{it_coupled_model_name}esm_runscripts_{datestamp}.log"
         )
 
         logger.trace_sink.def_path(logfile_path)
@@ -342,11 +348,6 @@ def _write_finalized_config(config):
 
     # format for the other ESM data structures
     EsmConfigDumper.add_representer(
-        esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str,
-    )
-
-    EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
@@ -357,9 +358,12 @@ def _write_finalized_config(config):
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
+    thisrun_config_dir = config["general"]["thisrun_config_dir"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
     config_file_path = (
-        f"{config['general']['thisrun_config_dir']}"
-        f"/{config['general']['expid']}_finished_config.yaml"
+        f"{thisrun_config_dir}/"
+        f"{expid}_{it_coupled_model_name}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
@@ -459,34 +463,23 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
-                    + "Note: You can choose to use -U flag in the esm_runscripts call "
-                    + "to automatically update the runscript (WARNING: This "
-                    + f"will overwrite your {file_type} in the experiment folder!)\n",
+                    + "Note: You can choose to use ``-U`` flag in the "
+                    + "``esm_runscripts`` call to automatically update the runscript "
+                    + f"(WARNING: This will overwrite your {file_type} in the "
+                    + "experiment folder!)\n",
                 )
-                correct_input = False
-                while not correct_input:
-                    update_choice = input(
-                        f"Do you want that {scriptsdir + '/' + tfile} is "
-                        + "updated with the above changes? (y/n): "
-                    )
-                    if update_choice == "y":
-                        correct_input = True
-                        oldscript = fromdir + "/" + tfile
-                        print(oldscript)
-                        shutil.copy2(oldscript, scriptsdir)
-                        print(f"{scriptsdir + '/' + tfile} updated!")
-                    elif update_choice == "n":
-                        correct_input = True
-                        esm_parser.user_error(
-                            f"Original {file_type} different from target",
-                            differences
-                            + "\n"
-                            + "You can choose to -U flag in the esm_runscripts call "
-                            + "to update the runscript without asking (WARNING: This "
-                            + f"will overwrite your {file_type} in the experiment folder!)\n\n",
-                        )
-                    else:
-                        print(f"'{update_choice}' is not a valid answer.")
+                update_choice = questionary.confirm(
+                    f"Do you want that {scriptsdir}/{tfile} is "
+                    + "updated with the above changes?"
+                ).ask()
+                if update_choice:
+                    oldscript = fromdir + "/" + tfile
+                    print(oldscript)
+                    shutil.copy2(oldscript, scriptsdir)
+                    print(f"{scriptsdir + '/' + tfile} updated!")
+                else:
+                    print("Submission stopped")
+                    sys.exit(1)
 
 
 def copy_tools_to_thisrun(config):
@@ -530,12 +523,12 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_rcfile.EsmToolsDir("FUNCTION_PATH"))
+        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         print(
             "Copying standard namelists from: ",
-            esm_rcfile.EsmToolsDir("NAMELIST_PATH"),
+            esm_tools.get_namelist_filepath(),
         )
         esm_tools.copy_namelist_folder(namelists_dir)
 
@@ -610,9 +603,12 @@ def copy_tools_to_thisrun(config):
         new_command = " ".join(new_command_list)
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
-        # prevent continuous addition of --no-motd
-        if not "--no-motd" in restart_command:
-            restart_command += " --no-motd "
+        # Add non-interaction flags
+        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        for ni_flag in non_interaction_flags:
+            # prevent continuous addition of ``ni_flag``
+            if not ni_flag in restart_command:
+                restart_command += f" {ni_flag} "
 
         if config["general"]["verbose"]:
             print(restart_command)
@@ -650,17 +646,17 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
 
 
 def _show_simulation_info(config):
-    six.print_()
-    six.print_(80 * "=")
-    six.print_("STARTING SIMULATION JOB!")
-    six.print_(f"Experiment ID = {config['general']['expid']}")
-    six.print_(f"Setup = {config['general']['setup_name']}")
+    print()
+    print(80 * "=")
+    print("STARTING SIMULATION JOB!")
+    print(f"Experiment ID = {config['general']['expid']}")
+    print(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        six.print_("This setup consists of:")
+        print("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            six.print_(f"- {model}")
-    six.print_("Experiment is installed in:")
-    six.print_(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    six.print_(80 * "=")
-    six.print_()
+            print(f"- {model}")
+    print("Experiment is installed in:")
+    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    print(80 * "=")
+    print()
     return config

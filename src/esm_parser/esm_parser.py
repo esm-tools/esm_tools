@@ -209,7 +209,7 @@ class EsmParser:
         """
 
         def _filter_variable(value):
-            """Filter function for in value side of key/value pair"""
+            """Filter function to check if a value contains variable start and end"""
             if isinstance(value, str):
                 return variable_start in value and variable_end in value
             return False

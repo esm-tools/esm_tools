@@ -1,0 +1,85 @@
+# runscript to run the GYRE_PISCES demo case that comes with NEMO4.2
+# to run this compile NEMO4.2 first with
+# cd ~/esm/models/
+# esm_master get-nemo-GYRE_PISCES
+# esm_master comp-nemo-GYRE_PISCES
+# Sebastian Wahl 03/2022
+#
+# workaround (1) for bug in esm_runscripts:
+# launcher_flags are not read correctly from the machine.yaml e.g. glogin.yaml in
+# an uncoupled setup. We need to explicitely specify them here
+computer:
+   launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+   # for HLRN4 set compiler_mpi if intel2019_impi2019_nemo4 is not set as default
+   # in glogin.yaml or blogin.yaml
+   compiler_mpi: intel2019_impi2019_nemo4 
+
+general:
+   use_venv: False
+   homedir: !ENV ${HOME}
+   
+   setup_name: nemo
+   compute_time: "00:15:00"
+   account: shkifmsw
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1900-02-01T00:00:00"         # Final date of the experiment
+   nyear: 0
+   nmonth: 1
+   base_dir: ${homedir}/esm/esm-experiments/ 
+   model_dir: ${homedir}/esm/models/nemo-${nemo.version}/ 
+
+nemo:
+   version: "GYRE_PISCES"
+   #model_dir: ${general.homedir}/esm/models/nemo-${nemo.version}/ 
+   resolution: "R4" 
+   nproc: 24
+   time_step: 600
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   # workaround for bug in f90nml library used by esm_runscripts, see 
+   # https://github.com/esm-tools/esm_tools/issues/633 and 
+   # https://github.com/marshallward/f90nml/issues/110
+   namelist_changes:
+      namelist_top_cfg:
+        namtrc:
+          sn_tracer: "remove_from_namelist"
+          sn_tracer(1)%clsname: DET
+          sn_tracer(2)%clsname: ZOO
+          sn_tracer(3)%clsname: PHY
+          sn_tracer(4)%clsname: NO3
+          sn_tracer(5)%clsname: NH4
+          sn_tracer(6)%clsname: DOM
+          sn_tracer(1:6)%cllname: "I_do_not_care_in_this_test"
+          sn_tracer(1:6)%clunit: "mmole-N/m3"
+
+xios:
+   xml_dir: ${general.model_dir}/nemo-${nemo.version}/cfgs/${nemo.version}/EXP00/
+   nproc: 8
+   add_config_files:
+      axis_def_oce: axis_def_oce
+      context_nemo: context_nemo
+      field_def_oce: field_def_oce
+      field_def_bgc: field_def_bgc
+      file_def_oce: file_def_oce
+      grid_def_oce: grid_def_oce
+   remove_config_files:
+      - file_def
+      - field_def
+   config_sources:
+      axis_def_oce: ${xml_dir}/axis_def_nemo.xml
+      context_nemo: ${xml_dir}/context_nemo.xml
+      domain_def: ${xml_dir}/domain_def_nemo.xml
+      field_def_oce: ${xml_dir}/field_def_nemo-oce.xml
+      field_def_bgc: ${xml_dir}/field_def_nemo-pisces.xml
+      file_def_oce: ${xml_dir}/file_def_nemo.xml
+      grid_def_oce: ${xml_dir}/grid_def_nemo.xml
+      io_def: ${xml_dir}/iodef.xml
+   config_in_work:
+      axis_def_oce: axis_def_nemo.xml
+      context_nemo: context_nemo.xml
+      domain_def: domain_def_nemo.xml
+      field_def_oce: field_def_nemo-oce.xml
+      field_def_bgc: field_def_nemo-pisces.xml
+      file_def_oce: file_def_nemo.xml
+      grid_def_oce: grid_def_nemo.xml
+      io_def: iodef.xml
+      

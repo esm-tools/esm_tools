@@ -9,6 +9,11 @@ mistral:
         compute_nodes: '^m[A-Za-z0-9]+\.hpc\.dkrz\.de$'
         post_nodes: 'mistralpp*'
 
+levante:
+        login_nodes: 'levante*'
+        compute_nodes: '^l[A-Za-z0-9]+\.lvt\.dkrz.de$'
+#        post_nodes: ''
+
 juwels:
         #login_nodes: '^juwels[0-9][0-9]\.ib.juwels.fzj.de'
         #compute_nodes: '^jwc[0-9][0-9]*'

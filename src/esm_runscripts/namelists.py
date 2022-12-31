@@ -12,7 +12,8 @@ import sys
 import warnings
 
 import f90nml
-import six
+
+from esm_parser import user_error
 
 
 class Namelist:
@@ -76,11 +77,13 @@ class Namelist:
                     mconfig["namelists"][nml] = f90nml.read(
                         os.path.join(mconfig["thisrun_config_dir"], nml)
                     )
-                except StopIteration:
-                    print(
-                        f"Sorry, the namelist we were trying to load: {nml} may have a formatting issue!"
+                except (StopIteration, ValueError) as e:
+                    user_error(
+                        "Namelist format",
+                        f"The namelist ``{nml}`` has a formatting issue. Please, "
+                        f"fix it before proceeding.\n\n``Hint:`` {e}",
+                        dsymbols=["``", "'"],
                     )
-                    sys.exit(1)
             else:
                 mconfig["namelists"][nml] = f90nml.namelist.Namelist()
             if mconfig.get("namelist_case") == "uppercase":
@@ -218,7 +221,7 @@ class Namelist:
             The modified configuration.
         """
         namelist_changes = mconfig.get("namelist_changes", {})
-        for namelist, changes in six.iteritems(namelist_changes):
+        for namelist, changes in namelist_changes.items():
             mconfig["namelists"][namelist].patch(changes)
         return mconfig
 
@@ -270,14 +273,14 @@ class Namelist:
                     forcing_table = pd.read_csv(
                         config["echam"]["transient_forcing_table"], sep=";", index_col=0
                     )
-                    co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[
+                    co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
                         config["general"]["current_date"].year
                     ]
                     radctl["co2vmr"] = co2
                     radctl["n2ovmr"] = n2o
                     radctl["ch4vmr"] = ch4
                     radctl["cecc"] = cecc
-                    radctl["cobl"] = cobl
+                    radctl["cobld"] = cobld
                     radctl["clonp"] = clonp
                     print(
                         "-------------------------------------------------------------"
@@ -295,7 +298,7 @@ class Namelist:
                     print(f"             N2O:  {radctl['n2ovmr']}")
                     print(f"             CH4:  {radctl['ch4vmr']}")
                     print(f"             CECC: {radctl['cecc']}")
-                    print(f"             COBL: {radctl['cobl']}")
+                    print(f"             COBL: {radctl['cobld']}")
                     print(f"             CLONP:{radctl['clonp']}")
                 except Exception as e:
                     # Haha something went wrong. Let's be polite about it though
@@ -423,7 +426,7 @@ class Namelist:
         """
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             with open(
                 os.path.join(mconfig["thisrun_config_dir"], nml_name), "w"
             ) as nml_file:
@@ -438,12 +441,12 @@ class Namelist:
     def nmls_output(mconfig):
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             all_nmls[nml_name] = nml_obj  # PG: or a string representation?
         for nml_name, nml in all_nmls.items():
             message = f"\nFinal Contents of {nml_name}:"
-            six.print_(message)
-            six.print_(len(message) * "-")
+            print(message)
+            print(len(message) * "-")
             nml.write(sys.stdout)
             print("-" * 80)
             print(f"::: end of the contents of {nml_name}\n")
@@ -451,7 +454,7 @@ class Namelist:
 
     @staticmethod
     def nmls_output_all(config):
-        six.print_(
+        print(
             "\n" "- Namelists modified according to experiment specifications..."
         )
         for model in config["general"]["valid_model_names"]:
@@ -466,31 +469,32 @@ class Namelist:
         Relevant configuration entries:
         """
         if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
-            "use_icebergs"
+            "use_icebergs", False
         ):
             # Get the fesom config namelist:
             nml = config["fesom"]["namelists"]["namelist.config"]
             # Get the current icebergs chapter or make a new empty one:
             icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
             # Determine if icesheet coupling is enabled:
-            if icebergs.get("use_icesheet_coupling"):
+            if config["fesom"].get("use_icesheet_coupling", False):
+                icebergs["use_icesheet_coupling"] = True
                 if os.path.isfile(
-                    config["general"]["couple_dir"] + "/num_non_melted_icb_file"
+                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
                 ):
                     with open(
-                        config["general"]["couple_dir"] + "/num_non_melted_icb_file"
+                        config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
                     ) as f:
                         ib_num_old = [
                             int(line.strip()) for line in f.readlines() if line.strip()
                         ][0]
-                        print("ib_num_old = ", ib_num_old)
+                elif config["general"].get("chunk_number", 0) == 1:
+                    ib_num_old = 0
+                else:
+                    print("Something went wrong! Continue without old icebergs.")
+                    ib_num_old = 0
 
-                    ib_num_new = sum(
-                        1
-                        for line in open(
-                            config["fesom"].get("iceberg_dir") + "/LON.dat"
-                        )
-                    )
+                print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
+                ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
                 icebergs["ib_num"] = ib_num_old + ib_num_new
                 nml["icebergs"] = icebergs
         return config

@@ -1,0 +1,126 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   version: "2.1-O12"
+   resolution: "TCO95_ORCA12"
+
+   compute_time: "12:00:00"
+   initial_date: "1950-01-11T00:00:00"       # Initial exp. date
+   final_date: "1950-01-16T00:00:00"         # Final date of the experiment
+
+   nyear: 0
+   nmonth: 0
+   nday: 5
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+
+   postprocessing: True
+  
+   # machine specific setup 
+   account: shk00018
+   base_dir: ${general.homedir}/esm/esm-experiments/
+   
+   lresume: True
+   ini_parent_exp_id: "FOCI_BJK012"
+   ini_string_parent_date: "1950-01-11"
+   ini_nemo_restart_steps: 3600
+   ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
+   oasis_date_stamp: "_19500106-19500110"
+   # with the eternal restart feature, the complete yaml of the previous run needs to be available:
+   prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml" #${oasis_date_stamp}"
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-2.1-O12
+  
+oifs:
+   lresume: ${general.lresume}
+   prev_run_config_file: "${general.prev_run_config_file}"
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/oifs/"
+   ini_parent_date: "${prev_date}"
+   
+   version: "43r3"
+   with_xios: True
+   scenario: "historical"   
+   mip: "cmip6"
+   pool_dir: /scratch/projects/shk00018/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   time_step: 1800
+   nproc: 287
+   use_ocean_currents: 0
+   perturb: 0
+   sclct_switch: 2
+
+   add_namelist_changes:
+       fort.4:
+           NAERAD:
+               NCMIPFIXYR: 1950
+               LSOLAR1950: ".true."
+
+oasis3mct:
+   lresume: ${general.lresume}
+   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca12/"
+   ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca12/"
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_date: "${prev_date}"
+   
+   norestart: F
+   use_lucia: True
+   #export_mode: EXPOUT
+   debug_level: 5
+   coupling_time_step: 3600
+   #oasis_date_stamp: ""
+   
+nemo:
+   lresume: ${general.lresume}
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+   ini_parent_date: "${prev_date}"
+   
+   resolution: "ORCA12"
+   jpni: 60
+   jpnj: 32
+   nproc: 1429
+   time_step: 200
+   input_dir: "/scratch/projects/shk00018/ORCA12/"
+   add_namelist_changes:
+       namelist_cfg:           
+           namsbc:
+               nn_fsbc: 1
+           namsbc_rnf:
+               rn_rfact: 1.067
+           namtra_ldf:
+               rn_aht_0: 125
+               rn_aht_m: 125
+           namdyn_ldf: 
+               rn_ahm_0_blp: -1.25e10
+               rn_ahm_m_blp: -1e11
+       namelist_ice_cfg:
+           namicedyn:
+               pstar: 1.5e4
+               ahi0: 200
+               telast: 120
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca12/output_1dUVTS_1dPLev/"
+   nproc: 203

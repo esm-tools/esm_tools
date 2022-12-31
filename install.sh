@@ -60,7 +60,12 @@ fi
 if [ ! -z ${VIRTUAL_ENV+x} ]; then
     echo "Detected virtual environment $VIRTUAL_ENV"
     pip install -e .
-#FIXME(PG): We might still need a case for Conda virtual environments
+elif [ ! -z ${CONDA_PREFIX+x} ]; then
+    echo "======================="
+    echo "Using CONDA environment"
+    echo "======================="
+    echo "WARNING: The use of a conda environment is currently not recommended. Use only for testing purposes!"
+    ${CONDA_PREFIX}/bin/pip install -e .
 else
     echo "Standard install to user directory (likely ${HOME}/.local)"
     pip install --user -e .

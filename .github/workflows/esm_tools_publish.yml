@@ -4,6 +4,15 @@ on:
   create:
     tags:
       - v*
+  # I am not sure which one is better:
+  # workflow_run:
+  #  workflows: [pre-merge_actions]
+  #  types:
+  #    - completed
+  workflow_call:
+    secrets:
+      PYPI_API_TOKEN:
+        required: true
 
 jobs:
   publish:

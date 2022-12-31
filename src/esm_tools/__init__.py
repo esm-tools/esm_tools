@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.3.7"
+__version__ = "6.18.5"
 
 import functools
 import inspect
@@ -34,10 +34,9 @@ import shutil
 import site
 import sys
 
-from loguru import logger
 import pkg_resources
 import yaml
-
+from loguru import logger
 
 # Setup Loguru for the following cases:
 # A) If user sets
@@ -363,14 +362,14 @@ def copy_runscript_folder(dest_path):
 
 
 @caller_wrapper
-def get_namelist_filepath(namelist):
+def get_namelist_filepath(namelist=""):
     if EDITABLE_INSTALL:
         return _get_namelist_filepath_editable_install(namelist)
     return _get_namelist_filepath_standard_install(namelist)
 
 
 @caller_wrapper
-def get_config_filepath(config):
+def get_config_filepath(config=""):
     if EDITABLE_INSTALL:
         cpath = _get_config_filepath_editable_install(config)
     else:
@@ -379,7 +378,7 @@ def get_config_filepath(config):
 
 
 @caller_wrapper
-def get_runscript_filepath(runscript):
+def get_runscript_filepath(runscript=""):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)

@@ -3,7 +3,7 @@ import copy
 import sys
 
 import esm_parser
-import esm_rcfile
+import esm_tools
 
 from . import chunky_parts
 
@@ -14,6 +14,7 @@ def init_first_user_config(command_line_config, user_config):
         user_config = get_user_config_from_command_line(command_line_config)
 
     # maybe switch to another runscript, if iterative coupling
+    user_config["general"]["iterative_coupled_model"] = ""
     if user_config["general"].get("iterative_coupling", False):
         user_config = chunky_parts.setup_correct_chunk_config(user_config)
 
@@ -36,6 +37,13 @@ def init_first_user_config(command_line_config, user_config):
 
         model_config = get_user_config_from_command_line(new_command_line_config)
         user_config = esm_parser.new_deep_update(user_config, model_config)
+
+        # Set the ``iterative_coupled_model`` string, to add the model name to the
+        # run_ folder, finished_config.yaml, etc., to avoid overwritting with the
+        # files of other offline coupled models
+        user_config["general"]["iterative_coupled_model"] = (
+            f"{user_config['general']['setup_name']}_"
+        )
 
     if user_config["general"].get("debug_obj_init", False):
         pdb.set_trace()
@@ -85,13 +93,8 @@ def get_user_config_from_command_line(command_line_config):
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
     except SystemExit as sysexit:
         sys.exit(sysexit)
-    except esm_parser.EsmConfigFileError as error:
-        raise error
     except:
-        # use the full absolute path instead of CWD
-        user_config = esm_parser.initialize_from_shell_script(
-            command_line_config["runscript_abspath"]
-        )
+        raise("An error occurred reading the config file from the command line") 
 
     # NOTE(PG): I really really don't like this. But I also don't want to
     # re-introduce black/white lists
@@ -107,6 +110,9 @@ def get_user_config_from_command_line(command_line_config):
     user_config["general"].update(command_line_config)
     if deupdate_use_venv:
         user_config["general"]["use_venv"] = user_use_venv
+    user_config["general"]["isinteractive"] = command_line_config.get(
+        "last_jobtype", ""
+    )=="command_line"
     return user_config
 
 
@@ -151,8 +157,7 @@ def get_total_config_from_user_config(user_config):
 
 
 def add_esm_runscripts_defaults_to_config(config):
-    FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
-    path_to_file = FUNCTION_PATH + "/esm_software/esm_runscripts/defaults.yaml"
+    path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
     config = distribute_per_model_defaults(config)

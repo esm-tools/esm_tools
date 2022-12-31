@@ -1,0 +1,174 @@
+! This is the "spinup" variant of namelist.echam. It contains a minimal set of
+! variables which allow you to see the overall model state as the spinup
+! progresses without wasting disk space.
+!
+! C. Danek and P. Gierz
+! Alfred Wegener Institute, Helmholtz Centre for Polar and Marine Research
+! July 2021
+
+&runctl
+    dt_start = 2285, 12, 31, 23, 52, 30
+    dt_stop = 6699, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    lresume = .true.
+    out_datapath = './'
+    out_expname = 'E280'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'months', 'last', 0
+    nproma = 8
+    lcouple = .true.
+    getocean = 1, 'days', 'last', 0
+    putocean = 1, 'days', 'last', 0
+    lcouple_co2 = .true.
+    default_output = .false.  ! The default_output is set to false for custom stream defintions
+/
+
+&parctl
+    nproca = 24
+    nprocb = 24
+/
+
+&submodelctl
+    lmethox = .true.
+/
+
+&submdiagctl
+    vphysc_lpost = .false.
+/
+
+&radctl
+    iaero = 3
+    io3 = 4
+    isolrad = 6
+    ich4 = 3
+    in2o = 3
+    co2vmr = 284.3169860840e-06
+    ch4vmr = 808.2490234375e-09
+    n2ovmr = 273.0210571289e-09
+    yr_perp = 1850
+/
+
+! The rest of this namelist is  stream definitions in alphabetic order
+
+&set_stream
+    stream = 'accw'
+    lpost = 0 ! no default echam-stream 'accw' output
+/
+
+&mvstreamctl ! necessary for co2 stream output
+    source = 'co2'
+    target = 'co2mon'
+    interval = 1, 'months', 'last', 0
+/
+
+&mvstreamctl
+    source = 'g3b'
+    target = 'g3bmon'
+    interval = 1, 'months', 'last', 0
+    variables = 
+    'aclcov:mean>aclcov=164', ! total cloud cover
+    'ahfl:mean>ahfl=147', ! latent heat flux
+    'ahfs:mean>ahfs=146', ! sensible heat flux
+    'albedo:mean>albedo=175',
+    'aprc:mean>aprc=143', ! convective precip
+    'aprl:mean>aprl=142', ! liquid precip
+    'aprs:mean>aprs=144', ! snow
+    'aps:mean>aps=134', ! surface pressure
+    'dew2:mean>dew2=168', ! 2m dew point temperature
+    'evap:mean>evap=182',
+    'friac:mean>friac=97', ! ice cover (fraction of grid box)
+    'geosp:mean>geosp=129', ! surface geopotential (orography)
+    'qvi:mean>qvi=230', ! vertically integrated water vapor
+    'srad0d:mean>srad0d=184', ! top incoming solar radiation
+    'srad0u:mean>srad0u=203', ! top solar radiation upward
+    'srads:mean>srads=176', ! net surface solar radiation
+    'sradsu:mean>sradsu=204', ! surface solar radiation upward
+    'sraf0:mean>sraf0=187', ! net top solar radiation     (clear sky)
+    't2min:min', 
+    't2max:max', 
+    'temp2:mean>temp2=167', 
+    'topmax:mean'
+    'trad0:mean>trad0=179', ! top thermal radiation (OLR)
+    'trads:mean>trads=177', ! net surface thermal radiation
+    'tradsu:mean>tradsu=205', ! surface thermal radiation upward
+    'traf0:mean>traf0=188', ! net top thermal radiation   (clear sky)
+    'trafs:mean>trafs=186', ! net surf. thermal radiation (clear sky)
+    'tsurf:mean>tsurf=169',
+    'u10:mean>u10=165', 
+    'ustr:mean>ustr=180', ! u-stress
+    'v10:mean>v10=166',
+    'vstr:mean>vstr=181', ! v-stress
+    'wind10:mean>wind10=171' ! 10m wind speed
+/
+
+&mvstreamctl
+    source = 'gl'
+    target = 'glmon'
+    interval = 1, 'months', 'last', 0
+    variables = 
+    'q:mean>q=133' ! specific humidity
+/
+
+&set_stream
+    stream = 'jsbach'
+    lpost = 0 ! no default jsbach-stream 'jsbach' output
+/
+
+&mvstreamctl
+    source = 'jsbach'
+    target = 'jsbachmon'
+    interval = 1, 'months', 'last', 0
+    variables = 
+    'cover_fract:mean>cover_fract=12',
+    'layer_moisture:mean>layer_moisture=84',
+    'veg_ratio_max:mean>veg_ratio_max_mean=20'
+/
+
+&set_stream
+    stream = 'land'
+    lpost = 0 ! no default jsbach-stream 'land' output
+/
+
+&mvstreamctl
+    source = 'land'
+    target = 'landmon'
+    interval = 1, 'months', 'last', 0
+    variables = 
+    'lai:mean>lai=107', 
+    'snow_fract:mean>snow_fract=60',
+    'soil_temperature:mean>soil_temperature=68'
+/
+
+&set_stream
+    stream = 'nitro'
+    lpost = 0 ! no jsbach-stream 'nitro' output also if namelist.jsbach:jsbach_ctl:with_nitrogen=true
+/
+
+&mvstreamctl
+    source = 'sp'
+    target = 'spmon'
+    interval = 1, 'months', 'last', 0
+    variables = 
+    'st:mean', 
+    'svo:mean', 
+    'lsp:mean', 
+    'sd:mean'
+/
+
+&mvstreamctl ! nesessary for tracer output, e.g. submodelctl:lco2=true
+    source = 'tracer'
+    target = 'tracermon'
+    interval = 1, 'months', 'last', 0
+/
+
+&set_stream
+    stream = 'veg'
+    lpost = 0 ! no default jsbach-stream 'veg' output
+/
+
+&set_stream
+    stream = 'yasso'
+    lpost = 0 ! no jsbach-stream 'yasso' output also if namelist.jsbach:jsbach_ctl:with_yasso=true
+/

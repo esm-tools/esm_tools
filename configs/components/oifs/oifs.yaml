@@ -112,10 +112,10 @@ compile_infos:
           43r3-master:
             requires:
             - oasis3mct-5.0-smhi
-            branch: development/2022/awi-cm3-integration
+            branch: main
             executable: OpenIFS
             comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
-            git-repository: https://git.smhi.se/jan.streffing/oifs43r3/
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3-ece
             install_bins: make/esm/oifs/bin/OpenIFS
             destination: oifs-43r3
             with_xios: true

@@ -10,36 +10,7 @@
         par_access="collective"
         name="atm_remapped"
         split_freq="1y"
-        timeseries="only">
-
-        <!-- Monthly pressure level fields -->
-        <file
-            enabled="true"
-            output_freq="1mo"
-            name_suffix="_pl_1m"
-            description="ECE4/OIFS monthly pressure level fields"
-        >
-            <field_group grid_ref="regular_pl" operation="average">
-                <!-- CMIP6 compliant output fields -->
-                <field field_ref="z_pl" name="z"/>
-                <field field_ref="t_pl" name="t"/>
-                <field field_ref="u_pl" name="u"/>
-                <field field_ref="v_pl" name="v"/>
-                <field field_ref="q_pl" name="q"/>
-                <field field_ref="w_pl" name="w"/>
-                <field field_ref="vo_pl" name="vo"/>
-                <field field_ref="r_pl" name="r"/>
-
-            </field_group>
-        </file>
-    </file_group>
-
-    <file_group
-        type="multiple_file"
-        format="netcdf4"
-        par_access="collective"
-        name="atm_remapped"
-        split_freq="1y">
+        compression_level="1">
 
         <file
             enabled="true"

@@ -267,6 +267,7 @@ choose_version:
 
 # common options for scenarios, eg. CMIP6
 Ndepo_cmip6: Ndepo_hist_scenario
+Ndepo_path: ""
 popdens_cmip6: popdens
 cover_fract_cmip6: cover_fract.@YEAR@.nc
 

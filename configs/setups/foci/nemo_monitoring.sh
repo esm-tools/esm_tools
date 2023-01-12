@@ -6,8 +6,7 @@
 #
 basedir=~/esm/esm-experiments/  # change via -p
 EXP_ID="test_experiment"        # change via -r
-envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
-ncpus=24
+ncpus=48
 use_singularity=true
 #
 #------- DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING ------#
@@ -48,7 +47,7 @@ shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
 
 # update vars with command line options if set
-envfile="$basedir/$EXP_ID/scripts/env.sh" 
+[[ -z $envfile ]] && envfile="$basedir/$EXP_ID/scripts/env.sh" 
 export PBS_NP=${ncpus}
 
 echo
@@ -106,7 +105,7 @@ if [[ "$(hostname)" =~ "nesh" ]] ; then
    # /gxfs_work1/gxfs_home_interim/sw which singularity does not like as the 
    # soft link can't be resolved in the container
    sw_bind="--bind /gxfs_home/sw:/gxfs_work1/gxfs_home_interim/sw"
-   shome_bind="--bind /home/smomw235:/home/smomw235"
+   shome_bind="--bind /gxfs_home/geomar/smomw235:/gxfs_home/geomar/smomw235"
 	foci_input2="/gxfs_work1/geomar/smomw235/foci_input2"
 	# only used if use_singularity=false
 	MINICONDA_HOME=~smomw235/miniconda3 

@@ -112,7 +112,7 @@ compile_infos:
           43r3-master:
             requires:
             - oasis3mct-5.0-smhi
-            branch: main
+            branch: main_dkrz
             executable: OpenIFS
             comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3-ece

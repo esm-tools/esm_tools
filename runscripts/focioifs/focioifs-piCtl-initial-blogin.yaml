@@ -7,12 +7,12 @@ general:
    version: "2.1"
    resolution: "TCO95_ORCA05"
 
-   compute_time: "12:00:00"
+   compute_time: "01:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2300-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
 
-   nyear: 10
-   nmonth: 0
+   nyear: 0
+   nmonth: 1
    nday: 0
    restart_rate: 1
    restart_unit: days 
@@ -22,7 +22,8 @@ general:
   
    # machine specific setup 
    account: shk00018
-   base_dir: ${general.homedir}/esm/esm-experiments/
+   #base_dir: ${general.homedir}/esm/esm-experiments/
+   base_dir: /scratch/usr/shkjocke/esm-speed3/
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.1
@@ -64,7 +65,7 @@ oasis3mct:
    norestart: F
    use_lucia: True
    #export_mode: EXPOUT
-   debug_level: 50
+   #debug_level: 50
    pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    oasis_date_stamp: "" 

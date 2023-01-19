@@ -184,11 +184,11 @@ FLORIDA_BAHAMAS_transports DRAKE_transports AUS_AA_transports
 ITF_transports MOZAMBIQUE_CHANNEL_transports SOUTH_AFR_transports
 KERGUELEN_transports CAMPBELL_transports AFR_AUSTR_transports
 AUSTR_AM_transports AM_AFR_transports DAVIS_transports
-icediags moc psi speed
+icediags moc mocsig psi speed
 section_23W section_ACT section_DAVIS
 section_OSNAP section_STAtlOMZ section_WoceA1E
 section_WoceA1W section_WoceA24N section_WoceS04A
-amoc_max_25.000N amoc_max_36.000N amoc_max_45.000N"
+amoc_max_25.000N amoc_max_36.000N amoc_max_45.000N amoc_max_26.500N"
 
 frequency='1y'
 datadir=${MONITORING_PATH}/derived_data/${EXP_ID}

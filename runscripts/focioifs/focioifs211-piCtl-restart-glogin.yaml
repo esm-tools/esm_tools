@@ -22,11 +22,10 @@ general:
 
    lresume: True
    ini_parent_exp_id: "FOCI_GJK006"
-   ini_string_parent_date: "3500-01-01" #"4000-01-01"
-   ini_nemo_restart_steps: 11395536 #20161344
-   ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
-   #oasis_date_stamp: "_39900101-39991231"
-   oasis_date_stamp: "_34900101-34991231"
+   ini_string_parent_date: "4000-01-01"
+   ini_nemo_restart_steps: 20161344
+   ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/"
+   oasis_date_stamp: "_39900101-39991231"
    # We will not restart OpenIFS, techinically speaking
    # with the eternal restart feature, the complete yaml of the previous run needs to be available:
    prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
@@ -111,7 +110,7 @@ nemo:
    lresume: ${general.lresume}
    ini_parent_exp_id: "${general.ini_parent_exp_id}"
    ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/nemo/"
-   ini_parent_date: "3499-12-31T23:30:00" #"${prev_date}"
+   ini_parent_date: "${prev_date}"
 
    resolution: "ORCA05"
    jpni: 24

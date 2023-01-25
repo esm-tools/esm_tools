@@ -17,6 +17,7 @@ description: |
 ##
 available_versions:
 - ec-earth
+- agrif
 - awicm-3.0
 - awicm-3.1
 - awicm-frontiers
@@ -51,7 +52,9 @@ choose_version:
     branch: runoff
   foci211:
     branch: foci211
-
+  agrif:
+    branch: agrif 
+  
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git

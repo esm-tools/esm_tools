@@ -445,7 +445,7 @@ rnfmap:
                         version: focioifs21
                         runoff_method: "EM21"
                 "agrif":
-                        version: focioifs21
+                        version: agrif 
                         runoff_method: "JK22" #"EM21"
                         with_agrif: True
                         add_namelist_changes:

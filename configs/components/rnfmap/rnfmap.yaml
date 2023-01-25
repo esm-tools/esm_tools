@@ -90,6 +90,7 @@ nproca: 1
 nprocb: 1
 
 runoff_method: "old"
+with_agrif: False
                          
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
@@ -115,6 +116,23 @@ coupling_fields:
         "[[runoff_fields_send-->FIELD]]":
                 grid: opaf
 
+# If we run FOCI-OpenIFS with AGRIF, 
+# then AGRIF needs to send its mask 
+# to rnfmap
+# Rnfmap then computes runoff and calving fields
+# for AGRIF
+choose_with_agrif:
+        True:
+                runoff_agrif_fields_recv: [1_R_AgrSpg]
+                runoff_agrif_fields_send: [1_R_Runoff_oce]
+                calving_agrif_fields_send: [1_R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_agrif_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_agrif_fields_send-->FIELD]]":
+                                grid: rnfs 
+                        "[[runoff_agrif_fields_recv-->FIELD]]":
+                                grid: rnfm 
 choose_runoff_method:
         'EM21':
                 runoff_fields_recv: [R_Runoff_atm]

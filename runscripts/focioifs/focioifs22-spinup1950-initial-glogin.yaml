@@ -9,9 +9,9 @@ general:
    
    compute_time: "12:00:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1951-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1960-01-01T00:00:00"         # Final date of the experiment
    
-   nyear: 1
+   nyear: 10
    nmonth: 0
    nday: 0
    restart_rate: 1
@@ -49,7 +49,7 @@ oifs:
    prepifs_startdate: 20080101
    resolution: TCO95
    levels: L91
-   nproc: 360  # 360x4 / 96 = 15 nodes
+   nproc: 168  # 360x4 / 96 = 15 nodes
    omp_num_threads: 4 
    use_ocean_currents: 0
    sclct_switch: 2
@@ -74,6 +74,7 @@ oifs:
 
 oasis3mct:
    lresume: True
+   coupling_time_step: 3600 
    pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
 
@@ -86,12 +87,14 @@ nemo:
    lresume: False
    resolution: "ORCA05"
    jpni: 24
-   jpnj: 18
-   nproc: 432
+   jpnj: 24
+   nproca: 24
+   nprocb: 24
+   nproc: 576
    add_namelist_changes:
        namelist_cfg:
-           namrun:
-               ln_single_prec_send: ".true." 
+           #namrun:
+           #    ln_single_prec_send: ".true." 
            namtra_ldf:
                rn_aht_0: 600
            namsbc_rnf:
@@ -103,4 +106,4 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
-   nproc: 47
+   nproc: 95

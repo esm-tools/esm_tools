@@ -915,6 +915,23 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
 
+Branchoff experiments with ``prev_run``
+---------------------------------------
+
+If you use ``prev_run`` variables in your model configuration files, ``esm_runscripts``
+will require that you define a ``prev_run_config_file`` variable in your runscript
+**when you try to run a branchoff experiment**. As a branchoff is a way of restarting,
+``esm_runscripts`` needs to know which file should use to load the ``prev_run``
+information, but (contrary to the regular restarts within the same experiment) finding
+that file name is a non-trivial task: being a different experiment, the datestamps and
+restart frequency can differ from the parent experiment to the branchoff experiment. To
+overcome this problem the user needs to specify the **full path** to the
+``finished_config.yaml`` to be used on the first run of the branchoff experiment:
+
+.. code-block:: yaml
+
+    prev_run_config_file: "/<basedir>/<expid>/config/<expid>_finished_config.yaml_<DATE>-<DATE>"
+
 Error-handling and warning syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

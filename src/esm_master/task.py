@@ -438,7 +438,9 @@ class Task:
                     + folder
                     + " detected. Please run 'make get-"
                     + self.package.raw_name
-                    + "' first."
+                    + "' first, or switch to the folder containing "
+                    + folder
+                    + "."
                 )
                 print()
                 sys.exit(0)

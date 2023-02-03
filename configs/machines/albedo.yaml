@@ -188,25 +188,25 @@ export_vars:
     LC_ALL: en_US.UTF-8
 
 # Paul's <<<<<<< HEAD
-  # NOTE(PG): All Compilers are set via the module files!
-  # Compilers:
-  # FC: ${fc}
-  # F77: ${f77}
-  # MPIFC: ${mpifc}
-  # MPICC: ${mpicc}
-  # CC: ${cc}
-  # CXX: ${cxx}
+    # NOTE(PG): All Compilers are set via the module files!
+    # Compilers:
+    # FC: ${fc}
+    # F77: ${f77}
+    # MPIFC: ${mpifc}
+    # MPICC: ${mpicc}
+    # CC: ${cc}
+    # CXX: ${cxx}
 
-  # Message Passing Interface (MPI) environment variables:
-  # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-  # NOTE(PG): I do not like this....should be set via module file, or fixed in model
-  MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+    # Message Passing Interface (MPI) environment variables:
+    # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+    MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-  # Linear-Algebra Library environment variables:
-  # FIXME(PG): This would be nicer...
-  # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
-  # NOTE(PG): I do not like this....should be set via module file, or fixed in model
-  LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 
+    # Linear-Algebra Library environment variables:
+    # FIXME(PG): This would be nicer...
+    # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
+    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+    LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 
 # Miguel's =======
 #    # Compilers:
 #    FC: ${fc}

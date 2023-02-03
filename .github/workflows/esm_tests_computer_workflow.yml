@@ -15,7 +15,7 @@ on:
         default: false
       test_flags:
         type: string
-        default: "-cngeu -s False"
+        default: "-cngeu -s False -r albedo" # TODO: before merging into release, remove -r albedo
     secrets:
       ESM_TOOLS_BOT:
         required: false

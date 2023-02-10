@@ -1302,6 +1302,10 @@ choose_nest1:
                 _nx_nest1: 1414
                 _ny_nest1: 944
                 nest_refinement: 5
+        ORION10X: 
+                _nx_nest1: 3564
+                _ny_nest1: 884
+                nest_refinement: 5
 
 choose_levels:
    L75:
@@ -1654,4 +1658,5 @@ grids:
                 ny: ${_ny_nest1}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 0
+
 

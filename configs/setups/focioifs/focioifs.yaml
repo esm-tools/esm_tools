@@ -339,6 +339,9 @@ nemo:
         choose_nemo.nest1:
                 viking10: 
                         loccunif_nb_nest: 16
+                ORION10:
+                        loccunif_nb_nest: 16
+        
         loccunif_nb_nest: 12
         
         namelist_changes:

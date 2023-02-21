@@ -282,9 +282,15 @@ class version_control_infos:
                     raw_command = raw_command + " " + package.destination
                 else:
                     raw_command = raw_command + " " + package.raw_name
+
+            commands = [raw_command]
+
+            if package.permissions:
+                commands.append(f"chmod {package.permissions} -R {package.destination}")
         else:
-            raw_command = None
-        return raw_command
+            commands = None
+
+        return commands
 
     def output(self):
         print()

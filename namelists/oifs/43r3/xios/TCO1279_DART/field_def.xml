@@ -1,0 +1,277 @@
+<field_definition level="1" prec="4" enabled="true" operation="instant" freq_op="1ts" ts_enabled="true" default_value="1.e+20" >
+  <field_group id="2D_physical" grid_ref="reduced_sfc" freq_op="3h" >
+    <!--TODO: convert to kg m-2-->
+    <field id="sro"    long_name="surface runoff"                                             standard_name="runoff_amount"                                            unit="m" />
+    <!--TODO: convert to kg m-2-->
+    <field id="ssro"   long_name="subsurface runoff"                                          standard_name="subsurface_runoff_amount"                                 unit="m" />
+    <field id="ci"     long_name="sea-ice cover"                                              standard_name="sea_ice_area_fraction"                                    unit="1" />
+    <field id="asn"    long_name="snow albedo"                                                standard_name="surface_albedo_assuming_deep_snow"                        unit="1" />
+    <field id="rsn"    long_name="snow density"                                               standard_name="snow_density"                                             unit="kg m-3" />
+    <field id="sstk"   long_name="sea surface temperature"                                    standard_name="sea_surface_temperature"                                  unit="K" />
+    <!--TODO: create single multi-layer field-->
+    <field id="istl1"  long_name="ice temperature layer 1"                                    standard_name="land_ice_temperature_layer_1"                             unit="K" />
+    <field id="istl2"  long_name="ice temperature layer 2"                                    standard_name="land_ice_temperature_layer_2"                             unit="K" />
+    <field id="istl3"  long_name="ice temperature layer 3"                                    standard_name="land_ice_temperature_layer_3"                             unit="K" />
+    <field id="istl4"  long_name="ice temperature layer 4"                                    standard_name="land_ice_temperature_layer_4"                             unit="K" />
+    <!--TODO: create single multi-layer field-->
+    <field id="swvl1"  long_name="volumetric soil water layer 1"                              standard_name="volume_fraction_of_water_in_soil_layer_1"                 unit="m3 m-3" />
+    <field id="swvl2"  long_name="volumetric soil water layer 2"                              standard_name="volume_fraction_of_water_in_soil_layer_2"                 unit="m3 m-3" />
+    <field id="swvl3"  long_name="volumetric soil water layer 3"                              standard_name="volume_fraction_of_water_in_soil_layer_3"                 unit="m3 m-3" />
+    <field id="swvl4"  long_name="volumetric soil water layer 4"                              standard_name="volume_fraction_of_water_in_soil_layer_4"                 unit="m3 m-3" />
+    <!--TODO: convert to kg m-2, but remains nonstandard-->
+    <field id="es"     long_name="snow evaporation"                                           standard_name="snow_evaporation_amount"                                  unit="m" />
+    <!--TODO: convert to kg m-2-->
+    <field id="smlt"   long_name="snow melt"                                                  standard_name="surface_snow_melt_amount"                                 unit="m" />
+    <field id="10fg"   long_name="10m wind gust"                                              standard_name="wind_speed_of_gust"                                       unit="m s-1" />
+    <!--TODO: nonstandard, check units-->
+    <field id="lspf"   long_name="large-scale precipitation fraction"                         standard_name="stratiform_precipitation_fraction"                        unit="s" />
+    <!--TODO: nonstandard, but convert to fluxes-->
+    <field id="uvb"    long_name="downward UV radiation at surface"                           standard_name="surface_downwelling_ultraviolet_radiative_flux_in_air"    unit="J m-2" />
+    <!--TODO: convert to fluxes-->
+    <field id="par"    long_name="downward photosynthetic radiation at surface"               standard_name="surface_downwelling_photosynthetic_radiative_flux_in_air" unit="J m-2" />
+    <field id="cape"   long_name="convective available potential energy"                      standard_name="atmosphere_convective_available_potential_energy"         unit="J kg-1" />
+    <!--Nonstandard-->
+    <field id="tclw"   long_name="total column liquid water"                                  standard_name="atmosphere_mass_content_of_liquid_water"                  unit="kg m-2" />
+    <!--Nonstandard-->
+    <field id="tciw"   long_name="total column ice water"                                     standard_name="atmosphere_mass_content_of_ice_water"                     unit="kg m-2" />
+    <!--Nonstandard-->
+    <field id="mx2t6"  long_name="maximum 2-metre temperature in last 6 hours"                standard_name="maximum_6hr_surface_temperature"                          unit="K" />
+    <!--Nonstandard-->
+    <field id="mn2t6"  long_name="minimum 2-metre temperature in last 6 hours"                standard_name="minimum_6hr_surface_temperature"                          unit="K" />
+    <!--Nonstandard-->
+    <field id="10fg6"  long_name="10m wind gust in last 6 hours"                              standard_name="6hr_wind_speed_of_gust"                                   unit="m s-1" />
+    <!--TODO: what about microwave emissivity?-->
+    <field id="emis"   long_name="surface emissivity"                                         standard_name="surface_longwave_emissivity"                              unit="1" />
+    <!-- WARNING: FullPos doesn't support 'vite', don't use it -->
+    <field id="vite"   long_name="vertically integrated total energy"                         standard_name="atmosphere_energy_content"                                unit="J m-2" />
+    <field id="sz"     long_name="geopotential at surface"                                    standard_name="surface_geopotential"                                     unit="m2 s-2" />
+    <field id="sp"     long_name="surface pressure"                                           standard_name="surface_air_pressure"                                     unit="Pa" />
+    <field id="tcw"    long_name="total column water"                                         standard_name="atmosphere_mass_content_of_water"                         unit="kg m-2" />
+    <field id="tcwv"   long_name="total column water vapor"                                   standard_name="atmosphere_mass_content_of_water_vapor"                   unit="kg m-2" />
+    <!--TODO: create single multi-layer field-->
+    <field id="stl1"   long_name="soil temperature layer 1"                                   standard_name="soil_temperature_layer_1"                                 unit="K" />
+    <field id="stl2"   long_name="soil temperature layer 2"                                   standard_name="soil_temperature_layer_2"                                 unit="K" />
+    <field id="stl3"   long_name="soil temperature layer 3"                                   standard_name="soil_temperature_layer_3"                                 unit="K" />
+    <field id="stl4"   long_name="soil temperature layer 4"                                   standard_name="soil_temperature_layer_4"                                 unit="K" />
+    <field id="sd"     long_name="snow depth"                                                 standard_name="lwe_thickness_of_surface_snow_amount"                     unit="m" />
+    <field id="lsp"    long_name="large scale precipitation"                                  standard_name="lwe_thickness_of_stratiform_precipitation_amount"         unit="m" />
+    <field id="cp"     long_name="convective precipitation"                                   standard_name="lwe_thickness_of_convective_precipitation_amount"         unit="m" />
+    <field id="sf"     long_name="snowfall"                                                   standard_name="lwe_thickness_of_snowfall_amount"                         unit="m" />
+    <!--TODO: convert to W m-2-->
+    <field id="bld"    long_name="boundary layer dissipation"                                 standard_name="dissipation_in_atmosphere_boundary_layer"                 unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="sshf"   long_name="surface sensible heat flux"                                 standard_name="surface_downward_sensible_heat_flux"                      unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="slhf"   long_name="surface latent heat flux"                                   standard_name="surface_downward_latent_heat_flux"                        unit="J m-2" />
+    <!--Nonstandard-->
+    <field id="chnk"   long_name="Charnock parameter"                                         standard_name="Charnock_parameter"                                       unit="1" />
+    <field id="msl"    long_name="mean sea level pressure"                                    standard_name="air_pressure_at_mean_vel"                                 unit="Pa" />
+    <field id="lnsp"   long_name="logarithm of surface pressure"                              standard_name="logarithm_surface_air_pressure"                           unit="1" />
+    <field id="blh"    long_name="boundary layer height"                                      standard_name="atmosphere_boundary_layer_thickness"                      unit="m" />
+    <field id="tcc"    long_name="total cloud cover"                                          standard_name="cloud_area_fraction"                                      unit="1" />
+    <field id="10u"    long_name="u-component of 10m wind"                                    standard_name="eastward_wind"                                            unit="m s-1" />
+    <field id="10v"    long_name="v-component of 10m wind"                                    standard_name="northward_wind"                                           unit="m s-1" />
+    <field id="2t"     long_name="2m air temperature"                                         standard_name="surface_air_temperature"                                  unit="K" />
+    <field id="2d"     long_name="2m dewpoint temperature"                                    standard_name="dew_point_temperature"                                    unit="K" />
+    <!--TODO: convert to W m-2-->
+    <field id="ssrd"   long_name="surface downward solar radiation"                           standard_name="surface_downwelling_shortwave_flux"                       unit="J m-2" />
+    <field id="lsm"    long_name="land-sea mask"                                              standard_name="land_fraction"                                            unit="1" />
+    <field id="sr"     long_name="surface roughness"                                          standard_name="surface_roughness_length"                                 unit="m" />
+    <field id="al"     long_name="background albedo"                                          standard_name="surface_albedo_assuming_no_snow"                          unit="m" />
+    <!--TODO: convert to W m-2-->
+    <field id="strd"   long_name="surface downward thermal radiation"                         standard_name="surface_downwelling_longwave_flux"                        unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="ssr"    long_name="surface net solar radiation"                                standard_name="surface_net_downward_shortwave_flux"                      unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="str"    long_name="surface net thermal radiation"                              standard_name="surface_net_downward_longwave_flux"                       unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="tsr"    long_name="top net solar radiation"                                    standard_name="toa_net_downward_shortwave_flux"                          unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="ttr"    long_name="top net thermal radiation"                                  standard_name="toa_net_downward_longwave_flux"                           unit="J m-2" />
+    <!--remains nonstandard-->
+    <field id="ewss"   long_name="eastward turbulent surface stress"                          standard_name="surface_downward_eastward_turbulent_stress_amount"        unit="N m-2 s" />
+    <!--remains nonstandard-->
+    <field id="nsss"   long_name="northward turbulent surface stress"                         standard_name="surface_downward_northward_turbulent_stress_amount"       unit="N m-2 s" />
+    <field id="e"      long_name="evaporation"                                                standard_name="lwe_thickness_of_evaporation_amount"                      unit="m" />
+    <field id="lcc"    long_name="low cloud cover"                                            standard_name="low_type_cloud_area_fraction"                             unit="1" />
+    <field id="mcc"    long_name="medium cloud cover"                                         standard_name="medium_type_cloud_area_fraction"                          unit="1" />
+    <field id="hcc"    long_name="high cloud cover"                                           standard_name="high_type_cloud_area_fraction"                            unit="1" />
+    <field id="sund"   long_name="sunshine duration"                                          standard_name="sunshine_duration"                                        unit="s" />
+    <!--TODO: convert to Pa (deaccumulate), remains nonstandard-->
+    <field id="lgws"   long_name="eastward gravity wave surface stress"                       standard_name="surface_downward_eastward_gravity_wave_stress"            unit="N m-2 s" />
+    <!--TODO: convert to Pa (deaccumulate), remains nonstandard-->
+    <field id="mgws"   long_name="northward gravity wave surface stress"                      standard_name="surface_downward_northward_gravity_wave_stress"           unit="N m-2 s" />
+    <!--TODO: Deaccumulate, remains nonstandard-->
+    <field id="gwd"    long_name="gravity wave dissipation"                                   standard_name="gravity_wave_dissipation"                                 unit="J m-2" />
+    <!--TODO: Deaccumulate, remains nonstandard-->
+    <field id="src"    long_name="skin reservoir content"                                     standard_name="lwe_skin_reservoir_content"                               unit="m" />
+    <!--Nonstandard-->
+    <field id="mx2t"   long_name="maximum 2-metre temperature since previous post-processing" standard_name="maximum_surface_temperature"                              unit="K" />
+    <!--Nonstandard-->
+    <field id="mn2t"   long_name="minimum 2-metre temperature since previous post-processing" standard_name="minimum_surface_temperature"                              unit="K" />
+    <field id="ro"     long_name="runoff"                                                     standard_name="runoff_amount"                                            unit="m" />
+    <field id="tco3"   long_name="total column ozone"                                         standard_name="atmosphere_mass_content_of_ozone"                         unit="kg m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="tsrc"   long_name="top net clear sky solar radiation"                          standard_name="toa_net_downward_shortwave_flux_assuming_clear_sky"       unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="ttrc"   long_name="top net clear sky thermal radiation"                        standard_name="toa_net_downward_longwave_flux_assuming_clear_sky"        unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="ssrc"   long_name="surface net clear sky solar radiation"                      standard_name="surface_net_downward_shortwave_flux_assuming_clear_sky"   unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="strc"   long_name="surface net clear sky thermal radiation"                    standard_name="surface_net_downward_longwave_flux_assuming_clear_sky"    unit="J m-2" />
+    <!--TODO: convert to W m-2-->
+    <field id="tisr"   long_name="toa incident solar radiation"                               standard_name="toa_incoming_shortwave_flux"                              unit="J m-2" />
+    <field id="vimd"   long_name="vertically integrated moisture divergence"                                                                                           unit="kg m-2" />
+    <field id="tp"     long_name="total precipitation (rain+snow)"                            standard_name="lwe_thickness_of_precipitation_amount"                    unit="m" />
+    <!--remains nonstandard-->
+    <field id="iews"   long_name="instantaneous eastward turbulent surface stress"            standard_name="surface_downward_eastward_turbulent_stress"               unit="N m-2" />
+    <!--remains nonstandard-->
+    <field id="inss"   long_name="instantaneous northward turbulent surface stress"           standard_name="surface_downward_northward_turbulent_stress"              unit="N m-2" />
+    <field id="ishf"   long_name="instantaneous surface sensible heat flux"                   standard_name="surface_downward_sensible_heat_flux"                      unit="W m-2" />
+    <field id="ie"     long_name="instantaneous moisture flux"                                standard_name="water_evaporation_flux"                                   unit="kg m-2 s-1" />
+    <!--TODO: take exponent-->
+    <field id="lsrh"   long_name="logarithm of surface roughness for heat"                    standard_name="surface_roughness_length_for_heat_in_air"                 unit="1" />
+    <field id="skt"    long_name="skin temperature"                                           standard_name="sea_surface_skin_temperature"                             unit="K" />
+    <field id="tsn"    long_name="temperature of snow layer"                                  standard_name="temperature_in_surface_snow"                              unit="K" />
+    <field id="fal"    long_name="forecast albedo"                                                                                                                     unit="1" />
+    <field id="fsr"    long_name="forecast surface roughness"                                                                                                          unit="m" />
+    <field id="flsr"   long_name="forecast logarithm of surface roughness for heat"                                                                                    unit="1" />
+    <!-- WARNING: 'cin' doesn't have properly data, don't use it -->
+    <field id="cin"    long_name="convective inhibition"                                      standard_name="atmosphere_convective_inhibition_wrt_surface"             unit="J kg-1" />
+    <field id="lmlt"   long_name="lake mixed layer temperature"                                                                                                        unit="K" />
+    <field id="lmld"   long_name="lake mixed layer depth"                                                                                                              unit="m" />
+    <field id="lblt"   long_name="lake bottom temperature"                                                                                                             unit="K" />
+    <field id="ltlt"   long_name="lake total layer temperature"                                                                                                        unit="K" />
+    <field id="lshf"   long_name="lake shape factor"                                                                                                                   unit="1" />
+    <field id="lict"   long_name="lake ice temperature"                                                                                                                unit="K" />
+    <field id="licd"   long_name="lake ice depth"                                                                                                                      unit="m" />
+    <field id="deg0l"  long_name="lake zero degree level"                                                                                                              unit="m" />
+    <field id="tcrw"   long_name="total column rain water"                                    standard_name="rainfall_amount"                                          unit="kg m-2" />
+    <field id="tcsw"   long_name="total column snow water"                                    standard_name="snowfall_amount"                                          unit="kg m-2" />
+    <field id="100u"   long_name="100 metre U wind component"                                                                                                          unit="m s-1" />
+    <field id="100v"   long_name="100 metre V wind component"                                                                                                          unit="m s-1" />
+    <field id="kx"     long_name="k-index"                                                    standard_name="atmosphere_stability_k_index"                             unit="K" />
+    <field id="totalx" long_name="total totals index"                                         standard_name="atmosphere_stability_total_totals_index"                  unit="K" />
+  </field_group>
+
+  <field_group id="3D_ml" grid_ref="reduced_ml" freq_op="3h" >
+    <field id="pt"     long_name="potential temperature"                     standard_name="air_potential_temperature"                 unit="K" />
+    <!-- WARNING: FullPos doesn't process 'mont', don't use it -->
+    <field id="mont"   long_name="Montgomery geopotential"                                                                             unit="m2 s-2" />
+    <field id="pres"   long_name="pressure"                                  standard_name="air_pressure"                              unit="Pa" />
+    <field id="pv"     long_name="potential vorticity"                       standard_name="potential_vorticity"                       unit="K*m2*kg-1*s-1" />
+    <field id="crwc"   long_name="precipitation rain water specific content" standard_name="precipitation_rain_water_specific_content" unit="kg*kg-1" />
+    <field id="cswc"   long_name="precipitation snow water specific content" standard_name="precipitation_snow_water_specific_content" unit="kg*kg-1" />
+    <field id="etadot" long_name="eta-coordinate vertical velocity"                                                                    unit="s-1" />
+    <field id="z"      long_name="geopotential"                              standard_name="geopotential"                              unit="m2 s-2" />
+    <field id="t"      long_name="temperature"                               standard_name="air_temperature"                           unit="K" />
+    <field id="u"      long_name="u-component of wind"                       standard_name="eastward_wind"                             unit="m s-1" />
+    <field id="v"      long_name="v-component of wind"                       standard_name="northward_wind"                            unit="m s-1" />
+    <field id="q"      long_name="specific humidity"                         standard_name="specific_humidity"                         unit="kg*kg-1" />
+    <field id="w"      long_name="vertical velocity"                         standard_name="tendency_of_air_pressure"                  unit="m s-1" />
+    <field id="vo"     long_name="relative vorticity"                        standard_name="atmosphere_relative_vorticity"             unit="s-1" />
+    <field id="d"      long_name="divergence"                                standard_name="divergence_of_wind"                        unit="s-1" />
+    <field id="r"      long_name="relative humidity"                         standard_name="relative_humidity"                         unit="1" />
+    <field id="o3"     long_name="ozone mass mixing ratio"                   standard_name="ozone_mass_mixing_ratio"                   unit="kg*kg-1" />
+    <field id="clwc"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
+    <field id="ciwc"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
+    <field id="cc"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+  </field_group>
+
+  <field_group id="3D_pl" grid_ref="reduced_pl" freq_op="3h" >
+    <field id="pt_pl"     long_name="potential temperature"                     standard_name="air_potential_temperature"                 unit="K" />
+    <!-- WARNING: FullPos doesn't process 'mont', don't use it -->
+    <field id="mont_pl"   long_name="Montgomery geopotential"                                                                             unit="m2 s-2" />
+    <field id="pv_pl"     long_name="potential vorticity"                       standard_name="potential_vorticity"                       unit="K*m2*kg-1*s-1" />
+    <field id="crwc_pl"   long_name="precipitation rain water specific content" standard_name="precipitation_rain_water_specific_content" unit="kg*kg-1" />
+    <field id="cswc_pl"   long_name="precipitation snow water specific content" standard_name="precipitation_snow_water_specific_content" unit="kg*kg-1" />
+    <field id="etadot_pl" long_name="eta-coordinate vertical velocity"                                                                    unit="s-1" />
+    <field id="z_pl"      long_name="geopotential"                              standard_name="geopotential"                              unit="m2 s-2" />
+    <field id="t_pl"      long_name="temperature"                               standard_name="air_temperature"                           unit="K" />
+    <field id="u_pl"      long_name="u-component of wind"                       standard_name="eastward_wind"                             unit="m s-1" />
+    <field id="v_pl"      long_name="v-component of wind"                       standard_name="northward_wind"                            unit="m s-1" />
+    <field id="q_pl"      long_name="specific humidity"                         standard_name="specific_humidity"                         unit="kg*kg-1" />
+    <field id="w_pl"      long_name="vertical velocity"                         standard_name="tendency_of_air_pressure"                  unit="m s-1" />
+    <field id="vo_pl"     long_name="relative vorticity"                        standard_name="atmosphere_relative_vorticity"             unit="s-1" />
+    <field id="d_pl"      long_name="divergence"                                standard_name="divergence_of_wind"                        unit="s-1" />
+    <field id="r_pl"      long_name="relative humidity"                         standard_name="relative_humidity"                         unit="1" />
+    <field id="o3_pl"     long_name="ozone mass mixing ratio"                   standard_name="ozone_mass_mixing_ratio"                   unit="kg*kg-1" />
+    <field id="clwc_pl"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
+    <field id="ciwc_pl"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
+    <field id="cc_pl"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+  </field_group>
+
+  <field_group id="3D_th" grid_ref="reduced_th" freq_op="3h" >
+    <!-- WARNING: FullPos doesn't process 'mont', don't use it -->
+    <field id="mont_th"   long_name="Montgomery geopotential"                                                                             unit="m2 s-2" />
+    <field id="pres_th"   long_name="pressure"                                  standard_name="air_pressure"                              unit="Pa" />
+    <field id="pv_th"     long_name="potential vorticity"                       standard_name="potential_vorticity"                       unit="K*m2*kg-1*s-1" />
+    <field id="crwc_th"   long_name="precipitation rain water specific content" standard_name="precipitation_rain_water_specific_content" unit="kg*kg-1" />
+    <field id="cswc_th"   long_name="precipitation snow water specific content" standard_name="precipitation_snow_water_specific_content" unit="kg*kg-1" />
+    <field id="etadot_th" long_name="eta-coordinate vertical velocity"                                                                    unit="s-1" />
+    <field id="z_th"      long_name="geopotential"                              standard_name="geopotential"                              unit="m2 s-2" />
+    <field id="t_th"      long_name="temperature"                               standard_name="air_temperature"                           unit="K" />
+    <field id="u_th"      long_name="u-component of wind"                       standard_name="eastward_wind"                             unit="m s-1" />
+    <field id="v_th"      long_name="v-component of wind"                       standard_name="northward_wind"                            unit="m s-1" />
+    <field id="q_th"      long_name="specific humidity"                         standard_name="specific_humidity"                         unit="kg*kg-1" />
+    <field id="w_th"      long_name="vertical velocity"                         standard_name="tendency_of_air_pressure"                  unit="m s-1" />
+    <field id="vo_th"     long_name="relative vorticity"                        standard_name="atmosphere_relative_vorticity"             unit="s-1" />
+    <field id="d_th"      long_name="divergence"                                standard_name="divergence_of_wind"                        unit="s-1" />
+    <field id="r_th"      long_name="relative humidity"                         standard_name="relative_humidity"                         unit="1" />
+    <field id="o3_th"     long_name="ozone mass mixing ratio"                   standard_name="ozone_mass_mixing_ratio"                   unit="kg*kg-1" />
+    <field id="clwc_th"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
+    <field id="ciwc_th"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
+    <field id="cc_th"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+  </field_group>
+
+  <field_group id="3D_pv" grid_ref="reduced_pv" freq_op="3h" >
+    <field id="pt_pv"     long_name="potential temperature" standard_name="air_potential_temperature"                                     unit="K" />
+    <!-- WARNING: FullPos doesn't process 'mont', don't use it -->
+    <field id="mont_pv"   long_name="Montgomery geopotential"                                                                             unit="m2 s-2" />
+    <field id="pres_pv"   long_name="pressure"                                  standard_name="air_pressure"                              unit="Pa" />
+    <field id="crwc_pv"   long_name="precipitation rain water specific content" standard_name="precipitation_rain_water_specific_content" unit="kg*kg-1" />
+    <field id="cswc_pv"   long_name="precipitation snow water specific content" standard_name="precipitation_snow_water_specific_content" unit="kg*kg-1" />
+    <field id="etadot_pv" long_name="eta-coordinate vertical velocity"                                                                    unit="s-1" />
+    <field id="z_pv"      long_name="geopotential"                              standard_name="geopotential"                              unit="m2 s-2" />
+    <field id="t_pv"      long_name="temperature"                               standard_name="air_temperature"                           unit="K" />
+    <field id="u_pv"      long_name="u-component of wind"                       standard_name="eastward_wind"                             unit="m s-1" />
+    <field id="v_pv"      long_name="v-component of wind"                       standard_name="northward_wind"                            unit="m s-1" />
+    <field id="q_pv"      long_name="specific humidity"                         standard_name="specific_humidity"                         unit="kg*kg-1" />
+    <field id="w_pv"      long_name="vertical velocity"                         standard_name="tendency_of_air_pressure"                  unit="m s-1" />
+    <field id="vo_pv"     long_name="relative vorticity"                        standard_name="atmosphere_relative_vorticity"             unit="s-1" />
+    <field id="d_pv"      long_name="divergence"                                standard_name="divergence_of_wind"                        unit="s-1" />
+    <field id="r_pv"      long_name="relative humidity"                         standard_name="relative_humidity"                         unit="1" />
+    <field id="o3_pv"     long_name="ozone mass mixing ratio"                   standard_name="ozone_mass_mixing_ratio"                   unit="kg*kg-1" />
+    <field id="clwc_pv"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
+    <field id="ciwc_pv"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
+    <field id="cc_pv"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+  </field_group>
+
+  <field_group id="pextra" grid_ref="reduced_ml" freq_op="3h" >
+    <field id="pextra_91"  long_name="u-tendency from explicit dynamics"                                                   unit="m/s2 * s" />
+    <field id="pextra_92"  long_name="v-tendency from explicit dynamics"                                                   unit="m/s2 * s" />
+    <field id="pextra_93"  long_name="T-tendency from explicit dynamics"                                                   unit="K/s * s" />
+    <field id="pextra_94"  long_name="q-tendency from explicit dynamics"                                                   unit="kg/kg/s * s" />
+    <field id="pextra_95"  long_name="T-tendency from radiation"                                                           unit="K/s * s" />
+    <field id="pextra_96"  long_name="u-tendency from vert. diff + orog drag + surf processes"                             unit="m/s2 * s" />
+    <field id="pextra_97"  long_name="v-tendency from vert. diff + orog drag + surf processes"                             unit="m/s2 * s" />
+    <field id="pextra_98"  long_name="T-tendency from vert. diff + orog drag + surf processes"                             unit="K/s * s" />
+    <field id="pextra_99"  long_name="q-tendency from vert. diff + orog drag + surf processes"                             unit="kg/kg/s * s" />
+    <field id="pextra_100" long_name="u-tendency of gravity wave drag (including non-orographic)"                          unit="m/s2 * s" />
+    <field id="pextra_101" long_name="v-tendency of gravity wave drag (including non-orographic)"                          unit="m/s2 * s" />
+    <!-- INFO: pextra_102 bugged before Cycle 39R1: see Notes -->
+    <field id="pextra_102" long_name="T-tendency of gravity wave drag (including non-orographic) = dissipation wave break" unit="K/s * s" />
+    <field id="pextra_103" long_name="u-tendency from convection"                                                          unit="m/s2 * s" />
+    <field id="pextra_104" long_name="v-tendency from convection"                                                          unit="m/s2 * s" />
+    <field id="pextra_105" long_name="T-tendency from convection"                                                          unit="K/s * s" />
+    <field id="pextra_106" long_name="q-tendency from convection"                                                          unit="kg/kg/s * s" />
+    <field id="pextra_107" long_name="Precip. flux from convection liquid"                                                 unit="kg/(m2 s) * s" />
+    <field id="pextra_108" long_name="Precip. flux from convection ice"                                                    unit="kg/(m2 s) * s" />
+    <field id="pextra_109" long_name="T-tendency from cloud and semi-Lagrangian (SL) physics"                              unit="K/s * s" />
+    <field id="pextra_110" long_name="q-tendency from cloud and SL phys. and negative humidity correction"                 unit="kg/kg/s * s" />
+    <field id="pextra_111" long_name="Cloud water tendency from vert. diff (with GWD and surf) and cloud"                  unit="kg/kg/s * s" />
+    <field id="pextra_112" long_name="Cloud ice tendency from vert. diff (with GWD and surf) and cloud"                    unit="kg/kg/s * s" />
+    <field id="pextra_113" long_name="Precip. flux from cloud scheme - liquid"                                             unit="kg/(m2 s) * s" />
+    <field id="pextra_114" long_name="Precip. flux from cloud scheme - ice"                                                unit="kg/(m2 s) * s" />
+  </field_group>
+</field_definition>

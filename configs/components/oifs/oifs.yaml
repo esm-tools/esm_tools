@@ -202,7 +202,6 @@ compile_infos:
         comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
-        source_code_permissions: 700
 
 further_reading:
         - oifs/oifs.env.yaml

@@ -82,6 +82,7 @@ metadata:
                 unsure, please contact redmine...
 
 compile_infos:
+        contact: "jan.streffing(at)awi.de, miguel.andres-martinez(at)awi.de"
         # this require currently causes esm_master install-... to not work properly
         # workaround esm_master get-... ; esm_master comp-...
         requires:
@@ -107,13 +108,14 @@ compile_infos:
             branch: foci_conserv
             comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg
             destination: 40r1
+            contact: "swahl(at)geomar.de"
           43r3-master:
             requires:
             - oasis3mct-5.0-smhi
-            branch: development/2022/awi-cm3-integration
+            branch: main_dkrz
             executable: OpenIFS
             comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
-            git-repository: https://git.smhi.se/jan.streffing/oifs43r3/
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3-ece
             install_bins: make/esm/oifs/bin/OpenIFS
             destination: oifs-43r3
             with_xios: true
@@ -160,6 +162,7 @@ compile_infos:
             requires:
             - oasis3mct-4.0
             - xios-2.5_r1910
+            contact: "swahl(at)geomar.de"
           43r3-foci21:
             branch: master
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -168,6 +171,7 @@ compile_infos:
             requires:
             - oasis3mct-EM21
             - xios-2.5_r1910
+            contact: "swahl(at)geomar.de"
           43r3-foci211:
             branch: foci211
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -176,6 +180,7 @@ compile_infos:
             requires:
             - oasis3mct-EM21
             - xios-2.5_r1910
+            contact: "swahl(at)geomar.de"
           43r3-v1:
             branch: 43r3v1-foci
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git

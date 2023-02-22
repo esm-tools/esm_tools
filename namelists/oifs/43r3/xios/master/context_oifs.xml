@@ -12,8 +12,7 @@
     <field_definition src="./field_def_oifs_cmip6.xml"/>
     <field_definition src="./field_def_oifs_noncmip6.xml"/>
 
-    <file_definition src="./file_def_oifs_default.xml"/>
-<!--<file_definition src="./file_def_oifs_orig.xml"/>-->
+    <file_definition src="./file_def_oifs_orig.xml"/>
 
     <variable_definition>
 
@@ -24,8 +23,8 @@
         </variable_group>
 
         <variable_group id="fullpos_freq">
-            <variable id="nfrhis" name="NFRHIS" type="int"> 1 </variable>
-            <variable id="nfrpos" name="NFRPOS" type="int"> 1 </variable>
+            <variable id="nfrhis" name="NFRHIS" type="int"> -6 </variable>
+            <variable id="nfrpos" name="NFRPOS" type="int"> -6 </variable>
         </variable_group>
 
         <variable_group id="spectral_fitting">

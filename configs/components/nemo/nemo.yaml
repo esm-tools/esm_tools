@@ -26,6 +26,8 @@ archfile: ESMTOOLS_generic_oasis_intel
 destination: ${version}
 install_bins: BLD/bin/oceanx
 
+contact: "swahl(at)geomar.de"
+
 #############################################################
 # file handling settings
 file_movements:

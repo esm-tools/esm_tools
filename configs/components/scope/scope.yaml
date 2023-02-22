@@ -14,5 +14,6 @@ choose_version:
 clean_command: pip uninstall scope-coupler
 comp_command: 'mkdir bin; pip install --user -e .; cp $(python -m site --user-base)/bin/scope ./bin
   '
+contact: "paul.gierz(at)awi.de"
 install_bins:
     - bin/scope

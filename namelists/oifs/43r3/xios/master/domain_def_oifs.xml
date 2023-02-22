@@ -1,16 +1,12 @@
-<?xml version="1.0"?>
-
 <domain_definition>
-
   <!-- Definition of the native domain of the model -->
-  <domain id="reduced_gaussian" long_name="reduced Gaussian grid" type="gaussian"/>
+  <domain id="reduced_gaussian" long_name="reduced Gaussian grid" type="gaussian" />
 
   <!-- Definition of regular Gaussian domains -->
-  <domain_group id="regular_domains" type="rectilinear">
-    <domain id="regular" long_name="regular grid" ni_glo="512" nj_glo="256">
-      <generate_rectilinear_domain/>
-      <interpolate_domain write_weight="true"/>
+  <domain_group id="regular_domains" type="rectilinear" >
+    <domain id="regular" long_name="regular grid" ni_glo="400" nj_glo="192" >
+      <generate_rectilinear_domain />
+      <interpolate_domain write_weight="true" />
     </domain>
   </domain_group>
-
 </domain_definition>

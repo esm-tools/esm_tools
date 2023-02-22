@@ -46,6 +46,7 @@ destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 restart_rate: "12"
@@ -128,7 +129,7 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_in_in_workdir:
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
@@ -144,7 +145,7 @@ restart_in_sources:
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc

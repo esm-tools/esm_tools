@@ -1304,6 +1304,10 @@ choose_nest1:
                 _nx_nest1: 1414
                 _ny_nest1: 944
                 nest_refinement: 5
+        WG10v4:
+                _nx_nest1: 1614
+                _ny_nest1: 944
+                nest_refinement: 5
         ORION10X: 
                 _nx_nest1: 3564
                 _ny_nest1: 884

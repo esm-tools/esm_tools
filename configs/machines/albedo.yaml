@@ -10,7 +10,7 @@ operating_system: "linux-rocky"
 sh_interpreter: "/usr/bin/bash"
 # Batch system and configuration:
 batch_system: "slurm"
-accounting: false
+accounting: true
 further_reading:
     - batch_system/slurm.yaml
 partitions:

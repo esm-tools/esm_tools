@@ -10,13 +10,13 @@ operating_system: "linux-rocky"
 sh_interpreter: "/usr/bin/bash"
 # Batch system and configuration:
 batch_system: "slurm"
-accounting: true
+accounting: false
 further_reading:
     - batch_system/slurm.yaml
 partitions:
     compute:
         name: mpp
-        cores_per_node: 36
+        cores_per_node: 128
     pp:
         name: smp
         cores_per_node: 1
@@ -62,125 +62,154 @@ choose_mpi_implementation:
         mpi_implementation_module: openmpi/4.1.3
         mpi_implementation_suffix: openmpi4.1.3
 
-compiler_suite: intel-oneapi
+compiler_suite: intel-oneapi #gcc
 choose_compiler_suite:
 # Paul's <<<<<<< HEAD
-  gcc:
-    compiler_module: gcc/12.1.0
-    compiler_suffix: gcc12.1.0
-    # FIXME(SOMEONE PLEASE): The module you load determines which compilers you 
-    # want to use. This sort of information should (in my view) *NOT* be hard-coded
-    # into our generated compile script.
-    fc: "gfortran"
-    cc: "gcc"
-    add_export_vars:
-      # NOTE(PG):
-      #
-      # I am not sure if the intel compilers need the same flags.
-      #
-      # The gfortran used on albedo is rather strict and we have many models 
-      # with legacy code which does not follow the newest standards, thus we 
-      # need to turn a few errors into just warnings in the compiler. It would 
-      # be better to fix the code of the individual models so this is not 
-      # needed:
-      FFLAGS: "'-fallow-argument-mismatch'"
-      FCLAGS: "'-fallow-argument-mismatch'"
-  intel-oneapi:
-    compiler_module: intel-oneapi-compilers/2022.1.0
-    compiler_suffix: oneapi2022.1.0
-
-netcdf_c_version: "4.8.1"
-netcdf_cxx4_version: "4.3.1"
-netcdf_fortran_version: "4.5.4"
-hdf5_version: "1.12.2"
-
-# module_actions:
-#         # Ensure a clean environment before start:
-#         - "purge"
-#         # Compilers:
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen/intel-oneapi-compilers-2022.0.1-gcc-8.5.0-scqri3c"
-#         # MPI Implementation:
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/openmpi-4.1.4-intel-2021.5.0-mkiypx5"
-#         # Libraries:
-#         # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
-#         - "load udunits/2.2.28"
-#         # NOTE(PG): The module versions **with** mpi in the module name are for parallel NetCDF, 
-#         # not needed in many cases
-#         # - "load netcdf-c/${netcdf_c_version}-${compiler_suffix}"
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-c-4.8.1-intel-2021.5.0-ilrhnqu"
-#         # - "load netcdf-cxx4/${netcdf_cxx4_version}-${compiler_suffix}"
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-cxx4-4.3.1-intel-2021.5.0-vqwu43z"
-#         # - "load netcdf-fortran/${netcdf_fortran_version}-${compiler_suffix}"
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-fortran-4.6.0-intel-2021.5.0-hcqpk2g"
-#         # - "load hdf5/${hdf5_version}-${compiler_suffix}"
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/hdf5-1.12.2-intel-2021.5.0-tenv4fn"
-#         # Math Kernel Library:
-#         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/intel-oneapi-mkl-2022.1.0-intel-2021.5.0-dzpadhb"
-#         # General Tools:
-#         - "load cdo/2.0.5"
-#         - "load nco/5.0.1"
-#         - "load git/2.35.2"
-#         - "load python/3.10.4"
-#         # Show what is there in the log:
-#         - "list"
-
-spack_actions:
-  - "env activate esm-tools-albedo"
-
-# Miguel's =======
-#    gcc:
-#        compiler_module: gcc/12.1.0
-#        compiler_suffix: gcc12.1.0
-#        fc: mpifort
-#        f77: mpifort
-#        mpifc: mpifort
-#        mpicc: mpicc
-#        cc: mpicc
-#        cxx: mpicxx
-#    intel-oneapi:
-#        compiler_module: intel-oneapi-compilers/2022.1.0 intel-oneapi-mkl/2022.1.0
-#        compiler_suffix: oneapi2022.1.0
-#        fc: mpif90
-#        f77: mpif90
-#        mpifc: mpif90
-#        mpicc: mpicc
-#        cc: mpicc
-#        cxx: mpic++
+#  gcc:
+#    compiler_module: gcc/12.1.0
+#    compiler_suffix: gcc12.1.0
+#    # FIXME(SOMEONE PLEASE): The module you load determines which compilers you 
+#    # want to use. This sort of information should (in my view) *NOT* be hard-coded
+#    # into our generated compile script.
+#    fc: "gfortran"
+#    cc: "gcc"
+#    add_export_vars:
+#      # NOTE(PG):
+#      #
+#      # I am not sure if the intel compilers need the same flags.
+#      #
+#      # The gfortran used on albedo is rather strict and we have many models 
+#      # with legacy code which does not follow the newest standards, thus we 
+#      # need to turn a few errors into just warnings in the compiler. It would 
+#      # be better to fix the code of the individual models so this is not 
+#      # needed:
+#      FFLAGS: "'-fallow-argument-mismatch'"
+#      FCLAGS: "'-fallow-argument-mismatch'"
+#  intel-oneapi:
+#    compiler_module: intel-oneapi-compilers/2022.1.0
+#    compiler_suffix: oneapi2022.1.0
 #
 #netcdf_c_version: "4.8.1"
-#netcdf_cxx_version: "4.2"
+#netcdf_cxx4_version: "4.3.1"
 #netcdf_fortran_version: "4.5.4"
 #hdf5_version: "1.12.2"
 #
 #module_actions:
-#    # Ensure a clean environment before start:
-#    - "purge"
-#    # Compilers:
-#    #- "load ${compiler_module}"
-#    # MPI Implementation:
-#    #- "load ${mpi_implementation_module}-${compiler_suffix}"
-#    # Libraries:
-#    # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
-#    - "load udunits/2.2.28"
-#    #- "load netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-#    #- "load netcdf-cxx/${netcdf_cxx_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-#    #- "load netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-#    #- "load hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix}"
-#    - load /albedo/home/mandresm/.spack/modules/intel-oneapi-compilers-2022.0.1-gcc-12.1.0-mech5is
-#    - load /albedo/home/mandresm/.spack/modules/intel-oneapi-mkl-2022.0.1-gcc-12.1.0-ebd776q
-#    - load /albedo/home/mandresm/.spack/modules/openmpi-4.1.3-intel-2021.5.0-uyqbpcs
-#    - load /albedo/home/mandresm/.spack/modules/hdf5-1.12.2-intel-2021.5.0-okkbjga
-#    - load /albedo/home/mandresm/.spack/modules/netcdf-c-4.8.1-intel-2021.5.0-24hqns7
-#    - load /albedo/home/mandresm/.spack/modules/netcdf-fortran-4.5.4-intel-2021.5.0-h37jgao
-#    - load /albedo/home/mandresm/.spack/modules/eccodes-2.25.0-intel-2021.5.0-bjv3v4v
-#    # General Tools:
-#    - "load cdo/2.0.5"
-#    - "load nco/5.0.1"
-#    - "load git/2.35.2"
-#    #- "load perl/5.35.0-gcc12.1.0"
-#    - "load python/3.10.4"
-#    # Show what is there in the log:
-#    - "list"
+#          - "load spack"
+##         # Ensure a clean environment before start:
+##         - "purge"
+##         # Compilers:
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen/intel-oneapi-compilers-2022.0.1-gcc-8.5.0-scqri3c"
+##         # MPI Implementation:
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/openmpi-4.1.4-intel-2021.5.0-mkiypx5"
+##         # Libraries:
+##         # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
+##         - "load udunits/2.2.28"
+##         # NOTE(PG): The module versions **with** mpi in the module name are for parallel NetCDF, 
+##         # not needed in many cases
+##         # - "load netcdf-c/${netcdf_c_version}-${compiler_suffix}"
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-c-4.8.1-intel-2021.5.0-ilrhnqu"
+##         # - "load netcdf-cxx4/${netcdf_cxx4_version}-${compiler_suffix}"
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-cxx4-4.3.1-intel-2021.5.0-vqwu43z"
+##         # - "load netcdf-fortran/${netcdf_fortran_version}-${compiler_suffix}"
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/netcdf-fortran-4.6.0-intel-2021.5.0-hcqpk2g"
+##         # - "load hdf5/${hdf5_version}-${compiler_suffix}"
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/hdf5-1.12.2-intel-2021.5.0-tenv4fn"
+##         # Math Kernel Library:
+##         - "load /albedo/home/pgierz/spack/share/spack/modules/linux-rocky8-zen2/intel-oneapi-mkl-2022.1.0-intel-2021.5.0-dzpadhb"
+##         # General Tools:
+##         - "load cdo/2.0.5"
+##         - "load nco/5.0.1"
+##         - "load git/2.35.2"
+##         - "load python/3.10.4"
+##         # Show what is there in the log:
+##         - "list"
+#
+#spack_actions:
+#  - "env activate /albedo/home/mandresm/utilities/spack_envs/esm-tools-albedo-intel"
+#
+# Miguel's =======
+    gcc:
+        compiler_module: gcc/12.1.0
+        mkl_module: /albedo/home/mandresm/.spack/modules/intel-oneapi-mkl-2022.0.1-gcc-12.1.0-ebd776q
+        openmpi_module: /albedo/soft/modules/spack-modules/openmpi/4.1.3-gcc12.1.0-npib
+        hdf5_module: /albedo/home/mandresm/.spack/modules/hdf5-1.12.2-gcc-12.1.0-7bogsh7
+        netcdfc_module: /albedo/home/mandresm/.spack/modules/netcdf-c-4.8.1-gcc-12.1.0-2u6p2ge
+        netcdff_module: /albedo/home/mandresm/.spack/modules/netcdf-fortran-4.5.4-gcc-12.1.0-2gawmpc
+        #compiler_suffix: gcc12.1.0
+        fc: mpifort
+        f77: mpifort
+        mpifc: mpifort
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpicxx
+
+        add_export_vars:
+            #SZIPROOT: "/sw/spack-levante/libaec-1.0.5-gij7yv"
+            HDF5ROOT: "/albedo/home/mandresm/.spack/sw/hdf5/1.12.2-7bogsh7/"
+            NETCDFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-c/4.8.1-2u6p2ge/"
+            NETCDFFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-fortran/4.5.4-2gawmpc/"
+            #ECCODESROOT: "/albedo/home/mandresm/.spack/sw/eccodes/2.25.0-hwsa4h3/"
+            #
+    intel-oneapi:
+        compiler_module: /albedo/home/mandresm/.spack/modules/intel-oneapi-compilers-2022.0.1-gcc-12.1.0-mech5is
+        mkl_module: /albedo/home/mandresm/.spack/modules/intel-oneapi-mkl-2022.0.1-gcc-12.1.0-ebd776q
+        openmpi_module: /albedo/home/mandresm/.spack/modules/openmpi-4.1.3-intel-2021.5.0-6xzp4ab
+        hdf5_module: /albedo/home/mandresm/.spack/modules/hdf5-1.12.2-intel-2021.5.0-xy5vq7s
+        netcdfc_module: /albedo/home/mandresm/.spack/modules/netcdf-c-4.8.1-intel-2021.5.0-ffhyl6p
+        netcdff_module: /albedo/home/mandresm/.spack/modules/netcdf-fortran-4.5.4-intel-2021.5.0-w4vv7su
+        #compiler_suffix: oneapi2022.1.0
+        fc: mpif90
+        f77: mpif90
+        mpifc: mpif90
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpic++
+
+        add_export_vars:
+            #SZIPROOT: "/sw/spack-levante/libaec-1.0.5-gij7yv"
+            HDF5ROOT: "/albedo/home/mandresm/.spack/sw/hdf5/1.12.2-xy5vq7s/"
+            NETCDFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-c/4.8.1-ffhyl6p/"
+            NETCDFFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-fortran/4.5.4-w4vv7su/"
+            #ECCODESROOT: "/albedo/home/mandresm/.spack/sw/eccodes/2.25.0-hwsa4h3/"
+
+netcdf_c_version: "4.8.1"
+netcdf_cxx_version: "4.2"
+netcdf_fortran_version: "4.5.4"
+hdf5_version: "1.12.2"
+
+module_actions:
+    # Ensure a clean environment before start:
+    - "purge"
+    # Compilers:
+    #- "load ${compiler_module}"
+    # MPI Implementation:
+    #- "load ${mpi_implementation_module}-${compiler_suffix}"
+    # Libraries:
+    # FIXME(PG): @sebhinck do we need to get a specific udunits version here as well, maybe?
+    - "load udunits/2.2.28"
+    #- "load netcdf-c/${netcdf_c_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    #- "load netcdf-cxx/${netcdf_cxx_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    #- "load netcdf-fortran/${netcdf_fortran_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+    #- "load hdf5/${hdf5_version}-${mpi_implementation_suffix}-${compiler_suffix}"
+
+    - "load ${compiler_module}" 
+    - "load ${mkl_module}" 
+    - "load ${openmpi_module}" 
+    - "load ${hdf5_module}" 
+    - "load ${netcdfc_module}" 
+    - "load ${netcdff_module}" 
+    #- load /albedo/home/mandresm/.spack/modules/netcdf-cxx-4.2-gcc-12.1.0-codiq6i
+    #- load /albedo/home/mandresm/.spack/modules/eccodes-2.25.0-intel-2021.5.0-bjv3v4v
+
+    # General Tools:
+    - "load cdo/2.0.5"
+    - "load nco/5.0.1"
+    - "load git/2.35.2"
+    #- "load perl/5.35.0-gcc12.1.0"
+    - "load python/3.10.4"
+    # Show what is there in the log:
+    - "list"
 #>>>>>>> albedo/awicm3
 
 export_vars:
@@ -188,61 +217,64 @@ export_vars:
     LC_ALL: en_US.UTF-8
 
 # Paul's <<<<<<< HEAD
-    # NOTE(PG): All Compilers are set via the module files!
-    # Compilers:
-    # FC: ${fc}
-    # F77: ${f77}
-    # MPIFC: ${mpifc}
-    # MPICC: ${mpicc}
-    # CC: ${cc}
-    # CXX: ${cxx}
-
-    # Message Passing Interface (MPI) environment variables:
-    # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
-    MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
-
-    # Linear-Algebra Library environment variables:
-    # FIXME(PG): This would be nicer...
-    # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
-    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
-    LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 
-# Miguel's =======
+#    # NOTE(PG): All Compilers are set via the module files!
 #    # Compilers:
-#    FC: ${fc}
-#    F77: ${f77}
-#    MPIFC: ${mpifc}
-#    MPICC: ${mpicc}
-#    CC: ${cc}
-#    CXX: ${cxx}
+#    # FC: ${fc}
+#    # F77: ${f77}
+#    # MPIFC: ${mpifc}
+#    # MPICC: ${mpicc}
+#    # CC: ${cc}
+#    # CXX: ${cxx}
 #
 #    # Message Passing Interface (MPI) environment variables:
-#    MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
-#    MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
-#
-#    # HDF5 exported environment variables:
-#    #HDF5_C_I/usr/lib64/perl5HDF5ROOT/include
-#
-#    #PSMPIFLAGS: '"-lrt -lm -ldl"'
+#    # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+#    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+#    MPI_LIB: "$($MPIF90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 #
 #    # Linear-Algebra Library environment variables:
-#    LAPACK_LIB: "'-mkl=sequential'"
-#    #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
-#
-#    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-#
-#    # PERL library
-#    #PERL5LIB: "/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib/5.35.0/"
-#    PERL5LIB: "/albedo/home/mandresm/my_libs/perl-5.32.0/lib"
-#
-#    # AWICM3
-#    #SZIPROOT: "/sw/spack-levante/libaec-1.0.5-gij7yv"
-#    HDF5ROOT: "/albedo/home/mandresm/.spack/sw/hdf5/1.12.2-okkbjga/"
-#    NETCDFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-c/4.8.1-24hqns7/"
-#    NETCDFFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-fortran/4.5.4-h37jgao/"
-#    ECCODESROOT: "/albedo/home/mandresm/.spack/sw/eccodes/2.25.0-hwsa4h3/"
-#
-#    PATH: "$PERL5LIB/../bin:$PATH" #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
-#
-#    LD_LIBRARY_PATH[(1)]: /albedo/home/mandresm/.spack/sw/intel-oneapi-mkl/2022.0.1-ebd776q/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+#    # FIXME(PG): This would be nicer...
+#    # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
+#    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+#    LAPACK_LIB: "'-L/albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-7235vfh/mkl/2022.1.0 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'" 
+# Miguel's =======
+    # Compilers:
+    FC: ${fc}
+    F77: ${f77}
+    MPIFC: ${mpifc}
+    MPICC: ${mpicc}
+    CC: ${cc}
+    CXX: ${cxx}
+
+    CPU_MODEL: AMD_EPYC_ZEN3
+
+    # Message Passing Interface (MPI) environment variables:
+    MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+    MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+    # HDF5 exported environment variables:
+    #HDF5_C_I/usr/lib64/perl5HDF5ROOT/include
+
+    #PSMPIFLAGS: '"-lrt -lm -ldl"'
+
+    # Linear-Algebra Library environment variables:
+    LAPACK_LIB: "'-mkl=sequential'"
+    #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -lpthread  -ldl"'
+
+    # PERL library
+    #PERL5LIB: "/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib/5.35.0/"
+    PERL5LIB: "/albedo/home/mandresm/my_libs/perl-5.32.0/lib"
+
+    # AWICM3
+    ##SZIPROOT: "/sw/spack-levante/libaec-1.0.5-gij7yv"
+    HDF5ROOT: ""
+    NETCDFROOT: ""
+    NETCDFFROOT: ""
+    ECCODESROOT: ""
+
+    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+    LD_LIBRARY_PATH[(1)]: /albedo/home/mandresm/.spack/sw/intel-oneapi-mkl/2022.0.1-ebd776q/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+
+    PATH: "$PERL5LIB/../bin:$PATH" #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+
 #>>>>>>> albedo/awicm3

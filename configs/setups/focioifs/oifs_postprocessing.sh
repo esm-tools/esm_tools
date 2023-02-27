@@ -12,9 +12,10 @@
 # 
 basedir=~/esm/esm-experiments/ # change via -p
 EXP_ID="test_experiment"        # change via -r
-startyear=1850                  # change via -s
-endyear=1850                    # change via -e
-envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
+startdate=18500101                  # change via -s
+enddate=18501231                    # change via -e
+envfile=""  # change via -x
+freq="m"
 run_monitoring="no"
 
 module load nco || module load NCO
@@ -25,8 +26,7 @@ ATM_CONVERT_NETCDF4=true
 ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_ml reduced_sfc reduced_pv reduced_pl reduced_ml"
 
 # Other settings
-day="01"
-max_jobs=12
+max_jobs=20
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -37,7 +37,7 @@ max_jobs=12
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?md:r:s:e:p:x" opt; do
+while getopts "h?md:r:s:e:p:x:i:" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -45,8 +45,9 @@ while getopts "h?md:r:s:e:p:x" opt; do
         echo "                   -d for more output (useful for debugging, not used at the moment)"
         echo "                   -p path to data                     (basedir,  default is $basedir)"
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
-        echo "                   -s startyear                        (startyear, default is $startyear)"
-        echo "                   -e endyear                          (endyear,   default is $endyear)"
+        echo "                   -s startdate                        (startdate, default is $startdate)"
+        echo "                   -e enddate                          (enddate,   default is $enddate)"
+        echo "                   -i increment                        (increment,  default is calculated automagially, see code for details)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         echo "                   -m run oifs_monitoring.sh           "
         echo
@@ -56,9 +57,11 @@ while getopts "h?md:r:s:e:p:x" opt; do
         ;;
     r)  EXP_ID=$OPTARG
         ;;
-    s)  startyear=$OPTARG
+    s)  startdate=$OPTARG
         ;;
-    e)  endyear=$OPTARG
+    e)  enddate=$OPTARG
+        ;;
+    i)  increment=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
@@ -69,13 +72,22 @@ while getopts "h?md:r:s:e:p:x" opt; do
     esac
 done
 
+[[ -z $envfile ]] && envfile="$basedir/$EXP_ID/scripts/env.sh"
 shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
-envfile="$basedir/$EXP_ID/scripts/env.sh"
 echo
-echo "Doing postprocessing in $basedir for $EXP_ID from year $startyear to $endyear"
+echo "Doing postprocessing in $basedir for $EXP_ID from $startdate to $enddate"
 echo "Using an environment from $envfile"
 echo
+startdate=$(date --date "$startdate" "+%Y%m%d")
+enddate=$(date --date "$enddate" "+%Y%m%d")
+if [[ ${#startdate} -ne 8 ]] || [[ ${#enddate} -ne 8 ]]; then
+	echo
+	echo " Please provide start and end date in yyyymmdd format e.g."
+	echo " $0 -s 20220101 -e 20220930"
+	echo
+	exit 1
+fi
 if [[ ! -r $envfile ]] ; then
    echo
 	echo $envfile does not exist
@@ -83,7 +95,7 @@ if [[ ! -r $envfile ]] ; then
 	exit 1
 else
   # module purge in envfile writes non-printable chars to log
-   source $envfile | tee
+   source $envfile > >(tee) 
 fi
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
@@ -101,8 +113,8 @@ set -e
 ###############################################################################
 #
 # some derived variables that directly depend on the command line arguments...
-startdate=${startyear}0101              # 
-nextdate=$((endyear + 1))0101
+#startdate=${startyearmonth}01              # 
+#enddate=$((endyear + 1))0101
 DATA_DIR=${basedir}/${EXP_ID}/outdata
 RESTART_DIR=${basedir}/${EXP_ID}/restart
 #inidate=18500101 # not needed anymore
@@ -110,6 +122,7 @@ debug=0
 
 # Component directories/names
 atmmod=oifs
+rnfmod=rnfmap
 
 #
 # Default options for Unix commands
@@ -137,18 +150,12 @@ function time_merge {
     cat "$@" > $tmp && mv $tmp $out
 }
 
-#
-# Job specification
-#
-
-mean_op='-monmean'; avg_op='-monavg'
-
 sleep_time=2
 
 # Definition of some time variables
 #
 # enddate:     last day of this run
-enddate=$(date --date="$nextdate - 1 day" "+%Y%m%d")
+#enddate=$(date --date="$nextdate - 1 day" "+%Y%m%d")
 
 #
 # DATA PROCESSING
@@ -164,27 +171,23 @@ then
     exit 1
 fi
 
-# Computation of expected input time stamps
-startstamp=${startdate%??}
-laststamp=
-stamps=
+# Computation of frequency, currently y for yearly and m for monthly are supported 
+startyear=$(date --date="$startdate" "+%Y")
+startmonth=$(date --date="$startdate" "+%m")
+endyear=$(date --date="$enddate" "+%Y")
+endmonth=$(date --date="$enddate" "+%m")
 
-currdate=$startdate
-while [[ $currdate -le $enddate ]] ; do
-    laststamp=${currdate%??}
-    stamps="$stamps $laststamp"
-    #currdate=$(calc_date plus -M 1 $currdate)
-	 # 18930401 does not exist for the date function and leads to an error
-	 [[ "$currdate" == "18930401" ]] && currdate="18930331"
-	 currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
-done
+[[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] && freq="y"
 
-# Computation of expected years for concatenated output
-#iniyear=${inidate%????}
-startyear=${startdate%????}
-endyear=${enddate%????}
-#[[ $startyear == $iniyear && $inidate != *0101 ]] && ((++startyear)) 
-[[ $enddate != *1231 ]] && ((--endyear))
+# calculate increment if not set, set to 1 to postprocess multiple years of
+# simulation that ran in multiyear intervals.
+if [[ -z $increment ]] ; then
+   if [[ $startyear == $endyear ]] ; then
+      increment=$((endmonth - startmonth + 1))
+   else
+      increment=$((endyear - startyear + 1))
+   fi
+fi
 
 # Temporary directory
 id=$$
@@ -198,7 +201,7 @@ mkdir $post_dir
 # Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
 # developed by Willi Rath, GEOMAR (convert_to_deflated_nc4classic_with_small_chunks.sh)
 # Converts any OpenIFS netCDF file to deflated (level 1) netCDF4-classic with
-# (1,1,100,100)=(t,plev,lat,lon) chunks.
+# (1,1,96,96)=(t,plev,lat,lon) chunks.
 # needs ncdump and a recent (4.3.7 or newer) nco
 #
 print 'OpenIFS netcdf4 conversion started'
@@ -209,31 +212,42 @@ cd ${outmod}
 mkdir nc3
 
 filetags="${ATM_FILE_TAGS}"
-
-#steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
 steps="1ts 1h 3h 6h 1d 1m 1y"
-tchunk=1; zchunk=1; ychunk=100; xchunk=100
+tchunk=1; zchunk=1; ychunk=96; xchunk=96
 
 echo 0 > $post_dir/status
 if ${ATM_CONVERT_NETCDF4} ; then
-	for ((year=startyear; year<=endyear; ++year))
+
+   nextdate=$startdate
+   while [[ $nextdate -lt $enddate ]] 
 	do
+	   # treat special case of 18930401, see echam_postprocessing.sh
+		if [[ $freq == "m" ]] ; then
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} month" "+%Y%m%d")
+		else
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		fi
+
 		for filetag in $filetags
 		do
    		for s in $steps
-      	        do
-                        # Name of output from model (always ECE3...)
-                        input_orig=ECE3_${s}_${year}0101_${filetag}.nc
-                        # Rename to this
-			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc3
-                        # Name of final compressed file
-		    	output=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
+         do
+            # Name of output from model (always ECE3...)
+            input_orig=ECE3_${s}_${currdate1}_${filetag}.nc
+            # Rename to this
+			   input=${EXP_ID}_${s}_${currdate1}_${currdate2}_${filetag}.nc3
+            # Name of final compressed file
+		    	output=${EXP_ID}_${s}_${currdate1}_${currdate2}_${filetag}.nc
                         			
-      	  	        if [[ -f $input_orig ]] ; then
-			    mv $input_orig $input
-                            # If too many jobs run at the same time, wait
-			    while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
-			    (
+  	         if [[ -f $input_orig ]] ; then
+			      mv $input_orig $input
+               # If too many jobs run at the same time, wait
+			      while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+			      (
 			    trap 'echo $? > $post_dir/status' ERR
 			    print "converting " $input " to " $output
 			    if [[ ! -f $output ]]; then
@@ -280,6 +294,35 @@ wait
 
 print 'OpenIFS netcdf4 conversion finished'
 
+# 
+# Post process output from runoff (if existing)
+#
+outrnf=${DATA_DIR}/${rnfmod}
+print 'Runoff post processing started'
+
+if [[ -d $outrnf ]] ; then
+   cd ${outrnf}
+	# ESM-Tools renames files if they exist in the output directory and
+	# creates a link to the lates file. If the postprocessing runs late
+	# we are not postprocessing the file we think we postprocess.
+	runoff_out="runoff_out.nc"
+	[[ -L $runoff_out ]] && runoff_out="runoff_out.nc_${startdate}-${enddate}"
+
+   if [[ -f ${runoff_out} ]] ; then
+   
+      # make time axis
+      cdo -settunits,seconds -settaxis,${startyear}-${startmonth}-01,00:00,3h ${runoff_out} runoff_out_time.nc 
+   
+      # day, month and year means
+      cdo daymean runoff_out_time.nc ${EXP_ID}_1d_${startdate}_${enddate}_rnf.nc
+      cdo monmean runoff_out_time.nc ${EXP_ID}_1m_${startdate}_${enddate}_rnf.nc
+	   if [[ "$freq" == "y" ]] ; then	
+         cdo yearmean runoff_out_time.nc ${EXP_ID}_1y_${startdate}_${enddate}_rnf.nc
+      fi 
+      rm ${runoff_out} runoff_out_time.nc 
+   fi 
+fi
+
 #
 # Calculate yearly means from nemo output and place in ym/ subdirectory 
 #
@@ -292,7 +335,8 @@ cd ${outmod}
 
 echo 0 > $post_dir/status
 mkdir ym
-
+# TODO: only works for yearly restart intervals at the moment
+# can be improved, see nemo_postprocessing.sh
 if ${ATM_CONVERT_NETCDF4} ; then
     for ((year=startyear; year<=endyear; ++year))
     do
@@ -304,7 +348,7 @@ if ${ATM_CONVERT_NETCDF4} ; then
 			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
 			output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
 
-			if [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
+			if [[ "$freq" == "y" ]] && [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 
 				touch ym/$output 
 				# If too many jobs run at the same time, wait
@@ -370,34 +414,42 @@ fi
 # * If we have _fx_ output, then take lsm and other stuff
 # * Use cdo gridarea to generate areacella 
 cd ${DATA_DIR}/${atmmod}
-for ((year=startyear-1; year<endyear; ++year)) ; do 
+for ((year=startyear; year<=endyear; ++year)) ; do 
+    echo " Use ECE3_fx_${year}0101_regular_sfc.nc to make grid file for regular grid "
     if [[ -f "ECE3_fx_${year}0101_regular_sfc.nc" ]] ; then
         if [[ ! -f "areacella.nc" ]] ; then
+            echo " Make areacella.nc "
             # Get grid cell area
-            cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_regular_sfc.nc areacella.nc
+            cdo -L -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_regular_sfc.nc areacella.nc
+        else
+            echo " areacella.nc already exists "
         fi 
         if [[ ! -f "lsm.nc" ]] ; then
+            echo " Make lsm.nc "
             # Get lsm
-            cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc 
+            cdo -L -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_regular_sfc.nc lsm.nc  
+        else
+            echo " lsm.nc already exists "
         fi
     fi
     
     if [[ -f "ECE3_fx_${year}0101_reduced_sfc.nc" ]] ; then
-        if [[ !-f "areacella_reduced.nc" ]] ; then
+        if [[ ! -f "areacella_reduced.nc" ]] ; then
             # Get grid cell area
-            cdo -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_reduced_sfc.nc areacella_reduced.nc
+            cdo -L -chname,cell_area,areacella -gridarea ECE3_fx_${year}0101_reduced_sfc.nc areacella_reduced.nc
         fi
-	if [[ !-f "lsm_reduced.nc" ]] ; then
+	if [[ ! -f "lsm_reduced.nc" ]] ; then
             # Get lsm
-	    cdo -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_reduced_sfc.nc lsm_reduced.nc
+	    cdo -L -aexpr,'land_mask=lsm+cl' -select,name=lsm,cl,al,sz ECE3_fx_${year}0101_reduced_sfc.nc lsm_reduced.nc
 	fi
     fi
 done
 
 if [[ -f "areacella.nc" ]] && [[ -f "lsm.nc" ]] ; then
+    echo " areacella.nc and lsm.nc exist, so removing fx files "
     rm *_fx_*_regular_sfc.nc 
 fi
-if [[ -f "areacella_reduced.nc"]] && [[ -f "lsm_reduced.nc" ]] ; then
+if [[ -f "areacella_reduced.nc" ]] && [[ -f "lsm_reduced.nc" ]] ; then
     rm *_fx_*_reduced_sfc.nc
 fi
 

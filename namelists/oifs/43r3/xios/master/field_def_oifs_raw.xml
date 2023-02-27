@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 
-<field_definition>
+<field_definition level="1" prec="4" enabled="true" operation="instant" freq_op="1ts" ts_enabled="true" default_value="1.e+20">
 
     <field_group id="2D_physical" grid_ref="reduced_sfc">
         <!--TODO: convert to kg m-2-->

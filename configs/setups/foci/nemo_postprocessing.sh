@@ -167,7 +167,7 @@ then
     print "Oops: invalid start date; currently only first of month is supported"
     exit 1
 fi
-
+set -vx
 # Computation of frequency, currently y for yearly and m for monthly are supported 
 startmonth=$(date --date="$startdate" "+%m")
 endmonth=$(date --date="$enddate" "+%m")
@@ -180,7 +180,12 @@ endyear=$(date --date="$enddate" "+%Y")
 # simulation that ran in multiyear intervals.
 if [[ -z $increment ]] ; then
    if [[ $startyear == $endyear ]] ; then
-      increment=$((endmonth - startmonth + 1)) 
+	   # freq is 'y' for a full single year
+      if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
+			increment=1
+		else
+      	increment=$((endmonth - startmonth + 1)) 
+		fi
 	else
       increment=$((endyear - startyear + 1)) 
    fi
@@ -226,7 +231,7 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 		else
 			currdate1=$nextdate
 			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 		fi
 
 		for filetag in $filetags
@@ -310,7 +315,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 	fi
 
 	for filetag in $filetags
@@ -384,7 +389,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + 1 year" "+%Y%m%d")	
 	fi
 
 	# output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc

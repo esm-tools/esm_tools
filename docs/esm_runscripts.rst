@@ -237,7 +237,79 @@ end of their names (i.e. ``fesom.clock_YYYYMMDD-YYYYMMDD``).
 Cleanup of ``run_`` directories
 -------------------------------
 
-.. automethod:: esm_runscripts.tidy.clean_run_dir
+.. TODO: fix this and remove the text below    .. automethod:: esm_runscripts.tidy.clean_run_dir
+
+This plugin allows you to clean up the ``run_${DATE}`` folders.
+To do that you can use the following variables under the
+``general`` section of your runscript (documentation follows order
+of code as it is executed):
+
+* ``clean_runs``: **This is the most important variable for most
+  users**. It can take the following values:
+    * ``True``: removes the ``run_`` directory after each run
+      (**overrides every other** ``clean_`` **option**).
+
+    * ``False``: does not remove any ``run_`` directory (default)
+      if no ``clean_`` variable is defined.
+
+    * ``<int>``: giving an integer as a value results in deleting
+      the ``run_`` folders except for the last <int> runs
+      (recommended option as it allows for debugging of crashed
+      simulations).
+
+  .. Note::
+     ``clean_runs: (bool)`` is incompatible with
+     ``clean_this_rundir`` and ``clean_runs: (int)`` is incompatible
+     with ``clean_old_rundirs_except`` (an error will be raised
+     after the end of the first simulation). The functionality of
+     ``clean_runs`` variable **alone will suffice most of the
+     standard user requirements**. If finer tunning for the removal
+     of ``run_`` directories is required you can used the following
+     variables instead of ``clean_runs``.
+
+* ``clean_this_rundir``: (bool) Removes the entire run directory
+  (equivalent to ``clean_runs: (bool)``). ``clean_this_rundir: True``
+  **overrides every other** ``clean_`` **option**.
+
+* ``clean_old_rundirs_except``: (int) Removes the entire run
+  directory except for the last <x> runs (equivalent to
+  ``clean_runs: (int)``).
+
+* ``clean_old_rundirs_keep_every``: (int) Removes the entire
+  run directory except every <x>th run. Compatible with
+  ``clean_old_rundirs_except`` or ``clean_runs: (int)``.
+
+* ``clean_<filetype>_dir``: (bool) Erases the run directory
+  for a specific filetype. Compatible with all the other options.
+
+* ``clean_size``: (int or float) Erases all files with size
+  greater than ``clean_size``, must be specified in bytes! Compatible
+  with all the other options.
+
+**Example**
+
+To delete all the ``run_`` directories in your experiment include this
+into your runscript:
+
+.. code-block:: yaml
+
+   general:
+           clean_runs: True
+
+To keep the last 2 ``run_`` directories:
+
+.. code-block:: yaml
+
+   general:
+           clean_runs: 2
+
+To keep the last 2 runs and every 5 runs:
+
+.. code-block:: yaml
+
+   general:
+           clean_old_rundirs_except: 2
+           clean_old_rundirs_keep_every: 5
 
 Debugging an Experiment
 -----------------------

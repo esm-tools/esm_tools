@@ -404,9 +404,6 @@ compiletime_environment_changes:
                                 - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
         choose_computer.name:
                 juwels:
                         add_module_actions:

@@ -127,11 +127,11 @@ executable: fesom
 choose_resolution:
         CORE2:
                 nx: 126859
-                mesh_dir: "${pool_dir}/meshes_default/core/"
+                mesh_dir: "${mesh_base_dir}/core/"
                 nproc: 288
         GLOB:
                 nx: 830305
-                mesh_dir: "${pool_dir}/meshes_default/glob/"
+                mesh_dir: "${mesh_base_dir}/glob/"
         GLOB_rmstep:
                 nx: 830305
                 mesh_dir: "/work/ba1150/a270147/meshes/"
@@ -143,12 +143,12 @@ choose_resolution:
                 mesh_dir: "${pool_dir}/meshes/mesh_ref/"
         BOLD:
                 nx: 1306775
-                mesh_dir: "${pool_dir}/meshes_default/bold/"
+                mesh_dir: "${mesh_base_dir}/bold/"
         fArc:
                 nx: 638387
         PI-GRID:
                 nx: 3140
-                mesh_dir: "${pool_dir}/meshes_default/pi-grid/"
+                mesh_dir: "${mesh_base_dir}/pi-grid/"
         CAVCORE2:
                 nx: 72411
 
@@ -446,23 +446,28 @@ ignore_sources:
         gf: goodfile
         chloro: Chl_Sweeney.dat
 
-compiletime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom1
 choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
+        ollie:
+                mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
                 add_compiletime_environment_changes:
                         add_export_vars:
-                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                                NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+                                LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+                                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+                                NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+
+        glogin:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
+                add_compiletime_environment_changes:
+                        add_export_vars:
+                                NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+                                LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+                                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+                                NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
         levante:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
                 add_compiletime_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}

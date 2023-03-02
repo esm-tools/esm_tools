@@ -166,11 +166,14 @@ choose_version:
     use_tracer: false 
     leapyear: false  
     free_surface: nonlinear
+    ln_tsd_tradmp: true
+    # this sets nn_fsbc
+    coupling_freq_in_steps: 1
 
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
     # forcing for uncoupled setups
     jra55_forcing_dir: ${pool_dir}/JRA55-do_drowned
-    jra55_runoff_dir: ${pool_dir}/JRA_runoff_forcing_ORCA025
+    jra55_runoff_dir: ${pool_dir}/eORCA025-nemo4
 
     # override hardcoded path to runoff forcing
     add_namelist_changes:
@@ -283,10 +286,10 @@ choose_version:
           "${jra55_forcing_dir}/psl_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
              from: 1958
              to: 2019
-        #sn_rnf:
-        #  "${jra55_runoff_dir}/sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc":
-        #     from: 1958
-        #     to: 2019
+        sn_rnf:
+          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-5-0_gr_eorca025_y@YEAR@.nc":
+             from: 1958
+             to: 2019
 
 
   'ORCA05.z75.ICE.JRA': 
@@ -344,6 +347,10 @@ choose_version:
     add_namelist_changes:
        namelist_cfg:
           namsbc_blk:
+             cn_dir: "./"
+          namsbc_apr:
+             cn_dir: "./"
+          namsbc_rnf:
              cn_dir: "./"
     
     add_input_sources:
@@ -1121,7 +1128,7 @@ choose_version:
         sn_humi: "huss-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
         sn_prec: "prra_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
         sn_snow: "prsn_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr.nc"
-        sn_rnf: "sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc"
+        sn_rnf: "sorunoff_JRA55-do-1-5-0_gr_eorca025_y@YEAR@.nc"
 
     forcing_sources:
         # JRA55-do drowned forcing
@@ -1158,7 +1165,7 @@ choose_version:
              from: 1958
              to: 1960
         sn_rnf:
-          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc":
+          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-5-0_gr_eorca025_y@YEAR@.nc":
              from: 1958
              to: 1960
 
@@ -1648,8 +1655,8 @@ input_sources:
         reshape_ghflux2_eORCA025: ${input_dir}/reshape_ghflux2_eORCA025_r4.2.0_bilin.nc
         reshape_jra55do_eORCA025_bicub: ${input_dir}/reshape_jra55do_eORCA025_r4.2.0_bicub.nc
         reshape_jra55do_eORCA025_bilin: ${input_dir}/reshape_jra55do_eORCA025_r4.2.0_bilin.nc
-        data_tem_eORCA025: ${input_dir}/woa13_decav_ptemp_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
-        data_sal_eORCA025: ${input_dir}/woa13_decav_salt_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.0.nc
+        data_tem_eORCA025: ${input_dir}/woa13_decav_ptemp_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.5.nc
+        data_sal_eORCA025: ${input_dir}/woa13_decav_salt_OMIPinit_eORCA025.L75_4.2.0_Kv1.0.5.nc
         runoff_eORCA025: ${input_dir}/runoff_b0.2.0_eORCA025_r4.2.0.nc
         seaice_eORCA025: ${input_dir}/seaice_c3.0_v19802004.0_eORCA025_r4.2.0.nc
 

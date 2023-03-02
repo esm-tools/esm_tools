@@ -451,29 +451,23 @@ choose_computer.name:
                 mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_environment_changes:
-                        add_export_vars:
-                                NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
-                                LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
-                                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
-                                NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
-
         glogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_environment_changes:
-                        add_export_vars:
-                                NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
-                                LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
-                                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
-                                NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
         levante:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_compiletime_environment_changes:
+                add_compiletim_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}
                                 NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include
                                 NETCDF_CXX_LIBRARIES: ${computer.netcdf_cxx_root}/lib
                                 LD_LIBRARY_PATH[(10)]: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+
+environment_changes:
+    choose_computer.name:
+        blogin:
+            iolibraries: system_libs
+        glogin:
+            iolibraries: system_libs
 
 coupling_fields:
         sst_feom:

@@ -55,6 +55,9 @@ choose_partition:
         standard96:
                 partition_name: standard96
                 partition_cpn: 96
+        'standard96:test':
+                partition_name: 'standard96:test'
+                partition_cpn: 96
 
 partitions:
         compute:

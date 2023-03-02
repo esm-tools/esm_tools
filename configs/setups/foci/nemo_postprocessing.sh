@@ -167,7 +167,7 @@ then
     print "Oops: invalid start date; currently only first of month is supported"
     exit 1
 fi
-set -vx
+
 # Computation of frequency, currently y for yearly and m for monthly are supported 
 startmonth=$(date --date="$startdate" "+%m")
 endmonth=$(date --date="$enddate" "+%m")

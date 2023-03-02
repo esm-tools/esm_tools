@@ -455,7 +455,7 @@ choose_computer.name:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         levante:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_compiletim_environment_changes:
+                add_compiletime_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}
                                 NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include

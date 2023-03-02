@@ -451,7 +451,7 @@ choose_computer.name:
                 mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_compiletime_environment_changes:
+                add_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
                                 LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
@@ -460,7 +460,7 @@ choose_computer.name:
 
         glogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
-                add_compiletime_environment_changes:
+                add_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
                                 LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH

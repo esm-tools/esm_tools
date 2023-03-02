@@ -127,11 +127,11 @@ executable: fesom
 choose_resolution:
         CORE2:
                 nx: 126859
-                mesh_dir: "${mesh_base_dir}/core/"
+                mesh_dir: "${fesom.mesh_base_dir}/core/"
                 nproc: 288
         GLOB:
                 nx: 830305
-                mesh_dir: "${mesh_base_dir}/glob/"
+                mesh_dir: "${fesom.mesh_base_dir}/glob/"
         GLOB_rmstep:
                 nx: 830305
                 mesh_dir: "/work/ba1150/a270147/meshes/"
@@ -143,12 +143,12 @@ choose_resolution:
                 mesh_dir: "${pool_dir}/meshes/mesh_ref/"
         BOLD:
                 nx: 1306775
-                mesh_dir: "${mesh_base_dir}/bold/"
+                mesh_dir: "${fesom.mesh_base_dir}/bold/"
         fArc:
                 nx: 638387
         PI-GRID:
                 nx: 3140
-                mesh_dir: "${mesh_base_dir}/pi-grid/"
+                mesh_dir: "${fesom.mesh_base_dir}/pi-grid/"
         CAVCORE2:
                 nx: 72411
 

@@ -67,6 +67,8 @@ general:
                         pool_dir: "/proj/awi/input"
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
+                albedo:
+                        pool_dir: "/albedo/work/user/jstreffi/input"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 

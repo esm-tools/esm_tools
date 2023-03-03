@@ -10,7 +10,7 @@ operating_system: "linux-rocky"
 sh_interpreter: "/usr/bin/bash"
 # Batch system and configuration:
 batch_system: "slurm"
-accounting: false
+accounting: true
 further_reading:
     - batch_system/slurm.yaml
 partitions:
@@ -171,7 +171,7 @@ choose_compiler_suite:
             HDF5ROOT: "/albedo/home/mandresm/.spack/sw/hdf5/1.12.2-xy5vq7s/"
             NETCDFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-c/4.8.1-ffhyl6p/"
             NETCDFFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-fortran/4.5.4-w4vv7su/"
-            #ECCODESROOT: "/albedo/home/mandresm/.spack/sw/eccodes/2.25.0-hwsa4h3/"
+            ECCODESROOT: "/albedo/home/mandresm/.spack/sw/eccodes/2.25.0-hwsa4h3/"
 
 netcdf_c_version: "4.8.1"
 netcdf_cxx_version: "4.2"
@@ -200,7 +200,8 @@ module_actions:
     - "load ${netcdfc_module}" 
     - "load ${netcdff_module}" 
     #- load /albedo/home/mandresm/.spack/modules/netcdf-cxx-4.2-gcc-12.1.0-codiq6i
-    #- load /albedo/home/mandresm/.spack/modules/eccodes-2.25.0-intel-2021.5.0-bjv3v4v
+    #- load /albedo/home/mandresm/.spack/modules/eccodes-2.25.0-intel-2021.5.0-bjv3v4v #JS: has no eccodes f90
+    - "load /albedo/home/mandresm/.spack/modules/eccodes-2.25.0-intel-2021.5.0-hwsa4h3"
 
     # General Tools:
     - "load cdo/2.0.5"
@@ -275,6 +276,6 @@ export_vars:
 
     LD_LIBRARY_PATH[(1)]: /albedo/home/mandresm/.spack/sw/intel-oneapi-mkl/2022.0.1-ebd776q/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
-    PATH: "$PERL5LIB/../bin:$PATH" #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+    PATH: "$PERL5LIB/../bin:$ECCODESROOT/bin:$PATH"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
 
 #>>>>>>> albedo/awicm3

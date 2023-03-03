@@ -48,10 +48,10 @@ forcing_sources:
         Ndepo_ssp:
                 # These files are 12-monthly; see README.md in Ndepo/ directory
                 # NOTE: ssp370 might be missing in this directory
-                "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_@YEAR@.nc":
+                "${input_dir_couple}/${Ndepo_path}@YEAR@.nc":
                     from: 1850
                     to: 2099
-                "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_2099.nc":
+                "${input_dir_couple}/${Ndepo_path}2099.nc":
                     from: 2100
                     to: 2101
 
@@ -84,7 +84,7 @@ choose_dataset:
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
                         # Files used by AWI-CM1 and AWI-CM1-REcoM in Levante for ssp scenarios
                         "popdens_ssp":
-                                "${input_dir_awi}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
+                                "${input_dir_couple}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "cover_fract_HIST":
@@ -123,7 +123,7 @@ choose_dataset:
 
                         "Ndepo_hist_scenario":
                         # TODO: pool on Levante seems to be broken currently.
-                        # There are no yearly Ndepo files. ${input_dir_awi}
+                        # There are no yearly Ndepo files. ${input_dir_couple}
                         # contains the yearly files
                                 "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
                                         to: 1850

@@ -502,7 +502,11 @@ rnfmap:
                                 namelist.runoffmapper:
                                         NAMRNFMAP:
                                                 LCalvingEnthalpy: True
-
+                        add_grids:
+                                rnfa:
+                                        name: RNFA
+                                rnfo:
+                                        name: RNFO
 
 #########################################################################################
 

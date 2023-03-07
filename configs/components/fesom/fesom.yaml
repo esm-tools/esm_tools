@@ -448,15 +448,15 @@ ignore_sources:
 
 choose_computer.name:
         ollie:
-                mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
-                climate_data_dir: "${pool_dir}/FESOM/hydrography/"
-                forcing_data_dir: "${pool_dir}/FESOM/forcing/"
+                pool_dir: "${computer.pool_directories.pool}/FESOM/"
+                mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         glogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         levante:
-                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
+                pool_dir: "${computer.pool_directories.pool}/AWICM/FESOM1/"
+                mesh_base_dir: "${pool_dir}/MESHES/"
                 add_compiletime_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}

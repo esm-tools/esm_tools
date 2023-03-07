@@ -448,7 +448,9 @@ ignore_sources:
 
 choose_computer.name:
         ollie:
-                mesh_base_dir: "${pool_dir}/meshes_default/"
+                mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+                climate_data_dir: "${pool_dir}/FESOM/hydrography/"
+                forcing_data_dir: "${pool_dir}/FESOM/forcing/"
         blogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         glogin:

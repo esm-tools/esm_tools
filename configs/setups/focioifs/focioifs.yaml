@@ -141,7 +141,7 @@ oifs:
              blogin:
                 compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_impi2019_nemo4
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -160,9 +160,9 @@ oifs:
                 compiler_mpi: intel2022_openmpi 
                 iolibraries: system_libs 
              blogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_impi2019_nemo4
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:

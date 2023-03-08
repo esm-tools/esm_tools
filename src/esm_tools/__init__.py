@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.19.5"
+__version__ = "6.19.7"
 
 import functools
 import inspect

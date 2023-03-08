@@ -89,7 +89,7 @@ compiler_mpi: intel2019_impi2019
 # for FOCIOIFS use
 # compiler_mpi: intel2019_ompi
 # for FOCI use
-compiler_mpi: intel2019_impi2019
+# compiler_mpi: intel2019_impi2019
 # for both FOCI and FOCIOIFS use
 iolibraries: geomar_libs
 

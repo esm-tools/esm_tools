@@ -231,6 +231,8 @@ oifs:
         choose_general.resolution:
                 TCO95_ORCA05:
                         nproc: 279
+                TCO95_eORCA025:
+                        nproc: 279
                 TCO95_ORCA12:
                         nproc: 287
 
@@ -538,6 +540,10 @@ oasis3mct:
         
         choose_general.resolution:
                 TCO95_ORCA05:
+                        # Default values (probably ok if grids similar)
+                        nb_of_neighbours_a2o: 9
+                        weight_a2o: 2.0
+                TCO95_eORCA025:
                         # Default values (probably ok if grids similar)
                         nb_of_neighbours_a2o: 9
                         weight_a2o: 2.0

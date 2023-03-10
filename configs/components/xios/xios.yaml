@@ -155,6 +155,11 @@ choose_general.setup_name:
                                         domain_def: domain_def
                                         field_def: field_def
                                         file_def: file_def
+                        "3.0": 
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        nemo_xml: nemo_xml
                         agrif:
                                 add_config_files:
                                         context_ifs: context_ifs

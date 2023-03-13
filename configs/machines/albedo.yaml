@@ -53,7 +53,17 @@ unset_vars:
     - "SLURM_MEM_PER_NODE"
     - "SLURM_MEM_PER_CPU"
 
-additional_flags: [--qos=12h]
+# QOS selection
+# Calculate minutes of cpomputing time
+compute_time_minutes: "$((
+    ${compute_time!hour}*60 + ${compute_time!minute} + ${compute_time!second}/60
+    ))"
+# Define the QOS based on the minutes of computing time
+qos: "$((
+    '30min' if ${compute_time_minutes} <= 30 else
+        '12h' if ${compute_time_minutes} <= 720 else '48h'
+    ))"
+additional_flags: ["--qos=${qos}"]
 
 mpi_implementation: openmpi
 choose_mpi_implementation:

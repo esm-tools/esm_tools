@@ -1,11 +1,8 @@
 hist_fold: hist_harvest
 
-# CD: Only for LU_hist definition is for years larger than 2014 (needed only to load
-# forcing data of the current year + 1 to do an interpolation). The historical
-# simulation in CMIP6 ends in 2014, the only data that is needed by echam is data from
-# 2015 and we agreed to choose the one from the ssp370 scenario (it does not really
-# matter which is chosen)
-hist_extend_scenario: ssp370
+# - year+1 data necessary for interpolation; historical ends 2014; use year 2015 of ssp370
+# - done for CMIP6 AWI-CM-1-1-LR/MR and AWI-ESM-1-1-LR simulations (tsemmler@awi.de, cdanek@awi.de)
+hist_extend_scenario: ssp370 
 
 input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
@@ -28,8 +25,7 @@ forcing_sources:
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                # HIST scenario will use this data beyond year 2014
-                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
                         from: 2015
 
         # landuse transitions
@@ -38,16 +34,14 @@ forcing_sources:
         "LU_trans_hist":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
-            # For the transient land data use a similar fix like in HIST land use
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
                 from: 2015
 
-        # NOTE: these files are prepared by Christopher Danek (AWI). These are
-        # yearly files where each file contain monthly data
-        # Used by AWI-CM1 and AWI-CM1-REcoM in Levante for ssp scenarios
+        # ndepo
+        # echam6/jsbach needs Ndepo files with either 1 (climatology) or 12 (monthly) time points per file
+        # --> these are not available in default pool
+        # --> created and saved in awi pool dir, check README.md in Ndepo path below, cdanek@awi.de
         Ndepo_ssp:
-                # These files are 12-monthly; see README.md in Ndepo/ directory
-                # NOTE: ssp370 might be missing in this directory
                 "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_@YEAR@.nc":
                     from: 1850
                     to: 2099
@@ -82,7 +76,6 @@ choose_dataset:
                         "a_nd_file": "${input_dir}/${echam.resolution}/spitfire/a_nd_${echam.resolution}.nc"
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
-                        # Files used by AWI-CM1 and AWI-CM1-REcoM in Levante for ssp scenarios
                         "popdens_ssp":
                                 "${input_dir_awi}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
                                         from: 1850
@@ -100,23 +93,20 @@ choose_dataset:
                                         to: 2014
                                 "${cover_fract_dir}/${echam.scenario}/cover_fract_11tiles_@YEAR@.nc":
                                         from: 2015
-                        "LU_trans_hist_scenario":
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
-                                        to: 2014
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
-                                        from: 2015
                         "cover_fract_ssp":
                                 "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
                                         from: 2015
                                         to: 2300
-
+                        "LU_trans_hist_scenario":
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                                        to: 2014
+                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                                        from: 2015
                         "LU_hist_scenario":
-                                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
-                                        to: 1850
                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-                                        from: 1851
+                                        from: 1850
                                         to: 2014
                                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                                         from: 2015

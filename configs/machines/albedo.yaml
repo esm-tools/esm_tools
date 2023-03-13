@@ -191,3 +191,21 @@ export_vars:
 
     PATH[(1)]: "$PERL5LIB/../bin:$PATH"
     PATH[(2)]: "$PATH:$ECCODESROOT/bin"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+
+warning:
+    testing:
+        message: "
+            ``Albedo Support for ESM-Tools is still in testing phase``. Most of the important
+            modules are already in the environment and many models compile already.
+            However, we cannot ensure that models will run smoothly due to missing
+            environment variables, pool problems, incorrect or not optimal compiler
+            flags... Feel free to try it a report and issue in https://github.com/esm-tools/esm_tools/issues
+            labelling it with the ``albedo`` tag, if things don't work as expected. By
+            running ``esm_tools --test-state`` you'll get information of what you can
+            expect to work and what not. Bare in mind that the ESM-Tools configurations
+            specific to Albedo will be changing fast on the following weeks, until
+            Albedo is fully supported. We recommend against using it for production
+            runs.\n\n
+            We kindly ask for your patience and collaboration.\n
+            The ESM-Tools Team
+            "

@@ -390,6 +390,7 @@ choose_scenario:
                 scenario_type: cmip6
         ssp534os:
                 scenario_type: cmip6
+                pool_dir: "/work/bb0519/foci_input2/ECHAM6_GENERAL/ECHAM6" # ssp534os forcing files not in default pool
         ssp585:
                 scenario_type: cmip6
 

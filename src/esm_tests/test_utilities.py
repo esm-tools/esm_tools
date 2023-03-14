@@ -217,7 +217,10 @@ def print_state_online(info={}):
         If not provided, defines the ``info`` keys needed.
     """
 
-    resources_branch = info["resources_branch"]
+    if "resources_branch" in info:
+        resources_branch = info["resources_branch"]
+    else:
+        resources_branch = "release"
     url = f"https://raw.githubusercontent.com/esm-tools/esm_tests_info/{resources_branch}/state.yaml"
     try:
         current_state = urllib.request.urlopen(url)

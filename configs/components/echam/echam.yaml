@@ -292,6 +292,11 @@ compiletime_environment_changes:
                 configure_opts: "'--without-regard-for-quality'"
                 FFLAGS: "'-fallow-argument-mismatch -w'"
                 FCFLAGS: "'-fallow-argument-mismatch -w'"
+            # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
+            add_unset_vars:
+              - FFLAGS
+              - FCFLAGS
+
 
 choose_concurrent_radiation_code:
         True:

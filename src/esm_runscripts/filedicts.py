@@ -1063,9 +1063,23 @@ class SimulationFile(dict):
         return True
 
 
+class SimulationFiles(dict):
+    """
+    Once instanciated, searches in the ``config`` dictionary for the ``files`` keys.
+    This class contains the methods to: 1) instanciate each of the files defined in
+    ``files`` as ``SimulationFile`` objects and 2) loop through these objects
+    triggering the desire file movement.
+    """
+    def __init__(self, config):
+        # Loop through components?
+            # Loop through files?
+        pass
+
+
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     """
-    Runs all methods required to get files into their correct locations.
+    Runs all methods required to get files into their correct locations. This will
+    instanciate the ``SimulationFiles`` class. It's called by the recipe manager.
 
     Parameters
     ----------

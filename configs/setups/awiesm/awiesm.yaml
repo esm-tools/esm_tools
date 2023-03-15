@@ -176,6 +176,11 @@ echam:
 
         # Environment
         # -----------
+        choose_computer.name:
+            albedo:
+                configure_opts: "'--with-coupler=oasis3-mct --without-regard-for-quality'"
+            "*":
+                configure_opts: '--with-coupler=oasis3-mct'
         add_compiletime_environment_changes:
             add_export_vars:
                 # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
@@ -183,7 +188,7 @@ echam:
                 OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
                 OASIS3MCT_FC_LIB: "$(pwd)/lib/"
                 OASIS3MCTROOT: "$(pwd)/oasis/"
-                configure_opts: '--with-coupler=oasis3-mct'
+                configure_opts: "${echam.configure_opts}"
 
         # Bootstrap switch
         # ----------------

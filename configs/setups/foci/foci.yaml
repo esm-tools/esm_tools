@@ -36,6 +36,7 @@ general:
         
         available_versions:
         - default
+        - default_autotools
         - fs
         - default_oasismct4
         - agrif 
@@ -44,6 +45,9 @@ general:
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          default_autotools:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_autotools+echam-6.3.05p2-foci_autotools
           fs:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS+echam-6.3.05p2-foci
@@ -59,26 +63,6 @@ general:
             #add_include_models:
             #- xios
 
-        file_movements:
-           forcing:
-              all_directions: link
-           input:
-              all_directions: link
-           restart_in:
-              # seb-wahl: need to copy restart files by default
-              # as oasis modifies the restart file !!!!
-              init_to_exp: copy
-              exp_to_run: copy
-              run_to_work: copy
-              work_to_run: link
-           restart_out:
-              all_directions: copy
-           #config:
-           #   init_to_exp: copy
-           #   exp_to_run: copy
-           #   run_to_work: link
-           #   work_to_run: link
-        
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -132,6 +116,8 @@ echam:
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
+                default_autotools:
+                        version: "6.3.05p2-foci"
                 fs:
                         version: "6.3.05p2-foci"
                 default_oasismct4:
@@ -151,16 +137,34 @@ echam:
 
         # do we want to link files or copy. For ECHAM6 we can't link the restart file
         # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
-        #file_movements:
-        #   forcing:
-        #      all_directions: "link"
-        #   forcing:
-        #      all_directions: "link"
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: link 
+           restart_out:
+              all_directions: move 
 
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/echam6/"
+
+        # Allows ssp scenarios to start before the ssp period with historical settings
+        # (i.e. historical to ssp simulations)
+        allow_hist2ssp_transition: True
 
         # some datamath for to be able to change the coupling step easily
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${echam.time_step}))
@@ -331,7 +335,22 @@ echam:
                                                     echam_postprocessing.sh
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -e ${end_date!syear}
+                                                    -p ${general.base_dir}"
+                                                nproc: 1
+                                        echam_monitoring:
+                                                batch_or_shell: shell
+                                                order_in_cluster: sequential 
+                                                run_on_queue: ${computer.partitions.pp.name}
+                                                run_after: echam_postprocessing 
+                                                script_dir: ${general.esm_function_dir}/setups/foci
+                                                submit_to_batch_system: True
+                                                script: "
+                                                    echam_monitoring.sh
+                                                    -r ${general.expid}
+                                                    -i ${initial_date!syear}
+                                                    -o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
+                                                    "
                                                 nproc: 1
 
 hdmodel:
@@ -342,16 +361,62 @@ hdmodel:
         restart_out_sources:
                 hdrestart: restart_${general.expid}_hd_${other_date!syear!smonth!sday}.nc
 
+        # do we want to link files or copy. For the HD model we can't link the restart file
+        # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: copy 
+           restart_out:
+              all_directions: copy 
+
+
 jsbach:
         version: "3.20p1"
         # directories
-        pool_dir: "${computer.pool_directories.focipool}/JSBACH"
+        pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
+        input_dir_couple: "${pool_dir}/input/"
         choose_computer.name:
                ollie:
                       dynveg_file_ending: ""
                       no_dynveg_file_ending: ""
 
         dynamic_vegetations: True
+
+        Ndepo_path: "${echam.resolution}/ndepo/Ndepo${Ndepo_sufix}."
+
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
+           restart_in:
+              all_directions: link 
+           restart_out:
+              all_directions: move 
 
         # settings for restarting from another run
         lresume: ${general.lresume}
@@ -414,6 +479,8 @@ nemo:
         choose_general.version:
                 default:
                         version: "ORCA05_LIM2_KCM_AOW"
+                default_autotools:
+                        version: "ORCA05_LIM2_KCM_AOW_autotools"
                 fs:
                         version: "ORCA05_LIM2_KCM_AOW_FS"
                 agrif:
@@ -423,6 +490,23 @@ nemo:
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
+
+        # file handling settings
+        file_movements:
+           default:
+              all_directions: copy
+           config:
+              init_to_exp: copy
+              exp_to_run: link
+              run_to_work: link
+           forcing:
+              all_directions: link
+           log:
+              all_directions: copy
+           input:
+              all_directions: link
+           outdata:
+              all_directions: move 
 
         # settings for restarting from another run
         lresume: ${general.lresume}
@@ -449,8 +533,9 @@ nemo:
                                                 script: "
                                                     nemo_postprocessing.sh -m 
                                                     -r ${general.expid}
-                                                    -s ${start_date!syear}
-                                                    -e ${end_date!syear}"
+                                                    -s ${start_date}
+                                                    -e ${end_date}
+                                                    -p ${general.base_dir}"
                                                 nproc: 1
 
 
@@ -489,6 +574,33 @@ oasis3mct:
                 default:
                         version: "foci"
                         export_mode_a2o: EXPORTED     
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                default_autotools:
+                        version: "foci"
+                        export_mode_a2o: EXPORTED
 
                         coupling_target_fields:
                            sstocean:

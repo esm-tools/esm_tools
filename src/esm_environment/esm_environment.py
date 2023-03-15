@@ -469,6 +469,10 @@ class EnvironmentInfos:
         """
 
         environment = []
+        # Fix for seb-wahl's hack via source
+        if self.config.get("general_actions") is not None:
+            for action in self.config["general_actions"]:
+                environment.append(action)
         # Write module actions
         if self.config.get("module_actions") is not None:
             for action in self.config["module_actions"]:
@@ -478,6 +482,10 @@ class EnvironmentInfos:
                     environment.append(action)
                 else:
                     environment.append(f"module {action}")
+        # Write Spack actions
+        if self.config.get("spack_actions") is not None:
+            for action in self.config["spack_actions"]:
+                environment.append(f"spack {action}")
         # Add an empty string as a newline:
         environment.append("")
         if self.config.get("export_vars") is not None:

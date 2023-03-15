@@ -1,0 +1,187 @@
+&parctl
+    nproca = 24
+    nprocb = 24
+    nprocar = 0
+    nprocbr = 0
+/
+
+&runctl
+    nproma = 0
+    npromar = 0
+    out_expname = 'ssp5_104'
+    out_datapath = '/work/ab0246/a270188/awiesm-2.1-wiso_future/pico-fesom/experiments/ssp5_104//run_20150101-20151231/work/'
+    out_filetype = 2
+    out_ztype = 0
+    rerun_filetype = 4
+    lresume = .false.
+    ltimer = .false.
+    lmidatm = .true.
+    lfractional_mask = .false.
+    lcouple = .true.
+    lcouple_co2 = .true.
+    lamip = .false.
+    dt_start = 2015, 1, 1
+    dt_stop = 2016, 1, 1
+    delta_time = 450
+    putocean = 1, 'days', 'last', 0
+    getocean = 1, 'days', 'last', 0
+    putrerun = 1, 'years', 'first', 0
+    putdata = 1, 'months', 'last', 0
+    default_output = .false.
+    trigfiles = 12, 'months', 'exact', 0
+    ldebugev = .false.
+    dt_resume = 2015, 1, 1
+/
+
+&submdiagctl
+    vphysc_lpost = .false.
+/
+
+&mvstreamctl
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'spim'
+    source = 'sp'
+    variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'glim'
+    source = 'gl'
+    variables = 'xl:mean', 'xi:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'aclcim'
+    source = 'g3b'
+    variables = 'aclc:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'months', 'last', 0
+    target = 'g3bim'
+    source = 'g3b'
+    variables = 't2min:min', 't2max:max', 'topmax:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'glday'
+    source = 'gl'
+    variables = 'q:mean'
+/
+
+&mvstreamctl
+    target = 'g3bday'
+    interval = 1, 'days', 'last', 0
+    source = 'g3b'
+    meannam = 'tslm1', 'tsi'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'g3bid'
+    source = 'g3b'
+    variables = 'u10:mean', 'v10:mean', 'temp2:mean', 'relhum:mean', 'dew2:mean',
+                'ws:mean', 'sn:mean', 'wimax:max', 't2min:min', 't2max:max'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'jsbid'
+    source = 'jsbach'
+    variables = 'layer_moisture:mean'
+/
+
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'sp6h'
+    source = 'sp'
+    variables = 'st:mean', 'svo:mean', 'lsp:mean', 'sd:mean'
+/
+
+&mvstreamctl
+    interval = 1, 'hours', 'last', 0
+    target = 'g3b1hi'
+    source = 'g3b'
+    variables = 'u10:inst', 'v10:inst', 'wimax:max'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'g3bdaymax'
+    source = 'g3b'
+    variables = 'temp2:max'
+/
+
+&mvstreamctl
+    interval = 1, 'days', 'last', 0
+    target = 'g3bdaymin'
+    source = 'g3b'
+    variables = 'temp2:min'
+/
+
+&set_stream_element
+    stream = 'aclcim'
+    name = 'aclc'
+    code = 162
+    lpost = 1
+/
+
+&set_stream
+    stream = 'jsbach'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'land'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'veg'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'yasso'
+    lpost = 0
+/
+
+&dynctl
+    enstdif = 1.0
+/
+
+&submodelctl
+    lmethox = .true.
+    lco2 = .false.
+/
+
+&radctl
+    iaero = 8
+    io3 = 4
+    isolrad = 1
+    ico2 = 4
+    ighg = 1
+    icfc = 4
+    ich4 = 4
+    in2o = 4
+    lrad_async = .false.
+    lrestart_from_old = .false.
+/
+
+&co2ctl
+    lco2_scenario = .true.
+/
+
+&wisoctl
+    lwiso_rerun = .false.
+    lwiso = .false.
+    nwiso = 0
+/

@@ -1,0 +1,25 @@
+general:
+   use_venv: false
+   homedir: !ENV ${HOME}
+   setup_name: nemo
+   compute_time: "02:15:00"
+   account: shkifmsw
+   initial_date: "1980-01-01T00:00:00"       # Initial exp. date
+   final_date: "1983-01-01T00:00:00"         # Final date of the experiment
+   leapyear: False
+   nyear: 1 
+   base_dir: ${homedir}/esm/esm-experiments/ 
+   model_dir: ${homedir}/esm/models/nemo-ORCA05.z75.ICE.JRA
+
+nemo:
+   version: ORCA05.z75.ICE.JRA
+   resolution: "ORCA05" 
+   leapyear: False
+   nproc: 480
+   jpni: 24
+   jpnj: 20
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+
+xios:
+   model_dir: ${general.homedir}/esm/models/nemo-ORCA05.z75.ICE.JRA/xios
+   nproc: 24

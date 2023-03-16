@@ -235,11 +235,11 @@ class SimulationFile(dict):
 
     * ``name`` : A human readable name for the file.
     * ``allowed_to_be_missing`` : A ``bool`` value to set a certain file as
-      allowed to be missing or not. in case it is, the cp/ln/mv command will not
+      allowed to be missing or not. In case it is, the cp/ln/mv command will not
       fail if the original file is not found.
     * ``datestamp_method`` : Sets how a datestamp should be added. See
       ``_allowed_datestamp_methods`` for more information.
-    * ``datestamp_format`` : Stes how a datestamp should be formatted. See
+    * ``datestamp_format`` : Sets how a datestamp should be formatted. See
       ``_allowed_datestamp_methods`` for more information.
 
     Example
@@ -261,7 +261,7 @@ class SimulationFile(dict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])  # doctest: +SKIP
+        >>> sim_file = SimulationFile(config, 'echam.files.jan_surf')  # doctest: +SKIP
 
     You could then copy the file to the experiment folder::
 

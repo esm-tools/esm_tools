@@ -7,33 +7,35 @@
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
 model: cryogrid
-version: 1.0.0
-
+type: permafrost
+version: "1.0.0"
+available_versions:
+    - "1.0.0"
 metadata:
         Institute: Alfred Wegener Institute Helmholtz Centre for Polar and Marine Research
         Description:
-                A brief description here
-        Authors: Moritz Langer (mlanger@awi.de), Jan Nitzbon (jnitzbon@awi.de)
+                Custom Julia implementation of the CryoGrid permafrost model. This version of CryoGridLite.jl is intended for being used in a coupled setup with AWI-ESM.
+        Authors: Moritz Langer (moritz.langer@awi.de), Jan Nitzbon (jan.nitzbon@awi.de)
         Publications:
                 - "Langer, M., Nitzbon, J., Groenke, B., Assmann, L.-M., Schneider von Deimling, T., Stuenzi, S. M., & Westermann, S. (2022). The evolution of Arctic permafrost over the last three centuries. EGUsphere, 1–27. <https://doi.org/10.5194/egusphere-2022-473>"
         License:
                 Creative Commons Attribution 4.0 International
 
-git-repository: https://gitlab.awi.de/paleodyn/Models/CryoGridLite.jl
+git-repository: "https://gitlab.awi.de/paleodyn/Models/CryoGridLite.jl"
 branch: coupling-awiesm
 comp_command: ""
-install_bins: "/bin/"
+install_bins: "/"
 clean_command: ${defaults.clean_command}
-executable: CGLite.jl
+executable: run_CGLite_coupled.sh
 
-choose_version:
+#choose_version:
     # Here you can place all the variables you would want to control via the version
     # variable above (for example, you could also add ``git-repository``,
     # ``comp_command``, ``destination``, ...) 
-    a_version_of_your_choice:
-        branch: name of the branch/tag associated to that version if you use git
-    another_version_of_your_choice:
-        branch: name of the branch/tag associated to that version if you use git
+    #a_version_of_your_choice:
+    #    branch: name of the branch/tag associated to that version if you use git
+    #another_version_of_your_choice:
+    #    branch: name of the branch/tag associated to that version if you use git
 
 # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
 # be an absolute path). Normally, changed via the runscript. We recommend you leave it
@@ -58,9 +60,9 @@ environment_changes:
 
 # Some recommended defaults
 lresume: false
-
+nproc: 36
 # Some commonly used variables in other ESM-Tools components (but optional)
-input_dir: ${pool_dir}/path/within/the/pool/dir/to/the/input/of/your/component
+#input_dir: ${pool_dir}/path/within/the/pool/dir/to/the/input/of/your/component
 #namelist_dir: /absolute/path/to/the/namelist/folder
 
 # If your components has namelist the following syntax allows you to control the values
@@ -78,24 +80,24 @@ input_dir: ${pool_dir}/path/within/the/pool/dir/to/the/input/of/your/component
 # the simulation. This syntax will change for something better soon. For more details
 # about this syntax consult:
 # https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
-input_files:
-    file_name: file_tag
-input_source:
-    file_tag: /absolute/path/to/the/file
-input_in_work:
-    file_tag: /relative/path/to/the/file/in/the/work/directory
+#input_files:
+#    file_name: para
+#input_source:
+#    para: /albedo/work/user/jnitzbon/CGLite/input/para_netcdf/para_cglite_awiesm_T63.nc
+#input_in_work:
+#    file_tag: /relative/path/to/the/file/in/the/work/directory
 
-config_files:
-    namelist_name: namelist_tag # Or any other configuration file
-config_sources:
-    namelist_tag: ${namelist_dir}/<namelist_name> # Use ${namelist_dir} here if you
+#config_files:
+#    namelist_name: namelist_tag # Or any other configuration file
+#config_sources:
+#    namelist_tag: ${namelist_dir}/<namelist_name> # Use ${namelist_dir} here if you
         # defined it above
 
-create_config:
-    name_of_the_config_you_want_to_create:
-        - "<--append-- line 1"
-        - "<--append-- line 2"
+#create_config:
+#    name_of_the_config_you_want_to_create:
+#        - "<--append-- line 1"
+#        - "<--append-- line 2"
 
 bin_sources:
-    bin_tag: ${model_dir}/bin/${executable} # This would be the normal way to do it
+    bin_tag: ${model_dir}/${executable} # This would be the normal way to do it
 

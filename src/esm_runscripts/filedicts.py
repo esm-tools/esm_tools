@@ -797,7 +797,7 @@ class SimulationFile(dict):
         self["name_in_work"] = self.get("name_in_work", default_name)
 
     @staticmethod
-    def wild_card_check(source_pattern: list, target_pattern: list) -> bool:
+    def _wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
         errors in the syntax using ``esm_parser.error``.

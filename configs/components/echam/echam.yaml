@@ -285,18 +285,21 @@ choose_version:
 #               lrestart_from_old: false
 
 
+compiletime_environment_changes:
+    choose_computer.name:
+        albedo:
+            add_export_vars:
+                configure_opts: "'--without-regard-for-quality'"
+                FFLAGS: "'-fallow-argument-mismatch -w'"
+                FCFLAGS: "'-fallow-argument-mismatch -w'"
+            # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
+            add_unset_vars:
+              - FFLAGS
+              - FCFLAGS
+
+
 choose_concurrent_radiation_code:
         True:
-                choose_computer.name:
-                    mistral:
-                        compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
                 add_namelist_changes:
                         namelist.echam:
                                 parctl:

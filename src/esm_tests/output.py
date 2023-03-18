@@ -406,7 +406,7 @@ def format_results(info):
             continue
         results[model] = {}
         for script, v in scripts.items():
-            version = v["version"]
+            version = str(v["version"])
             results[model][version] = results[model].get(version, {})
             results[model][version][script] = results[model][version].get(script, {})
             state = v["state"]

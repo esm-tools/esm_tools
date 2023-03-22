@@ -610,7 +610,7 @@ class IcebergCalving:
                     ##############################################################
                     # exclude coastal nodes (and full cells)
                     elems_to_drop = self.full_elems
-                    
+                
                     for felem in felems:
                         nodes = self.elem2d.iloc[felem].values
                         coastal = False
@@ -618,7 +618,7 @@ class IcebergCalving:
                             lon, lat, tmp = self.nod2d.loc[node]
                             if (tmp == 1 or coastal == 1):
                                 coastal = True
-                        
+                    
                         if coastal == 1:
                             elems_to_drop.append(felem)
 

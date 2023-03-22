@@ -80,7 +80,7 @@ general:
 
         with_wiso: false
         with_pico: false
-        with_icebergs: false
+        with_icb: false
         with_bootstrap: false
 
         scenario: "PALEO"
@@ -118,6 +118,9 @@ echam:
                 - sst
                 - sic
         with_wiso: ${general.with_wiso}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -143,6 +146,15 @@ echam:
                                 "[[wiso_fields-->FIELD]]":
                                         grid: atmo
 
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        icb_fields: [u10_atmo, v10_atmo]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: atmo
+        # --- icebergs ---
+        
         # Resolution switch
         # -----------------
         # kh 20.03.20 values may be superseded by section
@@ -231,6 +243,9 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -265,7 +280,15 @@ fesom:
                         add_coupling_fields:
                                 "[[wiso_fields-->FIELD]]":
                                         grid: feom
-
+        # --- icebergs ---
+        choose_fesom.with_icb:
+                True:
+                        icb_fields: [u10w_oce, v10w_oce]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: feom
+        # --- icebergs ---
+        
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
         opbnd_dir: "remove_from_namelist"
@@ -414,6 +437,15 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
+        
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        add_coupling_target_fields:
+                                add_a2o_flux:
+                                        - 'u10w_oce <--distwgt-- u10_atmo'
+                                        - 'v10w_oce <--distwgt-- v10_atmo'
+        
         choose_general.with_wiso:
                 True:
         # choose_general.wiso_code: # MA: after merging FESOM, from Martin B. this can be unified

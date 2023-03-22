@@ -1,0 +1,45 @@
+general:
+    thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
+    exp_dir: "/work/ollie/pgierz/some_exp"
+    thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
+    all_model_filetypes:
+        [
+            analysis,
+            bin,
+            config,
+            forcing,
+            input,
+            couple,
+            log,
+            mon,
+            outdata,
+            restart,
+            viz,
+            ignore,
+        ]
+computer:
+    pool_dir: "/work/ollie/pool"
+echam:
+    files:
+        jan_surf:
+            type: input
+            allowed_to_be_missing: False
+            name_in_computer: T63CORE2_jan_surf.nc
+            name_in_work: unit.24
+            path_in_computer: /work/ollie/pool/ECHAM/T63
+            filetype: NetCDF
+            description: >
+                Initial values used for the simulation, including
+                properties such as geopotential, temperature, pressure
+        vltclim:
+            type: input
+            allowed_to_be_missing: False
+            name_in_computer: T63CORE2_VLTCLIM.nc
+            name_in_work: unit.90
+            path_in_computer: /work/ollie/pool/ECHAM/T63
+            filetype: NetCDF
+            description: >
+                Initial values for the leaf area index, given as an annual cycle.
+    experiment_input_dir: "/work/ollie/pgierz/some_exp/input/echam"
+    thisrun_input_dir: "/work/ollie/pgierz/some_exp/run_20000101-20000101/input/echam"
+    thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"

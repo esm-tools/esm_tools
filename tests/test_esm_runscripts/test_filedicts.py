@@ -9,7 +9,7 @@ Some considerations
   we want to translate later on.
 * You _could_ use the config in each function to generate the fake files, to
   avoid repeating yourself; however, that adds real programming logic into the
-  unit test, which you don't really want.  
+  unit test, which you don't really want.
 """
 import os
 import sys
@@ -38,6 +38,17 @@ class Capturing(list):
         self.extend(self._stringio.getvalue().splitlines())
         del self._stringio  # free up some memory
         sys.stdout = self._stdout
+
+
+@pytest.fixture()
+def fake_config():
+    """Provides a fake config for testing purposes"""
+    # FIXME(PG): Path should be not rely on location of test run...
+    cfg_path = Path("./tests/test_esm_runscripts/example_configs/generic-config.yaml")
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(cfg_path.read_text())
+    config["general"]["current_date"] = date
+    return config
 
 
 @pytest.fixture()
@@ -93,7 +104,7 @@ def simulation_file(fs, config_tuple):
     """
     config = config_tuple.config
     attr_address = config_tuple.attr_address
-    fake_simulation_file = filedicts.SimulationFile(config, attr_address)
+    fake_simulation_file = filedicts.SimulationFile.from_config(config, attr_address)
 
     fs.create_dir(fake_simulation_file.locations["work"])
     fs.create_dir(fake_simulation_file.locations["computer"])
@@ -104,7 +115,7 @@ def simulation_file(fs, config_tuple):
     yield fake_simulation_file
 
 
-def test_filedicts_basics(fs):
+def test_SimulationFile_basics(fs):
     """Tests basic attribute behavior of filedicts"""
 
     dummy_config = """
@@ -134,7 +145,9 @@ def test_filedicts_basics(fs):
     config["general"]["current_date"] = date
     # Not needed for this test, just a demonstration:
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "echam.files.jan_surf"
+    )
     assert sim_file["name_in_work"] == "unit.24"
     assert sim_file.locations["work"] == Path(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
@@ -253,10 +266,10 @@ def test_allowed_to_be_missing_attr():
     config = yaml.safe_load(dummy_config)
     config["general"]["current_date"] = date
     # Not needed for this test, just a demonstration:
-    sim_file_001 = esm_runscripts.filedicts.SimulationFile(
+    sim_file_001 = esm_runscripts.filedicts.SimulationFile.from_config(
         config, "echam.files.human_readable_tag_001"
     )
-    sim_file_002 = esm_runscripts.filedicts.SimulationFile(
+    sim_file_002 = esm_runscripts.filedicts.SimulationFile.from_config(
         config, "echam.files.human_readable_tag_002"
     )
 
@@ -294,7 +307,7 @@ def test_allowed_to_be_missing_mv(fs):
     config["general"]["current_date"] = date
     fs.create_dir("/work/data/pool")
     fs.create_file("/work/data/pool/not_foo_at_all")
-    sim_file = esm_runscripts.filedicts.SimulationFile(
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
         config, "echam.files.human_readable_tag_001"
     )
     sim_file.mv("computer", "work")
@@ -333,7 +346,7 @@ def test_allowed_to_be_missing_mv_if_exists(fs):
     fs.create_dir("/work/data/pool")
     fs.create_file("/work/data/pool/foo")
     fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20011231/work")
-    sim_file = esm_runscripts.filedicts.SimulationFile(
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
         config, "echam.files.human_readable_tag_001"
     )
     sim_file.mv("computer", "work")
@@ -376,7 +389,9 @@ def test_cp_file(fs):
     fs.create_dir(target_folder)
 
     # Test the method
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "echam.files.jan_surf"
+    )
     sim_file.cp("computer", "work")
 
     assert os.path.exists(target)
@@ -419,7 +434,9 @@ def test_cp_folder(fs):
     fs.create_dir(target_folder)
 
     # Test the method
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.o3_data"
+    )
     sim_file.cp("computer", "work")
 
     assert os.path.exists(target)
@@ -429,7 +446,7 @@ def test_resolve_file_movements(config_tuple):
     # arrange config-in
     config = config_tuple.config
     attr_address = config_tuple.attr_address
-    simulation_file = filedicts.SimulationFile(config, attr_address)
+    simulation_file = filedicts.SimulationFile.from_config(config, attr_address)
     config = filedicts.resolve_file_movements(config)
 
     # check config-out
@@ -463,7 +480,9 @@ def test_mv(fs):
     fs.create_file("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20010101/work")
     assert os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "echam.files.jan_surf"
+    )
     sim_file.mv("computer", "work")
     assert not os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
     assert os.path.exists(
@@ -561,7 +580,7 @@ def test_check_file_syntax_type_missing():
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(
+            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -590,7 +609,7 @@ def test_check_file_syntax_type_incorrect():
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(
+            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -621,7 +640,7 @@ def test_check_file_syntax_input():
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(
+            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -652,7 +671,7 @@ def test_check_file_syntax_output():
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
         with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile(
+            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -700,7 +719,9 @@ def test_resolve_abs_paths(fs):
     config = yaml.safe_load(dummy_config)
     config["general"]["current_date"] = date
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "echam.files.jan_surf")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "echam.files.jan_surf"
+    )
 
     assert sim_file["absolute_path_in_work"] == Path(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
@@ -722,7 +743,7 @@ def test_resolve_paths_old_config():
     """
     # Load an old config
     tests_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".")
-    with open(f"{tests_path}/awicm3_config.yaml", "r") as f:
+    with open(f"{tests_path}/example_configs/awicm3_config.yaml", "r") as f:
         config = yaml.safe_load(f)
     # Add the new ``files`` dictionary
     config["oifs"]["files"] = {
@@ -734,7 +755,9 @@ def test_resolve_paths_old_config():
         }
     }
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.o3_data")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.o3_data"
+    )
 
     assert sim_file["absolute_path_in_work"] == Path(
         "/work/ollie/mandresm/testing/run/awicm3//awicm3-v3.1-TCO95L91-CORE2_initial/run_20000101-20000101/work/o3chem_l91"
@@ -887,7 +910,9 @@ def test_find_globbing_files(fs):
 
     fs.create_dir(config["oifs"]["experiment_outdata_dir"])
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.oifsnc"
+    )
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
@@ -939,7 +964,9 @@ def test_globbing_cp(fs):
             Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
         )
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.oifsnc"
+    )
     sim_file.cp("work", "exp_tree")
 
     for nf in expected_new_paths:
@@ -987,7 +1014,9 @@ def test_globbing_mv(fs):
             Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
         )
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.oifsnc"
+    )
     sim_file.mv("work", "exp_tree")
 
     for nf in expected_new_paths:
@@ -1035,7 +1064,9 @@ def test_globbing_ln(fs):
             Path(config["oifs"]["experiment_outdata_dir"]).joinpath(f)
         )
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.oifsnc")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.oifsnc"
+    )
     sim_file.ln("work", "exp_tree")
 
     for nf in expected_new_paths:
@@ -1077,7 +1108,15 @@ def test_makedirs_in_name(fs):
         "out/date/folder/ICMGG_input_expid"
     )
 
-    sim_file = esm_runscripts.filedicts.SimulationFile(config, "oifs.files.ICMGG")
+    sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        config, "oifs.files.ICMGG"
+    )
     sim_file.cp("work", "exp_tree")
 
     assert os.path.exists(expected_new_path)
+
+
+def test_SimulationFiles_basics(fake_config):
+    sim_files = esm_runscripts.filedicts.SimulationFiles.from_config(
+        fake_config, "echam.files"
+    )

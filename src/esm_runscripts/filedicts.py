@@ -26,13 +26,13 @@ from esm_parser import ConfigSetup, user_error
 
 logger.remove()
 LEVEL = "ERROR"  # "WARNING"  # "INFO"  # "DEBUG"
-LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"  # 
 logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 
-# Enumeration of file types
-class FileTypes(Enum):
+
+class FileStatus(Enum):
     """
-    Describes which type a particular file might have, e.g. ``FILE``,
+    Describes which status a particular file might have, e.g. ``FILE``,
     ``NOT_EXISTS``, ``BROKEN_LINK``.
     """
 
@@ -44,6 +44,35 @@ class FileTypes(Enum):
     BROKEN_LINK = auto()  # target of the symbolic link does not exist
 
 
+# FIXME(PG): This class belongs somewhere else, I think.
+class FileTypes(Enum):
+    """
+    Describes which type a file might belong to, e.g. input, outdata, forcing
+    """
+
+    ANALYSIS = auto()
+    CONFIG = auto()
+    COUPLE = auto()
+    FORCING = auto()
+    IGNORE = auto()
+    INPUT = auto()
+    LOG = auto()
+    MON = auto()
+    OUTDATA = auto()
+    RESTART = auto()
+    VIZ = auto()
+
+
+class FileLocations(Enum):
+    """Possible locations for a file"""
+
+    # TODO(PG): Figure out if this can have something like relative pathlib.Path...
+    COMPUTER = auto()
+    EXP_TREE = auto()
+    RUN_TREE = auto()
+    WORK = auto()
+
+
 # NOTE(PG): Comment can be removed later. Here I prefix with an underscore as
 # this decorator should **only** be used inside of this file.
 def _allowed_to_be_missing(method):
@@ -52,17 +81,17 @@ def _allowed_to_be_missing(method):
 
     If a method is decorated with ``@_allowed_to_be_missing``, it will return
     ``None`` instead of executing if the file has a attribute of
-    ``allowed_to_be_missing`` set to ``True. You get a warning via the logger
+    ``allowed_to_be_missing`` set to ``True``. You get a warning via the logger
     giving the full method name that was decorated and a representation of the
     file that was trying to be moved, linked, or copied.
 
     Usage Example
     -------------
-    Given you have an instanciated simulation file under ``sim_file`` with the following property::
+    Given you have an instantiated simulation file under ``sim_file`` with the following property::
         >>> sim_file.allowed_to_be_missing  # doctest: +SKIP
         True
 
-    And given that you have a decorated method foo, that would act on the file::
+    And given that you have a decorated method ``foo`` that would act on the file by moving, copying or linking it::
         >>> rvalue = sim_file.foo(*args, **kwargs)  # doctest: +SKIP
         >>> rvalue is None  # doctest: +SKIP
         True
@@ -86,8 +115,10 @@ def _allowed_to_be_missing(method):
     def inner_method(self, *args, **kwargs):
         if self.allowed_to_be_missing:
             try:
+                # Try to move/link/copy the file, since that is the requested operation:
                 return method(self, *args, **kwargs)
             except (FileNotFoundError, IOError):
+                # Move/copy/link does not work, give a warning since this file is allowed to be missing!
                 logger.warning(
                     f"Skipping {method.__qualname__} as this file ({self}) is allowed to be missing!"
                 )
@@ -198,7 +229,7 @@ def globbing(method):
                 )
                 glob_dict[f"name_in_{source}"] = glob_source_name
                 glob_dict[f"name_in_{target}"] = glob_target_name
-                glob_file = SimulationFile(glob_config, self.attrs_address)
+                glob_file = SimulationFile.from_config(glob_config, self.attrs_address)
                 # Use method
                 this_method = getattr(glob_file, method_name)
                 this_method(source, target, *args, **kwargs)
@@ -276,15 +307,14 @@ class SimulationFile(dict):
     - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
 
     LOCATION_KEY is one of the strings defined in LOCATION_KEY list
-    - name_in<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+    - name_in_<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
       - eg. name_in_computer: T63CORE2_jan_surf.nc
       - eg. name_in_work: unit.24
     - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
-      - eg. absolute_path_in_run_tree:
-      - /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
+      - eg. absolute_path_in_run_tree: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
     """
 
-    def __init__(self, full_config: dict, attrs_address: str):
+    def __init__(self, attrs_dict: dict):
         """
         - Initiates the properties of the object
         - Triggers basic checks
@@ -296,19 +326,8 @@ class SimulationFile(dict):
         attrs_address : str
             The address of this specific file in the full config, separated by dots.
         """
-        attrs_dict = dpath.util.get(
-            full_config, attrs_address, separator=".", default={}
-        )
         super().__init__(attrs_dict)
         self._original_filedict = copy.deepcopy(attrs_dict)
-        self._config = full_config
-        self.attrs_address = attrs_address
-        self._sim_date = full_config["general"][
-            "current_date"
-        ]  # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
-        self.name = attrs_address.split(".")[-1]
-        self.component = attrs_address.split(".")[0]
-        self.all_model_filetypes = full_config["general"]["all_model_filetypes"]
         self.path_in_computer = self.get("path_in_computer")
         self._datestamp_method = self.get(
             "datestamp_method", "avoid_overwrite"
@@ -322,6 +341,7 @@ class SimulationFile(dict):
         self._complete_file_names()
 
         # possible paths for files:
+        # TODO: Replace with enum ...?
         location_keys = ["computer", "exp_tree", "run_tree", "work"]
         # initialize the locations and complete paths for all possible locations
         self.locations = dict.fromkeys(location_keys, None)
@@ -330,16 +350,70 @@ class SimulationFile(dict):
         # Verbose set to true by default, for now at least
         self._verbose = full_config.get("general", {}).get("verbose", True)
 
+    def _post_init(self):
         # Checks
         self._check_path_in_computer_is_abs()
+
+    @classmethod
+    def from_dict(cls, attrs_dict: dict):
+        """
+        Create a new instance of the SimulationFile class from a dictionary.
+
+        Parameters
+        ----------
+        attrs_dict : dict
+            A dictionary containing the attributes of the file.
+
+        Returns
+        -------
+        SimulationFile
+            A new instance of the SimulationFile class.
+        """
+        sim_file = cls(attrs_dict)
+        # I would rather have this be in the main __init__...
+        sim_file._post_init()
+        return sim_file
+
+    @classmethod
+    def from_config(cls, full_config: dict, attrs_address: str):
+        """
+        Create a new instance of the SimulationFile class from a full configuration and the address of the file within the configuration.
+
+        Parameters
+        ----------
+        full_config : dict
+            The full simulation configuration
+        attrs_address : str
+            The address of this specific file in the full config, separated by dots.
+
+        Returns
+        -------
+        SimulationFile
+            A new instance of the SimulationFile class.
+        """
+        attrs_dict = dpath.util.get(
+            full_config, attrs_address, separator=".", default={}
+        )
+        sim_file = cls(attrs_dict)
+        sim_file._config = full_config
+        sim_file.attrs_address = attrs_address
+        # NOTE: we might have to change this in the future, depending on whether SimulationFile is access through tidy ("end_date") or prepcompute ("start_date")
+        sim_file._sim_date = full_config["general"]["current_date"]
+        sim_file.name = attrs_address.split(".")[-1]
+        sim_file.component = attrs_address.split(".")[0]
+        # FIXME(PG): I would rathe just use our new little class for this, but there might be good reasons against it:
+        sim_file.all_model_filetypes = [name.lower() for name in FileTypes._member_names_] 
+        # I would rather have this be in the main __init__...
+        sim_file._post_init()
+        return sim_file
 
     ##############################################################################################
     # Overrides of standard dict methods
     ##############################################################################################
 
     def __str__(self):
-        address = " -> ".join(self.attrs_address.split("."))
-        return address
+        """Nicely prints out the attribute address"""
+        return " -> ".join(getattr(self, "attrs_address", "").split("."))
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Checks when changing dot attributes for disallowed values"""
@@ -460,7 +534,7 @@ class SimulationFile(dict):
 
         # Actual copy
         source_path_type = self._path_type(source_path)
-        if source_path_type == FileTypes.DIR:
+        if source_path_type == FileStatus.DIR:
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
@@ -595,13 +669,15 @@ class SimulationFile(dict):
         str :
             A string in yaml format of the given file dictionary
         """
-        return yaml.dump({"files": {self.name: filedict}})
+        # No: This should be just *one* file. The class is called SimulationFile, it
+        # represents only one single one at a time....
+        return yaml.dump(filedict)
 
-    ##############################################################################################
+    ####################################################################################
 
-    ##############################################################################################
+    ####################################################################################
     # Private Methods, Attributes, and Class Variables
-    ##############################################################################################
+    ####################################################################################
 
     _allowed_datestamp_methods = {"never", "always", "avoid_overwrite"}
     """
@@ -640,7 +716,7 @@ class SimulationFile(dict):
         """
         if datestamp_method not in self._allowed_datestamp_methods:
             raise ValueError(
-                "The datestamp_method must be defined as one of never, always, or avoid_overwrite"
+                f"The datestamp_method must be defined as one of {self._allowed_datestamp_methods}",
             )
 
     def _check_datestamp_format_is_allowed(self, datestamp_format):
@@ -649,7 +725,7 @@ class SimulationFile(dict):
         """
         if datestamp_format not in self._allowed_datestamp_formats:
             raise ValueError(
-                "The datestamp_format must be defined as one of check_from_filename or append"
+                f"The datestamp_format must be defined as one of {self._allowed_datestamp_formats}"
             )
 
     def _resolve_abs_paths(self) -> None:
@@ -682,9 +758,9 @@ class SimulationFile(dict):
             else:
                 self[f"absolute_path_in_{key}"] = path.joinpath(self[f"name_in_{key}"])
 
-    def _path_type(self, path: pathlib.Path) -> FileTypes:
+    def _path_type(self, path: pathlib.Path) -> FileStatus:
         """
-        Checks if the given ``path`` exists. If it does returns it's type, if it
+        Checks if the given ``path`` exists. If it does returns it's status, if it
         doesn't, returns ``None``.
 
         Parameters
@@ -695,7 +771,7 @@ class SimulationFile(dict):
         Returns
         -------
         Enum value
-            One of the values from FileType enumeration
+            One of the values from FileStatus enumeration
 
         Raises
         ------
@@ -716,23 +792,23 @@ class SimulationFile(dict):
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
             logger.warning(f"Broken link detected: {path}")
-            return FileTypes.BROKEN_LINK
+            return FileStatus.BROKEN_LINK
         elif not path.exists():
             logger.warning(f"File does not exist: {path}")
-            return FileTypes.NOT_EXISTS
+            return FileStatus.NOT_EXISTS
         elif path.is_symlink():
-            return FileTypes.LINK
+            return FileStatus.LINK
         elif path.is_file():
-            return FileTypes.FILE
+            return FileStatus.FILE
         elif path.is_dir():
-            return FileTypes.DIR
+            return FileStatus.DIR
         else:
             # probably, this will not happen
             raise TypeError(f"{path} can not be identified")
 
-    def _always_datestamp(self, fname):
+    def _always_datestamp(self, fname: pathlib.Path) -> pathlib.Path:
         """
-        Method called when ``always`` is the ``datestamp_method.
+        Method called when ``always`` is the ``datestamp_method``.
 
         Appends the datestamp in any case if ``datestamp_format`` is
         ``append``. Appends the datestamp only if it is not obviously in the
@@ -750,12 +826,12 @@ class SimulationFile(dict):
             A modified file with an added date stamp.
         """
         if fname.is_dir():
-            return fname
+            return pathlib.Path(fname)
         if self.datestamp_format == "append":
             return pathlib.Path(f"{fname}_{self._sim_date}")
         if self.datestamp_format == "check_from_filename":
             if _fname_has_date_stamp_info(fname, self._sim_date):
-                return fname
+                return pathlib.Path(fname)
             else:
                 return pathlib.Path(f"{fname}_{self._sim_date}")
 
@@ -789,7 +865,7 @@ class SimulationFile(dict):
         """
         if self["type"] in self.input_file_types:
             default_name = self["name_in_computer"]
-        elif self["type"] in self.output_file_types:
+        else:
             default_name = self["name_in_work"]
         self["name_in_computer"] = self.get("name_in_computer", default_name)
         self["name_in_run_tree"] = self.get("name_in_run_tree", default_name)
@@ -899,18 +975,23 @@ class SimulationFile(dict):
         """
         error_text = ""
         missing_vars = ""
-        types_text = ", ".join(self.all_model_filetypes)
+        all_model_filetypes = [name.lower() for name in FileTypes._member_names_]
+        types_text = ", ".join(all_model_filetypes)
         this_filedict = copy.deepcopy(self._original_filedict)
-        self.input_file_types = input_file_types = ["config", "forcing", "input"]
+        self.input_file_types = input_file_types = [
+            FileTypes.CONFIG,
+            FileTypes.FORCING,
+            FileTypes.INPUT,
+        ]
         self.output_file_types = output_file_types = [
-            "analysis",
-            "couple",
-            "log",
-            "mon",
-            "outdata",
-            "restart",
-            "viz",
-            "ignore",
+            FileTypes.ANALYSIS,
+            FileTypes.COUPLE,
+            FileTypes.LOG,
+            FileTypes.MON,
+            FileTypes.OUTDATA,
+            FileTypes.RESTART,
+            FileTypes.VIZ,
+            FileTypes.IGNORE,
         ]
 
         if "type" not in self.keys():
@@ -922,7 +1003,7 @@ class SimulationFile(dict):
             missing_vars = (
                 f"{missing_vars}    ``type``: forcing/input/restart/outdata/...\n"
             )
-        elif self["type"] not in self.all_model_filetypes:
+        elif self["type"] not in all_model_filetypes:
             error_text = (
                 f"{error_text}"
                 f"- ``{self['type']}`` is not a supported ``type`` "
@@ -1037,13 +1118,13 @@ class SimulationFile(dict):
         # Checks
         # ------
         # Source does not exist
-        if source_path_type == FileTypes.NOT_EXISTS:
+        if source_path_type == FileStatus.NOT_EXISTS:
             err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
             raise FileNotFoundError(err_msg)
 
         # Target already exists
         target_exists = (
-            os.path.exists(target_path) or target_path_type == FileTypes.LINK
+            os.path.exists(target_path) or target_path_type == FileStatus.LINK
         )
         if target_exists:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
@@ -1056,7 +1137,7 @@ class SimulationFile(dict):
             raise FileNotFoundError(err_msg)
 
         # if source is a broken link. Ie. pointing to a non-existing file
-        if source_path_type == FileTypes.BROKEN_LINK:
+        if source_path_type == FileStatus.BROKEN_LINK:
             err_msg = f"Unable to create symbolic link: ``{source_path}`` points to a broken path: {source_path.resolve()}"
             raise FileNotFoundError(err_msg)
 
@@ -1070,10 +1151,47 @@ class SimulationFiles(dict):
     ``files`` as ``SimulationFile`` objects and 2) loop through these objects
     triggering the desire file movement.
     """
-    def __init__(self, config):
-        # Loop through components?
-            # Loop through files?
+
+    def __init__(self):
         pass
+
+    @classmethod
+    def from_config(cls, config: dict, config_address: str):
+        # Loop through components?
+        # NOTE(PG): NO! We should not loop through the components here, that belongs outside this class
+        #
+        # That will look like: config['echam']['files'] = SimulationFiles(config, 'echam.files')
+        #
+        # And more generally (please correct, I probably have the wrong syntax):
+        #
+        # for component in config['valid_model_names']:
+        #     config[component]['files'] = SimulationFiles(config, f"{component}.files")
+        #
+        # Ideally, to keep the class construstion modular, we also should make this a class_method:
+        #
+        # SimulationFiles.from_config(config, config_address)
+        #
+        # config_address will be something like 'echam.files'
+        #
+        # This might be better:
+        #
+        # sim_files = SimulationFiles.from_config(sim_cfg_dict['echam']['files'])
+        #
+        # ???
+        #
+        # Or:
+        # SimulationFiles.from_list([sim_file_a, sim_file_b, ....])
+        sim_files = cls()
+        for file_key, file_spec in dpath.util.get(
+            config, config_address, separator="."
+        ).items():
+            # Loop through files?
+            # NOTE(PG): Yes...
+            sim_files[file_key] = SimulationFile.from_dict(file_spec)
+            sim_file = sim_files[file_key]
+            sim_file.copy("computer", "work")
+        sim_files.defined_from = "config"
+        return sim_files
 
 
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:

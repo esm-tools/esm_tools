@@ -87,7 +87,7 @@ atmosphere2pism() {
         module load hdf5/1.10.2_gnu
         module load netcdf/4.6.2_gnu
     fi
-    module load cdo
+#    module load cdo
     which cdo
     #cdo=cdo
     echo -e "\t\t---> Preparing to couple generic atmosphere to specific ice sheet model PISM"

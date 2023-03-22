@@ -1,3 +1,6 @@
+#computer:
+#    additional_flags: "--ntasks-per-node=1"
+
 general:
     lresume: 0
     base_dir: /albedo/work/user/jnitzbon/experiments/cryogrid-1.0.0/

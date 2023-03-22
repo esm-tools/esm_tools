@@ -31,7 +31,9 @@ lresume: 0
 nproc: 1
 nproc_julia: 1
 
-executable: run_CGLite_esmtools.sh ${nproc_julia} #${forcing_file} ${input_file} ${exp_path} ${exp_id} #${lresume}
+executable: run_CGLite_esmtools.sh ${nproc_julia} ${start_date!syear} ${lresume} #${forcing_file} ${input_file} ${exp_path} ${exp_id} #${lresume}
+        #execution_command: "/bin/bash julia --project=. --threads=1 -p ${nproc_julia} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file para.cglite.nc"
+
 #choose_version:
     # Here you can place all the variables you would want to control via the version
     # variable above (for example, you could also add ``git-repository``,
@@ -83,20 +85,26 @@ environment_changes:
 # about this syntax consult:
 # https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
 
+
+
 input_sources:
     para_cglite_T63: "/albedo/work/user/jnitzbon/CGLite/input/para_netcdf/para_cglite_awiesm_T63.nc"
     para_jsbach_T63: "/albedo/work/user/jnitzbon/CGLite/input/para_netcdf/PARA.nc"
 input_files:
     para: para_cglite_T63
-input_in_work:
-    para: "para_for_cryogrid.nc"
+#input_in_work:
+ #   para: "para_for_cryogrid.nc"
+input_targets:
+    para: "para.cglite.nc"
 
 forcing_sources:
     ini_forcing: ${ini_forcing_file} # to be defined in runscript
 forcing_files:
     ini_forcing: ini_forcing
-forcing_in_work:
-    ini_forcing: "forcing_for_cryogrid.nc"
+#forcing_in_work:
+#    ini_forcing: "forcing_for_cryogrid.nc"
+forcing_targets:
+    ini_forcing: forcing.cglite.${end_date!syear}.nc
 
 bin_sources:
     #repo_tag: ${model_dir}
@@ -105,7 +113,7 @@ bin_sources:
     src: ${model_dir}/src/*
     project: ${model_dir}/Project.toml
     manifest: ${model_dir}/Manifest.toml
-bin_in_work:
+bin_targets:
     #code: "."
     run_script: run_CGLite_esmtools.sh
     cglite_script: CGLite.jl
@@ -113,17 +121,24 @@ bin_in_work:
     project: Project.toml
     manifest: Manifest.toml
     
+outdata_sources:
+    output: output.cglite.*.nc
+outdata_targets:
+    output: output.cglite.${end_date!syear}.nc
 
-#config_files:
-#    namelist_name: namelist_tag # Or any other configuration file
-#config_sources:
-#    namelist_tag: ${namelist_dir}/<namelist_name> # Use ${namelist_dir} here if you
-        # defined it above
+restart_in_sources:
+    restart_in: restart.cglite.$(${start_date!syear}).nc
+    
+restart_out_sources:
+    restart_out: restart.cglite.*.nc
+restart_out_targets:
+    restart_out: restart.cglite.$(${end_date!syear}+1).nc
 
 #create_config:
-#    name_of_the_config_you_want_to_create:
-#        - "<--append-- line 1"
-#        - "<--append-- line 2"
+#        cryogrid_wrapper.sh:
+#                - "<--append-- #!/bin/bash"
+#                - "<--append-- julia --project=. --threads=1 -p ${nproc_julia} CGLite.jl --forcing-file forcing_for_cryogrid.nc --input-file para_for_cryogrid.nc"
+
 
 
 

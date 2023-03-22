@@ -253,6 +253,9 @@ choose_use_icebergs:
                     namelist.io:
                             nml_list:
                                     io_list(:): ["icb", "1", "m", 4]
+                            nml_listsize:
+                                    io_listsize: 120
+
 
             choose_use_icesheet_coupling:
                     true:
@@ -505,6 +508,7 @@ config_files:
         io:      io
         cvmix:   cvmix
         icepack: icepack
+        tra:     tra
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -514,6 +518,7 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         cvmix:   "${namelist_dir}/namelist.cvmix"
         icepack: "${namelist_dir}/namelist.icepack"
+        tra:     "${namelist_dir}/namelist.tra"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -544,6 +549,7 @@ config_in_work:
         io:      "namelist.io"
         cvmix:   "namelist.cvmix"
         icepack: "namelist.icepack"
+        tra:     "namelist.tra"
 
 coupling_fields:
         sst_feom:

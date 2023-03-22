@@ -29,7 +29,7 @@ class MessageOfTheDayHandler:
         url = "https://raw.githubusercontent.com/esm-tools/esm_tools/release/motd/motd.yaml"
         try:
             self.motdfile = urllib.request.urlopen(url)
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, urllib.error.URLError):
             timeout = 1  # seconds to wait
             # print(f"HTTP Error: Connection to file {url} containing update messages could not be established")
             # print("    Please check the URL by manually...")

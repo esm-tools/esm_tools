@@ -895,3 +895,38 @@ class Date(object):
 
         new_date = self.from_list(result)
         return new_date
+
+    def is_in_interval(self, interval, sep="->") -> bool:
+        """
+        Finds if a date falls in an open interval.
+
+
+        Parameters
+        ----------
+        interval : str
+            A date interval string in which the 2 dates are separated by a ``sep``
+            string.
+        sep : str
+
+        Returns
+        -------
+        True :
+            If the date of ``self`` is within the open interval defined by ``interval``
+        False :
+            If the date of ``self`` is out of the open interval defined by ``interval``            
+        """
+
+        # Split the interval into 2 dates
+        interval = interval.split(sep)
+        if len(interval) != 2:
+            raise TypeError(
+                f"The time interval ${interval} is not well defined for the separator "
+                f"${sep}"
+            )
+        interval = [Date(date) for date in interval]
+
+        # Check whether the ``self`` date falls within the interval
+        if self > interval[0] and self < interval[1]:
+            return True
+        else:
+            return False

@@ -25,9 +25,13 @@ git-repository: "https://gitlab.awi.de/paleodyn/Models/CryoGridLite.jl"
 branch: coupling-awiesm
 comp_command: ""
 install_bins: "/"
-clean_command: ${defaults.clean_command}
-executable: run_CGLite_coupled.sh
+#clean_command: ${defaults.clean_command}
+# Some recommended defaults
+lresume: 0
+nproc: 1
+nproc_julia: 1
 
+executable: run_CGLite_esmtools.sh ${nproc_julia} #${forcing_file} ${input_file} ${exp_path} ${exp_id} #${lresume}
 #choose_version:
     # Here you can place all the variables you would want to control via the version
     # variable above (for example, you could also add ``git-repository``,
@@ -58,9 +62,7 @@ environment_changes:
         #VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
         #VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
 
-# Some recommended defaults
-lresume: false
-nproc: 36
+
 # Some commonly used variables in other ESM-Tools components (but optional)
 #input_dir: ${pool_dir}/path/within/the/pool/dir/to/the/input/of/your/component
 #namelist_dir: /absolute/path/to/the/namelist/folder
@@ -80,12 +82,37 @@ nproc: 36
 # the simulation. This syntax will change for something better soon. For more details
 # about this syntax consult:
 # https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
-#input_files:
-#    file_name: para
-#input_source:
-#    para: /albedo/work/user/jnitzbon/CGLite/input/para_netcdf/para_cglite_awiesm_T63.nc
-#input_in_work:
-#    file_tag: /relative/path/to/the/file/in/the/work/directory
+
+input_sources:
+    para_cglite_T63: "/albedo/work/user/jnitzbon/CGLite/input/para_netcdf/para_cglite_awiesm_T63.nc"
+    para_jsbach_T63: "/albedo/work/user/jnitzbon/CGLite/input/para_netcdf/PARA.nc"
+input_files:
+    para: para_cglite_T63
+input_in_work:
+    para: "para_for_cryogrid.nc"
+
+forcing_sources:
+    ini_forcing: ${ini_forcing_file} # to be defined in runscript
+forcing_files:
+    ini_forcing: ini_forcing
+forcing_in_work:
+    ini_forcing: "forcing_for_cryogrid.nc"
+
+bin_sources:
+    #repo_tag: ${model_dir}
+    run_script: ${model_dir}/run_CGLite_esmtools.sh # This would be the normal way to do it
+    cglite_script: ${model_dir}/CGLite.jl
+    src: ${model_dir}/src/*
+    project: ${model_dir}/Project.toml
+    manifest: ${model_dir}/Manifest.toml
+bin_in_work:
+    #code: "."
+    run_script: run_CGLite_esmtools.sh
+    cglite_script: CGLite.jl
+    src: src/
+    project: Project.toml
+    manifest: Manifest.toml
+    
 
 #config_files:
 #    namelist_name: namelist_tag # Or any other configuration file
@@ -98,6 +125,5 @@ nproc: 36
 #        - "<--append-- line 1"
 #        - "<--append-- line 2"
 
-bin_sources:
-    bin_tag: ${model_dir}/${executable} # This would be the normal way to do it
+
 

@@ -6,7 +6,7 @@ general:
     base_dir: /albedo/work/user/jnitzbon/experiments/cryogrid-1.0.0/
     compute_time: 01:00:00
     initial_date: "0000-01-01"
-    final_date: "0000-12-31"
+    final_date: "0002-12-31"
     nmonth: 0
     nyear: 1
     use_venv: False
@@ -17,8 +17,7 @@ cryogrid:
     lresume: 0
     model_dir: /albedo/home/jnitzbon/git/esm_tools/cryogrid-1.0.0/
     resolution: "T63"
-    nproc_julia: 1
-    nproc: 1
+    nproc: 16
     #exp_id: "cryogrid_esmtools_test"
     #exp_path: ${general.base_dir}
     ini_forcing_file: "/albedo/work/user/jnitzbon/CGLite/input/forcing_netcdf/forcing_for_cryogrid.nc"

@@ -29,9 +29,8 @@ install_bins: "/"
 # Some recommended defaults
 lresume: 0
 nproc: 1
-nproc_julia: 1
 
-executable: run_CGLite_esmtools.sh ${nproc_julia} ${start_date!syear} ${lresume} #${forcing_file} ${input_file} ${exp_path} ${exp_id} #${lresume}
+#executable: run_CGLite_esmtools.sh ${nproc_julia} ${start_date!syear} ${lresume} #${forcing_file} ${input_file} ${exp_path} ${exp_id} #${lresume}
         #execution_command: "/bin/bash julia --project=. --threads=1 -p ${nproc_julia} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file para.cglite.nc"
 
 #choose_version:
@@ -55,14 +54,17 @@ model_dir: "${general.esm_master.dir}/cryogrid-${version}"
 # (``configs/machine/<the_machine_used>.yaml``). For more information consult:
 # https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
 environment_changes:
-    #a_variable_in_the_computer_yaml: here you can over
-    add_module_actions:
+    add_module_actions: #- module command without ``module`` word (e.g. ``load netcdf``)
         - "load julia"
-        #- module command without ``module`` word (e.g. ``load netcdf``)
     add_export_vars: 
         JULIA_NUM_THREADS: 1
-        #VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
-        #VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
+choose_lresume:
+    0:
+        add_environment_changes: 
+            execution_command: "julia --project=. --threads=1 -p ${cryogrid.nproc} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file para.cglite.nc"
+    1:
+        add_environment_changes:
+            execution_command: "julia --project=. --threads=1 -p ${cryogrid.nproc} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file restart.cglite.nc -r"
 
 
 # Some commonly used variables in other ESM-Tools components (but optional)
@@ -101,38 +103,41 @@ forcing_sources:
     ini_forcing: ${ini_forcing_file} # to be defined in runscript
 forcing_files:
     ini_forcing: ini_forcing
+forcing_targets:
+    ini_forcing: forcing.cglite.${start_date!syear}.nc
 #forcing_in_work:
 #    ini_forcing: "forcing_for_cryogrid.nc"
-forcing_targets:
-    ini_forcing: forcing.cglite.${end_date!syear}.nc
 
 bin_sources:
-    #repo_tag: ${model_dir}
     run_script: ${model_dir}/run_CGLite_esmtools.sh # This would be the normal way to do it
     cglite_script: ${model_dir}/CGLite.jl
     src: ${model_dir}/src/*
     project: ${model_dir}/Project.toml
     manifest: ${model_dir}/Manifest.toml
 bin_targets:
-    #code: "."
     run_script: run_CGLite_esmtools.sh
     cglite_script: CGLite.jl
-    src: src/
+    src: src/*
     project: Project.toml
     manifest: Manifest.toml
+
     
-outdata_sources:
+outdata_in_work:
     output: output.cglite.*.nc
 outdata_targets:
     output: output.cglite.${end_date!syear}.nc
 
 restart_in_sources:
-    restart_in: restart.cglite.$(${start_date!syear}).nc
-    
+    restart_in: restart.cglite.$(( ${start_date!syear} - 1 )).nc
+restart_in_targets:
+    restart_in: restart.cglite.nc #remove year tag so that it is not considered by restart_out
+
 restart_out_sources:
     restart_out: restart.cglite.*.nc
+restart_out_in_work:
+    restart_out: restart.cglite.*.nc
 restart_out_targets:
-    restart_out: restart.cglite.$(${end_date!syear}+1).nc
+    restart_out: restart.cglite.${end_date!syear}.nc
 
 #create_config:
 #        cryogrid_wrapper.sh:

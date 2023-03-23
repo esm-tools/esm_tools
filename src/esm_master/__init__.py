@@ -2,7 +2,7 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.19.8"
+__version__ = "6.21.0"
 
 
 from . import database

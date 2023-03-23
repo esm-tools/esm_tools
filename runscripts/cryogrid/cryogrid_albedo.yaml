@@ -23,4 +23,6 @@ cryogrid:
     ini_forcing_file: "/albedo/work/user/jnitzbon/CGLite/input/forcing_netcdf/forcing_for_cryogrid.nc"
     #input_file: "/albedo/work/user/jnitzbon/CGLite/input/para_netcdf/para_cglite_awiesm_T63.nc"
     #pool_dir: ${model_dir}
+    input_files:
+        para: para_cglite_T63 # para_jsbach_T63
     

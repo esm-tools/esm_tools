@@ -53,18 +53,19 @@ model_dir: "${general.esm_master.dir}/cryogrid-${version}"
 # deviated from the defaults define for the specific machine
 # (``configs/machine/<the_machine_used>.yaml``). For more information consult:
 # https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
+choose_lresume:
+    0:
+        restart_options: "--input-file para.cglite.nc"
+    1:
+        restart_options: "--input-file restart.cglite.nc -r"
+
 environment_changes:
     add_module_actions: #- module command without ``module`` word (e.g. ``load netcdf``)
         - "load julia"
     add_export_vars: 
         JULIA_NUM_THREADS: 1
-choose_lresume:
-    0:
-        add_environment_changes: 
-            execution_command: "julia --project=. --threads=1 -p ${cryogrid.nproc} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file para.cglite.nc"
-    1:
-        add_environment_changes:
-            execution_command: "julia --project=. --threads=1 -p ${cryogrid.nproc} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc --input-file restart.cglite.nc -r"
+    execution_command: "julia --project=. --threads=1 -p ${cryogrid.nproc} CGLite.jl --forcing-file forcing.cglite.${start_date!syear}.nc ${cryogrid.restart_options}"
+
 
 
 # Some commonly used variables in other ESM-Tools components (but optional)

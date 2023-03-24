@@ -79,8 +79,10 @@ echo
 echo "Doing postprocessing in $basedir for $EXP_ID from $startdate to $enddate"
 echo "Using an environment from $envfile"
 echo
+echo " Start and end given: $startdate $enddate "
 startdate=$(date --date "$startdate" "+%Y%m%d")
 enddate=$(date --date "$enddate" "+%Y%m%d")
+echo " Start and end formatted:  $startdate $enddate "
 if [[ ${#startdate} -ne 8 ]] || [[ ${#enddate} -ne 8 ]]; then
 	echo
 	echo " Please provide start and end date in yyyymmdd format e.g."
@@ -177,17 +179,28 @@ startmonth=$(date --date="$startdate" "+%m")
 endyear=$(date --date="$enddate" "+%Y")
 endmonth=$(date --date="$enddate" "+%m")
 
+echo " Start year,month: $startyear $startmonth "
+echo " End year, month: $endyear $endmonth "
+
 [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] && freq="y"
 
-# calculate increment if not set, set to 1 to postprocess multiple years of
+# calculate increment if not set, set to 1 to postprocess multiple years of 
 # simulation that ran in multiyear intervals.
 if [[ -z $increment ]] ; then
    if [[ $startyear == $endyear ]] ; then
-      increment=$((endmonth - startmonth + 1))
-   else
+           # freq is 'y' for a full single year
+      if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
+                        increment=1
+                else
+        increment=$((endmonth - startmonth + 1))
+                fi
+        else
       increment=$((endyear - startyear + 1))
    fi
 fi
+
+echo " Increment: $increment "
+echo " Freq $freq "
 
 # Temporary directory
 id=$$
@@ -195,7 +208,7 @@ post_dir=$DATA_DIR/${id}_$startdate-$enddate
 [[ -d $post_dir ]] &&
     print "Hey: previous job failed or still running; removing temp dir"
 rm -r $post_dir
-mkdir $post_dir
+mkdir -v $post_dir
 
 #
 # Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
@@ -231,7 +244,10 @@ if ${ATM_CONVERT_NETCDF4} ; then
 			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
 			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
 		fi
-
+                
+                echo " Looking for files at $currdate1 "
+                echo " covering period $currdate1 $currdate2 "
+                
 		for filetag in $filetags
 		do
    		for s in $steps

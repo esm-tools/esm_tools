@@ -204,7 +204,11 @@ oifs:
                 True:
                         add_namelist_changes:
                                 fort.4:
+                                        NAMMCC:
+                                                # If false then u,v=0
+                                                LNEMOLIMCUR: ".true."
                                         NAEPHY:
+                                                # Send u,v to surf scheme
                                                 LECURR: ".true."
                 False:
                         add_namelist_changes:

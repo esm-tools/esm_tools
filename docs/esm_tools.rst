@@ -48,3 +48,9 @@ You can get a pre-generated template to add a new component with::
 
     Thank you! The new configuration has been saved. Please commit it (and get in touch with the
     esm-tools team if you need help)!
+
+You can also specify if you are creating a new ``setup`` or a new ``component`` with::
+
+  $ esm_tools create-new-config --type setup <MY_NEW_SETUP_NAME>
+
+Note however that there is (as of this writing) no template available for setups!

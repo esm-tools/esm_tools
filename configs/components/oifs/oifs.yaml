@@ -181,6 +181,16 @@ compile_infos:
             - oasis3mct-EM21
             - xios-2.5_r1910
             contact: "swahl(at)geomar.de"
+          43r3-foci30:
+            # CSW: new branch once created by Joakim
+            branch: foci30
+            git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+            comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+            install_bins: make/esm/oifs/bin/oifs
+            requires:
+            - oasis3mct-EM21
+            - xios-trunk_oasis
+            contact: "swahl(at)geomar.de"
           43r3-v1:
             branch: 43r3v1-foci
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -443,7 +453,7 @@ file_movements:
             all_directions: copy
         waminfo_in:
             all_directions: copy
-        outdata: # TODO: ask GEOMAR if they are fine with this, otherwise we have to put it into awicm3.yaml
+        outdata:
             all_directions: move
 
 # TODO: expand comment

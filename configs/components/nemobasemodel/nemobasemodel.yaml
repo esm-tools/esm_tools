@@ -3,6 +3,7 @@ available_versions:
 - 3.6ogcm_test
 - 3.6foci
 - 3.6foci_autotools
+- 4.2.0
 - 4.2.x 
 
 choose_version:

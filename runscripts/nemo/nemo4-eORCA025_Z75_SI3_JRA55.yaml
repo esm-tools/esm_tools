@@ -11,10 +11,10 @@ general:
    leapyear: False
    nyear: 1 
    base_dir: ${homedir}/esm/esm-experiments/ 
-   model_dir: ${homedir}/esm/models/nemo-eORCA025.z75.SI3
+   model_dir: ${homedir}/esm/models/nemo-eORCA025_Z75_SI3_JRA55
 
 nemo:
-   version: eORCA025.z75.SI3
+   version: eORCA025_Z75_SI3_JRA55
    resolution: "eORCA025" 
    leapyear: False
    nproc: 1416 

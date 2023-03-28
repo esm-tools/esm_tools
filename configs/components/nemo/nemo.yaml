@@ -47,6 +47,20 @@ file_movements:
       all_directions: move 
 
 runoff_method: "old"
+#
+# workaround for limitations in the environment_changes functionality
+# see discussion at https://github.com/esm-tools/esm_tools/discussions/912
+# 
+#hlrn_compiler_mpi: intel2019_impi2019
+#hlrn_iolibraries: geomar_libs
+#environment_changes:
+#  choose_computer.name:
+#    glogin:
+#      compiler_mpi: ${nemo.hlrn_compiler_mpi}
+#      iolibraries: ${nemo.hlrn_iolibraries}
+#    blogin:
+#      compiler_mpi: ${nemo.hlrn_compiler_mpi}
+#      iolibraries: ${nemo.hlrn_iolibraries}
 
 available_versions:
 - ORCA05_LIM2_KCM_AOW
@@ -75,21 +89,19 @@ choose_version:
 
   GYRE_PISCES:
 
-    # this should work but it does not if you run 
-    # the setting below are ignored
-    # if set on the root level of this file, and infinite loop 
-    # occurs if esm_master comp-foci-default/nemo is executed
-    # the enviornment_changes thing seems to be a mess,
-    # see also comment in foci.yaml section echam:
-    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
-    #environment_changes:
-#    choose_computer.name:
-#       glogin:
-#          compiler_mpi: intel2019_impi2019_nemo4
-#          iolibraries: geomar_libs 
-#       blogin:
-#           compiler_mpi: intel2019_impi2019_nemo4
-#           iolibraries: geomar_libs 
+    # workaround for limitations in the environment_changes functionality
+    # see discussion at https://github.com/esm-tools/esm_tools/discussions/912
+    #hlrn_compiler_mpi: intel2019_impi2019_nemo4
+    #hlrn_iolibraries: geomar_libs       
+    environment_changes:
+      choose_computer.name:
+        blogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+        glogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+
     requires:
     - xios-trunk
     - nemobasemodel-4.2.x
@@ -126,22 +138,19 @@ choose_version:
     # developed and maintained by Markus
     # basis for our coupled setups with NEMO4.2
 
-    # this should work but it does not if you run 
-    # the setting below are ignored
-    # if set on the root level of this file, and infinite loop 
-    # occurs if esm_master comp-foci-default/nemo is executed
-    # the enviornment_changes thing seems to be a mess,
-    # see also comment in foci.yaml section echam:
-    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
-    #environment_changes:
-#    choose_computer.name:
-#       glogin:
-#          compiler_mpi: intel2019_impi2019_nemo4
-#          iolibraries: geomar_libs 
-#       blogin:
-#           compiler_mpi: intel2019_impi2019_nemo4
-#           iolibraries: geomar_libs 
-    # TODO: add NEMO config once available from Markus 
+    # workaround for limitations in the environment_changes functionality
+    # see discussion at https://github.com/esm-tools/esm_tools/discussions/912
+    #hlrn_compiler_mpi: intel2019_impi2019_nemo4
+    #hlrn_iolibraries: geomar_libs       
+    environment_changes:
+      choose_computer.name:
+        blogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+        glogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+
     requires:
     - xios-trunk
     - nemobasemodel-4.2.0
@@ -297,22 +306,9 @@ choose_version:
   'eORCA025_Z75_SI3_COUPLED':
     # coupled eORCA025 set up with SI3 sea ice model
 
-    # this should work but it does not if you run 
-    # the setting below are ignored
-    # if set on the root level of this file, and infinite loop 
-    # occurs if esm_master comp-foci-default/nemo is executed
-    # the enviornment_changes thing seems to be a mess,
-    # see also comment in foci.yaml section echam:
-    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
-    #environment_changes:
-#    choose_computer.name:
-#       glogin:
-#          compiler_mpi: intel2019_impi2019_nemo4
-#          iolibraries: geomar_libs 
-#       blogin:
-#           compiler_mpi: intel2019_impi2019_nemo4
-#           iolibraries: geomar_libs 
-    # TODO: add NEMO config once available from Markus 
+    # modifications to compile time and runtime environment changes
+    # are set in components/setups/focioifs.yaml
+
     requires:
     - nemobasemodel-4.2.0
 
@@ -393,22 +389,19 @@ choose_version:
     # from Markus Scheinert
     # version: 'ORCA05.z75.ICE.JRA-KMST001'
 
-    # this should work but it does not if you run 
-    # the setting below are ignored
-    # if set on the root level of this file, and infinite loop 
-    # occurs if esm_master comp-foci-default/nemo is executed
-    # the enviornment_changes thing seems to be a mess,
-    # see also comment in foci.yaml section echam:
-    # manually set compiler_mpi in glogin.yaml / blogin.yaml for now
-    #environment_changes:
-#    choose_computer.name:
-#       glogin:
-#          compiler_mpi: intel2019_impi2019_nemo4
-#          iolibraries: geomar_libs 
-#       blogin:
-#           compiler_mpi: intel2019_impi2019_nemo4
-#           iolibraries: geomar_libs 
-    # TODO: add NEMO config once available from Markus 
+    # workaround for limitations in the environment_changes functionality
+    # see discussion at https://github.com/esm-tools/esm_tools/discussions/912
+    #hlrn_compiler_mpi: intel2019_impi2019_nemo4
+    #hlrn_iolibraries: geomar_libs       
+    environment_changes:
+      choose_computer.name:
+        blogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+        glogin:
+           add_module_actions:
+             - "load gcc/9.3.0" 
+
     requires:
     - xios-trunk
     - nemobasemodel-4.2.0

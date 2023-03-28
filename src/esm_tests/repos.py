@@ -20,9 +20,9 @@ def update_resources_submodule(info, verbose=True):
     """
 
     check_resources(info, verbose)
+    resources_branch = info["resources_branch"]
 
     if info["repo_update"]:
-        resources_branch = "release"
         text = f"Updating the resources repo with '{resources_branch}' branch"
 
         logger.info(text)

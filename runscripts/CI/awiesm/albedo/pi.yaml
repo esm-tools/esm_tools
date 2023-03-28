@@ -1,0 +1,47 @@
+general:
+    account: 'computing.computing'
+    setup_name: "awiesm"
+    compute_time: "00:20:00"
+    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+    final_date: "1850-04-01T00:00:00"         # Final date of the experiment
+    project_base: !ENV ${PROJECT_BASE}
+    base_dir: "${general.project_base}/experiments"
+    nmonth: 1
+    nyear: 0
+    with_wiso: False
+    use_venv: False
+    clean_old_rundirs_except: 2
+    clean_old_rundirs_keep_every: 25
+    version: "2.1"
+    # Why is this twice??
+    model_dir: "${general.project_base}/model_codes/awiesm-2.1"
+    description: >
+      Basic AWIESM Test for PI
+
+awiesm:
+    postprocessing: false
+    # Why is this twice??
+    model_dir: "${general.project_base}/model_codes/awiesm-2.1"
+
+echam:
+    restart_rate: 1
+    restart_unit: "months"
+    input_sources:
+            jansurf: "/albedo/pool/FESOM/meshes_default/core/tarfilesT63/input/echam6/T63CORE2_jan_surf.nc"
+            vgratclim: "/albedo/pool/FESOM/meshes_default/core/tarfilesT63/input/echam6/T63CORE2_VGRATCLIM.nc"
+            vltclim: "/albedo/pool/FESOM/meshes_default/core/tarfilesT63/input/echam6/T63CORE2_VLTCLIM.nc"
+jsbach:
+    input_sources:
+            jsbach_1850: "/albedo/pool/FESOM/meshes_default/core/tarfilesT63/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+fesom:
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    namelist_dir: "${general.project_base}/model_codes/awiesm-2.1/fesom-2.1/config"
+    mesh_dir: "/albedo/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+    namelist_changes:
+        namelist.config:
+            geometry:
+                force_rotation: false
+

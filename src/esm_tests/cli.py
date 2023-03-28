@@ -45,6 +45,7 @@ def main():
 
     # Parsing
     save_flag, print_state, delete_tests = info.argparse()
+    print(info["resources_branch"])
 
     # Update ``resources``
     update_resources_submodule(info)

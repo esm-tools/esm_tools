@@ -38,7 +38,7 @@ def install(package: str) -> None:
     installed_packages = esm_plugin_manager.find_installed_plugins()
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", package])
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "--user", package]
@@ -449,7 +449,7 @@ class Task:
     def validate(self):
         self.check_requirements()
 
-    def execute(self, ignore_errors=False):
+    def generate_task_script(self):
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
@@ -460,6 +460,7 @@ class Task:
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
 
+    def execute(self, ignore_errors=False):
         # Calculate the number of get commands for this esm_master operation
         self.num_of_get_commands()
         # Loop through the commands

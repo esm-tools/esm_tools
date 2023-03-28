@@ -217,7 +217,11 @@ def print_state_online(info={}):
         If not provided, defines the ``info`` keys needed.
     """
 
-    url = "https://raw.githubusercontent.com/esm-tools/esm_tests_info/release/state.yaml"
+    if "resources_branch" in info:
+        resources_branch = info["resources_branch"]
+    else:
+        resources_branch = "release"
+    url = f"https://raw.githubusercontent.com/esm-tools/esm_tests_info/{resources_branch}/state.yaml"
     try:
         current_state = urllib.request.urlopen(url)
     except urllib.error.HTTPError:
@@ -261,6 +265,7 @@ def sort_dict(dict_to_sort):
         Dictionary sorted.
     """
     if isinstance(dict_to_sort, dict):
+        dict_to_sort = {str(key): value for key, value in dict_to_sort.items()}
         dict_to_sort = {key: dict_to_sort[key] for key in sorted(dict_to_sort.keys())}
         for key, value in dict_to_sort.items():
             dict_to_sort[key] = sort_dict(value)

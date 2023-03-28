@@ -1,3 +1,14 @@
+"""
+Script that cleans the multirepo packages of ESM-Tools (<v6.0.0). Run this script
+if you suspect that you are having a conflict between a newly installed ESM-Tools
+version >5.1.9 and some older packages::
+
+    python3 utils/fix_monorepo.py
+
+This script is based on the script used to upgrade from 5.1.9 yo 6.0.0:
+https://github.com/esm-tools/esm_version_checker/blob/release/esm_version_checker/monorepo.py
+"""
+
 import colorama
 import glob
 import os

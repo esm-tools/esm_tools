@@ -453,7 +453,7 @@ file_movements:
             all_directions: copy
         waminfo_in:
             all_directions: copy
-        outdata: # TODO: ask GEOMAR if they are fine with this, otherwise we have to put it into awicm3.yaml
+        outdata:
             all_directions: move
 
 # TODO: expand comment

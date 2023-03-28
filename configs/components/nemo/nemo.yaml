@@ -343,7 +343,44 @@ choose_version:
        namelist_cfg:
           namsbc_blk:
              cn_dir: "./"
-    
+          #namrun:
+          #    nn_write: 3 # hourly output (no xios used)
+          namsbc:
+             ln_blk: false
+             ln_cpl: true
+             ln_ssr: false
+             ln_rnf: false
+             ln_traqsr: false
+             ln_apr_dyn: false
+          namsbc_cpl:
+             sn_snd_temp: ['oce and ice', 'no', '', '', '']
+             sn_snd_alb: ['ice', 'no', '', '', '']
+             sn_snd_thick: ['ice and snow', 'no', '', '', '']
+             sn_snd_crt: ['oce only', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_snd_co2: ['none', 'no', '', '', '']
+             sn_snd_cond: ['none', 'no', '', '', '']
+             sn_snd_mpnd: ['none', 'no', '', '', '']
+             sn_snd_sstfrz: ['none','no','','','']
+             sn_snd_wlev: ['none','no','','','']
+             sn_snd_ttilyr: ['none','no','','','']
+             sn_rcv_w10m: ['none', 'no', '', '', '']
+             sn_rcv_taumod: ['none', 'no', '', '', '']
+             sn_rcv_tau: ['oce and ice', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_rcv_dqnsdt: ['coupled', 'no', '', '', '']
+             sn_rcv_qsr: ['conservative', 'no', '', '', '']
+             sn_rcv_qns: ['conservative', 'no', '', '', '']
+             sn_rcv_emp: ['conservative', 'no', '', '', '']
+             sn_rcv_rnf: ['coupled', 'no', '', '', '']
+             sn_rcv_cal: ['coupled', 'no', '', '', '']
+             sn_rcv_co2: ['none', 'no', '', '', ''] 
+   #       namtra_ldf:
+   #          rn_aht_0: 600
+   #          rn_aeiv_scale: 0.5
+   #       namdyn_ldf:
+   #          rn_cmsmag_2: 4
+   #       namsbc_rnf:
+   #          rn_rfact: 0.984
+
     add_input_sources:
         namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
         namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
@@ -1393,6 +1430,8 @@ namelist_changes:
 
 choose_generation:
         "4.2": 
+                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+
                 add_namelist_changes:
                         namelist_cfg:
                                 namdom:
@@ -1410,6 +1449,8 @@ choose_generation:
                             namdyn_hpg:
                                ln_hpg_sco: '.true.'
         "3.6":
+                opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+
                 add_namelist_changes:
                         namelist_cfg:
                                 namdom:
@@ -1826,7 +1867,6 @@ log_sources:
 
 ##########################  coupling stuff
 
-opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
 
 agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 

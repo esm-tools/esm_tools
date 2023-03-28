@@ -198,13 +198,6 @@ oifs:
         
         # By default we turn off ECWAM wave model
         wam: False
-        
-        namelist_changes:
-                fort.4:
-                        NAMFOCICFG:
-                                # Turn on coupling
-                                # TODO: Add variable for AGRIF coupling
-                                FOCI_CPL_NEMO_LIM: ".true." 
 
         # For coupled setups we can use ocean currents
         use_ocean_currents: False
@@ -242,7 +235,12 @@ oifs:
         # L grid is wet points including lakes
         # R grid is dry points
         foci_fields_a: [A_QsrMix, A_QnsMix, ATotRain, ATotEvap, ATotSnow, AIceEvap]
-        foci_fields_l: [A_AlbIce, AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
+        choose_nemo.generation:
+           "3.6":
+              foci_fields_l: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
+                        A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, A_dQnsdT]
+           "4.2":
+              foci_fields_l: [A_AlbIce, AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
                         A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, A_dQnsdT]
         
         #foci_fields_r: [A_Runoff, A_Calving]
@@ -257,7 +255,31 @@ oifs:
         
         # add coupling fields for AGRIF                
         choose_general.version: 
-                agrif:
+        
+           "3.0":
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                       FOCI_CPL_NEMO_LIM: false
+                       FOCI_CPL_NEMO_SI3: true
+                    #NAERAD:
+                    #   NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMCLDP:
+                       # diffusion coeff for cloud edges
+                       RCLDIFF: 5.e-6 # default 3e-6
+                    NAMMCC:
+                       RALBSEAD_NML: 0.045
+                       RALBSCALE_AR: 0.8
+
+           "*":
+              add_namelist_changes:
+                  fort.4:
+                     NAMFOCICFG:
+                        # Turn on coupling
+                        # TODO: Add variable for AGRIF coupling
+                        FOCI_CPL_NEMO_LIM: ".true." 
+
+           agrif:
                         fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                         fociagrif_fields_l: [M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
                                              M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
@@ -312,6 +334,9 @@ oifs:
                                                 nproc: 1
 
 nemo:
+        # Joakim uses nproca / nprocb sometimes instead of jpni / jpnj
+        nproca: ${jpni}
+        nprocb: ${jpnj}
         
         # For 2.1-O12 we choose ORCA12 config for NEMO
         choose_general.version:
@@ -562,13 +587,8 @@ oasis3mct:
         
         coupling_target_fields:
                 # Coupling ocean fields to atm
-                #choose_nemo.generation:
-                #  "3.6":
-                sstocean:
-                        - 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
-                #  "4.2":
-                #     sstocean:
-                #        - 'A_AlbIce:AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- O_AlbIce:OIceFrc:O_SSTSST:O_TepIce:OIceTck:OSnwTck:O_OCurx1:O_OCury1'
+                # This is done in choose below as the coupling fields depend
+                # on the NEMO version used.
 
                 # Couple HTESSEL runoff to river routing:
                 # This is done in a choose_general.version block below
@@ -587,6 +607,15 @@ oasis3mct:
                 # Couple atm fluxes to ocean (conserving)
                 atmflx: 
                         - 'O_QsrMix:O_QnsMix:OTotRain:OTotSnow:OIceEvap:OTotEvap <--a2ogauswgtcn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:AIceEvap:ATotEvap'
+        choose_nemo.generation:
+           "3.6":
+              add_coupling_target_fields:
+                 sstocean:
+                    - 'AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- OIceFrac:O_SSTSST:O_TepIce:O_IceTck:O_SnwTck:O_OCurx1:O_OCury1'
+           "4.2":
+              add_coupling_target_fields:
+                 sstocean:
+                    - 'A_AlbIce:AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2agauswgt-- O_AlbIce:OIceFrc:O_SSTSST:O_TepIce:OIceTck:OSnwTck:O_OCurx1:O_OCury1'
          
         choose_general.version:
                 # TODO: check with Joakim

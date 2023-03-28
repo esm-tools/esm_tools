@@ -95,9 +95,10 @@ choose_compiler_suite:
 
         add_export_vars:
             # I/O libraries
-            HDF5ROOT: "/albedo/home/mandresm/.spack/sw/hdf5/1.12.2-7bogsh7/"
-            NETCDFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-c/4.8.1-2u6p2ge/"
-            NETCDFFROOT: "/albedo/home/mandresm/.spack/sw/netcdf-fortran/4.5.4-2gawmpc/"
+            HDF5ROOT: "/albedo/soft/sw/spack-sw/hdf5/1.12.2-rgostku/"
+            NETCDFROOT: "/albedo/soft/sw/spack-sw/netcdf-c/4.8.1-i5n4n63/"
+            NETCDFFROOT: "/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-yb7woqz/"
+            ECCODESROOT: "/albedo/soft/sw/spack-sw/eccodes/2.25.0-vhmiess/"
 
     intel-oneapi:
         compiler_module: intel-oneapi-compilers/2022.1.0

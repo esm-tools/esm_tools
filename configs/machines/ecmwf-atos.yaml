@@ -65,7 +65,7 @@ unset_vars:
 #
 #
 
-useMPI: intelmpi
+useMPI: openmpi
 module_actions:
         - "reset"
         - "load cmake"
@@ -114,7 +114,7 @@ export_vars:
         LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:{NETCDF4_PARALLEL_DIR}/lib:{ECCODES_DIR}/lib:{HDF5_DIR}/lib
 
 choose_useMPI:
-        intelmpi:
+        openmpi:
                 fc: mpifort
                 f77: mpifort
                 mpifc: mpifort

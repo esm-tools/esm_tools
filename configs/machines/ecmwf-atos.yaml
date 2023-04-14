@@ -1,0 +1,116 @@
+# THE ECMWF Atos YAML config file
+
+name: ecmwf-atos
+
+accounting: true
+batch_system: "slurm"
+
+operating_system: "linux-centos"
+
+jobtype: compute
+sh_interpreter: "/usr/bin/bash"
+
+
+partitions:
+        compute:
+                name: mpp
+                cores_per_node: 128
+        pp:
+                name: smp
+                cores_per_node: 1
+
+
+logical_cpus_per_core: 1
+
+threads_per_core: 1
+
+pool_dir: "/work/ollie/pool"
+
+pool_directories:
+        pool: "/work/ollie/pool"
+        projects: "/work/ollie/projects"
+        focipool: "/dev/null"
+
+# ?????
+choose_submitted:
+        true:
+                modules_needed:
+                        - centoslibs
+        false:
+                nothing: much
+
+submitted: false
+hyper_flag: "" # No hyperthreading on ollie
+choose_heterogeneous_parallelization:
+        True:
+                choose_taskset:
+                    False:
+                        add_export_vars:
+                            I_MPI_SLURM_EXT: 0
+                    "*":
+                        taskset_chs: ""
+                add_unset_vars:
+                        - "SLURM_DISTRIBUTION"
+                        - "SLURM_NTASKS"
+                        - "SLURM_NPROCS"
+                        - "SLURM_ARBITRARY_NODELIST"
+
+hetjob_flag: packjob
+
+unset_vars:
+        - "SLURM_MEM_PER_NODE"
+        - "SLURM_MEM_PER_CPU"
+
+# standard environment setup
+#
+#
+
+module_actions:
+        - "reset"
+        - "load cmake"
+        - "load udunits"
+        - "load prgenv/intel"
+        - "load intel/2021.4.0"
+        - "load intel-mkl/19.0.5"
+        - "load hpcx-openmpi/2.9.0"
+        - "load hdf5-parallel/1.10.6"
+        - "load cdo nco netcdf4-parallel/4.7.4"
+        - "load ecmwf-toolbox/2021.08.3.0"
+        - "load python3/3.8.8-01"
+        - "load git"
+        # - "load python3/3.6.5_intel2019"
+        - "list"
+
+export_vars:
+        LC_ALL: en_US.UTF-8
+
+        FC: mpif90
+        fcflags: -free
+        f77: mpif90
+        mpifc: mpif90
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpicxx
+
+        IO_LIB_ROOT: ""
+        HDF5ROOT: $HDF5_PARALLEL_DIR
+
+        NETCDFFROOT: $NETCDF4_PARALLEL_DIR
+        NETCDFROOT: $NETCDF4_PARALLEL_DIR
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
+        NETCDF_CXX_LIBRARIES: $NETCDF4_PARALLEL_DIR/lib
+
+        PERL5LIB: /usr/lib64/perl5
+        LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
+
+        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+        LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:{NETCDF4_PARALLEL_DIR}/lib:{ECCODES_DIR}/lib:{HDF5_DIR}/lib
+
+further_reading:
+        - batch_system/slurm.yaml

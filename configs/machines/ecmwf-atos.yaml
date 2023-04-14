@@ -65,6 +65,7 @@ unset_vars:
 #
 #
 
+useMPI: intelmpi
 module_actions:
         - "reset"
         - "load cmake"
@@ -83,14 +84,14 @@ module_actions:
 
 export_vars:
         LC_ALL: en_US.UTF-8
-        FC: mpifort
-        FCFLAGS: -r8 -traceback -g -fp-model precise -fp-speculation=safe -O2 -xHost
-        F77: mpifort
-        MPIFC: mpifort
-        MPICC: mpicc
-        CCFLAGS: -traceback -g -O2 -xHost
-        CC: mpicc
-        CXX: mpicxx
+        FC: ${fc}
+        #FCFLAGS: -r8 -traceback -g -fp-model precise -fp-speculation=safe -O2 -xHost
+        F77: ${f77}
+        MPIFC: ${mpifc}
+        MPICC: ${cc}
+        #CCFLAGS: -traceback -g -O2 -xHost
+        CC: ${cc}
+        CXX: ${cxx}
 
         IO_LIB_ROOT: ""
         HDF5ROOT: $HDF5_PARALLEL_DIR
@@ -111,6 +112,14 @@ export_vars:
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
         LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:{NETCDF4_PARALLEL_DIR}/lib:{ECCODES_DIR}/lib:{HDF5_DIR}/lib
+
+choose_useMPI:
+        intelmpi:
+                fc: mpifort
+                f77: mpifort
+                mpifc: mpifort
+                cc: mpicc
+                cxx: mpicxx
 
 further_reading:
         - batch_system/slurm.yaml

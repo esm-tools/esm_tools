@@ -13,10 +13,10 @@ sh_interpreter: "/usr/bin/bash"
 
 partitions:
         compute:
-                name: mpp
+                name: compute
                 cores_per_node: 128
         pp:
-                name: smp
+                name: gpil
                 cores_per_node: 1
 
 

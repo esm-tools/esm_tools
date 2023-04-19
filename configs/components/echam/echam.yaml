@@ -153,7 +153,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario_type}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
 
 switch: 1
 value : "echam default"
@@ -165,6 +165,7 @@ choose_switch:
 
 with_wiso: false
 wiso_code: false
+with_lco2_emis: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -358,24 +359,14 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
-                        #
                         ozone: 1950ozone
                         swflux: 1950swflux
                         volcir: 1950volcir
                         volcsw: 1950volcsw
-        # old hist settings --> need to discuss with deniz whether this is
-        # still needed
         HIST:
-                # NOTE: r0007 (default dataset) has upto 2014 but r0008 has
-                # upto 2024 (used by FOCI)
                 dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
-                        # aerocoarse: piaerocoarse
-                        # aerofarir: piaerofarir
-                        # aerofin: histaerofin
-                        sst: amipsst
-                        sic: amipsic
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse
                         aerocoarse_1851: piaerocoarse
@@ -385,31 +376,22 @@ choose_scenario:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist
+                        MAC-SP: MAC-SP_hist
+                        ozone: ozone_hist
+                        swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP
-
-        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-        # under the choose_scenario_type block
-        ssp585:
-                scenario_type: cmip6
-
-        ssp370:
-                scenario_type: cmip6
-
         ssp126:
                 scenario_type: cmip6
-
         ssp245:
                 scenario_type: cmip6
-
+        ssp370:
+                scenario_type: cmip6
         ssp534os:
                 scenario_type: cmip6
-
-        cmip6hist:
+                pool_dir: "/work/bb0519/foci_input2/ECHAM6_GENERAL/ECHAM6" # ssp534os forcing files not in default pool
+        ssp585:
                 scenario_type: cmip6
 
 choose_scenario_type:
@@ -425,12 +407,12 @@ choose_scenario_type:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario
+                        greenhouse: greenhouse_scenario
+                        MAC-SP: MAC-SP_scenario
+                        ozone: ozone_scenario
+                        swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP_hist_scenario
 
 choose_lresume:
         False:
@@ -497,6 +479,46 @@ choose_yr_perp_off:
                                 runctl:
                                         l_orbsvop87: ".false."
 
+choose_with_lco2_emis:
+    True:
+        # - run emission-driven and not concentration-driven experiment, e.g. `esm-piControl` or `esm-hist` and not `piControl` or `historical`
+        # - atmosheric CO2 concentration is not prescribed but calculated by the model setup
+        # - CO2 emissions need to be provided as `carbon_emissions.nc`, not CO2 concentrations as `greenhouse_gases.nc`
+        add_namelist_changes:
+            namelist.echam:
+                submodelctl:
+                    lco2: true # co2 submodel interacting with jsbach; true for emission-driven; if true, lco2_scenario will be set false during model run
+                radctl:
+                    ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
+                co2ctl:
+                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
+                    lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
+        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            HIST:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_hist
+            ssp126:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp126
+            ssp245:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp245
+            ssp370:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp370
+            ssp534os:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp534os
+            ssp585:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp585
+            "*":
+                add_error:
+                    "missing_scenario":
+                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+        add_forcing_in_work:
+            carbon_emissions: "carbon_emissions.nc"
+
 choose_wiso_code:
         True:
                 lwiso: "${with_wiso}"
@@ -560,39 +582,29 @@ input_in_work:
         "vltclim": "unit.90"
 
 forcing_in_work:
-        sic: "unit.96"
-        sst: "unit.20"
-        # ok this is another crazy ECHAM6 speciality
-        # every year the background aerosol files for 1849 to 1851 
-        # need to be linked to the same file for historical/scenario runs
-        # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
-        # MAC-SP describes aerosol w.r.t. piControl conditions.
+        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerocoarse_1849: "aero_coarse_1849.nc"
         aerocoarse_1850: "aero_coarse_1850.nc"
         aerocoarse_1851: "aero_coarse_1851.nc"
-        aerofin_1849: "aero_fine_1849.nc"
-        aerofin_1850: "aero_fine_1850.nc"
-        aerofin_1851: "aero_fine_1851.nc"
+        aerofarir: "aero_farir_@YEAR@.nc"
         aerofarir_1849: "aero_farir_1849.nc"
         aerofarir_1850: "aero_farir_1850.nc"
         aerofarir_1851: "aero_farir_1851.nc"
-        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
-        aerofarir: "aero_farir_@YEAR@.nc"
-        ozone: "ozon@YEAR@"
+        aerofin_1849: "aero_fine_1849.nc"
+        aerofin_1850: "aero_fine_1850.nc"
+        aerofin_1851: "aero_fine_1851.nc"
         greenhouse: "greenhouse_gases.nc"
+        "MAC-SP": "MAC-SP.nc"
+        ozone: "ozon@YEAR@"
+        sic: "unit.96"
+        sst: "unit.20"
+        swflux: "swflux_@YEAR@.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
-        swflux: "swflux_@YEAR@.nc"
-        "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
         aerocoarse:
-                - need_year_before
-                - need_year_after
-                - need_2years_before
-                - need_2years_after
-        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -602,13 +614,15 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        ozone:
+        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        # deniz: added these 3 variables. They were present in the esm-tools r4
-        volcsw:
+        ozone:
+                - need_year_before
+                - need_year_after
+        swflux:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -618,7 +632,7 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        swflux:
+        volcsw:
                 - need_year_before
                 - need_year_after
                 - need_2years_before

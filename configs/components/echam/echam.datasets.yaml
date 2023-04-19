@@ -1,5 +1,4 @@
 # inputs
-#
 input_sources:
         "cldoptprops": "${input_dir}/ECHAM6_CldOptProps.nc"
         "janspec": "${input_dir}/${resolution}/${resolution}${levels}_jan_spec.nc"
@@ -13,48 +12,31 @@ input_sources:
 # forcings
 forcing_sources:
         # sst
+        "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"
         "amipsst":
                 "${forcing_dir}/amip/${resolution}_amipsst_@YEAR@.nc":
                         from: 1870
                         to: 2016
 
-        "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"
-
         # sic
+        "pisic": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sic_1880-2379.nc"
         "amipsic":
                 "${forcing_dir}/amip/${resolution}_amipsic_@YEAR@.nc":
                         from: 1870
                         to: 2016
 
-        "pisic": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sic_1880-2379.nc"
-
         # aero
+        # NOTE: no transient aero data available
         "piaerocoarse": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc"
         "piaerofarir": "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc"
         "piaerofin": "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc"
-
-        "histaerocoarse": 
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa.nc":
-                to: 1864
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_coa_@YEAR@.nc":
-                from: 1865
-                to: 2000
-
-        "histaerofarir": 
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa.nc":
-                to: 1864
-            "${forcing_dir}/aero/${resolution}_aeropt_kinne_lw_b16_coa_@YEAR@.nc":
-                from: 1865
-                to: 2000
-
-        "histaerofin":
-                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_1865.nc":
-                        to: 1864
-                "${forcing_dir}/aero/${resolution}_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-                        from: 1865
-                        to: 2000
+        
         # volcanic
-        # NOTE: HIST scenario uses r0008 instead of r0007
+        # NOTE: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
+        "1950volcir":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1950.nc"
+        "1950volcsw":
+                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
         "histvolcir":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1850.nc":
                         to: 1850
@@ -63,8 +45,6 @@ forcing_sources:
                         to: 2024
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_2024.nc":
                         from: 2025
-
-        # TODO: important: r0007 has upto 2014 but r0008 has upto 2024 (used by FOCI)
         "histvolcsw":
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1850.nc":
                         to: 1850
@@ -74,62 +54,77 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_2024.nc":
                         from: 2025
 
-        "1950volcir":
-                "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1950.nc"
-
-        "1950volcsw":
-                "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
-
         # greenhouse
-        # TODO: currently only r0008 contains the greenhouse_ssp* files
-        "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
-        "greenhouse_hist_scenario":
+        # - echam needs year+1 in the forcing file greenhouse_gases.nc
+        # - greenhouse_historical.nc last year is 2014
+        # --> using this file for year 2014 yields wrong values since echam 
+        #     interpolates with nothing (and continues without error)
+        # --> use greenhouse_ssp*.nc for from 2014 onwards
+        # - year 2015 CO2 values: ssp126:399.9492, ssp245:399.9491, ssp370:399.9484, ssp585:399.9488 ppm
+        # --> doesn't really matter which is used; T. Semmler and C. Danek used ssp370 for their CMIP6 simulations
+        "greenhouse_hist":
                 "${greenhouse_dir}/greenhouse_historical.nc":
+                        to: 2013
+                "${greenhouse_dir}/greenhouse_ssp370.nc":
+                        from: 2014
                         to: 2014
+        "greenhouse_scenario":
                 "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
-
-        # TODO: greenhouse files differ
-        # greenhouse
         "1percCO2greenh": "${greenhouse_dir}/greenhouse_1pctCO2.nc"
-        #"histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
-        # - use any SSP file for the historical scenario to have GHG values for year 2015,
-        #   necessary for Echams year+1 interpolation for last historical year 2014
-        # - all historical years <= 2014 are identical throughout all SSP GHG files
-        # - year 2015 CO2 values: 126:399.9492, 245:399.9491, 370:399.9484, 585:399.9488 ppm
-        #   --> doesn't really matter which is used. T. Semmler and C. Danek used 370 for their CMIP6 simulations
 
         # radiation
+        "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
         "histswflux":
                 "${input_dir}/solar_irradiance/swflux_14band_1850.nc":
                         to: 1850
                 "${input_dir}/solar_irradiance/swflux_14band_@YEAR@.nc":
                         from: 1851
-
-        "1950swflux": "${input_dir}/solar_irradiance/swflux_14band_1950.nc"
-        # TODO: years are different
+        
         # ozone
-        "ozone_hist_scenario":
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
-                        to: 1850
-                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
-                        from: 1851
-                        to: 2014
-                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
-                        from: 2015
-
+        # - echam needs year+/-1 ozon data for interpolation
+        # - for historical year 2014, T. Semmler and C. Danek used ssp370 for their CMIP6 simulations 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
         "piozone": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonea": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozoneb": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
         "piozonec": "${forcing_dir}/ozone/${resolution}_ozone_picontrol.nc"
+        "ozone_hist":
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
+                        to: 1850
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        from: 1851
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc": 
+                        from: 2015
+                        to: 2015
+        "ozone_scenario":
+                "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                        from: 2014
+                        to: 2014
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc": 
+                        from: 2015
+                        to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc": 
+                        from: 2100
 
-        "MAC-SP": "${input_dir}/MAC-SP.nc"
-
-        "MAC-SP_hist_scenario":
-                 "${input_dir}/MAC-SP.nc":
+        # plume parameterization
+        "MAC-SP_hist":
+                 #"${input_dir}/MAC-SP.nc": # NOTE: historical MAC-SP.nc not in r0008 --> use r0007 instead
+                 "${pool_dir}/input/r0007/MAC-SP.nc":
                          to: 2014
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
+        "MAC-SP_scenario":
+                 "${input_dir}/MAC-SP_${scenario}.nc":
+                         from: 2015
+        
+        # carbon emissions for echam6:with_lco2_emis
+        carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc" # all ssp* identical from 1849 to 2015
+        carbon_emissions_ssp126: "${forcing_dir}/${resolution}_carbon_emissions_ssp126.nc"
+        carbon_emissions_ssp245: "${forcing_dir}/${resolution}_carbon_emissions_ssp245.nc"
+        carbon_emissions_ssp370: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc"
+        carbon_emissions_ssp534os: "${forcing_dir}/carbon_emissions/${resolution}_carbon_emissions_ssp534os.nc" # special case from foci pool
+        carbon_emissions_ssp585: "${forcing_dir}/${resolution}_carbon_emissions_ssp585.nc"
+

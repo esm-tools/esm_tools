@@ -89,22 +89,15 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
-                        ssp585:
-                                scenario_type: cmip6
-
-                        ssp370:
-                                scenario_type: cmip6
-
                         ssp126:
                                 scenario_type: cmip6
-
                         ssp245:
                                 scenario_type: cmip6
-
+                        ssp370:
+                                scenario_type: cmip6
                         ssp534os:
                                 scenario_type: cmip6
-
-                        cmip6hist:
+                        ssp585:
                                 scenario_type: cmip6
 
 
@@ -203,20 +196,13 @@ choose_version:
                         # further options are given under `choose_scenario_type` section
                         ssp126:
                                 scenario_type: cmip6
-
                         ssp245:
                                 scenario_type: cmip6
-
                         ssp370:
                                 scenario_type: cmip6
-
                         ssp534os:
                                 scenario_type: cmip6
-
                         ssp585:
-                                scenario_type: cmip6
-
-                        cmip6hist:
                                 scenario_type: cmip6
 
         "3.10":
@@ -306,7 +292,7 @@ choose_scenario_type:
                 forcing_files:
                         LU: LU_hist_scenario
                         LU_trans: LU_trans_hist_scenario
-                        Ndepo: Ndepo_hist_scenario
+                        Ndepo: Ndepo_ssp # Ndepo_hist_scenario
                         a_nd_file: a_nd_file
                         lightning: lightning
                         popdens: popdens

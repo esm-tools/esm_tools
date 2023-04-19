@@ -36,7 +36,7 @@ use_Fe2N              = .true.      ! use Fe2N instead of Fe2C, as in MITgcm ver
 use_photodamage       = .true.      ! use Alvarez et al (2018) for chlorophyll degradation
 HetRespFlux_plus      = .true.      !MB More stable computation of zooplankton respiration fluxes adding a small number to HetN
 REcoMDataPath         = '/work/ollie/okarakus/forcing/core_new_REcoMforcing/'
-restore_alkalinity    = .true.
+restore_alkalinity    = .false.
 NitrogenSS            = .false.     ! When set to true, external sources and sinks of nitrogen are activated (Riverine, aeolian and denitrification)
 useAeolianN           = .false.      ! When set to true, aeolian nitrogen deposition is activated
 firstyearoffesomcycle = 1958        ! The first year of the actual physical forcing (e.g. JRA-55) used
@@ -48,7 +48,7 @@ Nmocsy                = 1           ! Length of the vector that is passed to moc
 
 /
 &pasinking
-Vdet_a                = 0.0288      ! [1/day]
+Vdet_a                = 0.0288d0      ! [1/day]
 /
 
 &painitialization_N
@@ -67,8 +67,8 @@ reminSi               = 0.02d0
 &palimiter_function
 NMinSlope             = 50.d0 
 SiMinSlope            = 1000.d0
-NCmin                 = 0.04d0
-NCmin_d               = 0.04d0
+NCmin                 = 0.05d0
+NCmin_d               = 0.05d0
 NCmin_c               = 0.04d0      ! NEW
 SiCmin                = 0.04d0
 k_Fe                  = 0.04d0
@@ -128,11 +128,11 @@ ligandStabConst       = 100.d0      ! [m3/mumol] order 100. Ligand-free iron sta
 graz_max              = 2.4d0       ! [mmol N/(m3 * day)] Maximum grazing loss parameter 
 epsilon               = 0.35d0      ! [(mmol N)2 /m6] Half saturation constant for grazing loss 
 res_het               = 0.01d0      ! [1/day] Respiration by heterotrophs and mortality (loss to detritus)
-Redfield              = 6.625       ! [mmol C/mmol N] Redfield ratio of C:N = 106:16
+Redfield              = 6.625d0     ! [mmol C/mmol N] Redfield ratio of C:N = 106:16
 loss_het              = 0.05d0      ! [1/day] Temperature dependent N degradation of extracellular organic N (EON)
-pzDia                 = 0.5d0       ! Maximum diatom preference
+pzDia                 = 0.083d0       ! Maximum diatom preference
 sDiaNsq               = 0.d0
-pzPhy                 = 1.0d0       ! Maximum nano-phytoplankton preference                                                                                           
+pzPhy                 = 0.25d0       ! Maximum nano-phytoplankton preference                                                                                           
 sPhyNsq               = 0.d0
 pzCocco               = 0.666d0     ! NEW
 sCoccoNsq             = 0.d0        ! NEW
@@ -224,7 +224,7 @@ lossC_z2              = 0.02d0
 /
 
 &paco2lim                           ! NEW
-Cunits                = 976.5625    ! Conversion factor between [mol/m3] (model) and [umol/kg] (function): (1000 * 1000) / 1024
+Cunits                = 976.5625d0  ! Conversion factor between [mol/m3] (model) and [umol/kg] (function): (1000 * 1000) / 1024
 a_co2_phy             = 1.162e+00   ! [dimensionless]
 a_co2_dia             = 1.040e+00   ! [dimensionless]
 a_co2_cocco           = 1.109e+00   ! [dimensionless]
@@ -247,17 +247,18 @@ d_co2_calc            = 1.343e+07   ! [kg/mol]
 Fe2N                  = 0.033d0     ! Fe2C * 6.625
 Fe2N_benthos          = 0.15d0      ! test, default was 0.14 Fe2C_benthos * 6.625 - will have to be tuned. [umol/m2/day]
 Fe2C                  = 0.005d0
-Fe2C_benthos          = 0.02125     ! 0.68d0/32.d0 ! [umol/m2/day]
+Fe2C_benthos          = 0.02125d0   ! 0.68d0/32.d0 ! [umol/m2/day]
 kScavFe               = 0.07d0
 dust_sol              = 0.02d0      ! Dissolution of Dust for bioavaliable
 /
 
 &pacalc
-calc_prod_ratio       = 0.02
-calc_diss_guts        = 0.0d0
-calc_diss_rate        = 0.005714    ! 20.d0/3500.d0
+calc_prod_ratio       = 0.02d0
+calc_diss_guts        = 0.5d0
+calc_diss_rate        = 0.005714d0  ! 20.d0/3500.d0
 calc_diss_rate2       = 0.005714d0
 calc_diss_omegac      = 0.197d0     ! NEW
+calc_diss_exp         = 1.d0        ! NEW
 /
 
 &pabenthos_decay_rate

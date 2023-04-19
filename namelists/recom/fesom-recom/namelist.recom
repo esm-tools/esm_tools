@@ -28,7 +28,7 @@ use_coccos            = .true.      ! NEW
 OmegaC_diss           = .true.      ! NEW use OmegaC from Mocsy to compute calcite dissolution (following Aumont et al. 2015 and Gehlen et al. 2007)
 CO2lim                = .true.      ! NEW CO2 dependence of growth and calcification
 Diagnostics           = .true.
-constant_CO2          = .false.      ! .true. for a control simulation, .false. in case of increasing co2 
+constant_CO2          = .true.      ! .true. for a control simulation, .false. in case of increasing co2 
 UseFeDust             = .true.      ! Turns dust input of iron off when set to.false.
 UseDustClim           = .true.
 UseDustClimAlbani     = .true.      ! Use Albani dustclim field (If it is false Mahowald will be used)
@@ -48,7 +48,7 @@ Nmocsy                = 1           ! Length of the vector that is passed to moc
 
 /
 &pasinking
-Vdet_a                = 0.0288      ! [1/day]
+Vdet_a                = 0.0288d0      ! [1/day]
 /
 
 &painitialization_N
@@ -128,7 +128,7 @@ ligandStabConst       = 100.d0      ! [m3/mumol] order 100. Ligand-free iron sta
 graz_max              = 2.4d0       ! [mmol N/(m3 * day)] Maximum grazing loss parameter 
 epsilon               = 0.35d0      ! [(mmol N)2 /m6] Half saturation constant for grazing loss 
 res_het               = 0.01d0      ! [1/day] Respiration by heterotrophs and mortality (loss to detritus)
-Redfield              = 6.625       ! [mmol C/mmol N] Redfield ratio of C:N = 106:16
+Redfield              = 6.625d0     ! [mmol C/mmol N] Redfield ratio of C:N = 106:16
 loss_het              = 0.05d0      ! [1/day] Temperature dependent N degradation of extracellular organic N (EON)
 pzDia                 = 0.083d0       ! Maximum diatom preference
 sDiaNsq               = 0.d0
@@ -224,7 +224,7 @@ lossC_z2              = 0.02d0
 /
 
 &paco2lim                           ! NEW
-Cunits                = 976.5625    ! Conversion factor between [mol/m3] (model) and [umol/kg] (function): (1000 * 1000) / 1024
+Cunits                = 976.5625d0  ! Conversion factor between [mol/m3] (model) and [umol/kg] (function): (1000 * 1000) / 1024
 a_co2_phy             = 1.162e+00   ! [dimensionless]
 a_co2_dia             = 1.040e+00   ! [dimensionless]
 a_co2_cocco           = 1.109e+00   ! [dimensionless]
@@ -247,17 +247,18 @@ d_co2_calc            = 1.343e+07   ! [kg/mol]
 Fe2N                  = 0.033d0     ! Fe2C * 6.625
 Fe2N_benthos          = 0.15d0      ! test, default was 0.14 Fe2C_benthos * 6.625 - will have to be tuned. [umol/m2/day]
 Fe2C                  = 0.005d0
-Fe2C_benthos          = 0.02125     ! 0.68d0/32.d0 ! [umol/m2/day]
+Fe2C_benthos          = 0.02125d0   ! 0.68d0/32.d0 ! [umol/m2/day]
 kScavFe               = 0.07d0
 dust_sol              = 0.02d0      ! Dissolution of Dust for bioavaliable
 /
 
 &pacalc
-calc_prod_ratio       = 0.02
+calc_prod_ratio       = 0.02d0
 calc_diss_guts        = 0.5d0
-calc_diss_rate        = 0.005714    ! 20.d0/3500.d0
+calc_diss_rate        = 0.005714d0  ! 20.d0/3500.d0
 calc_diss_rate2       = 0.005714d0
 calc_diss_omegac      = 0.197d0     ! NEW
+calc_diss_exp         = 1.d0        ! NEW
 /
 
 &pabenthos_decay_rate

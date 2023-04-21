@@ -68,9 +68,9 @@ unset_vars:
 useMPI: openmpi
 module_actions:
         - "reset"
+        - "load prgenv/intel"
         - "load cmake"
         - "load udunits"
-        - "load prgenv/intel"
         - "load intel/2021.4.0"
         - "load intel-mkl/19.0.5"
         - "load hpcx-openmpi/2.9.0"

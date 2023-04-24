@@ -49,7 +49,7 @@ extras = {
 setup(
     author="Dirk Barbi",
     author_email="dirk.barbi@awi.de",
-    python_requires=">=3.6, <3.10",
+    python_requires=">=3.6, <=3.11",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
@@ -98,6 +98,6 @@ setup(
     tests_require=test_requirements,
     extras_require=extras,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.13.6",
+    version="6.21.6",
     zip_safe=False,
 )

@@ -3,6 +3,8 @@ Implement a New Model
 
 **Feature available since version:** 4.2
 
+.. note:: since version 6.20.2 a template is available in
+   ``esm_tools/configs/templates/component_template.yaml``
 
 1. Upload your model into a repository such us `gitlab.awi.de`, `gitlab.dkrz.de` or `GitHub`.
    Make sure to set up the right access permissions, so that you comply with the licensing of

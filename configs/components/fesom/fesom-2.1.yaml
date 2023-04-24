@@ -33,64 +33,20 @@ choose_version:
   2.1-wiso:
     branch: wiso
     wiso_code: true
-  2.1-recom:
-    branch: awiesm2-recom-wiso-mass # MA: We will need a new branch for Martin Butzin changes
+  2.1-recom: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
+    branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
+    git-repository:
+    - https://gitlab.dkrz.de/FESOM/fesom2.git
     wiso_code: true
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-  2.1-recom-par_tracers: # MA: for Kai testing ESM-Tools in Levante
-    branch: feature/par_tracers
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    destination: fesom-2.1-recom-par_tracers
-
-  2.1-recom-par_tracers_mpi: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
-    branch: awiesm2-recom-parallel
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    destination: fesom-2.1-recom-par_tracers_mpi
-# kh 08.03.22 todo: merge conflict (if enabled)
-#   include_models:
-#       - recom
-# YY: 29.04.22 to compile wiso code
-    wiso_code: true
-
-# MA: changes specific to PAR-TRACERS go here so they don't destroy other working versions of FESOM-2.1)
-# TODO: remove this block when PAR-TRACERS is generalized!
-par_tracers: "$(( 'par_tracers' in  '${fesom.version}' ))"
-choose_fesom.par_tracers:
-    True:
-        namelist_dir: "${model_dir}/config/"
-        # kh 21.02.22 use uppercase here
-        forcing_data_dir: "${pool_dir}/FORCING/"
-        # kh 21.02.22
-        asforcing: CORE2
-        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        remove_fesom.namelists: [namelist.cvmix, namelist.icepack]
-        # kh 14.04.22 last used for core2 resolution on levante
-        # kh 19.04.22 disable for haralds's tests
-        nproc: 1024
-        # kh 19.04.22 temporary disabled to get fesom-2.1-recom-par_tracers_mpi running on levante
-        remove_fesom.namelist_changes.namelist.forcing.nam_sbc: [
-            nm_xwind_file, nm_ywind_file, nm_humi_file, nm_qsr_file, nm_qlw_file,
-            nm_tair_file, nm_prec_file, nm_snow_file, nm_mslp_file, nm_runoff_file,
-            nm_sss_data_file]
-        # kh 21.02.22 temporary disabled to get fesom-2.1-recom-par_tracers running on levante
-        remove_fesom.config_files: [cvmix, icepack]
-        # kh 21.02.22 these entries are required in combination with the corresponding entries in "config_sources:" to copy/use the defaults like namelist.recom, ...
-        add_config_files:
-                recom:   recom
-                io.recom.ciso: io.recom.ciso
-        # kh 21.02.22 these entries are required in combination with the corresponding entriesin "config_files:" to copy/use the defaults like namelist.recom, ...
-        add_config_sources:
-                recom:   "${namelist_dir}/namelist.recom"
-                io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
-#-----------END OF the SPECIAL CHANGES FOR FESOM-PAR-TRACERS
+    namelist_dir: "${model_dir}/config/"
+    asforcing: CORE2
+    nproc: 1024
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 restart_rate: "12"
@@ -128,6 +84,9 @@ choose_computer.name:
         climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
         forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
         mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+    albedo:
+        climate_data_dir: "${pool_dir}/FESOM/hydrography/"
+        mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -164,19 +123,39 @@ choose_resolution:
                 nx: 3140
                 mesh_dir: "${fesom.mesh_base_dir}/pi/"
                 nproc: 4
+# YY: add LGM with glac1d_m1 resolution
+        LGM:
+                nx: 95239
+                mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
+                nproc: 1024
 
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_in_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         icb_restart_ISM: iceberg.restart.ISM
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         icb_restart_ISM: iceberg.restart.ISM
@@ -184,15 +163,34 @@ restart_in_sources:
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
+        fesom_bin_restart_info: fesom_bin_restart_info
+        fesom_bin_restart: fesom_bin_restart
+
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
@@ -283,6 +281,23 @@ log_sources:
         clock: fesom.clock
         mesh_diag: fesom.mesh.diag.nc
 
+file_movements:
+        fesom_raw_restart_in:
+                all_directions: move
+        fesom_raw_restart_out:
+                all_directions: move
+        fesom_raw_restart_info_in:
+                all_directions: move
+        fesom_raw_restart_info_out:
+                all_directions: move
+        fesom_bin_restart_in:
+                all_directions: move
+        fesom_bin_restart_out:
+                all_directions: move
+        fesom_bin_restart_info_in:
+                all_directions: move
+        fesom_bin_restart_info_out:
+                all_directions: move
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -295,6 +310,12 @@ choose_branchoff:
         false:
                 daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
+                add_restart_in_files:
+                        fesom_raw_restart_info: fesom_raw_restart_info
+                        fesom_raw_restart: fesom_raw_restart
+                        fesom_bin_restart_info: fesom_bin_restart_info
+                        fesom_bin_restart: fesom_bin_restart
+
 
 
 namelist_changes:
@@ -443,9 +464,6 @@ compiletime_environment_changes:
                                 - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
         choose_computer.name:
                 juwels:
                         add_module_actions:

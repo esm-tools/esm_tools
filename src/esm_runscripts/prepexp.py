@@ -245,11 +245,16 @@ def initialize_experiment_logfile(config):
         ``general.exp_log_file``; this file is removed; and re-initialized.
     """
 
+    experiment_dir = config["general"]["experiment_dir"]
+    expid = config["general"]["expid"]
+    it_coupled_model = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
+
     if config["general"]["run_number"] == 1:
         if os.path.isfile(config["general"]["experiment_log_file"]):
             os.remove(config["general"]["experiment_log_file"])
 
-        log_msg = f"# Beginning of Experiment {config['general']['expid']}"
+        log_msg = f"# Beginning of Experiment {expid}"
         write_to_log(config, [log_msg], message_sep="")
 
         write_to_log(
@@ -266,9 +271,8 @@ def initialize_experiment_logfile(config):
     # Write trace-log file now that we know where to do that
     if "trace_sink" in dir(logger):
         logfile_path = (
-            f"{config['general']['experiment_dir']}/log"
-            f"/{config['general']['expid']}_esm_runscripts_"
-            f"{config['general']['run_datestamp']}.log"
+            f"{experiment_dir}/log/"
+            f"{expid}_{it_coupled_model}esm_runscripts_{datestamp}.log"
         )
 
         logger.trace_sink.def_path(logfile_path)

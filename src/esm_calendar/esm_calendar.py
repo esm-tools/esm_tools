@@ -926,4 +926,4 @@ class Date(object):
         interval = [Date(date) for date in interval]
 
         # Check whether the ``self`` date falls within the interval
-        return self > interval[0] and self < interval[1]
+        return interval[0] < self < interval[1]

@@ -1022,7 +1022,13 @@ choose_mip:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
-
+                        "4xCO2":
+                                # quadruple CO2 from 1850 levels
+                                add_namelist_changes:
+                                        fort.4:
+                                                NAERAD: 
+                                                        LA4xCO2: ".true."
+                                                        NCMIPFIXYR: 1850
 #choose_o3_scheme:
 #        "prescribed":
 #                choose_mip:

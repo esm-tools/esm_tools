@@ -903,10 +903,8 @@ class Date(object):
 
         Parameters
         ----------
-        interval : str
-            A date interval string in which the 2 dates are separated by a ``sep``
-            string.
-        sep : str
+        interval : tuple of Date
+            A date interval in which there are 2 Dates objects.
 
         Returns
         -------

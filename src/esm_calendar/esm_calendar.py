@@ -896,7 +896,7 @@ class Date(object):
         new_date = self.from_list(result)
         return new_date
 
-    def is_in_interval(self, interval, sep="->") -> bool:
+    def is_in_interval(self, interval) -> bool:
         """
         Finds if a date falls in an open interval.
 

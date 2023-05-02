@@ -914,3 +914,27 @@ class Date(object):
 
         new_date = self.from_list(result)
         return new_date
+
+    def is_in_interval(self, interval: tuple) -> bool:
+        """
+        Finds if a date falls in an open interval.
+
+
+        Parameters
+        ----------
+        interval : tuple of Date
+            A date interval in which there are 2 Dates objects.
+
+        Returns
+        -------
+        True :
+            If the date of ``self`` is within the open interval defined by ``interval``
+        False :
+            If the date of ``self`` is out of the open interval defined by ``interval``
+        """
+
+        if len(interval) != 2:
+            raise TypeError(f"You must have {interval} be a tuple of two Dates!")
+
+        # Check whether the ``self`` date falls within the interval
+        return interval[0] < self < interval[1]

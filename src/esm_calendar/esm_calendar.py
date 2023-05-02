@@ -915,10 +915,7 @@ class Date(object):
         """
 
         if len(interval) != 2:
-            raise TypeError(
-                f"The time interval ${interval} is not well defined for the separator "
-                f"${sep}"
-            )
+            raise TypeError(f"You must have {interval} be a tuple of two Dates!")         
         interval = [Date(date) for date in interval]
 
         # Check whether the ``self`` date falls within the interval

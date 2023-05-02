@@ -914,8 +914,6 @@ class Date(object):
             If the date of ``self`` is out of the open interval defined by ``interval``            
         """
 
-        # Split the interval into 2 dates
-        interval = interval.split(sep)
         if len(interval) != 2:
             raise TypeError(
                 f"The time interval ${interval} is not well defined for the separator "

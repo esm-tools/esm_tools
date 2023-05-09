@@ -1,6 +1,13 @@
+################################################################################
+# The albedo.awi.de yaml config file for esm-tools
+#
+# N. Wieters, May 2023: Added comments and madatory entries
+################################################################################
+
 # GENERIC YAML CONFIGURATION FILES
 
 name: generic
+sh_interpreter: "/usr/bin/bash"
 accounting: false
 hetjob_flag: "?" # either hetjob or packjob
 batch_system: "slurm"

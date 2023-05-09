@@ -202,7 +202,7 @@ warning:
             environment variables, pool problems, incorrect or not optimal compiler
             flags... Feel free to try it a report and issue in https://github.com/esm-tools/esm_tools/issues
             labelling it with the ``albedo`` tag, if things don't work as expected. By
-            running ``esm_tools --test-state`` you'll get information of what you can
+            running ``esm_tools test-state`` you'll get information of what you can
             expect to work and what not. Bare in mind that the ESM-Tools configurations
             specific to Albedo will be changing fast on the following weeks, until
             Albedo is fully supported. We recommend against using it for production

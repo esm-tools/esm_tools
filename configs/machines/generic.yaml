@@ -48,8 +48,6 @@ use_hyperthreading: False
 #            mt_launcher_flag: ""
 #        False: 
 #            <set_any_variable_here_related_to_hypertherading>: <value>
-#        "anyother_scalar_value':
-#            <set_any_variable_here_related_to_hypertherading>: <value>
 
 # Set default partition ??? (e.g. compute)
 partition: <partition_name>

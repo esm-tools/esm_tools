@@ -13,8 +13,6 @@
 #     - See also files for other machines that are already implemented in esm-tools.
 #     - After editing this file, save it as <machine>.yaml. Add also an entry in
 #       the file all_machines.yaml (in this folder) for the new machine.
-#
-# Last changes: N. Wieters, May 2023: Added comments and placeholders.
 #######################################################################################
 
 # GENERIC YAML CONFIGURATION FILES
@@ -35,7 +33,7 @@ batch_system: "<your-job-scheduler>"
 # Set whether an account needs to be set for batch system (e.g. true or false). The actual account that will be used for the experiment will be set in the runscript.
 accounting: true 
 #
-#hetjob_flag: "?" # either hetjob or packjob
+#hetjob_flag: "?" # either hetjob or packjob, this depends on your SLURM version. More info can be found: https://slurm.schedmd.com/heterogeneous_jobs.html
 #
 #jobtype: compute
 #

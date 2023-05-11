@@ -1029,6 +1029,14 @@ choose_mip:
                                                 NAERAD: 
                                                         LA4xCO2: ".true."
                                                         NCMIPFIXYR: 1850
+                        "1pctCO2":
+                                # increase CO2 from 1850 by 1pct per year
+                                # (quadruple by year 140)
+                                add_namelist_changes:
+                                         fort.4:
+                                                NAERAD:
+                                                        L1PCTCO2: ".true."
+                                                        NCMIPFIXYR: 1850
 #choose_o3_scheme:
 #        "prescribed":
 #                choose_mip:
@@ -1181,14 +1189,58 @@ eternal_run_number: "$((
         0 if (${lresume} and ${general.run_number} == 1)
             or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
         else ${general.run_number}
-    ))"
+    ))" 
+
+# There are four kinds of runs:
+# eternal_run_number=0 - Restart from another experiment. 
+# eternal_run_number=1 - Start from initial conditions
+# eternal_run_number=2 - Regular restart
+# eternal_run_number=3 - Also regular restart, but we trick OpenIFS to think 
+#                        the initial_date is the start_date of the previous run
+#                        i.e. OpenIFS never knows it does more than 1 restart
+#                        This avoids both a memory issue for long runs and 
+#                        overflow of some calendar variables in single precision. 
+#
+# When we branch off from an existing experiment, we must set ini_pseudo_initial_date
+# in the runscript to inform ESM-Tools what initial_date it should trick OpenIFS it is.
+# For example, a piControl may start from 1850 and run to 2850. 
+# A historical run would then start from 2850 of the existing run, but we would set 
+# start_date for the new run to be 1850 and also trick OpenIFS to think initial_date is 1849. 
 
 # The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
 # OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
 # memory issues mentioned before. This is done by declaring the pseudo_initial_date
 # as the last start date.
 choose_eternal_run_number:
+        0:
+                # If we are branching off from an existing run
+                pseudo_initial_date: "${ini_pseudo_initial_date}"
+                start_ndays_source: "${prev_run.oifs.next_ndays}"
+                branchoff: true
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id};
+                    ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${thisrun_restart_in_dir}/
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${oifs.time_step}
+                        ${oifs.seconds_since_initial}
+                        ${oifs.start_ndays}
+                        ${oifs.wam};
+                    ${slice_icml}
+                    ${append_icmcl}
+                    echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
+                                
         1:
+                # If this is the first leg for an experiment
                 pseudo_initial_date: "${initial_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "
@@ -1206,6 +1258,7 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
+                # First restart 
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
@@ -1213,6 +1266,7 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
+                # Any restart that is not the first
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
                 preprocess_method: "
@@ -1237,9 +1291,9 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
-                choose_eternal_run_number:
-                        0:
-                                branchoff: true
+                #choose_eternal_run_number:
+                #        0:
+                #                branchoff: true
 
 
 choose_general.standalone:

@@ -1,10 +1,10 @@
 Implement a New HPC Machine
 ===========================
 
-To implement a new HPC machine to esm-tools, two files need to be updated and created, respectvily::
-   
-   - <PATH>/esm_tools/configs/machines/all_machines.yaml
-   - <PATH>/esm_tools/configs/machines/<new_machine>.yaml
+To implement a new HPC machine to `ESM-Tools`, two files need to be updated and created, respectively::
+
+- ``<PATH>/esm_tools/configs/machines/all_machines.yaml``
+- ``<PATH>/esm_tools/configs/machines/<new_machine>.yaml``
 
 1. Add an additional entry for the new machine.
 
@@ -17,8 +17,8 @@ To implement a new HPC machine to esm-tools, two files need to be updated and cr
    .. code-block:: yaml
 
      <new_machine>:
-        login_nodes: '<hostname>*'
-        compute_nodes: '<compute_notes>'
+        login_nodes: '<hostname>*' # A regex pattern that matches the hostname of login nodes
+        compute_nodes: '<compute_notes>' # A regex pattern that matches the hostname of compute nodes
 
 
 2. Create a new machine file.
@@ -28,11 +28,17 @@ To implement a new HPC machine to esm-tools, two files need to be updated and cr
 
     $ <your_text_editor> <PATH>/esm_tools/configs/machines/<new_machine>.yaml
 
-   or copy the ``machine_template.yaml`` file and edit the relevant entries::
+   A template file (``machine_template.yaml``) is available in ``configs/templates``, so you can alternatevely copy
+   this file into the ``configs/machines`` folder edit the relevant entries::
 
     $ cp <PATH>/esm_tools/configs/templates/machine_template.yaml  <PATH>/esm_tools/configs/machines/<new_machine>.yaml
     $ <your_text_editor> <PATH>/esm_tools/configs/machines/<new_machine>.yaml
 
+   You can also do reproduce the two steps abouve simply by running the following ``esm_tools`` command::
+
+    $ esm_tools create-new-config <PATH>/esm_tools/configs/machines/<new_machine>.yaml -t machine
+
+   This will copy the ``machine_template.yaml`` in the target location and open the file in your default editor.
 
 See also
 ~~~~~~~~

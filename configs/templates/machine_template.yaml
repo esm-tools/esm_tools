@@ -11,8 +11,9 @@
 #     - Please uncomment sections of this yaml file if appropriate.
 #       Possible sections are indicating this (see below).
 #     - See also files for other machines that are already implemented in esm-tools.
-#     - After editing this file, save it as <machine>.yaml. Add also an entry in
-#       the file all_machines.yaml (in this folder) for the new machine.
+#     - After editing this file, save it as <machine>.yaml in configs/machines. Add also
+#       an entry in the file configs/machines/all_machines.yaml (in this folder) for the
+#       new machine.
 #######################################################################################
 
 # GENERIC YAML CONFIGURATION FILES
@@ -27,7 +28,7 @@ name: <hostname>
 sh_interpreter: "<path-to-shell>"
 
 # Information about the job scheduler
-# Set batch system (e.g. slurm)
+# Set batch system (e.g. slurm/pbs)
 batch_system: "<your-job-scheduler>"
 
 # Set whether an account needs to be set for batch system (e.g. true or false). 
@@ -111,7 +112,8 @@ mpicc: "$MPICC"
 cxx: "$CXX"
 #
 #
-launcher_flags: "-l" # --distribution=block:cyclic"
+# Launcher flags (i.e. flags for the srun/mpirun/aprun command)
+launcher_flags: "-l"
 
 # Choose another configuration file, that should be evaluated (e.g. slurm.yaml, pbs.yaml)
 further_reading:
@@ -125,7 +127,7 @@ further_reading:
 # different e.g. compilers, you can use the funcionality of 
 # declaring choose_ blocks in this yaml file.
 # (For more details about yaml syntax please also see the documentation
-# https://esm-tools.readthedocs.io/en/latest/yaml.html)
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#switches-choose)
 #
 # The following lines show an example of how such a choose_ block can be 
 # set up depending on a given compiler value/key given by the variable compiler_mpi.

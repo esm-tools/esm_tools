@@ -1,7 +1,7 @@
 Implement a New HPC Machine
 ===========================
 
-To implement a new HPC machine to `ESM-Tools`, two files need to be updated and created, respectively::
+To implement a new HPC machine to `ESM-Tools`, two files need to be updated and created, respectively:
 
 - ``<PATH>/esm_tools/configs/machines/all_machines.yaml``
 - ``<PATH>/esm_tools/configs/machines/<new_machine>.yaml``

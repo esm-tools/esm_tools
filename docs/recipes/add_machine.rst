@@ -28,13 +28,13 @@ To implement a new HPC machine to `ESM-Tools`, two files need to be updated and 
 
     $ <your_text_editor> <PATH>/esm_tools/configs/machines/<new_machine>.yaml
 
-   A template file (``machine_template.yaml``) is available in ``configs/templates``, so you can alternatevely copy
+   A template file (``machine_template.yaml``) is available in ``configs/templates``, so you can alternatively copy
    this file into the ``configs/machines`` folder edit the relevant entries::
 
     $ cp <PATH>/esm_tools/configs/templates/machine_template.yaml  <PATH>/esm_tools/configs/machines/<new_machine>.yaml
     $ <your_text_editor> <PATH>/esm_tools/configs/machines/<new_machine>.yaml
 
-   You can also do reproduce the two steps abouve simply by running the following ``esm_tools`` command::
+   You can also reproduce the two steps above simply by running the following ``esm_tools`` command::
 
     $ esm_tools create-new-config <PATH>/esm_tools/configs/machines/<new_machine>.yaml -t machine
 

@@ -33,7 +33,7 @@ def test_state():
 @click.option(
     "-t",
     "--type",
-    type=click.Choice(["component", "setup"], case_sensitive=False),
+    type=click.Choice(["component", "setup", "machine"], case_sensitive=False),
     help="Creates either a new component (default) or a new setup",
     default="component",
     show_default=True,

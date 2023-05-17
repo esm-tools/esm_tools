@@ -29,8 +29,8 @@ glogin.hlrn.de / blogin.hlrn.de::
 
 juwels.fz-juelich.de::
 
-    $ module load git
     $ module load Stages/2022
+    $ module load git
     $ module load Python/3.9.6
 
 aleph::

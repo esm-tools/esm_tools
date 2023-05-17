@@ -30,7 +30,8 @@ glogin.hlrn.de / blogin.hlrn.de::
 juwels.fz-juelich.de::
 
     $ module load git
-    $ module load Python-3.6.8
+    $ module load Stages/2022
+    $ module load Python/3.9.6
 
 aleph::
 

@@ -685,12 +685,13 @@ oasis3mct:
 
         restart_in_files:
                 rmp: rmp
-                rstas.nc: rstas.nc
+                #rstas.nc: rstas.nc
+                rstas.nc: rstas_20000201-20000229.nc
                 rstos.nc: rstos.nc
 
         restart_in_in_work:
                 rmp: rmp_*.nc
-                rstas.nc: rstas.nc
+                rstas.nc: rstas_test.nc
                 rstos.nc: rstos.nc
 
         choose_lresume:

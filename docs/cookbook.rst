@@ -41,6 +41,7 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. include:: recipes/het_par.rst
 .. include:: recipes/how_to_run.rst
 .. include:: recipes/add_model_setup.rst
+.. include:: recipes/add_machine.rst
 .. include:: recipes/add_forcing_input.rst
 .. include:: recipes/exclude_forcing_input.rst
 .. include:: recipes/use_own_namelist.rst

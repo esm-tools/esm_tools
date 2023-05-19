@@ -164,7 +164,7 @@ export_vars:
     FESOM_PLATFORM_STRATEGY: albedo
 
     # PERL library
-    PERL5LIB: "/albedo/soft/sw/spack-sw/perl-uri/1.72-epj7s32/lib/perl5:/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib/5.35.0/"
+    PERL5LIB: "/albedo/soft/sw/spack-sw/perl-uri/1.72-epj7s32/lib/perl5:/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib"
 
     # I/O libraries
     HDF5ROOT: ""

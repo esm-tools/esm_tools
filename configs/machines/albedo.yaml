@@ -143,7 +143,7 @@ module_actions:
     - "load cdo/2.0.5"
     - "load nco/5.0.1"
     - "load git/2.35.2"
-    #- "load perl/5.35.0-gcc12.1.0"
+    - "load perl/5.35.0-gcc12.1.0"
     - "load python/3.10.4"
     # Show what is there in the log:
     - "list"
@@ -164,9 +164,7 @@ export_vars:
     FESOM_PLATFORM_STRATEGY: albedo
 
     # PERL library
-    # TODO: change that to lib systems
-    #PERL5LIB: "/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib/5.35.0/"
-    PERL5LIB: "/albedo/home/mandresm/my_libs/perl-5.32.0/lib"
+    PERL5LIB: "/albedo/soft/sw/spack-sw/perl-uri/1.72-epj7s32/lib/perl5:/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib"
 
     # I/O libraries
     HDF5ROOT: ""
@@ -202,7 +200,7 @@ warning:
             environment variables, pool problems, incorrect or not optimal compiler
             flags... Feel free to try it a report and issue in https://github.com/esm-tools/esm_tools/issues
             labelling it with the ``albedo`` tag, if things don't work as expected. By
-            running ``esm_tools --test-state`` you'll get information of what you can
+            running ``esm_tools test-state`` you'll get information of what you can
             expect to work and what not. Bare in mind that the ESM-Tools configurations
             specific to Albedo will be changing fast on the following weeks, until
             Albedo is fully supported. We recommend against using it for production

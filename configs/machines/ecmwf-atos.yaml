@@ -68,7 +68,6 @@ unset_vars:
 useMPI: openmpi
 module_actions:
         - "reset"
-        - "load cmake"
         - "load udunits"
         - "load prgenv/intel"
         - "load intel/2021.4.0"
@@ -105,13 +104,14 @@ export_vars:
         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
         NETCDF_CXX_LIBRARIES: $NETCDF4_PARALLEL_DIR/lib
 
-        PERL5LIB: /usr/lib64/perl5
-        LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
-        LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
+        #PERL5LIB: /usr/lib64/perl5
+        #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
+        #LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         XML2ROOT: /usr
         ZLIBROOT: /usr
 
         MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+        MPIDIR: $MPIROOT
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
         LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:{NETCDF4_PARALLEL_DIR}/lib:{ECCODES_DIR}/lib:{HDF5_DIR}/lib

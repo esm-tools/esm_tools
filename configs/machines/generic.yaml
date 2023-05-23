@@ -55,7 +55,7 @@ choose_general.check:
                     check runs (``esm_runscripts -c``).\n
 
                     If you are running on an HPC and you're seeing this message, it's
-                    likely that the HOSTNAME of your machine does not matches the
+                    likely that the HOSTNAME of your machine does not match the
                     pattern defined in ``configs/machines/all_machines.yaml``. Please,
                     check that your machine is included in that file and that the
                     ``configs/machines/<your_machine>.yaml`` exists.\n

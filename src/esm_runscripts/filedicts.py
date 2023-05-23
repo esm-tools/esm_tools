@@ -11,12 +11,13 @@ Developer Notes
 import copy
 import functools
 import glob
+import inspect
 import os
 import pathlib
 import shutil
 import sys
 from enum import Enum, auto
-from typing import Any, AnyStr
+from typing import Any, AnyStr, Iterator
 
 import dpath.util
 import yaml
@@ -26,11 +27,17 @@ from esm_parser import ConfigSetup, user_error
 
 logger.remove()
 LEVEL = "ERROR"  # "WARNING"  # "INFO"  # "DEBUG"
-LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"  # 
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"  #
 logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
 
 
-class FileStatus(Enum):
+def NameIterEnum(Enum) -> Iterator[str]:
+    def __iter__(self):
+        """Returns list of names of the iteration"""
+        return iter(str(name).lower() for name in self.__member_names__)
+
+
+class FileStatus(NameIterEnum):
     """
     Describes which status a particular file might have, e.g. ``FILE``,
     ``NOT_EXISTS``, ``BROKEN_LINK``.
@@ -45,7 +52,7 @@ class FileStatus(Enum):
 
 
 # FIXME(PG): This class belongs somewhere else, I think.
-class FileTypes(Enum):
+class FileTypes(NameIterEnum):
     """
     Describes which type a file might belong to, e.g. input, outdata, forcing
     """
@@ -166,7 +173,7 @@ def _fname_has_date_stamp_info(fname, date, reqs=["%Y", "%m", "%d"]):
     return fname.count("checked") == len(reqs)
 
 
-def globbing(method):
+def _globbing(method):
     """
     Decorator method for ``SimulationFile``'s methods ``cp``, ``mv``, ``ln``, that
     enables globbing. If a ``*`` is found on the ``source`` or ``target`` the globbing
@@ -342,9 +349,9 @@ class SimulationFile(dict):
 
         # possible paths for files:
         # TODO: Replace with enum ...?
-        location_keys = ["computer", "exp_tree", "run_tree", "work"]
+        location_keys = list(FileLocations)
         # initialize the locations and complete paths for all possible locations
-        self.locations = dict.fromkeys(location_keys, None)
+        self._locations = dict.fromkeys(location_keys, None)
         self._resolve_abs_paths()
 
         # Verbose set to true by default, for now at least
@@ -402,7 +409,7 @@ class SimulationFile(dict):
         sim_file.name = attrs_address.split(".")[-1]
         sim_file.component = attrs_address.split(".")[0]
         # FIXME(PG): I would rathe just use our new little class for this, but there might be good reasons against it:
-        sim_file.all_model_filetypes = [name.lower() for name in FileTypes._member_names_] 
+        sim_file.all_model_filetypes = list(FileTypes)
         # I would rather have this be in the main __init__...
         sim_file._post_init()
         return sim_file
@@ -493,7 +500,7 @@ class SimulationFile(dict):
     ##############################################################################################
     # Main Methods
     ##############################################################################################
-    @globbing
+    @_globbing
     @_allowed_to_be_missing
     def cp(self, source: str, target: str) -> None:
         """
@@ -509,13 +516,13 @@ class SimulationFile(dict):
             String specifying one of the following options: ``"computer"``, ``"work"``,
             ``"exp_tree"``, ``run_tree``
         """
-        if source not in self.locations:
+        if source not in self._locations:
             raise ValueError(
-                f"Source is incorrectly defined, and needs to be in {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self._locations}"
             )
-        if target not in self.locations:
+        if target not in self._locations:
             raise ValueError(
-                f"Target is incorrectly defined, and needs to be in {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self._locations}"
             )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
@@ -547,7 +554,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    @globbing
+    @_globbing
     @_allowed_to_be_missing
     def mv(self, source: str, target: str) -> None:
         """
@@ -556,18 +563,18 @@ class SimulationFile(dict):
 
         Parameters
         ----------
-        source : str
+        source : st r
             One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         target : str
             One of ``"computer"``, ``"work"``, ``"exp_tree"``, "``run_tree``"
         """
-        if source not in self.locations:
+        if source not in self._locations:
             raise ValueError(
-                f"Source is incorrectly defined, and needs to be in {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self._locations}"
             )
-        if target not in self.locations:
+        if target not in self._locations:
             raise ValueError(
-                f"Target is incorrectly defined, and needs to be in {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self._locations}"
             )
         source_path = self[f"absolute_path_in_{source}"]
         target_path = self[f"absolute_path_in_{target}"]
@@ -594,7 +601,7 @@ class SimulationFile(dict):
                 f"Exception details:\n{error}"
             )
 
-    @globbing
+    @_globbing
     @_allowed_to_be_missing
     def ln(self, source: AnyStr, target: AnyStr) -> None:
         """creates symbolic links from the path retrieved by ``source`` to the one by ``target``.
@@ -602,10 +609,12 @@ class SimulationFile(dict):
         Parameters
         ----------
         source : str
-            key to retrieve the source from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
+            key to retrieve the source from the file dictionary. Possible options: ``computer``,
+            ``work``, ``exp_tree``, ``run_tree``
 
         target : str
-            key to retrieve the target from the file dictionary. Possible options: ``computer``, ``work``, ``exp_tree``, ``run_tree``
+            key to retrieve the target from the file dictionary. Possible options: ``computer``,
+            ``work``, ``exp_tree``, ``run_tree``
 
         Returns
         -------
@@ -622,13 +631,13 @@ class SimulationFile(dict):
         FileExistsError
             - Target path already exists
         """
-        if source not in self.locations:
+        if source not in self._locations:
             raise ValueError(
-                f"Source is incorrectly defined, and needs to be in {self.locations}"
+                f"Source is incorrectly defined, and needs to be in {self._locations}"
             )
-        if target not in self.locations:
+        if target not in self._locations:
             raise ValueError(
-                f"Target is incorrectly defined, and needs to be in {self.locations}"
+                f"Target is incorrectly defined, and needs to be in {self._locations}"
             )
         # full paths: directory path / file name
         source_path = self[f"absolute_path_in_{source}"]
@@ -669,8 +678,6 @@ class SimulationFile(dict):
         str :
             A string in yaml format of the given file dictionary
         """
-        # No: This should be just *one* file. The class is called SimulationFile, it
-        # represents only one single one at a time....
         return yaml.dump(filedict)
 
     ####################################################################################
@@ -741,7 +748,7 @@ class SimulationFile(dict):
         - ``self["absolute_path_in_run_tree"]``
         - ``self["absolute_path_in_exp_tree"]``
         """
-        self.locations = {
+        self._locations = {
             "work": pathlib.Path(self._config["general"]["thisrun_work_dir"]),
             "computer": self.path_in_computer,  # Already Path type from _init_
             "exp_tree": pathlib.Path(
@@ -752,7 +759,7 @@ class SimulationFile(dict):
             ),
         }
 
-        for key, path in self.locations.items():
+        for key, path in self._locations.items():
             if key == "computer" and path is None:
                 self[f"absolute_path_in_{key}"] = None
             else:
@@ -939,7 +946,7 @@ class SimulationFile(dict):
         Raises
         ------
         FileNotFoundError
-            If ``self.locations[name_type]`` path does not exist
+            If ``self._locations[name_type]`` path does not exist
         """
         # Are there any subdirectories in ``name_in_<name_type>?
         if "/" in self[f"name_in_{name_type}"]:
@@ -947,7 +954,7 @@ class SimulationFile(dict):
             # If the parent path does not exist check whether the file location
             # exists
             if not parent_path.exists():
-                location = self.locations[name_type]
+                location = self._locations[name_type]
                 if location.exists():
                     # The location exists therefore the remaining extra directories
                     # from the parent_path can be created
@@ -1144,7 +1151,7 @@ class SimulationFile(dict):
         return True
 
 
-class SimulationFiles(dict):
+class SimulationFileCollection(dict):
     """
     Once instanciated, searches in the ``config`` dictionary for the ``files`` keys.
     This class contains the methods to: 1) instanciate each of the files defined in
@@ -1155,49 +1162,55 @@ class SimulationFiles(dict):
     def __init__(self):
         pass
 
+    # PG: Not sure I need this...
+    @property
+    def _defined_from(self):
+        stack = inspect.stack()
+        caller_frame = stack[1]  # Get the frame of the caller
+        caller_name = caller_frame.function
+        return caller_name
+
     @classmethod
-    def from_config(cls, config: dict, config_address: str):
-        # Loop through components?
-        # NOTE(PG): NO! We should not loop through the components here, that belongs outside this class
-        #
-        # That will look like: config['echam']['files'] = SimulationFiles(config, 'echam.files')
-        #
-        # And more generally (please correct, I probably have the wrong syntax):
-        #
-        # for component in config['valid_model_names']:
-        #     config[component]['files'] = SimulationFiles(config, f"{component}.files")
-        #
-        # Ideally, to keep the class construstion modular, we also should make this a class_method:
-        #
-        # SimulationFiles.from_config(config, config_address)
-        #
-        # config_address will be something like 'echam.files'
-        #
-        # This might be better:
-        #
-        # sim_files = SimulationFiles.from_config(sim_cfg_dict['echam']['files'])
-        #
-        # ???
-        #
-        # Or:
-        # SimulationFiles.from_list([sim_file_a, sim_file_b, ....])
+    def from_config(cls, config: dict):
         sim_files = cls()
-        for file_key, file_spec in dpath.util.get(
-            config, config_address, separator="."
-        ).items():
-            # Loop through files?
-            # NOTE(PG): Yes...
-            sim_files[file_key] = SimulationFile.from_dict(file_spec)
-            sim_file = sim_files[file_key]
-            sim_file.copy("computer", "work")
-        sim_files.defined_from = "config"
+        for component in config['valid_model_names']:
+            config_address = f"{component}.files"
+            for file_key, file_spec in dpath.util.get(
+                config, config_address, separator="."
+            ).items():
+                sim_files[file_key] = SimulationFile.from_dict(file_spec)
         return sim_files
+
+    def _gather_file_movements(self) -> None:
+        """Puts the methods for each file movement into the dictionary as callable values behind the `_filesystem_op` key""""
+        for sim_file_id, sim_file_obj in self.items():
+            if sim_file_obj["movement_type"] == "mv":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "mv")
+            elif sim_file_obj["movement_type"] == "cp":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "cp")
+            elif sim_file_obj["movement_type"] == "ln":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "ln")
+            else:
+                raise ValueError(f"Movement Type is not defined correctly, please use `mv`, `cp` or `ln` for {sim_file_id}")
+
+    def execute_filesystem_operation(self, config: ConfigSetup) -> ConfigSetup:  #, from: pathlib.Path | str, to: pathlib.Path | str) -> None:
+        self._gather_file_movements()
+        for sim_file_id, sim_file_obj in self.items():
+            logger.info(f"Processing {sim_file_id}")
+            if config["general"]["jobtype"] == "prepexp":
+                from, to = "pool", "work"
+            elif config["general"]["jobtype"] == "tidy":
+                from, to = "work", "exp_tree"
+            else:
+                raise ValueError(f"Incorrect jobtype specified for {sim_file_obj}")
+            sim_file_obj["_filesystem_op"](from, to)
+        return config
 
 
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     """
     Runs all methods required to get files into their correct locations. This will
-    instanciate the ``SimulationFiles`` class. It's called by the recipe manager.
+    instantiate the ``SimulationFiles`` class. It's called by the recipe manager.
 
     Parameters
     ----------
@@ -1209,7 +1222,6 @@ def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     config : ConfigSetup
         The complete simulation configuration, potentially modified.
     """
-    # TODO: to be filled with functions
-    # DONE: type annotation
-    # DONE: basic unit test: test_resolve_file_movements
+    sim_file_collection = SimulationFileCollection.from_config(config)
+    config = sim_file_collection.execute_filesystem_operation(config)
     return config

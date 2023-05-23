@@ -701,59 +701,41 @@ class Date(object):
         self, form="SELF", givenph=None, givenpm=None, givenps=None
     ):  # basically format_date
         """
-        Beautifully returns a ``Date`` object as a string.
+        Needs a docstring!
+        The following forms are accepted:
+        + SELF: uses the format which was given when constructing the date
+        + 0: A Date formated as YYYY
 
-        Parameters:
-        -----------
-        form : str or int
-            Some cryptic that Dirk over-took from MPI-Met
-        givenph : bool-ish
-            Print hours
-        givenpm : bool-ish
-            Print minutes
-        givenps : bool-ish
-            Print seconds
+        In [5]: test.format(form=1)
+        Out[5]: '1850-01-01_00:00:00'
 
-        Notes:
-        ------
-        How to use the ``form`` argument:
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            The following forms are accepted:
-            + SELF: uses the format which was given when constructing the date
-            + 0: A Date formatted as YYYY
+        In [6]: test.format(form=2)
+        Out[6]: '1850-01-01T00:00:00'
 
-            In [5]: test.format(form=1)
-            Out[5]: '1850-01-01_00:00:00'
+        In [7]: test.format(form=3)
+        Out[7]: '1850-01-01 00:00:00'
 
-            In [6]: test.format(form=2)
-            Out[6]: '1850-01-01T00:00:00'
+        In [8]: test.format(form=4)
+        Out[8]: '1850 01 01 00 00 00'
 
-            In [7]: test.format(form=3)
-            Out[7]: '1850-01-01 00:00:00'
+        In [9]: test.format(form=5)
+        Out[9]: '01 Jan 1850 00:00:00'
 
-            In [8]: test.format(form=4)
-            Out[8]: '1850 01 01 00 00 00'
+        In [10]: test.format(form=6)
+        Out[10]: '18500101_00:00:00'
 
-            In [9]: test.format(form=5)
-            Out[9]: '01 Jan 1850 00:00:00'
+        In [11]: test.format(form=7)
+        Out[11]: '1850-01-01_000000'
 
-            In [10]: test.format(form=6)
-            Out[10]: '18500101_00:00:00'
+        In [12]: test.format(form=8)
+        Out[12]: '18500101000000'
 
-            In [11]: test.format(form=7)
-            Out[11]: '1850-01-01_000000'
+        In [13]: test.format(form=9)
+        Out[13]: '18500101_000000'
 
-            In [12]: test.format(form=8)
-            Out[12]: '18500101000000'
-
-            In [13]: test.format(form=9)
-            Out[13]: '18500101_000000'
-
-            In [14]: test.format(form=10)
-            Out[14]: '01/01/1850 00:00:00'
+        In [14]: test.format(form=10)
+        Out[14]: '01/01/1850 00:00:00'
         """
-        # Programmer notes to not be ever included in the doc-string: Paul really, Really, REALLY
-        # dislikes this function. It rubs me in the wrong way.
         if form == "SELF":
             form = self._date_format.form
 
@@ -761,12 +743,11 @@ class Date(object):
         pm = self._date_format.printminutes
         ps = self._date_format.printseconds
 
-        # These variables are....utterly pointless
-        if givenph is not None:
+        if not givenph == None:
             ph = givenph
-        if givenpm is not None:
+        if not givenpm == None:
             pm = givenpm
-        if givenps is not None:
+        if not givenps == None:
             ps = givenps
         ndate = list(
             map(

@@ -54,7 +54,7 @@ choose_general.check:
                     is only aimed for local testing of ESM-Tools functionalities and dry
                     check runs (``esm_runscripts -c``).\n
 
-                    If you are running in a HPC and you're seeing this message, it's
+                    If you are running on an HPC and you're seeing this message, it's
                     likely that the HOSTNAME of your machine does not matches the
                     pattern defined in ``configs/machines/all_machines.yaml``. Please,
                     check that your machine is included in that file and that the

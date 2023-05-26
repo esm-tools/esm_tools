@@ -715,11 +715,6 @@ oasis3mct:
                                         rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
                                         rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
                                         rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
-#                                false:
-#                                    add_restart_in_sources:
-#                                        #rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-#                                        rstas.nc: rstas.nc_${start_date!syear!smonth!sday}-*
-#                                        rstos.nc: rstos.nc_${start_date!syear!smonth!sday}-*
 
         restart_in_sources:
                 rmp: rmp_*.nc

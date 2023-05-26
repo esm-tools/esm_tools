@@ -401,6 +401,9 @@ class oasis:
             config["outdata_sources"][thisfile] = thisfile
 
     def add_restart_files(self, restart_file, fconfig):
+        import glob
+        import os
+
         config = fconfig[self.name]
         gconfig = fconfig["general"]
         # enddate = "_" + str(gconfig["end_date"].year) + str(gconfig["end_date"].month) + str(gconfig["end_date"].day)
@@ -439,8 +442,48 @@ class oasis:
 
         config["restart_in_files"][restart_file] = restart_file
         config["restart_in_in_work"][restart_file] = restart_file
-        if not restart_file in config["restart_in_sources"]:
-            config["restart_in_sources"][restart_file] = restart_file
+
+        # In case of a branch-off experiment -> use the correct oasis restart files:
+        # Not the last rstas.nc file of initial experiment, but for the actual
+        # branch-off date
+        if gconfig["run_number"] == 1 and config["lresume"]:  # if branchoff experiment
+            # Check if ini_parent_* or ini_restart_* is used. To make sure ini_restart_*
+            # is always not empty, since I will continue to work with ini_restart_*  here.
+            # This is a bit contrary to prepare.py because there it only is taking care
+            # about the opposite case, if only ini_restart_* is set, than set ini_parent_* 
+            # to the values of ini_restart_*. -> ini_parent_* is always present in config.
+            # ini_restart_dir seems to be always set, even if lresume for oasis is false.?
+            #-----------------------------------------------------------------------------
+            # The follwoing 3 line can be removed, if we switch to only use ini_restart_*
+            if "ini_parent_date" in config and not "ini_restart_date" in config:
+                config["ini_restart_date"] = config["ini_parent_date"]
+                config["ini_restart_dir"] = config["ini_parent_dir"]
+            #-----------------------------------------------------------------------------
+            # If set in config (oasis):
+            if "ini_restart_dir" in config and "ini_restart_date" in config:
+                # check if restart file with ini_restart_date in filename is in the restart
+                # folder of the parent experiment to be branched off from:
+                branchoff_restart_file = glob.glob(config["ini_restart_dir"] + \
+                    restart_file + "_????????-" + \
+                    str(config["ini_restart_date"].year) + \
+                    str(config["ini_restart_date"].month).zfill(2) + \
+                    str(config["ini_restart_date"].day).zfill(2))
+                # What if there are more than one found?
+                if branchoff_restart_file:
+                    branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
+                else:
+                # If no restart file found for this particular ini_restart_dir, use default file 'rstas.nc'
+                    branchoff_restart_file = restart_file
+
+                config["restart_in_sources"][restart_file] = branchoff_restart_file
+            else:
+                # In case it is an initial run, but oasis restart files should be taken
+                # from different source (e.g. pool) as defined e.g. in awicm3.yaml
+                if not restart_file in config["restart_in_sources"]:
+                    config["restart_in_sources"][restart_file] = restart_file
+        else:
+            if not restart_file in config["restart_in_sources"]:
+                config["restart_in_sources"][restart_file] = restart_file
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(

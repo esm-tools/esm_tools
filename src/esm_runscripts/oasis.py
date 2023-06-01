@@ -470,20 +470,19 @@ class oasis:
                     # Note: What if there are more than one found? Let the user decide which one to take.
                     if len(branchoff_restart_file) == 1:
                         branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
-                    elif len(branchoff_restart_file) > 1 and not gconfig["isinteractive"]:
-                        # If more than one restart file found that matches ini_restart_date,
-                        # ask the user to select from the result list:
-                        questions = [
-                            {
-                                "type": "select",
-                                "name": "OASIS restart file",
-                                "message": "More than one OASIS restart file was found for your branchoff experiment that matches the ini_restart_date you selected. Please select one of the following OASIS restart files:",
-                                "choices": branchoff_restart_file,
-                            },
-                        ]
-                        branchoff_restart_file = os.path.basename(questionary.prompt(questions)["OASIS restart file"])
-                    if not gconfig["isinteractive"]:
-                        print(f"OASIS will use {branchoff_restart_file} as restart file from parent experiment {config['ini_restart_dir']}.")
+                    else:
+                        if not gconfig["isinteractive"]:
+                            # If more than one restart file found that matches ini_restart_date,
+                            # ask the user to select from the result list:
+                            questions = [
+                                {
+                                    "type": "select",
+                                    "name": "OASIS restart file",
+                                    "message": "More than one OASIS restart file was found for your branchoff experiment that matches the ini_restart_date you selected. Please select one of the following OASIS restart files:",
+                                    "choices": branchoff_restart_file,
+                                },
+                            ]
+                            branchoff_restart_file = os.path.basename(questionary.prompt(questions)["OASIS restart file"])
                 else:
                     # If no restart file found for this particular ini_restart_dir, use default file 'rstas.nc'
                     branchoff_restart_file = restart_file

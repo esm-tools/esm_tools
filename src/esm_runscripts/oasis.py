@@ -474,15 +474,11 @@ class oasis:
                         if not gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
                             # ask the user to select from the result list:
-                            questions = [
-                                {
-                                    "type": "select",
-                                    "name": "OASIS restart file",
-                                    "message": "More than one OASIS restart file was found for your branchoff experiment that matches the ini_restart_date you selected. Please select one of the following OASIS restart files:",
-                                    "choices": branchoff_restart_file,
-                                },
-                            ]
-                            branchoff_restart_file = os.path.basename(questionary.prompt(questions)["OASIS restart file"])
+                            message = "More than one OASIS restart file was found for your branchoff experiment that matches the ini_restart_date you selected. Please select one of the following OASIS restart files:"
+                            answers = questionary.form(
+                                restarts = questionary.select(message, choices=branchoff_restart_file)
+                            ).ask()
+                            branchoff_restart_file = os.path.basename(answers["restarts"])
                 else:
                     # If no restart file found for this particular ini_restart_dir, use default file 'rstas.nc'
                     branchoff_restart_file = restart_file

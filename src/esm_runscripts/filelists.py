@@ -774,65 +774,44 @@ def replace_year_placeholder(config):
 def log_used_files(config):
     if config["general"]["verbose"]:
         print("\n::: Logging used files", flush=True)
+
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
-    for model in config["general"]["valid_model_names"] + ["general"]:
-        thisrun_config_dir = config[model]["thisrun_config_dir"]
-        # this file contains the files used in the experiment
-        flist_file = (
-            f"{thisrun_config_dir}/"
-            f"{expid}_{it_coupled_model_name}filelist_{datestamp}"
-        )
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    flist_file = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
+    )
+    all_files = {}
 
-        with open(flist_file, "w") as flist:
-            flist.write(
-                f"These files are used for \n"
-                f"experiment {config['general']['expid']}\n"
-                f"component {model}\n"
-                f"date {config['general']['run_datestamp']}"
-            )
-            flist.write("\n")
-            flist.write(80 * "-")
-            for filetype in filetypes:
-                if filetype + "_sources" in config[model]:
-                    flist.write("\n" + filetype.upper() + ":\n")
-                    for category in config[model][filetype + "_sources"]:
-                        #                        esm_parser.pprint_config(config[model])
-                        flist.write(
-                            "\nSource: "
-                            + config[model][filetype + "_sources"][category]
-                        )
-                        flist.write(
-                            "\nExp Tree: "
-                            + config[model][filetype + "_intermediate"][category]
-                        )
-                        flist.write(
-                            "\nTarget: "
-                            + config[model][filetype + "_targets"][category]
-                        )
-                        if config["general"]["verbose"]:
-                            print(flush=True)
-                            print(f"::: logging file category: {category}")
-                            print(
-                                (
-                                    f"- source: "
-                                    f'{config[model][filetype + "_sources"][category]}'
-                                ),
-                                flush=True,
-                            )
-                            print(
-                                (
-                                    f"- target: "
-                                    f'{config[model][filetype + "_targets"][category]}'
-                                ),
-                                flush=True,
-                            )
-                            helpers.print_datetime(config)
-                        flist.write("\n")
-                flist.write("\n")
-                flist.write(80 * "-")
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        for filetype in filetypes:
+            model_config = config[model]
+            model_files = {}
+
+            for file in model_config.get(f"{filetype}_sources", []):
+                model_files[file] = {
+                    "source": model_config[f"{filetype}_sources"][file],
+                    "intermediate": model_config[f"{filetype}_intermediate"][file],
+                    "target": model_config[f"{filetype}_targets"][file],
+                    "type": filetype,
+                    "checksum": "1234", # This feature is still missing
+                }
+
+                if config["general"]["verbose"]:
+                    print(flush=True)
+                    print(f"::: logging file category: {filetype}")
+                    print(f"- source: {model_files[file]['source']}", flush=True)
+                    print(f"- target: {model_files[file]['target']}", flush=True)
+                    helpers.print_datetime(config)
+
+            if model_files:
+                all_files[model] = model_files
+
+    with open(flist_file, "w") as flist:
+        yaml.dump(all_files, flist)
+
     return config
 
 

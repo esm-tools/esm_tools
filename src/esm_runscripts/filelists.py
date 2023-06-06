@@ -2,6 +2,7 @@ import copy
 import datetime
 import filecmp
 import glob
+import hashlib
 import os
 import pathlib
 import re
@@ -791,12 +792,19 @@ def log_used_files(config):
             model_files = {}
 
             for file in model_config.get(f"{filetype}_sources", []):
+                try:
+                    checksum = hashlib.md5(
+                        open(model_config[f"{filetype}_targets"][file], "rb"
+                    ).read()).hexdigest()
+                except FileNotFoundError as err:
+                    checksum = False
+
                 model_files[file] = {
                     "source": model_config[f"{filetype}_sources"][file],
                     "intermediate": model_config[f"{filetype}_intermediate"][file],
                     "target": model_config[f"{filetype}_targets"][file],
                     "type": filetype,
-                    "checksum": "1234", # This feature is still missing
+                    "checksum": checksum,
                 }
 
                 if config["general"]["verbose"]:

@@ -9,7 +9,7 @@ Some considerations
   we want to translate later on.
 * You _could_ use the config in each function to generate the fake files, to
   avoid repeating yourself; however, that adds real programming logic into the
-  unit test, which you don't really want.  
+  unit test, which you don't really want.
 """
 import os
 import sys
@@ -53,6 +53,8 @@ def config_tuple():
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        valid_model_names: ["echam"]
+        jobtype: "prepcompute"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -128,6 +130,7 @@ def test_example(fs):
     general:
         base_dir: /some/dummy/location/
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        jobtype: "prepcompute"
     echam:
         files:
             jan_surf:
@@ -159,6 +162,7 @@ def test_filedicts_basics(fs):
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101/work"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        jobtype: "prepcompute"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -195,17 +199,17 @@ def test_filedicts_basics(fs):
 # ===
 # tests for SimulationFile._path_type() method
 # ===
-def test_path_type_raises_exception_on_incompatible_input(simulation_file, fs):
+def test_path_type_raises_exception_on_incompatible_input(simulation_file):
     # check for incompatible type
     with pytest.raises(TypeError):
-        output = simulation_file._path_type(12312312)
+        simulation_file._path_type(12312312)
 
 
-def test_path_type_detects_non_existing_file(simulation_file, fs):
+def test_path_type_detects_non_existing_file(simulation_file):
     # check for non-existent directory / file
     path = "/this/path/does/not/exist"
     output = simulation_file._path_type(path)
-    assert output == filedicts.FileTypes.NOT_EXISTS
+    assert output == filedicts.FileStatus.NOT_EXISTS
 
 
 def test_path_type_detects_symbolic_link(simulation_file, fs):
@@ -213,19 +217,19 @@ def test_path_type_detects_symbolic_link(simulation_file, fs):
     mylink = "/tmp/mylink"
     fs.create_symlink(mylink, simulation_file["absolute_path_in_computer"])
     output = simulation_file._path_type(mylink)
-    assert output == filedicts.FileTypes.LINK
+    assert output == filedicts.FileStatus.LINK
 
 
-def test_path_type_detects_file(simulation_file, fs):
+def test_path_type_detects_file(simulation_file):
     # check for file
     output = simulation_file._path_type(simulation_file["absolute_path_in_computer"])
-    assert output == filedicts.FileTypes.FILE
+    assert output == filedicts.FileStatus.FILE
 
 
-def test_path_type_detects_directory(simulation_file, fs):
+def test_path_type_detects_directory(simulation_file):
     # check for directory
     output = simulation_file._path_type(simulation_file.locations["work"])
-    assert output == filedicts.FileTypes.DIR
+    assert output == filedicts.FileStatus.DIR
 
 
 # === end of the tests for _path_type() method
@@ -245,7 +249,7 @@ def test_check_source_and_targets_works_as_expected(simulation_file, fs):
 
 
 def test_check_source_and_targets_raises_exception_on_incompatible_input_type(
-    simulation_file, fs
+    simulation_file,
 ):
     # check incompatible types for file paths
     with pytest.raises(TypeError):
@@ -255,7 +259,7 @@ def test_check_source_and_targets_raises_exception_on_incompatible_input_type(
 
 
 def test_check_source_and_targets_raises_exception_on_nonexisting_directory(
-    simulation_file, fs
+    simulation_file,
 ):
     # source does not exist
     source_path = Path("/this/does/not/exist")
@@ -281,6 +285,7 @@ def test_allowed_to_be_missing_attr():
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20010101"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        jobtype: "prepcompute"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -323,6 +328,7 @@ def test_allowed_to_be_missing_mv(fs):
         exp_dir: "/work/ollie/pgierz/some_exp"
         thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
         all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        jobtype: "prepcompute"
     computer:
         pool_dir: "/work/ollie/pool"
     echam:
@@ -482,7 +488,7 @@ def test_resolve_file_movements(config_tuple):
     # arrange config-in
     config = config_tuple.config
     attr_address = config_tuple.attr_address
-    simulation_file = filedicts.SimulationFile.from_config(config, attr_address)
+    filedicts.SimulationFile.from_config(config, attr_address)
     config = filedicts.resolve_file_movements(config)
 
     # check config-out
@@ -540,7 +546,7 @@ def test_ln_iscallable(simulation_file):
     assert isinstance(simulation_file.ln, Callable)
 
 
-def test_ln_links_file_from_computer_to_work(simulation_file, fs):
+def test_ln_links_file_from_computer_to_work(simulation_file):
     file_path_in_work = simulation_file["absolute_path_in_work"]
     file_path_in_computer = simulation_file["absolute_path_in_computer"]
 
@@ -613,8 +619,8 @@ def test_check_file_syntax_kind_missing():
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        with pytest.raises(SystemExit):
+            esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -642,8 +648,8 @@ def test_check_file_syntax_kind_incorrect():
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        with pytest.raises(SystemExit):
+            esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -673,8 +679,8 @@ def test_check_file_syntax_input():
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        with pytest.raises(SystemExit):
+            esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -704,8 +710,8 @@ def test_check_file_syntax_output():
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
-            sim_file = esm_runscripts.filedicts.SimulationFile.from_config(
+        with pytest.raises(SystemExit):
+            esm_runscripts.filedicts.SimulationFile.from_config(
                 config, "echam.files.jan_surf"
             )
 
@@ -731,7 +737,7 @@ def test_check_path_in_computer_is_abs(simulation_file):
     assert any(["ERROR: File Dictionaries" in line for line in output])
 
 
-def test_resolve_abs_paths(fs):
+def test_resolve_abs_paths():
     """
     Tests ``_resolve_abs_paths``
     """
@@ -849,7 +855,7 @@ def test_datestamp_added_by_default(dated_simulation_file, fs, movement_type):
     simulation_file_meth("computer", "work")
     if movement_type == "mv":
         assert not os.path.exists("/work/ollie/pool/ECHAM/T63/T63CORE2_jan_surf.nc")
-        # Recreate the moved file in computer (let's pretend we compied it):
+        # Recreate the moved file in computer (let's pretend we copied it):
         fs.create_file(simulation_file2["absolute_path_in_computer"])
     assert os.path.exists(
         "/work/ollie/pgierz/some_exp/run_20010101-20010101/work/unit.24"
@@ -865,20 +871,22 @@ def test_datestamp_added_by_default(dated_simulation_file, fs, movement_type):
     simulation_file_meth("run_tree", "exp_tree")
 
 
-def test_datestamp_not_added_if_attr_set(simulation_file):
+def test_datestamp_not_added_if_attr_set():
     pass  # Still to be implemented
 
 
-def test_datestamp_not_added_if_in_filename(simulation_file):
+def test_datestamp_not_added_if_in_filename():
     pass  # Still to be implemented
 
 
 def test_fname_has_date_stamp_info():
     fname = "blah_2000-01-01.nc"
-    fname2 = "blah_2000-01.nc"
+    fname2 = "blah_without_a_date_in_the_name.nc"
+    fname3 = "blah_with_a_wrong_date_2004-01-01.nc"
     date = esm_calendar.Date("2000-01-01T00:00:00")
     assert filedicts._fname_has_date_stamp_info(fname, date)
     assert not filedicts._fname_has_date_stamp_info(fname2, date)
+    assert not filedicts._fname_has_date_stamp_info(fname3, date)
 
 
 def test_wild_card_check():
@@ -888,7 +896,7 @@ def test_wild_card_check():
     source_pattern = source_name.split("*")
     target_pattern = target_name.split("*")
 
-    assert esm_runscripts.filedicts.SimulationFile.wild_card_check(
+    assert esm_runscripts.filedicts.SimulationFile._wild_card_check(
         source_pattern, target_pattern
     )
 
@@ -905,8 +913,8 @@ def test_wild_card_check_fails():
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
-            esm_runscripts.filedicts.SimulationFile.wild_card_check(
+        with pytest.raises(SystemExit):
+            esm_runscripts.filedicts.SimulationFile._wild_card_check(
                 source_pattern, target_pattern
             )
 
@@ -952,7 +960,7 @@ def test_find_globbing_files(fs):
 
     # Captures output (i.e. the user-friendly error)
     with Capturing() as output:
-        with pytest.raises(SystemExit) as error:
+        with pytest.raises(SystemExit):
             sim_file.cp("work", "exp_tree")
 
     # error needs to occur as the path is not absolute

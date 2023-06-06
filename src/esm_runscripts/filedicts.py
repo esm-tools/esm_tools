@@ -11,11 +11,13 @@ Developer Notes
 import copy
 import functools
 import glob
+import inspect
 import os
 import pathlib
 import shutil
+import sys
 from enum import Enum, auto
-from typing import Any, AnyStr, Dict
+from typing import Any, AnyStr, Dict, Iterator
 
 import dpath.util
 import yaml
@@ -24,6 +26,16 @@ from loguru import logger
 from esm_calendar import Date
 # These should be relative
 from esm_parser import ConfigSetup, user_error
+
+# Set up the logger:
+logger.remove()
+LEVEL = "ERROR"
+LOGGING_FORMAT = "[{time:HH:mm:ss  DD/MM/YYYY}]  <level>|{level}|  [{file} -> {function}() line:{line: >3}] >> </level>{message}"
+logger.add(sys.stderr, level=LEVEL, format=LOGGING_FORMAT)
+
+
+class DatestampFormatError(Exception):
+    """Raise this error when the Datestamp formatter is incorrectly used"""
 
 
 class DotDict(dict):
@@ -52,8 +64,40 @@ class DotDict(dict):
         self[attr] = value
 
 
-# Enumeration of file types
-class FileTypes(Enum):
+class NameIterEnum(Enum):
+    def __iter__(self) -> Iterator[str]:
+        """Returns list of names of the iteration, guarentted to be lower-case"""
+        return iter(str(name).lower() for name in self.__members__)
+
+
+class FileTypes(NameIterEnum):
+    """Describes which type a file might belong to, e.g. input, outdata, forcing"""
+
+    ANALYSIS = auto()
+    CONFIG = auto()
+    COUPLE = auto()
+    FORCING = auto()
+    IGNORE = auto()
+    INPUT = auto()
+    LOG = auto()
+    MON = auto()
+    OUTDATA = auto()
+    RESTART = auto()
+    VIZ = auto()
+
+
+class FileLocations(NameIterEnum):
+    """Posibile locations for a file"""
+
+    COMPUTER = auto()
+    EXP_TREE = auto()
+    RUN_TREE = auto()
+    WORK = auto()
+
+
+class FileStatus(NameIterEnum):
+    """Describes which status a particular file might have, e.g. ``FILE``, ``NOT_EXISTS``, ``BROKEN_LINK``."""
+
     FILE = auto()  # ordinary file
     DIR = auto()  # directory
     LINK = auto()  # symbolic link
@@ -76,7 +120,7 @@ def _allowed_to_be_missing(method):
 
     Usage Example
     -------------
-    Given you have an instansiated simulation file under ``sim_file`` with
+    Given you have an instantiated simulation file under ``sim_file`` with
     the following property in YAML::
 
         echam:
@@ -106,6 +150,18 @@ def _allowed_to_be_missing(method):
             # This method will always return None, the return below is never
             # reached:
             return 123
+
+    Notes
+    -----
+    Why does this thing have an underscore and the attribute does not?
+
+    Because this is a decorator to enable the functionality, and I do not want
+    anyone to use this decorator outside of this file, so, we start with ``_``
+    to denote that ("Private", even though Python does not formally have that).
+
+    And, the attribute might be interesting for the end-user, not the programmer.
+
+    That's why.
     """
 
     @functools.wraps(method)
@@ -195,10 +251,10 @@ def _globbing(method):
             target_pattern = target_name.split("*")
 
             # Check wild cards syntax
-            self.wild_card_check(source_pattern, target_pattern)
+            self._wild_card_check(source_pattern, target_pattern)
 
             # Obtain source files
-            glob_source_paths = self.find_globbing_files(source)
+            glob_source_paths = self._find_globbing_files(source)
 
             # Extract globbing source names
             glob_source_names = [
@@ -218,25 +274,14 @@ def _globbing(method):
             for glob_source_name, glob_target_name in zip(
                 glob_source_names, glob_target_names
             ):
-                # Create a new simulation file object for this specific glob file
-                glob_file = copy.deepcopy(self)
-                # set source and target names:
-                glob_file[f"absolute_path_in_{source}"] = pathlib.Path(
-                    str(glob_file[f"absolute_path_in_{source}"]).replace(
-                        source_name, glob_source_name
-                    )
-                )
-                glob_file[f"absolute_path_in_{target}"] = pathlib.Path(
-                    str(glob_file[f"absolute_path_in_{target}"]).replace(
-                        target_name, glob_target_name
-                    )
-                )
-                # Also need to replace names:
-                glob_file[f"name_in_{source}"] = glob_source_name
-                glob_file[f"name_in_{target}"] = glob_target_name
+                # Create a new simulation file object for this specific glob file's config
+                glob_dict = dict(self)
+                glob_dict[f"name_in_{source}"] = glob_source_name
+                glob_dict[f"name_in_{target}"] = glob_target_name
+                glob_file = SimulationFile(**glob_dict)
                 # Use method
                 this_method = getattr(glob_file, method_name)
-                this_method(source, target, *args, **kwargs)
+                return this_method(source, target, *args, **kwargs)
         else:
             return method(self, source, target, *args, **kwargs)
 
@@ -247,6 +292,38 @@ class SimulationFile(DotDict):
     """
     Describes a file used within a ESM Simulation.
 
+    A ``SimulationFile`` object describes one particular file used within an
+    ``esm-tools`` run. This description is similar to a standard Python
+    dictionary. Beyond the standard dictionary methods and attributes, there
+    are a variety of attributes that describe how the file should behave, as
+    well as a few additional methods you can use to relocate the file around on
+    the system. Please see the detailed documentation on each of the methods
+    for more specifics, but in summary, a ``SimulationFile`` has the following
+    additional functions::
+
+        >>> sim_file = SimulationFile(...)  # doctest: +SKIP
+        >>> sim_file.mv("computer", "work")  # doctest: +SKIP
+        >>> sim_file.ln("work", "run_tree")  # doctest: +SKIP
+        >>> sim_file.cp("run_tree", "exp_tree")  # doctest: +SKIP
+
+    You get extra functions for moving, copying, or linking a file from one
+    location to another. Location keys are desccribed in detail in the Notes
+    section.
+
+    Furthermore, there are a few attributes that you should be aware of. These
+    include:
+
+    * ``name`` : A human readable name for the file.
+    * ``allowed_to_be_missing`` : A ``bool`` value to set a certain file as
+      allowed to be missing or not. In case it is, the cp/ln/mv command will not
+      fail if the original file is not found.
+    * ``datestamp_method`` : Sets how a datestamp should be added. See
+      ``_allowed_datestamp_methods`` for more information.
+    * ``datestamp_format`` : Sets how a datestamp should be formatted. See
+      ``_allowed_datestamp_methods`` for more information.
+
+    Example
+    -------
     Given a config, you should be able to use this in YAML::
 
         $ cat dummy_config.yaml
@@ -264,13 +341,29 @@ class SimulationFile(DotDict):
 
     And, assuming config is as described above::
 
-        >>> sim_file = SimulationFile(config, ['echam']['files']['jan_surf'])  # doctest: +SKIP
+        >>> sim_file = SimulationFile.from_config(config, 'echam.files.jan_surf')  # doctest: +SKIP
 
     You could then copy the file to the experiment folder::
 
-        >>> sim_file.cp_to_exp_tree()  # doctest: +SKIP
+        >>> sim_file.cp("pool", "work")  # doctest: +SKIP
+
+    Notes
+    -----
+    A file can be located in one of these categories (``LOCATION_KEYS``):
+    - computer: pool/source directory (for input files)
+    - exp_tree: file in the category directory in experiment directory (eg. input, output, ...)
+    - run_tree: file in the experiment/run_<DATE>/<CATEGORY>/ directory
+    - work:     file in the current work directory. Eg. experiment/run_<DATE>/work/
+
+    LOCATION_KEY is one of the strings defined in LOCATION_KEY list
+    - name_in_<LOCATION_KEY> : file name (without path) in the LOCATION_KEY
+      - eg. name_in_computer: T63CORE2_jan_surf.nc
+      - eg. name_in_work: unit.24
+    - absolute_path_in_<LOCATION_KEY> : absolute path in the LOCATION_KEY
+      - eg. absolute_path_in_run_tree: /work/ollie/pgierz/some_exp/run_20010101-20010101/input/echam/T63CORE2_jan_surf.nc
     """
 
+    # Should all be replaced by Enums:
     input_file_kinds = [
         "config",
         "forcing",
@@ -319,7 +412,7 @@ class SimulationFile(DotDict):
             allowed_to_be_missing=allowed_to_be_missing,
             description=description,
             filetype=filetype,
-            _datestamp_method=datestamp_method,
+            datestamp_method=datestamp_method,
             locations={k: pathlib.Path(v).parent for k, v in paths.items()},
             **kwargs,
         )
@@ -389,7 +482,7 @@ class SimulationFile(DotDict):
         attrs_dict = dpath.util.get(
             full_config, attrs_address, separator=".", default={}
         )
-        _original_filedict = copy.deepcopy(attrs_dict)
+        # _original_filedict = copy.deepcopy(attrs_dict)
 
         name = attrs_address.split(".")[-1]
         component = attrs_address.split(".")[0]
@@ -662,7 +755,7 @@ class SimulationFile(DotDict):
 
         # Actual copy
         source_path_type = self._path_type(source_path)
-        if source_path_type == FileTypes.DIR:
+        if source_path_type == FileStatus.DIR:
             copy_func = shutil.copytree
         else:
             copy_func = shutil.copy2
@@ -825,7 +918,7 @@ class SimulationFile(DotDict):
                 "The datestamp_format must be defined as one of check_from_filename or append"
             )
 
-    def _path_type(self, path: pathlib.Path) -> int:
+    def _path_type(self, path: pathlib.Path) -> FileStatus:
         """
         Checks if the given ``path`` exists. If it does returns it's type, if it
         doesn't, returns ``None``.
@@ -857,20 +950,20 @@ class SimulationFile(DotDict):
         # NOTE: is_symlink() needs to come first because it is also a is_file()
         # NOTE: pathlib.Path().exists() also checks is the target of a symbolic link exists or not
         if path.is_symlink() and not path.exists():
-            return FileTypes.BROKEN_LINK
+            return FileStatus.BROKEN_LINK
         elif not path.exists():
-            return FileTypes.NOT_EXISTS
+            return FileStatus.NOT_EXISTS
         elif path.is_symlink():
-            return FileTypes.LINK
+            return FileStatus.LINK
         elif path.is_file():
-            return FileTypes.FILE
+            return FileStatus.FILE
         elif path.is_dir():
-            return FileTypes.DIR
+            return FileStatus.DIR
         else:
             # probably, this will not happen
             raise TypeError(f"{path} can not be identified")
 
-    def _always_datestamp(self, fname):
+    def _always_datestamp(self, fname) -> pathlib.Path:
         """
         Method called when ``always`` is the ``datestamp_method.
 
@@ -898,6 +991,9 @@ class SimulationFile(DotDict):
                 return fname
             else:
                 return pathlib.Path(f"{fname}_{self._sim_date}")
+        raise DatestampFormatError(
+            "Unknown Datestamp formatting type, please use `append` or `check_from_filename`"
+        )
 
     def _avoid_override_datestamp(self, target: pathlib.Path) -> pathlib.Path:
         """
@@ -923,7 +1019,7 @@ class SimulationFile(DotDict):
         return target
 
     @staticmethod
-    def wild_card_check(source_pattern: list, target_pattern: list) -> True:
+    def _wild_card_check(source_pattern: list, target_pattern: list) -> bool:
         """
         Checks for syntax mistakes. If any were found, it notifies the user about these
         errors in the syntax using ``esm_parser.error``.
@@ -937,10 +1033,11 @@ class SimulationFile(DotDict):
 
         Returns
         -------
-        True :
+        bool :
             If no issues were found
         """
-        if len(target_pattern) != len(source_pattern):
+        target_and_source_patterns_match = len(target_pattern) == len(source_pattern)
+        if not target_and_source_patterns_match:
             user_error(
                 "Wild card",
                 (
@@ -952,9 +1049,9 @@ class SimulationFile(DotDict):
                 ),
             )
 
-        return True
+        return target_and_source_patterns_match
 
-    def find_globbing_files(self, location: str) -> list:
+    def _find_globbing_files(self, location: str) -> list:
         """
         Lists the files matching the globbing path of the given ``location``, and
         notifies the user if none were found, via ``esm_parser.user_error``.
@@ -1014,13 +1111,13 @@ class SimulationFile(DotDict):
         # Checks
         # ------
         # Source does not exist
-        if source_path_type == FileTypes.NOT_EXISTS:
+        if source_path_type == FileStatus.NOT_EXISTS:
             err_msg = f"Unable to perform file operation. Source ``{source_path}`` does not exist!"
             raise FileNotFoundError(err_msg)
 
         # Target already exists
         target_exists = (
-            os.path.exists(target_path) or target_path_type == FileTypes.LINK
+            os.path.exists(target_path) or target_path_type == FileStatus.LINK
         )
         if target_exists:
             err_msg = f"Unable to perform file operation. Target ``{target_path}`` already exists"
@@ -1033,11 +1130,9 @@ class SimulationFile(DotDict):
             raise FileNotFoundError(err_msg)
 
         # if source is a broken link. Ie. pointing to a non-existing file
-        if source_path_type == FileTypes.BROKEN_LINK:
+        if source_path_type == FileStatus.BROKEN_LINK:
             err_msg = f"Unable to create symbolic link: ``{source_path}`` points to a broken path: {source_path.resolve()}"
             raise FileNotFoundError(err_msg)
-
-        return True
 
 
 class DatedSimulationFile(SimulationFile):
@@ -1082,9 +1177,84 @@ def copy_files(config):
     return config
 
 
+class SimulationFileCollection(dict):
+    """
+    Once instanciated, searches in the ``config`` dictionary for the ``files`` keys.
+    This class contains the methods to: 1) instanciate each of the files defined in
+    ``files`` as ``SimulationFile`` objects and 2) loop through these objects
+    triggering the desire file movement.
+    """
+
+    def __init__(self):
+        pass
+
+    # PG: Not sure I need this...
+    @property
+    def _defined_from(self):
+        stack = inspect.stack()
+        caller_frame = stack[1]  # Get the frame of the caller
+        caller_name = caller_frame.function
+        return caller_name
+
+    @classmethod
+    def from_config(cls, config: dict):
+        sim_files = cls()
+        for component in config["general"]["valid_model_names"]:
+            config_address = f"{component}.files"
+            for file_key in dpath.util.get(
+                config, config_address, separator="."
+            ).keys():
+                sim_files[file_key] = SimulationFile.from_config(
+                    config, f"{config_address}.{file_key}"
+                )
+        return sim_files
+
+    def _gather_file_movements(self) -> None:
+        """Puts the methods for each file movement into the dictionary as callable values behind the `_filesystem_op` key"""
+        for sim_file_id, sim_file_obj in self.items():
+            movement_type = sim_file_obj.get("movement_type", "cp")
+            if movement_type == "mv":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "mv")
+            elif movement_type == "cp":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "cp")
+            elif movement_type == "ln":
+                self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "ln")
+            else:
+                raise ValueError(
+                    f"Movement Type is not defined correctly, please use `mv`, `cp` or `ln` for {sim_file_id}"
+                )
+
+    def execute_filesystem_operation(
+        self, config: ConfigSetup
+    ) -> ConfigSetup:  # , from: pathlib.Path | str, to: pathlib.Path | str) -> None:
+        self._gather_file_movements()
+        for sim_file_id, sim_file_obj in self.items():
+            logger.info(f"Processing {sim_file_id}")
+            if config["general"]["jobtype"] == "prepcompute":
+                src, dest = "pool", "work"
+            elif config["general"]["jobtype"] == "tidy":
+                src, dest = "work", "exp_tree"
+            else:
+                raise ValueError(f"Incorrect jobtype specified for {sim_file_obj}")
+            sim_file_obj["_filesystem_op"](src, dest)
+        return config
+
+
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
-    """Replaces former assemble() function"""
-    # TODO: to be filled with functions
-    # DONE: type annotation
-    # DONE: basic unit test: test_resolve_file_movements
+    """
+    Runs all methods required to get files into their correct locations. This will
+    instantiate the ``SimulationFiles`` class. It's called by the recipe manager.
+
+    Parameters
+    ----------
+    config : ConfigSetup
+        The complete simulation configuration.
+
+    Returns
+    -------
+    config : ConfigSetup
+        The complete simulation configuration, potentially modified.
+    """
+    sim_file_collection = SimulationFileCollection.from_config(config)
+    config = sim_file_collection.execute_filesystem_operation(config)
     return config

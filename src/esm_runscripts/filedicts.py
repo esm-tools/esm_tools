@@ -12,6 +12,7 @@ import copy
 import functools
 import glob
 import inspect
+import hashlib
 import os
 import pathlib
 import shutil
@@ -1241,6 +1242,7 @@ class SimulationFileCollection(dict):
             config[sim_file_obj["component"]]["files"][sim_file_id]["src"] = (
                 sim_file_obj.paths[src]
             )
+            config[sim_file_obj["component"]]["files"][sim_file_id]["intermediate"] = None
             config[sim_file_obj["component"]]["files"][sim_file_id]["dest"] = (
                 sim_file_obj.paths[dest]
             )
@@ -1281,5 +1283,50 @@ def log_used_files(config: ConfigSetup) -> ConfigSetup:
     config : ConfigSetup
         The complete simulation configuration, potentially modified.
     """
+    if config["general"].get("verbose", False):
+        logger.info("\n::: Logging used files")
+
+    filetypes = config["general"]["relevant_filetypes"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"].get("iterative_coupled_model", "")
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    flist_file = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
+    )
+    all_files = {}
+
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        for filetype in filetypes:
+            model_config = config[model]
+            model_files = {}
+
+            for file_key, file_obj in model_config.get("files", {}).items():
+                try:
+                    checksum = hashlib.md5(open(
+                        file_obj["dest"], "rb"
+                    ).read()).hexdigest()
+                except FileNotFoundError as err:
+                    checksum = None
+
+                model_files[file_key] = {
+                    "source": str(file_obj["src"]),
+                    "intermediate": file_obj["intermediate"],
+                    "target": str(file_obj["dest"]),
+                    "checksum": checksum,
+                    "kind": filetype,
+                }
+
+                if config["general"].get("verbose", False):
+                    logger.info(f"::: logging file category: {filetype}")
+                    logger.info(f"- source: {files['src']}")
+                    logger.info(f"- target: {files['dest']}")
+                    helpers.print_datetime(config)
+
+            if model_files:
+                all_files[model] = model_files
+
+    with open(flist_file, "w") as flist:
+        yaml.dump(all_files, flist)
 
     return config

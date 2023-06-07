@@ -1207,17 +1207,18 @@ class SimulationFileCollection(dict):
                 sim_files[file_key] = SimulationFile.from_config(
                     config, f"{config_address}.{file_key}"
                 )
+                sim_files[file_key]["component"] = component
         return sim_files
 
     def _gather_file_movements(self) -> None:
         """Puts the methods for each file movement into the dictionary as callable values behind the `_filesystem_op` key"""
         for sim_file_id, sim_file_obj in self.items():
-            movement_type = sim_file_obj.get("movement_type", "cp")
-            if movement_type == "mv":
+            movement_type = sim_file_obj.get("movement_type", "copy")
+            if movement_type == "move":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "mv")
-            elif movement_type == "cp":
+            elif movement_type == "copy":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "cp")
-            elif movement_type == "ln":
+            elif movement_type == "link":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "ln")
             else:
                 raise ValueError(
@@ -1231,12 +1232,18 @@ class SimulationFileCollection(dict):
         for sim_file_id, sim_file_obj in self.items():
             logger.info(f"Processing {sim_file_id}")
             if config["general"]["jobtype"] == "prepcompute":
-                src, dest = "pool", "work"
+                src, dest = "computer", "work"
             elif config["general"]["jobtype"] == "tidy":
                 src, dest = "work", "exp_tree"
             else:
                 raise ValueError(f"Incorrect jobtype specified for {sim_file_obj}")
             sim_file_obj["_filesystem_op"](src, dest)
+            config[sim_file_obj["component"]]["files"][sim_file_id]["src"] = (
+                sim_file_obj.paths[src]
+            )
+            config[sim_file_obj["component"]]["files"][sim_file_id]["dest"] = (
+                sim_file_obj.paths[dest]
+            )
         return config
 
 
@@ -1257,4 +1264,22 @@ def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     """
     sim_file_collection = SimulationFileCollection.from_config(config)
     config = sim_file_collection.execute_filesystem_operation(config)
+    return config
+
+
+def log_used_files(config: ConfigSetup) -> ConfigSetup:
+    """
+    Logs the files moved on this current phase.
+
+    Parameters
+    ----------
+    config : ConfigSetup
+        The complete simulation configuration.
+
+    Returns
+    -------
+    config : ConfigSetup
+        The complete simulation configuration, potentially modified.
+    """
+
     return config

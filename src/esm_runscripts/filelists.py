@@ -797,7 +797,7 @@ def log_used_files(config):
                         open(model_config[f"{filetype}_targets"][file], "rb"
                     ).read()).hexdigest()
                 except FileNotFoundError as err:
-                    checksum = False
+                    checksum = None
 
                 model_files[file] = {
                     "source": model_config[f"{filetype}_sources"][file],

@@ -444,21 +444,15 @@ class oasis:
         config["restart_in_in_work"][restart_file] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
-        # Not the last rstas.nc file of initial experiment, but for the actual
+        # Not the rstas.nc soft link to the last, but the actual one for the
         # branch-off date
         if gconfig["run_number"] == 1 and config["lresume"]:  # if branchoff experiment
-            # Check if ini_parent_* or ini_restart_* is used. To make sure ini_restart_*
-            # is always not empty, since I will continue to work with ini_restart_*  here.
-            # This is a bit contrary to prepare.py because there it only is taking care
-            # about the opposite case, if only ini_restart_* is set, than set ini_parent_*
-            # to the values of ini_restart_*. -> ini_parent_* is always present in config.
-            # ini_restart_dir seems to be always set, even if lresume for oasis is false.?
-            # -----------------------------------------------------------------------------
-            # The following 3 line can be removed, if we switch to only use ini_restart_*
+            # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
+            # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
                 config["ini_restart_date"] = config["ini_parent_date"]
+            if "ini_parent_dir" in config and "ini_restart_dir" not in config:
                 config["ini_restart_dir"] = config["ini_parent_dir"]
-            # -----------------------------------------------------------------------------
             # If set in config (oasis):
             if "ini_restart_dir" in config and "ini_restart_date" in config:
                 # check if restart file with ini_restart_date in filename is in the restart
@@ -467,7 +461,7 @@ class oasis:
                 branchoff_restart_file = glob.glob(glob_search_file)
                 branchoff_restart_file.sort()
                 if branchoff_restart_file:
-                    # Note: What if there are more than one found? Let the user decide which one to take.
+                    # If there are more than one file found let the user decide which one to take
                     if len(branchoff_restart_file) == 1:
                         branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
                     else:

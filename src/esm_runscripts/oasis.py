@@ -100,7 +100,7 @@ class oasis:
             sep = ":"
 
         if export_mode == "DEFAULT":
-            if lresume is False:
+            if lresume == False:
                 export_mode = "EXPOUT"
             else:
                 export_mode = "EXPORTED"
@@ -457,7 +457,10 @@ class oasis:
             if "ini_restart_dir" in config and "ini_restart_date" in config:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
-                glob_search_file = f"{config['ini_restart_dir']}{restart_file}_????????-{config['ini_restart_date'].year}{config['ini_restart_date'].month:02}{config['ini_restart_date'].day:02}"
+                glob_search_file = f"{config['ini_restart_dir']}{restart_file}_????????-"\
+                                  +f"{config['ini_restart_date'].year}"                 \
+                                  +f"{config['ini_restart_date'].month:02}"             \
+                                  +f"{config['ini_restart_date'].day:02}"
                 branchoff_restart_file = glob.glob(glob_search_file)
                 branchoff_restart_file.sort()
                 if branchoff_restart_file:
@@ -465,10 +468,13 @@ class oasis:
                     if len(branchoff_restart_file) == 1:
                         branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
                     else:
-                        if not gconfig["isinteractive"]:
+                        if gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
                             # ask the user to select from the result list:
-                            message = "More than one OASIS restart file was found for your branchoff experiment that matches the ini_restart_date you selected. Please select one of the following OASIS restart files:"
+                            message = "More than one OASIS restart file was found for "\
+                                     +"your branchoff experiment that matches the "    \
+                                     +"ini_restart_date you selected. Please select "  \
+                                     +"one of the following OASIS restart files:"      
                             answers = questionary.form(
                                 restarts = questionary.select(message, choices=branchoff_restart_file)
                             ).ask()

@@ -63,7 +63,6 @@ class DictWithProvenance(dict):
         provenance_dict = dict_with_provenance.get_provenance()
     """
 
-
     def __init__(self, dictionary, provenance):
         """
         Instanciates the ``dictionary`` as an object of ``DictWithProvenance`` and
@@ -82,7 +81,6 @@ class DictWithProvenance(dict):
 
         self.provenance = {}
         self.set_provenance(provenance)
-
 
     def set_provenance(self, provenance, dictionary=None):
         """
@@ -108,7 +106,6 @@ class DictWithProvenance(dict):
             else:
                 dictionary[key] = val
                 dictionary.provenance[key] = provenance
-
 
     def get_provenance(self, dictionary=None):
         """
@@ -143,7 +140,6 @@ class DictWithProvenance(dict):
                 provenance_dict[key] = dictionary.provenance[key]
 
         return provenance_dict
-
 
     def __setitem__(self, key, val):
         """
@@ -287,10 +283,28 @@ assert config.get_provenance() == check_provenance
 
 # Test 5 (reset the provenance of all ``echam`` leaves to "a_string")
 config["echam"].set_provenance("a_string")
-check_provenance = {'echam': {'type': 'a_string', 'files': {'greenhouse': {'kind': 'a_string', 'path_in_computer': 'a_string'}}}, 'fesom': {'asd': 2, 'model': 2}, 'computer': None, True: None}
+check_provenance = {
+    "echam": {
+        "type": "a_string",
+        "files": {"greenhouse": {"kind": "a_string", "path_in_computer": "a_string"}},
+    },
+    "fesom": {"asd": 2, "model": 2},
+    "computer": None,
+    True: None,
+}
 assert config.get_provenance() == check_provenance
 
 # Test 6 (reset the provenance of a leaf)
 config["echam"]["files"]["greenhouse"].provenance["kind"] = "a_new_string"
-check_provenance = {'echam': {'type': 'a_string', 'files': {'greenhouse': {'kind': 'a_new_string', 'path_in_computer': 'a_string'}}}, 'fesom': {'asd': 2, 'model': 2}, 'computer': None, True: None}
+check_provenance = {
+    "echam": {
+        "type": "a_string",
+        "files": {
+            "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
+        },
+    },
+    "fesom": {"asd": 2, "model": 2},
+    "computer": None,
+    True: None,
+}
 assert config.get_provenance() == check_provenance

@@ -100,7 +100,7 @@ class oasis:
             sep = ":"
 
         if export_mode == "DEFAULT":
-            if lresume == False:
+            if bool(lresume) is False:
                 export_mode = "EXPOUT"
             else:
                 export_mode = "EXPORTED"

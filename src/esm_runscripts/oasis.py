@@ -105,7 +105,7 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if lresume == False:
+        if bool(lresume) is False:
             lag = str(0)
         else:
             lag = direction.get("lag", "0")

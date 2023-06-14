@@ -1,0 +1,10 @@
+# Example YAML data
+person:
+  name: Paul Gierz
+  username: !ENV USER
+  my_var: !ENV MY_VAR
+  my_other_var:
+      - a
+      - b
+      - c
+

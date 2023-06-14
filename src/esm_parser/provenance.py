@@ -214,97 +214,104 @@ my_provenance = {
 config = DictWithProvenance(config_dict, my_provenance)
 
 # Test 1 (should give you a provenance of None for the key ["fesom"]["asd"])
-config["fesom"] = {"asd": 0}
-assert config.get_provenance() == {
-    "echam": {
-        "type": {"from_file": None, "type": None},
-        "files": {
-            "greenhouse": {
-                "kind": {"from_file": None, "type": None},
-                "path_in_computer": {"from_file": None, "type": None},
-            }
+def test_get_provenance_1():
+    config["fesom"] = {"asd": 0}
+    print(config.get_provenance())
+    assert config.get_provenance() == {
+        "echam": {
+            "type": {"from_file": None, "type": None},
+            "files": {
+                "greenhouse": {
+                    "kind": {"from_file": None, "type": None},
+                    "path_in_computer": {"from_file": None, "type": None},
+                }
+            },
         },
-    },
-    "fesom": {"asd": None},
-}
+        "fesom": {"asd": None},
+    }
 
 # Test 2 (should give you a provenance of None for the key "computer")
-config["computer"] = 0
-check_provenance = {
-    "echam": {
-        "type": {"from_file": None, "type": None},
-        "files": {
-            "greenhouse": {
-                "kind": {"from_file": None, "type": None},
-                "path_in_computer": {"from_file": None, "type": None},
-            }
+def test_get_provenance_2():
+    config["computer"] = 0
+    check_provenance = {
+        "echam": {
+            "type": {"from_file": None, "type": None},
+            "files": {
+                "greenhouse": {
+                    "kind": {"from_file": None, "type": None},
+                    "path_in_computer": {"from_file": None, "type": None},
+                }
+            },
         },
-    },
-    "fesom": {"asd": None},
-    "computer": None,
-}
-assert config.get_provenance() == check_provenance
+        "fesom": {"asd": None},
+        "computer": None,
+    }
+    assert config.get_provenance() == check_provenance
 
 # Test 3 (should give you a provenance of 2 for the leaf keys inside "fesom")
-config_fesom = DictWithProvenance({"fesom": {"asd": 0, "model": "ocean"}}, 2)
-config.update(config_fesom)
-check_provenance = {
-    "echam": {
-        "type": {"from_file": None, "type": None},
-        "files": {
-            "greenhouse": {
-                "kind": {"from_file": None, "type": None},
-                "path_in_computer": {"from_file": None, "type": None},
-            }
+def test_get_provenance_3():
+    config_fesom = DictWithProvenance({"fesom": {"asd": 0, "model": "ocean"}}, 2)
+    config.update(config_fesom)
+    check_provenance = {
+        "echam": {
+            "type": {"from_file": None, "type": None},
+            "files": {
+                "greenhouse": {
+                    "kind": {"from_file": None, "type": None},
+                    "path_in_computer": {"from_file": None, "type": None},
+                }
+            },
         },
-    },
-    "fesom": {"asd": 2, "model": 2},
-    "computer": None,
-}
-assert config.get_provenance() == check_provenance
+        "fesom": {"asd": 2, "model": 2},
+        "computer": None,
+    }
+    assert config.get_provenance() == check_provenance
 
 # Test 4 (should give you a provenance of None for the keye True)
-config[True] = "boolean"
-check_provenance = {
-    "echam": {
-        "type": {"from_file": None, "type": None},
-        "files": {
-            "greenhouse": {
-                "kind": {"from_file": None, "type": None},
-                "path_in_computer": {"from_file": None, "type": None},
-            }
+def test_get_provenance_4():
+    config[True] = "boolean"
+    check_provenance = {
+        "echam": {
+            "type": {"from_file": None, "type": None},
+            "files": {
+                "greenhouse": {
+                    "kind": {"from_file": None, "type": None},
+                    "path_in_computer": {"from_file": None, "type": None},
+                }
+            },
         },
-    },
-    "fesom": {"asd": 2, "model": 2},
-    "computer": None,
-    True: None,
-}
-assert config.get_provenance() == check_provenance
+        "fesom": {"asd": 2, "model": 2},
+        "computer": None,
+        True: None,
+    }
+    assert config.get_provenance() == check_provenance
 
 # Test 5 (reset the provenance of all ``echam`` leaves to "a_string")
-config["echam"].set_provenance("a_string")
-check_provenance = {
-    "echam": {
-        "type": "a_string",
-        "files": {"greenhouse": {"kind": "a_string", "path_in_computer": "a_string"}},
-    },
-    "fesom": {"asd": 2, "model": 2},
-    "computer": None,
-    True: None,
-}
-assert config.get_provenance() == check_provenance
+def test_get_provenance_5():
+    config["echam"].set_provenance("a_string")
+    check_provenance = {
+        "echam": {
+            "type": "a_string",
+            "files": {"greenhouse": {"kind": "a_string", "path_in_computer": "a_string"}},
+        },
+        "fesom": {"asd": 2, "model": 2},
+        "computer": None,
+        True: None,
+    }
+    assert config.get_provenance() == check_provenance
 
 # Test 6 (reset the provenance of a leaf)
-config["echam"]["files"]["greenhouse"].provenance["kind"] = "a_new_string"
-check_provenance = {
-    "echam": {
-        "type": "a_string",
-        "files": {
-            "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
+def test_get_provenance_6():
+    config["echam"]["files"]["greenhouse"].provenance["kind"] = "a_new_string"
+    check_provenance = {
+        "echam": {
+            "type": "a_string",
+            "files": {
+                "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
+            },
         },
-    },
-    "fesom": {"asd": 2, "model": 2},
-    "computer": None,
-    True: None,
-}
-assert config.get_provenance() == check_provenance
+        "fesom": {"asd": 2, "model": 2},
+        "computer": None,
+        True: None,
+    }
+    assert config.get_provenance() == check_provenance

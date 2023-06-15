@@ -484,6 +484,7 @@ choose_with_lco2_emis:
         # - run emission-driven and not concentration-driven experiment, e.g. `esm-piControl` or `esm-hist` and not `piControl` or `historical`
         # - atmosheric CO2 concentration is not prescribed but calculated by the model setup
         # - CO2 emissions need to be provided as `carbon_emissions.nc`, not CO2 concentrations as `greenhouse_gases.nc`
+        # - todo: mpi-esm namelist.echam:&co2ctl:lco2_emis is false for piControl but there are non-zero emissions for 1850 in pool
         add_namelist_changes:
             namelist.echam:
                 submodelctl:
@@ -491,33 +492,40 @@ choose_with_lco2_emis:
                 radctl:
                     ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
                 co2ctl:
-                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
                     lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
-        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
-            HIST:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_hist
-            ssp126:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp126
-            ssp245:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp245
-            ssp370:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp370
-            ssp534os:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp534os
-            ssp585:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp585
+        add_choose_scenario: # loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            # set namelist.echam:&co2ctl:lco2_emis
+            PI-CTRL:
+                lco2_emis: false
             "*":
-                add_error:
-                    "missing_scenario":
-                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
-        add_forcing_in_work:
-            carbon_emissions: "carbon_emissions.nc"
+                lco2_emis: true # use carbon emissions from forcing file -> needs carbon_emissions.nc in work
+        choose_lco2_emis:
+            True:
+                add_choose_scenario:
+                    HIST:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_hist
+                    ssp126:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp126
+                    ssp245:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp245
+                    ssp370:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp370
+                    ssp534os:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp534os
+                    ssp585:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp585
+                    "*":
+                        add_error:
+                            "missing_scenario":
+                                message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+                add_forcing_in_work:
+                    carbon_emissions: "carbon_emissions.nc"
 
 choose_wiso_code:
         True:

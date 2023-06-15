@@ -89,10 +89,12 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                     "Source": self.filename,
                     "line": data.lc.line,
                     "col": data.lc.col,
+                    "Defined For": key,
+                    "Type": type(data).__name__,
                 }
             if hasattr(data, "yaml_set_start_comment"):
-                print("Adding comment to data", data, comment)
-                data.yaml_set_start_comment(comment)
+                print("Adding comment to data", data, comment, type(data))
+                data.yaml_set_start_comment(str(comment))
             else:
                 # warnings.warn("Cannot add comment to data", data, comment)
                 print("Cannot add comment to data", data, comment)
@@ -110,7 +112,9 @@ def main():
     esm_tools_loader = EsmToolsLoader()
 
     # Load the YAML file
-    file_path = pathlib.Path("example.yaml")
+    file_path = pathlib.Path(
+        "/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
+    )
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
         data = esm_tools_loader.load(file)

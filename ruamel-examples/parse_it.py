@@ -5,9 +5,9 @@ import sys
 import warnings
 
 import ruamel.yaml
+from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 from ruamel.yaml.representer import RoundTripRepresenter
-from yaml import warnings
 
 YAML_SPEC_TAG = "yaml.org,2002"
 """
@@ -15,7 +15,7 @@ str: Defines the YAML specification version used for tag replacements.
 """
 
 
-class EnvironmentConstructor(ruamel.yaml.RoundTripConstructor):
+class EnvironmentConstructor(RoundTripConstructor):
     """This class is used to replace the !ENV tag with the value of the environment variable."""
 
     def construct_scalar(self, node):

@@ -20,7 +20,9 @@ class EnvironmentConstructor(RoundTripConstructor):
         if isinstance(node, ScalarNode) and node.tag == "!ENV":
             env_variable = node.value
             if env_variable in os.environ:
-                # NOTE(PG): This will **always** give you back a string. Have a look in the handbook:
+                # NOTE(PG): This will **always** give you back a string. Have a look in
+                # the handbook:
+                #
                 # https://docs.python.org/3/library/os.html#os.environ
                 rval = os.environ[env_variable]
                 return rval

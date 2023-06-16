@@ -66,7 +66,7 @@ class ProvenanceConstructor(EnvironmentConstructor):
             node.start_mark.column,
         )
 
-        return data, provenance
+        return (data, provenance)
 
 
 class EnvironmentRepresenter(ruamel.yaml.RoundTripRepresenter):

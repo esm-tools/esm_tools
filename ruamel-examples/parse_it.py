@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
 import pathlib
-import sys
 import warnings
 
 import ruamel.yaml
 from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
-from ruamel.yaml.representer import RoundTripRepresenter
 
 YAML_SPEC_TAG = "yaml.org,2002"
 """

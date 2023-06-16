@@ -152,9 +152,9 @@ def main():
 
     # Load the YAML file
     file_path = pathlib.Path(
-        #"example.yaml"
+        "example.yaml"
         #"/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
-        "/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
+        #"/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
     )
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)

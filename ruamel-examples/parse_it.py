@@ -48,7 +48,7 @@ class ProvenanceConstructor(EnvironmentConstructor):
         Parameters
         ----------
         node : node object
-            The node contianing all the infomation about the yaml element
+            The node containing all the information about the yaml element
 
         Returns
         -------

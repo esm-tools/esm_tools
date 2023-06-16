@@ -29,10 +29,47 @@ class EnvironmentConstructor(ruamel.yaml.RoundTripConstructor):
             else:
                 raise ValueError(f"Environment variable {env_variable} not found")
         rval = super().construct_scalar(node)
+
         return rval
 
 
-class EnvironmentRepresenter(RoundTripRepresenter):
+class ProvenanceConstructor(EnvironmentConstructor):
+    """
+    Subclasses the ``EnvironmentConstructor`` to, instead of returning only a ``data``
+    returning a ``tuple`` where the element 0 is the ``data`` itself and the following
+    elements are the provenance values (1 -> line number, 2 -> column). The resulting
+    dictionary contains keys that are ``tuples`` and ``values`` that are tuples. This
+    can then be separated into two equivalent dictionaries, one with the "real" values
+    and another one with the values of the provenance.
+    """
+
+    def construct_object(self, node, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        node : node object
+            The node contianing all the infomation about the yaml element
+
+        Returns
+        -------
+        data : any
+            The "real" value as interpreted from the parent yaml constructor
+        provenance : tuple
+            provenance[0]: line number
+            provenance[1]: column number
+        """
+
+        data = super().construct_object(node, *args, **kwargs)
+
+        provenance = (
+            node.start_mark.line,
+            node.start_mark.column,
+        )
+
+        return data, provenance
+
+
+class EnvironmentRepresenter(ruamel.yaml.RoundTripRepresenter):
     """When dumping, this class is used to remove the !ENV tag from a particular value."""
 
     def represent_scalar(self, tag, value, style=None, anchor=None):
@@ -54,8 +91,9 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         super().__init__(*args, **kwargs)
         self.filename = None
         self.add_comments = True
-        self.Constructor = EnvironmentConstructor
-        self.Constructor.add_constructor(None, EnvironmentConstructor.construct_scalar)
+        self.Constructor = ProvenanceConstructor
+        self.Constructor.add_constructor(None, ProvenanceConstructor.construct_scalar)
+        self.Constructor.add_constructor('tag:yaml.org,2002:bool', ProvenanceConstructor.construct_yaml_bool)
         self.Representer = EnvironmentRepresenter
 
     def get_filename(self):
@@ -66,7 +104,8 @@ class EsmToolsLoader(ruamel.yaml.YAML):
 
     def load(self, stream):
         self.set_filename(stream.name)
-        return super().load(stream)
+        mapping_with_tuple_prov = super().load(stream)
+        return mapping_with_tuple_prov
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):
@@ -113,7 +152,9 @@ def main():
 
     # Load the YAML file
     file_path = pathlib.Path(
-        "/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
+        #"example.yaml"
+        #"/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
+        "/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
     )
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
@@ -121,8 +162,19 @@ def main():
 
     # Access the parsed data
     print(data)
-    breakpoint()
+    #breakpoint()
     # Dump the file back to YAML
+
+#    comment_index = self.find_comments()
+#
+#    subprovenance = {}
+#    line = subdata.lc.line + 1
+#    source = self.filename
+#    for c, (key, val) in enumerate(subdata.items()):
+#        print(key, val, c)
+#        if not isinstance(val, list):
+#            subprovenance[key] = {"line": line+c, source}
+
     with open("parsed_output.yaml", "w") as file:
         esm_tools_loader.dump(data, file)
 

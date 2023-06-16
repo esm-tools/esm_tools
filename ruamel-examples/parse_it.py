@@ -93,7 +93,9 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         self.add_comments = True
         self.Constructor = ProvenanceConstructor
         self.Constructor.add_constructor(None, ProvenanceConstructor.construct_scalar)
-        self.Constructor.add_constructor('tag:yaml.org,2002:bool', ProvenanceConstructor.construct_yaml_bool)
+        self.Constructor.add_constructor(
+            "tag:yaml.org,2002:bool", ProvenanceConstructor.construct_yaml_bool
+        )
         self.Representer = EnvironmentRepresenter
 
     def get_filename(self):
@@ -153,8 +155,8 @@ def main():
     # Load the YAML file
     file_path = pathlib.Path(
         "example.yaml"
-        #"/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
-        #"/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
+        # "/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
+        # "/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
     )
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
@@ -162,18 +164,18 @@ def main():
 
     # Access the parsed data
     print(data)
-    #breakpoint()
+    # breakpoint()
     # Dump the file back to YAML
 
-#    comment_index = self.find_comments()
-#
-#    subprovenance = {}
-#    line = subdata.lc.line + 1
-#    source = self.filename
-#    for c, (key, val) in enumerate(subdata.items()):
-#        print(key, val, c)
-#        if not isinstance(val, list):
-#            subprovenance[key] = {"line": line+c, source}
+    #    comment_index = self.find_comments()
+    #
+    #    subprovenance = {}
+    #    line = subdata.lc.line + 1
+    #    source = self.filename
+    #    for c, (key, val) in enumerate(subdata.items()):
+    #        print(key, val, c)
+    #        if not isinstance(val, list):
+    #            subprovenance[key] = {"line": line+c, source}
 
     with open("parsed_output.yaml", "w") as file:
         esm_tools_loader.dump(data, file)

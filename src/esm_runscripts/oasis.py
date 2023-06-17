@@ -457,41 +457,38 @@ class oasis:
             if "ini_restart_dir" in config and "ini_restart_date" in config:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
-                glob_search_file = f"{config['ini_restart_dir']}{restart_file}_????????-"\
-                                  +f"{config['ini_restart_date'].year}"                 \
-                                  +f"{config['ini_restart_date'].month:02}"             \
-                                  +f"{config['ini_restart_date'].day:02}"
-                branchoff_restart_file = glob.glob(glob_search_file)
-                branchoff_restart_file.sort()
-                if branchoff_restart_file:
+                glob_search_file = (
+                    f"{config['ini_restart_dir']}{restart_file}_????????-"
+                    f"{config['ini_restart_date'].year}"
+                    f"{config['ini_restart_date'].month:02}"
+                    f"{config['ini_restart_date'].day:02}"
+                )
+                glob_restart_file = glob.glob(glob_search_file)
+                glob_restart_file.sort()
+                if restart_file:
                     # If there are more than one file found let the user decide which one to take
-                    if len(branchoff_restart_file) == 1:
-                        branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
+                    if len(glob_restart_file) == 1:
+                        restart_file = os.path.basename(glob_restart_file[0])
                     else:
                         if gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
                             # ask the user to select from the result list:
-                            message = "More than one OASIS restart file was found for "\
-                                     +"your branchoff experiment that matches the "    \
-                                     +"ini_restart_date you selected. Please select "  \
-                                     +"one of the following OASIS restart files:"      
+                            message = (
+                                "More than one OASIS restart file was found for "
+                                "your branchoff experiment that matches the "
+                                "ini_restart_date you selected. Please select "
+                                "one of the following OASIS restart files:"
+                            )
                             answers = questionary.form(
-                                restarts = questionary.select(message, choices=branchoff_restart_file)
+                                restarts = questionary.select(message, choices=glob_restart_file)
                             ).ask()
-                            branchoff_restart_file = os.path.basename(answers["restarts"])
-                else:
-                    # If no restart file found for this particular ini_restart_dir, use default file 'rstas.nc'
-                    branchoff_restart_file = restart_file
+                            restart_file = os.path.basename(answers["restarts"])
 
-                config["restart_in_sources"][restart_file] = branchoff_restart_file
-            else:
-                # In case it is an initial run, but oasis restart files should be taken
-                # from different source (e.g. pool) as defined e.g. in awicm3.yaml
-                if restart_file not in config["restart_in_sources"]:
-                    config["restart_in_sources"][restart_file] = restart_file
-        else:
-            if restart_file not in config["restart_in_sources"]:
                 config["restart_in_sources"][restart_file] = restart_file
+
+        if restart_file not in config["restart_in_sources"]:
+            config["restart_in_sources"][restart_file] = restart_file
+
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(

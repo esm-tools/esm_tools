@@ -409,7 +409,7 @@ class oasis:
         config = fconfig[self.name]
         gconfig = fconfig["general"]
         restart_file_label = restart_file
-        is_runtime = fconfig["general"]["run_or_compile"] == "run"
+        is_runtime = gconfig["run_or_compile"] == "runtime"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )

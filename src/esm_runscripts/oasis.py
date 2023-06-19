@@ -2,7 +2,9 @@ import sys
 import glob
 import os
 import subprocess
+import questionary
 
+from esm_parser import user_error
 
 class oasis:
     def __init__(
@@ -406,8 +408,8 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        # enddate = "_" + str(gconfig["end_date"].year) + str(gconfig["end_date"].month) + str(gconfig["end_date"].day)
-        # parentdate = "_" + str(config["parent_date"].year) + str(config["parent_date"].month) + str(config["parent_date"].day)
+        restart_file_label = restart_file
+        is_runtime = gconfig["run_or_compile"] == "runtime"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -444,43 +446,57 @@ class oasis:
         config["restart_in_in_work"][restart_file] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
-        # Not the last rstas.nc file of initial experiment, but for the actual
+        # Not the rstas.nc soft link to the last, but the actual one for the
         # branch-off date
         if gconfig["run_number"] == 1 and config["lresume"]:  # if branchoff experiment
-            # Check if ini_parent_* or ini_restart_* is used. To make sure ini_restart_*
-            # is always not empty, since I will continue to work with ini_restart_*  here.
-            # This is a bit contrary to prepare.py because there it only is taking care
-            # about the opposite case, if only ini_restart_* is set, than set ini_parent_*
-            # to the values of ini_restart_*. -> ini_parent_* is always present in config.
-            # ini_restart_dir seems to be always set, even if lresume for oasis is false.?
-            # -----------------------------------------------------------------------------
-            # The following 3 line can be removed, if we switch to only use ini_restart_*
+            # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
+            # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
                 config["ini_restart_date"] = config["ini_parent_date"]
+            if "ini_parent_dir" in config and "ini_restart_dir" not in config:
                 config["ini_restart_dir"] = config["ini_parent_dir"]
-            # -----------------------------------------------------------------------------
             # If set in config (oasis):
             if "ini_restart_dir" in config and "ini_restart_date" in config:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
-                glob_search_file = f"{config['ini_restart_dir']}{restart_file}_????????-{config['ini_restart_date'].year}{config['ini_restart_date'].month:02}{config['ini_restart_date'].day:02}"
-                branchoff_restart_file = glob.glob(glob_search_file)
-                # Note: What if there are more than one found?
-                if branchoff_restart_file:
-                    branchoff_restart_file = os.path.basename(branchoff_restart_file[0])
-                else:
-                    # If no restart file found for this particular ini_restart_dir, use default file 'rstas.nc'
-                    branchoff_restart_file = restart_file
+                glob_search_file = (
+                    f"{config['ini_restart_dir']}{restart_file}_????????-"
+                    f"{config['ini_restart_date'].year}"
+                    f"{config['ini_restart_date'].month:02}"
+                    f"{config['ini_restart_date'].day:02}"
+                )
+                glob_restart_file = glob.glob(glob_search_file)
+                glob_restart_file.sort()
+                if restart_file and is_runtime:
+                    # If there are more than one file found let the user decide which one to take
+                    if len(glob_restart_file) == 1:
+                        restart_file = os.path.basename(glob_restart_file[0])
+                    elif len(glob_restart_file) == 0:
+                        user_error(
+                            "Restart file missing",
+                            f"No OASIS restart file for ``{restart_file}`` found "
+                            f"matching the pattern ``{glob_search_file}``"
+                        )
+                    else:
+                        if gconfig["isinteractive"]:
+                            # If more than one restart file found that matches ini_restart_date,
+                            # ask the user to select from the result list:
+                            message = (
+                                "More than one OASIS restart file was found for "
+                                "your branchoff experiment that matches the "
+                                "ini_restart_date you selected. Please select "
+                                "one of the following OASIS restart files:"
+                            )
+                            answers = questionary.form(
+                                restarts = questionary.select(message, choices=glob_restart_file)
+                            ).ask()
+                            restart_file = os.path.basename(answers["restarts"])
 
-                config["restart_in_sources"][restart_file] = branchoff_restart_file
-            else:
-                # In case it is an initial run, but oasis restart files should be taken
-                # from different source (e.g. pool) as defined e.g. in awicm3.yaml
-                if restart_file not in config["restart_in_sources"]:
-                    config["restart_in_sources"][restart_file] = restart_file
-        else:
-            if restart_file not in config["restart_in_sources"]:
-                config["restart_in_sources"][restart_file] = restart_file
+                config["restart_in_sources"][restart_file_label] = restart_file
+
+        if restart_file not in config["restart_in_sources"]:
+            config["restart_in_sources"][restart_file_label] = restart_file
+
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(

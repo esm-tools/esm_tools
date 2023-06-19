@@ -8,18 +8,18 @@ general:
         
         # Wall time for the job
         # Should be longer than you think
-        compute_time: "00:30:00"
+        compute_time: "00:45:00"
         # What date do we start from
         initial_date: "1979-01-01T00:00:00"
         # When do we finish
-        final_date: "1979-01-06T00:00:00"
+        final_date: "1979-07-01T00:00:00"
         
         # How often do we restart
         # nyear:0, nmonth: 0, nday:5 means we restart each 5 days
         # nyear:0, nmonth: 1, nday:0 means we restart each month
         nyear: 0
-        nmonth: 0
-        nday: 5
+        nmonth: 1
+        nday: 0
         
         # Where is your model code (you dont need to change it)
         model_dir: ${homedir}/esm/models/oifs-43r3-v2/
@@ -27,10 +27,6 @@ general:
         # This should be on WORK or a link to WORK
         base_dir: ${homedir}/esm/esm-experiments/
         
-        # run post processing after each job
-        # * compress output to netCDF4 classic zip
-        # * compute annual mean (if job is at least 1 year)
-        #postprocessing: True 
 oifs:
         # General settings we dont need to change
         version: 43r3
@@ -167,5 +163,5 @@ xios:
         # Choose settings for model output
         # This already includes some common variables. If you are looking for something
         # specific, you can make your own settings file
-        xml_dir: ${oifs.pool_dir}/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
+        xml_dir: /gxfs_work1/geomar/smomw352/foci_input2/openifs_cy43_tco95/output_for_prod/
         nproc: 16

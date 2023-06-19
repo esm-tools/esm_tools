@@ -4,6 +4,8 @@ import os
 import subprocess
 import questionary
 
+from esm_parser import user_error
+
 class oasis:
     def __init__(
         self,
@@ -406,8 +408,8 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        # enddate = "_" + str(gconfig["end_date"].year) + str(gconfig["end_date"].month) + str(gconfig["end_date"].day)
-        # parentdate = "_" + str(config["parent_date"].year) + str(config["parent_date"].month) + str(config["parent_date"].day)
+        restart_file_label = restart_file
+        is_runtime = fconfig["general"]["run_or_compile"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -465,10 +467,16 @@ class oasis:
                 )
                 glob_restart_file = glob.glob(glob_search_file)
                 glob_restart_file.sort()
-                if restart_file:
+                if restart_file and is_runtime:
                     # If there are more than one file found let the user decide which one to take
                     if len(glob_restart_file) == 1:
                         restart_file = os.path.basename(glob_restart_file[0])
+                    elif len(glob_restart_file) == 0:
+                        user_error(
+                            "Restart file missing",
+                            f"No OASIS restart file for ``{restart_file}`` found "
+                            f"matching the pattern ``{glob_search_file}``"
+                        )
                     else:
                         if gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
@@ -484,10 +492,10 @@ class oasis:
                             ).ask()
                             restart_file = os.path.basename(answers["restarts"])
 
-                config["restart_in_sources"][restart_file] = restart_file
+                config["restart_in_sources"][restart_file_label] = restart_file
 
         if restart_file not in config["restart_in_sources"]:
-            config["restart_in_sources"][restart_file] = restart_file
+            config["restart_in_sources"][restart_file_label] = restart_file
 
 
     def prepare_restarts(self, restart_file, all_fields, models, config):

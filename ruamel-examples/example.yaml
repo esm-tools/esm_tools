@@ -1,4 +1,3 @@
-# Example YAML data
 person:
   name: Paul Gierz
   username: !ENV USER
@@ -17,3 +16,4 @@ person:
 
   my_bolean: True
   my_int: 12.1
+  my_int2: 42

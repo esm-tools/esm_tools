@@ -107,7 +107,53 @@ class EsmToolsLoader(ruamel.yaml.YAML):
     def load(self, stream):
         self.set_filename(stream.name)
         mapping_with_tuple_prov = super().load(stream)
-        return mapping_with_tuple_prov
+
+
+        def _extract_dict(tup, config=None, prov=False):
+            """
+            Iterative function to extract dictionary with or without provenance
+
+            Parameters
+            ----------
+            tup : tuple
+            config: dictionary holding either main config of provenance
+            prov: If main or provenance dict should be returned (True or False, default False)
+
+            Returns
+            -------
+            canfig: dictionary with or wihtout provenance
+
+            """
+            config = config if config else {}
+# unpack tuple
+            diction, (line,col) =  tup
+# check if diction is ruamel.yaml.comments.CommentedMap (of class dict)
+            if isinstance(diction, ruamel.yaml.comments.CommentedMap):
+                for (key,prov1),(value,prov2) in diction.items():
+                    if isinstance(value, ruamel.yaml.comments.CommentedMap):
+                        config[key] = _extract_dict((value,prov2), config, prov)
+                    elif isinstance(value, list):
+                        templist = []
+                        for (lkey,prov3) in value:
+                            if prov:
+                                templist.append(prov3)
+                            else:
+                                templist.append(lkey)
+                        config[key] = templist
+                    else:
+                        if prov:
+                            config[key] = prov1
+                        else:
+                            config[key] = value
+            else:
+                print("------------------------------------------------")
+            return (config)
+
+        mapping_with_tuple_prov1 = _extract_dict(mapping_with_tuple_prov)
+        #mapping_with_tuple_prov2 = _extract_dict(mapping_with_tuple_prov,prov=True)
+
+        #return (mapping_with_tuple_prov1, mapping_with_tuple_prov1)
+        return mapping_with_tuple_prov1
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):
@@ -140,7 +186,8 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                 # warnings.warn("Cannot add comment to data", data, comment)
                 print("Cannot add comment to data", data, comment)
         except:
-            print("nope")
+            pass
+            #print("nope")
 
     def dump(self, data, stream=None, **kw):
         if not self.add_comments:
@@ -155,6 +202,7 @@ def main():
     # Load the YAML file
     file_path = pathlib.Path(
         "example.yaml"
+        #"/home/nwieters/Modelling/esm_tools_sprint/esm_tools/configs/components/echam/echam.yaml"
         # "/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
         # "/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
     )
@@ -164,6 +212,7 @@ def main():
 
     # Access the parsed data
     print(data)
+    #print(data2)
     # breakpoint()
     # Dump the file back to YAML
 
@@ -179,6 +228,9 @@ def main():
 
     with open("parsed_output.yaml", "w") as file:
         esm_tools_loader.dump(data, file)
+
+  #  with open("parsed_output_with_prov.yaml", "w") as file2:
+  #      esm_tools_loader.dump(data2, file2)
 
 
 if __name__ == "__main__":

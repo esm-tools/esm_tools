@@ -1249,6 +1249,55 @@ class SimulationFileCollection(dict):
         return config
 
 
+    def gather_all_component_relevant_files(self, config):
+
+        filetypes = config["general"]["relevant_filetypes"]
+        all_relevant_files = {}
+
+        for filetype in filetypes:
+            for file_key, file_obj in self.items():
+                if file_obj["kind"] == filetype:
+                    all_relevant_files[file_key] = file_obj
+
+        return all_relevant_files
+
+
+    def gather_basic_relevant_file_info(self, config):
+
+            all_relevant_files = self.gather_all_component_relevant_files(config)
+            basic_file_info = {}
+
+            for component in config["general"]["valid_model_names"]:
+                component_files = {}
+
+                for file_key, file_obj in all_relevant_files.items():
+                    if file_obj["component"] == component:
+                        try:
+                            checksum = hashlib.md5(open(
+                                file_obj["dest"], "rb"
+                            ).read()).hexdigest()
+                        except FileNotFoundError as err:
+                            checksum = None
+
+                        component_files[file_key] = {
+                            "source": str(file_obj["src"]),
+                            "intermediate": file_obj["intermediate"],
+                            "target": str(file_obj["dest"]),
+                            "checksum": checksum,
+                            "kind": file_obj["kind"],
+                        }
+
+                        if config["general"].get("verbose", False):
+                            logger.info(f"::: logging file category: {filetype}")
+                            logger.info(f"- source: {files['src']}")
+                            logger.info(f"- target: {files['dest']}")
+                            helpers.print_datetime(config)
+
+                basic_file_info[component] = component_files
+
+            return basic_file_info
+
+
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     """
     Runs all methods required to get files into their correct locations. This will
@@ -1286,7 +1335,6 @@ def log_used_files(config: ConfigSetup) -> ConfigSetup:
     if config["general"].get("verbose", False):
         logger.info("\n::: Logging used files")
 
-    filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"].get("iterative_coupled_model", "")
     datestamp = config["general"]["run_datestamp"]
@@ -1294,39 +1342,12 @@ def log_used_files(config: ConfigSetup) -> ConfigSetup:
     flist_file = (
         f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
     )
-    all_files = {}
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
-        for filetype in filetypes:
-            model_config = config[model]
-            model_files = {}
-
-            for file_key, file_obj in model_config.get("files", {}).items():
-                try:
-                    checksum = hashlib.md5(open(
-                        file_obj["dest"], "rb"
-                    ).read()).hexdigest()
-                except FileNotFoundError as err:
-                    checksum = None
-
-                model_files[file_key] = {
-                    "source": str(file_obj["src"]),
-                    "intermediate": file_obj["intermediate"],
-                    "target": str(file_obj["dest"]),
-                    "checksum": checksum,
-                    "kind": filetype,
-                }
-
-                if config["general"].get("verbose", False):
-                    logger.info(f"::: logging file category: {filetype}")
-                    logger.info(f"- source: {files['src']}")
-                    logger.info(f"- target: {files['dest']}")
-                    helpers.print_datetime(config)
-
-            if model_files:
-                all_files[model] = model_files
+    sim_files = SimulationFileCollection.from_config(config)
+    relevant_files = sim_files.gather_basic_relevant_file_info(config)
 
     with open(flist_file, "w") as flist:
-        yaml.dump(all_files, flist)
+        yaml.dump(relevant_files, flist)
 
     return config
+

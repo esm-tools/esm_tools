@@ -12,6 +12,7 @@ import copy
 import functools
 import glob
 import inspect
+import hashlib
 import os
 import pathlib
 import shutil
@@ -1207,17 +1208,18 @@ class SimulationFileCollection(dict):
                 sim_files[file_key] = SimulationFile.from_config(
                     config, f"{config_address}.{file_key}"
                 )
+                sim_files[file_key]["component"] = component
         return sim_files
 
     def _gather_file_movements(self) -> None:
         """Puts the methods for each file movement into the dictionary as callable values behind the `_filesystem_op` key"""
         for sim_file_id, sim_file_obj in self.items():
-            movement_type = sim_file_obj.get("movement_type", "cp")
-            if movement_type == "mv":
+            movement_type = sim_file_obj.get("movement_type", "copy")
+            if movement_type == "move":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "mv")
-            elif movement_type == "cp":
+            elif movement_type == "copy":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "cp")
-            elif movement_type == "ln":
+            elif movement_type == "link":
                 self[sim_file_id]["_filesystem_op"] = getattr(sim_file_obj, "ln")
             else:
                 raise ValueError(
@@ -1231,13 +1233,69 @@ class SimulationFileCollection(dict):
         for sim_file_id, sim_file_obj in self.items():
             logger.info(f"Processing {sim_file_id}")
             if config["general"]["jobtype"] == "prepcompute":
-                src, dest = "pool", "work"
+                src, dest = "computer", "work"
             elif config["general"]["jobtype"] == "tidy":
                 src, dest = "work", "exp_tree"
             else:
                 raise ValueError(f"Incorrect jobtype specified for {sim_file_obj}")
             sim_file_obj["_filesystem_op"](src, dest)
+            config[sim_file_obj["component"]]["files"][sim_file_id]["src"] = (
+                sim_file_obj.paths[src]
+            )
+            config[sim_file_obj["component"]]["files"][sim_file_id]["intermediate"] = None
+            config[sim_file_obj["component"]]["files"][sim_file_id]["dest"] = (
+                sim_file_obj.paths[dest]
+            )
         return config
+
+
+    def gather_all_component_relevant_files(self, config):
+
+        filetypes = config["general"]["relevant_filetypes"]
+        all_relevant_files = {}
+
+        for filetype in filetypes:
+            for file_key, file_obj in self.items():
+                if file_obj["kind"] == filetype:
+                    all_relevant_files[file_key] = file_obj
+
+        return all_relevant_files
+
+
+    def gather_basic_relevant_file_info(self, config):
+
+            all_relevant_files = self.gather_all_component_relevant_files(config)
+            basic_file_info = {}
+
+            for component in config["general"]["valid_model_names"]:
+                component_files = {}
+
+                for file_key, file_obj in all_relevant_files.items():
+                    if file_obj["component"] == component:
+                        try:
+                            checksum = hashlib.md5(open(
+                                file_obj["dest"], "rb"
+                            ).read()).hexdigest()
+                        except FileNotFoundError as err:
+                            checksum = None
+
+                        component_files[file_key] = {
+                            "source": str(file_obj["src"]),
+                            "intermediate": file_obj["intermediate"],
+                            "target": str(file_obj["dest"]),
+                            "checksum": checksum,
+                            "kind": file_obj["kind"],
+                        }
+
+                        if config["general"].get("verbose", False):
+                            logger.info(f"::: logging file category: {filetype}")
+                            logger.info(f"- source: {files['src']}")
+                            logger.info(f"- target: {files['dest']}")
+                            helpers.print_datetime(config)
+
+                basic_file_info[component] = component_files
+
+            return basic_file_info
 
 
 def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
@@ -1258,3 +1316,38 @@ def resolve_file_movements(config: ConfigSetup) -> ConfigSetup:
     sim_file_collection = SimulationFileCollection.from_config(config)
     config = sim_file_collection.execute_filesystem_operation(config)
     return config
+
+
+def log_used_files(config: ConfigSetup) -> ConfigSetup:
+    """
+    Logs the files moved on this current phase.
+
+    Parameters
+    ----------
+    config : ConfigSetup
+        The complete simulation configuration.
+
+    Returns
+    -------
+    config : ConfigSetup
+        The complete simulation configuration, potentially modified.
+    """
+    if config["general"].get("verbose", False):
+        logger.info("\n::: Logging used files")
+
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"].get("iterative_coupled_model", "")
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    flist_file = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
+    )
+
+    sim_files = SimulationFileCollection.from_config(config)
+    relevant_files = sim_files.gather_basic_relevant_file_info(config)
+
+    with open(flist_file, "w") as flist:
+        yaml.dump(relevant_files, flist)
+
+    return config
+

@@ -1115,3 +1115,63 @@ def test_globbing_ln(fs):
 
     for nf in expected_new_paths:
         assert os.path.exists(nf)
+
+
+def test_file_log(fs):
+    """Checks that the file log is produced correctly"""
+    dummy_config = """
+    general:
+        expid: expid
+        base_dir: /some/dummy/location/
+        thisrun_work_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/work"
+        thisrun_log_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231/log"
+        exp_dir: "/work/ollie/pgierz/some_exp"
+        thisrun_dir: "/work/ollie/pgierz/some_exp/run_20010101-20011231"
+        all_model_filetypes: [analysis, bin, config, forcing, input, couple, log, mon, outdata, restart, viz, ignore]
+        jobtype: "prepcompute"
+        valid_model_names: ["echam"]
+        relevant_filetypes: ["input"]
+        run_datestamp: "20010101-20011231"
+    computer:
+        pool_dir: "/work/ollie/pool"
+    echam:
+        experiment_input_dir: /work/ollie/pgierz/some_exp/input/echam
+        thisrun_input_dir: /work/ollie/pgierz/some_exp/run_20010101-20011231/input/echam
+        files:
+            human_readable_tag_001:
+                kind: input
+                allowed_to_be_missing: True
+                name_in_computer: foo
+                path_in_computer: /work/data/pool
+                name_in_work: foo
+                path_in_work: .
+                movement_type: move
+    """
+
+    check_log_file = """ \
+echam:
+    human_readable_tag_001:
+        checksum: d41d8cd98f00b204e9800998ecf8427e
+        intermediate: null
+        source: /work/data/pool/foo
+        target: /work/ollie/pgierz/some_exp/run_20010101-20011231/work/foo
+        kind: input
+    """
+    date = esm_calendar.Date("2000-01-01T00:00:00")
+    config = yaml.safe_load(dummy_config)
+    config["general"]["current_date"] = date
+    fs.create_dir("/work/data/pool")
+    fs.create_file("/work/data/pool/foo")
+    fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20011231/work")
+    fs.create_dir("/work/ollie/pgierz/some_exp/run_20010101-20011231/log")
+
+    sim_files = esm_runscripts.filedicts.SimulationFileCollection.from_config(
+        config
+    )
+    config = sim_files.execute_filesystem_operation(config)
+
+    esm_runscripts.filedicts.log_used_files(config)
+
+    log_file = open("/work/ollie/pgierz/some_exp/run_20010101-20011231/log/expid_filelist_20010101-20011231.yaml", "r").read()
+
+    assert log_file==yaml.dump(yaml.safe_load(check_log_file))

@@ -66,6 +66,7 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
+        - '2.5'
 
         choose_version:
           '2.1':
@@ -85,6 +86,10 @@ general:
             - recom
             fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
             with_recom: true
+          '2.5':
+            couplings:
+            - fesom-2.5+echam-6.3.05p2
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
 
         with_wiso: false
         with_pico: false

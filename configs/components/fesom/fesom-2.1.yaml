@@ -30,6 +30,11 @@ choose_version:
     destination: "fesom-2.1"
     wiso_code: true
     icb_code: true
+  2.5-awiesm-2.5:
+    branch: "2.5-awiesm-2.5"
+    destination: "fesom-2.5"
+    wiso_code: true
+    icb_code: true
   2.1-wiso:
     branch: wiso
     wiso_code: true

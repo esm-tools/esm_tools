@@ -478,7 +478,7 @@ class oasis:
                             f"matching the pattern ``{glob_search_file}``"
                         )
                     else:
-                        if gconfig["isinteractive"]:
+                        if not gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
                             # ask the user to select from the result list:
                             message = (

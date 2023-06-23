@@ -106,54 +106,38 @@ class EsmToolsLoader(ruamel.yaml.YAML):
 
     def load(self, stream):
         self.set_filename(stream.name)
-        mapping_with_tuple_prov = super().load(stream)
+        mapping_with_tuple_prov = super().load(stream)[0]
+
+        def _extract_dict(mapping_with_prov):
+            config = { }
+            config_prov = { }
+            for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
+                new_key = key
+                if isinstance(value, dict):
+                    config[new_key], config_prov[new_key] = _extract_dict(value)
+                elif isinstance(value, list):
+                    config[new_key] = []
+                    config_prov[new_key] = []
+                    for (lkey,lkey_prov) in value:
+                        prov = { }
+                        prov['line'], prov['col'] = lkey_prov
+                        prov['yaml_file'] = 'from.yaml'
+                        #prov['line'], prov['col'], prov['yaml_file'] = lkey_prov
+                        config_prov[new_key].append(prov)
+                        config[new_key].append(lkey)
+                else:
+                    prov = { }
+                    prov['line'], prov['col'] = value_prov
+                    prov['yaml_file'] = 'from.yaml'
+                    #prov['line'], prov['col'], prov['yaml_file'] = value_prov
+                    config_prov[new_key] = prov
+                    config[new_key] = value
+            return (config, config_prov)
 
 
-        def _extract_dict(tup, config=None, prov=False):
-            """
-            Iterative function to extract dictionary with or without provenance
+        normal_config, provenance = _extract_dict(mapping_with_tuple_prov)
 
-            Parameters
-            ----------
-            tup : tuple
-            config: dictionary holding either main config of provenance
-            prov: If main or provenance dict should be returned (True or False, default False)
-
-            Returns
-            -------
-            canfig: dictionary with or wihtout provenance
-
-            """
-            config = config if config else {}
-# unpack tuple
-            diction, (line,col) =  tup
-# check if diction is ruamel.yaml.comments.CommentedMap (of class dict)
-            if isinstance(diction, ruamel.yaml.comments.CommentedMap):
-                for (key,prov1),(value,prov2) in diction.items():
-                    if isinstance(value, ruamel.yaml.comments.CommentedMap):
-                        config[key] = _extract_dict((value,prov2), config, prov)
-                    elif isinstance(value, list):
-                        templist = []
-                        for (lkey,prov3) in value:
-                            if prov:
-                                templist.append(prov3)
-                            else:
-                                templist.append(lkey)
-                        config[key] = templist
-                    else:
-                        if prov:
-                            config[key] = prov1
-                        else:
-                            config[key] = value
-            else:
-                print("------------------------------------------------")
-            return (config)
-
-        mapping_with_tuple_prov1 = _extract_dict(mapping_with_tuple_prov)
-        #mapping_with_tuple_prov2 = _extract_dict(mapping_with_tuple_prov,prov=True)
-
-        #return (mapping_with_tuple_prov1, mapping_with_tuple_prov1)
-        return mapping_with_tuple_prov1
+        return (normal_config, provenance)
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):
@@ -202,17 +186,18 @@ def main():
     # Load the YAML file
     file_path = pathlib.Path(
         "example.yaml"
+        #"/home/nwieters/Modelling/esm_tools_sprint/esm_tools/configs/components/fesom/fesom-2.0.yaml"
         #"/home/nwieters/Modelling/esm_tools_sprint/esm_tools/configs/components/echam/echam.yaml"
         # "/Users/pgierz/Code/github.com/esm-tools/esm_tools/ruamel-examples/configs/components/echam/echam.yaml"
         # "/Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml"
     )
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
-        data = esm_tools_loader.load(file)
+        data, data2 = esm_tools_loader.load(file)
 
     # Access the parsed data
     print(data)
-    #print(data2)
+    print(data2)
     # breakpoint()
     # Dump the file back to YAML
 
@@ -229,8 +214,8 @@ def main():
     with open("parsed_output.yaml", "w") as file:
         esm_tools_loader.dump(data, file)
 
-  #  with open("parsed_output_with_prov.yaml", "w") as file2:
-  #      esm_tools_loader.dump(data2, file2)
+    with open("parsed_output_with_prov.yaml", "w") as file2:
+        esm_tools_loader.dump(data2, file2)
 
 
 if __name__ == "__main__":

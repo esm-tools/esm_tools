@@ -448,7 +448,7 @@ class oasis:
         # In case of a branch-off experiment -> use the correct oasis restart files:
         # Not the rstas.nc soft link to the last, but the actual one for the
         # branch-off date
-        if gconfig["run_number"] == 1 and config["lresume"]:  # if branchoff experiment
+        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute":
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
@@ -478,7 +478,7 @@ class oasis:
                             f"matching the pattern ``{glob_search_file}``"
                         )
                     else:
-                        if gconfig["isinteractive"]:
+                        if not gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,
                             # ask the user to select from the result list:
                             message = (

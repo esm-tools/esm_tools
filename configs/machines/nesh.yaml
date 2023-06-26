@@ -69,6 +69,7 @@ iolibraries: geomar_libs
 # for all compiler and I/O settings
 module_actions:
    - "load cmake"
+   - "load git git-lfs" 
 
 export_vars:
    LC_ALL: en_US.UTF-8

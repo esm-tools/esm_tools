@@ -112,32 +112,35 @@ class EsmToolsLoader(ruamel.yaml.YAML):
             config = { }
             config_prov = { }
             for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
-                new_key = key
                 if isinstance(value, dict):
-                    config[new_key], config_prov[new_key] = _extract_dict(value)
+                    config[key], config_prov[key] = _extract_dict(value)
                 elif isinstance(value, list):
-                    config[new_key] = []
-                    config_prov[new_key] = []
-                    for (lkey,lkey_prov) in value:
+                    config[key] = []
+                    config_prov[key] = []
+                    for (elem,elem_prov) in value:
                         prov = { }
-                        prov['line'], prov['col'] = lkey_prov
+                        prov['line'], prov['col'] = elem_prov
                         prov['yaml_file'] = 'from.yaml'
                         #prov['line'], prov['col'], prov['yaml_file'] = lkey_prov
-                        config_prov[new_key].append(prov)
-                        config[new_key].append(lkey)
+                        if isinstance(elem, dict):
+                            config[key].append(_extract_dict(elem)[0])
+                            config_prov[key].append(_extract_dict(elem)[1])
+                        else:
+                            config_prov[key].append(prov)
+                            config[key].append(elem)
                 else:
                     prov = { }
                     prov['line'], prov['col'] = value_prov
                     prov['yaml_file'] = 'from.yaml'
                     #prov['line'], prov['col'], prov['yaml_file'] = value_prov
-                    config_prov[new_key] = prov
-                    config[new_key] = value
+                    config_prov[key] = prov
+                    config[key] = value
             return (config, config_prov)
 
 
-        normal_config, provenance = _extract_dict(mapping_with_tuple_prov)
+        config, provenance = _extract_dict(mapping_with_tuple_prov)
 
-        return (normal_config, provenance)
+        return (config, provenance)
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):
@@ -197,7 +200,7 @@ def main():
 
     # Access the parsed data
     print(data)
-    print(data2)
+    #print(data2)
     # breakpoint()
     # Dump the file back to YAML
 

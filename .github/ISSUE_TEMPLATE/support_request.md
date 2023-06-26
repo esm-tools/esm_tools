@@ -21,7 +21,7 @@ If applicable, add screenshots to help explain your problem.
 
 **System (please complete the following information):**
  - Supercomputer: [which machine you are on]
- - Version [Please run `esm_versions check`]
+ - Version [Please run `esm_tools --version`]
 
 
 **Additional context**

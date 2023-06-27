@@ -3,9 +3,13 @@ import re
 import sys
 
 import yaml
+import ruamel.yaml
+from ruamel.yaml import RoundTripConstructor
+from ruamel.yaml.nodes import ScalarNode
 from loguru import logger
 
 import esm_parser
+#from esm_parser import parse_it
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
 
@@ -145,6 +149,154 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
+class EnvironmentConstructor(RoundTripConstructor):
+    """This class is used to replace the !ENV tag with the value of the environment variable."""
+
+    def construct_scalar(self, node):
+        if isinstance(node, ScalarNode) and node.tag == "!ENV":
+            env_variable = node.value
+            if env_variable in os.environ:
+                # NOTE(PG): This will **always** give you back a string. Have a look in
+                # the handbook:
+                #
+                # https://docs.python.org/3/library/os.html#os.environ
+                rval = os.environ[env_variable]
+                return rval
+            else:
+                raise ValueError(f"Environment variable {env_variable} not found")
+        rval = super().construct_scalar(node)
+
+        return rval
+
+
+class ProvenanceConstructor(EnvironmentConstructor):
+    """
+    Subclasses the ``EnvironmentConstructor`` to, instead of returning only a ``data``
+    returning a ``tuple`` where the element 0 is the ``data`` itself and the following
+    elements are the provenance values (1 -> line number, 2 -> column). The resulting
+    dictionary contains keys that are ``tuples`` and ``values`` that are tuples. This
+    can then be separated into two equivalent dictionaries, one with the "real" values
+    and another one with the values of the provenance.
+    """
+
+    def construct_object(self, node, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        node : node object
+            The node containing all the information about the yaml element
+
+        Returns
+        -------
+        data : any
+            The "real" value as interpreted from the parent yaml constructor
+        provenance : tuple
+            provenance[0]: line number
+            provenance[1]: column number
+            provenance[2]: file name
+            provenance[3]: file category
+        """
+
+        data = super().construct_object(node, *args, **kwargs)
+
+        # Todo: How to find out if category is a user runscript?
+        categories = ["runscripts", "components", "couplings", "defaults", "esm_software", "machines", "other_software", "setups", "spack_envs"]
+        yaml_file_path = os.path.abspath(node.start_mark.name)
+        category = None
+
+        # Chek if yaml file is coming from esm_tools own runscripts or configs folder.
+        if "/esm_tools/configs/" in yaml_file_path:
+            substring = yaml_file_path.split("/configs/")[-1]
+            category = substring[0:substring.find("/")]
+        elif "esm_tools/runscripts/" in yaml_file_path:
+            category = "runscripts"
+
+        if category not in categories:
+            category = str(None)
+        # If None, is it always a user defined yaml file?
+
+        provenance = (
+            node.start_mark.line,
+            node.start_mark.column,
+            yaml_file_path,
+            category,
+        )
+
+        return (data, provenance)
+
+
+class EnvironmentRepresenter(ruamel.yaml.RoundTripRepresenter):
+    """When dumping, this class is used to remove the !ENV tag from a particular value."""
+
+    def represent_scalar(self, tag, value, style=None, anchor=None):
+        type_tags = {
+            "int": f"tag:{YAML_SPEC_TAG}:int",
+            "float": f"tag:{YAML_SPEC_TAG}:float",
+            "bool": f"tag:{YAML_SPEC_TAG}:bool",
+            "str": f"tag:{YAML_SPEC_TAG}:str",
+        }
+        if tag == "!ENV":
+            type_tag = type(value).__name__
+            actual_type = type_tags[type_tag]
+            return super().represent_scalar(actual_type, value, style, anchor=anchor)
+        return super().represent_scalar(tag, value, style, anchor=anchor)
+
+
+
+
+class EsmToolsLoader(ruamel.yaml.YAML):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filename = None
+        self.add_comments = True
+        self.Constructor = ProvenanceConstructor
+        self.Constructor.add_constructor(None, ProvenanceConstructor.construct_scalar)
+        self.Constructor.add_constructor(
+            "tag:yaml.org,2002:bool", ProvenanceConstructor.construct_yaml_bool
+        )
+        self.Representer = EnvironmentRepresenter
+
+    def get_filename(self):
+        return self.filename
+
+    def set_filename(self, filename):
+        self.filename = filename
+
+    def load(self, stream):
+        self.set_filename(stream.name)
+        mapping_with_tuple_prov = super().load(stream)[0]
+
+        def _extract_dict(mapping_with_prov):
+            config = { }
+            config_prov = { }
+            for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
+                if isinstance(value, dict):
+                    config[key], config_prov[key] = _extract_dict(value)
+                elif isinstance(value, list):
+                    config[key] = []
+                    config_prov[key] = []
+                    for (elem,elem_prov) in value:
+                        prov = { }
+                        prov["line"], prov["col"], prov["yaml_file"], prov["category"] = elem_prov
+                        if isinstance(elem, dict):
+                            config[key].append(_extract_dict(elem)[0])
+                            config_prov[key].append(_extract_dict(elem)[1])
+                        else:
+                            config_prov[key].append(prov)
+                            config[key].append(elem)
+                else:
+                    prov = { }
+                    prov["line"], prov["col"], prov["yaml_file"], prov["category"] = value_prov
+                    config_prov[key] = prov
+                    config[key] = value
+            return (config, config_prov)
+
+
+        config, provenance = _extract_dict(mapping_with_tuple_prov)
+
+        return (config, provenance)
+
+
 def yaml_file_to_dict(filepath):
     """
     Given a yaml file, returns a corresponding dictionary.
@@ -169,6 +321,7 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
+
     loader = create_env_loader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:

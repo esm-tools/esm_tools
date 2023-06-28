@@ -8,6 +8,8 @@ from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 from loguru import logger
 
+from .provenance import *
+
 import esm_parser
 #from esm_parser import parse_it
 
@@ -346,9 +348,11 @@ def yaml_file_to_dict(filepath):
                     yaml_load["computer"]["runtime_environment_changes"][
                         "add_export_vars"
                     ] = add_export_vars
-                # Check for empty components/models
-                # check_for_empty_components(yaml_load, filepath + extension)
-                return yaml_load
+
+            yaml_load = DictWithProvenance(yaml_load, {"filepath": filepath})
+
+            return yaml_load
+
         except IOError as error:
             logger.debug(
                 f"IOError ({error.errno}): File not found with {filepath+extension}, trying another extension pattern."

@@ -199,21 +199,15 @@ class ProvenanceConstructor(EnvironmentConstructor):
 
         data = super().construct_object(node, *args, **kwargs)
 
-        # Todo: How to find out if category is a user runscript?
-        categories = ["runscripts", "components", "couplings", "defaults", "esm_software", "machines", "other_software", "setups", "spack_envs"]
         yaml_file_path = os.path.abspath(node.start_mark.name)
-        category = None
-
-        # Chek if yaml file is coming from esm_tools own runscripts or configs folder.
-        if "/esm_tools/configs/" in yaml_file_path:
-            substring = yaml_file_path.split("/configs/")[-1]
-            category = substring[0:substring.find("/")]
-        elif "esm_tools/runscripts/" in yaml_file_path:
-            category = "runscripts"
-
-        if category not in categories:
-            category = str(None)
-        # If None, is it always a user defined yaml file?
+        categories = ["runscripts", "components", "couplings", "defaults", "esm_software", "machines", "other_software", "setups", "spack_envs"]
+        for category in categories:
+            if category in yaml_file_path:
+                category = category
+            else:
+                category = None
+        # Todo: How to find out if category is a user runscript?
+        #       If None -> always user runscript?
 
         provenance = (
             node.start_mark.line,

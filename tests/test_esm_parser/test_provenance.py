@@ -120,3 +120,22 @@ def test_get_provenance_6():
         True: None,
     }
     assert config.get_provenance() == check_provenance
+
+# Test 7 (reset the provenance of a leaf)
+def test_get_provenance_7():
+    config_fesom = provenance.DictWithProvenance({"fesom": {"update_test": True}}, "new_provenance")
+
+    config["fesom"].update(config_fesom["fesom"])
+
+    check_provenance = {
+        "echam": {
+            "type": "a_string",
+            "files": {
+                "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
+            },
+        },
+        "fesom": {"asd": 2, "model": 2, "update_test": "new_provenance"},
+        "computer": None,
+        True: None,
+    }
+    assert config.get_provenance() == check_provenance

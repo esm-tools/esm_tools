@@ -6,4 +6,5 @@ __version__ = "6.21.19"
 
 
 from .esm_parser import *
+from .provenance import *
 from .yaml_to_dict import yaml_file_to_dict

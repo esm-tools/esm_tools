@@ -144,7 +144,7 @@ class oasis:
             allpres = [allpres]
         for pre in allpres:
             detail_line = ""
-            if type(pre) == dict:
+            if isinstance(pre, dict):
                 pre = list(pre.keys())[0]
             if pre.lower() == "checkin":
                 trafo_line += " CHECKIN"

@@ -87,6 +87,7 @@ import yaml
 
 # functions reading in dict from file
 from .yaml_to_dict import *
+from .provenance import *
 
 # Date class
 from esm_calendar import Date
@@ -591,7 +592,7 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
             new_dict_merge(dct[k], merge_dct[k], winner)
         else:
             if not (winner == "receiving" and k in dct):
-                dct[k] = merge_dct[k]
+                assign_key_val_with_provenance(dct, merge_dct, k)
 
 
 def new_deep_update(
@@ -680,9 +681,9 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             # is empty and protection is requested
             if k in dct:
                 if dct[k] and not merge_dct[k] and dont_overwrite_with_empty_value:
-                    merge_dct[k] = dct[k]
+                    assign_key_val_with_provenance(merge_dct, dct, k)
 
-            dct[k] = merge_dct[k]
+            assign_key_val_with_provenance(dct, merge_dct, k)
 
 
 def deep_update(chapter, entries, config, blackdict={}):
@@ -837,7 +838,7 @@ def add_entries_from_chapter(config, add_chapter, add_entries):
         if type(config[add_chapter]) == list:
             for entry in my_entries:
                 config[add_chapter].append(entry)
-        elif type(config[add_chapter]) == dict:
+        elif isinstance(config[add_chapter], dict):
             # MA: I'm not supper happy about the resolve_nested_adds implementation
             dict_merge(
                 config[add_chapter],
@@ -1133,7 +1134,7 @@ def merge_dicts(*dict_args):
     -------
     A merged dictionary (shallow).
     """
-    result = {}
+    result = {} #DictWithProvenance({}, {"provenance": None})
     for dictionary in dict_args:
         result.update(dictionary)
     return result
@@ -1745,11 +1746,11 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
     if level == "mappings":
-        do_func_for = [dict, list]
+        do_func_for = [dict, list, DictWithProvenance]
     elif level == "atomic":
         do_func_for = [str, int, float, Date]
     elif level == "always":
-        do_func_for = [str, dict, list, int, float, bool]
+        do_func_for = [str, dict, list, int, float, bool, DictWithProvenance]
     elif level == "keys":
         do_func_for = []
     else:

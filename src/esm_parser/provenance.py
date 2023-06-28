@@ -1,3 +1,5 @@
+import esm_parser
+
 class DictWithProvenance(dict):
     """
     A dictionary subclass that contains a ``provenance`` attribute. This attribute is
@@ -63,6 +65,8 @@ class DictWithProvenance(dict):
         provenance_dict = dict_with_provenance.get_provenance()
     """
 
+#    last_leaf_provenance = None
+
     def __init__(self, dictionary, provenance):
         """
         Instanciates the ``dictionary`` as an object of ``DictWithProvenance`` and
@@ -78,7 +82,6 @@ class DictWithProvenance(dict):
         """
 
         super().__init__(dictionary)
-
         self.provenance = {}
         self.set_provenance(provenance)
 
@@ -107,6 +110,7 @@ class DictWithProvenance(dict):
                 dictionary[key] = val
                 dictionary.provenance[key] = provenance
 
+
     def get_provenance(self, dictionary=None):
         """
         Returns a ``dictionary`` containing the all the nested provenance information
@@ -130,18 +134,20 @@ class DictWithProvenance(dict):
         """
 
         provenance_dict = {}
-        if not dictionary:
+        if dictionary is None:
             dictionary = self
 
         for key, val in dictionary.items():
             if isinstance(val, dict):
                 provenance_dict[key] = self.get_provenance(val)
+            elif hasattr(dictionary, "provenance"):
+                provenance_dict[key] = dictionary.provenance.get(key)
             else:
-                provenance_dict[key] = dictionary.provenance[key]
+                provenance_dict[key] = None
 
         return provenance_dict
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key, val, *args, **kwargs):
         """
         Rewrites the ``dict.__setitem__`` method (used for example in when defining a
         `key's value` ``my_dict[key] = val``) to additionally inherit the provenance of
@@ -183,14 +189,58 @@ class DictWithProvenance(dict):
         # standard ``__setitem__`` method from ``dict`` because that preserves all
         # object's methods and properties
         if isinstance(val, DictWithProvenance):
-            return super().__setitem__(key, val)
+            return super().__setitem__(key, val, *args, **kwargs)
         # If ``val`` is a ``dict`` but not a ``DictWithProvenance`` set the ``val``
         # as an instance of ``DictWithProvenance`` setting the ``provenance`` as
         # ``None``
-        elif isinstance(val, dict):
-            return super().__setitem__(key, DictWithProvenance(val, provenance=None))
+        #elif isinstance(val, dict):
+        #    return super().__setitem__(key, DictWithProvenance(val, provenance=None))
         # If the ``val`` is not a ``dict`` (it's a leaf of the dictionary tree) defines
         # ``self.provenance[key]`` as ``None``
         else:
-            self.provenance[key] = None
-            return super().__setitem__(key, val)
+            if key not in self.provenance:
+                self.provenance[key] = None
+            return super().__setitem__(key, val, *args, **kwargs)
+
+#        self.set_last_leaf_provenance(None)
+#
+#    def __getitem__(self, key, *args, **kwargs):
+#        self.set_last_leaf_provenance(self.provenance.get(key))
+#
+#        return super().__getitem__(key, *args, **kwargs)
+#   
+#    def set_last_leaf_provenance(self, provenance):
+#        DictWithProvenance.last_leaf_provenance = provenance
+
+
+    def __delitem__(self, key, *args, **kwargs):
+
+        if isinstance(self, DictWithProvenance) and not isinstance(self[key], dict):
+            del self.provenance[key]
+
+        super().__delitem__(key, *args, **kwargs)
+
+    def update(self, dictionary, *args, **kwargs):
+        super().update(dictionary, *args, **kwargs)
+
+        for key, val in dictionary.items():
+            if isinstance(dictionary, DictWithProvenance) and not isinstance(val, dict):
+                self.provenance[key] = dictionary.provenance.get(key)
+
+
+def assign_key_val_with_provenance(target_dict, source_dict, key):
+
+    if not isinstance(target_dict, dict) or not isinstance(source_dict, dict):
+        raise TypeError(
+            "This function only takes dictionationaries or dictionary subclasses as "
+            "first and second input!"
+        )
+
+    # Update the provenane
+    if isinstance(target_dict, DictWithProvenance) and isinstance(source_dict, DictWithProvenance):
+        target_dict.provenance[key] = source_dict.provenance.get(key)
+    elif isinstance(target_dict, DictWithProvenance):
+        target_dict.provenance[key] = None
+
+    # The regular functionality
+    target_dict[key] = source_dict[key]

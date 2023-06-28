@@ -1,7 +1,11 @@
 """
     Unit tests for the new provenance feature
 """
+import os
 import esm_parser.provenance as provenance
+import pathlib
+import esm_parser
+from esm_parser import yaml_to_dict
 
 config_dict = {
     "echam": {
@@ -17,6 +21,7 @@ my_provenance = {
     "type": None,
 }
 config = provenance.DictWithProvenance(config_dict, my_provenance)
+
 
 # Test 1 (should give you a provenance of None for the key ["fesom"]["asd"])
 def test_get_provenance_1():
@@ -35,6 +40,7 @@ def test_get_provenance_1():
     }
     assert config.get_provenance() == check_provenance
 
+
 # Test 2 (should give you a provenance of None for the key "computer")
 def test_get_provenance_2():
     config["computer"] = 0
@@ -52,6 +58,7 @@ def test_get_provenance_2():
         "computer": None,
     }
     assert config.get_provenance() == check_provenance
+
 
 # Test 3 (should give you a provenance of 2 for the leaf keys inside "fesom")
 def test_get_provenance_3():
@@ -72,6 +79,7 @@ def test_get_provenance_3():
     }
     assert config.get_provenance() == check_provenance
 
+
 # Test 4 (should give you a provenance of None for the key True)
 def test_get_provenance_4():
     config[True] = "boolean"
@@ -91,6 +99,7 @@ def test_get_provenance_4():
     }
     assert config.get_provenance() == check_provenance
 
+
 # Test 5 (reset the provenance of all ``echam`` leaves to "a_string")
 def test_get_provenance_5():
     config["echam"].set_provenance("a_string")
@@ -104,6 +113,7 @@ def test_get_provenance_5():
         True: None,
     }
     assert config.get_provenance() == check_provenance
+
 
 # Test 6 (reset the provenance of a leaf)
 def test_get_provenance_6():
@@ -120,3 +130,136 @@ def test_get_provenance_6():
         True: None,
     }
     assert config.get_provenance() == check_provenance
+
+
+def test_extract_dict():
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    file_path = pathlib.Path("example.yaml")
+    config = {
+            'person': {
+                'name': 'Paul Gierz',
+                'username': 'nwieters',
+                'a_string': ' hello world I am here to make your life impossible ',
+                'my_var': 'MY_VAR',
+                'my_other_var': ['a', 'b', 'c'],
+                'my_other_list': ['a', 'b', 'c'],
+                'my_bolean': True,
+                'my_int': 12.1,
+                'my_int2': 42,
+                'list_with_dict_inside': [1, 2, {
+                    'my_dict': {
+                        'foo': [1, 2, {
+                            'my_dict': {
+                                'foo': 'bar'}
+                            }]
+                    }
+                }]
+            }
+    }
+
+    with open(file_path, "r") as file:
+        esm_tools_loader.set_filename(file_path)
+        data, data2 = esm_tools_loader.load(file)
+
+    assert data == config
+
+
+def test_extract_provenance():
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    file_path = pathlib.Path("example.yaml")
+    file_path = os.path.abspath(file_path)
+    provenance = {
+            'person': {
+                'name': {
+                    'line': 1,
+                    'col': 8,
+                    'yaml_file': file_path,
+                    'category': 'None'},
+                'username': {
+                    'line': 2,
+                    'col': 12,
+                    'yaml_file': file_path,
+                    'category': 'None'},
+                'a_string': {
+                    'line': 3,
+                    'col': 12,
+                    'yaml_file': file_path,
+                    'category': 'None'},
+                'my_var': {
+                    'line': 8,
+                    'col': 10,
+                    'yaml_file': file_path,
+                    'category': 'None'},
+                'my_other_var': [{
+                    'line': 10,
+                    'col': 8,
+                    'yaml_file': file_path,
+                    'category': 'None'}, {
+                        'line': 12,
+                        'col': 8,
+                        'yaml_file': file_path,
+                        'category': 'None'}, {
+                        'line': 13,
+                        'col': 8,
+                        'yaml_file': file_path,
+                        'category': 'None'}],
+                'my_other_list': [{
+                    'line': 14,
+                    'col': 18,
+                    'yaml_file': file_path,
+                    'category': 'None'}, {
+                        'line': 14,
+                        'col': 21,
+                        'yaml_file': file_path,
+                        'category': 'None'}, {
+                        'line': 14,
+                        'col': 24,
+                        'yaml_file': file_path,
+                        'category': 'None'}],
+                'my_bolean': {
+                        'line': 16,
+                        'col': 13,
+                        'yaml_file': file_path,
+                        'category': 'None'},
+                'my_int': {
+                        'line': 17,
+                        'col': 10,
+                        'yaml_file': file_path,
+                        'category': 'None'},
+                'my_int2': {
+                        'line': 18,
+                        'col': 11,
+                        'yaml_file': file_path,
+                        'category': 'None'},
+                'list_with_dict_inside': [{
+                    'line': 20,
+                    'col': 4,
+                    'yaml_file': file_path,
+                    'category': 'None'}, {
+                        'line': 21,
+                        'col': 4,
+                        'yaml_file': file_path,
+                        'category': 'None'}, {
+                        'my_dict': {
+                            'foo': [{
+                                'line': 24,
+                                'col': 10,
+                                'yaml_file': file_path,
+                                'category': 'None'}, {
+                                    'line': 25,
+                                    'col': 10,
+                                    'yaml_file': file_path,
+                                    'category': 'None'}, {
+                                    'my_dict': {
+                                        'foo': {
+                                            'line': 27,
+                                            'col': 17,
+                                            'yaml_file': file_path,
+                                            'category': 'None'}
+                                    }}]}}]}}
+
+    with open(file_path, "r") as file:
+        esm_tools_loader.set_filename(file_path)
+        data, data2 = esm_tools_loader.load(file)
+
+    assert data2 == provenance

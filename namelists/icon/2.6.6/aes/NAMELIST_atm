@@ -1,0 +1,256 @@
+!
+&parallel_nml
+ nproma           = 32
+ nproma_sub       = 8000
+/
+&grid_nml
+ dynamics_grid_filename = 'icon_grid_0005_R02B04_G.nc'
+/
+&run_nml
+ num_lev          = 47          ! number of full levels
+ modelTimeStep    = "PT4M"
+ ltestcase        = .FALSE.     ! run testcase
+ ldynamics        = .TRUE.      ! dynamics
+ ltransport       = .TRUE.      ! transport
+ iforcing         = 2           ! 0: none, 1: HS, 2: ECHAM, 3: NWP
+ output           = 'nml'
+ msg_level        = 15          ! level of details report during integration 
+ restart_filename = "ICON_restart_atm_<rsttime>.mfr"
+ activate_sync_timers = .TRUE.
+/
+&extpar_nml
+ itopo            = 1           ! 1: read topography from the grid file
+ itype_lwemiss    = 0
+/
+&initicon_nml
+ init_mode        = 2           ! 2: initialize from IFS analysis
+ ifs2icon_filename= "ifs2icon.nc"
+ pinit_seed       = 0           ! seed for perturbation of initial model state. no perturbation by default
+ pinit_amplitude  = 0.          ! amplitude of perturbation
+/
+&nonhydrostatic_nml
+ ndyn_substeps    = 2           ! dtime/dt_dyn
+ damp_height      = 50000.      ! [m]
+ rayleigh_coeff   = 0.10
+ vwind_offctr     = 0.2
+ divdamp_fac      = 0.004
+/
+&interpol_nml
+ rbf_scale_mode_ll = 1
+/
+&sleve_nml
+ min_lay_thckn    = 40.         ! [m]
+ top_height       = 83000.      ! [m]
+ stretch_fac      = 0.9
+ decay_scale_1    = 4000.       ! [m]
+ decay_scale_2    = 2500.       ! [m]
+ decay_exp        = 1.2
+ flat_height      = 16000.      ! [m]
+/
+&diffusion_nml
+/
+&transport_nml
+ tracer_names     = 'hus','clw','cli','qr','qs','qg'
+ ivadv_tracer     =    3 ,   3 ,   3 ,  3 ,  3 ,  3
+ itype_hlimit     =    3 ,   4 ,   4 ,  4 ,  4 ,  4
+ ihadv_tracer     =   52 ,   2 ,   2 ,  2 ,  2 ,  2
+/
+&aes_phy_nml
+!
+! domain 1
+! --------
+!
+! atmospheric phyiscs (""=never)
+ aes_phy_config(1)%dt_rad = "PT8M"
+ aes_phy_config(1)%dt_vdf = "PT4M"
+ aes_phy_config(1)%dt_mig = "PT4M"
+!
+! surface (.TRUE. or .FALSE.)
+ aes_phy_config(1)%ljsb   = .TRUE.
+ aes_phy_config(1)%lamip  = .TRUE.
+ aes_phy_config(1)%lice   = .TRUE.
+ aes_phy_config(1)%lmlo   = .FALSE.
+ aes_phy_config(1)%llake  = .TRUE.
+/
+&aes_rad_nml
+!
+! domain 1
+! --------
+!
+ aes_rad_config(1)%isolrad    =  1
+ aes_rad_config(1)%irad_h2o   =  1
+ aes_rad_config(1)%irad_co2   =  3
+ aes_rad_config(1)%irad_ch4   = 13
+ aes_rad_config(1)%irad_n2o   = 13
+ aes_rad_config(1)%irad_o3    =  5
+ aes_rad_config(1)%irad_o2    =  2
+ aes_rad_config(1)%irad_cfc11 =  3
+ aes_rad_config(1)%irad_cfc12 =  3
+ aes_rad_config(1)%irad_aero  =  0
+/
+&aes_vdf_nml
+/
+&aes_cop_nml
+/
+&cloud_mig_nml
+ cloud_mig_config(1)%mu_rain        = 0.5
+ cloud_mig_config(1)%rain_n0_factor = 0.1
+ cloud_mig_config(1)%v0snow         = 25.
+/
+&aes_cov_nml
+/
+&sea_ice_nml
+/
+! TODO: understand restart mechanism, is there a single file 
+! restart mechanism for a start
+&io_nml
+ output_nml_dict  = "vardict.txt"
+ netcdf_dict      = "vardict.txt"
+ lnetcdf_flt64_output = .TRUE.
+ itype_pres_msl   = 4
+ restart_file_type= 5
+ restart_write_mode = "joint procs multifile"
+/
+&output_nml
+ output_filename  = "ICON_atm_vgrid"
+ filename_format  = "<output_filename>_<levtype_l>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"       ! output_start = output_end
+ output_end       = "1979-01-01T00:00:00Z"       ! --> write once only irrespective of
+ output_interval  = "PT4M"  !     the output interval and
+ file_interval    = "PT4M"    !     the file interval
+ ml_varlist       = 'zghalf'  , 'zg'      , 'dzghalf'
+/
+&output_nml
+ output_filename  = "ICON_atm_3d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'      , 'pfull'   , 'zg'      ,
+                    'rho'     , 'ta'      ,
+                    'ua'      , 'va'      , 'wap'     ,
+                    'hus'     , 'clw'     , 'cli'     ,
+                    'cl'      ,
+/
+&output_nml
+ output_filename  = "ICON_atm_2d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'      , 'psl'     ,
+                    'cosmu0'  ,
+                    'rsdt'    ,
+                    'rsut'    , 'rsutcs'  , 'rlut'    , 'rlutcs'  ,
+                    'rsds'    , 'rsdscs'  , 'rlds'    , 'rldscs'  ,
+                    'rsus'    , 'rsuscs'  , 'rlus'    ,
+                    'ts'      ,
+                    'sic'     , 'sit'     ,
+                    'albedo'  ,
+                    'clt'     ,
+                    'prlr'    , 'prls'    ,
+                    'pr'      , 'prw'     , 'cllvi'   , 'clivi'   ,
+                    'hfls'    , 'hfss'    , 'evspsbl' ,
+                    'tauu'    , 'tauv'    ,
+                    'sfcwind' , 'uas'     , 'vas'     ,
+                    'tas'     , 'dew2'    ,
+/
+&output_nml
+ output_filename  = "ICON_phy_3d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'           , 'pfull'        , 'zg'           ,
+                    'tend_ta_phy'  ,
+                    'tend_ta_rlw'  , 'tend_ta_rsw'  ,
+                    'tend_ta_vdf'  , 'tend_ta_mig'  ,
+                    'tend_ua_phy'  ,
+                    'tend_ua_vdf'  ,
+                    'tend_va_phy'  ,
+                    'tend_va_vdf'  ,
+                    'tend_qhus_phy',
+                    'tend_qhus_vdf',
+/
+&output_nml
+ output_filename  = "ICON_atm_mean_3d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ operation        = 'mean'
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT8M"
+ file_interval    = "PT8M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'      , 'pfull'   , 'zg'      ,
+/
+&output_nml
+ output_filename  = "ICON_trc_3d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'        , 'pfull'     , 'zg'        ,
+                    'mairvi_phy',
+                    'mdryvi_phy',
+                    'mh2ovi_phy',
+                    'qhus_phy'  , 'mhusvi_phy', 'tend_mhusvi_phy',
+                    'qclw_phy'  , 'mclwvi_phy', 'tend_mclwvi_phy',
+                    'qcli_phy'  , 'mclivi_phy', 'tend_mclivi_phy',
+/
+&output_nml
+ output_filename  = "ICON_aer_3d"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'ps'          , 'pfull'       , 'zg'          ,
+                    'aer_aod_533' , 'aer_ssa_533',  'aer_asy_533' , 
+                    'aer_aod_2325', 'aer_ssa_2325', 'aer_asy_2325', 
+                    'aer_aod_9731',
+/
+&output_nml
+ output_filename  = "ICON_lnd"
+ filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
+ filetype         = 5
+ remap            = 0
+ output_grid      = .TRUE.
+ output_start     = "1979-01-01T00:00:00Z"
+ output_end       = "1979-02-01T00:16:00Z"
+ output_interval  = "PT4M"
+ file_interval    = "PT4M"
+ include_last     = .FALSE.
+ ml_varlist       = 'pheno_lai_box'         , 'pheno_fract_fpc_veg'         , 'hydro_fract_water_box' ,
+                    'hydro_fract_snow_box'  , 'hydro_w_skin_box'            , 'hydro_w_snow_box'      ,
+                    'hydro_w_soil_column_box'
+/

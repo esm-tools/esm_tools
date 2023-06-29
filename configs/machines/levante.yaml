@@ -70,17 +70,16 @@ pool_directories:
 
 pool_dir:  "/pool/data"
 
-# kh 15.02.22 preferred on levante (at the moment), on mistral intelmpi was the default
 compiler_mpi: intel2022_openmpi
 
-# seb-wahl: choose libaries below, default is the system libs via modules
 iolibraries: system_libs
+# ESM-Tools vars necessary for ``system_libs`` case
+mod_netcdf_c: 
+mod_netcdf_f: 
+mod_hdf5: 
 
 module_actions:
         - "purge"
-        - "load git/2.31.1-gcc-11.2.0"
-        - "load cdo/2.0.5-gcc-11.2.0"
-        - "load nco/5.0.6-gcc-11.2.0"
 
 # kh 31.05.22 enable for ddt
 #       - "load arm-forge/21.1.3-gcc-11.2.0"
@@ -95,27 +94,6 @@ export_vars:
         CPU_MODEL: AMD_EPYC_ZEN3
         FESOM_PLATFORM_STRATEGY: levante.dkrz.de
 
-# kh 07.03.22
-        I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
-        I_MPI_PMI: pmi2
-        FI_PROVIDER: mlx
-        I_MPI_OFI_PROVIDER: mlx
-        I_MPI_FABRICS: shm:ofi
-
-#       I_MPI_HYDRA_BOOTSTRAP: slurm
-#       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
-
-# kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
-        HCOLL_ENABLE_MCAST_ALL: "1"
-        HCOLL_MAIN_IB: mlx5_0:1
-        UCX_IB_ADDR_TYPE: ib_global
-        UCX_NET_DEVICES: mlx5_0:1
-        UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
-        UCX_UNIFIED_MODE: y
-
-# kh 16.06.22 set appropriate pinning for OpenMP
-        KMP_LIBRARY: turnaround
-        KMP_AFFINITY: "granularity=fine,scatter"
 
 
 # Variables needed exclusively during runtime
@@ -152,6 +130,24 @@ choose_compiler_mpi:
                         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+
+                        # TODO: these vars where added by Kai Himstedt in Feb/March 2022
+                        # during the early access phase of LEVANTE. Are they still relevant?
+                        I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
+                        I_MPI_PMI: pmi2
+                        FI_PROVIDER: mlx
+                        I_MPI_OFI_PROVIDER: mlx
+                        I_MPI_FABRICS: shm:ofi
+
+                        HCOLL_ENABLE_MCAST_ALL: "1"
+                        HCOLL_MAIN_IB: mlx5_0:1
+                        UCX_IB_ADDR_TYPE: ib_global
+                        UCX_NET_DEVICES: mlx5_0:1
+                        UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
+                        UCX_UNIFIED_MODE: y
+
+                        KMP_LIBRARY: turnaround
+                        KMP_AFFINITY: "granularity=fine,scatter"
        intel2022_openmpi:
                 # ESM-Tools vars necessary for ``system_libs`` case
                 mod_netcdf_c: netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
@@ -174,10 +170,31 @@ choose_compiler_mpi:
                         MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                         MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+                        # TODO: these vars where added by Kai Himstedt in Feb/March 2022
+                        # during the early access phase of LEVANTE. Are they still relevant?
+                        I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
+                        I_MPI_PMI: pmi2
+                        FI_PROVIDER: mlx
+                        I_MPI_OFI_PROVIDER: mlx
+                        I_MPI_FABRICS: shm:ofi
+
+                        HCOLL_ENABLE_MCAST_ALL: "1"
+                        HCOLL_MAIN_IB: mlx5_0:1
+                        UCX_IB_ADDR_TYPE: ib_global
+                        UCX_NET_DEVICES: mlx5_0:1
+                        UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
+                        UCX_UNIFIED_MODE: y
+
+                        KMP_LIBRARY: turnaround
+                        KMP_AFFINITY: "granularity=fine,scatter"
+
 
 choose_iolibraries:
     system_libs:
         add_module_actions:
+            - "load git/2.31.1-gcc-11.2.0"
+            - "load cdo/2.0.5-gcc-11.2.0"
+            - "load nco/5.0.6-gcc-11.2.0"
             - "load ${mod_netcdf_c}"
             - "load ${mod_netcdf_f}"
             - "load ${mod_hdf5}"
@@ -236,6 +253,10 @@ choose_iolibraries:
 
     # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
     awi_paleodyn_libs:
+        add_module_actions:
+            - "load git/2.31.1-gcc-11.2.0"
+            - "load cdo/2.0.5-gcc-11.2.0"
+            - "load nco/5.0.6-gcc-11.2.0"
         choose_compiler_mpi:
             intel2022_openmpi:
                 add_export_vars:

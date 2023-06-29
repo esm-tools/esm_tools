@@ -1,0 +1,36 @@
+&master_nml
+ lrestart               =  .true.
+ read_restart_namelists =  .true.
+/
+&master_time_control_nml
+ calendar             = 'proleptic gregorian'
+ experimentStartDate  = '1979-01-01T00:00:00Z'
+ restartTimeIntval    = 'PT16M'
+ checkpointTimeIntval = 'PT8M'
+ experimentStopDate = '1979-02-01T00:16:00Z'
+/
+&time_nml
+ is_relative_time     = .false.
+/
+&master_model_nml
+  model_name="atmo"
+  model_namelist_filename="NAMELIST_atm"
+  model_type=1
+  model_min_rank=0
+  model_max_rank=65535
+  model_inc_rank=1
+  model_rank_group_size=1
+/
+&jsb_control_nml
+ is_standalone      = .false.
+ restart_jsbach     = .true.
+ debug_level        = 0
+ timer_level        = 0
+/
+&jsb_model_nml
+ model_id = 1
+ model_name = "JSBACH"
+ model_shortname = "jsb"
+ model_description = 'JSBACH land surface model'
+ model_namelist_filename = "NAMELIST_lnd"
+/

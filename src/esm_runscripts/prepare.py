@@ -632,6 +632,7 @@ def set_parent_info(config):
 
     # Make sure "ini_parent_dir" and "ini_restart_dir" both work:
     for model in config["general"]["valid_model_names"]:
+        # If only ini_restart_* variables are used in runcscript, set ini_parent_* to the same values
         if not "ini_parent_dir" in config[model]:
             if "ini_restart_dir" in config[model]:
                 config[model]["ini_parent_dir"] = config[model]["ini_restart_dir"]

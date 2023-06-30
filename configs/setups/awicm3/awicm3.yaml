@@ -66,7 +66,7 @@ general:
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
                 albedo:
-                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+                        pool_dir: "/albedo/pool"
                 ecmwf-atos:
                         pool_dir: "/perm/duts/pool/"
                 "*":
@@ -93,6 +93,12 @@ oifs:
 
         add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
+
+        # Recommended new structure to support more versions under the same OpenIFS
+        # folder. Make it the default after generalization in all pools
+        choose_computer.name:
+            albedo:
+                pool_dir: ${general.pool_dir}/OpenIFS
 
         pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
@@ -316,7 +322,12 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        pool_dir: "${general.pool_dir}/fesom2/"
+        # Remove this when the pools are unified
+        choose_computer.name:
+            albedo:
+                pool_dir: "${general.pool_dir}/FESOM2/awicm3/"
+            "*":
+                pool_dir: "${general.pool_dir}/fesom2/"
 
         restart_unit: "d"
         leapyear: True
@@ -711,10 +722,10 @@ oasis3mct:
                         load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
-                                        add_restart_in_sources:
-                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
-                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                                    add_restart_in_sources:
+                                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

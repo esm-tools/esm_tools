@@ -21,7 +21,6 @@ class EnvironmentConstructor(RoundTripConstructor):
     #    self.env_variables = []
 
     def construct_scalar(self, node):
-        print(type(self))
         tag = "!ENV"
         pattern_envvar = re.compile("\${(\w+)}")
         pattern_envtag = re.compile("""^[^\#]*\!ENV[ \t]+['|"]?\$\{\w+\}['|"]?""")
@@ -30,7 +29,8 @@ class EnvironmentConstructor(RoundTripConstructor):
             envvar_matches = pattern_envvar.findall(env_variable)
             if envvar_matches:
                 full_value = env_variable
-                super().env_variables.append(full_value)
+                # Add entry to list esm_tools_loader.env_variables ???????????
+                # esm_tools_loader.env_variables.append(fill_name)
                 for env_var in envvar_matches:
                     # first check if the variable exists in the shell environment
                     if env_var in os.environ:

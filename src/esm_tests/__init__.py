@@ -2,7 +2,7 @@
 
 __author__ = """Miguel Andres-Martinez"""
 __email__ = "miguel.andres-martinez@awi.de"
-__version__ = "6.21.9"
+__version__ = "6.21.20"
 
 from .initialization import *
 from .read_shipped_data import *

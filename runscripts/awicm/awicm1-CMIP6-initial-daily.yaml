@@ -1,0 +1,90 @@
+general:
+    setup_name: 'awicm'
+    account: ab0995 #!ENV ${ACCOUNT}
+    compute_time: "00:30:00"
+    initial_date: "1850-01-03"
+    final_date: "1850-01-04"
+    base_dir: !ENV ${WORKCD} #${ESM_TESTING_DIR}
+    nyear: 0
+    nmonth: 0
+    nday: 1
+    lresume: false
+    ini_restart_exp_id: i971_awi1
+    ini_restart_dir: /work/ab0995/a270152/i971_awi1/restart/
+
+awicm:
+    version: "CMIP6"
+    scenario: "PI-CTRL"
+    post_processing: 0
+    model_dir: /work/ab0995/a270152/model_codes/awicm-CMIP6/ #!ENV ${MODEL_DIR}
+    pool_dir: /pool/data/
+    resolution: T127
+
+fesom:
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+
+    choose_computer.name:
+        levante:
+            rpool_dir: /work/ab0995/a270152/testing_pool/input/
+            rmesh_dir: /work/ab0995/a270152/testing_pool/AWICM/FESOM1/MESHES/core/
+            rproc: 384
+    pool_dir: ${fesom.rpool_dir}
+    mesh_dir: ${fesom.rmesh_dir}
+    resolution: CORE2
+    time_step: 450
+    nproc: ${rproc}
+
+    lresume: ${general.lresume}
+    ini_restart_exp_id: ${general.ini_restart_exp_id}
+    ini_restart_date: "${prev_date}"
+    ini_restart_dir: ${general.ini_restart_dir}/fesom/
+
+echam:
+    restart_rate: 1
+    restart_unit: "days"
+    restart_first: 1
+
+    scenario: "PI-CTRL"
+    resolution: T127
+    levels: L95
+    post_processing: False
+    lresume: ${general.lresume}
+    choose_computer.name:
+        levante:
+            nproca: 32
+            nprocb: 32
+        "*":
+            nproca: 24
+            nprocb: 24
+    time_step: 200
+
+    ini_restart_exp_id: ${general.ini_restart_exp_id}
+    ini_restart_date: "${prev_date}"
+    ini_restart_dir: ${general.ini_restart_dir}/echam/
+
+jsbach:
+    dataset: r0009
+    streams:
+        - jsbach
+        - jsbid
+        - yasso
+        - surf
+        - veg
+    remove_jsbach.forcing_files:
+        - a_nd_file
+        - lightning
+        - popdens
+        - LU
+
+    lresume: ${general.lresume}
+    ini_restart_exp_id: ${general.ini_restart_exp_id}
+    ini_restart_date: "${prev_date}"
+    ini_restart_dir: ${general.ini_restart_dir}/jsbach/
+
+oasis3mct:
+    lresume: ${general.lresume}
+    ini_restart_exp_id: ${general.ini_restart_exp_id}
+    ini_restart_date: "${prev_date}"
+    ini_restart_dir: ${general.ini_restart_dir}/oasis3mct/

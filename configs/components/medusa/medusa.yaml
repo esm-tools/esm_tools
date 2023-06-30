@@ -61,7 +61,7 @@ comp_command: "mkdir -p lib; mkdir -p include;
     make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
     cp modmxm.h *.mod ${model_dir}/include;
     cd ${model_dir}/medmbm/trunk4mcg/src-mcg; 
-    cp Makefile_mpiifort_levante ./Makefile; make;
+    cp Makefile_mpiifort ./Makefile; make;
     cd ${model_dir}/medmbm/trunk4mcg/src-med; 
     cp Makefile_mpiifort_levante ./Makefile; make;
     make usetemplates;

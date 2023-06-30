@@ -59,8 +59,6 @@ general:
         choose_computer.name:
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
-                ollie:
-                        pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:
@@ -69,6 +67,8 @@ general:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
                 albedo:
                         pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+                ecmwf-atos:
+                        pool_dir: "/perm/duts/pool/"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 

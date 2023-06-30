@@ -24,11 +24,11 @@ logical_cpus_per_core: 1
 
 threads_per_core: 1
 
-pool_dir: "/work/ollie/pool"
+pool_dir: "/dev/null"
 
 pool_directories:
-        pool: "/work/ollie/pool"
-        projects: "/work/ollie/projects"
+        pool: "/dev/null"
+        projects: "/dev/null"
         focipool: "/dev/null"
 
 # ?????
@@ -78,7 +78,6 @@ module_actions:
         - "load ecmwf-toolbox/2021.08.3.0"
         - "load python3/3.8.8-01"
         - "load git"
-        # - "load python3/3.6.5_intel2019"
         - "list"
 
 export_vars:

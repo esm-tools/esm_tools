@@ -6,7 +6,7 @@ person:
     I am here to make your life impossible
   "
   # My comment
-  my_var: !ENV MY_VAR
+  my_var: MY_VAR
   my_other_var:
       - a
 

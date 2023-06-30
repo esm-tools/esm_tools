@@ -10,6 +10,10 @@ operating_system: "linux-centos"
 jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
+partition: false
+exclusive: false
+additional_flags:
+    - "--qos=np"
 
 partitions:
         compute:
@@ -115,7 +119,7 @@ export_vars:
         MPIDIR: $MPIROOT
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-        LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:{NETCDF4_PARALLEL_DIR}/lib:{ECCODES_DIR}/lib:{HDF5_DIR}/lib
+        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_DIR/lib
 
 choose_useMPI:
         openmpi:

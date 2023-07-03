@@ -729,35 +729,35 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         self.set_filename(stream.name)
         mapping_with_tuple_prov = super().load(stream)[0]
 
-        def _extract_dict(mapping_with_prov):
-            config = { }
-            config_prov = { }
-            for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
-                if isinstance(value, dict):
-                    config[key], config_prov[key] = _extract_dict(value)
-                elif isinstance(value, list):
-                    config[key] = []
-                    config_prov[key] = []
-                    for (elem,elem_prov) in value:
-                        prov = { }
-                        prov["line"], prov["col"], prov["yaml_file"], prov["category"] = elem_prov
-                        if isinstance(elem, dict):
-                            config[key].append(_extract_dict(elem)[0])
-                            config_prov[key].append(_extract_dict(elem)[1])
-                        else:
-                            config_prov[key].append(prov)
-                            config[key].append(elem)
-                else:
-                    prov = { }
-                    prov["line"], prov["col"], prov["yaml_file"], prov["category"] = value_prov
-                    config_prov[key] = prov
-                    config[key] = value
-            return (config, config_prov)
-
-
-        config, provenance = _extract_dict(mapping_with_tuple_prov)
+        config, provenance = self._extract_dict(mapping_with_tuple_prov)
 
         return (config, provenance)
+
+    def _extract_dict(self,mapping_with_prov):
+        config = { }
+        config_prov = { }
+        for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
+            if isinstance(value, dict):
+                config[key], config_prov[key] = self._extract_dict(value)
+            elif isinstance(value, list):
+                config[key] = []
+                config_prov[key] = []
+                for (elem,elem_prov) in value:
+                    prov = { }
+                    prov["line"], prov["col"], prov["yaml_file"], prov["category"] = elem_prov
+                    if isinstance(elem, dict):
+                        config[key].append(self._extract_dict(elem)[0])
+                        config_prov[key].append(self._extract_dict(elem)[1])
+                    else:
+                        config_prov[key].append(prov)
+                        config[key].append(elem)
+            else:
+                prov = { }
+                prov["line"], prov["col"], prov["yaml_file"], prov["category"] = value_prov
+                config_prov[key] = prov
+                config[key] = value
+        return (config, config_prov)
+
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):

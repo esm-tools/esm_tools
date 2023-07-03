@@ -592,7 +592,7 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
             new_dict_merge(dct[k], merge_dct[k], winner)
         else:
             if not (winner == "receiving" and k in dct):
-                assign_key_val_with_provenance(dct, merge_dct, k)
+                dct[k] = merge_dct[k]
 
 
 def new_deep_update(
@@ -681,9 +681,9 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             # is empty and protection is requested
             if k in dct:
                 if dct[k] and not merge_dct[k] and dont_overwrite_with_empty_value:
-                    assign_key_val_with_provenance(merge_dct, dct, k)
+                    merge_dct[k] = dct[k]
 
-            assign_key_val_with_provenance(dct, merge_dct, k)
+            dct[k] = merge_dct[k]
 
 
 def deep_update(chapter, entries, config, blackdict={}):
@@ -1882,6 +1882,7 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
+@keep_id_provenance
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -2242,6 +2243,7 @@ def determine_computer_from_hostname():
     # )
 
 
+@keep_id_provenance
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2346,6 +2348,7 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
+@keep_id_provenance
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2360,6 +2363,7 @@ def mark_dates(tree, rhs, config):
     return entry
 
 
+@keep_id_provenance
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2390,6 +2394,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
+@keep_id_provenance
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2401,6 +2406,7 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
+@keep_id_provenance
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2451,6 +2457,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
+@keep_id_provenance
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]

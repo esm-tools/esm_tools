@@ -65,7 +65,7 @@ class DictWithProvenance(dict):
         provenance_dict = dict_with_provenance.get_provenance()
     """
 
-#    last_leaf_provenance = None
+    leaf_id_provenance = {}
 
     def __init__(self, dictionary, provenance):
         """
@@ -177,6 +177,13 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
+
+    def __getitem__(self, key, *args, **kwargs):
+        self.set_leaf_id_provenance(key)
+
+        return super().__getitem__(key, *args, **kwargs)
+
+
     def __setitem__(self, key, val, *args, **kwargs):
         """
         Rewrites the ``dict.__setitem__`` method (used for example in when defining a
@@ -228,49 +235,53 @@ class DictWithProvenance(dict):
         # If the ``val`` is not a ``dict`` (it's a leaf of the dictionary tree) defines
         # ``self.provenance[key]`` as ``None``
         else:
-            if key not in self.provenance:
-                self.provenance[key] = None
+            val_id = id(val)
+            self.provenance[key] = DictWithProvenance.leaf_id_provenance.get(val_id, None)
             return super().__setitem__(key, val, *args, **kwargs)
-
-#        self.set_last_leaf_provenance(None)
-#
-#    def __getitem__(self, key, *args, **kwargs):
-#        self.set_last_leaf_provenance(self.provenance.get(key))
-#
-#        return super().__getitem__(key, *args, **kwargs)
-#   
-#    def set_last_leaf_provenance(self, provenance):
-#        DictWithProvenance.last_leaf_provenance = provenance
 
 
     def __delitem__(self, key, *args, **kwargs):
 
-        if isinstance(self, DictWithProvenance) and not isinstance(self[key], dict):
+        if isinstance(self, DictWithProvenance) and not isinstance(super().__getitem__(key), dict):
             del self.provenance[key]
 
         super().__delitem__(key, *args, **kwargs)
+
 
     def update(self, dictionary, *args, **kwargs):
         super().update(dictionary, *args, **kwargs)
 
         for key, val in dictionary.items():
+            val_id = id(val)
             if isinstance(dictionary, DictWithProvenance) and not isinstance(val, dict):
-                self.provenance[key] = dictionary.provenance.get(key)
+                self.provenance[key] = dictionary.provenance.get(key,
+                    DictWithProvenance.leaf_id_provenance.get(val_id, None)
+                )
+            elif isinstance(dictionary, dict) and not isinstance(val, dict):
+                self.provenance[key] = DictWithProvenance.leaf_id_provenance.get(val_id, None)
 
 
-def assign_key_val_with_provenance(target_dict, source_dict, key):
+    def set_leaf_id_provenance(self, key):
+        # If it's a leaf
+        if not isinstance(super().__getitem__(key), DictWithProvenance):
+            val_id = id(super().__getitem__(key))
+            # Stores the provenance in a class variable, under an id key
+            DictWithProvenance.leaf_id_provenance[val_id] = self.provenance.get(key, None)
 
-    if not isinstance(target_dict, dict) or not isinstance(source_dict, dict):
-        raise TypeError(
-            "This function only takes dictionationaries or dictionary subclasses as "
-            "first and second input!"
-        )
 
-    # Update the provenane
-    if isinstance(target_dict, DictWithProvenance) and isinstance(source_dict, DictWithProvenance):
-        target_dict.provenance[key] = source_dict.provenance.get(key)
-    elif isinstance(target_dict, DictWithProvenance):
-        target_dict.provenance[key] = None
+def keep_id_provenance(func):
+    """
+    This is a decorator for recursive functions in esm_parser to preserve
+    provenanve. Better docstrings will come later...
+    """
+    def inner(tree, rhs, *args, **kwargs):
+        rhs_id = id(rhs)
+        output = func(tree, rhs, *args, **kwargs)
+        output_id = id(output)
 
-    # The regular functionality
-    target_dict[key] = source_dict[key]
+        if rhs_id in DictWithProvenance.leaf_id_provenance:
+            DictWithProvenance.leaf_id_provenance[output_id] = DictWithProvenance.leaf_id_provenance[rhs_id]
+
+        return output
+
+    return inner

@@ -14,6 +14,7 @@ with open("HISTORY.rst") as history_file:
 
 requirements = [
     "Click>=7.0",
+    "click-loguru==1.3.6",
     "PyGithub",
     "colorama",
     "coloredlogs",

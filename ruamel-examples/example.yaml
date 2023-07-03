@@ -1,6 +1,6 @@
 person:
   name: Paul Gierz
-  username: !ENV USER
+  username: !ENV ${USER}
   a_string: "
     hello world
     I am here to make your life impossible

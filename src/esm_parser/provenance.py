@@ -82,8 +82,38 @@ class DictWithProvenance(dict):
         """
 
         super().__init__(dictionary)
-        self.provenance = {}
-        self.set_provenance(provenance)
+        self.provenance = provenance
+
+        self.put_provenance(provenance)
+
+
+    def put_provenance(self, provenance, dictionary=None):
+        """
+        Defines recursively the ``provenance`` of the ``DictWithProvenance`` object
+        ``self`` or it's nested ``dictionary``.
+
+        Parameters
+        ----------
+        provenance : any
+        dictionary : dict
+            Dictionary for which the ``provenance`` is to be set. When a value is not
+            given, the ``dictionary`` takes the value of ``self``. Only for recursion
+            within nested ``DictWithProvenance``, do not use it outside of this method.
+        """
+
+        if not dictionary:
+            dictionary = self
+
+        for key, val in dictionary.items():
+            if isinstance(val, dict):
+                check_prov = provenance.get(key, None)
+                if check_prov is not None:
+                    dictionary[key] = DictWithProvenance(val, provenance.get(key, {}))
+                else:
+                    dictionary.provenance[key] = None
+            else:
+                dictionary[key] = val
+                dictionary.provenance[key] = provenance.get(key, None)
 
     def set_provenance(self, provenance, dictionary=None):
         """

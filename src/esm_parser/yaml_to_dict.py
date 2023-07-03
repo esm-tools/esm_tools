@@ -185,7 +185,7 @@ def yaml_file_to_dict(filepath):
                 check_duplicates(yaml_file)
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
-                yaml_load = {}
+                #yaml_load = {}
                 # Actually load the file
 #                yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
 
@@ -201,6 +201,7 @@ def yaml_file_to_dict(filepath):
                 yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
 
                 # Where can I put these line in the new esm_tools_loader?????????????
+                # I need to find out where I can set esm_tools_loader.env_variables
                 if esm_tools_loader.env_variables:
 
                     runtime_env_changes = yaml_load.get("computer", {}).get(
@@ -709,7 +710,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         super().__init__(*args, **kwargs)
         self.filename = None
         self.add_comments = True
-        self.env_variables = [('hallo', 'wert')]
+        self.env_variables = [('test', 'wert')]
         self.Constructor = ProvenanceConstructor
         #print(ProvenanceConstructor.__mro__)
         #print(dir(ProvenanceConstructor.__getattribute__))

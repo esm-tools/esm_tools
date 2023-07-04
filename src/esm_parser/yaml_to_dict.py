@@ -6,9 +6,10 @@ import yaml
 from loguru import logger
 
 #from .provenance import *
-from provenance import *
+from .provenance import *
 import pathlib
 import esm_parser
+import esm_tools
 
 import ruamel.yaml
 from ruamel.yaml import RoundTripConstructor
@@ -668,19 +669,20 @@ class ProvenanceConstructor(EnvironmentConstructor):
         data = super().construct_object(node, *args, **kwargs)
 
         yaml_file_path = os.path.abspath(node.start_mark.name)
-# Todo: Compare path to yaml file with path to esm_tools, to get category correct. Choose one of the following, only if esm_tools path.
-        categories = ["runscripts", "components", "couplings", "defaults", "esm_software", "machines", "other_software", "setups", "spack_envs"]
+
+        # Compare path to yaml file with path to esm_tools, to get category correct.
+        # Choose one of the following, only if esm_tools path.
+        configs_path = esm_tools.get_config_filepath()
+        categories = os.listdir(configs_path)
         for category in categories:
-            if category in yaml_file_path:
-                category = category
+            if yaml_file_path.startswith(f"{configs_path}/{category}"):
+                break
             else:
-                category = None
-        # Todo: How to find out if category is a user runscript?
-        #       If None -> always user runscript?
+                category = "runscript"
 
         provenance = (
-            node.start_mark.line,
-            node.start_mark.column,
+            node.start_mark.line + 1,
+            node.start_mark.column + 1,
             yaml_file_path,
             category,
         )

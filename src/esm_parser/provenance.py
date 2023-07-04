@@ -82,7 +82,7 @@ class DictWithProvenance(dict):
         """
 
         super().__init__(dictionary)
-        self.provenance = provenance
+        self.provenance = {}
 
         self.put_provenance(provenance)
 
@@ -106,14 +106,11 @@ class DictWithProvenance(dict):
 
         for key, val in dictionary.items():
             if isinstance(val, dict):
-                check_prov = provenance.get(key, None)
-                if check_prov is not None:
-                    dictionary[key] = DictWithProvenance(val, provenance.get(key, {}))
-                else:
-                    dictionary.provenance[key] = None
+                dictionary[key] = DictWithProvenance(val, provenance.get(key, {}))
             else:
                 dictionary[key] = val
                 dictionary.provenance[key] = provenance.get(key, None)
+
 
     def set_provenance(self, provenance, dictionary=None):
         """

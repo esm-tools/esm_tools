@@ -99,8 +99,9 @@ oifs:
         choose_computer.name:
             albedo:
                 pool_dir: ${general.pool_dir}/OpenIFS
+            "*":
+                pool_dir: ${general.pool_dir}
 
-        pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"

@@ -10,7 +10,7 @@ general:
     initial_date: "1850-01-01"
     final_date: "1899-12-31"
     project_base: "/work/ab0246/${user}/"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/ab0246/${user}/runtime/amoc_storylines/"
     nday: 0
     nmonth: 0
     nyear: 5

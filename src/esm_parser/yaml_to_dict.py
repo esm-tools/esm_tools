@@ -618,12 +618,11 @@ class EnvironmentConstructor(RoundTripConstructor):
             envvar_matches = pattern_envvar.findall(env_variable)
             if envvar_matches:
                 full_value = env_variable
-                # Add entry to list esm_tools_loader.env_variables ???????????
-                self.env_variables.append(full_value)
                 for env_var in envvar_matches:
                     # first check if the variable exists in the shell environment
                     if env_var in os.environ:
                         rval = full_value.replace(f"${{{env_var}}}", os.getenv(env_var))
+                        self.env_variables.append((env_var, rval))
                         return rval
                     else:
                         esm_parser.user_error(
@@ -712,10 +711,8 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         super().__init__(*args, **kwargs)
         self.filename = None
         self.add_comments = True
-        self.env_variables = [('test', 'wert')]
+        self.env_variables = []
         self.Constructor = ProvenanceConstructor
-        #print(ProvenanceConstructor.__mro__)
-        #print(dir(ProvenanceConstructor.__getattribute__))
         self.Constructor.add_constructor(None, ProvenanceConstructor.construct_scalar)
         self.Constructor.add_constructor(
             "tag:yaml.org,2002:bool", ProvenanceConstructor.construct_yaml_bool
@@ -733,7 +730,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         mapping_with_tuple_prov = super().load(stream)[0]
 
         config, provenance = self._extract_dict(mapping_with_tuple_prov)
-
+        self.env_variables = self.constructor.env_variables
         return (config, provenance)
 
     def _extract_dict(self,mapping_with_prov):

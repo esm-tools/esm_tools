@@ -36,13 +36,14 @@ def install(package: str) -> None:
     """
     package_name = package.split("/")[-1].replace(".git", "")
     installed_packages = esm_plugin_manager.find_installed_plugins()
+    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
+    if os.environ.get("VIRTUAL_ENV"):
+        arg_list.remove("--user")
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", package])
+            subprocess.check_call(arg_list)
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "--user", package]
-            )
+            subprocess.check_call(arg_list)
 
 
 ######################################################################################

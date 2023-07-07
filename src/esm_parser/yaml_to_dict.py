@@ -5,7 +5,6 @@ import sys
 import yaml
 from loguru import logger
 
-#from .provenance import *
 from .provenance import *
 import pathlib
 import esm_parser
@@ -17,6 +16,7 @@ from ruamel.yaml.nodes import ScalarNode
 
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
+CONFIG_PATH = esm_tools.get_config_filepath()
 
 
 class EsmConfigFileError(Exception):
@@ -179,6 +179,7 @@ def yaml_file_to_dict(filepath):
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
     #loader = create_env_loader()
+    esm_tools_loader = EsmToolsLoader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:
             with open(filepath + extension) as yaml_file:
@@ -186,12 +187,7 @@ def yaml_file_to_dict(filepath):
                 check_duplicates(yaml_file)
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
-                #yaml_load = {}
                 # Actually load the file
-#                yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
-
-                esm_tools_loader = EsmToolsLoader()
-
                 esm_tools_loader.set_filename(yaml_file)
                 yaml_load, provenance = esm_tools_loader.load(yaml_file)
 
@@ -200,16 +196,12 @@ def yaml_file_to_dict(filepath):
                 check_changes_duplicates(yaml_load, filepath + extension)
                 # Add the file name you loaded from to track it back:
                 yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
-
-                # Where can I put these line in the new esm_tools_loader?????????????
-                # I need to find out where I can set esm_tools_loader.env_variables
                 if esm_tools_loader.env_variables:
 
                     runtime_env_changes = yaml_load.get("computer", {}).get(
                         "runtime_environment_changes", {}
                     )
                     add_export_vars = runtime_env_changes.get("add_export_vars", {})
-                    #for env_var_name, env_var_value in loader.env_variables:
                     for env_var_name, env_var_value in esm_tools_loader.env_variables:
                         add_export_vars[env_var_name] = env_var_value
                     # TODO(PG): There is probably a more elegant way of doing this:
@@ -221,9 +213,10 @@ def yaml_file_to_dict(filepath):
                         "add_export_vars"
                     ] = add_export_vars
 
-#            yaml_load = DictWithProvenance(yaml_load, {"filepath": filepath})
             yaml_load = DictWithProvenance(yaml_load, provenance)
+
             return yaml_load
+
         except IOError as error:
             logger.debug(
                 f"IOError ({error.errno}): File not found with {filepath+extension}, trying another extension pattern."
@@ -667,23 +660,9 @@ class ProvenanceConstructor(EnvironmentConstructor):
 
         data = super().construct_object(node, *args, **kwargs)
 
-        yaml_file_path = os.path.abspath(node.start_mark.name)
-
-        # Compare path to yaml file with path to esm_tools, to get category correct.
-        # Choose one of the following, only if esm_tools path.
-        configs_path = esm_tools.get_config_filepath()
-        categories = os.listdir(configs_path)
-        for category in categories:
-            if yaml_file_path.startswith(f"{configs_path}/{category}"):
-                break
-            else:
-                category = "runscript"
-
         provenance = (
             node.start_mark.line + 1,
             node.start_mark.column + 1,
-            yaml_file_path,
-            category,
         )
 
         return (data, provenance)
@@ -723,39 +702,64 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         return self.filename
 
     def set_filename(self, filename):
-        self.filename = filename
+        self.filename = pathlib.Path(str(filename))
+
+    def set_file_categorty(self):
+        if not hasattr(self, "filename"):
+            raise AttributeError(
+                "The attribute 'filename' has not been set yet. Set it using "
+                "'self.set_filename'"
+            )
+
+        # Compare path to yaml file with path to esm_tools, to get category correct.
+        # Choose one of the following, only if esm_tools path.
+        categories = os.listdir(CONFIG_PATH)
+        for category in categories:
+            path_to_category_folder = pathlib.Path(f"{CONFIG_PATH}/{category}")
+            if path_to_category_folder in self.filename.parents:
+                break
+            else:
+                category = "runscript"
+
+        self.category = category
 
     def load(self, stream):
         self.set_filename(stream.name)
+        self.set_file_categorty()
         mapping_with_tuple_prov = super().load(stream)[0]
 
-        config, provenance = self._extract_dict(mapping_with_tuple_prov)
+        config, provenance = self._extract_dict_and_prov(mapping_with_tuple_prov)
         self.env_variables = self.constructor.env_variables
         return (config, provenance)
 
-    def _extract_dict(self,mapping_with_prov):
-        config = { }
-        config_prov = { }
-        for (key,key_prov), (value,value_prov) in mapping_with_prov.items():
+    def _extract_dict_and_prov(self, mapping_with_prov):
+        config = {}
+        config_prov = {}
+        for (key, key_prov), (value, value_prov) in mapping_with_prov.items():
             if isinstance(value, dict):
-                config[key], config_prov[key] = self._extract_dict(value)
+                config[key], config_prov[key] = self._extract_dict_and_prov(value)
             elif isinstance(value, list):
                 config[key] = []
                 config_prov[key] = []
-                for (elem,elem_prov) in value:
-                    prov = { }
-                    prov["line"], prov["col"], prov["yaml_file"], prov["category"] = elem_prov
+                for (elem, elem_prov) in value:
                     if isinstance(elem, dict):
-                        config[key].append(self._extract_dict(elem)[0])
-                        config_prov[key].append(self._extract_dict(elem)[1])
+                        config[key].append(self._extract_dict_and_prov(elem)[0])
+                        config_prov[key].append(self._extract_dict_and_prov(elem)[1])
                     else:
+                        prov = {}
+                        prov["line"], prov["col"] = elem_prov
+                        prov["yaml_file"] = str(self.filename)
+                        prov["category"] = self.category
                         config_prov[key].append(prov)
                         config[key].append(elem)
             else:
-                prov = { }
-                prov["line"], prov["col"], prov["yaml_file"], prov["category"] = value_prov
+                prov = {}
+                prov["line"], prov["col"] = value_prov
+                prov["yaml_file"] = str(self.filename)
+                prov["category"] = self.category
                 config_prov[key] = prov
                 config[key] = value
+
         return (config, config_prov)
 
 

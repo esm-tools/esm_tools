@@ -66,6 +66,12 @@ class DictWithProvenance(dict):
     """
 
     leaf_id_provenance = {}
+    """
+    dict : 
+        This is a class-level variable to hold IDs of objects in memory. It is
+        at the class level because this information needs to be passed around
+        between various instances
+    """
 
     def __init__(self, dictionary, provenance):
         """
@@ -170,6 +176,9 @@ class DictWithProvenance(dict):
             elif hasattr(dictionary, "provenance"):
                 provenance_dict[key] = dictionary.provenance.get(key)
             else:
+                # The DictWithProvenance object might have dictionaries inside that
+                # are not instances of that class (i.e. a dictionary added in the
+                # backend). The provenance in this method is then defined as None
                 provenance_dict[key] = None
 
         return provenance_dict
@@ -259,6 +268,19 @@ class DictWithProvenance(dict):
 
 
     def set_leaf_id_provenance(self, key):
+        """
+        Stores the last-leaf provenance information in the class level 
+        variable ``leaf_id_provenance``.
+        
+        This method gets the ``id`` value (unique Python object counter), which
+        is used as a key in the `leaf_id_provenance`. The value becomes the
+        provenance of that key, or defaults to ``None``
+        
+        Parameters
+        ----------
+        key : Any
+           The key of the "inner-most" leaf to store provenance information for
+        """
         # If it's a leaf
         if not isinstance(super().__getitem__(key), DictWithProvenance):
             val_id = id(super().__getitem__(key))
@@ -268,8 +290,18 @@ class DictWithProvenance(dict):
 
 def keep_id_provenance(func):
     """
-    This is a decorator for recursive functions in esm_parser to preserve
-    provenanve. Better docstrings will come later...
+    Decorator for recursive functions in ``esm_parser`` to preserve
+    provenance.
+    
+    Recursive run functions in ``esm_parser`` are generally called on the innermost
+    leaf. Here, we still run the function, but additionally store the output of the
+    function into the `leaf_id_provenance` container so that provenance can be added
+    to the result of the function call.
+
+    Parameters
+    ----------
+    func : Callable
+        The function to decorate
     """
     def inner(tree, rhs, *args, **kwargs):
         rhs_id = id(rhs)

@@ -1134,7 +1134,7 @@ def merge_dicts(*dict_args):
     -------
     A merged dictionary (shallow).
     """
-    result = {} #DictWithProvenance({}, {"provenance": None})
+    result = {}
     for dictionary in dict_args:
         result.update(dictionary)
     return result

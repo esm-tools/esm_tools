@@ -472,11 +472,14 @@ class oasis:
                     if len(glob_restart_file) == 1:
                         restart_file = os.path.basename(glob_restart_file[0])
                     elif len(glob_restart_file) == 0:
-                        user_error(
-                            "Restart file missing",
-                            f"No OASIS restart file for ``{restart_file}`` found "
-                            f"matching the pattern ``{glob_search_file}``"
-                        )
+                        restart_file = f"{config['ini_restart_dir']}{restart_file}"
+                        if not os.path.isfile(restart_file):
+                            user_error(
+                                "Restart file missing",
+                                f"No OASIS restart file for ``{restart_file}`` found "
+                                f"matching the pattern ``{glob_search_file}`` nor "
+                                f"``{restart_file}``"
+                            )
                     else:
                         if not gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,

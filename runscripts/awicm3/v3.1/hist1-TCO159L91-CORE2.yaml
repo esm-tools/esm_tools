@@ -50,7 +50,10 @@ oifs:
     input_expid: awi3
     wam: true
     lresume: true
-    prev_run_config_file: "/work/ab0246/a270092/runtime/amoc_storylines/spinup_continuation/config/spinup_continuation_finished_config.yaml"
+    ini_restart_dir: /work/ab0246/a270092/runtime/amoc_storylines//spinup_continuation/restart/oifs/
+    ini_restart_exp_id: spinup_continuation
+    ini_restart_date: '1879-12-31T23:00:00'
+    prev_run_config_file: "/work/ab0246/a270092/runtime/amoc_storylines/spinup_continuation/config/spinup_continuation_finished_config.yaml_18750101-18791231"
     time_step: 3600
     nproc: 384
     omp_num_threads: 8

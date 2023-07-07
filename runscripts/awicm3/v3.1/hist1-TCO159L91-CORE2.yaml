@@ -36,7 +36,12 @@ fesom:
     nproc: 384
     ini_parent_exp_id: "spinup_continuation"
     ini_parent_date: "1874-12-31"
-    ini_parent_dir: "/work/ab0246/a270179/runtime/amoc_storylines/spinup_continuation/"
+    ini_parent_dir: "/work/ab0246/a270092/runtime/amoc_storylines/spinup_continuation/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /work/ab0246/a270179/runtime/amoc_storylines/spinup_continuation/restart/fesom/fesom.1874.oce.restart/*.nc
+                par_ice_restart: /work/ab0246/a270092/runtime/amoc_storylines/spinup_continuation/restart/fesom/fesom.1874.ice.restart/*.nc
 
 oifs:
     resolution: "TCO159"

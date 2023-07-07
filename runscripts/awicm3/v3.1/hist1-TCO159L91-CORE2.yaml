@@ -1,0 +1,70 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.1"
+    account: "ab0246"
+    install_esm_tools_branch: "amoc_storylines_paper"
+    install_esm_tools_editable: false
+    compute_time: "08:00:00"
+    initial_date: "1850-01-01"
+    final_date: "1979-12-31"
+    project_base: "/work/ab0246/${user}/"
+    base_dir: "/work/ab0246/${user}/runtime/amoc_storylines/"
+    nday: 0
+    nmonth: 0
+    nyear: 10
+    mail_type: all
+    mail_user: jan.streffing@awi.de
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+    pool_dir: "${general.project_base}/input/"
+    
+fesom:
+    resolution: "CORE2"
+    pool_dir: "${general.project_base}/input/fesom2/"
+    mesh_dir: "${pool_dir}/core2/"
+    restart_rate: 10
+    restart_unit: "y"
+    restart_first: 10
+    lresume: true
+    time_step: 1800
+    nproc: 384
+    ini_parent_exp_id: "spinup_continuation"
+    ini_parent_date: "1874-12-31"
+    ini_parent_dir: "/work/ab0246/a270179/runtime/amoc_storylines/spinup_continuation/"
+
+oifs:
+    resolution: "TCO159"
+    levels: "L91"
+    prepifs_expid: h9wu
+    input_expid: awi3
+    wam: true
+    lresume: true
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 8
+    add_namelist_changes:
+        fort.4:
+            NAERAD:
+                LCMIP6: .true.
+                CMIP6DATADIR: '/work/ab0246/a270092/input/oifs-43r3/cmip6-data/'
+                NCMIPFIXYR: 0
+                SSPNAME: 'historical'
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 7200
+    
+rnfmap:
+    omp_num_threads: 128
+
+xios:
+    with_model: oifs
+    nproc: 8
+    omp_num_threads: 16
+

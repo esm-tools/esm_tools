@@ -35,13 +35,13 @@ fesom:
     time_step: 1800
     nproc: 384
     ini_parent_exp_id: "spinup_continuation"
-    ini_parent_date: "1899-12-31"
+    ini_parent_date: "1894-12-31"
     ini_parent_dir: "/work/ab0246/a270092/runtime/amoc_storylines/spinup_continuation/restart/fesom/"
     choose_general.run_number:
         1:
             restart_in_sources:
-                par_oce_restart: ${general.base_dir}/${fesom.ini_parent_exp_id}/restart/fesom/fesom.1899.oce.restart/*.nc
-                par_ice_restart: ${general.base_dir}/${fesom.ini_parent_exp_id}/restart/fesom/fesom.1899.ice.restart/*.nc
+                par_oce_restart: ${general.base_dir}/${fesom.ini_parent_exp_id}/restart/fesom/fesom.1894.oce.restart/*.nc
+                par_ice_restart: ${general.base_dir}/${fesom.ini_parent_exp_id}/restart/fesom/fesom.1894.ice.restart/*.nc
 
 oifs:
     resolution: "TCO159"

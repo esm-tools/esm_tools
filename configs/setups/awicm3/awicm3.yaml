@@ -19,6 +19,7 @@ general:
         available_versions:
         - 'v3.0'
         - 'v3.1'
+        - 'v3.1.1'
         - 'master'
         - 'frontiers-xios'
         choose_version:
@@ -121,7 +122,7 @@ oifs:
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
                         mip: "cmip6"
                         wam: true
-                "v3.1":
+                "v3.1*":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.1
                         mip: "cmip6"
@@ -353,7 +354,7 @@ fesom:
                         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
                         remove_forcing_files:
                                 - ICMCL_INIT
-                "v3.1":
+                "v3.1*":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
                         add_namelist_changes:
                                 namelist.oce:
@@ -562,7 +563,7 @@ oasis3mct:
                                 - xios
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
-                'v3.1':
+                'v3.1*':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'

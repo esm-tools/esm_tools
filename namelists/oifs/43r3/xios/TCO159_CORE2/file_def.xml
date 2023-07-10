@@ -295,11 +295,11 @@
         <file
             enabled="true"
 	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h_pl"
+	    output_freq="1m"
+            name_suffix="_1m_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
-            <field_group grid_ref="regular_pl" freq_op="6h" operation="instant">
+            <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>

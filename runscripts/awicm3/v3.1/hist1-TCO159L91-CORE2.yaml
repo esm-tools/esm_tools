@@ -2,14 +2,14 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "v3.1"
-    account: "ab0246"
+    account: "ab0995"
     install_esm_tools_branch: "amoc_storylines_paper"
     install_esm_tools_editable: false
     compute_time: "08:00:00"
     initial_date: "1850-01-01"
     final_date: "1979-12-31"
     project_base: "/work/ab0246/${user}/"
-    base_dir: "/work/ab0246/${user}/runtime/amoc_storylines/"
+    base_dir: "/work/ab0995/${user}/runtime/amoc_storylines/"
     nday: 0
     nmonth: 0
     nyear: 10

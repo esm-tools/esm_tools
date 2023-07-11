@@ -7,12 +7,12 @@ general:
     install_esm_tools_editable: false
     compute_time: "08:00:00"
     initial_date: "1850-01-01"
-    final_date: "1979-12-31"
+    final_date: "1986-12-31"
     project_base: "/work/ab0246/${user}/"
     base_dir: "/work/ab0995/${user}/runtime/amoc_storylines/"
     nday: 0
     nmonth: 0
-    nyear: 10
+    nyear: 7
     mail_type: all
     mail_user: jan.streffing@awi.de
 
@@ -28,9 +28,9 @@ fesom:
     resolution: "CORE2"
     pool_dir: "${general.project_base}/input/fesom2/"
     mesh_dir: "${pool_dir}/core2/"
-    restart_rate: 10
+    restart_rate: 7
     restart_unit: "y"
-    restart_first: 10
+    restart_first: 7
     lresume: true
     time_step: 1800
     nproc: 384

@@ -20,6 +20,7 @@ general:
         - 'v3.0'
         - 'v3.1'
         - 'v3.1.1'
+        - 'v3.1.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:

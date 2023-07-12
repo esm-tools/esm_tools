@@ -24,9 +24,11 @@ general:
         - 'frontiers-xios'
         choose_version:
           v3.0:
+            major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
           v3.1:
+            major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
             add_include_models:
@@ -34,6 +36,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
           v3.1.1:
+            major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
             add_include_models:
@@ -41,6 +44,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
           master:
+            major_version: master
             couplings:
             - fesom-2.0-master+oifs-43r3-master
             add_include_models:
@@ -48,6 +52,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
           frontiers-xios:
+            major_version: frontiers-xios
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
@@ -117,12 +122,12 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
                         mip: "cmip6"
                         wam: true
-                "v3.1*":
+                "v3.1":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.1
                         mip: "cmip6"
@@ -344,7 +349,7 @@ fesom:
                         oce_tra:
                                 surf_relax_s: "${surf_relax_s}"
 
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.0/"
                         add_namelist_changes:
@@ -354,7 +359,7 @@ fesom:
                         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
                         remove_forcing_files:
                                 - ICMCL_INIT
-                "v3.1*":
+                "v3.1":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
                         add_namelist_changes:
                                 namelist.oce:
@@ -555,7 +560,7 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
-        choose_general.version:
+        choose_general.major_version:
                 'frontiers-xios':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
@@ -563,7 +568,7 @@ oasis3mct:
                                 - xios
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
-                'v3.1*':
+                'v3.1':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'

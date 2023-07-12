@@ -491,7 +491,7 @@ class oasis:
             # If the restart file path is not defined set it to be the same as the
             # ini_restart_dir
             if not restart_file_path:
-                restart_file_path = config["ini_restart_dir"]
+                restart_file_path = f"{config['ini_restart_dir']}/{restart_file}"
             # If set in config (oasis):
             if "ini_restart_dir" in config and "ini_restart_date" in config:
                 # check if restart file with ini_restart_date in filename is in the restart

@@ -488,9 +488,9 @@ class oasis:
                 config["ini_restart_date"] = config["ini_parent_date"]
             if "ini_parent_dir" in config and "ini_restart_dir" not in config:
                 config["ini_restart_dir"] = config["ini_parent_dir"]
-            # If the restart file path is not defined set it to be the same as the
-            # ini_restart_dir
-            if not restart_file_path:
+            # If the restart file path is not defined, or it's not an absolute path to
+            # the file set it to be the same as the ini_restart_dir
+            if not restart_file_path or restart_file_path==restart_file:
                 restart_file_path = f"{config['ini_restart_dir']}/{restart_file}"
             # If set in config (oasis):
             if "ini_restart_dir" in config and "ini_restart_date" in config:
@@ -516,7 +516,7 @@ class oasis:
                     if not os.path.isfile(restart_file):
                         user_error(
                             "Restart file missing",
-                            f"No OASIS restart file for ``{restart_file}`` found "
+                            f"No OASIS restart file for ``{restart_file_label}`` found "
                             f"matching the pattern ``{glob_search_file}`` nor "
                             f"``{restart_file}``"
                         )

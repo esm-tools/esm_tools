@@ -43,6 +43,14 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+          v3.1.2:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
           master:
             major_version: master
             couplings:

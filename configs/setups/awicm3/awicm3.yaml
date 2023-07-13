@@ -728,9 +728,9 @@ oasis3mct:
                 true:
                         lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
-                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # it is not a branched off experiment adds the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}') and ${general.run_number} == 1 ))"
                         choose_load_restart_from_pool:
                                 true:
                                     add_restart_in_sources:

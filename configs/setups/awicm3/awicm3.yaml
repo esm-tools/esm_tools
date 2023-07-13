@@ -218,6 +218,13 @@ oifs:
                                                 ORBMODE: "fixed_year"
                                                 ORBIY: ${start_date!syear}
 
+        choose_general.version:
+                "v3.1.3":
+                        add_namelist_changes:
+                                fort.4:
+                                        NAERAD:
+                                                NAERANT_SCALE: "1"
+
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data

@@ -411,7 +411,7 @@ class oasis:
         Cases
         -----
         1. If this run is a restart but not a branch-off experiment, set the source to
-            be the same as defined by the user in ``restart_in_in_sources`` or the same
+            be the same as defined by the user in ``restart_in_sources`` or the same
             as the name coming from ``coupling_<target/input>_fields``, if the first is
             missing (the normal case).
         2. Same as case 1 but with the time stamp added to the name of the restart file

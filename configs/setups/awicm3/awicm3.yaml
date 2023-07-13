@@ -20,6 +20,7 @@ general:
         - 'v3.0'
         - 'v3.1'
         - 'v3.1.1'
+        - 'v3.1.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:
@@ -39,6 +40,14 @@ general:
             major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          v3.1.2:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:

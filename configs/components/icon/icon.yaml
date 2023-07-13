@@ -1,11 +1,14 @@
-# NAME OF YOUR MODEL OR COMPONENT HERE
+# ICON climate and weather forecast model configuration 
+# As I (seb-wahl) keep getting confused with the different ICON versions 
+# here's my personal summary
+#    * ICON-AES: ICON version with ECHAM physics (AES=Atmosphere in the Earth System)
+#    * ICON-LEM: Limited area model version, seems to be deprecated
+#    * ICON-NWP: NWP version used at DWD
+#    * ICON-SEAMLESS: „climate“ version based on NWP physics.
+#    * ICON RUBY: ICON-ESM coupled to ICON-O with ECHAM physics, published in Jungclaus, J. H., Lorenz, S. J., Schmidt, H., Gutjahr, O., Haak, H., Mehlmann, C., … Hanke, M. (2021). The ICON Earth System Model Version 1.0. Journal of Advances in Modeling Earth Systems. https://doi.org/10.1002/essoar.10507989.1 
+#    * ICON SAPPHIRE: High resolution version pushed at MPI, see Hohenegger, C., Korn, P., Linardakis, L., Redler, R., Schnur, R., Adamidis, P., … Stevens, B. (2023). ICON-Sapphire: Simulating the components of the Earth system and their interactions at kilometer and subkilometer scales. Geoscientific Model Development, 16(2), 779–811. https://doi.org/10.5194/gmd-16-779-2023 for details
+#    * ICON-APE - ICON Aquaplanet Experiments
 #
-# For more information about the extended YAML syntax, please consult:
-# https://esm-tools.readthedocs.io/en/latest/yaml.html#esm-tools-extended-yaml-syntax
-#
-# For more information about the ESM-Tools feature variables available, please consult:
-# https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
-
 model: icon 
 version: 2.6.6 
 configuration: aes # ECHAM physics, nwp for NWP physics
@@ -19,12 +22,13 @@ metadata:
         License:
                 Please make sure you have a valid licence before using ICON, for licensing details see https://code.mpimet.mpg.de/projects/icon-license
 
+# currently https://git.geomar.de/foci/src/icon.git only contains version 2.6.6 as received from MPI
+# via a personal licence.
 git-repository: https://git.geomar.de/foci/src/icon.git
 branch: master
 # workaround until esm_master becomes more clever
 comp_command: '$ICON_CONFIGURE_COMMAND ; make -j 16' 
 
-#install_bins: subpath within ``model_dir`` where the comp command produces the binaries
 clean_command: ${defaults.clean_command}
 executable: icon 
 
@@ -33,8 +37,6 @@ choose_version:
         branch: master 
     default: 
         branch: master 
-
-           #model_dir: "${model_dir}/icon-${version}"
 
 # This section takes care of dealing with environment changes you might want to do, to
 # deviated from the defaults define for the specific machine
@@ -84,7 +86,12 @@ file_movements:
             all_directions: move
         outdata:
             all_directions: move
+        unknown:
+            all_directions: move
 
+# format start_date/end_date according to ISO_8601 standard used by ICON
+start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
+end_rsttime: ${next_date!syear!smonth!sday}T${next_date!shour!sminute!ssecond}Z
 # By default do a cold start
 lresume: false
 
@@ -97,22 +104,25 @@ grid_label: G
 grid_refinement: R02B04
 grid_name: icon_grid_${grid_id}_${grid_refinement}_${grid_label}
 
-# time step
+# time step (4min), ICON uses the http://en.wikipedia.org/wiki/ISO_8601 standard
+# for time stamps and time periods
 modelTimeStep: PT4M 
 
 # restart intervals
-checkpoint_interval: PT8M
-restart_interval: PT16M
+checkpoint_interval: P01M
+restart_interval: P01M
 
 # output intervals
-output_interval: PT4M
-file_interval: PT4M
-
-# namelist files
-atmo_namelist: NAMELIST_atm
-jsbach_namelist: NAMELIST_lnd
-
+output_interval: P01D
+# always use a file interval >> restart_interval as a new output file is 
+# created upon each restart
+file_interval: P50Y 
+# instant ("") or mean/max/min/acc over output_interval
+# TODO: check if precip is still accumulated or really averaged
+operation: mean
+#
 # JSBACH settings
+#
 jsbach_usecase: jsbach_pfts    # jsbach_lite or jsbach_pfts
 jsbach_with_lakes: yes
 jsbach_with_hd: no
@@ -125,7 +135,7 @@ with_ozone: 5
 # 0 = no aerosol in radiation
 # 18 = Kinne background aerosol + Stenchikov volcanic aerosol in the
 #      stratosphere + MacSP V2 simple plumes
-# for other options see Namelist_Overview.pdf
+# for other options see doc/Namelist_Overview.pdf in the ICON repository
 aerosol: 18
 
 input_dir: ${computer.pool_dir}/ICON
@@ -151,22 +161,28 @@ pft_file_tag: ""
 choose_jsbach_usecase:
    jsbach_pfts:
       pft_file_tag: 11pfts_
-
+#
+# namelists and namelist settings/changes
+#
 namelist_dir: "${general.esm_namelist_dir}/icon/${version}/${configuration}/"
 namelists:
     - NAMELIST_atm
     - NAMELIST_lnd
     - icon_master.namelist
 
+config_sources:
+   'icon_master.namelist': ${namelist_dir}/icon_master.namelist 
+   NAMELIST_atm: ${namelist_dir}/NAMELIST_atm   
+   NAMELIST_lnd: ${namelist_dir}/NAMELIST_lnd   
+
 # https://esm-tools.readthedocs.io/en/latest/yaml.html#changing-namelists
-# TODO: how do I change  output_filename in the duplicate output_nml namelists
 namelist_changes:
    'icon_master.namelist': 
       master_nml:
          lrestart: ${lresume}
       master_time_control_nml:
          experimentStartDate: ${start_date}
-         experimentStopDate: ${end_date}
+         experimentStopDate: ${next_date}
          restartTimeIntval: ${restart_interval} 
          checkpointTimeIntval: ${checkpoint_interval}
          
@@ -183,6 +199,15 @@ namelist_changes:
          aes_phy_config(1)%llake: ${llake}
       aes_rad_nml:
          aes_rad_config(1)%irad_o3: ${with_ozone} 
+      output_nml:
+         output_filename: ${expid}
+         output_start: ${start_date}
+         output_end: ${next_date}
+         output_interval: ${output_interval}
+         file_interval: ${file_interval}
+         # TODO: operation = 'mean' not working at least not with
+         # my set of output variables
+         # operation: ${operation}
                
    NAMELIST_lnd:
       jsb_model_nml:
@@ -219,38 +244,40 @@ choose_aerosol:
          kinne_fin: kinne_fin
       add_forcing_files:
          stenchikov_sw: stenchikov_sw
-
-config_sources:
-   'icon_master.namelist': ${namelist_dir}/icon_master.namelist 
-   NAMELIST_atm: ${namelist_dir}/NAMELIST_atm   
-   NAMELIST_lnd: ${namelist_dir}/NAMELIST_lnd   
-
-# TODO: need to understand how the DOM01.nc based restart mechanism works 
-# TODO: set rsttime correctly
-start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
-end_rsttime: ${end_date!syear!smonth!sday}T${end_date!shour!sminute!ssecond}Z
-
-# TODO: I'm pretty sure this doesn't work as ${expid}_restart_atm_${start_rsttime}.mfr is a directory
+#
+# output data settings
+#
+outdata_sources:
+   icon_nc: ${expid}_*_${start_rsttime}.nc
+#
+# restart settings, ICON uses multifile restarts
+#
+# all restart files are stored in a subdirectory in work at the end of a run
+restart_in_files:
+   restart_atm_mfr: restart_atm_mfr
 restart_in_sources: 
    #restart_atm: /path/to/global/restart_atm_DOM01.nc
-   restart_atm_mfr: ${expid}_restart_atm_${start_rsttime}.mfr
+   restart_atm_mfr: ${parent_expid}_restart_atm_${start_rsttime}.mfr
+restart_in_in_work:
+   restart_atm_mfr: multifile_restart_atm.mfr 
+
 restart_out_sources: 
    #restart_atm: /path/to/global/restart_atm_DOM01.nc
    restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr
+#restart_out_targets: 
+   #restart_atm: /path/to/global/restart_atm_DOM01.nc
+   #   restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr/*
 
 bin_sources:
     bin_tag: ${model_dir}/bin/${executable} # This would be the normal way to do it
-    
-# File dictionaries to control the copying/moving/linking of all files associated to
-# the simulation. This syntax will change for something better soon. For more details
-# about this syntax consult:
-# https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
 
+#
+# input and forcing files
+# 
 choose_lresume:
    false:
       add_input_files:
          ifs2icon: ifs2icon
-         ic_land_soil: ic_land_soil
 
 input_files:
    coefficients_sw: coefficients_sw
@@ -270,8 +297,7 @@ input_files:
    land_phys: land_phys
    land_soil: land_soil
    lctlib: lctlib
-
-      # forcing_files:
+   ic_land_soil: ic_land_soil
 
 forcing_sources:
    ozone_hist: 

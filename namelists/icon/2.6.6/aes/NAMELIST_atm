@@ -111,146 +111,31 @@
  restart_file_type= 5
  restart_write_mode = "joint procs multifile"
 /
+
 &output_nml
- output_filename  = "ICON_atm_vgrid"
- filename_format  = "<output_filename>_<levtype_l>"
+ output_filename  = "ICON" ! overwritten by esm-tools with expid, see icon.yaml
+ filename_format  = "<output_filename>_DOM<physdom>_<levtype_l>_<datetime2>"
  filetype         = 5
- remap            = 0
+ remap            = 1
+ reg_lat_def      = -90.0,181,90.0 
+ reg_lon_def      = 0.0,360,360.0 
  output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"       ! output_start = output_end
- output_end       = "1979-01-01T00:00:00Z"       ! --> write once only irrespective of
- output_interval  = "PT4M"  !     the output interval and
- file_interval    = "PT4M"    !     the file interval
- ml_varlist       = 'zghalf'  , 'zg'      , 'dzghalf'
-/
-&output_nml
- output_filename  = "ICON_atm_3d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
+ !output_start     = "to_be_set_by_esm_tools" 
+ !output_end       = "to_be_set_by_esm_tools""
+ output_interval  = "PT01H"
+ file_interval    = "P01D"
  include_last     = .FALSE.
- ml_varlist       = 'ps'      , 'pfull'   , 'zg'      ,
-                    'rho'     , 'ta'      ,
-                    'ua'      , 'va'      , 'wap'     ,
-                    'hus'     , 'clw'     , 'cli'     ,
-                    'cl'      ,
+ p_levels         = 10,50,100,200,300,400,500,600,700,800,
+                    1000,2000,3000,4000,5000,6000,7000,8000,10000,15000,20000,
+										25000,30000,40000,50000,60000,70000,77500,80000,85000,
+										90000,92500,95000,100000
+ !pl_varlist       = 'group:atmo_pl_vars'
+ ! TODO: better use taveraged version of precipitation?
+ !pl_varlist       = 'qv','prec_con','prec_gsp','psl_m','rh','rh_2m',
+ !                   'sob_s','sob_t','sou_s','sou_t','t_2m','t_seasfc','temp',
+ !									'thb_s','thb_t','tmax_2m','tmin_2m','tot_prec','u_10m','v_10m','u','v',
+ ! 3D and 2D vars
+ pl_varlist       = 'zg','rho','ta','ua','va','wap','hus','clw','cli','hur','cl'
+ ml_varlist       = 'orog','cosmu0','rsdt','rsut','rsutcs','rlut','rlutcs','rsds','rsdscs','rlds','rldscs','rsus','rsuscs','rlus','ts','sic','sit','albedo','clt','prlr','prls','prcr','prcs','pr','prw','cllvi','clivi','hfls','hfss','evspsbl','tauu','tauv','sfcwind','uas','vas','tas','dew2','ptp'
 /
-&output_nml
- output_filename  = "ICON_atm_2d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
- include_last     = .FALSE.
- ml_varlist       = 'ps'      , 'psl'     ,
-                    'cosmu0'  ,
-                    'rsdt'    ,
-                    'rsut'    , 'rsutcs'  , 'rlut'    , 'rlutcs'  ,
-                    'rsds'    , 'rsdscs'  , 'rlds'    , 'rldscs'  ,
-                    'rsus'    , 'rsuscs'  , 'rlus'    ,
-                    'ts'      ,
-                    'sic'     , 'sit'     ,
-                    'albedo'  ,
-                    'clt'     ,
-                    'prlr'    , 'prls'    ,
-                    'pr'      , 'prw'     , 'cllvi'   , 'clivi'   ,
-                    'hfls'    , 'hfss'    , 'evspsbl' ,
-                    'tauu'    , 'tauv'    ,
-                    'sfcwind' , 'uas'     , 'vas'     ,
-                    'tas'     , 'dew2'    ,
-/
-&output_nml
- output_filename  = "ICON_phy_3d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
- include_last     = .FALSE.
- ml_varlist       = 'ps'           , 'pfull'        , 'zg'           ,
-                    'tend_ta_phy'  ,
-                    'tend_ta_rlw'  , 'tend_ta_rsw'  ,
-                    'tend_ta_vdf'  , 'tend_ta_mig'  ,
-                    'tend_ua_phy'  ,
-                    'tend_ua_vdf'  ,
-                    'tend_va_phy'  ,
-                    'tend_va_vdf'  ,
-                    'tend_qhus_phy',
-                    'tend_qhus_vdf',
-/
-&output_nml
- output_filename  = "ICON_atm_mean_3d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- operation        = 'mean'
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT8M"
- file_interval    = "PT8M"
- include_last     = .FALSE.
- ml_varlist       = 'ps'      , 'pfull'   , 'zg'      ,
-/
-&output_nml
- output_filename  = "ICON_trc_3d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
- include_last     = .FALSE.
- ml_varlist       = 'ps'        , 'pfull'     , 'zg'        ,
-                    'mairvi_phy',
-                    'mdryvi_phy',
-                    'mh2ovi_phy',
-                    'qhus_phy'  , 'mhusvi_phy', 'tend_mhusvi_phy',
-                    'qclw_phy'  , 'mclwvi_phy', 'tend_mclwvi_phy',
-                    'qcli_phy'  , 'mclivi_phy', 'tend_mclivi_phy',
-/
-&output_nml
- output_filename  = "ICON_aer_3d"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
- include_last     = .FALSE.
- ml_varlist       = 'ps'          , 'pfull'       , 'zg'          ,
-                    'aer_aod_533' , 'aer_ssa_533',  'aer_asy_533' , 
-                    'aer_aod_2325', 'aer_ssa_2325', 'aer_asy_2325', 
-                    'aer_aod_9731',
-/
-&output_nml
- output_filename  = "ICON_lnd"
- filename_format  = "<output_filename>_<levtype_l>_<datetime2>"
- filetype         = 5
- remap            = 0
- output_grid      = .TRUE.
- output_start     = "1979-01-01T00:00:00Z"
- output_end       = "1979-02-01T00:16:00Z"
- output_interval  = "PT4M"
- file_interval    = "PT4M"
- include_last     = .FALSE.
- ml_varlist       = 'pheno_lai_box'         , 'pheno_fract_fpc_veg'         , 'hydro_fract_water_box' ,
-                    'hydro_fract_snow_box'  , 'hydro_w_skin_box'            , 'hydro_w_snow_box'      ,
-                    'hydro_w_soil_column_box'
-/
+

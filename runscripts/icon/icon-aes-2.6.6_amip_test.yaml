@@ -5,13 +5,12 @@ general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: icon
-   compute_time: "00:05:00"
+   compute_time: "00:45:00"
    account: bb1198
    initial_date: "1979-01-01T00:00:00"       # Initial exp. date
-   final_date: "1979-02-01T00:00:00"         # Final date of the experiment
-   leapyear: true
-   #nyear: 1 
+   final_date: "1979-03-01T00:00:00"         # Final date of the experiment
    nmonth: 1
+   
    base_dir: ${homedir}/esm/esm-experiments/ 
    model_dir: ${homedir}/esm/models/icon-2.6.6
 
@@ -19,4 +18,7 @@ icon:
    version: 2.6.6
    nproc: 32 
    omp_num_threads: 4
-
+   #namelist_changes:
+      #NAMELIST_atm:
+      #   output_nml:
+      #      remap: 1 

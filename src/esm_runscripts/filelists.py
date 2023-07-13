@@ -992,6 +992,39 @@ def copy_files(config, filetypes, source, target):
                             )
                             helpers.print_datetime(config)
                             missing_files.update({file_target: file_source})
+                    # handle directories
+                    else:
+                        try:
+                            if not os.path.isdir(dest_dir):
+                                # MA: ``os.makedirs`` creates the specified directory
+                                # and the parent directories if the last don't exist
+                                # (same as with ``mkdir -p <directory>>``)
+                                os.makedirs(dest_dir)
+                            if not os.path.isdir(file_source):
+                                print(
+                                    f"WARNING: Directory not found: {file_source}",
+                                    flush=True,
+                                )
+                                helpers.print_datetime(config)
+                                missing_files.update({file_target: file_source})
+                                continue
+                            if (file_source == file_target):
+                                if config["general"]["verbose"]:
+                                    print(
+                                        f"Source and target directory are identical, skipping {file_source}",
+                                        flush=True,
+                                    )
+                                    helpers.print_datetime(config)
+                                continue
+                            movement_method(file_source, file_target)
+                            successful_files.append(file_source)
+                        except IOError:
+                            print(
+                                f"Could not copy/move/link directory {file_source} to {file_target} for unknown reasons.",
+                                flush=True,
+                            )
+                            helpers.print_datetime(config)
+                            missing_files.update({file_target: file_source})
 
     if missing_files:
         if not "files_missing_when_preparing_run" in config["general"]:

@@ -363,9 +363,6 @@ fesom:
                         restart_log:
                                 restart_length_unit: "${restart_unit}"
                                 restart_length: "${restart_rate}"
-                namelist.oce:
-                        oce_tra:
-                                surf_relax_s: "${surf_relax_s}"
 
         choose_general.major_version:
                 "v3.0":
@@ -374,18 +371,12 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
-                        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
-                        remove_forcing_files:
-                                - ICMCL_INIT
                 "v3.1":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
-                        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
-                        remove_forcing_files:
-                                - ICMCL_INIT
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -422,10 +413,42 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
-                        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
-                        remove_forcing_files:
-                                - ICMCL_INIT
 
+        # Note that this choose block (version) can overwrite settings from the block above (major_version)
+        choose_general.version:
+                "v3.1.3":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/"
+                        add_namelists:
+                                - namelist.tra
+                                - namelist.cvmix
+                        add_config_sources:
+                                tra:     "${namelist_dir}/namelist.tra"
+                                dyn:     "${namelist_dir}/namelist.dyn"
+                        add_config_in_work:
+                                tra:     "namelist.tra"
+                                dyn:     "namelist.dyn"
+                        add_config_files:
+                                tra:     tra
+                                dyn:     dyn
+                        add_namelist_changes:
+                                namelist.config:
+                                        ale_def:
+                                                which_ALE: 'zstar'
+                                namelist.oce:
+                                        oce_dyn:
+                                                SPP: true
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
+                                                use_momix: false
+                                namelist.ice:
+                                        ice_therm:
+                                                albi: 0.6
+                                                albim: 0.43
+
+        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
+        remove_forcing_files:
+                - ICMCL_INIT
         remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
                 - restart_length
                 - restart_length_unit

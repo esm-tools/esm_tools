@@ -70,6 +70,8 @@ choose_version:
         archfile: ESMTOOLS_generic_oasis_intel
       intelopenmpi:
         archfile: ESMTOOLS_generic_oasis_intel
+      intelmpich:
+        archfile: ESMTOOLS_generic_oasis_intel
       "*":
         foo: bar
     # MA: yet another block, this time for albedo. We cannot fix this now, but in the

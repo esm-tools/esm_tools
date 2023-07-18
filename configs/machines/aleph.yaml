@@ -46,7 +46,7 @@ hyper_flag: ""
 #
 #
 
-useMPI: intelopenmpi #cray_mpich
+useMPI: cray_mpich #intelopenmpi #cray_mpich
 
 choose_useMPI:
         cray_mpich:
@@ -84,16 +84,18 @@ choose_useMPI:
                         ZLIBROOT: /usr
 
         intelopenmpi:
-                fc: mpifort
-                f77: mpif77
-                mpifc: mpifort
-                mpicc: mpicc
-                cc: mpicc
-                cxx: mpicxx
+                fc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
+                f77: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
+                mpifc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
+                mpicc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
+                cc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
+                cxx: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicxx
                 module_actions:
                         - "purge"
                         - "load PrgEnv-intel/6.0.5"
                         - "unload pmi"
+                        - "swap intel/19.0.0.117"
+                        - "load gcc/9.3.0"
                         - "load pbs"
                         - "load cmake/3.14.0"
                         - "load cdo/1.9.5"
@@ -103,7 +105,9 @@ choose_useMPI:
                         - "load python/3.9.1"
                         - "list"
                 add_export_vars:
-                        IO_LIB_ROOT: home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717
+                        CMAKE_C_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
+                        CMAKE_CXX_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicxx
+                        IO_LIB_ROOT: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717
                         LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                         SZIPROOT: $IO_LIB_ROOT
@@ -112,6 +116,39 @@ choose_useMPI:
                         NETCDFROOT: $IO_LIB_ROOT
                         NETCDFFROOT: $IO_LIB_ROOT
                         ECCODESROOT: $IO_LIB_ROOT
+
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                        PATH: $IO_LIB_ROOT/bin:$PATH
+
+        intelmpich:
+                fc: ftn
+                f77: ftn
+                mpifc: ftn
+                mpicc: cc
+                cc: cc
+                cxx: CC
+                module_actions:
+                        - "purge"
+                        - "load PrgEnv-intel/6.0.5"
+                        - "load gcc/9.3.0"
+                        - "load pbs"
+                        - "load cmake/3.14.0"
+                        - "load cdo/1.9.5"
+                        - "load fftw/2.1.5.9"
+                        - "load nco/4.9.4"
+                        - "load proj4/5.1.0"
+                        - "load python/3.9.1"
+                        - "load cray-netcdf-hdf5parallel/4.6.1.3"
+                        - "load cray-hdf5-parallel/1.10.2.0"
+                        - "load eccodes"
+                        - "list"
+                add_export_vars:
+                        #LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+                        ECCODESROOT: $ECCODES_DIR
 
                         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
                         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include

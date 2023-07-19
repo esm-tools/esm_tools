@@ -70,7 +70,7 @@ choose_version:
         archfile: ESMTOOLS_generic_oasis_intel
       intelopenmpi:
         archfile: ESMTOOLS_generic_oasis_intel
-      intelmpich:
+      intel_mpich:
         archfile: ESMTOOLS_generic_oasis_intel
       "*":
         foo: bar

@@ -46,7 +46,7 @@ hyper_flag: ""
 #
 #
 
-useMPI: cray_mpich #intelopenmpi #cray_mpich
+useMPI: intel_mpich #intelopenmpi #cray_mpich
 
 choose_useMPI:
         cray_mpich:
@@ -124,7 +124,7 @@ choose_useMPI:
                         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                         PATH: $IO_LIB_ROOT/bin:$PATH
 
-        intelmpich:
+        intel_mpich:
                 fc: ftn
                 f77: ftn
                 mpifc: ftn
@@ -134,7 +134,9 @@ choose_useMPI:
                 module_actions:
                         - "purge"
                         - "load PrgEnv-intel/6.0.5"
-                        - "load gcc/9.3.0"
+                        - "load craype-x86-skylake"
+                        - "load cray-mpich/7.7.3"
+                        - "load gcc/7.3.0"
                         - "load pbs"
                         - "load cmake/3.14.0"
                         - "load cdo/1.9.5"
@@ -144,11 +146,9 @@ choose_useMPI:
                         - "load python/3.9.1"
                         - "load cray-netcdf-hdf5parallel/4.6.1.3"
                         - "load cray-hdf5-parallel/1.10.2.0"
-                        - "load eccodes"
                         - "list"
                 add_export_vars:
-                        #LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-                        ECCODESROOT: $ECCODES_DIR
+                        ECCODESROOT: /home/awiiccp2/software/HPC_libraries/eccodes_intel_mpich/
 
                         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
                         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
@@ -156,7 +156,6 @@ choose_useMPI:
                         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                         PATH: $IO_LIB_ROOT/bin:$PATH
-
 export_vars:
         LC_ALL: en_US.UTF-8
 

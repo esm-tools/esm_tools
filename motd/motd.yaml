@@ -130,11 +130,19 @@ release6.7:
             If the model you are aiming to use is not in that list, please add a comment\n
             to the discussion in the link, stating the model's name, version, branches...\n
             and \x1b[35mcontact the model developers\x1b[0m for them to do the necessary\n
-            changes in the CMake files.\n
+            changes in the CMake files.\n"
+        action: DELAY(1)
+        announcement: true
 
-            To upgrade to version \x1b[96m6.7\x1b[0m follow these simple steps:\n
-            \x1b[96m1.\x1b[0m \x1b[35mcd <YOUR_PATH>/esm_tools\x1b[0m\n
-            \x1b[96m2.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+oasis_branchoff6.21.23:
+        package: "esm_tools"
+        versions: "<6.21.23"
+        message: "\x1b[1m\x1b[96mOASIS BRANCH-OFF RESTARTS FIXED!\x1b[0m\n
+
+            The bug on the copying of the wrong flux files from OASIS \x1b[96mwhen running\n
+            a branch-off simulation that started from the middle of a parent simulation\x1b[0m is now\n
+            \x1b[96mfixed\x1b[0m (no more manual fixing of the \x1b[35mrstas.nc\x1b[0m/\x1b[35mrstos.nc\x1b[0m/\x1b[35ma2o_flux\x1b[0m/\x1b[35mo2a_flux.nc\x1b[0m\n
+            links is needed).\n"
         action: DELAY(1)
         announcement: true
 

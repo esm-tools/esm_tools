@@ -46,7 +46,7 @@ hyper_flag: ""
 #
 #
 
-useMPI: intel_mpich #intelopenmpi #cray_mpich
+useMPI: cray_mpich #intel_mpich #intelopenmpi #cray_mpich
 
 choose_useMPI:
         cray_mpich:
@@ -84,18 +84,18 @@ choose_useMPI:
                         ZLIBROOT: /usr
 
         intelopenmpi:
-                fc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
-                f77: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
-                mpifc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpifort
-                mpicc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
-                cc: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
-                cxx: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicxx
+                fc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                f77: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                mpifc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                mpicc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                cc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                cxx: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicxx
                 module_actions:
-                        - "purge"
+                        - "unload PrgEnv-cray"
                         - "load PrgEnv-intel/6.0.5"
-                        - "unload pmi"
-                        - "swap intel/19.0.0.117"
-                        - "load gcc/9.3.0"
+                        - "load craype-x86-skylake"
+                        - "load cray-mpich/7.7.3"
+                        - "load gcc/7.3.0"
                         - "load pbs"
                         - "load cmake/3.14.0"
                         - "load cdo/1.9.5"
@@ -105,9 +105,9 @@ choose_useMPI:
                         - "load python/3.9.1"
                         - "list"
                 add_export_vars:
-                        CMAKE_C_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicc
-                        CMAKE_CXX_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717/bin/mpicxx
-                        IO_LIB_ROOT: /home/awiiccp2/software/HPC_libraries/intel-19.0.0.117_ompi_20230717
+                        CMAKE_C_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                        CMAKE_CXX_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicxx
+                        IO_LIB_ROOT: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717
                         LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
                         SZIPROOT: $IO_LIB_ROOT
@@ -123,6 +123,7 @@ choose_useMPI:
                         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                         PATH: $IO_LIB_ROOT/bin:$PATH
+                        MPIFC: ftn
 
         intel_mpich:
                 fc: ftn
@@ -132,7 +133,7 @@ choose_useMPI:
                 cc: cc
                 cxx: CC
                 module_actions:
-                        - "purge"
+                        - "unload PrgEnv-cray"
                         - "load PrgEnv-intel/6.0.5"
                         - "load craype-x86-skylake"
                         - "load cray-mpich/7.7.3"
@@ -156,6 +157,7 @@ choose_useMPI:
                         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                         PATH: $IO_LIB_ROOT/bin:$PATH
+                        MPIFC: ftn
 export_vars:
         LC_ALL: en_US.UTF-8
 
@@ -180,7 +182,7 @@ export_vars:
         # Important for eccodes to work
         CRAYPE_LINK_TYPE: dynamic
 
-label_format: '"[@MODEL@]%l:"'
+label_format: '"[@MODEL@]%r:"'
 launcher_flags_per_component: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
         env OMP_NUM_THREADS=@omp_num_threads@
         env PMI_LABEL_ERROUT_FORMAT=${label_format}"

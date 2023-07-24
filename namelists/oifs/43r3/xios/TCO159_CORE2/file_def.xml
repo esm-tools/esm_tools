@@ -295,7 +295,7 @@
         <file
             enabled="true"
 	    timeseries="only"
-	    output_freq="1m"
+	    output_freq="1mo"
             name_suffix="_1m_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 

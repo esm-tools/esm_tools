@@ -126,64 +126,77 @@ class Namelist:
 
         namelist_changes = mconfig.get("namelist_changes", {})
         namelist_removes = []
+        error_message = (
+            "There is a syntax error, probably in your runscript, regarding namelist "
+            "changes (e.g. in a 'add_namelist_changes' block). "
+            "It seems that either 'namelist_file' or "
+            "'namelist_group' or 'both' are missing.\n"
+            "Please make sure that namelist changes are specified in the correct syntax (see example below)"
+            " and rerun your runscript.\n"
+            "Example for add_namelist_changes:\n"
+            "\t add_namelist_changes:\n"
+            "\t\t'<namelist_file>':\n"
+            "\t\t\t'<namelist_group>':\n"
+            "\t\t\t\t<variable>: <value>"
+        )
         for namelist in list(namelist_changes):
-            # NOTE (NW): Check if namelist is a file, or in the format file_name.ext ?
             changes = namelist_changes[namelist]
-            logging.debug("Determining remove entires for %s", namelist)
-            logging.debug("All changes: %s", changes)
-            for change_chapter in list(changes):
-                change_entries = changes[change_chapter]
-                if isinstance(change_entries, dict):
-                    for key in list(change_entries):
-                        value = change_entries[key]
-                        if value == "remove_from_namelist":
-                            namelist_removes.append((namelist, change_chapter, key))
-
-                            # the key is probably coming from esm_tools config
-                            # files or from a user runscript. It can contain lower
-                            # case, but the original Fortran namelist could be in
-                            # any case combination. Here `original_key` is coming
-                            # from the default namelist and may contain mixed case.
-                            # `key` is the processed variable from f90nml module and
-                            # is lowercase.
-                            remove_original_key = False
-
-                            # traverse the namelist chapter and see if a mixed case
-                            # variable is also found
-                            for key2 in namelist_changes[namelist][change_chapter]:
-                                # take care of the MiXeD FORTRAN CaSeS
-                                if key2.lower() == key.lower() and key2 != key:
-                                    original_key = key2
-                                    remove_original_key = True
-                                    namelist_removes.append(
-                                        (namelist, change_chapter, original_key)
-                                    )
-
-                            # remove both lowercase and mixed case variables
-                            del namelist_changes[namelist][change_chapter][key]
-                            if remove_original_key:
-                                del namelist_changes[namelist][change_chapter][original_key]
-
-                            # mconfig instead of config, Grrrrr
-                            print(
-                                f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
-                            )
-                else:
-                    message = (
-                                "There is something wrong within a 'add_namelist_changes' block. "
-                                "Propably in your runscript. It seems that either 'namelist_file' or "
-                                "'namelist_group' is not set.\n"
-                                "Please make sure that add_namelist_changes are set in the following syntax:\n"
-                                "\t add_namelist_changes:\n"
-                                "\t\t'<namelist_file>':\n"
-                                "\t\t\t'<namelist_group>':\n"
-                                "\t\t\t\t<variable>: <value>"
+            # Check if namelist_changes are specified in correct syntac (e.g. in runscript)
+            # If correct syntax, changes is always a dict.
+            if isinstance(changes, dict):
+                logging.debug("Determining remove entires for %s", namelist)
+                logging.debug("All changes: %s", changes)
+                for change_chapter in list(changes):
+                    change_entries = changes[change_chapter]
+                    # Check if namelist_changes are specified in correct syntac (e.g. in runscript)
+                    # If correct syntax, change_entries is always a dict.
+                    if isinstance(change_entries, dict):
+                        for key in list(change_entries):
+                            value = change_entries[key]
+                            if value == "remove_from_namelist":
+                                namelist_removes.append((namelist, change_chapter, key))
+    
+                                # the key is probably coming from esm_tools config
+                                # files or from a user runscript. It can contain lower
+                                # case, but the original Fortran namelist could be in
+                                # any case combination. Here `original_key` is coming
+                                # from the default namelist and may contain mixed case.
+                                # `key` is the processed variable from f90nml module and
+                                # is lowercase.
+                                remove_original_key = False
+    
+                                # traverse the namelist chapter and see if a mixed case
+                                # variable is also found
+                                for key2 in namelist_changes[namelist][change_chapter]:
+                                    # take care of the MiXeD FORTRAN CaSeS
+                                    if key2.lower() == key.lower() and key2 != key:
+                                        original_key = key2
+                                        remove_original_key = True
+                                        namelist_removes.append(
+                                            (namelist, change_chapter, original_key)
+                                        )
+    
+                                # remove both lowercase and mixed case variables
+                                del namelist_changes[namelist][change_chapter][key]
+                                if remove_original_key:
+                                    del namelist_changes[namelist][change_chapter][original_key]
+    
+                                # mconfig instead of config, Grrrrr
+                                print(
+                                    f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
                                 )
-                    user_error(
-                        "add_namelist_changes syntax error",
-                        message,
-                        dsymbols=["``", "'"],
-                    )
+                    else:
+                        user_error(
+                            "Syntax error in namelist changes",
+                            error_message,
+                            dsymbols=["``", "'"],
+                        )
+            else:
+                user_error(
+                    "Syntax error in namelist changes",
+                    error_message,
+                    dsymbols=["``", "'"],
+                )
 
         for remove in namelist_removes:
             namelist, change_chapter, key = remove

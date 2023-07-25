@@ -234,7 +234,7 @@ class version_control_infos:
             except:
                 print("Sorry, no " + todo + "_command defined for " + package.repo_type)
                 sys.exit(42)
-            if type(package.repo) == list:
+            if isinstance(package.repo, list):
                 repo = package.repo[0]
             else:
                 repo = package.repo

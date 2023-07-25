@@ -113,7 +113,7 @@ def create_empty_folders(config):
     for model in list(config):
         if "create_folders" in config[model]:
             folders = config[model]["create_folders"]
-            if not type(folders) == list:
+            if not isinstance(folders, list):
                 folders = [folders]
             for folder in folders:
                 if not os.path.isdir(folder):

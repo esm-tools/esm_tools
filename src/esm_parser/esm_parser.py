@@ -272,7 +272,7 @@ def complete_config(user_config):
     while True:
         for model in list(user_config):
             if "further_reading" in user_config[model]:
-                if type(user_config[model]["further_reading"]) == list:
+                if isinstance(user_config[model]["further_reading"], list):
                     for additional_file in user_config[model]["further_reading"]:
                         if (
                             not additional_file
@@ -281,7 +281,7 @@ def complete_config(user_config):
                             user_config["general"]["additional_files"].append(
                                 additional_file
                             )
-                elif type(user_config[model]["further_reading"]) == str:
+                elif isinstance(user_config[model]["further_reading"], str):
                     additional_file = user_config[model]["further_reading"]
                     if (
                         not additional_file
@@ -507,7 +507,7 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     if attach_key in config:
         attach_value = config[attach_key]
         del config[attach_key]
-        if type(attach_value) == str:
+        if isinstance(attach_value, str):
             attach_value = [attach_value]
         for attach_value in attach_value:
             try:
@@ -835,7 +835,7 @@ def remove_entries_from_chapter(config, remove_chapter, remove_entries):
 def add_entries_from_chapter(config, add_chapter, add_entries):
     my_entries = copy.deepcopy(add_entries)
     if add_chapter in config:
-        if type(config[add_chapter]) == list:
+        if isinstance(config[add_chapter], list):
             for entry in my_entries:
                 config[add_chapter].append(entry)
         elif isinstance(config[add_chapter], dict):
@@ -1049,7 +1049,7 @@ def add_entry_to_chapter(
     if chapter_to_add not in target_config[model_to_add_to]:
         target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
+        if not isinstance(add_entries, type(target_config[model_to_add_to][chapter_to_add])):
             error_type = "Type mismatch"
             error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
             user_error(error_type, error_text)
@@ -1746,15 +1746,15 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
     if level == "mappings":
-        do_func_for = [dict, list, DictWithProvenance]
+        do_func_for = (dict, list)
     elif level == "atomic":
-        do_func_for = [str, int, float, Date]
+        do_func_for = (str, int, float, Date)
     elif level == "always":
-        do_func_for = [str, dict, list, int, float, bool, DictWithProvenance]
+        do_func_for = (str, dict, list, int, float, bool, BoolWithProvenance)
     elif level == "keys":
-        do_func_for = []
+        do_func_for = ()
     else:
-        do_func_for = []
+        do_func_for = ()
 
     logging.debug("Type right: %s", type(right))
     logging.debug("Do func for: %s", do_func_for)
@@ -1768,7 +1768,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             right.update({returned_key: old_value})
 
     # logger.debug("right is a %s!", type(right))
-    if type(right) in do_func_for:
+    if isinstance(right, do_func_for):
         if isinstance(right, dict):
             keys = list(right)
             for key in keys:
@@ -1808,7 +1808,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 extremely undesirable way of solving this
                 Miguels fault
             """
-            if type(item) == str and "[[" in item and func == list_to_multikey:
+            if isinstance(item, str) and "[[" in item and func == list_to_multikey:
                 newright += new_item
             elif isinstance(new_item, list):
                 newright.extend(new_item)
@@ -1834,7 +1834,7 @@ def recursive_get(config_to_search, config_elements):
     Recusively gets entries in a nested dictionary in the form ``outer_key.middle_key.inner_key = value``
 
     Given a list of config elements in the form above (e.g. the result of
-    splitting the string ``"outer_key.middle_key.inner_key".split(".")``` on
+    splitting the string ``"outer_key.middle_key.inner_key".split(".")`` on
     the dot), the value "value" of the innermost nest is returned.
 
     Parameters
@@ -1882,7 +1882,6 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
-@keep_id_provenance
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -1895,7 +1894,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
         ):
             var_result, var_attrs = actually_find_variable(tree, var, full_config)
 
-            if type(var_result) == str:
+            if isinstance(var_result, str):
                 if "${" in var_result:
                     var_result = find_variable(
                         tree,
@@ -1967,6 +1966,8 @@ def actually_find_variable(tree, rhs, full_config):
 
     config_elements[-1] = var_name
     original_config_elements = copy.deepcopy(config_elements)
+    if rhs=="oifs.wam_number":
+        var_result = recursive_get(full_config, config_elements)
     try:
         var_result = recursive_get(full_config, config_elements)
         # return var_result
@@ -2243,7 +2244,6 @@ def determine_computer_from_hostname():
     # )
 
 
-@keep_id_provenance
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2336,7 +2336,7 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if type(result) == list:
+        if isinstance(result, list):
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
@@ -2348,7 +2348,6 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
-@keep_id_provenance
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2363,7 +2362,6 @@ def mark_dates(tree, rhs, config):
     return entry
 
 
-@keep_id_provenance
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2394,7 +2392,6 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
-@keep_id_provenance
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2406,13 +2403,12 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
-@keep_id_provenance
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    if type(entry) == str:
+    if isinstance(entry, str):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
@@ -2457,7 +2453,6 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
-@keep_id_provenance
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2472,7 +2467,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if type(value) == bool:
+    if isinstance(value, (bool, BoolWithProvenance)):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2481,9 +2476,9 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if type(value) == bool:
+    if isinstance(value, (bool, BoolWithProvenance)):
         return True
-    elif type(value) == str:
+    elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
             return True
     return False

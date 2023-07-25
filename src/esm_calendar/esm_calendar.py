@@ -582,7 +582,7 @@ class Date(object):
     def __sub__(self, other):
         if isinstance(other, Date):
             return self.sub_date(other)
-        elif type(other) == tuple:
+        elif isinstance(other, tuple):
             return self.sub_tuple(other)
         else:
             print("No known combination for subtraction")

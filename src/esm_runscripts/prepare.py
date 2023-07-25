@@ -90,7 +90,7 @@ def check_model_lresume(config):
                 user_lresume = esm_parser.find_variable(
                     model, user_lresume, config, [], []
                 )
-            if type(user_lresume) == str:
+            if isinstance(user_lresume, str):
 
                 if user_lresume == "0" or user_lresume.upper() == "FALSE":
                     user_lresume = False

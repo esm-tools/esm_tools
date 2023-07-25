@@ -98,7 +98,7 @@ def _modify_config_with_settings(config, settings):
                 selected_config = selected_config[k2]
             if isinstance(selected_config, dict):
                 selected_config[entry] = v
-            elif type(selected_config) == list:
+            elif isinstance(selected_config, list):
                 selected_config.append(entry + "=" + v)
 
             else:

@@ -353,12 +353,12 @@ As an example, to configure `esm_runscripts` for an echam-experiment to link the
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
 
-Running a experiment with a virtual environment
+Running an experiment with a virtual environment
 -----------------------------------------------
 
 Running jobs can optionally be encapsulated into a virtual environment.
 
-To run using a virtual environment run ``esm_runscripts`` with the flag
+To use a virtual environment run ``esm_runscripts`` with the flag
 ``--contained-run`` or set ``use_venv`` within the ``general`` section of your
 runscript to ``True``:
 
@@ -370,19 +370,15 @@ runscript to ``True``:
 This shields the run from changes made to the remainder of the ESM-Tool installation,
 and it's strongly recommended for production runs.
 
-Before the first run, a local copy will be installed in the experiment tree,
-and **that** installation will be used. For example, for a user ``miguel``
-with a run with `expid` ``test`` ESM-Tools will be installed here::
+If you choose to use a virtual environment, a local installation will be created in the experiment tree at the begining of the first run into the folder named ``.venv_esmtools``.  **That** installation will be used for the experiment. It will be installed at the root of your experiment and contains all the Python libraries used by ESM-Tools. The installation at the beginning of the experiment will induce a small overhead (~2-3 minutes).
+
+For example, for a user ``miguel`` with a run with `expid` ``test`` ESM-Tools will be installed here::
 
      /scratch/miguel/test/.venv_esmtools/lib/python3.10/site-packages/esm_tools
 
 instead of::
 
     /albedo/home/miguel/.local/lib/site-packages/esm_tools
-
-If you choose to use a virtual environment, a folder named ``.venv_esmtools``
-will be created at the root of your experiment. This contains all the Python
-libraries used by ESM-Tools. The first installation induces some overhead (~2-3 minutes).
 
 The virtual environment installs by default the ``release`` branch, pulling it directly
 from our GitHub repository. You can choose to override this default by specifying another
@@ -401,7 +397,7 @@ branch, adding to your runscript:
 
 You may also select to install esm_tools in `editable mode`, in which case
 they will be installed in a folder ``src/esm_tools/`` in the root of
-your experiment. Any changes made to code in that folder **will** influence how
+your experiment. Any changes made to the code in that folder **will** influence how
 ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
 `editable` mode use:
 

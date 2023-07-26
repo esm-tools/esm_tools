@@ -358,7 +358,7 @@ Running an experiment with a virtual environment
 
 Running jobs can optionally be encapsulated into a virtual environment.
 
-To run using a virtual environment run ``esm_runscripts`` with the flag
+To use a virtual environment run ``esm_runscripts`` with the flag
 ``--contained-run`` or set ``use_venv`` within the ``general`` section of your
 runscript to ``True``:
 

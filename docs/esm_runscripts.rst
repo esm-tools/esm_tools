@@ -401,7 +401,7 @@ branch, adding to your runscript:
 
 You may also select to install esm_tools in `editable mode`, in which case
 they will be installed in a folder ``src/esm_tools/`` in the root of
-your experiment. Any changes made to code in that folder **will** influence how
+your experiment. Any changes made to the code in that folder **will** influence how
 ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
 `editable` mode use:
 

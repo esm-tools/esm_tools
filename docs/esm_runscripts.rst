@@ -358,6 +358,15 @@ Running a experiment with a virtual environment
 
 Running jobs can optionally be encapsulated into a virtual environment.
 
+To run using a virtual environment run ``esm_runscripts`` with the flag
+``--contained-run`` or set ``use_venv`` within the ``general`` section of your
+runscript to ``True``:
+
+.. code-block:: yaml
+
+   general:
+       use_venv: True
+
 This shields the run from changes made to the remainder of the ESM-Tool installation,
 and it's strongly recommended for production runs.
 

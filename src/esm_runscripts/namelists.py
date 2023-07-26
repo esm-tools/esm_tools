@@ -139,7 +139,6 @@ class Namelist:
             if not isinstance(changes, dict):
                 nml_syntax_error = True
                 this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    {namelist}: {changes}\n...")
-#                this_is_wrong = [namelist, changes]
                 break
             else:
                 for change_chapter in list(changes):

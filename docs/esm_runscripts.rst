@@ -353,7 +353,7 @@ As an example, to configure `esm_runscripts` for an echam-experiment to link the
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
 
-Running a experiment with a virtual environment
+Running an experiment with a virtual environment
 -----------------------------------------------
 
 Running jobs can optionally be encapsulated into a virtual environment.

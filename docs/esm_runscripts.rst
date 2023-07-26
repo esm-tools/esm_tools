@@ -370,19 +370,15 @@ runscript to ``True``:
 This shields the run from changes made to the remainder of the ESM-Tool installation,
 and it's strongly recommended for production runs.
 
-Before the first run, a local copy will be installed in the experiment tree,
-and **that** installation will be used. For example, for a user ``miguel``
-with a run with `expid` ``test`` ESM-Tools will be installed here::
+If you choose to use a virtual environment, a local installation will be created in the experiment tree at the begining of the first run into the folder named ``.venv_esmtools``.  **That** installation will be used for the experiment. It will be installed at the root of your experiment and contains all the Python libraries used by ESM-Tools. The installation at the beginning of the experiment will induce a small overhead (~2-3 minutes).
+
+For example, for a user ``miguel`` with a run with `expid` ``test`` ESM-Tools will be installed here::
 
      /scratch/miguel/test/.venv_esmtools/lib/python3.10/site-packages/esm_tools
 
 instead of::
 
     /albedo/home/miguel/.local/lib/site-packages/esm_tools
-
-If you choose to use a virtual environment, a folder named ``.venv_esmtools``
-will be created at the root of your experiment. This contains all the Python
-libraries used by ESM-Tools. The first installation induces some overhead (~2-3 minutes).
 
 The virtual environment installs by default the ``release`` branch, pulling it directly
 from our GitHub repository. You can choose to override this default by specifying another

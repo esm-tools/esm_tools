@@ -352,3 +352,57 @@ As an example, to configure `esm_runscripts` for an echam-experiment to link the
 
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
+
+Running a experiment with a virtual environment
+-----------------------------------------------
+
+Running jobs can optionally be encapsulated into a virtual environment.
+
+This shields the run from changes made to the remainder of the ESM-Tool installation,
+and it's strongly recommended for production runs.
+
+Before the first run, a local copy will be installed in the experiment tree,
+and **that** installation will be used. For example, for a user ``miguel``
+with a run with `expid` ``test`` ESM-Tools will be installed here::
+
+     /scratch/miguel/test/.venv_esmtools/lib/python3.10/site-packages/esm_tools
+
+instead of::
+
+    /albedo/home/miguel/.local/lib/site-packages/esm_tools
+
+If you choose to use a virtual environment, a folder named ``.venv_esmtools``
+will be created at the root of your experiment. This contains all the Python
+libraries used by ESM-Tools. The first installation induces some overhead (~2-3 minutes).
+
+The virtual environment installs by default the ``release`` branch, pulling it directly
+from our GitHub repository. You can choose to override this default by specifying another
+branch, adding to your runscript:
+
+.. code-block:: yaml
+
+  general:
+      install_esm_tools_branch: '<your_branch_name>'
+
+.. warning::
+   The branch **needs to exist on GitHub** as it is cloned form there, and **not from your
+   local folder**. If you made any changes in your local branch make sure they are pushed before
+   running esm_runscripts with a virtual environment, so that your changes are included in the
+   virtual environment installation.
+
+You may also select to install esm_tools in `editable mode`, in which case
+they will be installed in a folder ``src/esm_tools/`` in the root of
+your experiment. Any changes made to code in that folder **will** influence how
+ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
+`editable` mode use:
+
+.. code-block:: yaml
+
+   general:
+       install_<esm_package>_editable: true/false
+
+.. note::
+   When using a virtual environment, config files and namelists will come of the
+   folder .venv_esmtools listed above and **not** from your user install directory.
+   You should make **all** changes to the namelists and config files via your user
+   runscript. This is recommended in all cases!!!

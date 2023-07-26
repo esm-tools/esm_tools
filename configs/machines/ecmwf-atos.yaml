@@ -73,16 +73,21 @@ useMPI: openmpi
 module_actions:
         - "reset"
         - "load prgenv/intel"
+        #- "load prgenv/gnu openmpi"
         #- "load prgenv/expert"
         #- "load hdf5-parallel/1.10.6:amd:3.1:ompi:4.0"
         #- "load netcdf4-parallel/4.7.4:amd:3.1:ompi:4.0"
         - "load udunits"
-        - "load intel/2021.4.0"
+        #- "load intel/2021.4.0"
+        #- "load intel-mpi/2021.4.0"
         - "load intel-mkl/19.0.5"
-        - "load openmpi/4.1.4.1"
+        - "load openmpi/4.1.1.1"
         #- "load hpcx-openmpi/2.9.0"
         - "load hdf5-parallel/1.10.6"
-        - "load cdo nco netcdf4-parallel/4.7.4"
+        - "load netcdf4-parallel/4.7.4"
+        #- "load hdf5"
+        #- "load netcdf4"
+        - "load cdo nco"
         - "load ecmwf-toolbox/2021.08.3.0"
         - "load python3/3.8.8-01"
         - "load git"
@@ -100,7 +105,7 @@ export_vars:
         CXX: ${cxx}
 
         CRAYPE_LINK_TYPE: dynamic
-        PATH: /gfs1/work/hbxeeeee/sw/cmake/bin:$PATH
+        #PATH: /gfs1/work/hbxeeeee/sw/cmake/bin:$PATH
 
         IO_LIB_ROOT: ""
         HDF5ROOT: $HDF5_PARALLEL_DIR
@@ -110,6 +115,14 @@ export_vars:
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
         NETCDF_CXX_LIBRARIES: $NETCDF4_PARALLEL_DIR/lib
+
+        #HDF5ROOT: $HDF5_DIR
+
+        #NETCDFFROOT: $NETCDF4_DIR
+        #NETCDFROOT: $NETCDF4_DIR
+        #NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDF4_DIR/include
+        #NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF4_DIR/include
+        #NETCDF_CXX_LIBRARIES: $NETCDF4_DIR/lib
 
         #PERL5LIB: /usr/lib64/perl5
         #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
@@ -123,7 +136,9 @@ export_vars:
         MPIDIR: $MPIROOT
         MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
 
-        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_DIR/lib
+        #LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_DIR/lib
+        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_DIR/lib:$ECCODES_DIR/lib:$HDF5_DIR/lib
+        OMPI_MCA_btl: "^vader"
 
 choose_useMPI:
         openmpi:

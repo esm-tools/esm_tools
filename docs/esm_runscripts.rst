@@ -414,4 +414,4 @@ ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
    When using a virtual environment, config files and namelists will come of the
    folder .venv_esmtools listed above and **not** from your user install directory.
    You should make **all** changes to the namelists and config files via your user
-   runscript. This is recommended in all cases!!!
+   runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!

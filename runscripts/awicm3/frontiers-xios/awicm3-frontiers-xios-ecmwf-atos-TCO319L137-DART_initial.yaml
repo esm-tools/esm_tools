@@ -1,0 +1,111 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "frontiers-xios"
+    account: "ieclim"
+    compute_time: "01:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-02"
+    base_dir: "/scratch/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/home/${user}/esm_tools/${general.setup_name}-${general.version}//"
+
+fesom:
+    ini_restart_exp_id: "ctl1950d"
+    ini_restart_date: "1949-12-31"
+    ini_restart_dir: "/scratch/duts/ctl1950d_restart/"
+    resolution: "DART"
+    #pool_dir: "/work/ab0246/a270092/input/fesom2/"
+    mesh_dir: "/scratch/duts/pool/FESOM2/awicm3/dart/"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    namelist_changes:
+        namelist.config:
+           machine:
+             n_levels: 2
+             n_part: [10, 128]
+    lresume: false
+    namelist_dir: "/home/duts/esm_tools/namelists/fesom2/2.0/awicm3/DART_niko_kpp/"
+    add_file_movements:
+        outdata:
+           all_directions: move
+    time_step: 60
+    nproc: 4800
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 900
+    nproc: 512
+    #omp_num_threads: 1
+    namelist_changes:
+        fort.4:
+            naerad:
+                NCMIPFIXYR: 0
+                SSPNAME: "SSP5-8.5"
+            namcumf:
+                RPRCON: 1.0E-3
+                ENTRORG: 1.25E-3
+            namgwwms:
+                GGAUSSB: -0.45
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 3600
+    #use_lucia: true
+    ini_restart_exp_id: "ctl1950d"
+    ini_restart_date: "1949-12-31"
+    ini_restart_dir: "/scratch/duts/ctl1950d_restart/oasis/"
+    coupling_methods:
+        gauswgt_c:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: glbpos
+                    algorithm: opt
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+
+xios:
+    with_model: oifs
+    #nproc: 32
+    #omp_num_threads: 32
+
+

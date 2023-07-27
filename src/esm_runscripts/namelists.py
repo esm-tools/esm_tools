@@ -103,7 +103,8 @@ class Namelist:
         ----------
         namelist_changes : nested dict
         
-        If the syntax is correct, namelist_changes should be a nested dict of the following form:
+        If the syntax is correct, namelist_changes should be a nested dict of the following form::
+
         {'namelist1.nml': {'namelist1': {'variable1': 'value1', 'variable2': 'value2', 'variable3': 'value3'}, 'namelist2': {'variable1': value1}}}
         
         Returns

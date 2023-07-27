@@ -122,7 +122,7 @@ class Namelist:
             " and rerun your runscript.\n"
         )
         example = (
-            "\nExample for [add_]namelist_changes:\n"
+            "\nExample of a ``correct syntax`` for [add_]namelist_changes:\n"
             "\t [add_]namelist_changes:\n"
             "\t    '<namelist_file>':\n"
             "\t        '<namelist_group>':\n"

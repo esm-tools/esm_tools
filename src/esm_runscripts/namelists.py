@@ -94,7 +94,7 @@ class Namelist:
     def nmls_check_changes(namelist_changes):
         """
         Checks if namelist changes are given in correct syntax.
-        If not, a user_error will be raised and stopp the execution.
+        If not, a user_error will be raised and stop the execution.
         
         Programmer Information
         ----------------------

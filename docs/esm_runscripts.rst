@@ -370,6 +370,12 @@ runscript to ``True``:
 This shields the run from changes made to the remainder of the ESM-Tool installation,
 and it's strongly recommended for production runs.
 
+.. warning::
+   Refrain from using this feature if you have installed ESM-Tools within a conda
+   environment. Conda enviroment installation is still in its testing phase and we
+   cannot evaluate yet which conflicts might araise from combining both the venv of
+   this feature and the environment from conda.
+
 If you choose to use a virtual environment, a local installation will be created in the experiment tree at the begining of the first run into the folder named ``.venv_esmtools``.  **That** installation will be used for the experiment. It will be installed at the root of your experiment and contains all the Python libraries used by ESM-Tools. The installation at the beginning of the experiment will induce a small overhead (~2-3 minutes).
 
 For example, for a user ``miguel`` with a run with `expid` ``test`` ESM-Tools will be installed here::

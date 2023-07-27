@@ -225,7 +225,6 @@ class Namelist:
                                 namelist_removes.append(
                                     (namelist, change_chapter, original_key)
                                 )
-    
                         # remove both lowercase and mixed case variables
                         del namelist_changes[namelist][change_chapter][key]
                         if remove_original_key:

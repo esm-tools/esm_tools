@@ -215,7 +215,6 @@ class Namelist:
                         # `key` is the processed variable from f90nml module and
                         # is lowercase.
                         remove_original_key = False
-    
                         # traverse the namelist chapter and see if a mixed case
                         # variable is also found
                         for key2 in namelist_changes[namelist][change_chapter]:

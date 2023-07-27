@@ -207,7 +207,6 @@ class Namelist:
                     value = change_entries[key]
                     if value == "remove_from_namelist":
                         namelist_removes.append((namelist, change_chapter, key))
-    
                         # the key is probably coming from esm_tools config
                         # files or from a user runscript. It can contain lower
                         # case, but the original Fortran namelist could be in

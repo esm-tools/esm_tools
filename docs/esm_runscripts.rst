@@ -331,12 +331,12 @@ This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb
 Setting the file movement method for filetypes in the runscript
 ---------------------------------------------------------------
 
-By default, `esm_runscripts` copies all files initially into the first ``run_``-folder, and from there to ``work``. After the run, outputs, logs, restarts etc. are copied
+By default, ``esm_runscripts`` copies all files initially into the first ``run_``-folder, and from there to ``work``. After the run, outputs, logs, restarts etc. are copied
 from ``work`` to ``run_``, and then moved from there to the overall experiment folder. We chose that as the default setting as it is the safest option, leaving the user
 with everything belonging to the experiment in one folder. It is also the most disk space consuming, and it makes sense to link some files into the experiment rather
 than copy them.
 
-As an example, to configure `esm_runscripts` for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
+As an example, to configure ``esm_runscripts`` for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
 
 .. code-block:: yaml
 
@@ -398,7 +398,7 @@ branch, adding to your runscript:
 .. warning::
    The branch **needs to exist on GitHub** as it is cloned form there, and **not from your
    local folder**. If you made any changes in your local branch make sure they are pushed before
-   running esm_runscripts with a virtual environment, so that your changes are included in the
+   running ``esm_runscripts`` with a virtual environment, so that your changes are included in the
    virtual environment installation.
 
 You may also select to install esm_tools in `editable mode`, in which case

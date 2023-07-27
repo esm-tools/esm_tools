@@ -696,10 +696,10 @@ class Date(object):
         """
         Beautifully returns a ``Date`` object as a string.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         form : str or int
-            Some cryptic that Dirk over-took from MPI-Met
+            Logic taken from from MPI-Met
         givenph : bool-ish
             Print hours
         givenpm : bool-ish
@@ -707,8 +707,8 @@ class Date(object):
         givenps : bool-ish
             Print seconds
 
-        Notes:
-        ------
+        Note
+        ----
         How to use the ``form`` argument:
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             The following forms are accepted:

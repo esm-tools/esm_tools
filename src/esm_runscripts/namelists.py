@@ -110,8 +110,6 @@ class Namelist:
         -------
         None
         
-        Calls to other methods:
-        ----------------------
         """
 
         error_message = (
@@ -190,7 +188,7 @@ class Namelist:
         mconfig : dict
             The modified configuration.
 
-        Calls to other methods:
+        Calls to other methods
         ----------------------
         nmls_check_changes
         """

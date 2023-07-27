@@ -137,7 +137,7 @@ class Namelist:
             # If correct syntax, changes is always a dict.
             if not isinstance(changes, dict):
                 nml_syntax_error = True
-                this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    {namelist}: {changes}\n...")
+                this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}: {changes}'\n...")
                 break
             else:
                 for change_chapter in list(changes):

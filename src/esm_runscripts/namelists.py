@@ -229,7 +229,6 @@ class Namelist:
                         del namelist_changes[namelist][change_chapter][key]
                         if remove_original_key:
                             del namelist_changes[namelist][change_chapter][original_key]
-    
                         # mconfig instead of config, Grrrrr
                         print(
                             f"- NOTE: removing the variable: {key} from the namelist: {namelist}"

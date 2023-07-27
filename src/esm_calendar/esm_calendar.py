@@ -709,8 +709,7 @@ class Date(object):
 
         Note
         ----
-        How to use the ``form`` argument
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        **How to use the ``form`` argument**
             The following forms are accepted:
             + SELF: uses the format which was given when constructing the date
             + 0: A Date formatted as YYYY

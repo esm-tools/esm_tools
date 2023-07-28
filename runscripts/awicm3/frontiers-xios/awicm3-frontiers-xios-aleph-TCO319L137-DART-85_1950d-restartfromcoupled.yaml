@@ -49,7 +49,7 @@ fesom:
            restart_log:
              raw_restart_length: 1
              raw_restart_length_unit: "y"
-    namelist_dir: /proj/awiiccp5/esm_tools/namelists/fesom2/2.0/awicm3/DART_niko_kpp/  
+    namelist_dir: "/proj/awiiccp5/esm_tools/namelists/fesom2/2.0/awicm3/DART/"
     add_file_movements:
         outdata:
             all_directions: move

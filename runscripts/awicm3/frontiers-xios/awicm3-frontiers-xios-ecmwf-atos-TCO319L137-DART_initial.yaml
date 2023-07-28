@@ -34,7 +34,7 @@ fesom:
              n_levels: 2
              n_part: [10, 128]
     lresume: false
-    namelist_dir: "/home/duts/esm_tools/namelists/fesom2/2.0/awicm3/DART_niko_kpp/"
+    namelist_dir: "/home/duts/esm_tools/namelists/fesom2/2.0/awicm3/DART/"
     add_file_movements:
         outdata:
            all_directions: move

@@ -261,6 +261,17 @@ class Date(object):
     """
 
     def __init__(self, indate, calendar=Calendar()):
+        if isinstance(indate, str):
+            self._init_from_str(indate, calendar=Calendar())
+        elif isinstance(indate, Date):
+            self._init_from_date(indate, calendar=Calendar())
+        else:
+            raise TypeError(
+                f"{type(indate)} is not a valid type to initialize a Date object "
+                "(valid types: str, Date)"
+            )
+
+    def _init_from_str(self, indate, calendar=Calendar()):
         printhours = True
         printminutes = True
         printseconds = True
@@ -335,6 +346,11 @@ class Date(object):
         self.sdoy = str(self.day_of_year())
 
         self._date_format = Dateformat(form, printhours, printminutes, printseconds)
+
+    def _init_from_date(self, indate, calendar=Calendar()):
+        self.year, self.month, self.day, self.hour, self.minute, self.second = (
+            indate.year, indate.month, indate.day, indate.hour, indate.minute, indate.second
+        )
 
     @property
     def sdoy(self):
@@ -504,6 +520,9 @@ class Date(object):
         return self_tup <= other_tup
 
     def __eq__(self, other):
+        if not isinstance(other, Date):
+            return False
+
         self_tup = (
             self.year,
             self.month,
@@ -523,6 +542,9 @@ class Date(object):
         return self_tup == other_tup
 
     def __ne__(self, other):
+        if not isinstance(other, Date):
+            return True
+
         self_tup = (
             self.year,
             self.month,

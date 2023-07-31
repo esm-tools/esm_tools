@@ -1882,6 +1882,7 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
+@keep_provenance
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -2244,6 +2245,7 @@ def determine_computer_from_hostname():
     # )
 
 
+@keep_provenance
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2348,6 +2350,7 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
+@keep_provenance
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2357,11 +2360,12 @@ def mark_dates(tree, rhs, config):
     logging.debug(entry)
     # if "${" in str(entry):
     #    return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         entry = str(entry) + DATE_MARKER
     return entry
 
 
+@keep_provenance
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2372,7 +2376,7 @@ def marked_date_to_date_object(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         # if isinstance(entry, str) and DATE_MARKER in entry and "<--" not in entry:
         while DATE_MARKER in entry and "${" not in entry:
             entry = entry.replace(DATE_MARKER, "")
@@ -2392,6 +2396,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
+@keep_provenance
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2403,6 +2408,7 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
+@keep_provenance
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2453,6 +2459,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
+@keep_provenance
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2467,7 +2474,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if isinstance(value, (bool, BoolWithProvenance)):
+    if isinstance(value, bool):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2476,7 +2483,7 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if isinstance(value, (bool, BoolWithProvenance)):
+    if isinstance(value, bool):
         return True
     elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
@@ -3097,3 +3104,4 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
         recursive_run_function([], config, "atomic", purify_booleans, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
+        config["oasis3mct"].get_provenance()

@@ -1,15 +1,26 @@
 import esm_parser
 
+from esm_calendar import Date
 
-class BoolWithProvenance:
+
+class ProvenanceClassForTheUnsubclassable:
+    """
+    A class to reproduce the methods of the unclassable ``bool`` and ``NoneType``
+    classes, needed to add the ``provenance`` attribute to those versions of the types.
+
+    This class stores 2 attributes, one is the ``value`` of the target object (a
+    ``bool`` or a ``NoneType``) and the other is the ``provenance``.
+    """
+
     def __init__(self, value, provenance):
-        #for attribute in dir(bool(value)):
-        #    try:
-        #        self.__setattr__(attribute, bool(value).__getattribute__(attribute))
-        #        print(attribute)
-        #    except (TypeError, AttributeError):
-        #        pass
-
+        """
+        Parameters
+        ----------
+        value : bool, None
+            Value of the object
+        provenance : any
+            The provenance information
+        """
         self.value = value
         self.provenance = provenance
 
@@ -30,27 +41,77 @@ class BoolWithProvenance:
         return hash(self.value)
 
 
-def ValueWrapperFactory(value, provenance=None):
+class BoolWithProvenance(ProvenanceClassForTheUnsubclassable):
+    @property
+    def __class__(self):
+        """
+        This is here for having ``isinstance(<my_bool_with_provenance>, bool)`` return ``True``
+        """
+        return bool
+
+
+class NoneWithProvenance(ProvenanceClassForTheUnsubclassable):
+    @property
+    def __class__(self):
+        """
+        This is here for having ``isinstance(<my_bool_with_provenance>, None)`` return ``True``
+        """
+        return type(None)
+
+
+def wrapper_with_provenance_factory(value, provenance=None):
+    """
+    A function to subclass and instanciate all types of subclassable objects in the
+    ESM-Tools ``config`` and add the ``provenance`` attribute to them. It uses the
+    ``WrapperWithProvenance`` class defined within the function for that purpose. For classes
+    that are not subclassable (``bool`` and ``NoneType``) intanciates an object that
+    mimics their behaviour but also contains the ``provenance`` attribute.
+
+    Objects of type ``esm_calendari.esm_calendar.Date`` are not subclass (and the
+    ``provenance`` attribute is simply added to them, because they fail to be subclassed
+    with in the ``WrapperWithProvenance`` with the following error::
+
+        __new__ method giving error object.__new__() takes exactly one argument
+        (the type to instantiate)
+
+    Parameters
+    ----------
+    value : any
+        Value of the object to be subclassed and reinstanciated
+    provenance : any
+        The provenance information
+
+    Returns
+    -------
+    WrapperWithProvenance, esm_calendar.esm_calendar.Date, BoolWithProvenance,
+    NoneWithProvenance
+        The new instance with the ``provenance`` attribute
+    """
 
     if type(value) == bool:
         return BoolWithProvenance(value, provenance)
 
+    elif value == None:
+        return NoneWithProvenance(value, provenance)
+
+    elif type(value) == Date:
+        value.provenance = provenance
+        return value
+
     else:
+        class WrapperWithProvenance(type(value)):
+            """
+            Dynamically create a subclass of the type of the given value
+            """
 
-
-        # Dynamically create a subclass of the type of the given value
-        class ValueWrapper(type(value)):
             def __new__(cls, value, *args, **kwargs):
-                return super(ValueWrapper, cls).__new__(cls, value)
-            #def __new__(cls, value, provenance=None):
-            #    return super().__new__(cls)
+                return super(WrapperWithProvenance, cls).__new__(cls, value)
 
             def __init__(self, value, provenance=None):
-            #    self.value = value
                 self.provenance = provenance
 
         # Instantiate the subclass with the given value and provenance
-        return ValueWrapper(value, provenance)
+        return WrapperWithProvenance(value, provenance)
 
 
 class DictWithProvenance(dict):
@@ -118,13 +179,6 @@ class DictWithProvenance(dict):
         provenance_dict = dict_with_provenance.get_provenance()
     """
 
-    leaf_id_provenance = {}
-    """
-    dict : 
-        This is a class-level variable to hold IDs of objects in memory. It is
-        at the class level because this information needs to be passed around
-        between various instances
-    """
 
     def __init__(self, dictionary, provenance):
         """
@@ -165,7 +219,7 @@ class DictWithProvenance(dict):
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance.get(key, {}))
             else:
-                self[key] = ValueWrapperFactory(val, provenance.get(key, None))
+                self[key] = wrapper_with_provenance_factory(val, provenance.get(key, None))
 
 
     def set_provenance(self, provenance):
@@ -189,7 +243,7 @@ class DictWithProvenance(dict):
             if isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance)
             else:
-                self[key] = ValueWrapperFactory(val, provenance)
+                self[key] = wrapper_with_provenance_factory(val, provenance)
 
 
     def get_provenance(self):
@@ -217,7 +271,7 @@ class DictWithProvenance(dict):
         provenance_dict = {}
 
         for key, val in self.items():
-            if isinstance(val, PROVENANCE_CLASSES):
+            if isinstance(val, PROVENANCE_MAPPINGS):
                 provenance_dict[key] = val.get_provenance()
             elif hasattr(val, "provenance"):
                 provenance_dict[key] = val.provenance
@@ -230,98 +284,15 @@ class DictWithProvenance(dict):
         return provenance_dict
 
 
-    #def __getitem__(self, key, *args, **kwargs):
-    #    self.set_leaf_id_provenance(key)
-
-    #    return super().__getitem__(key, *args, **kwargs)
-
-
-    #def __setitem__(self, key, val, *args, **kwargs):
-        """
-        Rewrites the ``dict.__setitem__`` method (used for example in when defining a
-        `key's value` ``my_dict[key] = val``) to additionally inherit the provenance of
-        the new ``val``. There are three cases in which the ``provenance`` can be
-        inherited:
-
-        1. ``val`` is a ``DictWithProvenance``: If the value is already an object of
-            ``DictWithProvenance`` we use the standard ``__setitem__`` method from
-            ``dict`` because that preserves all object's methods and properties
-
-        2. ``val`` is a ``dict``: If ``val`` is a ``dict`` but not a
-            ``DictWithProvenance`` sets the ``val`` as an instance of
-            ``DictWithProvenance`` setting the ``provenance`` as ``None``
-
-        3. ``val`` is not a ``dict``: If the ``val`` is not a ``dict`` (it's a leaf of
-            the dictionary tree) defines ``self.provenance[key]`` as ``None``. Leaves
-            of nested ``DictWithProvenance`` cannot contain attribute as we cannot
-            subclass python objects such as ``bool`` and therefore, we keep the
-            provenance information one level above in our ``dict`` subclass, within
-            the attribute ``self.provenance`` for the ``key`` associated to that
-            ``val``.
-
-        Parameters
-        ----------
-        key : string
-            Key of a ``dict``
-        val : any
-            New value of the key
-
-        Returns
-        -------
-        NoneType :
-            Returns the same as ``dict.__setitem__(key, val)`` method would return
-            with the exception that the ``val`` will be redefined based on options 1,
-            2 or 3
-        """
-
-        # If the value is already an object of ``DictWithProvenance`` we can use the
-        # standard ``__setitem__`` method from ``dict`` because that preserves all
-        # object's methods and properties
-        #if isinstance(val, DictWithProvenance):
-        #    return super().__setitem__(key, val, *args, **kwargs)
-        # If ``val`` is a ``dict`` but not a ``DictWithProvenance`` set the ``val``
-        # as an instance of ``DictWithProvenance`` setting the ``provenance`` as
-        # ``None``
-        #elif isinstance(val, dict):
-        #    return super().__setitem__(key, DictWithProvenance(val, provenance=None))
-        # If the ``val`` is not a ``dict`` (it's a leaf of the dictionary tree) defines
-        # ``self.provenance[key]`` as ``None``
-        #else:
-        #    val_id = id(val)
-        #    self.provenance[key] = DictWithProvenance.leaf_id_provenance.get(val_id, None)
-        #    return super().__setitem__(key, val, *args, **kwargs)
-
-
-    #def __delitem__(self, key, *args, **kwargs):
-
-    #    if isinstance(self, DictWithProvenance) and not isinstance(super().__getitem__(key), dict):
-    #        del self.provenance[key]
-
-    #    super().__delitem__(key, *args, **kwargs)
-
-
-    #def update(self, dictionary, *args, **kwargs):
-    #    super().update(dictionary, *args, **kwargs)
-
-    #    for key, val in dictionary.items():
-    #        val_id = id(val)
-    #        if isinstance(dictionary, DictWithProvenance) and not isinstance(val, dict):
-    #            self.provenance[key] = dictionary.provenance.get(key,
-    #                DictWithProvenance.leaf_id_provenance.get(val_id, None)
-    #            )
-    #        elif isinstance(dictionary, dict) and not isinstance(val, dict):
-    #            self.provenance[key] = DictWithProvenance.leaf_id_provenance.get(val_id, None)
-
-
     def set_leaf_id_provenance(self, key):
         """
-        Stores the last-leaf provenance information in the class level 
+        Stores the last-leaf provenance information in the class level
         variable ``leaf_id_provenance``.
-        
+
         This method gets the ``id`` value (unique Python object counter), which
         is used as a key in the `leaf_id_provenance`. The value becomes the
         provenance of that key, or defaults to ``None``
-        
+
         Parameters
         ----------
         key : Any
@@ -350,7 +321,31 @@ class ListWithProvenance(list):
             elif isinstance(elem, list):
                 self[c] = ListWithProvenance(elem, provenance[c])
             else:
-                self[c] = ValueWrapperFactory(elem, provenance[c])
+                self[c] = wrapper_with_provenance_factory(elem, provenance[c])
+
+
+    def set_provenance(self, provenance):
+        """
+        Defines recursively the ``provenance`` of the ``DictWithProvenance`` object
+        ``self`` or it's nested ``dictionary``.
+
+        Parameters
+        ----------
+        provenance : any
+            New `provenance value` to be set
+        dictionary : dict
+            Dictionary for which the ``provenance`` is to be set. When a value is not
+            given, the ``dictionary`` takes the value of ``self``. Only for recursion
+            within nested ``DictWithProvenance``, do not use it outside of this method.
+        """
+
+        for c, elem in enummerate(self):
+            if isinstance(elem, dict):
+                self[c] = DictWithProvenance(elem, provenance)
+            if isinstance(elem, list):
+                self[c] = ListWithProvenance(elem, provenance)
+            else:
+                self[c] = wrapper_with_provenance_factory(elem, provenance)
 
 
     def get_provenance(self):
@@ -378,7 +373,7 @@ class ListWithProvenance(list):
         provenance_list = []
 
         for elem in self:
-            if isinstance(elem, PROVENANCE_CLASSES):
+            if isinstance(elem, PROVENANCE_MAPPINGS):
                 provenance_list.append(elem.get_provenance())
             elif hasattr(elem, "provenance"):
                 provenance_list.append(elem.provenance)
@@ -391,13 +386,14 @@ class ListWithProvenance(list):
         return provenance_list
 
 
-PROVENANCE_CLASSES = (DictWithProvenance, ListWithProvenance)
+PROVENANCE_MAPPINGS = (DictWithProvenance, ListWithProvenance)
 
-def keep_id_provenance(func):
+
+def keep_provenance(func):
     """
     Decorator for recursive functions in ``esm_parser`` to preserve
     provenance.
-    
+
     Recursive run functions in ``esm_parser`` are generally called on the innermost
     leaf. Here, we still run the function, but additionally store the output of the
     function into the `leaf_id_provenance` container so that provenance can be added
@@ -409,16 +405,36 @@ def keep_id_provenance(func):
         The function to decorate
     """
     def inner(tree, rhs, *args, **kwargs):
-        #rhs_id = id(rhs)
-        output = func(tree, rhs, *args, **kwargs)
-        #output_id = id(output)
 
-        #if rhs_id in DictWithProvenance.leaf_id_provenance:
-        #    DictWithProvenance.leaf_id_provenance[output_id] = DictWithProvenance.leaf_id_provenance[rhs_id]
+        output = func(tree, rhs, *args, **kwargs)
+
+        if hasattr(rhs, "provenance"):
+            provenance = rhs.provenance
+            # Value was modified
+            if type(rhs) != type(output) or rhs != output:
+                # If the new value has an inherited provenance, keep it (i.e. variable
+                # was called: rhs = ${fesom.namelist_dir}, output =
+                # /actual/path/with/provenance/to/be/kept})
+                if hasattr(output, "provenance"):
+                    append_modified_by_to_provenance(output.provenance, func)
+                # If the rhs.provenance is not None and output has no provenance, keep
+                # the old proveance
+                elif provenance != None:
+                    provenance = append_modified_by_to_provenance(provenance, func)
+                    output = wrapper_with_provenance_factory(output, provenance)
 
         return output
 
     return inner
+
+def append_modified_by_to_provenance(provenance, func):
+    if "modified_by" not in provenance:
+        provenance["modified_by"] = [str(func)]
+    else:
+        provenance["modified_by"].append(str(func))
+
+    return provenance
+
 
 if __name__=="__main__":
     mydict = {

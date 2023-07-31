@@ -31,11 +31,10 @@ class ProvenanceClassForTheUnsubclassable:
         return bool(self.value)
 
     def __eq__(self, other):
-
         if isinstance(other, BoolWithProvenance):
             return self.value == other.value
 
-        return self.value==other
+        return self.value == other
 
     def __hash__(self):
         return hash(self.value)
@@ -99,6 +98,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
         return value
 
     else:
+
         class WrapperWithProvenance(type(value)):
             """
             Dynamically create a subclass of the type of the given value
@@ -179,7 +179,6 @@ class DictWithProvenance(dict):
         provenance_dict = dict_with_provenance.get_provenance()
     """
 
-
     def __init__(self, dictionary, provenance):
         """
         Instanciates the ``dictionary`` as an object of ``DictWithProvenance`` and
@@ -197,7 +196,6 @@ class DictWithProvenance(dict):
         super().__init__(dictionary)
 
         self.put_provenance(provenance)
-
 
     def put_provenance(self, provenance):
         """
@@ -219,8 +217,9 @@ class DictWithProvenance(dict):
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance.get(key, {}))
             else:
-                self[key] = wrapper_with_provenance_factory(val, provenance.get(key, None))
-
+                self[key] = wrapper_with_provenance_factory(
+                    val, provenance.get(key, None)
+                )
 
     def set_provenance(self, provenance):
         """
@@ -244,7 +243,6 @@ class DictWithProvenance(dict):
                 self[key] = ListWithProvenance(val, provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
-
 
     def get_provenance(self):
         """
@@ -283,7 +281,6 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
-
     def set_leaf_id_provenance(self, key):
         """
         Stores the last-leaf provenance information in the class level
@@ -302,19 +299,18 @@ class DictWithProvenance(dict):
         if not isinstance(super().__getitem__(key), DictWithProvenance):
             val_id = id(super().__getitem__(key))
             # Stores the provenance in a class variable, under an id key
-            DictWithProvenance.leaf_id_provenance[val_id] = self.provenance.get(key, None)
+            DictWithProvenance.leaf_id_provenance[val_id] = self.provenance.get(
+                key, None
+            )
 
 
 class ListWithProvenance(list):
-
     def __init__(self, mylist, provenance):
         super().__init__(mylist)
 
         self.put_provenance(provenance)
 
-
     def put_provenance(self, provenance):
-
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, provenance[c])
@@ -322,7 +318,6 @@ class ListWithProvenance(list):
                 self[c] = ListWithProvenance(elem, provenance[c])
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance[c])
-
 
     def set_provenance(self, provenance):
         """
@@ -346,7 +341,6 @@ class ListWithProvenance(list):
                 self[c] = ListWithProvenance(elem, provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
-
 
     def get_provenance(self):
         """
@@ -404,8 +398,8 @@ def keep_provenance(func):
     func : Callable
         The function to decorate
     """
-    def inner(tree, rhs, *args, **kwargs):
 
+    def inner(tree, rhs, *args, **kwargs):
         output = func(tree, rhs, *args, **kwargs)
 
         if hasattr(rhs, "provenance"):
@@ -427,6 +421,7 @@ def keep_provenance(func):
 
     return inner
 
+
 def append_modified_by_to_provenance(provenance, func):
     if "modified_by" not in provenance:
         provenance["modified_by"] = [str(func)]
@@ -436,39 +431,27 @@ def append_modified_by_to_provenance(provenance, func):
     return provenance
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     mydict = {
-        "person": {
-            "name": "Paul Gierz"
-        },
+        "person": {"name": "Paul Gierz"},
         "a_string": "hello world",
         "my_var": "MY_VAR",
         "my_other_var": ["a", "b", "c"],
         "my_bolean": True,
         "my_float": 12.1,
         "my_int": 42,
-        "list_with_dict_inside": [1, 2, {
-            "my_dict": {
-                "foo": [1,2, {"foo": "bar"}]
-            }
-        }]
+        "list_with_dict_inside": [1, 2, {"my_dict": {"foo": [1, 2, {"foo": "bar"}]}}],
     }
 
     myprov = {
-        "person": {
-            "name": 1
-        },
+        "person": {"name": 1},
         "a_string": 2,
         "my_var": 3,
         "my_other_var": [4, 5, 6],
         "my_bolean": 7,
         "my_float": 8,
         "my_int": 9,
-        "list_with_dict_inside": [10, 11, {
-            "my_dict": {
-                "foo": [12,13, {"foo": 14}]
-            }
-        }]
+        "list_with_dict_inside": [10, 11, {"my_dict": {"foo": [12, 13, {"foo": 14}]}}],
     }
 
     asd = DictWithProvenance(mydict, myprov)
@@ -477,4 +460,4 @@ if __name__=="__main__":
     print(asd.get_provenance())
 
     print(asd["a_string"], asd["a_string"].provenance)
-    print(asd["list_with_dict_inside"],asd["list_with_dict_inside"])
+    print(asd["list_with_dict_inside"], asd["list_with_dict_inside"])

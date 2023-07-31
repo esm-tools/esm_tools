@@ -1814,7 +1814,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 newright.extend(new_item)
             else:
                 newright.append(new_item)
-        right = newright
+        if isinstance(right, ListWithProvenance):
+            right = ListWithProvenance(newright, right.get_provenance())
+        else:
+            right = newright
     elif isinstance(right, dict):
         keys = list(right)
         for key in keys:
@@ -3104,4 +3107,3 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
         recursive_run_function([], config, "atomic", purify_booleans, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
-        config["oasis3mct"].get_provenance()

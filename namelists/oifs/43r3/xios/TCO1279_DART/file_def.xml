@@ -23,6 +23,9 @@
             <field_group freq_op="3h" operation="instant">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="lcc" name="lcc" long_name="low cloud cover"/>
+                <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+                <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>

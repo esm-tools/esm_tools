@@ -1,29 +1,50 @@
+import copy
+import hashlib
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
-import copy
-import pathlib
 
 import f90nml
 import questionary
 import yaml
-from colorama import Fore, Back, Style, init
+from colorama import Back, Fore, Style, init
+from loguru import logger
 
-import esm_tools
 import esm_calendar
 import esm_parser
 import esm_runscripts
+import esm_tools
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
 from .helpers import end_it_all, evaluate, write_to_log
 from .namelists import Namelist
-from loguru import logger
 
 #####################################################################
 #                                   compute jobs                    #
 #####################################################################
+
+
+# NOTE(PG): Helper function, thus, this gets prefixed with a _
+def _calculate_file_checksum(file_path, algorithm="sha256"):
+    """Calculate the checksum of a file using the specified algorithm."""
+    hash_algorithm = hashlib.new(algorithm)
+    with open(file_path, "rb") as file:
+        hash_algorithm.update(file.read())
+    return hash_algorithm.hexdigest()
+
+
+def _create_checksums_work(config):
+    all_checksums = {}
+    work_dir = config["general"]["thisrun_work_dir"]
+    for root, dirs, files in os.walk(work_dir):
+        for file in files:
+            filename = os.path.join(root, file)
+            checksum = _calculate_file_checksum(filename)
+            all_checksums[filename] = checksum
+    return all_checksums
 
 
 def run_job(config):
@@ -300,6 +321,7 @@ def _write_finalized_config(config):
     ----------
     config : esm-tools config object
     """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -351,9 +373,7 @@ def _write_finalized_config(config):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
@@ -362,8 +382,7 @@ def _write_finalized_config(config):
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     config_file_path = (
-        f"{thisrun_config_dir}/"
-        f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        f"{thisrun_config_dir}/" f"{expid}_{it_coupled_model_name}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
@@ -430,6 +449,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     # If the target path exists compare the two scripts
     else:
         import difflib
+
         import esm_parser
 
         script_o = open(fromdir + "/" + tfile).readlines()
@@ -604,7 +624,10 @@ def copy_tools_to_thisrun(config):
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
         # Add non-interaction flags
-        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        non_interaction_flags = [
+            "--no-motd",
+            f"--last-jobtype {config['general']['jobtype']}",
+        ]
         for ni_flag in non_interaction_flags:
             # prevent continuous addition of ``ni_flag``
             if not ni_flag in restart_command:

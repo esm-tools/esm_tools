@@ -18,6 +18,7 @@ from loguru import logger
 from .helpers import SmartSink
 from .sim_objects import *
 
+from esm_parser import user_error
 
 def parse_shargs():
     """The arg parser for interactive use"""
@@ -247,6 +248,12 @@ def main():
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
     runscript_dir += "/"
+    if not os.path.exists(runscript_full_path):
+        user_error(
+            "runscript not found",
+            f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
+            dsymbols=["``", "'"],
+        )
 
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()

@@ -84,6 +84,10 @@ choose_useMPI:
                         ZLIBROOT: /usr
 
         intelopenmpi:
+                warning:
+                        Configuration does not run: 
+                        message: "The intelopenmpi configuration on aleph is experimental. From past experiance it can compile AWI-CM3, but crashes on runtime. Use as your own disgression. Contact jan.streffing@awi.de for further questions"
+                        ask_user_to_continue: True
                 fc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
                 f77: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
                 mpifc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
@@ -126,6 +130,10 @@ choose_useMPI:
                         MPIFC: ftn
 
         intel_mpich:
+                warning:
+                        Configuration does not run: 
+                        message: "The intel_mpich configuration on aleph is experimental. From past experiance it can compile AWI-CM3, but crashes on runtime. Use as your own disgression. Contact jan.streffing@awi.de for further questions"
+                        ask_user_to_continue: True
                 fc: ftn
                 f77: ftn
                 mpifc: ftn

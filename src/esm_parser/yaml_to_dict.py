@@ -200,7 +200,7 @@ def yaml_file_to_dict(filepath):
                         "add_export_vars"
                     ] = add_export_vars
                 # Check for empty components/models
-                # check_for_empty_components(yaml_load, filepath + extension)
+                check_for_empty_components(yaml_load, filepath + extension)
                 return yaml_load
         except IOError as error:
             logger.debug(

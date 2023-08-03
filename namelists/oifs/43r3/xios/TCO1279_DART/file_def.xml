@@ -11,7 +11,7 @@
         par_access="collective"
         name="atm"
         compression_level="1"
-        split_freq="1y">
+        split_freq="1mo">
 
         <file
             enabled="false"
@@ -169,7 +169,7 @@
         par_access="collective"
         name="atm_reduced"
         compression_level="1"
-        split_freq="1y">
+        split_freq="1mo">
 
         <file
             enabled="true"

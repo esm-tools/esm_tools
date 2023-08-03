@@ -2,7 +2,7 @@ general:
     setup_name: "awicm3"
     version: "frontiers-xios"
     account: "awiiccp"
-    compute_time: "08:00:00"
+    compute_time: "12:00:00"
     initial_date: "1950-01-01"
     final_date: "1960-01-01"
     base_dir: "/scratch/awiiccp2/"

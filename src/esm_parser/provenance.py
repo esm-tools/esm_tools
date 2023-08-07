@@ -335,7 +335,7 @@ class ListWithProvenance(list):
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 DictWithProvenancei.set_provenance(elem, provenance)
-            if isinstance(elem, list):
+            elif isinstance(elem, list):
                 ListWithProvenance.set_provenance(elem, provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)

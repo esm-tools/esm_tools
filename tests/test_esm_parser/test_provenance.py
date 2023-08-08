@@ -23,7 +23,7 @@ from esm_parser import yaml_to_dict
 #}
 #config = provenance.DictWithProvenance(config_dict, my_provenance)
 
-config = yaml_to_dict.yaml_file_to_dict('example2.yaml')
+config = yaml_to_dict.yaml_file_to_dict(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml")
 
 check_provenance = {'echam':
     {'type':

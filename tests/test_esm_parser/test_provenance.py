@@ -30,7 +30,7 @@ check_provenance = {'echam':
         {'line': 2, 'col': 11, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()), 'category': 'runscript'},
         'files': {
             'greenhouse': {
-                'kind': {'line': 5, 'col': 19, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()).resolve()), 'category': 'runscript'},
+                'kind': {'line': 5, 'col': 19, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()), 'category': 'runscript'},
                 'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()), 'category': 'runscript'}
             }
         }

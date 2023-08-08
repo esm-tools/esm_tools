@@ -35,6 +35,7 @@ requirements = [
     "tqdm",
     "typing_extensions>=3.10.0.0",
     "xdgenvpy",
+    "ruamel.yaml",
 ]
 
 setup_requirements = []

@@ -1,23 +1,64 @@
 import os
+import pathlib
 import re
 import sys
 
+import ruamel.yaml
 import yaml
 from loguru import logger
-
-from .provenance import *
-import pathlib
-import esm_parser
-import esm_tools
-
-import ruamel.yaml
 from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 
+import esm_parser
+import esm_tools
+
+from .provenance import *
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
 CONFIG_PATH = esm_tools.get_config_filepath()
 
+
+class CommentedYamlDumper(yaml.SafeDumper):
+    pass
+
+
+class EsmConfigFileError(Exception):
+    """
+    Exception for yaml file containing tabs or other syntax issues.
+
+    An exception used when yaml.load() throws a yaml.scanner.ScannerError.
+    This error occurs mainly when there are tabs inside a yaml file or
+    when the syntax is incorrect. If tabs are found, this exception returns
+    a user-friendly message indicating where the tabs are located in the
+    yaml file.
+
+    Parameters
+    ----------
+    fpath : str
+        Path to the yaml file
+    """
+
+    def __init__(self, fpath, yaml_error):
+        report = ""
+        # Loop through the lines inside the yaml file searching for tabs
+        with open(fpath) as yaml_file:
+            for n, line in enumerate(yaml_file):
+                # Save lines and line numbers with tabs
+                if "\t" in line:
+                    report += str(n) + ":" + line.replace("\t", "____") + "\n"
+
+        # Message to return
+        if len(report) == 0:
+            # If no tabs are found print the original error message
+            print("\n\n\n" + yaml_error)
+        else:
+            # If tabs are found print the report
+            self.message = (
+                "\n\n\n"
+                f"Your file {fpath} has tabs, please use ONLY spaces!\n"
+                "Tabs are in following lines:\n" + report
+            )
+        super().__init__(self.message)
 
 
 # This next part is stolen here:
@@ -96,7 +137,6 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
             if envvar_matches:
                 full_value = value
                 for env_var in envvar_matches:
-
                     # first check if the variable exists in the shell environment
                     if not os.getenv(env_var):
                         esm_parser.user_error(
@@ -140,7 +180,7 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
-    #loader = create_env_loader()
+    # loader = create_env_loader()
     esm_tools_loader = EsmToolsLoader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:
@@ -159,7 +199,6 @@ def yaml_file_to_dict(filepath):
                 # Add the file name you loaded from to track it back:
                 yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
                 if esm_tools_loader.env_variables:
-
                     runtime_env_changes = yaml_load.get("computer", {}).get(
                         "runtime_environment_changes", {}
                     )
@@ -186,14 +225,13 @@ def yaml_file_to_dict(filepath):
         except yaml.scanner.ScannerError as yaml_error:
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
             error = EsmConfigFileError(filepath + extension, yaml_error)
-            esm_parser.user_error(
-                "Yaml syntax",
-                f"{error}")
+            esm_parser.user_error("Yaml syntax", f"{error}")
         except Exception as error:
             logger.exception(error)
             esm_parser.user_error(
                 "Yaml syntax",
-                f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}")
+                f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
+            )
     raise FileNotFoundError(
         "All file extensions tried and none worked for %s" % filepath
     )
@@ -550,7 +588,7 @@ class EsmConfigFileError(Exception):
             try:
                 print("\n" + yaml_error)
             except:
-                self.message = (f"\n\n A syntax error has been found in ``{fpath}``\n")
+                self.message = f"\n\n A syntax error has been found in ``{fpath}``\n"
         else:
             # If tabs are found print the report
             self.message = (
@@ -706,7 +744,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
             elif isinstance(value, list):
                 config[key] = []
                 config_prov[key] = []
-                for (elem, elem_prov) in value:
+                for elem, elem_prov in value:
                     if isinstance(elem, dict):
                         config[key].append(self._extract_dict_and_prov(elem)[0])
                         config_prov[key].append(self._extract_dict_and_prov(elem)[1])
@@ -726,7 +764,6 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                 config[key] = value
 
         return (config, config_prov)
-
 
     def _add_origin_comments(self, data, comment=None, key=None):
         if isinstance(data, dict):
@@ -760,7 +797,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                 print("Cannot add comment to data", data, comment)
         except:
             pass
-            #print("nope")
+            # print("nope")
 
     def dump(self, data, stream=None, **kw):
         if not self.add_comments:

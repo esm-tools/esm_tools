@@ -106,11 +106,12 @@ def test_set_provenance_for_a_new_leaf():
 # Test 9: Reset the provenance of a list")
 def test_set_provenance_for_a_list_leaf():
     new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'this_is_for_a_list'}
+    config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
     config["fesom"] = {"list": [30, 19]}
     config["fesom"]["list"] = provenance.ListWithProvenance(config["fesom"]["list"], [None, None])
     config["fesom"]["list"].set_provenance(new_prov)
-    print("config: ",config)
-    print("provenance: ",config.get_provenance())
+    #print("provenance: ",config["fesom"]["list"].get_provenance())
+    #print("provenance2: ",config.get_provenance())
     assert config.get_provenance() == check_provenance
 
 
@@ -181,16 +182,17 @@ def test_check_set_provenance_list():
 def test_check_set_provenance_of_single_list_entry():
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
     file_path = pathlib.Path("example.yaml")
-    old_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'runscript'}
+    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': 'example.yaml', 'category': 'runscript'}
+    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': 'example.yaml', 'category': 'runscript'}
     new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_second_list'}
-    check_prov = [old_prov, old_prov, new_prov]
+    check_prov = [old_prov1, old_prov2, new_prov]
 
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
         data, data2 = esm_tools_loader.load(file)
 
     config = provenance.DictWithProvenance(data, data2)
-    config["person"]["my_other_list"][2].set_provenance(new_prov)
+    config["person"]["my_other_list"][2].provenance = new_prov
     assert config["person"]["my_other_list"].get_provenance() == check_prov
 #
 #def test_extract_provenance():

@@ -27,11 +27,11 @@ config = yaml_to_dict.yaml_file_to_dict(str(pathlib.Path(f"{os.environ['GITHUB_W
 
 check_provenance = {'echam':
     {'type':
-        {'line': 2, 'col': 11, 'yaml_file': str(pathlib.Path("example2.yaml").resolve()), 'category': 'runscript'},
+        {'line': 2, 'col': 11, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()), 'category': 'runscript'},
         'files': {
             'greenhouse': {
-                'kind': {'line': 5, 'col': 19, 'yaml_file': str(pathlib.Path("example2.yaml").resolve()), 'category': 'runscript'},
-                'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': str(pathlib.Path("example2.yaml").resolve()), 'category': 'runscript'}
+                'kind': {'line': 5, 'col': 19, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()).resolve()), 'category': 'runscript'},
+                'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()), 'category': 'runscript'}
             }
         }
     },
@@ -118,7 +118,7 @@ def test_set_provenance_for_a_list_leaf():
 # Test 10: Test the extraction of config for all allowed variable types.
 def test_extract_dict_config():
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
+    file_path = pathlib.Path(str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml")))
     config = {
             'person': {
                 'name': 'Paul Gierz',
@@ -151,8 +151,8 @@ def test_extract_dict_config():
 # Test 11: Check provenance of a list entry
 def test_check_provenance_list():
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
-    check_prov = [{'line': 15, 'col': 19, 'yaml_file': 'example.yaml', 'category': 'runscript'}, {'line': 15, 'col': 22, 'yaml_file': 'example.yaml', 'category': 'runscript'}, {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'runscript'}]
+    file_path = pathlib.Path(str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml")))
+    check_prov = [{'line': 15, 'col': 19, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve()), 'category': 'runscript'}, {'line': 15, 'col': 22, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve()), 'category': 'runscript'}, {'line': 15, 'col': 25, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve()), 'category': 'runscript'}]
 
     with open(file_path, "r") as file:
         esm_tools_loader.set_filename(file_path)
@@ -165,7 +165,7 @@ def test_check_provenance_list():
 # Test 12: Check set_provenance of a list entry
 def test_check_set_provenance_list():
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
+    file_path = pathlib.Path(str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml")))
     new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_list'}
     check_prov = [new_prov, new_prov, new_prov]
 
@@ -181,9 +181,9 @@ def test_check_set_provenance_list():
 # Test 13: Check set_provenance of a single list entry
 def test_check_set_provenance_of_single_list_entry():
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
-    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': 'example.yaml', 'category': 'runscript'}
-    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': 'example.yaml', 'category': 'runscript'}
+    file_path = pathlib.Path(str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml")))
+    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve()), 'category': 'runscript'}
+    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve()), 'category': 'runscript'}
     new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_second_list'}
     check_prov = [old_prov1, old_prov2, new_prov]
 

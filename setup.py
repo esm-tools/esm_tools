@@ -29,6 +29,7 @@ requirements = [
     "pyyaml",
     "pyyaml>=5.1",
     "questionary",
+    "ruamel.yaml==0.17.32",
     "semver",
     "sqlalchemy",
     "tabulate",

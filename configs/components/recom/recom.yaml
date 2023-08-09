@@ -100,6 +100,7 @@ scenario: "PI-CTRL"
 time_step: 1800
 
 use_ciso: false
+use_AlkAddition: false # ocean alkalinity enhancement
 
 choose_use_ciso:
         true:
@@ -111,6 +112,14 @@ choose_use_ciso:
         false:
                 recom_namelist:  "namelist.recom"
 
+choose_use_AlkAddition: # ocean alkalinity enhancement
+        true:
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                    UseAlkAddition: true
+                add_monthly_outputs:
+                    - aAlk
 
 choose_scenario:
         PI-CTRL:

@@ -104,9 +104,11 @@ metadata:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
                 Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
-                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
-                https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
-                to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
+                To use the repository on either gitlab.dkrz.de/modular_esm/echam6.git or gitlab.awi.de/paleodyn/models/echam6.git,
+                please register for the MPI-ESM user forum at https://code.mpimet.mpg.de/projects/mpi-esm-license
+                and send a screenshot of yourself logged in to the forum to either paul.gierz@awi.de, miguel.andres-martinez@awi.de,
+                or nadine.wieters@awi.de. Note also that you can otherwise ignore the instructions on that page, just the registration
+                and login screen shot is the relevant part for obtaining the license.
 
 standalone_model: True
 

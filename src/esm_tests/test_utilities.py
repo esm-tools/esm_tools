@@ -208,7 +208,7 @@ def print_state_online(info={}):
     """
     Returns the state of the tested models obtained directly from the repository online.
     This method is aimed to be used externally from ``esm_tests`` (i.e. throw the
-    ``esm_tools --test-state`` command).
+    ``esm_tools test-state`` command).
 
     Parameters
     ----------

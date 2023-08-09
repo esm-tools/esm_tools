@@ -19,20 +19,41 @@ general:
         available_versions:
         - 'v3.0'
         - 'v3.1'
+        - 'v3.1.1'
+        - 'v3.1.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:
           v3.0:
+            major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
           v3.1:
+            major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+          v3.1.1:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          v3.1.2:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
           master:
+            major_version: master
             couplings:
             - fesom-2.0-master+oifs-43r3-master
             add_include_models:
@@ -40,6 +61,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
           frontiers-xios:
+            major_version: frontiers-xios
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
@@ -109,7 +131,7 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
                         mip: "cmip6"
@@ -336,7 +358,7 @@ fesom:
                         oce_tra:
                                 surf_relax_s: "${surf_relax_s}"
 
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.0/"
                         add_namelist_changes:
@@ -547,7 +569,7 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
-        choose_general.version:
+        choose_general.major_version:
                 'frontiers-xios':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
@@ -706,15 +728,15 @@ oasis3mct:
                 true:
                         lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
-                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # it is not a branched off experiment adds the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}') and ${general.run_number} == 1 ))"
                         choose_load_restart_from_pool:
                                 true:
-                                        add_restart_in_sources:
-                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
-                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                                    add_restart_in_sources:
+                                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

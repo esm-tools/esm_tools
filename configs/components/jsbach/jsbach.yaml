@@ -25,8 +25,8 @@ dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
-scenario: ${echam.scenario}
-scenario_type: ${scenario}
+scenario: ${echam.scenario} # e.g. hist or ssp126
+scenario_type: ${scenario}  # e.g. hist or ssp
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -91,15 +91,15 @@ choose_version:
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
                         ssp126:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp245:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp370:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp534os:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp585:
-                                scenario_type: cmip6
+                                scenario_type: ssp
 
 
         "3.20":
@@ -196,15 +196,15 @@ choose_version:
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
                         ssp126:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp245:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp370:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp534os:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp585:
-                                scenario_type: cmip6
+                                scenario_type: ssp
 
         "3.10":
                 dataset: r0007
@@ -285,15 +285,10 @@ choose_version:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
 
-# common options for scenarios, eg. CMIP6
-Ndepo_cmip6: Ndepo_hist_scenario
-Ndepo_path: ""
-popdens_cmip6: popdens
-cover_fract_cmip6: cover_fract.@YEAR@.nc
-
+# check forcing files of common scenarios
 choose_scenario_type:
-        cmip6:
-                Ndepo_path: "${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_"
+        ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
+                ssp_num: "$(( '${scenario}'[:4] ))" # first 4 characters, e.g. 'ssp1' in case of 'ssp126'
                 add_input_files:
                         jsbach: jsbach_1850
                 forcing_files:
@@ -302,26 +297,7 @@ choose_scenario_type:
                         Ndepo: Ndepo_ssp # Ndepo_hist_scenario
                         a_nd_file: a_nd_file
                         lightning: lightning
-                        popdens: ${popdens_cmip6}
-                        cover_fract: ${cover_fract_cmip6}
-
-
-# For ssp scenarios find the pathway first 4 characters
-scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
-choose_scenario_is_ssp:
-        True:
-                ssp_num: "$(( '${scenario}'[:4] ))"
-                # SSP scenarios share common paths. They are grouped under cmip6 and
-                # further options are given under `choose_scenario_type` section
-                scenario_type: cmip6
-                Ndepo_cmip6: Ndepo_ssp
-                popdens_cmip6: popdens_ssp
-                cover_fract_cmip6: cover_fract_ssp
-                Ndepo_sufix: "_${echam.scenario}"
-
-        False:
-                ssp_num: null
-                Ndepo_sufix: ""
+                        popdens: popdens_ssp
 
 choose_echam.with_wiso:
         True:

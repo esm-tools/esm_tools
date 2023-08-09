@@ -391,24 +391,38 @@ choose_scenario:
                         volcir: histvolcir
                         volcsw: histvolcsw
         ssp126:
-                scenario_type: cmip6
+                scenario_type: ssp
         ssp245:
-                scenario_type: cmip6
+                scenario_type: ssp
         ssp370:
-                scenario_type: cmip6
+                scenario_type: ssp
         ssp534os:
-                scenario_type: cmip6
+                scenario_type: ssp
                 pool_dir: "/work/bb0519/foci_input2/ECHAM6_GENERAL/ECHAM6" # ssp534os forcing files not in default pool
         ssp585:
-                scenario_type: cmip6
+                scenario_type: ssp
 
-# Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-# under the choose_scenario_type block
-scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
+# check forcing files of common scenarios
 allow_hist2ssp_transition: False
-choose_scenario_is_ssp:
-    True:
-        scenario_type: cmip6
+choose_scenario_type:
+    ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
+        greenhouse_dir: "${input_dir}"
+        forcing_files:
+                aerocoarse_1849: piaerocoarse
+                aerocoarse_1850: piaerocoarse
+                aerocoarse_1851: piaerocoarse
+                aerofarir_1849: piaerofarir
+                aerofarir_1850: piaerofarir
+                aerofarir_1851: piaerofarir
+                aerofin_1849: piaerofin
+                aerofin_1850: piaerofin
+                aerofin_1851: piaerofin
+                greenhouse: greenhouse_scenario
+                MAC-SP: MAC-SP_scenario
+                ozone: ozone_scenario
+                swflux: histswflux
+                volcir: histvolcir
+                volcsw: histvolcsw
         after_2014: "$(( ${start_date!year} > 2014 ))"
         initial_date_non_ssp: "$((
             ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
@@ -437,26 +451,6 @@ choose_scenario_is_ssp:
                     namelist.echam:
                         radctl:
                             iaero: "${iaero}"
-
-choose_scenario_type:
-        cmip6:
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_1849: piaerocoarse
-                        aerocoarse_1850: piaerocoarse
-                        aerocoarse_1851: piaerocoarse
-                        aerofarir_1849: piaerofarir
-                        aerofarir_1850: piaerofarir
-                        aerofarir_1851: piaerofarir
-                        aerofin_1849: piaerofin
-                        aerofin_1850: piaerofin
-                        aerofin_1851: piaerofin
-                        greenhouse: greenhouse_scenario
-                        MAC-SP: MAC-SP_scenario
-                        ozone: ozone_scenario
-                        swflux: histswflux
-                        volcir: histvolcir
-                        volcsw: histvolcsw
 
 choose_lresume:
         False:

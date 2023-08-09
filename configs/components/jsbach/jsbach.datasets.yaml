@@ -42,10 +42,10 @@ forcing_sources:
         # --> these are not available in default pool
         # --> created and saved in awi pool dir, check README.md in Ndepo path below, cdanek@awi.de
         Ndepo_ssp:
-                "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_@YEAR@.nc":
+                "${input_dir_couple}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_@YEAR@.nc":
                     from: 1850
                     to: 2099
-                "${input_dir_awi}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_2099.nc":
+                "${input_dir_couple}/${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_2099.nc":
                     from: 2100
                     to: 2101
 

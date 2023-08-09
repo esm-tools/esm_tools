@@ -97,22 +97,49 @@ def wrapper_with_provenance_factory(value, provenance=None):
         value.provenance = provenance
         return value
 
+    elif type(value) == int:
+        return WrapperWithProvenance_int(value, provenance)
+
+    elif type(value) == str:
+        return WrapperWithProvenance_str(value, provenance)
+
     else:
-
-        class WrapperWithProvenance(type(value)):
-            """
-            Dynamically create a subclass of the type of the given value
-            """
-
-            def __new__(cls, value, *args, **kwargs):
-                return super(WrapperWithProvenance, cls).__new__(cls, value)
-
-            def __init__(self, value, provenance=None):
-                self.provenance = provenance
-
         # Instantiate the subclass with the given value and provenance
+        class WrapperWithProvenance(type(value)):
+              """
+              Dynamically create a subclass of the type of the given value
+              """
+
+              def __new__(cls, value, *args, **kwargs):
+                  return super(WrapperWithProvenance, cls).__new__(cls, value)
+
+              def __init__(self, value, provenance=None):
+                       self.provenance = provenance
         return WrapperWithProvenance(value, provenance)
 
+
+class WrapperWithProvenance_str(str):
+      """
+      Create a subclass of type str
+      """
+
+      def __new__(cls, value, *args, **kwargs):
+          return super(WrapperWithProvenance_str, cls).__new__(cls, value)
+
+      def __init__(self, value, provenance=None):
+               self.provenance = provenance
+
+
+class WrapperWithProvenance_int(int):
+      """
+      Create a subclass of type int
+      """
+
+      def __new__(cls, value, *args, **kwargs):
+          return super(WrapperWithProvenance_int, cls).__new__(cls, value)
+
+      def __init__(self, value, provenance=None):
+               self.provenance = provenance
 
 class DictWithProvenance(dict):
     """

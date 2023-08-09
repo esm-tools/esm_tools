@@ -119,27 +119,28 @@ def wrapper_with_provenance_factory(value, provenance=None):
 
 
 class WrapperWithProvenance_str(str):
-      """
-      Create a subclass of type str
-      """
+    """
+    Create a subclass of type str
+    """
 
-      def __new__(cls, value, *args, **kwargs):
-          return super(WrapperWithProvenance_str, cls).__new__(cls, value)
+    def __new__(cls, value, *args, **kwargs):
+        return super(WrapperWithProvenance_str, cls).__new__(cls, value)
 
-      def __init__(self, value, provenance=None):
-               self.provenance = provenance
+    def __init__(self, value, provenance=None):
+             self.provenance = provenance
 
 
 class WrapperWithProvenance_int(int):
-      """
-      Create a subclass of type int
-      """
+    """
+    Create a subclass of type int
+    """
 
-      def __new__(cls, value, *args, **kwargs):
-          return super(WrapperWithProvenance_int, cls).__new__(cls, value)
+    def __new__(cls, value, *args, **kwargs):
+        return super(WrapperWithProvenance_int, cls).__new__(cls, value)
 
-      def __init__(self, value, provenance=None):
-               self.provenance = provenance
+    def __init__(self, value, provenance=None):
+             self.provenance = provenance
+
 
 class DictWithProvenance(dict):
     """

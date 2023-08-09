@@ -1,3 +1,15 @@
+# NOTE(PG): Question to be clarified during code review. Why does this file exist? 
+# This is all information that could be instead contained in each individual 
+# machine file
+albedo:
+  login_nodes:
+    - 'albedo0'
+    - 'albedo1'
+  compute_nodes: 'prod-*'
+  gpu_nodes: 'gpu-*'
+  fat_nodes: 'fat-*'
+  post_nodes: None
+
 ollie:
         login_nodes:
                 - 'ollie0'

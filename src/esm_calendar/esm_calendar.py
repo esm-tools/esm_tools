@@ -274,6 +274,9 @@ class Date(object):
             indate2 = indate
         if "_" in indate2:
             date, time = indate2.split("_")
+        elif ":" in indate2 and not "-" in indate2:
+            date = "0000-00-00"
+            time = indate2
         else:
             date = indate2
             time = ""

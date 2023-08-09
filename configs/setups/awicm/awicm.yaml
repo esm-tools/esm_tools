@@ -105,13 +105,6 @@ jsbach:
                         dynveg_file_ending: ""
                         no_dynveg_file_ending: ""
 
-        choose_scenario_is_ssp:
-                True:
-                        add_forcing_files:
-                                Ndepo: Ndepo_ssp
-                                popdens: popdens_ssp
-                                cover_fract: cover_fract_ssp
-
 #########################################################################################
 
 

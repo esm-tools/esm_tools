@@ -77,7 +77,7 @@ choose_dataset:
                         "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                         "popdens": "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc" # ndecades
                         "popdens_ssp":
-                                "${input_dir_awi}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
+                                "${input_dir_couple}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
                                         from: 1850
                                         to: 2100
                         "cover_fract_HIST":
@@ -113,7 +113,7 @@ choose_dataset:
 
                         "Ndepo_hist_scenario":
                         # TODO: pool on Levante seems to be broken currently.
-                        # There are no yearly Ndepo files. ${input_dir_awi}
+                        # There are no yearly Ndepo files. ${input_dir_couple}
                         # contains the yearly files
                                 "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
                                         to: 1850

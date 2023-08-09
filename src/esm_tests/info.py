@@ -51,6 +51,8 @@ class Info(dict):
     - ``user``: ``esm_tests`` configurations specific to the user, as read from
       ``<PATH>/esm_tools/src/esm_tests/user_config.yaml``.
 
+    - ``branch``: branch in the ``esm_tests_info`` to be used as ``last-state``
+
     """
 
     def __init__(self):
@@ -150,6 +152,12 @@ class Info(dict):
             + "catch that as a failing test",
             action="store_true",
         )
+        parser.add_argument(
+            "-r",
+            "--branch",
+            help="use the given esm_tests_info branch",
+            default="release",
+        )
 
         args = vars(parser.parse_args())
 
@@ -165,6 +173,7 @@ class Info(dict):
         self["repo_update"] = args["update"]
         self["in_github"] = args["github"]
         self["system_exit_on_errors"] = args["system_exit_on_errors"]
+        self["resources_branch"] = args["branch"]
 
         if self["in_github"]:
             self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}

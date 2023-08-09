@@ -618,7 +618,7 @@ def set_prev_date(config):
             )
 
         else:
-            config[model]["prev_date"] = config["general"]["current_date"]
+            config[model]["prev_date"] = config["general"]["prev_date"]
     return config
 
 

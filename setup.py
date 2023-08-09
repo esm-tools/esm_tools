@@ -44,7 +44,7 @@ test_requirements = ["pyfakefs"]
 setup(
     author="Dirk Barbi",
     author_email="dirk.barbi@awi.de",
-    python_requires=">=3.6, <3.10",
+    python_requires=">=3.6, <=3.11",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
@@ -92,6 +92,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.17.4",
+    version="6.21.1",
     zip_safe=False,
 )

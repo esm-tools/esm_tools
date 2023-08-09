@@ -18,6 +18,7 @@ Welcome to ESM Tools's documentation!
    esm_runscripts
    workflow
    esm_environment
+   esm_tests
    motd
    cookbook
    faq

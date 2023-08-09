@@ -4,14 +4,21 @@
 
   <context id="xios">
     <variable_definition>
-
+        
       <variable id="info_level" type="int">5</variable>
       <variable id="print_file" type="bool">false</variable>
 
       <variable id="optimal_buffer_size" type="string">performance</variable>
-
+      <variable id="buffer_size_factor"  type="double"> 2.0</variable>
       <variable id="using_server" type="bool">true</variable>
       <variable id="using_oasis" type="bool">true</variable>
+      <variable id="using_server2"        type="bool"> true </variable>
+      <variable id="ratio_server2"        type="int" > 50   </variable>
+      <variable id="number_pools_server2" type="int" > 1    </variable>
+      <variable id="server2_dist_file_memory"       type="bool"  > false </variable>
+      <variable id="server2_dist_file_memory_ratio" type="double"> 0.5   </variable>
+
+
       <variable id="call_oasis_enddef" type="bool">false</variable>
       <variable id="oasis_codes_id" type="string">OpenIFS</variable>
 

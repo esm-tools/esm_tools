@@ -60,8 +60,8 @@ choose_version:
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
   5.0-smhi:
-    branch: feat/cmake
-    git-repository: https://git.smhi.se/jan.streffing/oasis3-mct.git
+    branch: main_dkrz
+    git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
   ec-earth:
     branch: ec-earth-version
   foci:

@@ -67,6 +67,8 @@ general:
                         pool_dir: "/proj/awi/input"
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
+                albedo:
+                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -500,7 +502,11 @@ rnfmap:
                                 namelist.runoffmapper:
                                         NAMRNFMAP:
                                                 LCalvingEnthalpy: True
-
+                        add_grids:
+                                rnfa:
+                                        name: RNFA
+                                rnfo:
+                                        name: RNFO
 
 #########################################################################################
 

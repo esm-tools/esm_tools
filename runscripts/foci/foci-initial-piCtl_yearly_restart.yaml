@@ -37,6 +37,13 @@ echam:
    restart_unit: "months"
    nproca: 24
    nprocb: 24
+   # parallel I/O, off by default
+   #nprocio: 6
+   #namelist_changes:
+   #   namelist.echam:
+   #      parctl:
+   #         iomode: 2 
+   #         nprocio: ${nprocio}
    
 nemo:
    resolution: "ORCA05"

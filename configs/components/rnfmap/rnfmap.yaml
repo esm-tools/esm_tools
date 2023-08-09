@@ -24,6 +24,7 @@ available_versions:
 - focioifs
 - focioifs1
 - focioifs21
+- foci211
 
 runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -48,6 +49,8 @@ choose_version:
     branch: smhi
   focioifs21:
     branch: runoff
+  foci211:
+    branch: foci211
 
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
@@ -116,6 +119,15 @@ coupling_fields:
 choose_runoff_method:
         'EM21':
                 runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                calving_fields_send: [R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_fields_send-->FIELD]]":
+                                grid: rnfs
+        'JK22':
+                runoff_fields_recv: [R_Runoff_atm, R_Calving_atm]
                 runoff_fields_send: [R_Runoff_oce]
                 calving_fields_send: [R_Calving_oce]
                 add_coupling_fields:

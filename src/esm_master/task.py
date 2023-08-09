@@ -38,7 +38,7 @@ def install(package: str) -> None:
     installed_packages = esm_plugin_manager.find_installed_plugins()
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", package])
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "--user", package]
@@ -438,7 +438,9 @@ class Task:
                     + folder
                     + " detected. Please run 'make get-"
                     + self.package.raw_name
-                    + "' first."
+                    + "' first, or switch to the folder containing "
+                    + folder
+                    + "."
                 )
                 print()
                 sys.exit(0)
@@ -447,7 +449,7 @@ class Task:
     def validate(self):
         self.check_requirements()
 
-    def execute(self, ignore_errors=False):
+    def generate_task_script(self):
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
@@ -458,15 +460,16 @@ class Task:
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
 
+    def execute(self, ignore_errors=False):
         # Calculate the number of get commands for this esm_master operation
         self.num_of_get_commands()
         # Loop through the commands
         for command in self.command_list:
             repo = self.get_repo_properties_from_command(command)
-            if command.startswith("mkdir"):
+            if command.startswith("mkdir") and ";" not in command:
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
-            elif command.startswith("cp "):
+            elif command.startswith("cp ") and ";" not in command:
                 subprocess.run(command.split(), check=not ignore_errors)
             elif command.startswith("cd ") and ";" not in command:
                 os.chdir(command.replace("cd ", ""))

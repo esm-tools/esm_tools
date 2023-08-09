@@ -1,6 +1,45 @@
+import copy
+
 import esm_parser
 
 from esm_calendar import Date
+
+
+class Provenance(list):
+    """
+    A subclass of lists in which each element holds provenance information about the
+    provenance history of a value. To assign the provenance to a value instanciated as
+    an attribute of that value. To be used from the ``WithProvenance`` classes created
+    by ``wrapper_with_provenance_factory``.
+    """
+    def __init__(self, provenance_data):
+        if isinstance(provenance_data, list):
+            super().__init__(provenance_data)
+        else:
+            super().__init__([provenance_data])
+
+    def append_last_step_modified_by(self, func):
+        new_provenance_step = copy.deepcopy(self[-1])
+        new_provenance_step = self.add_modified_by(new_provenance_step, func)
+
+        self.append(new_provenance_step)
+
+
+    def extend_and_modified_by(self, additional_provenance, func):
+        new_additional_provenance = copy.deepcopy(additional_provenance)
+        if new_additional_provenance is not self:
+            for elem in new_additional_provenance:
+                new_additional_provenance.add_modified_by(elem, func, modified_by="extended_by")
+            self.extend(new_additional_provenance)
+        else:
+            self.append_last_step_modified_by(func)
+
+
+    def add_modified_by(self, provenance_step, func, modified_by="modified_by"):
+        if provenance_step is not None:
+            provenance_step[modified_by] = str(func)
+
+        return provenance_step
 
 
 class ProvenanceClassForTheUnsubclassable:
@@ -22,7 +61,7 @@ class ProvenanceClassForTheUnsubclassable:
             The provenance information
         """
         self.value = value
-        self.provenance = provenance
+        self.provenance = Provenance(provenance)
 
     def __repr__(self):
         return f"{self.value}"
@@ -94,7 +133,8 @@ def wrapper_with_provenance_factory(value, provenance=None):
         return NoneWithProvenance(value, provenance)
 
     elif type(value) == Date:
-        value.provenance = provenance
+        value.provenance = Provenance(provenance)
+
         return value
 
     else:
@@ -108,7 +148,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
                 return super(WrapperWithProvenance, cls).__new__(cls, value)
 
             def __init__(self, value, provenance=None):
-                self.provenance = provenance
+                self.provenance = Provenance(provenance)
 
         # Instantiate the subclass with the given value and provenance
         return WrapperWithProvenance(value, provenance)
@@ -216,6 +256,8 @@ class DictWithProvenance(dict):
                 self[key] = DictWithProvenance(val, provenance.get(key, {}))
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance.get(key, {}))
+            elif hasattr(val, "provenance"):
+                self[key].provenance.extend(provenance.get(key, None))
             else:
                 self[key] = wrapper_with_provenance_factory(
                     val, provenance.get(key, None)
@@ -239,12 +281,14 @@ class DictWithProvenance(dict):
         for key, val in self.items():
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, provenance)
-            if isinstance(val, list):
+            elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance)
+            elif hasattr(val, "provenance"):
+                self[key].provenance.extend(provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
-    def get_provenance(self):
+    def get_provenance(self, index=-1):
         """
         Returns a ``dictionary`` containing the all the nested provenance information
         of the current ``DictWithProvenance`` with a structure and `keys` equivalent to
@@ -270,9 +314,9 @@ class DictWithProvenance(dict):
 
         for key, val in self.items():
             if isinstance(val, PROVENANCE_MAPPINGS):
-                provenance_dict[key] = val.get_provenance()
+                provenance_dict[key] = val.get_provenance(index=index)
             elif hasattr(val, "provenance"):
-                provenance_dict[key] = val.provenance
+                provenance_dict[key] = val.provenance[index]
             else:
                 # The DictWithProvenance object might have dictionaries inside that
                 # are not instances of that class (i.e. a dictionary added in the
@@ -316,6 +360,8 @@ class ListWithProvenance(list):
                 self[c] = DictWithProvenance(elem, provenance[c])
             elif isinstance(elem, list):
                 self[c] = ListWithProvenance(elem, provenance[c])
+            elif hasattr(elem, "provenance"):
+                self[c].provenance.extend(provenance[c])
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance[c])
 
@@ -337,12 +383,14 @@ class ListWithProvenance(list):
         for c, elem in enummerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, provenance)
-            if isinstance(elem, list):
+            elif isinstance(elem, list):
                 self[c] = ListWithProvenance(elem, provenance)
+            elif hasattr(elem, "provenance"):
+                self[c].provenance.append(provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 
-    def get_provenance(self):
+    def get_provenance(self, index=-1):
         """
         Returns a ``dictionary`` containing the all the nested provenance information
         of the current ``DictWithProvenance`` with a structure and `keys` equivalent to
@@ -368,9 +416,9 @@ class ListWithProvenance(list):
 
         for elem in self:
             if isinstance(elem, PROVENANCE_MAPPINGS):
-                provenance_list.append(elem.get_provenance())
+                provenance_list.append(elem.get_provenance(index=index))
             elif hasattr(elem, "provenance"):
-                provenance_list.append(elem.provenance)
+                provenance_list.append(elem.provenance[index])
             else:
                 # The DictWithProvenance object might have dictionaries inside that
                 # are not instances of that class (i.e. a dictionary added in the
@@ -410,25 +458,16 @@ def keep_provenance(func):
                 # was called: rhs = ${fesom.namelist_dir}, output =
                 # /actual/path/with/provenance/to/be/kept})
                 if hasattr(output, "provenance"):
-                    append_modified_by_to_provenance(output.provenance, func)
+                    provenance.extend_and_modified_by(output.provenance, func)
                 # If the rhs.provenance is not None and output has no provenance, keep
-                # the old proveance
-                elif provenance != None:
-                    provenance = append_modified_by_to_provenance(provenance, func)
+                # the old provenance
+                elif provenance is not None:
+                    provenance.append_last_step_modified_by(func)
                     output = wrapper_with_provenance_factory(output, provenance)
 
         return output
 
     return inner
-
-
-def append_modified_by_to_provenance(provenance, func):
-    if "modified_by" not in provenance:
-        provenance["modified_by"] = [str(func)]
-    else:
-        provenance["modified_by"].append(str(func))
-
-    return provenance
 
 
 if __name__ == "__main__":

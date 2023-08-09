@@ -1796,7 +1796,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logger.debug("finished with do_func_for")
 
     if isinstance(right, list):
-        newright = []
+        if isinstance(right, ListWithProvenance):
+            newright = ListWithProvenance([], None)
+        else:
+            newright = []
         for index, item in enumerate(right):
             new_item = recursive_run_function(
                 tree + [None], item, level, func, *args, **kwargs
@@ -1814,10 +1817,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 newright.extend(new_item)
             else:
                 newright.append(new_item)
-        if isinstance(right, ListWithProvenance):
-            right = ListWithProvenance(newright, right.get_provenance())
-        else:
-            right = newright
+        right = newright
     elif isinstance(right, dict):
         keys = list(right)
         for key in keys:

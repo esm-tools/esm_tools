@@ -7,22 +7,18 @@ import esm_parser.provenance as provenance
 import esm_parser
 from esm_parser import yaml_to_dict
 
-if "GITHUB_WORKSPACE" in os.environ:
-    example2_file_path = str(pathlib.Path(f"{os.environ.get('GITHUB_WORKSPACE')}/tests/test_esm_parser/example2.yaml").resolve())
-    example_file_path = str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example.yaml").resolve())
-else:
-    example2_file_path = str(pathlib.Path(f"{os.getcwd()}/example2.yaml").resolve())
-    example_file_path = str(pathlib.Path(f"{os.getcwd()}/example.yaml").resolve())
+EXAMPLE_PATH1 = f"{os.path.dirname(__file__)}/example.yaml"
+EXAMPLE_PATH2 = f"{os.path.dirname(__file__)}/example2.yaml"
 
-config = yaml_to_dict.yaml_file_to_dict(example2_file_path)
+config = yaml_to_dict.yaml_file_to_dict(EXAMPLE_PATH2)
 
 check_provenance = {'echam':
     {'type':
-        {'line': 2, 'col': 11, 'yaml_file': example2_file_path, 'category': 'runscript'},
+        {'line': 2, 'col': 11, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'},
         'files': {
             'greenhouse': {
-                'kind': {'line': 5, 'col': 19, 'yaml_file': example2_file_path, 'category': 'runscript'},
-                'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': example2_file_path, 'category': 'runscript'}
+                'kind': {'line': 5, 'col': 19, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'},
+                'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'}
             }
         }
     },
@@ -123,18 +119,18 @@ def test_set_provenance_for_a_new_leaf():
     assert config.get_provenance() == check_provenance
 
 
-#def test_set_provenance_for_a_list_leaf():
-#    """
-#        Test 9: Reset the provenance of a list")
-#    """
-#
-#    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'this_is_for_a_list'}
-#    config["fesom"] = {"list": [30, 19]}
-#    config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
+def test_set_provenance_for_a_list_leaf():
+    """
+        Test 9: Reset the provenance of a list")
+    """
+
+    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'this_is_for_a_list'}
+    config["fesom"] = {"list": [30, 19]}
+    config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
+
 #    config["fesom"]["list"] = provenance.ListWithProvenance(config["fesom"]["list"], [None, None])
-##    config["fesom"]["list"].set_provenance(new_prov)
-#    config["fesom"].set_provenance(new_prov)
-#    assert config.get_provenance() == check_provenance
+    config["fesom"]["list"].set_provenance(new_prov)
+    assert config.get_provenance() == check_provenance
 
 
 def test_extract_dict_config():
@@ -166,8 +162,8 @@ def test_extract_dict_config():
             }
     }
 
-    with open(example_file_path, "r") as file:
-        esm_tools_loader.set_filename(example_file_path)
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(EXAMPLE_PATH1)
         data, data2 = esm_tools_loader.load(file)
 
     assert data == config
@@ -180,9 +176,9 @@ def test_check_provenance_list():
 
     os.environ['USER'] = "some_user"
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    check_prov = [{'line': 15, 'col': 19, 'yaml_file': example_file_path, 'category': 'runscript'}, {'line': 15, 'col': 22, 'yaml_file': example_file_path, 'category': 'runscript'}, {'line': 15, 'col': 25, 'yaml_file': example_file_path, 'category': 'runscript'}]
+    check_prov = [{'line': 15, 'col': 19, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}, {'line': 15, 'col': 22, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}, {'line': 15, 'col': 25, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}]
 
-    with open(example_file_path, "r") as file:
+    with open(EXAMPLE_PATH1, "r") as file:
         esm_tools_loader.set_filename(file)
         data, data2 = esm_tools_loader.load(file)
 
@@ -200,7 +196,7 @@ def test_check_set_provenance_list():
     new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_list'}
     check_prov = [new_prov, new_prov, new_prov]
 
-    with open(example_file_path, "r") as file:
+    with open(EXAMPLE_PATH1, "r") as file:
         esm_tools_loader.set_filename(file)
         data, data2 = esm_tools_loader.load(file)
 
@@ -216,12 +212,12 @@ def test_check_set_provenance_of_single_list_entry():
 
     os.environ['USER'] = "some_user"
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': example_file_path, 'category': 'runscript'}
-    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': example_file_path, 'category': 'runscript'}
+    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}
+    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}
     new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_second_list'}
     check_prov = [old_prov1, old_prov2, new_prov]
 
-    with open(example_file_path, "r") as file:
+    with open(EXAMPLE_PATH1, "r") as file:
         esm_tools_loader.set_filename(file)
         data, data2 = esm_tools_loader.load(file)
 

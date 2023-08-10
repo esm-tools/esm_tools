@@ -215,7 +215,7 @@ class DictWithProvenance(dict):
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, provenance.get(key, {}))
             elif isinstance(val, list):
-                self[key] = ListWithProvenance(val, provenance.get(key, {}))
+                self[key] = ListWithProvenance(val, provenance.get(key, []))
             else:
                 self[key] = wrapper_with_provenance_factory(
                     val, provenance.get(key, None)
@@ -240,7 +240,7 @@ class DictWithProvenance(dict):
                 self[key] = DictWithProvenance(val, {})
                 self[key].set_provenance(provenance)
             elif isinstance(val, list):
-                self[key] = ListWithProvenance(val, {})
+                self[key] = ListWithProvenance(val, [])
                 self[key].set_provenance(provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
@@ -312,6 +312,9 @@ class ListWithProvenance(list):
         self.put_provenance(provenance)
 
     def put_provenance(self, provenance):
+        if not provenance:
+            provenance = [None] * len(self)
+
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, provenance[c])

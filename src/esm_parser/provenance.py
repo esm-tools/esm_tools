@@ -110,7 +110,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
             def __init__(self, value, provenance=None):
                 self.provenance = provenance
 
-            # Instantiate the subclass with the given value and provenance
+        # Instantiate the subclass with the given value and provenance
         return WrapperWithProvenance(value, provenance)
 
 
@@ -235,7 +235,6 @@ class DictWithProvenance(dict):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
-        print("set_provenance in dict: ",provenance)
         for key, val in self.items():
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, {})
@@ -335,7 +334,6 @@ class ListWithProvenance(list):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
-        print("set_provenance in list: ",provenance)
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, {})

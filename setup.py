@@ -26,6 +26,7 @@ requirements = [
     "packaging",
     "pandas>=1.0",
     "psutil",
+    "pytest",
     "pyyaml",
     "pyyaml>=5.1",
     "questionary",

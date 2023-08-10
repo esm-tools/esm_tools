@@ -286,6 +286,7 @@ choose_version:
                                         LU_trans: LU_trans_none
 
 # check forcing files of common scenarios
+ssp_num: null
 choose_scenario_type:
         ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
                 ssp_num: "$(( '${scenario}'[:4] ))" # first 4 characters, e.g. 'ssp1' in case of 'ssp126'

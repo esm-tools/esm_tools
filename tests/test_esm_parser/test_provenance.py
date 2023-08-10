@@ -7,23 +7,13 @@ import esm_parser.provenance as provenance
 import esm_parser
 from esm_parser import yaml_to_dict
 
-#config_dict = {
-#    "echam": {
-#        "type": "atmosphere",
-#        "files": {
-#            "greenhouse": {"kind": "input", "path_in_computer": "/my/path/in/computer"}
-#        },
-#    }
-#}
-#
-#my_provenance = {
-#    "echam": {
-#        "type": {"line": 2, "col": 11, "yaml_file": "myrunscript.yaml", "category": "runscript"},
-#        },
-#}
-#config = provenance.DictWithProvenance(config_dict, my_provenance)
+# Todo: Check if 'GITHUB_WORKSPACE' is set, otherwise set to pwd.
+if os.environ.get('GITHUB_WORKSPACE') is not None:
+    example_file_path = f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml"
+else:
+    example_file_path = os.getcwd()
 
-#os.environ['GITHUB_WORKSPACE'] = "/work/ab0995/a270089/esm_tools"
+print(example_file_path)
 config = yaml_to_dict.yaml_file_to_dict(str(pathlib.Path(f"{os.environ['GITHUB_WORKSPACE']}/tests/test_esm_parser/example2.yaml").resolve()))
 
 check_provenance = {'echam':
@@ -38,6 +28,7 @@ check_provenance = {'echam':
     },
     'debug_info': {'loaded_from_file': None}
 }
+
 # Test 1:  Checks for a correct provenance entries from example yaml file.
 def test_get_provenance_from_yaml_to_dict():
     assert config.get_provenance() == check_provenance
@@ -199,123 +190,3 @@ def test_check_set_provenance_of_single_list_entry():
     config = provenance.DictWithProvenance(data, data2)
     config["person"]["my_other_list"][2].provenance = new_prov
     assert config["person"]["my_other_list"].get_provenance() == check_prov
-#
-#def test_extract_provenance():
-#    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-#    file_path = pathlib.Path("example.yaml")
-#    file_path = os.path.abspath(file_path)
-#    provenance = {
-#            'person': {
-#                'name': {
-#                    'line': 1,
-#                    'col': 8,
-#                    'yaml_file': file_path,
-#                    'category': 'None'},
-#                'username': {
-#                    'line': 2,
-#                    'col': 12,
-#                    'yaml_file': file_path,
-#                    'category': 'None'},
-#                'a_string': {
-#                    'line': 3,
-#                    'col': 12,
-#                    'yaml_file': file_path,
-#                    'category': 'None'},
-#                'my_var': {
-#                    'line': 8,
-#                    'col': 10,
-#                    'yaml_file': file_path,
-#                    'category': 'None'},
-#                'my_other_var': [{
-#                    'line': 10,
-#                    'col': 8,
-#                    'yaml_file': file_path,
-#                    'category': 'None'}, {
-#                        'line': 12,
-#                        'col': 8,
-#                        'yaml_file': file_path,
-#                        'category': 'None'}, {
-#                        'line': 13,
-#                        'col': 8,
-#                        'yaml_file': file_path,
-#                        'category': 'None'}],
-#                'my_other_list': [{
-#                    'line': 14,
-#                    'col': 18,
-#                    'yaml_file': file_path,
-#                    'category': 'None'}, {
-#                        'line': 14,
-#                        'col': 21,
-#                        'yaml_file': file_path,
-#                        'category': 'None'}, {
-#                        'line': 14,
-#                        'col': 24,
-#                        'yaml_file': file_path,
-#                        'category': 'None'}],
-#                'my_bolean': {
-#                        'line': 16,
-#                        'col': 13,
-#                        'yaml_file': file_path,
-#                        'category': 'None'},
-#                'my_int': {
-#                        'line': 17,
-#                        'col': 10,
-#                        'yaml_file': file_path,
-#                        'category': 'None'},
-#                'my_int2': {
-#                        'line': 18,
-#                        'col': 11,
-#                        'yaml_file': file_path,
-#                        'category': 'None'},
-#                'list_with_dict_inside': [{
-#                    'line': 20,
-#                    'col': 4,
-#                    'yaml_file': file_path,
-#                    'category': 'None'}, {
-#                        'line': 21,
-#                        'col': 4,
-#                        'yaml_file': file_path,
-#                        'category': 'None'}, {
-#                        'my_dict': {
-#                            'foo': [{
-#                                'line': 24,
-#                                'col': 10,
-#                                'yaml_file': file_path,
-#                                'category': 'None'}, {
-#                                    'line': 25,
-#                                    'col': 10,
-#                                    'yaml_file': file_path,
-#                                    'category': 'None'}, {
-#                                    'my_dict': {
-#                                        'foo': {
-#                                            'line': 27,
-#                                            'col': 17,
-#                                            'yaml_file': file_path,
-#                                            'category': 'None'}
-#                                    }}]}}]}}
-#
-#    with open(file_path, "r") as file:
-#        esm_tools_loader.set_filename(file_path)
-#        data, data2 = esm_tools_loader.load(file)
-#
-#    assert data2 == provenance
-#
-#
-## Test 7 (reset the provenance of a leaf)
-#def test_get_provenance_7():
-#    config_fesom = provenance.DictWithProvenance({"fesom": {"update_test": True}}, "new_provenance")
-#
-#    config["fesom"].update(config_fesom["fesom"])
-#
-#    check_provenance = {
-#        "echam": {
-#            "type": "a_string",
-#            "files": {
-#                "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
-#            },
-#        },
-#        "fesom": {"asd": 2, "model": 2, "update_test": "new_provenance"},
-#        "computer": None,
-#        True: None,
-#    }
-#    assert config.get_provenance() == check_provenance

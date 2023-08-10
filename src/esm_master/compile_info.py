@@ -10,7 +10,6 @@ from .general_stuff import (
     SETUPS_DIR,
     DEFAULTS_DIR,
     ESM_SOFTWARE_DIR,
-    ESM_MASTER_PICKLE,
     ESM_MASTER_DIR,
 )
 

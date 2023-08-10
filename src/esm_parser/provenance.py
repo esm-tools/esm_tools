@@ -148,7 +148,7 @@ class DictWithProvenance(dict):
 
         .. code-block:: python
 
-            >>> config_dict["echam"].provenance
+#            >>> config_dict["echam"].provenance
             {'type': {'file': 'echam.yaml'}}
 
     Note that the `key` ``"files"`` does not exist as the value for that key in the

@@ -97,49 +97,21 @@ def wrapper_with_provenance_factory(value, provenance=None):
         value.provenance = provenance
         return value
 
-    elif type(value) == int:
-        return WrapperWithProvenance_int(value, provenance)
-
-    elif type(value) == str:
-        return WrapperWithProvenance_str(value, provenance)
-
     else:
-        # Instantiate the subclass with the given value and provenance
+
         class WrapperWithProvenance(type(value)):
-              """
-              Dynamically create a subclass of the type of the given value
-              """
+            """
+            Dynamically create a subclass of the type of the given value
+            """
 
-              def __new__(cls, value, *args, **kwargs):
-                  return super(WrapperWithProvenance, cls).__new__(cls, value)
+            def __new__(cls, value, *args, **kwargs):
+                return super(WrapperWithProvenance, cls).__new__(cls, value)
 
-              def __init__(self, value, provenance=None):
-                       self.provenance = provenance
+            def __init__(self, value, provenance=None):
+                self.provenance = provenance
+
+            # Instantiate the subclass with the given value and provenance
         return WrapperWithProvenance(value, provenance)
-
-
-class WrapperWithProvenance_str(str):
-    """
-    Create a subclass of type str
-    """
-
-    def __new__(cls, value, *args, **kwargs):
-        return super(WrapperWithProvenance_str, cls).__new__(cls, value)
-
-    def __init__(self, value, provenance=None):
-             self.provenance = provenance
-
-
-class WrapperWithProvenance_int(int):
-    """
-    Create a subclass of type int
-    """
-
-    def __new__(cls, value, *args, **kwargs):
-        return super(WrapperWithProvenance_int, cls).__new__(cls, value)
-
-    def __init__(self, value, provenance=None):
-             self.provenance = provenance
 
 
 class DictWithProvenance(dict):
@@ -265,9 +237,11 @@ class DictWithProvenance(dict):
         """
         for key, val in self.items():
             if isinstance(val, dict):
-                DictWithProvenance.set_provenance(val, provenance)
+                self[key] = DictWithProvenance(val, None)
+                self[key].set_provenance(val, provenance)
             elif isinstance(val, list):
-                ListWithProvenance.set_provenance(val, provenance)
+                self[key] = ListWithProvenance(val, None)
+                self[key].set_provenance(val, provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
@@ -362,9 +336,11 @@ class ListWithProvenance(list):
         """
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
-                DictWithProvenancei.set_provenance(elem, provenance)
+                self[c] = DictWithProvenance(elem, None)
+                self[c].set_provenance(elem, provenance)
             elif isinstance(elem, list):
-                ListWithProvenance.set_provenance(elem, provenance)
+                self[c] = ListWithProvenance(elem, None)
+                self[c].set_provenance(elem, provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 

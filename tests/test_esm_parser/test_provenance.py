@@ -125,11 +125,11 @@ def test_set_provenance_for_a_list_leaf():
     """
 
     new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'this_is_for_a_list'}
-    config["fesom"] = {"list": [30, 19]}
+    config["fesom"]["list"] = [30, 19]
     config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
-
-#    config["fesom"]["list"] = provenance.ListWithProvenance(config["fesom"]["list"], [None, None])
     config["fesom"]["list"].set_provenance(new_prov)
+    check_provenance["fesom"]["list"] = [new_prov, new_prov]
+    check_provenance["fesom"]["asd"] = None
     assert config.get_provenance() == check_provenance
 
 

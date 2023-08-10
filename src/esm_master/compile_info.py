@@ -337,16 +337,7 @@ def get_relevant_info(relevant_entries, raw_config, merge_into_this_config=None)
 class setup_and_model_infos:
     def __init__(self, vcs, general, parsed_args):
 
-        if not os.path.isfile(ESM_MASTER_PICKLE):
-            self.config, self.relevant_entries = combine_components_yaml(parsed_args)
-            save_pickle(self.config, ESM_MASTER_PICKLE)
-
-        elif "list_all_packages" in parsed_args:
-            self.config = load_pickle(ESM_MASTER_PICKLE)
-
-        else:
-            self.config, self.relevant_entries = combine_components_yaml(parsed_args)
-            save_pickle(self.config, ESM_MASTER_PICKLE)
+        self.config, self.relevant_entries = combine_components_yaml(parsed_args)
 
         self.model_kinds = list(self.config.keys())
         self.meta_todos = general.meta_todos

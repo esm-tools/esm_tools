@@ -235,13 +235,14 @@ class DictWithProvenance(dict):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
+        print("set_provenance in dict: ",provenance)
         for key, val in self.items():
             if isinstance(val, dict):
-                self[key] = DictWithProvenance(val, None)
-                self[key].set_provenance(val, provenance)
+                self[key] = DictWithProvenance(val, {})
+                self[key].set_provenance(provenance)
             elif isinstance(val, list):
-                self[key] = ListWithProvenance(val, None)
-                self[key].set_provenance(val, provenance)
+                self[key] = ListWithProvenance(val, {})
+                self[key].set_provenance(provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
@@ -334,13 +335,14 @@ class ListWithProvenance(list):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
+        print("set_provenance in list: ",provenance)
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
-                self[c] = DictWithProvenance(elem, None)
-                self[c].set_provenance(elem, provenance)
+                self[c] = DictWithProvenance(elem, {})
+                self[c].set_provenance(provenance)
             elif isinstance(elem, list):
-                self[c] = ListWithProvenance(elem, None)
-                self[c].set_provenance(elem, provenance)
+                self[c] = ListWithProvenance(elem, [])
+                self[c].set_provenance(provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 

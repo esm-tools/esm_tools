@@ -102,24 +102,13 @@ metadata:
         Authors: Bjorn Stevens (bjorn.stevens@mpimet.mpg.de) among others at MPI-Met
         Publications:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
-        License: >
+        License:
                 Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
-                To use the repository on any of these locations: 
-                
-                * gitlab.dkrz.de/modular_esm/echam.git
-                * gitlab.awi.de/paleodyn/models/echam.git
-                
-                please register for the MPI-ESM user forum at:
-                
-                https://code.mpimet.mpg.de/projects/mpi-esm-license 
-                
+                To use the repository on either gitlab.dkrz.de/modular_esm/echam6.git or gitlab.awi.de/paleodyn/models/echam6.git,
+                please register for the MPI-ESM user forum at https://code.mpimet.mpg.de/projects/mpi-esm-license
                 and send a screenshot of yourself logged in to the forum to either paul.gierz@awi.de, miguel.andres-martinez@awi.de,
-                or nadine.wieters@awi.de.
-                
-                Note also that you can otherwise ignore the instructions on that page, just the registiration and login screen shot
-                is important for us.
-                
-                Have fun using ECHAM! :-)
+                or nadine.wieters@awi.de. Note also that you can otherwise ignore the instructions on that page, just the registration
+                and login screen shot is the relevant part for obtaining the license.
 
 standalone_model: True
 
@@ -405,11 +394,11 @@ choose_scenario:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                        MAC-SP: MAC-SP
+                        MAC-SP: MAC-SP_hist_scenario
 
         cmip6hist:
                 scenario_type: cmip6

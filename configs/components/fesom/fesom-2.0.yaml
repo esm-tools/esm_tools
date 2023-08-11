@@ -170,8 +170,10 @@ restart_in_in_work:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 restart_in_sources:
-        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
-        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        # TODO: When cleaning up the FESOM yamls, remove the wildcard and make this file
+        # be dependent on the corresponding namelist option
+        oce_restart: fesom.${parent_date!syear}.o*e.restart.nc
+        ice_restart: fesom.${parent_date!syear}.i*e.restart.nc
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info

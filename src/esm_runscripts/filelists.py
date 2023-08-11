@@ -891,7 +891,7 @@ def check_for_unknown_files(config):
     return config
 
 
-def resolve_symlinks(file_source):
+def resolve_symlinks(config, file_source):
     if os.path.islink(file_source):
         points_to = os.path.realpath(file_source)
 
@@ -904,7 +904,7 @@ def resolve_symlinks(file_source):
             return file_source
 
         # recursively find the file that the link is pointing to
-        return resolve_symlinks(points_to)
+        return resolve_symlinks(config, points_to)
     else:
         return file_source
 
@@ -955,7 +955,7 @@ def copy_files(config, filetypes, source, target):
                             helpers.print_datetime(config)
                         continue
                     dest_dir = os.path.dirname(file_target)
-                    file_source = resolve_symlinks(file_source)
+                    file_source = resolve_symlinks(config, file_source)
                     if not os.path.isdir(file_source):
                         try:
                             if not os.path.isdir(dest_dir):

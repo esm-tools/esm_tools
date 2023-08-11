@@ -18,8 +18,6 @@ ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
 CONFIG_YAML = esm_tools.get_config_filepath("/esm_software/esm_master/esm_master.yaml")
 VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
 
-ESM_MASTER_PICKLE = ESM_SOFTWARE_DIR + "/esm_master/esm_master.pkl"
-
 ######################################################################################
 ##################################### tab completion #################################
 ######################################################################################
@@ -234,7 +232,7 @@ class version_control_infos:
             except:
                 print("Sorry, no " + todo + "_command defined for " + package.repo_type)
                 sys.exit(42)
-            if type(package.repo) == list:
+            if isinstance(package.repo, list):
                 repo = package.repo[0]
             else:
                 repo = package.repo

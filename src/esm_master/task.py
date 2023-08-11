@@ -81,7 +81,7 @@ class Task:
             general, "already_installed_plugins", []
         )
 
-        if type(raw) == str:
+        if isinstance(raw, str):
             (
                 self.todo,
                 kind,
@@ -202,7 +202,7 @@ class Task:
         if self.only_subtask:
             if self.only_subtask == "NONE":
                 return []
-            elif type(self.only_subtask) == str:
+            elif isinstance(self.only_subtask, str):
                 return [self.only_subtask]
             else:
                 subtasks = self.only_subtask

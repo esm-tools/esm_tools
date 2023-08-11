@@ -148,7 +148,7 @@ class DictWithProvenance(dict):
 
         .. code-block:: python
 
-            >>> config_dict["echam"].provenance
+#            >>> config_dict["echam"].provenance
             {'type': {'file': 'echam.yaml'}}
 
     Note that the `key` ``"files"`` does not exist as the value for that key in the
@@ -215,7 +215,7 @@ class DictWithProvenance(dict):
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, provenance.get(key, {}))
             elif isinstance(val, list):
-                self[key] = ListWithProvenance(val, provenance.get(key, {}))
+                self[key] = ListWithProvenance(val, provenance.get(key, []))
             else:
                 self[key] = wrapper_with_provenance_factory(
                     val, provenance.get(key, None)
@@ -235,12 +235,13 @@ class DictWithProvenance(dict):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
-
         for key, val in self.items():
             if isinstance(val, dict):
-                self[key] = DictWithProvenance(val, provenance)
-            if isinstance(val, list):
-                self[key] = ListWithProvenance(val, provenance)
+                self[key] = DictWithProvenance(val, {})
+                self[key].set_provenance(provenance)
+            elif isinstance(val, list):
+                self[key] = ListWithProvenance(val, [])
+                self[key].set_provenance(provenance)
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
@@ -311,6 +312,9 @@ class ListWithProvenance(list):
         self.put_provenance(provenance)
 
     def put_provenance(self, provenance):
+        if not provenance:
+            provenance = [None] * len(self)
+
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, provenance[c])
@@ -333,12 +337,13 @@ class ListWithProvenance(list):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
-
-        for c, elem in enummerate(self):
+        for c, elem in enumerate(self):
             if isinstance(elem, dict):
-                self[c] = DictWithProvenance(elem, provenance)
-            if isinstance(elem, list):
-                self[c] = ListWithProvenance(elem, provenance)
+                self[c] = DictWithProvenance(elem, {})
+                self[c].set_provenance(provenance)
+            elif isinstance(elem, list):
+                self[c] = ListWithProvenance(elem, [])
+                self[c].set_provenance(provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 

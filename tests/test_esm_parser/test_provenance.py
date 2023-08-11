@@ -2,143 +2,148 @@
     Unit tests for the new provenance feature
 """
 import os
-import esm_parser.provenance as provenance
 import pathlib
+import esm_parser.provenance as provenance
 import esm_parser
 from esm_parser import yaml_to_dict
 
-config_dict = {
-    "echam": {
-        "type": "atmosphere",
-        "files": {
-            "greenhouse": {"kind": "input", "path_in_computer": "/my/path/in/computer"}
-        },
-    }
+EXAMPLE_PATH1 = f"{os.path.dirname(__file__)}/example.yaml"
+EXAMPLE_PATH2 = f"{os.path.dirname(__file__)}/example2.yaml"
+
+config = yaml_to_dict.yaml_file_to_dict(EXAMPLE_PATH2)
+
+check_provenance = {'echam':
+    {'type':
+        {'line': 2, 'col': 11, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'},
+        'files': {
+            'greenhouse': {
+                'kind': {'line': 5, 'col': 19, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'},
+                'path_in_computer': {'line': 6, 'col': 31, 'yaml_file': EXAMPLE_PATH2, 'category': 'runscript'}
+            }
+        }
+    },
+    'debug_info': {'loaded_from_file': None}
 }
 
-my_provenance = {
-    "from_file": None,
-    "type": None,
-}
-config = provenance.DictWithProvenance(config_dict, my_provenance)
+
+def test_get_provenance_from_yaml_to_dict():
+    """
+        Test 1:  Checks for correct provenance entries from example2.yaml file.
+    """
+
+    assert config.get_provenance() == check_provenance
 
 
-# Test 1 (should give you a provenance of None for the key ["fesom"]["asd"])
-def test_get_provenance_1():
+def test_get_provenance_of_added_entry():
+    """
+        Test 2: Checks whether the provenance of an added config entry is None.
+    """
+
+    config["fesom"] = True
+    check_provenance["fesom"] = None
+    assert config.get_provenance() == check_provenance
+
+
+def test_get_provenance_of_added_nested_entry():
+    """
+        Test 3: Checks whether the provenance of an added nested config entry is None.
+    """
+
     config["fesom"] = {"asd": 0}
-    check_provenance = {
-        "echam": {
-            "type": {"from_file": None, "type": None},
-            "files": {
-                "greenhouse": {
-                    "kind": {"from_file": None, "type": None},
-                    "path_in_computer": {"from_file": None, "type": None},
-                }
-            },
-        },
-        "fesom": {"asd": None},
-    }
+    check_provenance["fesom"] = None
     assert config.get_provenance() == check_provenance
 
 
-# Test 2 (should give you a provenance of None for the key "computer")
-def test_get_provenance_2():
-    config["computer"] = 0
-    check_provenance = {
-        "echam": {
-            "type": {"from_file": None, "type": None},
-            "files": {
-                "greenhouse": {
-                    "kind": {"from_file": None, "type": None},
-                    "path_in_computer": {"from_file": None, "type": None},
-                }
-            },
-        },
-        "fesom": {"asd": None},
-        "computer": None,
-    }
+def test_get_provenance_of_added_nested_entry_2():
+    """
+        Test 4: Checks whether the provenance of an added nested config entry is None.
+    """
+
+    config["echam"]["test1"] = 17.
+    check_provenance["echam"]["test1"] = None
     assert config.get_provenance() == check_provenance
 
 
-# Test 3 (should give you a provenance of 2 for the leaf keys inside "fesom")
-def test_get_provenance_3():
-    config_fesom = provenance.DictWithProvenance({"fesom": {"asd": 0, "model": "ocean"}}, 2)
-    config.update(config_fesom)
-    check_provenance = {
-        "echam": {
-            "type": {"from_file": None, "type": None},
-            "files": {
-                "greenhouse": {
-                    "kind": {"from_file": None, "type": None},
-                    "path_in_computer": {"from_file": None, "type": None},
-                }
-            },
-        },
-        "fesom": {"asd": 2, "model": 2},
-        "computer": None,
-    }
+def test_set_provenance_for_leaf():
+
+    """
+        Test 5: Reset the provenance of an ``echam`` leave.
+    """
+
+    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'userdefined'}
+    print(config["echam"].get_provenance())
+    config["echam"].set_provenance(new_prov)
+    print(config)
+    check_provenance["echam"]["type"] = new_prov
+    check_provenance["echam"]["files"]["greenhouse"]["kind"] = new_prov
+    check_provenance["echam"]["files"]["greenhouse"]["path_in_computer"] = new_prov
+    check_provenance["echam"]["test1"] = new_prov
     assert config.get_provenance() == check_provenance
 
 
-# Test 4 (should give you a provenance of None for the key True)
-def test_get_provenance_4():
-    config[True] = "boolean"
-    check_provenance = {
-        "echam": {
-            "type": {"from_file": None, "type": None},
-            "files": {
-                "greenhouse": {
-                    "kind": {"from_file": None, "type": None},
-                    "path_in_computer": {"from_file": None, "type": None},
-                }
-            },
-        },
-        "fesom": {"asd": 2, "model": 2},
-        "computer": None,
-        True: None,
-    }
+def test_set_provenance_for_leaf_of_new_branch():
+    """
+        Test 6: Reset the provenance of leaves for an later added branch ``debug_info``.
+    """
+
+    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'debuginfo'}
+    config["debug_info"].set_provenance(new_prov)
+    check_provenance["debug_info"]['loaded_from_file'] = new_prov
     assert config.get_provenance() == check_provenance
 
 
-# Test 5 (reset the provenance of all ``echam`` leaves to "a_string")
-def test_get_provenance_5():
-    config["echam"].set_provenance("a_string")
-    check_provenance = {
-        "echam": {
-            "type": "a_string",
-            "files": {"greenhouse": {"kind": "a_string", "path_in_computer": "a_string"}},
-        },
-        "fesom": {"asd": 2, "model": 2},
-        "computer": None,
-        True: None,
-    }
+def test_set_provenance_for_leaf_to_a_string():
+    """
+        Test 7: Reset the provenance of all ``echam`` leaves to "a_string")
+    """
+
+    new_prov = "a_string"
+    config["echam"].set_provenance(new_prov)
+    check_provenance["echam"]["type"] = new_prov
+    check_provenance["echam"]["files"]["greenhouse"]["kind"] = new_prov
+    check_provenance["echam"]["files"]["greenhouse"]["path_in_computer"] = new_prov
+    check_provenance["echam"]["test1"] = new_prov
     assert config.get_provenance() == check_provenance
 
 
-# Test 6 (reset the provenance of a leaf)
-def test_get_provenance_6():
-    config["echam"]["files"]["greenhouse"].provenance["kind"] = "a_new_string"
-    check_provenance = {
-        "echam": {
-            "type": "a_string",
-            "files": {
-                "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
-            },
-        },
-        "fesom": {"asd": 2, "model": 2},
-        "computer": None,
-        True: None,
-    }
+def test_set_provenance_for_a_new_leaf():
+    """
+        Test 8: Rest the provenanve of fesom entry.
+    """
+
+    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'set_for_onknown_leaf'}
+    config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
+    config["fesom"].set_provenance(new_prov)
+    check_provenance["fesom"] = {"asd": None}
+    check_provenance["fesom"]["asd"] = new_prov
     assert config.get_provenance() == check_provenance
 
 
-def test_extract_dict():
+def test_set_provenance_for_a_list_leaf():
+    """
+        Test 9: Reset the provenance of a list")
+    """
+
+    new_prov = {'line': 2, 'col': 11, 'yaml_file': 'someother.yaml', 'category': 'this_is_for_a_list'}
+    config["fesom"]["list"] = [30, 19]
+    config["fesom"] = provenance.DictWithProvenance(config["fesom"], {})
+    config["fesom"]["list"].set_provenance(new_prov)
+    check_provenance["fesom"]["list"] = [new_prov, new_prov]
+    check_provenance["fesom"]["asd"] = None
+    assert config.get_provenance() == check_provenance
+
+
+def test_extract_dict_config():
+    """
+        Test 10: Test the extraction of config for all allowed variable types.
+    """
+
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
+    os.environ['USER'] = "some_user"
     config = {
             'person': {
                 'name': 'Paul Gierz',
-                'username': 'nwieters',
+                'username': os.environ['USER'],
                 'a_string': ' hello world I am here to make your life impossible ',
                 'my_var': 'MY_VAR',
                 'my_other_var': ['a', 'b', 'c'],
@@ -157,129 +162,65 @@ def test_extract_dict():
             }
     }
 
-    with open(file_path, "r") as file:
-        esm_tools_loader.set_filename(file_path)
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(EXAMPLE_PATH1)
         data, data2 = esm_tools_loader.load(file)
 
     assert data == config
 
 
-def test_extract_provenance():
-    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
-    file_path = pathlib.Path("example.yaml")
-    file_path = os.path.abspath(file_path)
-    provenance = {
-            'person': {
-                'name': {
-                    'line': 1,
-                    'col': 8,
-                    'yaml_file': file_path,
-                    'category': 'None'},
-                'username': {
-                    'line': 2,
-                    'col': 12,
-                    'yaml_file': file_path,
-                    'category': 'None'},
-                'a_string': {
-                    'line': 3,
-                    'col': 12,
-                    'yaml_file': file_path,
-                    'category': 'None'},
-                'my_var': {
-                    'line': 8,
-                    'col': 10,
-                    'yaml_file': file_path,
-                    'category': 'None'},
-                'my_other_var': [{
-                    'line': 10,
-                    'col': 8,
-                    'yaml_file': file_path,
-                    'category': 'None'}, {
-                        'line': 12,
-                        'col': 8,
-                        'yaml_file': file_path,
-                        'category': 'None'}, {
-                        'line': 13,
-                        'col': 8,
-                        'yaml_file': file_path,
-                        'category': 'None'}],
-                'my_other_list': [{
-                    'line': 14,
-                    'col': 18,
-                    'yaml_file': file_path,
-                    'category': 'None'}, {
-                        'line': 14,
-                        'col': 21,
-                        'yaml_file': file_path,
-                        'category': 'None'}, {
-                        'line': 14,
-                        'col': 24,
-                        'yaml_file': file_path,
-                        'category': 'None'}],
-                'my_bolean': {
-                        'line': 16,
-                        'col': 13,
-                        'yaml_file': file_path,
-                        'category': 'None'},
-                'my_int': {
-                        'line': 17,
-                        'col': 10,
-                        'yaml_file': file_path,
-                        'category': 'None'},
-                'my_int2': {
-                        'line': 18,
-                        'col': 11,
-                        'yaml_file': file_path,
-                        'category': 'None'},
-                'list_with_dict_inside': [{
-                    'line': 20,
-                    'col': 4,
-                    'yaml_file': file_path,
-                    'category': 'None'}, {
-                        'line': 21,
-                        'col': 4,
-                        'yaml_file': file_path,
-                        'category': 'None'}, {
-                        'my_dict': {
-                            'foo': [{
-                                'line': 24,
-                                'col': 10,
-                                'yaml_file': file_path,
-                                'category': 'None'}, {
-                                    'line': 25,
-                                    'col': 10,
-                                    'yaml_file': file_path,
-                                    'category': 'None'}, {
-                                    'my_dict': {
-                                        'foo': {
-                                            'line': 27,
-                                            'col': 17,
-                                            'yaml_file': file_path,
-                                            'category': 'None'}
-                                    }}]}}]}}
+def test_check_provenance_list():
+    """
+        Test 11: Check provenance of a list entry
+    """
 
-    with open(file_path, "r") as file:
-        esm_tools_loader.set_filename(file_path)
+    os.environ['USER'] = "some_user"
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    check_prov = [{'line': 15, 'col': 19, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}, {'line': 15, 'col': 22, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}, {'line': 15, 'col': 25, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}]
+
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(file)
         data, data2 = esm_tools_loader.load(file)
 
-    assert data2 == provenance
+    config = provenance.DictWithProvenance(data, data2)
+    assert config["person"]["my_other_list"].get_provenance() == check_prov
 
 
-# Test 7 (reset the provenance of a leaf)
-def test_get_provenance_7():
-    config_fesom = provenance.DictWithProvenance({"fesom": {"update_test": True}}, "new_provenance")
+def test_check_set_provenance_list():
+    """
+        Test 12: Check set_provenance of a list entry
+    """
 
-    config["fesom"].update(config_fesom["fesom"])
+    os.environ['USER'] = "some_user"
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_list'}
+    check_prov = [new_prov, new_prov, new_prov]
 
-    check_provenance = {
-        "echam": {
-            "type": "a_string",
-            "files": {
-                "greenhouse": {"kind": "a_new_string", "path_in_computer": "a_string"}
-            },
-        },
-        "fesom": {"asd": 2, "model": 2, "update_test": "new_provenance"},
-        "computer": None,
-        True: None,
-    }
-    assert config.get_provenance() == check_provenance
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(file)
+        data, data2 = esm_tools_loader.load(file)
+
+    config = provenance.DictWithProvenance(data, data2)
+    config["person"]["my_other_list"].set_provenance(new_prov)
+    assert config["person"]["my_other_list"].get_provenance() == check_prov
+
+
+def test_check_set_provenance_of_single_list_entry():
+    """
+        Test 13: Check set_provenance of a single list entry
+    """
+
+    os.environ['USER'] = "some_user"
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    old_prov1 = {'line': 15, 'col': 19, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}
+    old_prov2 = {'line': 15, 'col': 22, 'yaml_file': EXAMPLE_PATH1, 'category': 'runscript'}
+    new_prov = {'line': 15, 'col': 25, 'yaml_file': 'example.yaml', 'category': 'from_a_second_list'}
+    check_prov = [old_prov1, old_prov2, new_prov]
+
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(file)
+        data, data2 = esm_tools_loader.load(file)
+
+    config = provenance.DictWithProvenance(data, data2)
+    config["person"]["my_other_list"][2].provenance = new_prov
+    assert config["person"]["my_other_list"].get_provenance() == check_prov

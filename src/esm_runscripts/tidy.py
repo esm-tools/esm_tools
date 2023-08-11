@@ -362,12 +362,12 @@ def copy_all_results_to_exp(config):
                         + destination
                     )
             else:
-                linkdest = resolve_symlinks(source)
+                linkdest = resolve_symlinks(config, source)
                 # newlinkdest = (
                 #    destination.rsplit("/", 1)[0] + "/" + linkdest.rsplit("/", 1)[-1]
                 # )
                 if os.path.islink(destination):
-                    destdest = resolve_symlinks(source)
+                    destdest = resolve_symlinks(config, source)
                     if linkdest == destdest:
                         # both links are identical, skip
                         continue

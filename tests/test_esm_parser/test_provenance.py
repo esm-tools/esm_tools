@@ -7,15 +7,16 @@ import sys
 
 import pytest
 from ruamel.yaml import YAML
+import yaml as yamel
 
 import esm_parser
 import esm_parser.provenance as provenance
 from esm_parser import yaml_to_dict
 
-#@pytest.fixture
-#def yaml():
-#    yaml = YAML()
-#    return yaml
+@pytest.fixture
+def yaml():
+    yaml = YAML()
+    return yaml
 #
 #
 #@pytest.fixture
@@ -258,8 +259,19 @@ def test_check_set_provenance_of_single_list_entry():
     assert config["person"]["my_other_list"].get_provenance() == check_prov
 
 
-def test_dump_config_with_provenance(config, yaml):
+#def test_dump_config_with_provenance(config, yaml):
+def test_dump_config_with_provenance(yaml):
     """Prints out the dictionary with comments"""
-    breakpoint()
 
-    print(yaml.dump(config.get_provenance(), sys.stdout))
+    esm_tools_loader = yaml_to_dict.EsmToolsLoader()
+    with open(EXAMPLE_PATH1, "r") as file:
+        esm_tools_loader.set_filename(file)
+        data, data2 = esm_tools_loader.load(file)
+
+    config = provenance.DictWithProvenance(data, data2)
+#    breakpoint()
+    yamel.dump(config, sys.stdout, Dumper=yaml_to_dict.CommentedYamlDumper, width=10000, indent=4)
+#    print(yaml.dump(config.get_provenance(), sys.stdout))
+#    dumper = esm_parser.CommentedYamlDumper(config.get_provenance())
+#    print(dumper.dump, sys.stdout)
+    assert 1 == 2

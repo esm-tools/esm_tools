@@ -18,9 +18,16 @@ YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
 CONFIG_PATH = esm_tools.get_config_filepath()
 
 
-class CommentedYamlDumper(yaml.SafeDumper):
+def provenance_representer(dumper, provenance):
+    return dumper.represent_str("provenance")
+
+#class CommentedYamlDumper(ruamel.yaml.SafeDumper):
+class CommentedYamlDumper(yaml.Dumper):
     pass
 
+CommentedYamlDumper.add_representer(
+    str,provenance_representer
+)
 
 class EsmConfigFileError(Exception):
     """

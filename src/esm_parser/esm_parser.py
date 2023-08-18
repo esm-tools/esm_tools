@@ -271,7 +271,7 @@ def check_for_empty_components_in_user_config(user_config):
                 f"file ``{user_config['general']['runscript_abspath']}`` is empty. "
                 "No further variables are set for this component in your runscript."
             )
-            user_config[model] = {}
+            del user_config[model]
     return user_config
 
 def complete_config(user_config):

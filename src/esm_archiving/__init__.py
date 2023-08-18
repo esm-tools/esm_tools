@@ -4,7 +4,7 @@
 
 __author__ = """Paul Gierz"""
 __email__ = "pgierz@awi.de"
-__version__ = "6.23.3"
+__version__ = "6.23.5"
 
 from .esm_archiving import (archive_mistral, check_tar_lists,
                             delete_original_data, determine_datestamp_location,

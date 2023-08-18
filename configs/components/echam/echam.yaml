@@ -394,11 +394,11 @@ choose_scenario:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                        MAC-SP: MAC-SP
+                        MAC-SP: MAC-SP_hist_scenario
 
         cmip6hist:
                 scenario_type: cmip6

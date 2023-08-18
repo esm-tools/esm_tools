@@ -199,8 +199,6 @@ def yaml_file_to_dict(filepath):
                     yaml_load["computer"]["runtime_environment_changes"][
                         "add_export_vars"
                     ] = add_export_vars
-                # Check for empty components/models
-                check_for_empty_components(yaml_load, filepath + extension)
                 return yaml_load
         except IOError as error:
             logger.debug(

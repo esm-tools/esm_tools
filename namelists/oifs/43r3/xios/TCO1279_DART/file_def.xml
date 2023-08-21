@@ -10,16 +10,17 @@
         format="netcdf4"
         par_access="collective"
         name="atm"
+        compression_level="1"
         split_freq="1y">
 
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h"
-            description="ECE4/OIFS 6hourly surface fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h"
+            description="ECE4/OIFS 3hourly surface fields">
 
-            <field_group freq_op="6h" operation="instant">
+            <field_group freq_op="3h" operation="instant">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
@@ -32,12 +33,12 @@
 
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="1d"
+	          timeseries="only"
+	          output_freq="1d"
             name_suffix="_1d"
             description="ECE4/OIFS daily surface fields">
 
-            <field_group freq_op="6h" operation="average">
+            <field_group freq_op="3h" operation="average">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
@@ -50,12 +51,12 @@
 
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="1mo"
+	          timeseries="only"
+	          output_freq="1mo"
             name_suffix="_1m"
             description="ECE4/OIFS monthly surface fields">
 
-            <field_group freq_op="6h" operation="average">
+            <field_group freq_op="3h" operation="average">
         <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
         <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
         <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
@@ -120,12 +121,12 @@
         <!-- Example: model level output -->
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h_ml"
-            description="ECE4/OIFS 6hourly model level fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h_ml"
+            description="ECE4/OIFS 3hourly model level fields">
 
-            <field_group freq_op="6h" operation="instant">
+            <field_group freq_op="3h" operation="instant">
                 <field field_ref="pres" name="pres"/>
                 <field field_ref="t" name="t"/>
                 <field field_ref="u" name="u"/>
@@ -140,12 +141,12 @@
         <!-- Example: pressure level output -->
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h_pl"
-            description="ECE4/OIFS 6hourly pressure level fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h_pl"
+            description="ECE4/OIFS 3hourly pressure level fields">
 
-            <field_group freq_op="6h" operation="instant">
+            <field_group freq_op="3h" operation="instant">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>
@@ -163,17 +164,18 @@
         type="multiple_file"
         format="netcdf4"
         par_access="collective"
-        name="atm_remapped"
+        name="atm_reduced"
+        compression_level="1"
         split_freq="1y">
 
         <file
             enabled="true"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h"
-            description="ECE4/OIFS 6hourly surface fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h"
+            description="ECE4/OIFS 3hourly surface fields">
 
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="instant">
+            <field_group grid_ref="reduced_sfc" freq_op="3h" operation="instant">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
@@ -186,12 +188,12 @@
 
         <file
             enabled="true"
-	    timeseries="only"
-	    output_freq="1d"
+	          timeseries="only"
+	          output_freq="1d"
             name_suffix="_1d"
             description="ECE4/OIFS daily surface fields">
 
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+            <field_group grid_ref="reduced_sfc" freq_op="3h" operation="average">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
@@ -204,12 +206,12 @@
 
         <file
             enabled="true"
-	    timeseries="only"
-	    output_freq="1mo"
+	          timeseries="only"
+	          output_freq="1mo"
             name_suffix="_1m"
             description="ECE4/OIFS monthly surface fields">
 
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+            <field_group grid_ref="reduced_sfc" freq_op="3h" operation="average">
         <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
         <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
         <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
@@ -274,12 +276,12 @@
         <!-- Example: model level output -->
         <file
             enabled="false"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h_ml"
-            description="ECE4/OIFS 6hourly model level fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h_ml"
+            description="ECE4/OIFS 3hourly model level fields">
 
-            <field_group grid_ref="regular_ml" freq_op="6h" operation="instant">
+            <field_group grid_ref="reduced_ml" freq_op="3h" operation="instant">
                 <field field_ref="pres" name="pres"/>
                 <field field_ref="t" name="t"/>
                 <field field_ref="u" name="u"/>
@@ -294,12 +296,12 @@
         <!-- Example: pressure level output -->
         <file
             enabled="true"
-	    timeseries="only"
-	    output_freq="6h"
-            name_suffix="_6h_pl"
-            description="ECE4/OIFS 6hourly pressure level fields">
+	          timeseries="only"
+	          output_freq="3h"
+            name_suffix="_3h_pl"
+            description="ECE4/OIFS 3hourly pressure level fields">
 
-            <field_group grid_ref="regular_pl" freq_op="6h" operation="instant">
+            <field_group grid_ref="reduced_pl" freq_op="3h" operation="instant">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>

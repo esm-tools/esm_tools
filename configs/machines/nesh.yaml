@@ -22,18 +22,34 @@ batch_system: "slurm"
 jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
-choose_jobtype:
-        tidy_and_resubmit:
-                partition: cluster 
-        post:
-                partition: cluster 
-        compute:
-                partition: cluster 
-
+# Set default partition on NESH
+partition: cluster
 
 choose_partition:
         cluster:
-                cores_per_node: 32
+                # Set partition name and core per node
+                partition_name: cluster
+                partition_cpn: 32
+                #cores_per_node: 32
+
+# Define all partitions available
+partitions:
+        compute:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+
+
+# Set default for each job type
+#choose_jobtype:
+#        tidy_and_resubmit:
+#                partition: cluster 
+#        post:
+#                partition: cluster 
+#        compute:
+#                partition: cluster 
 
 logical_cpus_per_core: 2
 
@@ -53,6 +69,7 @@ iolibraries: geomar_libs
 # for all compiler and I/O settings
 module_actions:
    - "load cmake"
+   - "load git git-lfs" 
 
 export_vars:
    LC_ALL: en_US.UTF-8

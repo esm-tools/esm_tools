@@ -132,7 +132,7 @@ def order_clusters(config):
                 not gw_config["subjob_clusters"][subjob_cluster]["run_after"]
                 in gw_config["subjob_clusters"]
             ):
-                print(f"Unknown cluster {subjob_cluster['run_after']}.")
+                print(f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_after']}.")
                 sys.exit(-1)
 
             calling_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_after"]
@@ -156,7 +156,7 @@ def order_clusters(config):
                 not gw_config["subjob_clusters"][subjob_cluster]["run_before"]
                 in gw_config["subjob_clusters"]
             ):
-                print(f"Unknown cluster {subjob_cluster['run_before']}.")
+                print(f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_before']}.")
                 sys.exit(-1)
 
             called_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_before"]
@@ -330,7 +330,13 @@ def init_total_workflow(config):
         config["general"]["workflow"]["subjobs"] = prepcompute
         config["general"]["workflow"]["subjobs"].update(compute)
         config["general"]["workflow"]["subjobs"].update(tidy)
-
+    else:
+        if not "prepcompute" in config["general"]["workflow"]["subjobs"]:
+            config["general"]["workflow"]["subjobs"].update(prepcompute)
+        if not "compute" in config["general"]["workflow"]["subjobs"]:
+            config["general"]["workflow"]["subjobs"].update(compute)
+        if not "tidy" in config["general"]["workflow"]["subjobs"]:
+            config["general"]["workflow"]["subjobs"].update(tidy)    
     if not "last_task_in_queue" in config["general"]["workflow"]:
         config["general"]["workflow"]["last_task_in_queue"] = "tidy"
     if not "first_task_in_queue" in config["general"]["workflow"]:

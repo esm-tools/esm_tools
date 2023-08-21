@@ -1,5 +1,10 @@
 import sys
+import glob
+import os
+import subprocess
+import questionary
 
+from esm_parser import user_error
 
 class oasis:
     def __init__(
@@ -77,7 +82,6 @@ class oasis:
         lresume,
         export_mode="DEFAULT",
     ):
-        import sys
 
         self.namcouple += ["#"]
 
@@ -98,12 +102,12 @@ class oasis:
             sep = ":"
 
         if export_mode == "DEFAULT":
-            if lresume == False:
+            if bool(lresume) is False:
                 export_mode = "EXPOUT"
             else:
                 export_mode = "EXPORTED"
 
-        if lresume == False:
+        if bool(lresume) is False:
             lag = str(0)
         else:
             lag = direction.get("lag", "0")
@@ -387,11 +391,11 @@ class oasis:
 
         self.next_coupling += 1
 
-        if not "outdata_files" in config:
+        if "outdata_files" not in config:
             config["outdata_files"] = {}
-        if not "outdata_in_work" in config:
+        if "outdata_in_work" not in config:
             config["outdata_in_work"] = {}
-        if not "outdata_sources" in config:
+        if "outdata_sources" not in config:
             config["outdata_sources"] = {}
 
         for thisfile in out_file:
@@ -401,10 +405,11 @@ class oasis:
             config["outdata_sources"][thisfile] = thisfile
 
     def add_restart_files(self, restart_file, fconfig):
+
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        # enddate = "_" + str(gconfig["end_date"].year) + str(gconfig["end_date"].month) + str(gconfig["end_date"].day)
-        # parentdate = "_" + str(config["parent_date"].year) + str(config["parent_date"].month) + str(config["parent_date"].day)
+        restart_file_label = restart_file
+        is_runtime = gconfig["run_or_compile"] == "runtime"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -412,18 +417,18 @@ class oasis:
             form=9, givenph=False, givenpm=False, givenps=False
         )
 
-        if not "restart_out_files" in config:
+        if "restart_out_files" not in config:
             config["restart_out_files"] = {}
-        if not "restart_out_in_work" in config:
+        if "restart_out_in_work" not in config:
             config["restart_out_in_work"] = {}
-        if not "restart_out_sources" in config:
+        if "restart_out_sources" not in config:
             config["restart_out_sources"] = {}
 
-        if not "restart_in_files" in config:
+        if "restart_in_files" not in config:
             config["restart_in_files"] = {}
-        if not "restart_in_in_work" in config:
+        if "restart_in_in_work" not in config:
             config["restart_in_in_work"] = {}
-        if not "restart_in_sources" in config:
+        if "restart_in_sources" not in config:
             config["restart_in_sources"] = {}
 
         config["restart_out_files"][restart_file] = restart_file
@@ -439,17 +444,65 @@ class oasis:
 
         config["restart_in_files"][restart_file] = restart_file
         config["restart_in_in_work"][restart_file] = restart_file
-        if not restart_file in config["restart_in_sources"]:
-            config["restart_in_sources"][restart_file] = restart_file
+
+        # In case of a branch-off experiment -> use the correct oasis restart files:
+        # Not the rstas.nc soft link to the last, but the actual one for the
+        # branch-off date
+        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute":
+            # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
+            # based on ``ini_parent_date`` and ``ini_parent_dir``
+            if "ini_parent_date" in config and "ini_restart_date" not in config:
+                config["ini_restart_date"] = config["ini_parent_date"]
+            if "ini_parent_dir" in config and "ini_restart_dir" not in config:
+                config["ini_restart_dir"] = config["ini_parent_dir"]
+            # If set in config (oasis):
+            if "ini_restart_dir" in config and "ini_restart_date" in config:
+                # check if restart file with ini_restart_date in filename is in the restart
+                # folder of the parent experiment to be branched off from:
+                glob_search_file = (
+                    f"{config['ini_restart_dir']}{restart_file}_????????-"
+                    f"{config['ini_restart_date'].year}"
+                    f"{config['ini_restart_date'].month:02}"
+                    f"{config['ini_restart_date'].day:02}"
+                )
+                glob_restart_file = glob.glob(glob_search_file)
+                glob_restart_file.sort()
+                if restart_file and is_runtime:
+                    # If there are more than one file found let the user decide which one to take
+                    if len(glob_restart_file) == 1:
+                        restart_file = os.path.basename(glob_restart_file[0])
+                    elif len(glob_restart_file) == 0:
+                        user_error(
+                            "Restart file missing",
+                            f"No OASIS restart file for ``{restart_file}`` found "
+                            f"matching the pattern ``{glob_search_file}``"
+                        )
+                    else:
+                        if not gconfig["isinteractive"]:
+                            # If more than one restart file found that matches ini_restart_date,
+                            # ask the user to select from the result list:
+                            message = (
+                                "More than one OASIS restart file was found for "
+                                "your branchoff experiment that matches the "
+                                "ini_restart_date you selected. Please select "
+                                "one of the following OASIS restart files:"
+                            )
+                            answers = questionary.form(
+                                restarts = questionary.select(message, choices=glob_restart_file)
+                            ).ask()
+                            restart_file = os.path.basename(answers["restarts"])
+
+                config["restart_in_sources"][restart_file_label] = restart_file
+
+        if restart_file not in config["restart_in_sources"]:
+            config["restart_in_sources"][restart_file_label] = restart_file
+
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
         # enddate = "_" + str(config["general"]["end_date"].year) + str(config["general"]["end_date"].month) + str(config["general"]["end_date"].day)
-        import glob
-        import os
-        import subprocess
 
         print("Preparing oasis restart files from initial run...", flush=True)
         # Assign an exe per model

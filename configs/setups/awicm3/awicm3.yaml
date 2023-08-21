@@ -711,10 +711,10 @@ oasis3mct:
                         load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
                         choose_load_restart_from_pool:
                                 true:
-                                        add_restart_in_sources:
-                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
-                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                                    add_restart_in_sources:
+                                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc

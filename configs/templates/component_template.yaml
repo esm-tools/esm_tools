@@ -1,0 +1,99 @@
+# NAME OF YOUR MODEL OR COMPONENT HERE
+#
+# For more information about the extended YAML syntax, please consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#esm-tools-extended-yaml-syntax
+#
+# For more information about the ESM-Tools feature variables available, please consult:
+# https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
+
+model: name of your component
+version: default version
+
+metadata:
+        Institute: where it was developed
+        Description:
+                A brief description here
+        Authors: Authors
+        Publications:
+                - "Main publication for this component here <link_to_the_publication>"
+        License:
+                License details here
+
+git-repository: if your code is hosted in git place here the address
+branch: default branch
+comp_command: command used to compile your component
+install_bins: subpath within ``model_dir`` where the comp command produces the binaries
+clean_command: ${defaults.clean_command}
+executable: medusa_recom_paleo
+
+choose_version:
+    # Here you can place all the variables you would want to control via the version
+    # variable above (for example, you could also add ``git-repository``,
+    # ``comp_command``, ``destination``, ...) 
+    a_version_of_your_choice:
+        branch: name of the branch/tag associated to that version if you use git
+    another_version_of_your_choice:
+        branch: name of the branch/tag associated to that version if you use git
+
+# ``model_dir`` let's ESM-Tools know where is the source code of your component (must
+# be an absolute path). Normally, changed via the runscript. We recommend you leave it
+# as below, changing only the ``name_of_your_model`` part to whatever you defined as 
+# the ``model`` var. This will automatically select the source code for esm_master if
+# the command is operating with a coupled setup
+model_dir: "${general.esm_master.dir}/name_of_your_model-${version}"
+
+# This section takes care of dealing with environment changes you might want to do, to
+# deviated from the defaults define for the specific machine
+# (``configs/machine/<the_machine_used>.yaml``). For more information consult:
+# https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
+environment_changes:
+    a_variable_in_the_computer_yaml: here you can over
+    add_module_actions:
+        - module command without ``module`` word (e.g. ``load hdf5``)
+        - module command without ``module`` word (e.g. ``load netcdf``)
+    add_export_vars:
+        VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
+        VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
+
+# Some recommended defaults
+lresume: false
+
+# Some commonly used variables in other ESM-Tools components (but optional)
+input_dir: ${pool_dir}/path/within/the/pool/dir/to/the/input/of/your/component
+namelist_dir: /absolute/path/to/the/namelist/folder
+
+# If your components has namelist the following syntax allows you to control the values
+# of their values. For more information consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#changing-namelists
+namelist_changes:
+    namelist_name:
+        section_in_the_namelist:
+            variable_in_the_namelist: its new value here
+
+namelists:
+    - name of the namelist
+
+# File dictionaries to control the copying/moving/linking of all files associated to
+# the simulation. This syntax will change for something better soon. For more details
+# about this syntax consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
+input_files:
+    file_name: file_tag
+input_source:
+    file_tag: /absolute/path/to/the/file
+input_in_work:
+    file_tag: /relative/path/to/the/file/in/the/work/directory
+
+config_files:
+    namelist_name: namelist_tag # Or any other configuration file
+config_sources:
+    namelist_tag: ${namelist_dir}/<namelist_name> # Use ${namelist_dir} here if you
+        # defined it above
+
+create_config:
+    name_of_the_config_you_want_to_create:
+        - "<--append-- line 1"
+        - "<--append-- line 2"
+
+bin_sources:
+    bin_tag: ${model_dir}/bin/${executable} # This would be the normal way to do it

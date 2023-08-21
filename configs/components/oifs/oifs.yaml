@@ -201,7 +201,8 @@ compile_infos:
             - oasis3mct-4.0
             - xios-2.5_r1910_oifs
           43r3-v2:
-            branch: master
+            # same branch as for coupled runs with FOCI-OpenIFS 2.1.1 
+            branch: foci211
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
             comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
             install_bins: make/esm/oifs/bin/oifs
@@ -1324,11 +1325,30 @@ preprocess:
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script
 # not working as expected as there is no "wait" after submit in the compute recipe below
-postprocess:
-        postprocess_shell:
-                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-                type: shell
+#postprocess:
+#        postprocess_shell:
+#                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+#                type: shell
 
+choose_oifs.post_processing:
+        True:
+                workflow:
+                        next_run_triggered_by: tidy
+                        subjobs:
+                                oifs_postprocessing:
+                                        batch_or_shell: shell
+                                        order_in_cluster: concurrent
+                                        run_on_queue: ${computer.partitions.pp.name}
+                                        run_after: tidy
+                                        script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                        submit_to_batch_system: True
+                                        script: "
+                                                oifs_postprocessing.sh -m
+                                                    -r ${general.expid}
+                                                    -s ${start_date}
+                                                    -e ${end_date}
+                                                    -p ${general.base_dir}"
+                                        nproc: 1
 
 #======================================================================================
 # RECIPE

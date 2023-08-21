@@ -8,6 +8,7 @@ import shlex  # contains shlex.split that respects quoted strings
 import pathlib
 
 from .software_package import software_package
+from esm_parser import user_error
 
 import esm_environment
 import esm_plugin_manager
@@ -35,13 +36,14 @@ def install(package: str) -> None:
     """
     package_name = package.split("/")[-1].replace(".git", "")
     installed_packages = esm_plugin_manager.find_installed_plugins()
+    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
+    if os.environ.get("VIRTUAL_ENV"):
+        arg_list.remove("--user")
     if not package_name in installed_packages:
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--user",package])
+            subprocess.check_call(arg_list)
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "--user", package]
-            )
+            subprocess.check_call(arg_list)
 
 
 ######################################################################################
@@ -437,7 +439,9 @@ class Task:
                     + folder
                     + " detected. Please run 'make get-"
                     + self.package.raw_name
-                    + "' first."
+                    + "' first, or switch to the folder containing "
+                    + folder
+                    + "."
                 )
                 print()
                 sys.exit(0)
@@ -446,7 +450,7 @@ class Task:
     def validate(self):
         self.check_requirements()
 
-    def execute(self, ignore_errors=False):
+    def generate_task_script(self):
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
@@ -456,11 +460,17 @@ class Task:
                     )
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
+
+    def execute(self, ignore_errors=False):
+        # Calculate the number of get commands for this esm_master operation
+        self.num_of_get_commands()
+        # Loop through the commands
         for command in self.command_list:
-            if command.startswith("mkdir"):
+            repo = self.get_repo_properties_from_command(command)
+            if command.startswith("mkdir") and ";" not in command:
                 # os.system(command)
                 subprocess.run(command.split(), check=not ignore_errors)
-            elif command.startswith("cp "):
+            elif command.startswith("cp ") and ";" not in command:
                 subprocess.run(command.split(), check=not ignore_errors)
             elif command.startswith("cd ") and ";" not in command:
                 os.chdir(command.replace("cd ", ""))
@@ -476,6 +486,16 @@ class Task:
                     pipe_command.split(), stdin=curl_process.stdout
                 )
                 curl_process.wait()
+            elif repo["is_repo_operation"]:
+                command_spl = shlex.split(command)
+                try:
+                    subprocess.run(command_spl, check=not ignore_errors)
+                except subprocess.CalledProcessError as error:
+                    self.add_repo_error(command, repo, error)
+                # If it's the last repo command, check for errors and report them back
+                if repo["is_last_repo"]:
+                    self.report_repo_errors()
+                    self.report_destination_path_errors()
             else:
                 # os.system(command)
                 # deniz: I personally did not like the iterator and the list
@@ -534,3 +554,184 @@ class Task:
             print("    Executing commands in this order:")
             for command in self.shown_command_list:
                 print("        ", command)
+
+    # Repository methods
+    # ------------------
+    def num_of_get_commands(self):
+        """
+        Defines ``self.num_get_commands`` which accounts for the total number of get
+        commands for the current ``esm_master`` operation
+        """
+        self.num_get_commands = 0
+        for command in self.command_list:
+            for subtask in self.subtasks:
+                if command in subtask.package.command_list.get("get", []):
+                    self.num_get_commands += 1
+                    break
+        return self.num_get_commands # (Not strictly needed, but might be nice?)
+
+    def get_repo_properties_from_command(self, command):
+        """
+        If the current command is a repo action (e.g. cloning) collects the repo
+        information associated to that command
+
+        Parameters
+        ----------
+        command : str
+            The shell command to be evaluated
+
+        Returns
+        -------
+        repo : dict
+            A dictionary containing the following information:
+            - ``package``: the package object that contains all the package info
+            - ``is_repo_operation``: boolean that indicates whether ``command`` is a
+              repo operation
+            - ``is_last_repo``: boolean that indicates whether this is the last repo
+              operation or not
+        """
+        # Initializes the list of executed repo commands
+        if not hasattr(self, "executed_repo_commands"):
+            self.executed_repo_commands = []
+
+        repo = {"is_repo_operation": False, "is_last_repo": False}
+        get_commands = self.package.command_list.get("get")
+        # This is true for standalone models
+        if self.package.repo and get_commands:
+            if command in get_commands:
+                repo["package"] = self.package
+                repo["is_repo_operation"] = True
+                repo["is_last_repo"] = True
+        # This block here is for coupled setups (loops through each subtask -> model)
+        else:
+            for subtask in self.subtasks:
+                get_commands = subtask.package.command_list.get("get")
+                if command in get_commands:
+                    repo ["package"]= subtask.package
+                    repo["is_repo_operation"] = True
+                    self.executed_repo_commands.append(command)
+                    if self.num_get_commands == len(self.executed_repo_commands):
+                        repo["is_last_repo"] = True
+                    break
+
+        return repo
+
+    def add_repo_error(self, command, repo, error):
+        """
+        If an error occurred during the repo ``command``, then stores information about
+        the error, and the associated package. The information about the error is
+        saved in the attribute ``self.repo_errors`` (if it doesn't exist, it creates
+        it).
+
+        The ``repo_errors`` attribute itself is a ``dict`` with keys being the failed
+        ``command``s, each of them containing the following variables:
+        - ``model``: model name
+        - ``repo``: url of the repo
+        - ``destination``: destination folder
+        - ``error``: "destination path exist" if the destination exist, and the value
+          of the ``error`` parameter if it the destination does not exist
+
+        Note
+        ---- 
+        Since the ``error`` is caught from an ``except`` of a ``subprocess``
+        command, the actual error that occurred during the execution of the ``command``
+        by ``subprocess.run`` is not caught. That means that we cannot evaluate which
+        type of error occurred during the repo command (i.e. was an error related to
+        access to the repo, or was it the error that happens when the folder already
+        exist?). To compensate for this problem, this method also checks whether the
+        destination folder exist or not to save a ``"destination path exist"`` error
+        description or to keep the same error string as reported by ``error``
+        (permission problem). This approach is not ideal. It would be possible to catch
+        the ``subprocess`` error, by capturing the stdout/stderr of the ``subprocess``
+        command, but then, the downloading progress is also captured and not displayed
+        to the user, which might make the users wonder if ESM-Tools is stalling.
+
+        Parameters
+        ----------
+        command : str
+            Repo command for which the error might have occur
+        repo : dict
+            Information associated to the repo ``command``, including tha ``package``
+            object
+        error : str
+            Error caught from ``except``
+        """
+        # Initializes the list of executed repo commands
+        if not hasattr(self, "repo_errors"):
+            self.repo_errors = {}
+
+        destination = repo["package"].destination
+        # Checks whether the destination path exists to save a "destination path exist"
+        # error
+        if os.path.isdir(destination):
+            error = "destination path exists"
+        for folder in self.folders_after_download:
+            if destination in folder:
+                full_destination = folder
+
+        # If an error occured, store the information in the ``repo_errors`` atribute
+        if error:
+            self.repo_errors[command] = {
+                "model": repo["package"].model,
+                "repo": repo["package"].repo,
+                "contact": repo["package"].contact,
+                "destination": full_destination,
+                "error": error,
+            }
+
+    def report_repo_errors(self):
+        """
+        Reports an ``esm_parser.user_error`` summarizing all the information about
+        the repo permission errors associated to the ``esm_master`` command.
+        """
+        if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
+            return
+
+        problematic_repos = ""
+        for command, repo_error in self.repo_errors.items():
+            error = repo_error["error"]
+            if error != "destination path exists":
+                problematic_repos += (
+                    f"``{repo_error['model']}``: {repo_error['repo']}\n"
+                    f"    ``contact``: {repo_error['contact']}\n"
+                    f"    failed command: ``{command}``\n"
+                    f"    error message:\n{error}\n"
+                )
+
+        if problematic_repos:
+            user_error(
+                "Download error",
+                "There were problems downloading some of the components involved in "
+                f"the operation ``{self.raw_name}``. Make sure the ``user names`` and "
+                "``passwords`` you introduced are correct. Also, check that you have "
+                "access and reading permissions to the repositories listed below. If "
+                "you don't, contact the person in charge of that particular repository "
+                "(see ``contact`` in the repository list below).\n\n"
+                f"Repositories with problems:\n{problematic_repos}"
+            )
+
+    def report_destination_path_errors(self):
+        """
+        Reports an ``esm_parser.user_error`` summarizing all the information about
+        the ``"destination path exist"`` errors associated to the ``esm_master``
+        command.
+        """
+        if not hasattr(self, "repo_errors") or len(self.repo_errors) == 0:
+            return
+
+        problematic_destinations = ""
+        for command, repo_error in self.repo_errors.items():
+            error = repo_error["error"]
+            if error == "destination path exists":
+                problematic_destinations += f"- ``{repo_error['destination']}``\n"
+
+        if problematic_destinations:
+            user_error(
+                "destination already exists",
+                "Some coponents couldn't be downloaded because their destination paths "
+                f"already exists (see list below). If you want to download again the "
+                "model consider deleting that folder. If instead, you want to keep "
+                "that, you can use other esm_master commands (e.g. esm_master "
+                "comp-<model>-<version>). Destinations already present:\n"
+                f"{problematic_destinations}\n"
+            )

@@ -24,6 +24,8 @@ jobs:
           computer: ollie1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   levante:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -32,6 +34,8 @@ jobs:
           computer: levante1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   juwels:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -40,6 +44,8 @@ jobs:
           computer: jwlogin01.juwels
           update_esm_tests_info: true
           test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   aleph:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -48,6 +54,8 @@ jobs:
           computer: elogin1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   blogin:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
@@ -56,3 +64,5 @@ jobs:
           computer: blogin1
           update_esm_tests_info: true
           test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}

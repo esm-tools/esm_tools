@@ -1,0 +1,450 @@
+! ============================================================================
+&NAMECECFG
+! ----------------------------------------------------------------------------
+! * EC-Earth configuration
+! ----------------------------------------------------------------------------
+ECE_CPL_FESOM_FESIM = true,    ! Run coupled to NEMO (true) or not (false)
+
+! ============================================================================
+/
+
+! ============================================================================
+&NAMMCC
+! ----------------------------------------------------------------------------
+! * Module YOMMCC: Keys for IFS "climate version"
+! ----------------------------------------------------------------------------
+    LMCCEC = true,               ! LMCCEC = .T.   ===> Boundary conditions updated by ECMWF routines
+                                 !        = .F.   ===> they are not updated
+    NFRCPL = 0,                  ! NFRCPL         ===> Coupling frequency
+    LMCCDYNSEAICE = true,        ! Use of dynamic sea-ice model
+
+!   LNEMOCOUP                    ! LNEMOCOUP = .T. ===> SINGLE EXECUTABLE COUPLING TO NEMO
+!                                !           = .F. ===> NO SINGLE EXECUTABLE COUPLING TO NEMO
+!   LNEMOSSTFREEZ                ! LNEMOSSTFREEZ = .T. ===> SET SST TO FREEZING IF CI<=RCIMIN
+!                                !               = .F. ===> KEEP NEMO SST IF CI<=RCIMIN 
+!   LNEMOFLUXNC                  ! LNEMOFLUXNC = .T. ===> OUTPUT FLUXES FOR NEMO COUPLING IN NETCDF
+!                                !             = .F. ===> DO NOT OUTPUT FLUXES FOR NEMO COUPLING IN NETCDF
+!   LNEMO1WAY                    ! LNEMO1WAY = .T. ===> 1WAY (IFS TO NEMO) COUPLING 
+!                                !           = .F. ===> 2WAY IFS TO NEMO AND NEMO TO IFS COUPLING
+!   LNEMOIFSLOG                  ! LNEMOIFSLOG = .T. ===> NEMO LOG OUTPUT IN IFS NODE.???_?? FILES
+!                                !             = .F. ===> NORMAL NEMO LOG OUTPUT
+!   LNEMOLIMGET                  ! LNEMOLIMGET  = .T. ! Get new fields LIM
+!   LNEMOLIMPUT                  ! LNEMOLIMPUT  = .T. ! Put new fields LIM
+!   LNEMOLIMALB                  ! LNEMOLIMALB  = .T. ! Use albedo from LIM
+!   LNEMOLIMTEMP                 ! LNEMOLIMTEMP = .F. ! Use ice temp from LIM
+!   LNEMOLIMTLVL                 ! LNEMOLIMTLVL = .F. ! Receive temp levels from LIM
+!   LNEMOLIMTHK                  ! LNEMOLIMTHK  = .T. ! Use ice and snow thickness
+! ============================================================================
+/
+
+! ============================================================================
+&NAMARG
+! ----------------------------------------------------------------------------
+! *
+! ----------------------------------------------------------------------------
+    NCONF = 1,
+    LSLAG = true,
+    CNMEXP = 'awi3',
+    UTSTEP = 3600.0,                        ! Time step in seconds
+    CUSTOP = 'd1', ! txx = timesteps, hxx = hours, dxx = days.
+! ============================================================================
+/
+
+&NAMDIM
+    NPROMA = -8,
+/
+
+&NAMGFL
+    YQ_NL%LGP = true,
+    YQ_NL%LSP = false,
+    YO3_NL%LGP = false,
+    YQ_NL%LGPINGP = true,
+    YR_NL%NREQIN = -1,
+    YS_NL%NREQIN = -1,
+    LTRCMFMG = true,
+/
+
+&NAMPAR0
+    LSTATS = true,
+    LDETAILED_STATS = false,
+    LSYNCSTATS = false,
+    MP_TYPE = 2,
+    MBX_SIZE = 32000000,
+    NPROC = 144,      ! Number of MPI ranks (cores of no OpenMP)
+    NOUTPUT = 1,
+/
+
+&NAMCT0
+    LXIOS = true,
+    NFPOS = 2,
+    LREFOUT = true,
+    N3DINI = 0,
+    NFRDHP = 1,
+    NFRDHFD = 1,
+    NFRSDI = 1,
+    LSLPHY = false,
+    LSLPHY = true,
+    NUNDEFLD = 1,
+    NFRMASSCON = 1,
+/
+
+&NAMPAR1
+    LSPLIT = true,
+    NFLDIN = 0,
+    NSTRIN = 1,
+    NSTROUT = 0,
+    NOUTTYPE = 1,
+    LPPTSF = false,
+    NPPBUFLEN = 100000,
+/
+
+&NAMRIP0
+  ! NINDAT = 19970115,
+  ! NSSSSS = 43200,
+/
+
+&NAEPHY
+    LEPHYS = true,
+    LERADI = true,
+    LELAIV = false,
+/
+
+&NAERAD
+    NRPROMA = -8,
+    CRTABLEDIR = "/p/project/chhb19/streffing1/input/oifs-43r3/rtables/",  ! Modify this for your installation, note trailing /
+/
+
+&NAMGEM
+    NHTYP = 0,
+/
+
+&NAMDPHY
+  ! NVXTR2 = 0,
+  ! NVEXTR = 0,
+  ! NCEXTR = 0,
+/
+
+&NAMAFN
+    TFP_FUA(1)%LLGP = false,
+/
+
+&NAMRES
+    NFRRES = 1
+    NRESTS = -1, -24
+/
+&NAMPPC
+    LRSACC = true,             ! reset accumulated fields to zero at model output frequency
+/
+
+&NAMDYN
+    LMASCOR        = true,
+    LMASDRY        = false,
+/
+
+&NAMFPC
+/
+
+&NAEAER
+/
+&NALBAR
+/
+&NALORI
+/
+&NAM_DISTRIBUTED_VECTORS
+/
+&NAM926
+/
+&NAMANA
+/
+&NAMARPHY
+/
+&NAMCA
+/
+&NAMCAPE
+/
+&NAMCFU
+/
+&NAMCHK
+/
+&NAMCHET
+/
+&NAMCLDP
+/
+&NAMCLTC
+/
+&NAMCOM
+/
+&NAMCOS
+/
+&NAMCTAN
+/
+&NAMCUMF
+/
+&NAMCUMFS
+/
+&NAMCT1
+/
+&NAMCVA
+/
+&NAMDDH
+/
+&NAMDFHD
+/
+&NAMDFI
+/
+&NAMDIF
+/
+&NAMDIMO
+/
+&NAMDMSP
+/
+&NAMDYNA
+/
+&NAMDYNCORE
+/
+&NAMEMIS_CONF
+/
+&NAMENKF
+/
+&NAMFA
+/
+&NAMFFT
+/
+&NAMFPD
+/
+&NAMFPDY2
+/
+&NAMFPDYH
+/
+&NAMFPDYP
+/
+&NAMFPDYS
+/
+&NAMFPDYT
+/
+&NAMFPDYV
+/
+&NAMFPEZO
+/
+&NAMFPF
+/
+&NAMFPG
+/
+&NAMFPIOS
+/
+&NAMFPPHY
+/
+&NAMFPSC2
+/
+&NAMFPSC2_DEP
+/
+&NAMFY2
+/
+&NAMGMS
+/
+&NAMGOES
+/
+&NAMGOM
+/
+&NAMGRIB
+/
+&NAMGWD
+/
+&NAMGWWMS
+/
+&NAMHLOPT
+/
+&NAMINI
+/
+&NAMIOMI
+/
+&NAMIOS
+/
+&NAMJBCODES
+/
+&NAMJFH
+/
+&NAMJG
+/
+&NAMJO
+/
+&NAMKAP
+/
+&NAMLCZ
+/
+&NAMLEG
+/
+&NAMLFI
+/
+&NAMMCUF
+/
+&NAMMETEOSAT
+/
+&NAMMTS
+/
+&NAMMTSAT
+/
+&NAMMTT
+/
+&NAMMUL
+/
+&NAMNMI
+/
+&NAMNASA
+/
+&NAMNN
+/
+&NAMNPROF
+/
+&NAMNUD
+/
+&NAMOBS
+/
+&NAMONEDVAR
+/
+&NAMOPH
+/
+&NAMOPTCMEM
+/
+&NAMPARAR
+/
+&NAMPHY
+/
+&NAMPHY0
+/
+&NAMPHY1
+/
+&NAMPHY2
+/
+&NAMPHY3
+/
+&NAMPHYDS
+/
+&NAMPONG
+/
+&NAMRAD15
+/
+&NAMRADCMEM
+/
+&NAMRCOEF
+/
+&NAMRINC
+/
+&NAMRIP
+/
+&NAMSATS
+/
+&NAMSCC
+/
+&NAMSCEN
+/
+&NAMSCM
+/
+&NAMSENS
+/
+&NAMSIMPHL
+/
+&NAMSKF
+/
+&NAMSPSDT
+/
+&NAMSPP
+/
+&NAMSSMI
+/
+&NAMSTA
+/
+&NAMSTOPH
+/
+&NAMTCWV
+/
+&NAMTESTVAR
+/
+&NAMTOPH
+/
+&NAMTOVS
+/
+&NAMTRAJP
+/
+&NAMTRANS
+/
+&NAMTRM
+/
+&NAMVAR
+/
+&NAMVARBC
+/
+&NAMVARBC_AIREP
+/
+&NAMVARBC_ALLSKY
+/
+&NAMVARBC_GBRAD
+/
+&NAMVARBC_RAD
+/
+&NAMVARBC_SFCOBS
+/
+&NAMVARBC_TCWV
+/
+&NAMVARBC_TO3
+/
+&NAMVAREPS
+/
+&NAMVDOZ
+/
+&NAMVFP
+/
+&NAMVRTL
+/
+&NAMVV0
+/
+&NAMVV1
+/
+&NAMVV2
+/
+&NAMVWRK
+/
+&NAMWAVELETJB
+/
+&NAMXFU
+/
+&NAMZDI
+/
+&NAPHLC
+/
+&NAV1IS
+/
+&NAEPHLI
+/
+&NAMCVER
+/
+&NAMPPVI
+/
+&NAMSPNG
+/
+&NAMRLX
+/
+&NAMTHLIM
+/
+&NAMOOPS
+/
+&NAMINTFLEX
+/
+&NAMIAU
+/
+&NAMDIM_TRAJ
+/
+&NAMVDF
+/
+&NAMGWDIAG
+/
+&NAMTRANS0
+/
+&NAMMETHOX
+/
+&NAM_ATLAS_IFS
+/
+&NAETLDIAG
+/
+
+! vi:syntax=fortran

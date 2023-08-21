@@ -71,14 +71,14 @@ $ esm_versions upgrade esm_parser
 Uninstall ESM-Tools
 -------------------
 
-To uninstall your current installation make sure you have the most recent version of
+We are sorry to see you go! To uninstall your current installation make sure you have the most recent version of
 ``pip`` available for your system::
 
 $ python3 -m pip install -U pip
 
 Then, you can use use the following command to uninstall all `ESM-Tools` packages::
 
-$ esm_versions clean
+$ pip freeze | grep esm | xargs pip uninstall -y
 
 You can also choose to manually uninstall. In order to do that, remove the installed Python packages and delete the ``esm_*`` executables. The following commands will do the trick if you installed with the ``install.sh`` script or installed using ``pip`` with ``user`` mode ::
 
@@ -89,5 +89,5 @@ Note that you may have a different Python version, so the second command might n
 
 $ pip uninstall [--user] esm-tools
 
-The ``--user`` flag may be required when using ``pip``.
+The ``--user`` flag may be required when using ``pip`` if you are not uninstalling in either a virtual environment or a global install (you would need to be root in that case).
 

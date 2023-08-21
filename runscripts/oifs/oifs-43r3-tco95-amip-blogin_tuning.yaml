@@ -3,10 +3,10 @@ general:
         verbose: False
 
         setup_name: oifs
-        compute_time: "02:30:00"
+        compute_time: "02:00:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1981-01-01T00:00:00"
-        nyear: 2
+        final_date: "1980-01-01T00:00:00"
+        nyear: 1
         nmonth: 0
         nday: 0
         restart_rate: 1
@@ -17,18 +17,19 @@ general:
 
         # machine specific setup 
         account: shk00018
-        model_dir: /home/shkjocke/model_codes/oifs-43r3-v1/
-        base_dir: /scratch/usr/shkjocke/esm-tuning/
+        model_dir: /home/shkjocke/esm/models/oifs-43r3-v1/
+        base_dir: /scratch/usr/shkjocke/esm-tuning-v2/
 
 oifs:
         version: 43r3
         with_xios: True         
-        input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
-        rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
-        vtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/vtables/
-        clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
-        ifsdata_dir: ${pool_dir}/OPENIFS43R3_GENERAL/ifsdata/
-        cmip6_data_dir: ${pool_dir}/OPENIFS43R3_GENERAL/cmip6-data/
+        pool_dir: /scratch/projects/shk00018/foci_input2/
+        input_dir: ${pool_dir}/openifs_cy43_tco95/
+        rtables_dir: ${pool_dir}/openifs_cy43_general/rtables/
+        vtables_dir: ${pool_dir}/openifs_cy43_general/vtables/
+        clim_dir: ${pool_dir}/openifs_cy43_tco95/95_4/
+        ifsdata_dir: ${pool_dir}/openifs_cy43_general/ifsdata/
+        cmip6_data_dir: ${pool_dir}/openifs_cy43_general/cmip6-data/
         mip: cmip6
         scenario: historical
         icmcl_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95-AMIP/
@@ -39,8 +40,9 @@ oifs:
         levels: L91
         lresume: 0
         post_processing: 0
-        nproc: 288
-        perturb: 0
+        nproc: 480
+        time_step: 1800
+        perturb: 1
         ensemble_id: 1
         pextra: 0  
         massfixer: 2
@@ -51,10 +53,11 @@ oifs:
                 NAMCUMF:
                     RPRCON: 1.4E-3
                     ENTRORG: 1.75E-3
-                    DETRPEN: 0.75E-4
+                    DETRPEN: 0.6E-4
                     ENTRDD: 3.0E-4
                 NAMCLDP:
                     RVICE: 0.13
+                    RCLCRIT_SEA: 2.5E-4
 
 xios:        
         # 3hr surface + 6hr model lev + 1d pressure lev + 1d PV + 1m surf and pressure level

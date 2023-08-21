@@ -18,14 +18,15 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
 cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
-pool_dir_awi: "${computer.pool_directories.pool}/AWICM/JSBACH"
-input_dir_awi: "${pool_dir_awi}/input/${dataset}"
+pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
+input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
 dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
-scenario_type: ${echam.scenario}
+scenario: ${echam.scenario}
+scenario_type: ${scenario}
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -87,23 +88,6 @@ choose_version:
                                         lightning: lightning
                                         popdens: popdens
 
-                        # SSP scenarios share common paths. They are grouped under cmip6 and
-                        # further options are given under `choose_scenario_type` section
-                        ssp585:
-                                scenario_type: cmip6
-
-                        ssp370:
-                                scenario_type: cmip6
-
-                        ssp126:
-                                scenario_type: cmip6
-
-                        ssp245:
-                                scenario_type: cmip6
-
-                        ssp534os:
-                                scenario_type: cmip6
-
                         cmip6hist:
                                 scenario_type: cmip6
 
@@ -112,13 +96,13 @@ choose_version:
                 dataset: r0010
                 choose_dynamic_vegetations:
                         true:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg"
                                 dynveg: "_dynveg"
                                 jsbachnc_file_ending: "${dynveg_file_ending}"
                         false:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
-                                dynveg: "_no_dynveg"
+                                dynveg: "_no-dynveg"
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:
@@ -198,23 +182,6 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         #lightning: lightning
                                         #popdens: popdens
-
-                        # SSP scenarios share common paths. They are grouped under cmip6 and
-                        # further options are given under `choose_scenario_type` section
-                        ssp126:
-                                scenario_type: cmip6
-
-                        ssp245:
-                                scenario_type: cmip6
-
-                        ssp370:
-                                scenario_type: cmip6
-
-                        ssp534os:
-                                scenario_type: cmip6
-
-                        ssp585:
-                                scenario_type: cmip6
 
                         cmip6hist:
                                 scenario_type: cmip6
@@ -299,25 +266,42 @@ choose_version:
                                         LU_trans: LU_trans_none
 
 # common options for scenarios, eg. CMIP6
+Ndepo_cmip6: Ndepo_hist_scenario
+Ndepo_path: ""
+popdens_cmip6: popdens
+cover_fract_cmip6: cover_fract.@YEAR@.nc
+
 choose_scenario_type:
         cmip6:
+                Ndepo_path: "${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_"
                 add_input_files:
                         jsbach: jsbach_1850
                 forcing_files:
                         LU: LU_hist_scenario
                         LU_trans: LU_trans_hist_scenario
-                        Ndepo: Ndepo_hist_scenario
+                        Ndepo: ${Ndepo_cmip6}
                         a_nd_file: a_nd_file
                         lightning: lightning
-                        popdens: popdens
+                        popdens: ${popdens_cmip6}
+                        cover_fract: ${cover_fract_cmip6}
+
 
 # For ssp scenarios find the pathway first 4 characters
-scenario_is_ssp: "$(( 'ssp' in '${scenario}' ))"
+scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
 choose_scenario_is_ssp:
         True:
                 ssp_num: "$(( '${scenario}'[:4] ))"
+                # SSP scenarios share common paths. They are grouped under cmip6 and
+                # further options are given under `choose_scenario_type` section
+                scenario_type: cmip6
+                Ndepo_cmip6: Ndepo_ssp
+                popdens_cmip6: popdens_ssp
+                cover_fract_cmip6: cover_fract_ssp
+                Ndepo_sufix: "_${echam.scenario}"
+
         False:
                 ssp_num: null
+                Ndepo_sufix: ""
 
 choose_echam.with_wiso:
         True:

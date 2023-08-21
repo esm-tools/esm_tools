@@ -14,6 +14,7 @@ def init_first_user_config(command_line_config, user_config):
         user_config = get_user_config_from_command_line(command_line_config)
 
     # maybe switch to another runscript, if iterative coupling
+    user_config["general"]["iterative_coupled_model"] = ""
     if user_config["general"].get("iterative_coupling", False):
         user_config = chunky_parts.setup_correct_chunk_config(user_config)
 
@@ -36,6 +37,13 @@ def init_first_user_config(command_line_config, user_config):
 
         model_config = get_user_config_from_command_line(new_command_line_config)
         user_config = esm_parser.new_deep_update(user_config, model_config)
+
+        # Set the ``iterative_coupled_model`` string, to add the model name to the
+        # run_ folder, finished_config.yaml, etc., to avoid overwritting with the
+        # files of other offline coupled models
+        user_config["general"]["iterative_coupled_model"] = (
+            f"{user_config['general']['setup_name']}_"
+        )
 
     if user_config["general"].get("debug_obj_init", False):
         pdb.set_trace()

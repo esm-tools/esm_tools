@@ -24,11 +24,10 @@ clean_command: "rm -fr ${install_bins}"
 comp_command: "display ${install_bins}"
 
 metadata:
-        Institute: wiki
-        Description:
-            "Tux image"
-        Authors: "who knows"
+        Institute: ""
+        Description: ""
+        Authors: ""
         Publications:
-            - "are you serious?"
+            - " "
         License:
             GPL

@@ -10,6 +10,9 @@
 # an uncoupled setup. We need to explicitely specify them here
 computer:
    launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+   # for HLRN4 set compiler_mpi if intel2019_impi2019_nemo4 is not set as default
+   # in glogin.yaml or blogin.yaml
+   compiler_mpi: intel2019_impi2019_nemo4 
 
 general:
    use_venv: False

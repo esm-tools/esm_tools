@@ -1,11 +1,21 @@
-============
-ESM-Versions
-============
+=================
+ESM-Tools version
+=================
 
-New with the Tools version 3.1.5, you will find an executable in your path called ``esm_version``. This was added by Paul Gierz to help the user / developer to keep track of / upgrade the python packages belonging to ESM Tools.
+Use ``esm_tools --version`` to get the version of `ESM-Tools`.
+
+.. note:: If your version is prior to 6.0.0 (before 2022) this option does not exist.
+   You can use ``esm_versions`` instead (:ref:`esm_versions:ESM-Versions`)
+
+ESM-Versions (deprecated)
+-------------------------
+
+.. warning:: This feature is deprecated since 2022 (version 6.0.0)
+
+Above version 3.1.5 and below 6.0.0, you will find an executable in your path called ``esm_version``. This was added by Paul Gierz to help the user / developer to keep track of / upgrade the python packages belonging to ESM Tools.
 
 Usage
------
+~~~~~
 
 It doesn't matter from which folder you call ``esm_versions``. You have two subcommands::
 
@@ -22,34 +32,3 @@ Notice that you can also upgrade single python packages, e.g.::
                                                 branch
 
 And yes, ``esm_versions`` can upgrade itself.
-
-
-Getting ESM-Versions 
---------------------
-
-As was said before, if you have the Tools with a version newer than 3.1.4, you should already have ``esm_versions`` in your path. In case you are on an older version of the Tools, or it is missing because of problems, you need to remove the installed python packages by hand one last time, and then reinstall them using the installer:
-
-1. Make sure to push all your local changes to branches of the repos, or save them otherwise!
-
-2. Remove the installed python libs::
-
-    $ rm -rf ~/.local/lib/python-whatever_your_version/site-packages/esm*
-
-3. Remove the installed executables::
-
-    $ rm -rf ~/.local/bin/esm*
-
-4. Upgrade the repository esm_tools::
-
-    $ cd path/to/esm_tools
-    $ git checkout release
-    $ git pull
-
-5. Re-install the python packages::
-
-    $ ./install.sh
-
-You should now be on the most recent released version of the tools, and ``esm_versions`` should be in your ``PATH``.
-
-
-

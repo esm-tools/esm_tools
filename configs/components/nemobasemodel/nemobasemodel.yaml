@@ -2,52 +2,37 @@ available_versions:
 - 3.6.3.x
 - 3.6ogcm_test
 - 3.6foci
+- 3.6foci_autotools
 - 4.2.x 
 
 choose_version:
   4.2.x:
-    archfile: ESMTOOLS_generic_intel
     branch: branch_4.2
     git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git 
-    # TODO: include arch repo as separate component
-    comp_command: export NEMO_TOPLEVEL=${model_dir}; export XIOS_TOPLEVEL=${model_dir}/../xios; 
-                  test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
-                  ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} -j 24 ; cp -p cfgs/${nemo.version}/BLD/bin/nemo.exe cfgs/${nemo.version}/BLD/bin/oceanx
-    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
-    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
-    destination: nemo-${nemo.version}
+
+  4.2.0:
+    # 4.2.0 is actually a tag and not a branch, but we agreed
+    # to use tag 4.2.0 as a basis for all our developments
+    branch: 4.2.0
+    git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
     
   3.6.3.x:
-    # TODO: the archfile ESMTOOLS_generic_intel is not yet available in 
-    # NEMOGCM.git, hence it won't work at the moment
-    archfile: ESMTOOLS_generic_intel
     branch: release-3.6.3.x
     git-repository: https://git.geomar.de/NEMO/NEMOGCM.git
   3.6foci:
-    archfile: ESMTOOLS_generic_oasis_intel
     branch: esm-tools
     git-repository: https://git.geomar.de/foci/src/nemo.git
+  3.6foci_autotools:
+    branch: esm-tools-autotools
+    git-repository: https://git.geomar.de/foci/src/nemo.git
   3.6foci_agrif:
-    archfile: ESMTOOLS_generic_oasis_intel_agrif
     branch: esm-tools
     git-repository: https://git.geomar.de/foci/src/nemo.git
   # Test using Jan-Klaus Rieck's OMIP configuration
   3.6ogcm_test:
-    archfile: ESMTOOLS_generic_intel
     branch: release-3.6.3.x-berlin-omip
     git-repository: https://git.geomar.de/jan-klaus-rieck/NEMOGCM.git 
-    comp_command: export NEMO_TOPLEVEL=${model_dir}; 
-      if [[ ! -f ARCH/arch-${archfile}.fcm ]]; then cp CONFIG/${nemo.version}/EXP00/arch-${archfile}.fcm ARCH/; fi; 
-      cd CONFIG; cp ${nemo.version}/cfg.inc cfg.txt;
-      ./makenemo -n ${nemo.version} -m ${archfile} -j 24; 
-      cp -p ${nemo.version}/BLD/bin/nemo.exe ${nemo.version}/BLD/bin/oceanx
-clean_command: cd CONFIG; 
-   cp ${nemo.version}/cfg.inc cfg.txt; 
-   ./makenemo -n ${nemo.version} -m ${archfile} clean;
-   cd ..
-comp_command: export NEMO_TOPLEVEL=${model_dir}; cd CONFIG; cp ${nemo.version}/cfg.inc
-  cfg.txt; ./makenemo -n ${nemo.version} -m ${archfile} -j 24; cp -p ${nemo.version}/BLD/bin/nemo.exe
-  ${nemo.version}/BLD/bin/oceanx
-destination: nemo-${nemo.version}
-install_bins: CONFIG/${nemo.version}/BLD/bin/oceanx
 
+destination: nemo-${nemo.version}
+
+contact: "swahl(at)geomar.de"

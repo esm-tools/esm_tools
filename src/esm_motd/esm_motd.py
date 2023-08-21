@@ -29,7 +29,7 @@ class MessageOfTheDayHandler:
         url = "https://raw.githubusercontent.com/esm-tools/esm_tools/release/motd/motd.yaml"
         try:
             self.motdfile = urllib.request.urlopen(url)
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, urllib.error.URLError):
             timeout = 1  # seconds to wait
             # print(f"HTTP Error: Connection to file {url} containing update messages could not be established")
             # print("    Please check the URL by manually...")
@@ -112,10 +112,12 @@ class MessageOfTheDayHandler:
         for message in self.message_dict:
             # If the package for this message is the same as ``mypackage`` and the
             # the version condition is met display the MOTD
+            version_range = self.message_dict[message]["versions"]
+            version = version_range.strip("<>=!")
             if self.message_dict[message][
                 "package"
             ] == mypackage and esm_utilities.check_valid_version(
-                self.message_dict[message]["versions"], version=myversion
+                version_range, version=myversion
             ):
                 print(
                     "************************************************************************************"
@@ -124,9 +126,14 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    print("Upgrade ESM-Tools by:")
-                    print(f"    cd {esm_tools._get_real_dir_from_pth_file('')}")
-                    print("    git pull")
+                    esm_tools_path = esm_tools._get_real_dir_from_pth_file('')
+                    print(
+                        f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
+                        f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
+                        "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
+                        "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
+                        "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+                    )
                 # Deprecated after monorepo rework, rewrite if we ever get to have
                 # more than one package again.
                 else:
@@ -166,8 +173,10 @@ if __name__ == "__main__":
 
     motd = MessageOfTheDayHandler()
     # Uncomment the following lines For testing using the local motd.yaml
-    # print(local_motd)
-    # with open(local_motd, "r") as motdfile:
+    #import os
+    #local_motd = f"{os.path.dirname(__file__)}/../../esm_tools/motd/motd.yaml"
+    #print(local_motd)
+    #with open(local_motd, "r") as motdfile:
     #    motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
     motd.motd_handler(mypackage, myversion)
     sys.exit(0)

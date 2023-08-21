@@ -1,0 +1,83 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.1"
+    account: "hhb20"
+    compute_time: "02:00:00"
+    initial_date: "1990-01-01"
+    final_date: "1990-01-03"
+    base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+awicm3:
+    postprocessing: false
+    model_dir: "/p/project/chhb19/${user}/model_codes/${general.setup_name}-${general.version}/"
+    pool_dir: "/p/project/chhb19/jstreffi/input/"
+
+fesom:
+    resolution: "SO3"
+    pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
+    mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/SO3/"
+    restart_rate: 1 
+    restart_unit: "d"
+    restart_first: 1
+    lresume: true
+    ini_parent_exp_id: "D00"
+    ini_parent_date: "2014-12-31"
+    ini_parent_dir: "/p/project/chhb19/streffing1/input/fesom2/restart/SO3/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /p/project/chhb19/streffing1/input/fesom2/restart/SO3/fesom.2014.oce.restart/*.nc
+                par_ice_restart: /p/project/chhb19/streffing1/input/fesom2/restart/SO3/fesom.2014.ice.restart/*.nc
+            lasttime: '86040'
+    namelist_changes:
+        namelist.config:
+            machine:
+                n_levels: 2
+                n_part: [80, 72]
+        namelist.oce:
+            oce_dyn:
+                redi: ".false."
+        namelist.ice:
+            ice_therm:
+                albsn: 0.81
+                albsnm: 0.77
+                albi: 0.78
+                albim: 0.70
+    time_step: 300
+    nproc: 8192
+    file_movements:
+        restart_in:
+            all_directions: link    
+
+oifs:
+    resolution: "TCO639"
+    levels: "L137"
+    prepifs_expid: hf1d
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 60
+    nproc: 384
+    omp_num_threads: 2
+    add_namelist_changes:
+        fort.4:
+            NAMCT0:
+                LXIOS: 'false'
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 3600
+    use_lucia: true
+#   choose_lresume:
+#      false:
+#            remove_input_files: ['rmp']
+
+#xios:
+#    with_model: oifs
+#    nproc: 2
+#    omp_num_threads: 48
+

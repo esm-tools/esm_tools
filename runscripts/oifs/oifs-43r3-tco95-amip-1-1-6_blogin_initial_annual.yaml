@@ -19,7 +19,7 @@ general:
 oifs:
         version: 43r3
         with_xios: True 
-        time_step: 3600
+        time_step: 3600 
         #pool_dir: /scratch/usr/shkifmsw/foci_input2
         input_dir: ${pool_dir}/OPENIFS43R3-TCO95/
         rtables_dir: ${pool_dir}/OPENIFS43R3_GENERAL/rtables/
@@ -38,10 +38,28 @@ oifs:
         lresume: 0
         post_processing: 0
         nproc: 288
+        omp_num_threads: 1
         perturb: 0
         #solarspectrum: 1 #only works with 43r3v2
         ensemble_id: 1
         restart_type: eternal
+        
+        # For prognostic O3 (Cariolle scheme) set
+        # YO3_NL%LGP to true (O3 advection)
+        # LEO3CH to true (for chem scheme)
+        # LEPO3RA to true (for use in rad scheme)
+        # NGHGRAD to 20 (so prog overwrites climatology)
+        add_namelist_changes:
+            fort.4:
+                NAMGFL:
+                   YO3_NL%LGP: '.true.'
+                NAEPHY:
+                   LEO3CH: '.true.'
+                NAERAD:
+                   LEPO3RA: '.true.'
+                   LCMIP6O3: '.false.'
+                   LEO3VAR: '.false.'  
+                   NGHGRAD: 20
         
 xios:
         # Precip and 2t every time step + 3hr + 6hrPLev + 1 day PV + monthly

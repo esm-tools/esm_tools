@@ -67,6 +67,8 @@ def combine_components_yaml(parsed_args):
         "archfile",
         "use_oasis",
         "pipe_options",  # deniz: Linux pipe support
+        "contact",
+        "source_code_permissions",
     ]
 
     categories = ["components", "couplings", "setups", "esm_software"]

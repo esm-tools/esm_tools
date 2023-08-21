@@ -775,12 +775,15 @@ def log_used_files(config):
     if config["general"]["verbose"]:
         print("\n::: Logging used files", flush=True)
     filetypes = config["general"]["relevant_filetypes"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
     for model in config["general"]["valid_model_names"] + ["general"]:
+        thisrun_config_dir = config[model]["thisrun_config_dir"]
         # this file contains the files used in the experiment
         flist_file = (
-            f"{config[model]['thisrun_config_dir']}"
-            f"/{config['general']['expid']}_filelist_"
-            f"{config['general']['run_datestamp']}"
+            f"{thisrun_config_dir}/"
+            f"{expid}_{it_coupled_model_name}filelist_{datestamp}"
         )
 
         with open(flist_file, "w") as flist:
@@ -889,7 +892,7 @@ def check_for_unknown_files(config):
     return config
 
 
-def resolve_symlinks(file_source):
+def resolve_symlinks(config, file_source):
     if os.path.islink(file_source):
         points_to = os.path.realpath(file_source)
 
@@ -902,7 +905,7 @@ def resolve_symlinks(file_source):
             return file_source
 
         # recursively find the file that the link is pointing to
-        return resolve_symlinks(points_to)
+        return resolve_symlinks(config, points_to)
     else:
         return file_source
 
@@ -953,7 +956,7 @@ def copy_files(config, filetypes, source, target):
                             helpers.print_datetime(config)
                         continue
                     dest_dir = os.path.dirname(file_target)
-                    file_source = resolve_symlinks(file_source)
+                    file_source = resolve_symlinks(config, file_source)
                     if not os.path.isdir(file_source):
                         try:
                             if not os.path.isdir(dest_dir):

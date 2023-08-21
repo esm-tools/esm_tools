@@ -1,0 +1,41 @@
+# ENVIRONMENT FOR RUNNING ESM-TOOLS WITH CONDA
+# ============================================
+# WARNING: Running ESM-Tools with conda is not recommended at this state,
+# and we won't be offering support for that. This environment and instructions
+# are put together only for testing purposes, for the core team.
+#
+# How to install esm_tools using a conda environment
+# --------------------------------------------------
+# 1. ``conda env create -f utils/environment.yaml -n esm_tools``
+# 2. Clone ESM-Tools from the github repository and use the ``./install.sh`` script
+#    (that script uses pip, because ESM-Tools is not in a conda repository, however
+#    most of the important dependencies for ESM-Tools are already defined in this
+#    file, meaning that pip almost only installs ESM-Tools).
+
+name: esm_tools
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - Click>=7.0
+  - PyGithub
+  - colorama
+  - coloredlogs
+  - emoji
+  - f90nml
+  - gitpython
+  - loguru
+  - numpy
+  - packaging
+  - pandas>=1.0
+  - psutil
+  - pyyaml
+  - pyyaml>=5.1
+  - questionary
+  - semver
+  - sqlalchemy
+  - tabulate
+  - tqdm
+  - typing_extensions>=3.10.0.0
+prefix: /Users/mandresm/opt/anaconda3/envs/esm_tools

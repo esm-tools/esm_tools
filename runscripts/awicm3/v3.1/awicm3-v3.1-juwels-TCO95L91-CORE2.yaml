@@ -3,13 +3,13 @@ general:
     setup_name: "awicm3"
     version: "v3.1"
     account: "hhb20"
-    compute_time: "00:10:00"
-    initial_date: "2000-01-01"
-    final_date: "2050-01-01"
-    base_dir: "/p/scratch/chhb19/${user}/runtime/${general.setup_name}-${general.version}/"
+    compute_time: "06:00:00"
+    initial_date: "1990-01-01"
+    final_date: "2040-01-01"
+    base_dir: "/p/scratch/chhb20/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
-    nmonth: 1
-    nyear: 0
+    nmonth: 0
+    nyear: 10
 
 awicm3:
     postprocessing: false
@@ -20,9 +20,9 @@ fesom:
     resolution: "CORE2"
     pool_dir: "/p/project/chhb19/jstreffi/input/fesom2/"
     mesh_dir: "/p/project/chhb19/jstreffi/input/fesom2/core2/"
-    restart_rate: 1
-    restart_unit: "m"
-    restart_first: 1
+    restart_rate: 10
+    restart_unit: "y"
+    restart_first: 10
     lresume: false
     time_step: 2400
     nproc: 432

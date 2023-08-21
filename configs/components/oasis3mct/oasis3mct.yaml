@@ -6,6 +6,7 @@ norestart: F
 use_lucia: False
 mct_version: "2.8" # TODO: set mct_version = version (can't do at the moment as version is a string)
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
+contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 config_files:
         cf: cf
@@ -20,6 +21,7 @@ version: '2.8'
 
 available_versions:
 - foci
+- foci_autotools
 - fociagrif
 - ec-earth
 - '2.8'
@@ -30,10 +32,17 @@ available_versions:
 - '4.0-awicm-frontiers'
 - '4.0-awicm-3.0'
 - '4.0-awicm-3.1'
+- '5.0-smhi'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8mct-awiesm-2.1'
     git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
+
+# kh 09.06.22
+  '2.8-paleodyn-multi-group-support':
+    branch: 'feat/multi-group-support'
+    git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
+    
   '2.8':
     branch: 'v2.8'
   '3.0':
@@ -43,20 +52,36 @@ choose_version:
   4.0-geomar:
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
     branch: '4.0'
+    contact: "swahl(at)geomar.de"
   4.0-awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
   4.0-awicm-3.1:
     branch: awicm-3.1
   4.0-awicm-frontiers:
     branch: awicm-3-frontiers
+  5.0-smhi:
+    branch: main_dkrz
+    git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
   ec-earth:
     branch: ec-earth-version
   foci:
     branch: oasis3mct2.8-foci
     git-repository: https://git.geomar.de/foci/src/oasis3mct.git
+    contact: "swahl(at)geomar.de"
+  foci_autotools:
+    git-repository: https://git.geomar.de/foci/src/oasis3mct.git
+    branch: master
+    clean_command: make clean
+    contact: "swahl(at)geomar.de"
+    comp_command: ./configure --prefix=$(pwd)/../ CFLAGS="-O2 -DgFortran -std=gnu99" FCFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" FFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" ;
+               make -j `nproc --all`; make install -j `nproc --all`;
+    install_libs: ''
   fociagrif:
     branch: fociagrif
     git-repository: https://git.geomar.de/foci/src/oasis3-mct4.git
+  EM21:
+    branch: runoff
+        
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 
@@ -71,6 +96,14 @@ install_libs:
 # for handling restarts
 # this could be _19900101-19901231 for example
 oasis_date_stamp: ""
+
+#
+# some default settings for remapping
+# GAUSWGT with 9 neighbours and weight 2.0
+# is fine when resolutions are similar
+#
+nb_of_neighbours_a2o: 9
+weight_a2o: 2.0
 
 log_files:
         nout: nout

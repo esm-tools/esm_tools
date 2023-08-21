@@ -72,6 +72,11 @@ import subprocess
 import sys
 import warnings
 
+if sys.version_info > (3, 9):
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
+
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
@@ -237,6 +242,7 @@ def look_for_file(model, item, all_config=None):
 
 
 def initialize_from_yaml(filepath):
+    user_config = {}
     for file_ending in YAML_AUTO_EXTENSIONS:
         if filepath.endswith(file_ending) and not file_ending == "":
             user_config = yaml_file_to_dict(filepath)
@@ -247,6 +253,13 @@ def initialize_from_yaml(filepath):
             user_config["general"]["runscript_abspath"] = filepath
 
             user_config = complete_config(user_config)
+    if not user_config:
+        user_error(
+            "Incorrect extension",
+            f"The runscript provided (``{filepath}``) does not have a valid file "
+            "extension. The following are valid file extensions for runscripts: "
+            f"{YAML_AUTO_EXTENSIONS[1:]}"
+        )
     return user_config
 
 
@@ -573,7 +586,7 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
         if (
             k in dct
             and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+            and isinstance(merge_dct[k], Mapping)
         ):
             new_dict_merge(dct[k], merge_dct[k], winner)
         else:
@@ -615,7 +628,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
         if (
             k in dct
             and isinstance(v, dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+            and isinstance(merge_dct[k], Mapping)
         ):
             # NOTE(PG): this is a very bad hack and doesn't belong here at all.
             # Maybe instead the yaml_file_to_dict needs to say something like

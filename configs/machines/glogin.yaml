@@ -5,6 +5,8 @@ account: None
 
 # set default for hyperthreading_flag
 use_hyperthreading: False
+# seb-wahl: use old heterogeneous parallelization on HLRN4, the new approach does not work yet
+taskset: true
 choose_use_hyperthreading:
         "1":
                 hyperthreading_flag: ""
@@ -77,6 +79,8 @@ pool_dir:  "/scratch/usr/hbkawi"
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
 compiler_mpi: intel2019_impi2019
+# to compile nemo standalone, comment the line above and uncomment the one below
+#compiler_mpi: intel2019_impi2019_nemo4 
 #iolibraries: system_libs
 #
 # for FOCIOIFS use
@@ -95,6 +99,7 @@ module_actions:
    - "load sw.skl"
    - "load cmake"
    - "load cdo nco"
+   - "load git"
 
 export_vars:
    LC_ALL: en_US.UTF-8
@@ -153,11 +158,13 @@ choose_iolibraries:
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netcdf"
+         - "load netcdf/intel/4.7.3"
        # TODO: find the correct libraries and dependencies
        add_export_vars:
          NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
          LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
 
     geomar_libs:
        add_export_vars:

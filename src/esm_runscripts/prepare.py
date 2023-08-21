@@ -393,9 +393,11 @@ def find_last_prepared_run(config):
         base_dir = esm_parser.find_variable(
             ["general", "base_dir"], config["general"]["base_dir"], config, [], True
         )
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
 
         if os.path.isdir(
-            base_dir + "/" + config["general"]["expid"] + "/run_" + datestamp
+            f"{base_dir}/{expid}/run_{it_coupled_model_name}{datestamp}"
         ):
             config["general"]["current_date"] = current_date
             return config
@@ -505,10 +507,11 @@ def _add_all_folders(config):
     # Apply changes from ``--update-files`` flag
     config = helpers.update_reusable_filetypes(config)
 
+    experiment_dir = config["general"]["experiment_dir"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
     config["general"]["thisrun_dir"] = (
-        config["general"]["experiment_dir"]
-        + "/run_"
-        + config["general"]["run_datestamp"]
+        f"{experiment_dir}/run_{it_coupled_model_name}{datestamp}"
     )
 
     for filetype in all_filetypes:
@@ -615,7 +618,7 @@ def set_prev_date(config):
             )
 
         else:
-            config[model]["prev_date"] = config["general"]["current_date"]
+            config[model]["prev_date"] = config["general"]["prev_date"]
     return config
 
 
@@ -629,6 +632,7 @@ def set_parent_info(config):
 
     # Make sure "ini_parent_dir" and "ini_restart_dir" both work:
     for model in config["general"]["valid_model_names"]:
+        # If only ini_restart_* variables are used in runcscript, set ini_parent_* to the same values
         if not "ini_parent_dir" in config[model]:
             if "ini_restart_dir" in config[model]:
                 config[model]["ini_parent_dir"] = config[model]["ini_restart_dir"]
@@ -744,18 +748,29 @@ def check_vcs_info_against_last_run(config):
     config : dict
         The experiment configuration
     """
-    if config['general']['run_number'] == 1:
+    # FIXME(PG): Sometimes general.run_number is None (shows up as null in the
+    # config), so this check is absolutely the worst way of doing it, but
+    # whatever...
+    if config['general']['run_number'] == 1 or config["general"]["run_number"] is None:
         return config  # No check needed on the very first run
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
     # FIXME(PG): This file might not exist if people erase every run folder...
     last_exp_vcs_info_file = f"{config['prev_run']['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
 
-    with open(exp_vcs_info_file, "r") as f:
-        current_vcs_info = yaml.safe_load(f)
-    with open(last_exp_vcs_info_file, "r") as f:
-        last_vcs_info = yaml.safe_load(f)
+    try:
+        with open(exp_vcs_info_file, "r") as f:
+            current_vcs_info = yaml.safe_load(f)
+    except IOError:
+        logger.warning(f"Unable to open {exp_vcs_info_file}, skipping check...")
+        return config
+    try:
+        with open(last_exp_vcs_info_file, "r") as f:
+            last_vcs_info = yaml.safe_load(f)
+    except IOError:
+        logger.warning(f"Unable to open {last_exp_vcs_info_file}, skipping_check...")
+        return config
     if not config["general"].get("allow_vcs_differences", False) and current_vcs_info != last_vcs_info:
-        esm_parser.user_error("""
+        esm_parser.user_error("VCS Differences", """
             You have differences in either the model code or in the esm-tools between two runs! 
 
             If you are **sure** that this is OK, you can set 'general.allow_vcs_differences' to True to avoid this check.
@@ -798,13 +813,15 @@ def initialize_coupler(config):
     if config["general"]["standalone"] == False:
         from . import coupler
 
+        base_dir = config["general"]["base_dir"]
+        expid = config["general"]["expid"]
+        it_coupled_model_name = config["general"]["iterative_coupled_model"]
+        datestamp = config["general"]["run_datestamp"]
         for model in list(config):
             if model in coupler.known_couplers:
                 config["general"]["coupler_config_dir"] = (
-                    f"{config['general']['base_dir']}"
-                    f"/{config['general']['expid']}"
-                    f"/run_{config['general']['run_datestamp']}"
-                    f"/config/{model}/"
+                    f"{base_dir}/{expid}/"
+                    f"run_{it_coupled_model_name}{datestamp}/config/{model}/"
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break

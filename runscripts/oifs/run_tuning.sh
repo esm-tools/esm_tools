@@ -10,7 +10,7 @@
 # If you have > 10 concurrent jobs the admin usually gets angry 
 # and before you know it you are on trial for sabotaging government property
 
-rs=oifs-43r3-tco95-amip-blogin_qbo.yaml
+rs=oifs-43r3-tco95-amip-blogin_tuning.yaml
 expid_prefix="oifs-tco95"
 
 rprcon=0
@@ -18,7 +18,8 @@ rvice=0
 entrorg=0
 detrpen=0
 entrdd=0
-ggaussb=1
+rclcrit_sea=1
+ggaussb=0
 
 # Dont do more than approx 10 in one go
 
@@ -93,6 +94,21 @@ if [[ "x${entrdd}" == "x1" ]] ;then
 	
         esm_runscripts ${rs} -e ${expid_prefix}_q${ii} 
 	
+        i=$(( $i + 1 ))
+    done
+fi
+
+## RCLCRIT_SEA
+if [[ "x${rclcrit_sea}" == "x1" ]] ;then
+    i=1
+    
+    for r in 1.5E-4 2.0E-4 3.0E-4 3.5E-4 2.5E-4 ; do
+	ii=$( printf "%03d" $i )
+        echo " Run name: ${expid_prefix}_r${ii}"
+	sed -i "s/RCLCRIT_SEA:.*/RCLCRIT_SEA: ${r}/" ${rs}
+
+	esm_runscripts ${rs} -e ${expid_prefix}_r${ii}
+
         i=$(( $i + 1 ))
     done
 fi

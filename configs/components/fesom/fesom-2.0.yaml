@@ -24,7 +24,7 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-master:
-    branch: master
+    branch: refactoring
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -67,15 +67,7 @@ install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
 - https://gitlab.dkrz.de/FESOM/fesom2.git
-
-
-choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
-
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 restart_rate: "12"
 restart_unit: "m"
@@ -151,8 +143,14 @@ choose_resolution:
                 nx: 912469
         DART:
                 nx: 3160340
+        ROS2:
+                nx: 26306560
         HR:
                 nx: 1306775
+        jane:
+                nx: 33348172
+        SO3:
+                nx: 11087062
 
 mesh_dir: "${pool_dir}/${resolution}/"
 
@@ -169,13 +167,19 @@ restart_in_in_work:
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 restart_in_sources:
-        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
-        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        # TODO: When cleaning up the FESOM yamls, remove the wildcard and make this file
+        # be dependent on the corresponding namelist option
+        oce_restart: fesom.${parent_date!syear}.o*e.restart.nc
+        ice_restart: fesom.${parent_date!syear}.i*e.restart.nc
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 
 restart_out_files:
         oce_restart: oce_restart
@@ -184,6 +188,8 @@ restart_out_files:
         par_ice_restart: par_ice_restart
         fesom_raw_restart_info: fesom_raw_restart_info
         fesom_raw_restart: fesom_raw_restart
+        fesom_bin_restart_info: fesom_bin_restart_info
+        fesom_bin_restart: fesom_bin_restart
 
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -192,6 +198,8 @@ restart_out_in_work:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -200,6 +208,8 @@ restart_out_sources:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 
 
 outdata_sources:
@@ -228,6 +238,14 @@ file_movements:
                 all_directions: move
         fesom_raw_restart_info_out:
                 all_directions: move
+        fesom_bin_restart_in:
+                all_directions: move
+        fesom_bin_restart_out:
+                all_directions: move
+        fesom_bin_restart_info_in:
+                all_directions: move
+        fesom_bin_restart_info_out:
+                all_directions: move
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -243,6 +261,8 @@ choose_branchoff:
                 add_restart_in_files:
                         fesom_raw_restart_info: fesom_raw_restart_info
                         fesom_raw_restart: fesom_raw_restart
+                        fesom_bin_restart_info: fesom_bin_restart_info
+                        fesom_bin_restart: fesom_bin_restart
 
 
 
@@ -328,15 +348,6 @@ config_sources:
         oce:     "${namelist_dir}/namelist.oce"
         io:      "${namelist_dir}/namelist.io"
         diag:    "${namelist_dir}/namelist.diag"
-
-compiletime_environment_changes:
-        add_export_vars:
-                taken2from:      fesom2_compile
-
-runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
 
 config_in_work:
         config:  "namelist.config"

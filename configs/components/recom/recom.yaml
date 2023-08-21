@@ -88,6 +88,7 @@ clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
 install_libs:
   - build/librecom.a
+contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
@@ -97,6 +98,19 @@ data_path: ""
 scenario: "PI-CTRL"
 
 time_step: 1800
+
+use_ciso: false
+
+choose_use_ciso:
+        true:
+                recom_namelist:  "namelist.recom.ciso"
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        ciso: true
+        false:
+                recom_namelist:  "namelist.recom"
+
 
 choose_scenario:
         PI-CTRL:
@@ -123,6 +137,9 @@ choose_scenario:
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
                 numofCO2cycles: "${num_CO2_cycles}"
                 currentCO2cycle: "${current_CO2_cycle}"
+#4.7.22 Ying: to use a different namelist.recom for LGM
+        lgm:
+                namelist_sce: ".lgm"
         "*":
                 constant_CO2: ""
                 REcoM_PI: ""
@@ -143,6 +160,7 @@ choose_scenario:
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
 
+namelist_sce: ""
 namelist_dir: "${general.model_dir}/recom/"
 
 namelists:
@@ -167,8 +185,10 @@ config_files:
         recom:  recom
 
 config_sources:
-        recom: "${namelist_dir}/namelist.recom"
-#        io.recom.ciso: "${namelist_dir}/namelist.io.recom.ciso"
+        recom:  "${namelist_dir}/${recom_namelist}${namelist_sce}"
+
+config_in_work:
+        recom: "namelist.recom"
 
 restart_name: ""
 

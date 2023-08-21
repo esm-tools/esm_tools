@@ -51,7 +51,7 @@ setup(
         "deniz.ural@awi.de",
         "jan.streffing@awi.de",
         "sebastian.wahl@geomar.de",
-	"kai.himstedt@dkrz.de",
+	      "kai.himstedt@dkrz.de",
     ],
     python_requires=">=3.6, <3.10",
     classifiers=[
@@ -101,6 +101,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.13.7",
+    version="6.23.6",
     zip_safe=False,
 )

@@ -81,10 +81,10 @@ forcing_sources:
                 "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1950.nc"
 
         # greenhouse
-        # TODO: currently only r0008 contains the greenhouse_ssp* files
+        # currently only r0008 contains the greenhouse_ssp* files
         "histgreenh": "${greenhouse_dir}/greenhouse_historical.nc"
         "greenhouse_hist_scenario":
-                "${greenhouse_dir}/greenhouse_historical.nc":
+                "${greenhouse_dir}/${greenhouse_hist_name}.nc":
                         to: 2014
                 "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
@@ -118,6 +118,9 @@ forcing_sources:
                 # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
                         from: 2015
+                        to: 2099
+                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc":
+                        from: 2100
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"
         "1950ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1950.nc"
@@ -129,7 +132,14 @@ forcing_sources:
         "MAC-SP": "${input_dir}/MAC-SP.nc"
 
         "MAC-SP_hist_scenario":
-                 "${input_dir}/MAC-SP.nc":
+                 "${input_dir}/${MAC-SP_hist_name}.nc":
                          to: 2014
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
+
+greenhouse_hist_name: "greenhouse_historical"
+MAC-SP_hist_name: "MAC-SP"
+choose_echam.dataset:
+    r0008:
+        greenhouse_hist_name: "greenhouse_ssp245"
+        MAC-SP_hist_name: "MAC-SP_ssp245"

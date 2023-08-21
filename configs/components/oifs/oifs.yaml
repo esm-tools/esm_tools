@@ -1185,6 +1185,7 @@ choose_output:
 # as general.run_number, but for branchoff experiments should be 0 so that the 3rd
 # preprocessing option is used, instead of the options 1 or 2.
 branchoff: false
+ini_pseudo_initial_date: "${initial_date}" #${prev_run.general.start_date}"  
 eternal_run_number: "$((
         0 if (${lresume} and ${general.run_number} == 1)
             or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})

@@ -955,7 +955,7 @@ choose_version:
         "[[agr1_r_fields-->FIELD]]":
             grid: agr1r
         "[[agr1_rc_fields-->FIELD]]":
-            grid: agr1
+            grid: agrc
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
 
@@ -1611,6 +1611,8 @@ choose_levels:
    L75:
       add_namelist_changes:
          namelist_cfg:
+            namcfg: 
+               jpkdta: 75 
             namdom:
                # very important to set hmin to -10 or lower
                rn_hmin: -10 
@@ -1898,7 +1900,7 @@ choose_runoff_method:
                         "[[agr1_r_fields-->FIELD]]":
                                 grid: agr1
                         "[[agr1_rc_fields-->FIELD]]":
-                                grid: agr1
+                                grid: agrc
         
         # Old method based on remapping runoff to a pre-made
         # runoff mask on the ORCA05 grid (rnfo) or AGRIF (agr1r)
@@ -1960,5 +1962,12 @@ grids:
                 ny: ${_ny_nest1}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 0
-
+        
+        # agrc: AGRIF grid but with a mask corresponding to calving
+        agrc:   
+                name: agrc
+                nx: ${_nx_nest1}
+                ny: ${_ny_nest1}
+                oasis_grid_type: "LR"
+                number_of_overlapping_points: 0
 

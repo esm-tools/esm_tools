@@ -142,7 +142,7 @@ oifs:
                 compiler_mpi: intel2022_impi2022
                 #compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2019_impi2019_nemo4
+                compiler_mpi: intel2022_impi2021 #intel2019_impi2019_nemo4
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -163,7 +163,7 @@ oifs:
              blogin:
                 compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2019_impi2019_nemo4
+                compiler_mpi: intel2022_impi2021 #intel2019_impi2019_nemo4
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -295,6 +295,7 @@ oifs:
                                         NAMFOCICFG:
                                                 # Turns on coupling to AGRIF
                                                 # Each coupling field is duplicated once
+                                                FOCI_CPL_NEMO_LIM: ".true." 
                                                 FOCI_CPL_NB_OCE_ZOOM: 1
                         add_coupling_fields:
                                 "[[fociagrif_fields_a-->FIELD]]":
@@ -581,7 +582,7 @@ oasis3mct:
                         # Suggested by Eric Maisonnave for Tco95 -> VIKING10
                         nb_of_neighbours_a2o: 15
                         weight_a2o: 0.1
-                TCO399_ORCA12: 
+                TCO319_ORCA12: 
                         # We take nb 25 and variance 0.1 from TL799 VIKING10
                         # see: https://cerfacs.fr/wp-content/uploads/2019/11/GlobC-TR-Maisonnave-odus_report_4-1.pdf
                         # Error goes down until nb 25, then constant
@@ -773,7 +774,7 @@ oasis3mct:
                 'rnfm->agr1':
                         lag: ${r2o_lag}
                         seq: 3
-                'rnfs->agr1':
+                'rnfs->agrc':
                         lag: ${r2o_lag}
                         seq: 3
                 # AGRIF mask to runoff mapper
@@ -1082,13 +1083,12 @@ oasis3mct:
                 c2agrzero:
                         time_transformation: average
                         remapping:
-                                - gauswgt: 
+                                - bilinear: 
                                         search_bin: latitude
-                                        nb_of_neighbours: 15
-                                        weight: 0.1 
+                                        nb_of_search_bins: 1000
                                 - mapping:
-                                        mapname: rmp_rnfs_to_agr1_ZERO.nc
-                                        map_regrid_on: src
+                                        mapname: rmp_rnfs_to_agrc_BILINEAR_ZERO.nc
+                                        map_regrid_on: dst
                         postprocessing:
                                 conserv:
                                         method: global
@@ -1148,7 +1148,7 @@ oasis3mct:
                 rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.resolution}.nc
                 rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc 
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
-                rmp_c2agr_R1: rmp_rnfs_to_agr1_ZERO.nc
+                rmp_c2agr_R1: rmp_rnfs_to_agrc_ZERO.nc
                                 
                 sstocean: sstocean
                 flxatmos: flxatmos
@@ -1182,7 +1182,7 @@ oasis3mct:
                 rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc  
                 #rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
-                rmp_c2agr_R1: rmp_rnfs_to_agr1_ZERO.nc
+                rmp_c2agr_R1: rmp_rnfs_to_agrc_BILINEAR_ZERO.nc
 
                 #rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 #rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -1237,7 +1237,7 @@ oasis3mct:
                 rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc  
                 #rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
-                rmp_c2agr_R1: rmp_rnfs_to_agr1_ZERO.nc
+                rmp_c2agr_R1: rmp_rnfs_to_agrc_BILINEAR_ZERO.nc
 
                 #rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 #rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc
@@ -1276,7 +1276,7 @@ oasis3mct:
                 rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc                
                 #rmp_r2agr_R1: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
-                rmp_c2agr_R1: rmp_rnfs_to_agr1_ZERO.nc
+                rmp_c2agr_R1: rmp_rnfs_to_agrc_BILINEAR_ZERO.nc
 
                 #rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.resolution}.nc
                 #rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.resolution}.nc

@@ -22,7 +22,7 @@ requirements = [
     "gfw-creator==0.2.2",
     "gitpython==3.1.20",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
-    "numpy==1.19.5",  # Maximum version for Python 3.6 support
+    "numpy==1.22.0",  # Maximum version for Python 3.6 support
     "packaging==21.3",
     "pandas==1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",

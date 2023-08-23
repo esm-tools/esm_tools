@@ -22,7 +22,7 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         days-before-issue-stale: 365
-        stale-before-pr-stale: 365
+        days-before-pr-stale: 365
         days-before-issue-close: 30
         days-before-pr-close: -1
         stale-issue-message: 'This issue has been inactive for the last 365 days. It will now be marked as stale and closed after 30 days of further inactivity. Please add a comment to reset this automatic closing of this issue or close it if solved.'

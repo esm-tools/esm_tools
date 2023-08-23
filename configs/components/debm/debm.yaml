@@ -18,10 +18,10 @@ choose_version:
     "esm_tools":
         branch: "esm_tools"
 
-clean_command: cd Fortran-v1.0; rm -rf build CMakeCache.txt
-comp_command: cd Fortran-v1.0; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+clean_command: cd Fortran; rm -rf build CMakeCache.txt
+comp_command: cd Fortran; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
 git-repository: https://github.com/ukrebska/dEBM
-install_bins: Fortran-v1.0/bin/debm
+install_bins: Fortran/bin/debm
 
 metadata:
     Institute: AWI

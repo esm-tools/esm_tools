@@ -199,9 +199,10 @@ echam_ice_select_relevant_variables() {
                 ${cdo} -s -f nc \
                         -expr,"orog=geosp/9.81; aprt=aprl+aprc; temp2=temp2; tsurf=tsurf; swd=srads-sradsu; cc=aclcov; \
                                emiss=(trads-tradsu)/(5.6703744e-8*temp2^4); \
-                               tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; " \
+                               tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; 
+                               uv=(u10^2+v10^2)^(1/2)" \
                         -setcodetab,${file}.codes \
-                        -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54 \
+                        -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
                         $file \
                         "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
                         #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \

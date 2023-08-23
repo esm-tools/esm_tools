@@ -34,6 +34,8 @@ requirements = [
     "tqdm==4.64.0",
     "typing_extensions==4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
+    "pydantic",
+    "h5netcdf",
 ]
 
 setup_requirements = []

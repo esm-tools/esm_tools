@@ -130,3 +130,6 @@ src/esm_tests/user_config.yaml
 
 # Smooth installation of version 6 even after having checkout release and pull
 esm_tools/__init__.py
+
+# backup files
+*.py.*

@@ -24,7 +24,7 @@ requirements = [
     "loguru==0.6.0",
     "numpy==1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
-    "pandas==1.1.5",  # Correct compatiability with xarray for Python 3.6
+    "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
     "pyyaml==5.1",
     "questionary==1.10.0",

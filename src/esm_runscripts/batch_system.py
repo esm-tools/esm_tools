@@ -725,7 +725,22 @@ class batch_system:
             elif "executable" in config[model]:
                 command = config[model]["executable"]
             # Prepare the MPMD commands
-            if command:
+#            if command:
+# kh 24.06.22 observed behavior was:
+#model:  oasis3mct
+#command:  None
+
+#model:  recom
+#command:  None
+
+#model:  jsbach
+#command:  None
+
+#model:  hdmodel
+#command:  NONE
+
+# kh 24.06.22 workaround: filter hdmodel
+            if command and (command != "NONE"):
                 launcher = config["computer"].get("launcher")
                 launcher_flags = self.calc_launcher_flags(config, model, cluster)
                 component_lines.append(f"{launcher_flags} ./{command} ")
@@ -817,7 +832,7 @@ class batch_system:
                         + f"    {model}.cpus_per_proc: {cpus_per_proc}\n"
                     ),
                 )
-        elif "nproca" in config[model] and "procb" in config[model]:
+        elif "nproca" in config[model] and "nprocb" in config[model]:
             # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
             if omp_num_threads > 1:
                 esm_parser.user_note(
@@ -827,6 +842,12 @@ class batch_system:
             nproc = config[model]["nproca"] * config[model]["nprocb"]
             cpus_per_proc = 1
             omp_num_threads = 1
+        else:
+
+# kh 22.06.22 defensive (user_error/user_note could also be added here)
+            nproc = 0
+            cpus_per_proc = 0
+#           omp_num_threads = 0
 
         # Number of nodes needed
         nodes = int(nproc * cpus_per_proc / cores_per_node) + (

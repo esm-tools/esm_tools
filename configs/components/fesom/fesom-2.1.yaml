@@ -168,53 +168,50 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_in_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        #icb_restart: icb_restart
+        #icb_restart_ISM: icb_restart_ISM
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         icb_restart_ISM: iceberg.restart.ISM
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
-        icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+        icb_restart: iceberg.restart.${parent_date!syear} #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear}
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        #icb_restart: icb_restart #.${parent_date!syear}
+        #icb_restart_ISM: icb_restart_ISM
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart #_${start_date!syear} #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear}
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-
-#choose_use_icebergs:
-#        True:
-#                restart_in_intermediate:
-#                        icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
-#                        icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
-#                
-#                restart_in_targets:
-#                        #oce_restart: fesom.${end_date!syear}.oce.restart.nc
-#                        #ice_restart: fesom.${end_date!syear}.ice.restart.nc
-#                        #wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-#                        icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-#                        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-#                restart_out_targets:
-#                        #oce_restart: fesom.${end_date!syear}.oce.restart.nc
-#                        #ice_restart: fesom.${end_date!syear}.ice.restart.nc
-#                        #wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-#                        icb_restart: iceberg.restart_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-#                        icb_restart_ISM: iceberg.restart.ISM_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+        icb_restart: iceberg.restart.${end_date!syear} #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday} #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM.${end_date!syear} #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -224,24 +221,21 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-
             add_restart_in_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-
-            add_restart_out_files:
+            restart_out_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-
-            restart_in_intermediate:
-                    icb_restart: iceberg.restart_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
-                    icb_restart_ISM: iceberg.restart.ISM_${parent_date!syear}${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
-            restart_in_targets:
-                    icb_restart: iceberg.restart #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-                    icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-            restart_out_targets:
-                    icb_restart: iceberg.restart_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
-                    icb_restart_ISM: iceberg.restart.ISM_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
+            #restart_in_intermediate:
+            #        icb_restart: iceberg.restart.${parent_date!syear} #${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear} #${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+            #restart_in_targets:
+            #        icb_restart: iceberg.restart.${parent_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #restart_out_targets:
+            #        icb_restart: iceberg.restart.${start_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${start_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
             
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
@@ -249,25 +243,13 @@ choose_use_icebergs:
             add_outdata_sources:
                     buoys_track: "buoys_track.nc"
 
-            add_namelist_changes:
-                    namelist.io:
-                            nml_list:
-                                    io_list(:): ["icb", "1", "m", 4]
-                            nml_listsize:
-                                    io_listsize: 120
-
-
             choose_use_icesheet_coupling:
                     true:
                             choose_general.run_number:
                                     1:
                                             iceberg_dir: "${ini_iceberg_dir}"
-                                            #input_sources:
-                                            #        num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
                                     "*":
                                             iceberg_dir: "${general.experiment_couple_dir}"
-                                            #input_sources:
-                                            #        num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
 
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"

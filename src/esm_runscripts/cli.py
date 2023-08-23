@@ -263,6 +263,6 @@ def main():
 
     Setup = SimulationSetup(command_line_config)
     # if not Setup.config['general']['submitted']:
-    if not Setup.config["general"]["submitted"] and not no_motd:
-        check_all_esm_packages()
+    #if not Setup.config["general"]["submitted"] and not no_motd:
+    #    check_all_esm_packages()
     Setup()

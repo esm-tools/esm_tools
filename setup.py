@@ -26,7 +26,7 @@ requirements = [
     "packaging==21.3",
     "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
-    "pyyaml==5.1",
+    "pyyaml==5.4",
     "questionary==1.10.0",
     "semver==2.13.0",
     "sqlalchemy==1.4.39",

@@ -22,9 +22,9 @@ requirements = [
     "gfw-creator==0.2.2",
     "gitpython==3.1.20",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
-    "numpy==1.19.5",  # Maximum version for Python 3.6 support
+    "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
-    "pandas==1.1.5",  # Correct compatiability with xarray for Python 3.6
+    "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
     "pyyaml==5.1",
     "questionary==1.10.0",
@@ -34,6 +34,8 @@ requirements = [
     "tqdm==4.64.0",
     "typing_extensions==4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
+    "pydantic==1.10.2",
+    "h5netcdf>=0.8.1",
 ]
 
 setup_requirements = []
@@ -53,7 +55,7 @@ setup(
         "sebastian.wahl@geomar.de",
 	      "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <3.10",
+    python_requires=">=3.6, <=3.11",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",

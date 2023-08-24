@@ -8,11 +8,6 @@ jobs:
     env:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
-
-    strategy:
-      matrix:
-        python-version: ['3.8.10']
-
     container:
       image: koldunovn/esm_test:latest
       options: --hostname ollie1

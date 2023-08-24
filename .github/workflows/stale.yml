@@ -29,3 +29,6 @@ jobs:
         stale-pr-message: 'This PR has been inactive for the last 365 days. It will now be marked as stale. Please close this PR if no longer needed.'
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
+        close-issue-label: 'Closed by github-actions'
+        exempt-issue-labels: enhancement, feature request
+        exempt-pr-labels: enhancement, feature request

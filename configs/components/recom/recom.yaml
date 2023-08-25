@@ -83,6 +83,7 @@ choose_version:
         branch: recom-update
     2.0-recom-awicm:
         branch: oxygen
+        use_medusa: "without_medusa"
 
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
@@ -206,7 +207,7 @@ choose_fesom2_standalone:
 namelists:
         - namelist.recom
 
-use_atbox: "remove_from_namelists"
+use_atbox: "remove_from_namelist"
 namelist_changes:
         namelist.recom:
                 pavariables:

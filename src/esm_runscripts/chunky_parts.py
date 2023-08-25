@@ -184,6 +184,29 @@ def update_command_line_config(config):
 
 
 def prev_chunk_info(config):
+    """
+    Loads the ``finished_config`` yaml of the previous model chunks into
+    ``config["prev_run_{model}"]`` so that they can be called from other chunks.
+
+    **Example**
+
+    Let's say we are running fesom-recom-medusa. In this offline coupling,
+    ``fesom-recom`` are run in separate chunks from ``medusa`` (``fesom-recom`` is
+    offline-coupled to ``medusa``). Let's assume we are currently running a
+    ``medusa`` chunk but we still want to access from our ``medusa.yaml`` a variable
+    defined in a file from fesom-recom files. This function allows you to do so by using
+    the following syntax:
+
+    .. code-block:: yaml
+
+       medusa:
+           fesom_start_date: "${prev_chunk_fesom.general.start_date}"
+
+    Parameters
+    ----------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+    """
     expid = config["general"]["expid"]
     base_dir = config["general"]["base_dir"]
     chunk_number = config["general"]["chunk_number"]
@@ -277,6 +300,26 @@ def _read_chunk_date_file_if_exists(config):
 
 
 def _read_model_date_file(config, model):
+    """
+    Extracts the current date and run number of a ``model`` from the ``.date`` file
+    (i.e. the ESM-Tools clock) in ``<base_dir>/<expid>/scripts`` folder.
+
+    Parameters
+    ----------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+    model : str
+        Name of the model.
+
+    Returns
+    -------
+    model_date : str
+        Date read from the ``.date`` file, only the file is found. Otherwise returns
+        nothing.
+    run_number : int
+        Run number read from the ``.date`` file, only the file is found. Otherwise returns
+        nothing.
+    """
     expid = config["general"]["expid"]
     base_dir = config["general"]["base_dir"]
     model_date_file = f"{base_dir}/{expid}/scripts/{expid}_{model}.date"
@@ -289,6 +332,31 @@ def _read_model_date_file(config, model):
 
 
 def _find_model_finished_config(config, model, model_date):
+    """
+    Finds the ``finished_config`` yaml path of a ``model`` matching the ``model_date``
+    provided.
+
+    Parameters
+    ----------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+    model : str
+        Name of the model.
+    model_date : str
+        Date of the current model's time in the format ``<YYYYMMDD>`` or
+        ``<YYYYMMDD>T<HH:MM:SS>``
+
+    Returns
+    -------
+    full_file_path : str
+        Path of the ``finished_config`` for the model, matching the date. Returns
+        ``None`` if no file is found.
+
+    Raises
+    ------
+    loguru.logger.error :
+        If a more than one file matches the date.
+    """
     expid = config["general"]["expid"]
     base_dir = config["general"]["base_dir"]
     file_path = f"{base_dir}/{expid}/config/{expid}_{model}_finished_config.yaml"

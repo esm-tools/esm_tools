@@ -23,25 +23,9 @@ choose_version:
 git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
 # directory for code and libraries
 model_dir: "${general.esm_master.dir}/medusa-${version}"
-#lib_dir: "${model_dir}/lib"
-#inc_dir: "${model_dir}/include"
-#code_dir: "${model_dir}/medmbm/trunk4mcg"
-# directory of applications
-#setup_dir: "${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_paleo"
-# directory of executables
-#bin_dir: "${model_dir}/work/exe_files"
-# input data e.g. fesom.mesh.diag.nc needed for medusa
-#data_path: ""
 
 environment_changes:
     choose_computer.name:
-        ollie:
-            add_module_actions:
-                - "unload netcdf"
-                - "load netcdf/4.6.1_intel"
-                - "load intel.compiler intel.mpi"
-#            add_export_vars:
-#                ...
         levante:
             add_module_actions:
                 - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
@@ -60,9 +44,9 @@ comp_command: "mkdir -p lib; mkdir -p include;
     cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
     make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
     cp modmxm.h *.mod ${model_dir}/include;
-    cd ${model_dir}/medmbm/trunk4mcg/src-mcg; 
+    cd ${model_dir}/medmbm/trunk4mcg/src-mcg;
     cp Makefile_mpiifort ./Makefile; make;
-    cd ${model_dir}/medmbm/trunk4mcg/src-med; 
+    cd ${model_dir}/medmbm/trunk4mcg/src-med;
     cp Makefile_mpiifort_levante ./Makefile; make;
     make usetemplates;
     make libmedusa.a;

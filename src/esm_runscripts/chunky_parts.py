@@ -132,7 +132,6 @@ def set_chunk_calendar(config):
 
 
 def _update_chunk_date_file(config):
-
     if not config["general"].get("iterative_coupling", False):
         return config
 
@@ -370,7 +369,8 @@ def _find_model_finished_config(config, model, model_date):
         elif len(full_file_path) > 1:
             logger.error(
                 "There is more than one finished_config file matching the criteria: "
-                "{full_file_path}")
+                "{full_file_path}"
+            )
             raise
 
 

@@ -162,6 +162,10 @@ echam:
         ini_parent_date: "${general.ini_parent_date}"
         ini_parent_dir: "${general.ini_parent_dir}/echam6/"
 
+        # Allows ssp scenarios to start before the ssp period with historical settings
+        # (i.e. historical to ssp simulations)
+        allow_hist2ssp_transition: True
+
         # some datamath for to be able to change the coupling step easily
         coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${echam.time_step}))
 
@@ -383,13 +387,16 @@ hdmodel:
 jsbach:
         version: "3.20p1"
         # directories
-        pool_dir: "${computer.pool_directories.focipool}/JSBACH"
+        pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
+        input_dir_couple: "${pool_dir}/input/"
         choose_computer.name:
                ollie:
                       dynveg_file_ending: ""
                       no_dynveg_file_ending: ""
 
         dynamic_vegetations: True
+
+        Ndepo_path: "${echam.resolution}/ndepo/Ndepo${Ndepo_sufix}."
 
         file_movements:
            default:

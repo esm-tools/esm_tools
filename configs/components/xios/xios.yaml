@@ -70,6 +70,16 @@ choose_version:
         archfile: ESMTOOLS_generic_oasis_intel
       "*":
         foo: bar
+    # MA: yet another block, this time for albedo. We cannot fix this now, but in the
+    # future we should adopt the compiler suite logic for the other computers. Already
+    # included in ESM-Tools clickup
+    choose_computer.compiler_suite:
+        gcc:
+            archfile: ESMTOOLS_generic_oasis_gcc
+        intel-oneapi:
+            archfile: ESMTOOLS_levante_oasis_intel
+        "*":
+            foo: bar
     choose_computer.name:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
@@ -92,8 +102,8 @@ choose_version:
     use_oasis: '' 
     branch: 2.5_r1910
   2.5_smhi:
-    git-repository: https://git.smhi.se/jan.streffing/xios2.git
-    branch: arch_for_esm_tools
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece
+    branch: main
     archfile: ESMTOOLS_generic_oasis_intel
     choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
       cray_mpich:

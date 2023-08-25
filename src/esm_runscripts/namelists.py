@@ -91,6 +91,72 @@ class Namelist:
         return mconfig
 
     @staticmethod
+    def nmls_check_changes(namelist_changes):
+        """
+        Checks if namelist changes are given in correct syntax.
+        If not, a user_error will be raised and stop the execution.
+
+        Programmer Information
+        ----------------------
+
+        Parameters
+        ----------
+        namelist_changes : nested dict
+
+        If the syntax is correct, namelist_changes should be a nested dict of the following form::
+
+        {'namelist1.nml': {'namelist1': {'variable1': 'value1', 'variable2': 'value2', 'variable3': 'value3'}, 'namelist2': {'variable1': value1}}}
+
+        Returns
+        -------
+        None
+
+        """
+
+        error_message = (
+            "There is a syntax error, probably in your runscript (but potentially in other yaml files), "
+            "regarding namelist changes (e.g. in a 'add_namelist_changes' block). "
+            "It seems that either 'namelist_file' or "
+            "'namelist_group' or 'both' are missing.\n"
+            "Please make sure that namelist changes are specified in the correct syntax (see example below)"
+            " and rerun your runscript.\n"
+        )
+        example = (
+            "\nExample of a ``correct syntax`` for [add_]namelist_changes:\n"
+            "\t [add_]namelist_changes:\n"
+            "\t    '<namelist_file>':\n"
+            "\t        '<namelist_group>':\n"
+            "\t            <variable>: <value>"
+        )
+
+        nml_syntax_error = False
+
+        for namelist in list(namelist_changes):
+            changes = namelist_changes[namelist]
+            # Check if namelist_changes are specified in correct syntax (e.g. in runscript)
+            # If correct syntax, changes is always a dict.
+            if not isinstance(changes, dict):
+                nml_syntax_error = True
+                this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}: {changes}'\n...")
+                break
+            else:
+                for change_chapter in list(changes):
+                    change_entries = changes[change_chapter]
+                    # Check if namelist_changes are specified in correct syntax (e.g. in runscript)
+                    # If correct syntax, change_entries is always a dict.
+                    if not isinstance(change_entries, dict):
+                        nml_syntax_error = True
+                        this_is_wrong = (
+                            f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}':\n        '{change_chapter}: {change_entries}'\n...")
+                        break
+        if nml_syntax_error:
+            user_error(
+                "Syntax error in namelist changes",
+                f"{error_message}\n{this_is_wrong}\n{example}",
+                dsymbols=["``", "'"],
+            )
+
+    @staticmethod
     def nmls_remove(mconfig):
         """
         Removes an element from a namelist chapter.
@@ -122,9 +188,15 @@ class Namelist:
         -------
         mconfig : dict
             The modified configuration.
+
+        Calls to other methods
+        ----------------------
+        nmls_check_changes
         """
 
         namelist_changes = mconfig.get("namelist_changes", {})
+        # Check if namelist_changes have correct syntax
+        Namelist.nmls_check_changes(namelist_changes)
         namelist_removes = []
         for namelist in list(namelist_changes):
             changes = namelist_changes[namelist]
@@ -136,7 +208,6 @@ class Namelist:
                     value = change_entries[key]
                     if value == "remove_from_namelist":
                         namelist_removes.append((namelist, change_chapter, key))
-
                         # the key is probably coming from esm_tools config
                         # files or from a user runscript. It can contain lower
                         # case, but the original Fortran namelist could be in
@@ -145,7 +216,6 @@ class Namelist:
                         # `key` is the processed variable from f90nml module and
                         # is lowercase.
                         remove_original_key = False
-
                         # traverse the namelist chapter and see if a mixed case
                         # variable is also found
                         for key2 in namelist_changes[namelist][change_chapter]:
@@ -156,12 +226,10 @@ class Namelist:
                                 namelist_removes.append(
                                     (namelist, change_chapter, original_key)
                                 )
-
                         # remove both lowercase and mixed case variables
                         del namelist_changes[namelist][change_chapter][key]
                         if remove_original_key:
                             del namelist_changes[namelist][change_chapter][original_key]
-
                         # mconfig instead of config, Grrrrr
                         print(
                             f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
@@ -219,8 +287,15 @@ class Namelist:
         -------
         mconfig : dict
             The modified configuration.
+
+        Calls to other methods:
+        ----------------------
+        nmls_check_changes
         """
         namelist_changes = mconfig.get("namelist_changes", {})
+        # Check if namelist_changes have correct syntax
+        Namelist.nmls_check_changes(namelist_changes)
+
         for namelist, changes in namelist_changes.items():
             mconfig["namelists"][namelist].patch(changes)
         return mconfig

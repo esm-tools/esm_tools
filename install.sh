@@ -46,7 +46,7 @@ if hash git 2>/dev/null; then
 		echo $git_error_message
 		echo "git version found: ${git_version}"
 	else
-		if test ${minor_git_version} -lt "13"; then
+		if test ${minor_git_version} -lt "10"; then
 			echo $git_error_message
 			echo "git version found: ${git_version}"
 		fi

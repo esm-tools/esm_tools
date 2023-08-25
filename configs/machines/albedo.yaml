@@ -1,0 +1,210 @@
+################################################################################
+# The albedo.awi.de yaml config file for esm-tools
+#
+# P. Gierz, Nov/Dec 2022
+# M. Andres-Martinez, Nov/Dec 2022
+################################################################################
+name: albedo
+# Could be useful if this is extraced from /etc/os-distro:
+operating_system: "linux-rocky"
+sh_interpreter: "/usr/bin/bash"
+# Batch system and configuration:
+batch_system: "slurm"
+accounting: true
+further_reading:
+    - batch_system/slurm.yaml
+partitions:
+    compute:
+        name: mpp
+        cores_per_node: 128
+    pp:
+        name: smp
+        cores_per_node: 1
+
+# compute node hardware information:
+logical_cpus_per_core: 2
+threads_per_core: 1
+
+# pool directory information:
+pool_directories:
+    pool: "/albedo/pool"
+    projects: "/albedo/work/projects"
+    focipool: "/dev/null"
+pool_dir: "${computer.pool_directories.pool}"
+
+hyper_flag: "" # No hyperthreading on albedo is supported in esm-tools (yet)!
+choose_heterogeneous_parallelization:
+    True:
+        choose_taskset:
+            False:
+                add_export_vars:
+                    I_MPI_SLURM_EXT: 0
+            "*":
+                taskset_chs: ""
+        add_unset_vars:
+            - "SLURM_DISTRIBUTION"
+            - "SLURM_NTASKS"
+            - "SLURM_NPROCS"
+            - "SLURM_ARBITRARY_NODELIST"
+
+hetjob_flag: packjob
+
+unset_vars:
+    - "SLURM_MEM_PER_NODE"
+    - "SLURM_MEM_PER_CPU"
+
+# QOS selection
+# Calculate minutes of cpomputing time
+compute_time_minutes: "$((
+    ${compute_time!hour}*60 + ${compute_time!minute} + ${compute_time!second}/60
+    ))"
+# Define the QOS based on the minutes of computing time
+qos: "$((
+    '30min' if ${compute_time_minutes} <= 30 else
+        '12h' if ${compute_time_minutes} <= 720 else '48h'
+    ))"
+additional_flags: ["--qos=${qos}"]
+
+mpi_implementation: openmpi
+choose_mpi_implementation:
+    intel-oneapi-mpi:
+        mpi_implementation_module: intel-oneapi-mpi/2021.6.0
+        mpi_implementation_suffix: intel-oneapi-mpi2021.6.0
+    openmpi:
+        mpi_implementation_module: openmpi/4.1.3
+        mpi_implementation_suffix: openmpi4.1.3
+
+compiler_suite: intel-oneapi
+choose_compiler_suite:
+    gcc:
+        compiler_module: gcc/12.1.0
+        mkl_module: intel-oneapi-mkl/2022.1.0
+        mkl_root: /albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-akthm3n/mkl/2022.1.0
+        mpi_module: openmpi/4.1.3-gcc12.1.0
+        hdf5_module: hdf5/1.12.2-openmpi4.1.3-gcc12.1.0
+        netcdfc_module: netcdf-c/4.8.1-openmpi4.1.3-gcc12.1.0
+        netcdff_module: netcdf-fortran/4.5.4-openmpi4.1.3-gcc12.1.0
+        netcdfcxx_module: netcdf-cxx4/4.3.1-openmpi4.1.3-gcc12.1.0
+        eccodes_module: eccodes/2.25.0-openmpi4.1.3-gcc12.1.0
+        fc: mpifort
+        f77: mpifort
+        mpifc: mpifort
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpicxx
+
+        add_export_vars:
+            # I/O libraries
+            HDF5ROOT: "/albedo/soft/sw/spack-sw/hdf5/1.12.2-rgostku/"
+            NETCDFROOT: "/albedo/soft/sw/spack-sw/netcdf-c/4.8.1-i5n4n63/"
+            NETCDFFROOT: "/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-yb7woqz/"
+            ECCODESROOT: "/albedo/soft/sw/spack-sw/eccodes/2.25.0-vhmiess/"
+
+    intel-oneapi:
+        compiler_module: intel-oneapi-compilers/2022.1.0
+        mkl_module: intel-oneapi-mkl/2022.1.0-gcc12.1.0
+        mkl_root: /albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-akthm3n/mkl/2022.1.0
+        mpi_module: openmpi/4.1.3-intel2021.6.0
+        hdf5_module: hdf5/1.12.2-openmpi4.1.3-intel2021.6.0
+        netcdfc_module: netcdf-c/4.8.1-openmpi4.1.3-intel2021.6.0
+        netcdff_module: netcdf-fortran/4.5.4-openmpi4.1.3-intel2021.6.0
+        netcdfcxx_module: netcdf-cxx4/4.3.1-openmpi4.1.3-intel2021.6.0
+        eccodes_module: eccodes/2.25.0-openmpi4.1.3-intel2021.6.0
+        fc: mpif90
+        f77: mpif90
+        mpifc: mpif90
+        mpicc: mpicc
+        cc: mpicc
+        cxx: mpic++
+
+        add_export_vars:
+            # I/O libraries
+            HDF5ROOT: "/albedo/soft/sw/spack-sw/hdf5/1.12.2-mstdrjw/"
+            NETCDFROOT: "/albedo/soft/sw/spack-sw/netcdf-c/4.8.1-vvxxdc3/"
+            NETCDFFROOT: "/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-uwfs3bu/"
+            ECCODESROOT: "/albedo/soft/sw/spack-sw/eccodes/2.25.0-vn2k575/"
+
+module_actions:
+    # Ensure a clean environment before start:
+    - "purge"
+    # Compilers:
+    - "load ${compiler_module}"
+    - "load ${mkl_module}"
+    # MPI Implementation:
+    - "load ${mpi_module}"
+    # Libraries:
+    - "load udunits/2.2.28"
+    - "load ${hdf5_module}"
+    - "load ${netcdfc_module}"
+    - "load ${netcdff_module}"
+    - "load ${netcdfcxx_module}"
+    - "load ${eccodes_module}"
+    # General Tools:
+    - "load cdo/2.0.5"
+    - "load nco/5.0.1"
+    - "load git/2.35.2"
+    - "load perl/5.35.0-gcc12.1.0"
+    - "load python/3.10.4"
+    # Show what is there in the log:
+    - "list"
+
+export_vars:
+    # Basics:
+    LC_ALL: en_US.UTF-8
+
+    # Compilers:
+    FC: ${fc}
+    F77: ${f77}
+    MPIFC: ${mpifc}
+    MPICC: ${mpicc}
+    CC: ${cc}
+    CXX: ${cxx}
+
+    CPU_MODEL: AMD_EPYC_ZEN2
+    FESOM_PLATFORM_STRATEGY: albedo
+
+    # PERL library
+    PERL5LIB: "/albedo/soft/sw/spack-sw/perl-uri/1.72-epj7s32/lib/perl5:/albedo/soft/sw/spack-sw/perl/5.35.0-asf6m5t/lib"
+
+    # I/O libraries
+    HDF5ROOT: ""
+    NETCDFROOT: ""
+    NETCDFFROOT: ""
+    ECCODESROOT: ""
+
+    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+    # Message Passing Interface (MPI) environment variables:
+    # MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+    MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+    MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+    # Linear-Algebra Library environment variables:
+    # FIXME(PG): This would be nicer...
+    # LAPACK_LIB: "$(mkl_link_tool --quiet -libs $MPIF90)"
+    # NOTE(PG): I do not like this....should be set via module file, or fixed in model
+    LAPACK_LIB: "'-L${mkl_root} -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'"
+
+    LD_LIBRARY_PATH[(1)]: ${mkl_root}/lib/intel64:$LD_LIBRARY_PATH
+
+    PATH[(1)]: "$PERL5LIB/../bin:$PATH"
+    PATH[(2)]: "$PATH:$ECCODESROOT/bin"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+
+warning:
+    testing:
+        message: "
+            ``Albedo Support for ESM-Tools is still in testing phase``. Most of the important
+            modules are already in the environment and many models compile already.
+            However, we cannot ensure that models will run smoothly due to missing
+            environment variables, pool problems, incorrect or not optimal compiler
+            flags... Feel free to try it a report and issue in https://github.com/esm-tools/esm_tools/issues
+            labelling it with the ``albedo`` tag, if things don't work as expected. By
+            running ``esm_tools test-state`` you'll get information of what you can
+            expect to work and what not. Bare in mind that the ESM-Tools configurations
+            specific to Albedo will be changing fast on the following weeks, until
+            Albedo is fully supported. We recommend against using it for production
+            runs.\n\n
+            We kindly ask for your patience and collaboration.\n
+            The ESM-Tools Team
+            "

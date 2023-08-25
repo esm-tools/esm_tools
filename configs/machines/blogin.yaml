@@ -169,11 +169,13 @@ choose_iolibraries:
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netcdf"
+         - "load netcdf/intel/4.7.3"
        # TODO: find the correct libraries and dependencies
        add_export_vars:
          NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
          LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
 
     geomar_libs:
        add_export_vars:

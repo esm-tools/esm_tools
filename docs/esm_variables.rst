@@ -45,15 +45,16 @@ Installation variables
    :header: Key, Description
    :widths: 15, 85
 
-   model,               "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
-   setup_name,          Name of the coupled setup.
-   version,             "Version of the model/setup (one of the available options in the ``available_versions`` list)."
-   available_versions,  List of supported versions of the component or coupled setup.
-   git-repository,      Address of the model's git repository.
-   branch,              Branch from where to clone.
-   destination,         "Name of the folder where the model is downloaded and compiled, in a coupled setup."
-   comp_command,        Command used to compile the component.
-   install_bins,        "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   model,                   "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
+   setup_name,              Name of the coupled setup.
+   version,                 "Version of the model/setup (one of the available options in the ``available_versions`` list)."
+   available_versions,      List of supported versions of the component or coupled setup.
+   git-repository,          Address of the model's git repository.
+   branch,                  Branch from where to clone.
+   destination,             "Name of the folder where the model is downloaded and compiled, in a coupled setup."
+   comp_command,            Command used to compile the component.
+   install_bins,            "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   source_code_permissions, "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
 
 Runtime variables
 -----------------

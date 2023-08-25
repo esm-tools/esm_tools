@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine, Column, Integer, String, Sequence, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
 import os
+
+from sqlalchemy import (Column, DateTime, Integer, Sequence, String,
+                        create_engine)
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # database_file = os.path.dirname(os.path.abspath(__file__)) + "/../database/esm_runscripts.db"
 database_file = os.path.expanduser("~") + "/.esm_tools/esm_runscripts.db"

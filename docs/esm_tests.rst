@@ -117,7 +117,7 @@ Check test status
 As a user, you can check the ``last-state`` status (the online one of the
 ``esm_tests_info`` repo, ``release`` branch) by running::
 
-    esm_tools --test-state
+    esm_tools test-state
 
 This will give you a summary of the state of compilation and running tests for
 different models, in different computers, and also a date of when the latest actual

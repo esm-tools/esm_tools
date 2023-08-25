@@ -93,6 +93,9 @@ choose_computer.name:
         climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
         forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
         mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+    albedo:
+        climate_data_dir: "${pool_dir}/FESOM/hydrography/"
+        mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -138,15 +141,30 @@ choose_resolution:
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_in_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         icb_restart_ISM: iceberg.restart.ISM
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
         icb_restart_ISM: iceberg.restart.ISM
@@ -154,15 +172,34 @@ restart_in_sources:
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-restart_out_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
+        fesom_bin_restart_info: fesom_bin_restart_info
+        fesom_bin_restart: fesom_bin_restart
+
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
@@ -253,6 +290,23 @@ log_sources:
         clock: fesom.clock
         mesh_diag: fesom.mesh.diag.nc
 
+file_movements:
+        fesom_raw_restart_in:
+                all_directions: move
+        fesom_raw_restart_out:
+                all_directions: move
+        fesom_raw_restart_info_in:
+                all_directions: move
+        fesom_raw_restart_info_out:
+                all_directions: move
+        fesom_bin_restart_in:
+                all_directions: move
+        fesom_bin_restart_out:
+                all_directions: move
+        fesom_bin_restart_info_in:
+                all_directions: move
+        fesom_bin_restart_info_out:
+                all_directions: move
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -265,6 +319,12 @@ choose_branchoff:
         false:
                 daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
+                add_restart_in_files:
+                        fesom_raw_restart_info: fesom_raw_restart_info
+                        fesom_raw_restart: fesom_raw_restart
+                        fesom_bin_restart_info: fesom_bin_restart_info
+                        fesom_bin_restart: fesom_bin_restart
+
 
 
 namelist_changes:
@@ -413,9 +473,6 @@ compiletime_environment_changes:
                                 - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
         choose_computer.name:
                 juwels:
                         add_module_actions:

@@ -104,9 +104,11 @@ metadata:
                 'Atmosphericcomponent of the MPI-M earth system model: ECHAM6 <https://doi.org/10.1002/jame.20015>'
         License:
                 Please make sure you have a license to use ECHAM. Otherwise downloading ECHAM will already fail.
-                To use the repository on gitlab.dkrz.de/modular_esm/echam.git, register for the MPI-ESM user forum at 
-                https://mpimet.mpg.de/en/science/modeling-with-icon/code-availability/mpi-esm-users-forum and send a screenshot
-                to either dirk.barbi@awi.de, deniz.ural@awi.de or miguel.andres-martinez@awi.de
+                To use the repository on either gitlab.dkrz.de/modular_esm/echam6.git or gitlab.awi.de/paleodyn/models/echam6.git,
+                please register for the MPI-ESM user forum at https://code.mpimet.mpg.de/projects/mpi-esm-license
+                and send a screenshot of yourself logged in to the forum to either paul.gierz@awi.de, miguel.andres-martinez@awi.de,
+                or nadine.wieters@awi.de. Note also that you can otherwise ignore the instructions on that page, just the registration
+                and login screen shot is the relevant part for obtaining the license.
 
 standalone_model: True
 
@@ -125,7 +127,7 @@ transient_advance_forcing: false
 ocean_resolution: 'GR15'
 disturbance: "1.000001"
 lresume: false
-dataset: "r0007"
+
 
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
@@ -212,9 +214,11 @@ choose_version:
                 wiso_code: true
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
         6.3.04p1:
                 repo_tag: 6.3.04p1
+                dataset: r0007
+        6.3.04p1-recom-awicm:
                 dataset: r0007
         6.3.04p1-paleodyn:
                 repo_tag: 6.3.04p1
@@ -225,7 +229,7 @@ choose_version:
                 dataset: r0007
         6.3.05p2:
                 repo_tag: 6.3.05p2
-                dataset: r0007
+                dataset: r0008
                 nprocrad: "remove_from_namelist"
                 lrad_async: "remove_from_namelist"
         6.3.05p2-foci:
@@ -242,7 +246,7 @@ choose_version:
         6.3.05p2-concurrent_radiation-paleodyn:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -251,6 +255,7 @@ choose_version:
                                         lrestart_from_old: "${lrestart_from_old}"
 
         6.3.05p2-wiso:
+                dataset: r0008
                 wiso_code: true
                 concurrent_radiation_code: true
                 default_output: True
@@ -262,7 +267,7 @@ choose_version:
         6.3.05p2-concurrent_radiation:
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
-                dataset: r0007
+                dataset: r0008
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -282,18 +287,21 @@ choose_version:
 #               lrestart_from_old: false
 
 
+compiletime_environment_changes:
+    choose_computer.name:
+        albedo:
+            add_export_vars:
+                configure_opts: "'--without-regard-for-quality'"
+                FFLAGS: "'-fallow-argument-mismatch -w'"
+                FCFLAGS: "'-fallow-argument-mismatch -w'"
+            # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
+            add_unset_vars:
+              - FFLAGS
+              - FCFLAGS
+
+
 choose_concurrent_radiation_code:
         True:
-                choose_computer.name:
-                    mistral:
-                        compiletime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-                        runtime_environment_changes:
-                            add_export_vars:
-                                NETCDFROOT: "/sw/rhel6-x64/netcdf/netcdf_c-4.3.2-gcc48"
-                                LD_LIBRARY_PATH: "/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
                 add_namelist_changes:
                         namelist.echam:
                                 parctl:
@@ -386,31 +394,50 @@ choose_scenario:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                        MAC-SP: MAC-SP
-
-        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-        # under the choose_scenario_type block
-        ssp585:
-                scenario_type: cmip6
-
-        ssp370:
-                scenario_type: cmip6
-
-        ssp126:
-                scenario_type: cmip6
-
-        ssp245:
-                scenario_type: cmip6
-
-        ssp534os:
-                scenario_type: cmip6
+                        MAC-SP: MAC-SP_hist_scenario
 
         cmip6hist:
                 scenario_type: cmip6
+
+# Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+# under the choose_scenario_type block
+scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
+allow_hist2ssp_transition: False
+choose_scenario_is_ssp:
+    True:
+        scenario_type: cmip6
+        after_2014: "$(( ${start_date!year} > 2014 ))"
+        initial_date_non_ssp: "$((
+            ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
+        ))"
+        choose_initial_date_non_ssp:
+            True:
+                add_error:
+                    "Initial date out of the ssp period":
+                        message: "
+                            You are trying to run a ``ssp`` scenario (``${scenario}``)
+                            with an initial date that does not correspond to a ssp
+                            period (``${initial_date}``). Consider running a historical
+                            scenario until the end of 2014, and then branch off a new
+                            experiment for the ssp period. Alternatively, you can set
+                            ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
+                            against that!)."
+            # Automatic switching of iaero if simulations are allowed to run from
+            # historical to ssp periods
+            False:
+                choose_after_2014:
+                    True:
+                        iaero: 9
+                    False:
+                        iaero: 8
+                add_namelist_changes:
+                    namelist.echam:
+                        radctl:
+                            iaero: "${iaero}"
 
 choose_scenario_type:
         cmip6:

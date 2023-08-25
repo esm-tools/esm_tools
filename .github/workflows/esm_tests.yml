@@ -27,3 +27,7 @@ jobs:
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
         computer: blogin1
+  albedo:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: albedo1

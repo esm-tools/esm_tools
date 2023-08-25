@@ -208,7 +208,7 @@ def print_state_online(info={}):
     """
     Returns the state of the tested models obtained directly from the repository online.
     This method is aimed to be used externally from ``esm_tests`` (i.e. throw the
-    ``esm_tools --test-state`` command).
+    ``esm_tools test-state`` command).
 
     Parameters
     ----------
@@ -217,7 +217,11 @@ def print_state_online(info={}):
         If not provided, defines the ``info`` keys needed.
     """
 
-    url = "https://raw.githubusercontent.com/esm-tools/esm_tests_info/release/state.yaml"
+    if "resources_branch" in info:
+        resources_branch = info["resources_branch"]
+    else:
+        resources_branch = "release"
+    url = f"https://raw.githubusercontent.com/esm-tools/esm_tests_info/{resources_branch}/state.yaml"
     try:
         current_state = urllib.request.urlopen(url)
     except urllib.error.HTTPError:
@@ -261,7 +265,8 @@ def sort_dict(dict_to_sort):
         Dictionary sorted.
     """
     if isinstance(dict_to_sort, dict):
-        dict_to_sort = {key: dict_to_sort[key] for key in sorted(dict_to_sort.keys(), key=lambda x: str(x))}
+        dict_to_sort = {str(key): value for key, value in dict_to_sort.items()}
+        dict_to_sort = {key: dict_to_sort[key] for key in sorted(dict_to_sort.keys())}
         for key, value in dict_to_sort.items():
             dict_to_sort[key] = sort_dict(value)
 
@@ -338,17 +343,28 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
             info, "finished_config", v, this_test_dir
         )
         if len(s_config_yaml) > 0:
-            namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
+            namelists, models = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
             ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
             ldir.sort()
             for f in ldir:
                 # Take the first run directory
                 if "run_" in f:
                     cf_path = f"{this_test_dir}/{f}/work/"
-                    for n in namelists:
-                        if not os.path.isfile(f"{user_info['test_dir']}/{cf_path}/{n}"):
+                    for n, model in zip(namelists, models):
+                        namelist_path = f"{user_info['test_dir']}/{cf_path}/{n}"
+                        if not os.path.isfile(namelist_path):
                             logger.debug(f"'{cf_path}/{n}' does not exist!")
-                        subpaths.append(f"{cf_path}/{n}")
+                        # Is broken link
+                        if os.path.islink(namelist_path) and not os.path.exists(os.readlink(namelist_path)):
+                            path_in_general_config = (
+                                f"{this_test_dir}/config/{model}/{n}_{f.split('_')[-1]}"
+                            )
+                            if os.path.exists(f"{user_info['test_dir']}/{path_in_general_config}"):
+                                subpaths.append(f"{path_in_general_config}")
+                            else:
+                                logger.debug(f"'{cf_path}/{n}' does not exist!")
+                        else:
+                            subpaths.append(f"{cf_path}/{n}")
                     break
     else:
         subpaths = [f"{this_test_dir}/{cfile}"]
@@ -385,12 +401,15 @@ def extract_namelists(s_config_yaml):
     -------
     namelists : list
         List of namelist names associated to this experiment.
+    components : list
+        List of components associated to the namelists (same order as ``namelists``).
     """
     # Read config file
     with open(s_config_yaml, "r") as c:
         config = yaml.load(c, Loader=yaml.FullLoader)
 
     namelists = []
+    components = []
     # Loop through the components to find the namelists
     for component in config.keys():
         namelists_component = config[component].get("namelists", [])
@@ -400,9 +419,11 @@ def extract_namelists(s_config_yaml):
                 [nml in x for x in config_sources.values()]
             ):
                 namelists.append(nml)
+                components.append(component)
 
     # Adds OASIS ``namcouple``
     if "oasis3mct" in config:
         namelists.append("namcouple")
+        components.append("oasis")
 
-    return namelists
+    return namelists, components

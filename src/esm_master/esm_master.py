@@ -88,6 +88,8 @@ def main_flow(parsed_args, target):
         user_task.output()
 
     user_task.output_steps()
+    user_task.validate()
+    user_task.generate_task_script()
 
     if parsed_args.get("check", False):
         # deniz: if the environment variable ESM_MASTER_DEBUG is also set dump
@@ -101,7 +103,6 @@ def main_flow(parsed_args, target):
         print("esm_master: check mode is activated. Not executing the actions above")
         return 0
 
-    user_task.validate()
 
     user_task.execute(ignore_errors)  # env)
 

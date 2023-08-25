@@ -4,7 +4,7 @@ lcurt_stress_surf=.false.
 ldiag_curl_vel3  =.false.
 ldiag_energy     =.false.
 ldiag_salt3D     =.false.
-ldiag_dMOC       =.false.
+ldiag_dMOC       =.true.
 ldiag_DVD        =.false.
 ldiag_forc       =.true.
 /
@@ -37,7 +37,7 @@ io_list =  'sst       ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
            'temp      ',1, 'm', 4,
            'salt      ',1, 'm', 4,
-           'sigma0'   ',1, 'm', 4'
+           'sigma0'   ',1, 'm', 4,
            'N2        ',1, 'y', 4,
            'Kv        ',1, 'y', 4,
            'u         ',1, 'y', 4,

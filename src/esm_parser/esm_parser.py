@@ -262,11 +262,23 @@ def initialize_from_yaml(filepath):
         )
     return user_config
 
+def check_for_empty_components_in_user_config(user_config):
+    for model in list(user_config):
+        if user_config[model] is None or user_config[model] == "" or not user_config[model]:
+            user_note(
+                f"Warning: YAML syntax",
+                f"The component ``{model}`` in your configuration "
+                f"file ``{user_config['general']['runscript_abspath']}`` is empty. "
+                "No further variables are set for this component in your runscript."
+            )
+            del user_config[model]
+    return user_config
 
 def complete_config(user_config):
     if not "general" in user_config:
         user_config["general"] = {}
     user_config["general"]["additional_files"] = []
+    user_config = check_for_empty_components_in_user_config(user_config)
 
     while True:
         for model in list(user_config):

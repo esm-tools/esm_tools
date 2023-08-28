@@ -346,33 +346,12 @@ fesom:
         # Settings for running with REcoM
         choose_general.with_recom:
             True:
-                add_config_sources:
-                    oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
-                    io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
-                remove_namelist_changes.namelist.config: [inout]
-                add_namelist_changes:
-                    namelist.config:
-                        restart_log:
-                            restart_length: "${restart_rate}"
-                            restart_length_unit: "${restart_unit}"
-                    namelist.oce:
-                        oce_tra:
-                            num_tracers: "${num_tracers}"
+                # Set fesom.with_recom: true when general.with_recom: true
+                with_recom: true
                 wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
                 add_coupling_fields:
                     "[[wiso_fields-->FIELD]]":
                         grid: feom
-
-        # use_ciso switch
-        # ---------------
-        # num_tracers only changed if ``with_recom: true``, i.e. indentation)
-                choose_recom.use_ciso:
-                        True:
-                                namelist_ciso_sufix: ".ciso"
-                                num_tracers: 33
-                        False:
-                                namelist_ciso_sufix: ""
-                                num_tracers: 24
 
 #########################################################################################
 

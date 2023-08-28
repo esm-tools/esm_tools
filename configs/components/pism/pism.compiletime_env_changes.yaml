@@ -25,3 +25,12 @@ choose_computer.name:
                 - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
                 - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
                 - "HDF5_ROOT=$HDF5ROOT"
+    albedo:
+        environment_changes:
+            add_export_vars:
+                - "UDUNITS2_ROOT=/albedo/soft/sw/spack-sw/udunits/2.2.28-nzwb4bf/"
+                - "FFTW_ROOT=/albedo/soft/sw/spack-sw/fftw/3.3.10-pj3kzd2/"
+                - "PROJ4_ROOT=/albedo/home/lackerma/.spack/sw/proj/4.9.2-lcmxjw5"
+                - "PETSC_DIR=/albedo/home/lackerma/.spack/sw/petsc/3.17.1-s5b6i2f"
+                - "HDF5_ROOT=/albedo/soft/sw/spack-sw/hdf5/1.12.2-xwuyi5j/"
+                - "GSL_ROOT=/albedo/home/lackerma/.spack/sw/gsl/2.7.1-lrzlyrm"

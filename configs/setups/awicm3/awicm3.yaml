@@ -164,6 +164,25 @@ oifs:
                                                 LECURR: true
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
+                "v3.2":
+                        with_xios: True
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.2
+                        mip: "cmip6"
+                        wam: true
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                                        NAEPHY:
+                                                LECURR: true
+                                        NAERAD:
+                                                NSOLARSPECTRUM: "1"
 
                 "frontiers-xios":
                         with_xios: True
@@ -380,6 +399,12 @@ fesom:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.1":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
+                        add_namelist_changes:
+                                namelist.oce:
+                                        oce_tra:
+                                                surf_relax_s: "${surf_relax_s}"
+                "v3.2":
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.2/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:

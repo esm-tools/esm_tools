@@ -1,0 +1,79 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.1.3"
+    account: "ab0995"
+    compute_time: "08:00:00"
+    initial_date: "1350-01-01"
+    final_date: "1850-01-01"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 25
+    install_esm_tools_branch: 'feat/awicm3.1.3'
+
+computer:
+    mail_type: ALL
+    mail_user: "jan.streffing@awi.de"
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    pool_dir: "/work/ab0246/a270092/input/fesom2/"
+    mesh_dir: "${pool_dir}/core2/"
+    restart_rate: 25
+    restart_unit: "y"
+    restart_first: 25
+    lresume: false
+    time_step: 1800
+    nproc: 768
+    add_namelist_changes:
+        namelist.ice:
+            ice_therm:
+                albi: 0.70
+                albim: 0.50
+        namelist.oce:
+            oce_dyn:
+                k_gm_max: 3000
+                k_gm_rampmax: 40.0
+                k_gm_rampmin: 30
+                scaling_ferreira: true
+                scaling_fesom14: true
+        namelist.tra:
+            tracer_phys:
+                kv0_const: false
+
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: aack
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 8
+    add_namelist_changes:
+        fort.4:
+            NAERAD:
+                LHVOLCA: false
+                LCMIP6: true
+                NAERANT_SCALE: 0
+                CMIP6DATADIR: '/work/ab0246/a270092/input/oifs-43r3/cmip6-data/'
+                NCMIPFIXYR: 1850
+                SSPNAME: 'historical'
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32
+

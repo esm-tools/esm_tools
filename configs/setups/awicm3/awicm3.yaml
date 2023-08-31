@@ -661,6 +661,7 @@ oasis3mct:
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'master':
                         mct_version: 5.0

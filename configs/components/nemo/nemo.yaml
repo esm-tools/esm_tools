@@ -14,6 +14,8 @@ include_models:
 # 
 clean_command: cp cfg.inc ../cfg.txt; cd ../
    ./makenemo -n ${nemo.version} -m ${archfile} clean;
+   rm -r ${nemo.version}/BLD;
+   rm -r ../TOOLS/COMPILE/arch_nemo.fcm; 
    cd ..
 
 comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ; cd ../ ;
@@ -454,7 +456,7 @@ choose_version:
                   cp cfgs/${nemo.version}/work_cfgs.inc cfgs/ref_cfgs.txt;
                   ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; 
                   cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
-    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean  
     archfile: ESMTOOLS_generic_intel
     destination: nemo-${nemo.version}
     install_bins: cfgs/${nemo.version}/BLD/bin/oceanx

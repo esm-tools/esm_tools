@@ -224,8 +224,9 @@ choose_iolibraries:
           # for now: use libraries compiled with older compilers
           intel2022_impi2021:
               add_export_vars:
-                IO_LIB_ROOT:  /home/shkifmsw/sw/HPC_libraries/intel2022.2_impi2021.6_20230719
-              
+                IO_LIB_ROOT:  /home/shkifmsw/sw/HPC_libraries/intel2022.2_impi2021.6_20230815 
+                #IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2022.2_impi2021.6_20230719_save/ 
+                
           intel2019_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811

@@ -192,7 +192,9 @@ if [[ -z $increment ]] ; then
       if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
                         increment=1
                 else
-        increment=$((endmonth - startmonth + 1))
+        # remove leading 0 if it exists. Its fine for 01, 02 etc
+        # but 08 would be interpreted as octal number...
+        increment=$((${endmonth#0} - ${startmonth#0} + 1))
                 fi
         else
       increment=$((endyear - startyear + 1))

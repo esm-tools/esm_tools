@@ -336,7 +336,7 @@ def init_total_workflow(config):
         if not "compute" in config["general"]["workflow"]["subjobs"]:
             config["general"]["workflow"]["subjobs"].update(compute)
         if not "tidy" in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(tidy)    
+            config["general"]["workflow"]["subjobs"].update(tidy)
     if not "last_task_in_queue" in config["general"]["workflow"]:
         config["general"]["workflow"]["last_task_in_queue"] = "tidy"
     if not "first_task_in_queue" in config["general"]["workflow"]:
@@ -350,35 +350,47 @@ def init_total_workflow(config):
 
 def collect_all_workflow_information(config):
 
+    # For each component entry in config (can be a model or a new entry (e.g. 'flows')
     for model in config:
         if "workflow" in config[model]:
             w_config = config[model]["workflow"]
             gw_config = config["general"]["workflow"]
 
+            # looks for entry 'subjob_clusters' in config of each component
             if "subjob_clusters" in w_config:
                 for cluster in w_config["subjob_clusters"]:
+                    # if a cluster is also in the general config, this cluster will be merged together ...
                     if cluster in gw_config["subjob_clusters"]:
                         gw_config["subjob_clusters"][cluster] = merge_if_possible(
                             w_config["subjob_clusters"][cluster],
                             gw_config["subjob_clusters"][cluster],
                         )
+                    # if cluster is not in general config, it will copied into it.
                     else:
                         gw_config["subjob_clusters"][cluster] = copy.deepcopy(
                             w_config["subjob_clusters"][cluster],
                         )
 
+            # looks for entry 'subjobs' in config of each component
             if "subjobs" in w_config:
+                # copies component workflow config to new variable ref_config
                 ref_config = copy.deepcopy(w_config)
+                # ??? for every subjob in ???
                 for subjob in list(copy.deepcopy(w_config["subjobs"])):
 
                     # subjobs (other than clusters) should be model specific
+                    # subjobs that are defined in subjobs of components workflow configs and not in a subjob_cluster are copied to general with suffix of componet entry.
                     gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
                         w_config["subjobs"][subjob]
                     )
+                    # if this copied subjobs is also n general workflow subjobs it will be deleted there
                     if subjob in gw_config["subjobs"]:
                         del gw_config["subjobs"][subjob]
+
                     # make sure that the run_after and run_before refer to that cluster
+                    # for all subjobs now in general workflow
                     for other_subjob in gw_config["subjobs"]:
+                        # sets run_after and run_before to correct subjob???
                         if "run_after" in gw_config["subjobs"][other_subjob]:
                             if (
                                 gw_config["subjobs"][other_subjob]["run_after"]

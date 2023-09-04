@@ -31,6 +31,10 @@
       <domain domain_ref="reduced_gaussian" />
       <axis axis_ref="pressure_levels" />
     </grid>
+    <grid id="reduced_pl_plus" description="3D model grid with more pressure levels" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels_plus" />
+    </grid>
     <grid id="regular_pl" description="3D interpolated regular grid with pressure levels" >
       <domain domain_ref="regular" />
       <axis axis_ref="pressure_levels" />

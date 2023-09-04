@@ -30,7 +30,8 @@ choose_computer.name:
             add_export_vars:
                 - "UDUNITS2_ROOT=/albedo/soft/sw/spack-sw/udunits/2.2.28-nzwb4bf/"
                 - "FFTW_ROOT=/albedo/soft/sw/spack-sw/fftw/3.3.10-pj3kzd2/"
-                - "PROJ4_ROOT=/albedo/home/lackerma/.spack/sw/proj/4.9.2-lcmxjw5"
+                #- "PROJ4_ROOT=/albedo/home/lackerma/.spack/sw/proj/4.9.2-lcmxjw5"
+                - "PROJ_ROOT=/albedo/soft/sw/spack-sw/proj/8.2.1-pq74r7k/"
                 - "PETSC_DIR=/albedo/home/lackerma/.spack/sw/petsc/3.17.1-s5b6i2f"
                 - "HDF5_ROOT=/albedo/soft/sw/spack-sw/hdf5/1.12.2-xwuyi5j/"
-                - "GSL_ROOT=/albedo/home/lackerma/.spack/sw/gsl/2.7.1-lrzlyrm"
+                - "GSL_ROOT=/albedo/soft/sw/spack-sw/gsl/2.7.1-r4x7ty2/" #/albedo/home/lackerma/.spack/sw/gsl/2.7.1-lrzlyrm"

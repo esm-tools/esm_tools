@@ -143,7 +143,6 @@ restart_in_files:
         ice_restart: ice_restart
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
-
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
@@ -166,8 +165,8 @@ restart_in_sources:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart.${parent_date!syear} #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear}
 
 restart_out_files:
         oce_restart: oce_restart
@@ -178,7 +177,6 @@ restart_out_files:
         fesom_raw_restart: fesom_raw_restart
         fesom_bin_restart_info: fesom_bin_restart_info
         fesom_bin_restart: fesom_bin_restart
-
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
@@ -189,8 +187,8 @@ restart_out_in_work:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart #_${start_date!syear} #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM #_${start_date!syear}
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
@@ -201,51 +199,46 @@ restart_out_sources:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: iceberg.restart.${end_date!syear} #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday} #.${parent_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM.${end_date!syear} #_${start_date!syear!smonth!sday}-${end_date!syear!smonth!sday}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        #fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        fesom: "*.fesom.*.nc"
 
 choose_use_icebergs:
         True:
-
             add_restart_in_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-
-            add_restart_out_files:
+            restart_out_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-
+            #restart_in_intermediate:
+            #        icb_restart: iceberg.restart.${parent_date!syear} #${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear} #${start_date!smonth!sday}-${parent_date!syear}${end_date!smonth!sday}
+            #restart_in_targets:
+            #        icb_restart: iceberg.restart.${parent_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #restart_out_targets:
+            #        icb_restart: iceberg.restart.${start_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            #        icb_restart_ISM: iceberg.restart.ISM.${start_date!syear} #!smonth!sday}-${end_date!syear!smonth!sday}
+            
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
 
             add_outdata_sources:
                     buoys_track: "buoys_track.nc"
 
-            add_namelist_changes:
-                    namelist.io:
-                            nml_list:
-                                    io_list(:): ["icb", "1", "m", 4]
-
             choose_use_icesheet_coupling:
                     true:
-                            choose_general.chunk_number:
+                            choose_general.run_number:
                                     1:
                                             iceberg_dir: "${ini_iceberg_dir}"
                                     "*":
                                             iceberg_dir: "${general.experiment_couple_dir}"
-
-                            choose_general.run_number:
-                                    1:
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
-                                    "*":
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
 
                             input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
@@ -256,27 +249,61 @@ choose_use_icebergs:
                     "*":
                             iceberg_dir: "${ini_iceberg_dir}"
 
+            choose_update_icebergs:
+                    true:
+                            add_input_sources:
+                                    longitude: "${iceberg_dir}/LON.dat"
+                                    latitude: "${iceberg_dir}/LAT.dat"
+                                    length: "${iceberg_dir}/LENGTH.dat"
+                                    height: "${iceberg_dir}/HEIGHT.dat"
+                                    scaling: "${iceberg_dir}/SCALING.dat"
+                                    felem: "${iceberg_dir}/FELEM.dat"
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
+                   
+                            input_in_work:
+                                    latitude: "icb_latitude.dat"
+                                    longitude: "icb_longitude.dat"
+                                    length: "icb_length.dat"
+                                    height: "icb_height.dat"
+                                    scaling: "icb_scaling.dat"
+                                    felem: "icb_felem.dat"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
-            input_in_work:
-                    longitude: "icb_longitude.dat"
-                    latitude: "icb_latitude.dat"
-                    length: "icb_length.dat"
-                    height: "icb_height.dat"
-                    scaling: "icb_scaling.dat"
+                            add_input_files:
+                                    latitude: "latitude"
+                                    longitude: "longitude"
+                                    length: "length"
+                                    height: "height"
+                                    scaling: "scaling"
+                                    felem: "felem"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+                    false:
+                            add_input_sources:
+                                    length:    "${iceberg_dir}/icb_length.dat_@YEAR@0101-@YEAR@1231"
+                                    latitude:  "${iceberg_dir}/icb_latitude.dat_@YEAR@0101-@YEAR@1231"
+                                    longitude: "${iceberg_dir}/icb_longitude.dat_@YEAR@0101-@YEAR@1231"
+                                    height:    "${iceberg_dir}/icb_height.dat_@YEAR@0101-@YEAR@1231"
+                                    scaling:   "${iceberg_dir}/icb_scaling.dat_@YEAR@0101-@YEAR@1231"
+                                    felem:   "${iceberg_dir}/icb_felem.dat_@YEAR@0101-@YEAR@1231"
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
+            
+                            input_in_work:
+                                    latitude: "icb_latitude.dat"
+                                    longitude: "icb_longitude.dat"
+                                    length: "icb_length.dat"
+                                    height: "icb_height.dat"
+                                    scaling: "icb_scaling.dat"
+                                    felem: "icb_felem.dat"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
-                    latitude: "latitude"
-                    length: "length"
-                    height: "height"
-                    scaling: "scaling"
+                            add_input_files:
+                                    latitude: "latitude"
+                                    longitude: "longitude"
+                                    length: "length"
+                                    height: "height"
+                                    scaling: "scaling"
+                                    felem: "felem"
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
 log_files:
         clock: clock
@@ -414,6 +441,29 @@ choose_icb_code:
                     use_icesheet_coupling: "${use_icesheet_coupling}"
                     steps_per_ib_step: 8
 
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+                
+                fwf_path: "${general.experiment_couple_dir}" 
+                
+                #choose_echam.hosing_correction:
+                #        true:
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${fwf_path}" 
+        '*':
+                use_landice_water: False
+
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
 choose_currentday:
@@ -452,6 +502,7 @@ config_files:
         io:      io
         cvmix:   cvmix
         icepack: icepack
+        tra:     tra
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -461,6 +512,7 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         cvmix:   "${namelist_dir}/namelist.cvmix"
         icepack: "${namelist_dir}/namelist.icepack"
+        tra:     "${namelist_dir}/namelist.tra"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -488,6 +540,7 @@ config_in_work:
         io:      "namelist.io"
         cvmix:   "namelist.cvmix"
         icepack: "namelist.icepack"
+        tra:     "namelist.tra"
 
 coupling_fields:
         sst_feom:

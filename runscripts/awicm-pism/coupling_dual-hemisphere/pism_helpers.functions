@@ -1,0 +1,104 @@
+#!/usr/bin/ksh
+
+pism_helpers_create_xy_axis() {
+    # Build xy-file from PISM initial file
+    # If we produce input files for PISM, the horizontal axis have to
+    # be the dimension/arrays "x" and "y". These shall hold the grid
+    # dimension as distance and correct meta data. We obtain these
+    # from a PISM initial/restart file.
+    # Since using "ncks" to add these with the wrong numerical type
+    # (eg. float vs double), you could be rediculous wrong
+    # values. Hence we produce two versions, one with "float" and one
+    # with "double" arrays. 
+    # Call: pism_helpers_create_xy_axis PISMInitFile (XY_FileName_double) (XY_FileName_float) (RestartDir)
+    # Christian Rodehacke, AWI, 2018-09-20
+    _pism_init_file=$1
+    _xy_file_double=$2
+    _xy_file_float=$3
+    _restart_dir=$4
+
+    test_file_or_exit $_pism_init_file 11
+
+    _xy_double=${_xy_file_double:-xy_file_double.$(basename $_pism_init_file)}
+    _xy_float=${_xy_file_float:-xy_file_float.$(basename $_pism_init_file)}
+
+    if [ "x${_restart_dir}" != "x" ] ; then
+	_xy_restart_double=${_restart_dir:-.}/${_xy_double}
+	_xy_restart_float=${_restart_dir:-.}/${_xy_float}
+    else
+	_xy_restart_double=${_xy_double}
+	_xy_restart_float=${_xy_float}
+    fi
+
+    echo "                -   xy-files: "
+    echo "                              double          >${_xy_double}<"
+    echo "                              float           >${_xy_float}< "
+    echo "                              extracted from >>${_pism_init_file}<<"
+
+    _flag_compute_xy=0
+    _flag_new_double_file=0
+    _flag_new_float_file=0
+    # If any of the wanted or restart files is missing, we set the flag
+    for _file in $_xy_double $_xy_float $_xy_restart_double $_xy_restart_float ; do
+	test ! -f $_file && _flag_compute_xy=$(( _flag_compute_xy + 1 ))
+    done
+
+    if [ $_flag_compute_xy -gt 0 ] ; then
+	if [ ! -f ${_xy_double} ] ; then
+	    if [ "x${_restart_dir}" != "x" ] ; then
+		# If Restart exists, use it
+		if [ -f ${_xy_restart_double} ] ; then
+		    cp ${_xy_restart_double} ${_xy_double}
+		fi 
+	    fi
+	    if [ ! -f ${_xy_double} ] ; then
+		# xy-file still not present: build it
+		#ncks -v x,y,.mapping ${_pism_init_file} ${_xy_double} && \
+		echo "_pism_init_file = ${_pism_init_file}"
+                echo "_xy_double = ${_xy_double}"
+                ncks -v x,y ${_pism_init_file} ${_xy_double} && \
+		    ncatted \
+		    -a standard_name,x,c,c,"projection_x_coordinate" \
+		    -a standard_name,y,c,c,"projection_y_coordinate" \
+		    -a units,x,c,c,"m" -a axis,x,c,c,"X" \
+		    -a units,y,c,c,"m" -a axis,y,c,c,"Y" \
+		    ${_xy_double}
+		_flag_new_double_file=1
+	    fi
+	fi
+
+	if [ ! -f ${_xy_float} ] ; then
+	    if [ "x${_restart_dir}" != "x" ] ; then
+		# If Restart exists, use it
+		if [ -f ${_xy_restart_float} ] ; then
+		    cp ${_xy_restart_float} ${_xy_float}
+		fi 
+	    fi
+	    if [ ! -f ${_xy_float} ] ; then
+		# xy-file still not present: build it
+		ncdump ${_xy_double} | sed 's/double /float /g' | ncgen -o ${_xy_float}
+		#ncatted \
+		#    -a standard_name,x,c,c,"projection_x_coordinate" \
+		#    -a standard_name,y,c,c,"projection_y_coordinate" \
+		#    -a units,x,c,c,"m" -a axis,x,c,c,"X" \
+		#    -a units,y,c,c,"m" -a axis,y,c,c,"Y" \
+		#    ${_xy_float}
+	    fi
+	fi
+    fi
+
+    if [ "x${_restart_dir}" != "x" ] ; then
+	if [ $_flag_new_double_file -ge 1 ] ; then
+	    add_to $(pwd)/$_xy_double         $_xy_double $_restart_dir
+	fi
+	if [ $_flag_new_float_file -ge 1 ] ; then
+	    add_to $(pwd)/$_xy_float          $_xy_float  $_restart_dir
+	fi
+    fi
+ 
+    unset _pism_init_file _xy_file_double _xy_file_float _restart_dir
+    unset _flag_compute_xy _flag_new_double_file _flag_new_float_file
+    unset _file _restart_xy_double _restart_xy_float _xy_double _xy_float
+}
+
+# -- last line

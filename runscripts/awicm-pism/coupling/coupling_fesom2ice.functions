@@ -3,8 +3,16 @@
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
+    
+    if [ ${MACHINE} == "ollie" ]; then
+        module unload nco
+        module load nco/4.7.5-gcc64
+    fi
 
-    . /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+    module load python3
+    module load cdo
+
+    . ${FUNCTION_PATH}/general_lists.functions
     . ${FUNCTION_PATH}/coupling_general.functions
 
     echo "     Starting coupling_fesom2ice.functions ...."
@@ -285,7 +293,12 @@ function fesom_ice_select_relevant_variables {
 
 function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	# Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+        if [ "${MACHINE}" == "mistral" ]; then
+            module unload python3
+            module load python3
+        fi
         echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"
+        echo ""; echo " *   using python version $(python --version)"
 
 	pyfesom_script=${FUNCTION_PATH:-${FPATH}}/fesom_scalar_array_to_LonLat.py
 	if [ ! -f $pyfesom_script ] ; then
@@ -373,8 +386,6 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
         
         # Several things might be needed for pyfesom. If it isn't installed;
         # get it
-        module unload python
-        module load ${module_python3}
         for required_python_external in xarray joblib cmocean seawater; do
                 python -c "import $required_python_external" \
                         || pip install --user ${required_python_external} \
@@ -394,18 +405,25 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	#
 	# ==> related code is placed at the end of this file
 	#
+        if [ "${MACHINE}" == "ollie" ]; then
+            module unload python3
+            module load miniconda
+            module load proj/5.1.0
+        fi
+        
         variable=temp
         for file in ${fesom1x_file3D_T_list_for_ice} ; do
                 filename=$(basename $file) ; logfile=${filename}.${variable}.log
 		output="${filename%.*}"_goodgrid.nc
 
 		echo -n "     - >${variable}< from ${file}"
-                python3 $pyfesom_script ${FESOM_MESH_SWITCHES} \
+                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
 		    --FESOM_PATH $DATA_DIR_fesom \
 		    --FESOM_VARIABLE $variable \
 		    --FESOM_MESH ${MESH_DIR_fesom} \
 		    --FESOM_YEARS $start_year_couple $end_year_couple \
-                    --FESOM_OUTPUT $output #> $logfile
+                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
+                    --FESOM_OUTPUT $output > $logfile
 		echo " : STILL alive"
 
 		test_file_or_exit $output 6
@@ -423,6 +441,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		    --FESOM_VARIABLE $variable \
 		    --FESOM_MESH ${MESH_DIR_fesom} \
 		    --FESOM_YEARS $start_year_couple $end_year_couple \
+                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		    --FESOM_OUTPUT $output > $logfile
 		echo " : STILL alive"
 
@@ -458,6 +477,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		        --FESOM_OUTPUT $output > $logfile
 		    echo " : STILL alive"
 
@@ -490,6 +510,7 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
 		        --FESOM_OUTPUT $output > $logfile
 		    echo " : STILL alive"
 
@@ -545,12 +566,15 @@ function fesom_ice_concatenate_files {
 	# New cdo versions sometimes do not allow to overwrite files for
 	# "collective" commands. Hence delete existing old output file
 	[[ -f ocean_file_for_ice.nc ]] && rm ocean_file_for_ice.nc
-	${cdo} -s merge \
-	    ${processed_fesom1x_file3D_T_list_for_ice} \
-	    ${processed_fesom1x_file3D_S_list_for_ice} \
-	    ${processed_fesom1x_file2D_list_for_ice} \
-	    ${processed_fesom1x_file2Dstatic_list_for_ice} \
-	    ocean_file_for_ice.nc
+	${cdo} -s ensmean ${processed_fesom1x_file3D_T_list_for_ice} temp.tmp.nc
+	${cdo} -s ensmean ${processed_fesom1x_file3D_S_list_for_ice} salt.tmp.nc
+        ${cdo} -s merge temp.tmp.nc salt.tmp.nc ocean_file_for_ice.nc
+        #${cdo} -s merge \
+	#    ${processed_fesom1x_file3D_T_list_for_ice} \
+	#    ${processed_fesom1x_file3D_S_list_for_ice} \
+	#    ${processed_fesom1x_file2D_list_for_ice} \
+	#    ${processed_fesom1x_file2Dstatic_list_for_ice} \
+	#    ocean_file_for_ice.nc
 
 	_flag_extract_depth=1
 	# Extract depth axis and Clean up temporary files
@@ -608,7 +632,9 @@ function fesom_ice_rename_level2depth_add_depth {
     #
     # Step 1 : rename dimension "level" into "depth"
     #
+    echo $(module list)
     ncrename -d level,depth -v level,depth ${_file_data}
+    #ncrename -d level,depth ${_file_data}
     ncatted -a axis,depth,o,c,'Z' ${_file_data}
 
     #
@@ -631,6 +657,7 @@ function fesom_ice_rename_level2depth_add_depth {
 	else
 	    # As before
 	    ncrename -d level,depth ${_file_depth} ${_file_depth_level}.tmp1
+	    #ncrename -d level,depth ${_file_depth_level}.tmp1
 	    ncatted -a axis,level,d,, \
 		-a axis,depth,c,c,'Z' \
 		${_file_depth_level}.tmp1

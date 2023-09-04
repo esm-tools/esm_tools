@@ -1,0 +1,116 @@
+# PISM YAML DEFAULT CONFIGURATION FILE:
+
+model: pism_sh
+repository: https://github.com/pism/pism.git
+type: ice
+
+standalone_model: True
+
+metadata:
+        Institute: UAF and PIK
+        Description:
+                The Parallel Ice Sheet Model (PISM) is an open source, parallel, high-resolution ice sheet model.
+        Authors: Ed Bueler, Jed Brown, Anders Levermann, Ricarda Winkelmann and many more (uaf-pism@alaska.edu)
+        Publications:
+                - 'Shallow shelf approximation as a "sliding law" in a thermomechanically coupled ice sheet model <https://doi.org/10.1029/2008JF001179>'
+                - 'The Potsdam parallel ice sheet model (PISM-PIK) -  Part 1: Model description <https://doi.org/10.5194/tc-5-715-2011>'
+        License:
+                GPL 3.0
+
+description: |
+        The Parallel Ice Sheet Model (PISM) is an open source, parallel, high-resolution ice sheet model.
+
+license_text: |
+        "GPL 3.0"
+
+available_versions:
+- snowflake0.7
+- snowflake1.0
+- github1.1.4
+- github1.2
+- github1.2.1
+- index1.1
+required_plugins:
+    - "git+https://github.com/esm-tools-plugins/esm_pism"
+choose_version:
+  github1.1.4:
+    branch: v1.1.4
+    git-repository: https://github.com/pism/pism.git
+  github1.2:
+    branch: v1.2
+    git-repository: https://github.com/pism/pism.git
+  github1.2.1:
+    branch: v1.2.1
+    git-repository: https://github.com/pism/pism.git
+  index1.1:
+    branch: Index_dev
+    git-repository: https://github.com/sebhinck/pism-pub
+  snowflake0.7:
+    branch: awi0.7-dev
+    git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
+  snowflake1.0:
+    branch: stable1.0-awi-dev
+    git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
+clean_command: ${defaults.clean_command}
+comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -f\
+  \ $(pwd)/..); cmake \\\n        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \\\n        -DCMAKE_BUILD_TYPE=RelWithDebInfo\
+  \ \\\n        -DPism_BUILD_TYPE=RelWithDebInfo \\\n        -DCMAKE_CXX_COMPILER=$CXX\
+  \ \\\n        -DCMAKE_CXX_FLAGS=\"-O3 -fp-model precise -no-fast-transcendentals -march=native\"\
+  \ \\\n        -DCMAKE_C_COMPILER=$CC  \\\n        -DCMAKE_C_FLAGS=\"-O3 -march=native -fp-model precise\
+  \ -no-fast-transcendentals\" \\\n        -DPETSC_EXECUTABLE_RUNS:BOOL=ON \\\n  \
+  \      -DMPI_C_DIR=\"$I_MPI_ROOT\" \\\n        -DPism_USE_JANSSON:BOOL=NO \\\n \
+  \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=OFF\
+  \ \\\n        -DPism_USE_PROJ4:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
+  \ \\\n        ..; make -j4; make install;\n"
+
+
+executable: pismr
+install_bins: "bin/pismr"
+version: github1.2.1
+domain: "greenland"
+resolution: 20km
+lresume: false
+
+
+model_dir: "${general.esm_master.dir}/pism-${version}"
+setup_dir: "${model_dir}"
+bin_dir: "${setup_dir}/bin"
+pool_dir: "${computer.pool_directories.pool}/pool_pism"
+
+cold_start_file: "${pool_dir}/input/${domain}/pismr_${domain}_${resolution}.nc"
+spinup_file: "/no/default/was/set"
+
+choose_computer.partitions.compute.cores_per_node:
+    "24":
+        nnodes: 4
+        nproca: 96
+        nprocb: 1
+    "36":
+        nnodes: 2
+        nproca: 72
+        nprocb: 1
+    "128":
+        nnodes: 1
+        nproca: 128
+        nprocb: 1
+
+time_step: 100
+job_type: "compute"
+
+bin_files:
+        "pism_bin": "pism_bin"
+bin_sources:
+        "pism_bin": "${bin_dir}/pismr"
+bin_in_work:
+        "pism_bin": "pismr"
+
+solidearth_initialize_method: regrid # either dummy, regrid or first_timestep
+#solidearth_initialize_file: #needed if method is dummy
+
+further_reading:
+    - pism_sh/pism_sh.domains.yaml
+    - pism_sh/pism_sh.compiletime_env_changes.yaml
+    - pism_sh/pism_sh.input_and_restart_files.yaml
+    - pism_sh/pism_sh.outputs.yaml
+    - pism_sh/pism_sh.calendar.yaml
+    - pism_sh/pism_sh.recipes.yaml

@@ -1,0 +1,478 @@
+#!/usr/bin/ksh
+
+
+mecho()
+{
+	mecho_level=${mecho_level:-1}
+	this_level=0
+	mecho_string=""
+	if [[ x"${verbose}" = x1 ]]
+	then
+		while (( $this_level < $mecho_level ))
+		do
+			mecho_string="---"${mecho_string}
+			this_level=$((this_level + 1))
+		done	 
+		echo "${mecho_string}> $@" >> $dumpfile
+	fi
+	unset mecho_string this_level
+}
+
+becho()
+{
+	echo "		$@"
+	mecho "		$@"	
+}
+
+bline()
+{
+	becho "=================================================================="
+}
+
+
+line()
+{
+	echo "		=================================================================="
+}
+
+
+headline()
+{
+	echo; echo
+	echo "		${1}..."
+	line
+}
+
+bheadline()
+{
+	becho; becho
+	becho "		${1}..."
+	bline
+}
+
+
+output_changed_vars()
+{
+	changedvars=`comm -13 <(sort < $DUMP_DIR/oldvars_${ID}_${mecho_level}_$1.txt) <(sort < $DUMP_DIR/newvars_${ID}_${mecho_level}_$1.txt) \
+			 | sed '/LINENO/d' \
+			 | sed '/SECONDS/d' \
+			 | sed '/RANDOM=/d'	`
+	printf '%s\n' "$changedvars" | while IFS= read -r line
+	do
+   		mecho "$line"
+	done
+	unset line changedvars
+}
+
+run_formatted()
+{
+	mecho_level=$((mecho_level + 1))
+	ID=${JOB_ID:-$$}
+	#DUMP_DIR=$WORKING_DIR
+	$set > $DUMP_DIR/oldvars_${ID}_${mecho_level}_$1.txt
+	eval $@
+	$set > $DUMP_DIR/newvars_${ID}_${mecho_level}_$1.txt
+	output_changed_vars $1
+	rm $DUMP_DIR/oldvars_${ID}_${mecho_level}_$1.txt $DUMP_DIR/newvars_${ID}_${mecho_level}_$1.txt
+	mecho_level=$((mecho_level - 1))
+}
+
+call_or_exit()
+{
+	function_exists_or_exit $1
+	run_formatted $@
+}
+
+var_set()
+{
+	varname=$1
+	re='^[0-9]+$'
+
+	eval $varname=\${${varname}:-ERR}
+	eval varvalue=\$${varname}
+
+	if [[ "x${varvalue}" = "xERR" ]]
+	then
+		echo "0"
+	else
+		echo "1"
+	fi
+	unset varname varvalue re
+}
+
+
+
+cond_merge()
+{
+	if [[ -e $2 ]]; then
+		echo "about to merge $1 and $2"
+		cdo merge $1 $2 tempout_cond_merge; mv tempout_cond_merge $2; rm $1
+		echo "done"
+	else
+		mv $1 $2
+	fi
+}
+
+
+
+test_if_set()
+{
+	varname=$1
+	re='^[0-9]+$'
+
+	eval $varname=\${${varname}:-ERR}
+	eval varvalue=\$${varname}
+
+	if [[ "x${varvalue}" = "xERR" ]]
+	then
+		echo "${varname} not set!"
+		exit 42
+	fi
+	unset varname varvalue re
+}
+
+test_if_number()
+{
+	varname=$1
+	re='^[0-9]+$'
+
+	eval varvalue=\$${varname}
+
+	if [[ ! ${varvalue} =~ $re ]] 
+	then
+		echo "${varname} not a number!" 
+		exit 42
+	fi
+	unset varname varvalue re
+}
+
+test_if_set_and_number()
+{
+	test_if_set $1
+	test_if_number $1
+}
+
+function_exists_or_exit()
+{
+	if ! [[ "`type $1 2>/dev/null`" ]]
+	then
+		echo Function $1 not found.
+		exit 1
+	fi
+}
+
+call_if_exists()
+{
+	if [[ "`type $1 2>/dev/null`" ]]
+	then
+		if ! [[ "${@#*pass_down}" = $@ ]]; then
+			mecho Calling $@...
+		fi
+		run_formatted $@
+	fi
+}
+
+calc_date()
+{
+	typeset command="$1"
+	shift
+	command calc_date $command -c 1 "$@"
+	unset command
+}
+
+get_file_names()
+{
+	typeset pattern="$1"
+	shift
+	echo $(printf " $pattern" "$@")
+	unset pattern
+}
+
+time_merge()
+{
+	typeset out="$1"
+	typeset tmp=$(dirname $out)/.$(basename $out)
+	shift
+	cat "$@" > $tmp && mv $tmp $out
+	unset out tmp
+}
+
+
+
+pass_down_vars()
+{
+	searchname=$1
+	replacename=$2
+	mecho Passing down vars from $1 to $2:	
+	list_of_all_vars=`set | awk -v pat="${searchname}\$" ' BEGIN { FS = "=" } ; $1 ~ pat {print $1}'`
+	for variable in	$list_of_all_vars
+	do
+		newvar=`echo $variable | sed s/${searchname}/${replacename}/`
+		eval testvar=\${${newvar}:-ERR}
+		if [[ "x${testvar}" = "xERR" ]]
+		then
+			eval ${newvar}=\$${variable} 
+		fi 
+	done
+	unset list_of_all_vars replacename searchname newvar testvar variable
+}
+
+
+general_execute()
+{
+	call_if_exists general_$1
+
+	call_if_exists ${setup_name}_user_$1
+	call_if_exists ${setup_name}_$1
+	call_if_exists ${setup_name}_USER_$1
+	call_if_exists ${setup_name}_pass_down
+
+	for model in $coupled_setup_component_list
+	do
+		call_if_exists ${model}_user_$1
+		call_if_exists ${model}_$1
+		call_if_exists ${model}_USER_$1
+		call_if_exists ${model}_pass_down
+	done
+}
+
+
+double_loop() {
+
+	nolastbit=0
+	critsize=10000	
+        verbose=0 # [0,1,2]; only debuggin; must equal 0 for model run
+    
+	template=$1
+    if [[ "x$verbose" == "x1" ]]; then
+        echo "template=$template"
+    fi
+	len_temp=`printf '%s' "$template" | awk '{ print length($0) }'`
+    if [[ $verbose = 1 ]]; then
+        echo "len_temp=$len_temp"
+    fi
+
+	location1=`awk -v a="${template}" -v b="SUBSTREAM1" 'BEGIN{print index(a,b)}'`
+	location2=`awk -v a="${template}" -v b="SUBSTREAM2" 'BEGIN{print index(a,b)}'`
+    if [[ $verbose = 1 ]]; then
+        echo "location1=$location1"
+    fi
+    if [[ $verbose = 1 ]]; then
+        echo "location2=$location2"
+    fi
+        
+	if [[ $location1 -lt $location2 ]]; then
+		loc1=$location1
+		loc2=$location2
+	else
+		loc1=$location2
+		loc2=$location1
+	fi
+    if [[ $verbose = 1 ]]; then
+        echo "loc1=$loc1"
+    fi
+    if [[ $verbose = 1 ]]; then
+        echo "loc2=$loc2"
+    fi
+
+	start_pre=0
+	len_pre=$(( loc1 - 1 ))
+    if [[ $verbose = 1 ]]; then
+        echo "len_pre=$len_pre"
+    fi
+	prefix=`printf '%s' "$template" | awk -v start="$start_pre" -v len="$len_pre" '{print substr ($0, start, len)}'`
+    if [[ $verbose = 1 ]]; then
+        echo "prefix=$prefix"
+    fi
+
+	start_mid=$(( loc1 + 10 ))
+    if [[ $verbose = 1 ]]; then
+        echo "start_mid=$start_mid"
+    fi
+	len_mid=$(( loc2 - start_mid ))
+    if [[ $verbose = 1 ]]; then
+        echo "len_mid=$len_mid"
+    fi
+	middle=`printf '%s' "$template" | awk -v start="$start_mid" -v len="$len_mid" '{print substr ($0, start, len)}'`
+    if [[ $verbose = 1 ]]; then
+        echo "middle=$middle"
+    fi
+
+	start_end=$((loc2 + 10))
+    if [[ $verbose = 1 ]]; then
+        echo "start_end=$start_end"
+    fi
+	len_end=$((len_temp - start_end + 1))
+    if [[ $verbose = 1 ]]; then
+        echo "len_end=$len_end"
+    fi
+	lastbit=`printf '%s' "$template" | awk -v start="$start_end" -v len="$len_end" '{print substr ($0, start, len)}'`
+    if [[ $verbose = 1 ]]; then
+        echo "lastbit=$lastbit"
+    fi
+	if [[ "x${lastbit}" == "x" ]]; then
+		nolastbit=1
+	fi
+    if [[ $verbose = 1 ]]; then
+        echo "nolastbit=$nolastbit"
+    fi
+
+	substreams1=""; substreams2=""; list_of_files=""
+	firstline=1
+
+	searchtemplate="`echo $template | sed 's/SUBSTREAM1/*/' | sed 's/SUBSTREAM2/*/' `"
+    if [[ $verbose = 1 ]]; then  
+        echo "searchtemplate=$searchtemplate"
+        $(ls $searchtemplate)
+    fi
+    if files=$(ls $searchtemplate 2>/dev/null); then
+        for file in $files; do
+            if [[ $verbose = 1 ]]; then
+                echo "file     =$file"
+            fi
+			len_file=`printf '%s' "$file" | awk '{ print length($0) }'`
+            if [[ $verbose = 1 ]]; then
+                echo "len_file=$len_file"
+            fi
+
+            file_tmp=${file:$len_pre:$len_file}
+            if [[ $verbose = 1 ]]; then
+                echo "file_tmp=$file_tmp"
+            fi
+			start_mid=`awk -v a="$file_tmp" -v b="${middle}" 'BEGIN{print index(a,b)}'`
+            if [[ $verbose = 1 ]]; then
+                echo "start_mid=$start_mid"
+            fi
+            start_mid=$(( start_mid + len_pre ))
+            if [[ $verbose = 1 ]]; then
+                echo "start_mid=$start_mid"
+            fi
+			if [[ "${nolastbit}" == 0 ]]; then
+				start_end=`awk -v a="$file" -v b="${lastbit}" 'BEGIN{print index(a,b)}'`
+			else
+				start_end=$(( len_file + 1 ))
+			fi
+            if [[ $verbose = 1 ]]; then
+                echo "start_end=$start_end"
+            fi
+
+			sub1_start=$loc1
+            if [[ $verbose = 1 ]]; then
+                echo "sub1_start=$sub1_start"
+            fi
+			sub1_len=$(( start_mid - sub1_start ))
+            if [[ $verbose = 1 ]]; then
+                echo "sub1_len=$sub1_len"
+            fi
+			sub1=`printf '%s' "$file" | awk -v start="${sub1_start}" -v len="${sub1_len}" '{print substr ($0, start, len)}'`
+            if [[ $verbose = 1 ]]; then
+                echo "sub1=$sub1"
+            fi
+
+			sub2_start=$((start_mid + len_mid ))
+            if [[ $verbose = 1 ]]; then
+                echo "sub2_start=$sub2_start"
+            fi
+			sub2_len=$((start_end - sub2_start))
+            if [[ $verbose = 1 ]]; then
+                echo "sub2_len=$sub2_len"
+            fi
+			sub2=`printf '%s' "$file" | awk -v start="${sub2_start}" -v len="${sub2_len}" '{print substr ($0, start, len)}'`
+            if [[ $verbose = 1 ]]; then
+                echo "sub2=$sub2"
+            fi
+
+			if [[ $location1 -lt $location2 ]]; then
+				substream1=${sub1}
+				substream2=${sub2}
+			else
+				substream1=${sub2}
+				substream2=${sub1}
+			fi
+            if [[ $verbose = 1 ]]; then
+                echo "substream1=$substream1"
+            fi
+            if [[ $verbose = 1 ]]; then
+                echo "substream2=$substream2"
+            fi
+
+			found=0	
+			for stream in $substreams1; do
+                if [[ $verbose = 1 ]]; then
+                    echo "prefix=$prefix"
+                fi
+				if [[ "x${stream}" = "x${substream1}" ]]; then
+                                    found=1
+                                fi
+			done
+			if [[ "x$found" = "x0" ]]; then
+                            substreams1="${substreams1} $substream1"
+                        fi
+            if [[ $verbose = 1 ]]; then
+                echo "substreams1=$substreams1"
+            fi
+			found=0	
+			for stream in $substreams2; do
+                if [[ $verbose = 1 ]]; then
+                    echo "stream=$stream"
+                fi
+				if [[ "x${stream}" = "x${substream2}" ]]; then
+                                    found=1
+                                fi
+			done
+			if [[ "x$found" = "x0" ]]; then
+                            substreams2="${substreams2} $substream2"
+                        fi
+            if [[ $verbose = 1 ]]; then
+                echo "substreams2=$substreams2"
+            fi
+		done
+	
+		for substream1 in $substreams1; do
+            if [[ $verbose = 2 ]]; then
+                echo "substream1=$substream1"
+            fi
+			for substream2 in $substreams2; do
+                if [[ $verbose = 2 ]]; then
+                    echo "substream2=$substream2"
+                fi
+				file=`echo $template | sed "s/SUBSTREAM1/${substream1}/" | sed "s/SUBSTREAM2/${substream2}/" `
+                if [[ $verbose = 2 ]]; then
+                    echo "file=$file"
+                fi
+				if found=$(ls $file 2>/dev/null); then
+					filesize=$(stat -c%s "$file")
+					if [[ ("$filesize" > "$critsize") ]]; then 
+                        if [[ "x$firstline" = "x1" ]]; then
+                            list_of_files=$(printf "$file $substream1 $substream2")
+                            just_the_files=$(printf "$file")
+                            just_the_substreams1=$(printf "$substream1")
+                            just_the_substreams2=$(printf "$substream2")
+                            firstline=0
+                        else
+                            list_of_files=$(printf "$list_of_files\n $file $substream1 $substream2")
+                            just_the_files=$(printf "$just_the_files\n $file")
+                            just_the_substreams1=$(printf "$just_the_substreams1\n $substream1")
+                            just_the_substreams2=$(printf "$just_the_substreams1\n $substream2")
+                        fi
+					fi
+				fi
+			done
+		done
+	fi
+	if [[ "${firstline}" = "1" ]]; then
+	    echo "firstline=$firstline exit"
+             exit 21
+	else
+		printf "$list_of_files"
+	fi
+}		
+
+forall_models_and_filetypes()
+{
+	for model in ${setup_name} $coupled_setup_component_list; do
+		for filetype in $autofiletypes; do
+			call_if_exists $@ $model ${filetype}
+		done
+	done
+}

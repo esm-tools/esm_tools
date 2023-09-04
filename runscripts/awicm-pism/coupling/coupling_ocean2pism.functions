@@ -3,6 +3,15 @@
 function ocean2pism {
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
+    if [ "$MACHINE" == "ollie" ]; then
+        module unload python3
+        module load miniconda
+    elif [ "$MACHINE" == "mistral" ]; then
+        module load defaults
+#    elif [ "$MACHINE" == "levante" ]; then
+#        module load cdo
+    fi
+    echo $(module list)
     . ${FUNCTION_PATH}/coupling_general.functions
     . ${FUNCTION_PATH}/general_lists.functions
 
@@ -173,7 +182,7 @@ function ocean2pism {
             exit 3
     esac
 
-    iterative_coupling_ocean_pism_set_options
+    #iterative_coupling_ocean_pism_set_options
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
 

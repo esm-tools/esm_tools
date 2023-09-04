@@ -33,7 +33,7 @@ config_sources:
 
 # normally, except awicm on ollie :-(((
 no_dynveg_file_ending: "_no-dynveg"
-dynveg_file_ending: "_dynveg"
+dynveg_file_ending: "" #_dynveg"
 
 choose_version:
         # 3.20p1 is used within FOCI, currently only configured to run WITH
@@ -185,6 +185,16 @@ choose_version:
 
                         cmip6hist:
                                 scenario_type: cmip6
+                choose_general.iterative_coupling:
+                        True:
+                                choose_general.chunk_number:
+                                        1:
+                                                jsbach: jsbach
+                                        "*":
+                                                add_input_files:
+                                                        jsbach: jsbach_ismc
+                        "*":
+                                jsbach: jsbach 
 
         "3.10":
                 dataset: r0007
@@ -330,7 +340,6 @@ forcing_in_work:
         "a_nd_file": "a_nd_file.nc"
         "lightning": "lightning.nc"
         "popdens": "population_density.nc"
-        # Naming based upon: https://gitlab.awi.de/paleodyn/Models/echam6/-/blob/6.3.05p2-awiesm-2.1/src/src_jsbach3/mo_cbal_landcover_change.f90#L3050 
         "LU" : "landuseHarvest.@YEAR@.nc"
         "Ndepo": "Ndepo.@YEAR@.nc"
         "LU_trans": "landuseTransitions.@YEAR@.nc"
@@ -418,6 +427,12 @@ restart_out_in_work:
 
 namelists:
         - "namelist.jsbach"
+
+namelist_changes:
+        namelist.jsbach:
+                hydrology_ctl:
+                        lgfw: "${echam.lgfw}"
+
 
 further_reading:
         - jsbach/jsbach.inherit.yaml

@@ -1,6 +1,7 @@
 #!/usr/bin/ksh
 
-. /home/ollie/lackerma/esm-master/esm-runscripts/functions/all/general_lists.functions
+module load nco
+. ${FUNCTION_PATH}/general_lists.functions
 
 cdo=cdo
 

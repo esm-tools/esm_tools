@@ -346,7 +346,7 @@ class Namelist:
 
                 try:
                     forcing_table = pd.read_csv(
-                        config["echam"]["transient_forcing_table"], sep=";", index_col=0
+                        config["echam"]["transient_forcing_table"], sep=";", index_col=0, header=None, 
                     )
                     co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
                         config["general"]["current_date"].year
@@ -552,24 +552,27 @@ class Namelist:
             icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
             # Determine if icesheet coupling is enabled:
             if config["fesom"].get("use_icesheet_coupling", False):
+                print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                 icebergs["use_icesheet_coupling"] = True
                 if os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
+                    config["fesom"]["input_sources"]["num_non_melted_icb_file"]
                 ):
+                    print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                     with open(
-                        config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
+                        config["fesom"]["input_sources"]["num_non_melted_icb_file"]
+                        #config["fesom"]["iceberg_dir"] + "/num_non_melted_icb_file"
                     ) as f:
                         ib_num_old = [
                             int(line.strip()) for line in f.readlines() if line.strip()
                         ][0]
-                elif config["general"].get("chunk_number", 0) == 1:
+                elif config["general"]["run_number"] == 1:
                     ib_num_old = 0
                 else:
                     print("Something went wrong! Continue without old icebergs.")
                     ib_num_old = 0
 
                 print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
+                ib_num_new = sum(1 for line in open(config["fesom"]["input_sources"].get("length")))
                 icebergs["ib_num"] = ib_num_old + ib_num_new
                 nml["icebergs"] = icebergs
         return config

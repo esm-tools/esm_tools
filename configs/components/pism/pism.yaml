@@ -90,6 +90,11 @@ choose_computer.partitions.compute.cores_per_node:
         nnodes: 2
         nproca: 72
         nprocb: 1
+     # Settings for DKRZ's Levante
+    128:
+        nnodes: 1
+        nproca: 128
+        nprocb: 1
 
 
 time_step: 100

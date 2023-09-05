@@ -215,6 +215,9 @@ ic_atm2pism_regrid_dyn_downscale() {
     ic_atm2pism_regrid_dyn_downscale_TOAshortwave
     ic_atm2pism_regrid_dyn_downscale_humidity
     ic_atm2pism_regrid_dyn_downscale_emissivity
+    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+        ic_atm2pism_regrid_dyn_downscale_wind
+    fi
     ic_atm2pism_regrid_dyn_downscale_cloud_cover
     ic_atm2pism_regrid_dyn_downscale_transmissivity
     
@@ -248,6 +251,9 @@ ic_atm2pism_regrid_downscale() {
     ic_atm2pism_regrid_downscale_shortwave_downward_radiation
     ic_atm2pism_regrid_downscale_TOAshortwave
     ic_atm2pism_regrid_downscale_humidity
+    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+        ic_atm2pism_regrid_downscale_wind
+    fi
     ic_atm2pism_regrid_downscale_emissivity
     ic_atm2pism_regrid_downscale_cloud_cover
     ic_atm2pism_regrid_downscale_transmissivity
@@ -269,6 +275,9 @@ ic_atm2pism_regrid_interpolate() {
     ic_atm2pism_regrid_interpolate_shortwave_downward_radiation
     ic_atm2pism_regrid_interpolate_TOAshortwave
     ic_atm2pism_regrid_interpolate_humidity
+    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+        ic_atm2pism_regrid_interpolate_wind
+    fi
     ic_atm2pism_regrid_interpolate_emissivity
     ic_atm2pism_regrid_interpolate_cloud_cover
     ic_atm2pism_regrid_interpolate_transmissivity
@@ -289,6 +298,9 @@ ic_atm2pism_regrid_remap() {
     ic_atm2pism_regrid_remap_shortwave_downward_radiation
     ic_atm2pism_regrid_remap_TOAshortwave
     ic_atm2pism_regrid_remap_humidity
+    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+        ic_atm2pism_regrid_remap_wind
+    fi
     ic_atm2pism_regrid_remap_emissivity
     ic_atm2pism_regrid_remap_cloud_cover
     ic_atm2pism_regrid_remap_transmissivity
@@ -405,6 +417,7 @@ ic_atm2pism_prepare_clean_missing_values() {
 
     missing_value_filler=0
     variables_in_atmosphere_file_for_ice=$(cdo -s vardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk '{print $2}')
+    echo "LA DEBUG: variables_in_atmosphere_file_for_ice=${variables_in_atmosphere_file_for_ice}"
     cdo -s splitvar ${COUPLE_DIR}/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice_
     for var in ${variables_in_atmosphere_file_for_ice}; do
         current_min=$(cdo -s \
@@ -438,6 +451,7 @@ ic_atm2pism_prepare_clean_missing_values() {
             | awk '{print $NF}')
        echo "number_of_missing_values = ${number_of_missing_values}"
        if [ "x$number_of_missing_values" != "x0" ]; then
+            echo "LA DEBUG: var=${var}"
             echo -e "\t\t!!! ${RED}W A R N I N G${NOCOLOR}: The variable ${var} has ${number_of_missing_values} missing values."
             echo -e "\t\t!!! ${RED}W A R N I N G${NOCOLOR}: These are being set to $missing_value_filler"
             cdo -s \
@@ -558,6 +572,11 @@ ic_atm2pism_regrid_dyn_downscale_emissivity() {
         echo""; echo -e "\t\t*   downscaling atm. emissivity"
         echo -e "\t\t-   falling back to bilinear interpolation for LW radiation!"
         mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_emissivity}.nc ${COUPLE_DIR}/emissivity.nc
+}
+ic_atm2pism_regrid_dyn_downscale_wind() {
+        echo""; echo -e "\t\t*   downscaling wind velocities"
+        echo -e "\t\t-   falling back to bilinear interpolation for wind velocities!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_wind}.nc ${COUPLE_DIR}/uv.nc
 }
 ic_atm2pism_regrid_dyn_downscale_cloud_cover() {
         echo""; echo -e "\t\t*   downscaling cloud cover"
@@ -866,6 +885,11 @@ ic_atm2pism_regrid_downscale_emissivity() {
         echo -e "\t\t-   falling back to bilinear interpolation!"
         mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_emissivity}.nc ${COUPLE_DIR}/emissivity.nc
 }
+ic_atm2pism_regrid_downscale_wind() {
+        echo""; echo -e "\t\t*   downscaling wind"
+        echo -e "\t\t-   falling back to bilinear interpolation!"
+        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_wind}.nc ${COUPLE_DIR}/uv.nc
+}
 ic_atm2pism_regrid_downscale_cloud_cover() {
         echo""; echo -e "\t\t*   downscaling cloud cover"
         echo -e "\t\t-   falling back to bilinear interpolation for cloud cover!"
@@ -979,6 +1003,14 @@ ic_atm2pism_regrid_interpolate_emissivity() {
                 ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
                 ${COUPLE_DIR}/emissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 }
+ic_atm2pism_regrid_interpolate_wind() {
+        echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapbil,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_wind} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/uv.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+}
 
 ic_atm2pism_regrid_interpolate_humidity() {
         echo ""; echo -e "\t\t* Regridding from atmosphere_file_for_ice.nc"
@@ -1082,6 +1114,14 @@ ic_atm2pism_regrid_remap_emissivity() {
                 -selvar,${atmosphere_name_emissivity} \
                 ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
                 ${COUPLE_DIR}/emissivity.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+} 
+ic_atm2pism_regrid_remap_wind() {
+        echo ""; echo -e "\t\t* Regridding wind velocity from atmosphere_file_for_ice.nc"
+        ${cdo} -f nc \
+                -remapcon,${COUPLE_DIR}/ice.griddes \
+                -selvar,${atmosphere_name_wind} \
+                ${COUPLE_DIR}/atmosphere_file_for_ice.nc \
+                ${COUPLE_DIR}/uv.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 } 
 ic_atm2pism_regrid_remap_humidity() {
         echo ""; echo -e "\t\t* Regridding TOA shortwave radiation from atmosphere_file_for_ice.nc"
@@ -1451,18 +1491,34 @@ ic_atm2debm_ablation_debm_make_forcing_set_longwave_units() {
 
 ic_atm2debm_ablation_debm_make_forcing_merge_preliminary_files() {
         echo -e "\t\t-   merging together atmospheric temperature, precip, cloud cover, SW and LW radiation"
-        $cdo -s -O \
-                -merge \
-                ${COUPLE_DIR}/temperature.nc \
-                ${COUPLE_DIR}/precipitation.nc \
-                ${COUPLE_DIR}/cloud_cover.nc \
-                ${COUPLE_DIR}/shortwave_down.nc \
-                ${COUPLE_DIR}/TOAshortwave.nc \
-	        ${COUPLE_DIR}/emissivity.nc \
-	        ${COUPLE_DIR}/transmissivity.nc \
-                ${COUPLE_DIR}/humidity.nc \
-                ${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
-                2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+                $cdo -s -O \
+                        -merge \
+                        ${COUPLE_DIR}/temperature.nc \
+                        ${COUPLE_DIR}/precipitation.nc \
+                        ${COUPLE_DIR}/cloud_cover.nc \
+                        ${COUPLE_DIR}/shortwave_down.nc \
+                        ${COUPLE_DIR}/TOAshortwave.nc \
+	                ${COUPLE_DIR}/emissivity.nc \
+	                ${COUPLE_DIR}/transmissivity.nc \
+                        ${COUPLE_DIR}/humidity.nc \
+                        ${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+                        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        #${COUPLE_DIR}/uv.nc \
+        else
+                $cdo -s -O \
+                        -merge \
+                        ${COUPLE_DIR}/temperature.nc \
+                        ${COUPLE_DIR}/precipitation.nc \
+                        ${COUPLE_DIR}/cloud_cover.nc \
+                        ${COUPLE_DIR}/shortwave_down.nc \
+                        ${COUPLE_DIR}/TOAshortwave.nc \
+	                ${COUPLE_DIR}/emissivity.nc \
+	                ${COUPLE_DIR}/transmissivity.nc \
+                        ${COUPLE_DIR}/humidity.nc \
+                        ${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+                        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        fi
         echo -e "\t\t-   UKK  input_file_for_debm_" ${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}
                 #${COUPLE_DIR}/temperature_below_firn.nc \
 }
@@ -1507,7 +1563,7 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
         # Plus ten points for Shan: variable names are actually variable. Sortof...
         # UKK Paul, sometimes I don't understand you
 
-if [ "x${DEBM_BETA}"=="x-1" ]; then
+if [[ "x${DEBM_BETA}" == "x999" ]]; then
         cat -> ${COUPLE_DIR}/namelist.debm << EOF
 ! This is the namelist file for model general configuration
 
@@ -1534,6 +1590,52 @@ shortwave_radiation_TOA_varname='TOAswd'
 cloud_cover_varname='cc'
 emissivity_varname='emiss'
 transmissivity_varname='tau'
+mapping_varname='thk'
+longitude_varname='lon'
+latitude_varname='lat'
+time_varname='time'
+
+hydmth_str = 10      ! the beginning of the hydrological year, also start month for snow height integration
+                  ! October for Northern Hemisphere
+                  ! April Southern Hemisphere
+stddev=3.5        ! constant standard deviation
+obliquity=${obliquity_value}
+cloud_bias=0.155  ! cloud bias
+Ans    = .845     ! Albedo for new snow
+Ads    = .73      ! Albedo for dry snow
+Aws    = .55      ! Albedo for wet snow
+tau_cs = .75      ! expected clear sky transmissivity
+residual    = 0        ! residual heat flux (e.g. due to flux into the ice sheet
+/
+EOF
+elif [[ "x${DEBM_BETA}" == "xWIND" ]]; then
+        cat -> ${COUPLE_DIR}/namelist.debm << EOF
+! This is the namelist file for model general configuration
+
+&runctl
+lresume=.false.      ! if restart, read snow height from 'restart_debm.nc'
+                     ! .false. by default
+use_shortwave_radiation_TOA=.true.  ! if incorporate top incoming shortwave
+use_mask=.false.     ! ice mask
+debug_switch=.true. ! debug option
+                     ! .false. by default
+debug_lon=241        ! if debug_switch=.true.
+debug_lat=107        ! debug grid point(debug_lon,debug_lat,debug_mon,debug_year)
+debug_mon=7         ! will be print during simulation
+debug_year=1
+/
+
+&debm
+filename_in='${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc'
+
+precipitation_varname='precipitation'
+temperature_varname='air_temp'
+shortwave_radiation_downward_varname='swd'
+shortwave_radiation_TOA_varname='TOAswd'
+cloud_cover_varname='cc'
+emissivity_varname='emiss'
+transmissivity_varname='tau'
+windvelocity_varname='uv'
 mapping_varname='thk'
 longitude_varname='lon'
 latitude_varname='lat'
@@ -1837,7 +1939,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         cdo -s -lec,3 mask.nc tmp 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
         mv tmp ${mask_file}
 
-        if [ "x${DEBM_BETA}"=="x-1" ]; then
+        if [[ "x${DEBM_BETA}" == "x999" ]]; then
                 # apply mask
                 #for var in SNH ME SMB RZ A air_temp; do
                 for var in SNH ME SMB RZ A tsurf; do

@@ -107,18 +107,20 @@ grid_name: icon_grid_${grid_id}_${grid_refinement}_${grid_label}
 # time step (4min), ICON uses the http://en.wikipedia.org/wiki/ISO_8601 standard
 # for time stamps and time periods
 modelTimeStep: PT4M 
+radTimeStep: PT60M
 
 # restart intervals
-checkpoint_interval: P01M
-restart_interval: P01M
+checkpoint_interval: P01Y
+restart_interval: P01Y
 
 # output intervals
-output_interval: P01D
+output_interval: P01M
 # always use a file interval >> restart_interval as a new output file is 
 # created upon each restart
 file_interval: P50Y 
 # instant ("") or mean/max/min/acc over output_interval
 # TODO: check if precip is still accumulated or really averaged
+# TODO: does nothing at the moment
 operation: mean
 #
 # JSBACH settings
@@ -197,6 +199,9 @@ namelist_changes:
          restart_filename: ${expid}_restart_atm_<rsttime>.mfr
       aes_phy_nml:
          aes_phy_config(1)%llake: ${llake}
+         aes_phy_config(1)%dt_rad: ${radTimeStep} 
+         aes_phy_config(1)%dt_vdf: ${modelTimeStep} 
+         aes_phy_config(1)%dt_mig: ${modelTimeStep}
       aes_rad_nml:
          aes_rad_config(1)%irad_o3: ${with_ozone} 
       output_nml:

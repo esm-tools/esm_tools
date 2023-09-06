@@ -936,14 +936,15 @@ def copy_files(config, filetypes, source, target):
                 sourceblock = config[model][filetype + "_" + text_source]
                 targetblock = config[model][filetype + "_" + text_target]
                 for category in sourceblock:
-                    movement_method = get_method(
-                        get_movement(config, model, category, filetype, source, target)
-                    )
                     file_source = os.path.normpath(sourceblock[category])
                     file_target = os.path.normpath(targetblock[category])
+                    movement_method = get_method(
+                        get_movement(config, model, category, filetype, source, target),
+                        os.path.isdir(file_source)
+                    )
                     if config["general"]["verbose"]:
                         print(flush=True)
-                        print(f"::: copying file category: {category}")
+                        print(f"::: processing file category: {category}")
                         print(f"- source: {file_source}", flush=True)
                         print(f"- target: {file_target}", flush=True)
                         helpers.print_datetime(config)
@@ -983,11 +984,10 @@ def copy_files(config, filetypes, source, target):
                                     helpers.print_datetime(config)
                                 continue
                             movement_method(file_source, file_target)
-                            # shutil.copy2(file_source, file_target)
                             successful_files.append(file_source)
                         except IOError:
                             print(
-                                f"Could not copy {file_source} to {file_target} for unknown reasons.",
+                                f"Could not {movement_method.__name__} {file_source} to {file_target}: IOError message: {e}",
                                 flush=True,
                             )
                             helpers.print_datetime(config)
@@ -1018,9 +1018,9 @@ def copy_files(config, filetypes, source, target):
                                 continue
                             movement_method(file_source, file_target)
                             successful_files.append(file_source)
-                        except IOError:
+                        except IOError as e:
                             print(
-                                f"Could not copy/move/link directory {file_source} to {file_target} for unknown reasons.",
+                                f"Could not {movement_method.__name__} directory {file_source} to {file_target}: IOError message: {e}",
                                 flush=True,
                             )
                             helpers.print_datetime(config)
@@ -1177,9 +1177,12 @@ def complete_one_file_movement(config, model, filetype, movement, movetype):
     return config
 
 
-def get_method(movement):
+def get_method(movement,isdir=False):
     if movement == "copy":
-        return shutil.copy2
+        if isdir:
+            return shutil.copytree
+        else:
+            return shutil.copy2
     elif movement == "link":
         return os.symlink
     elif movement == "move":

@@ -3,6 +3,13 @@ import esm_parser
 
 
 def skip_cluster(cluster, config):
+    """
+    Arguments:
+        cluster
+        config
+    Returns:
+        True or False
+    """
     gw_config = config["general"]["workflow"]
     clusterconf = gw_config["subjob_clusters"][cluster]
 
@@ -37,7 +44,14 @@ def skip_cluster(cluster, config):
 
 
 def assemble_workflow(config):
-    #
+    """
+    Assembles the workflow tasks from the runscript.
+
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     config = init_total_workflow(config)
     config = collect_all_workflow_information(config)
     config = complete_clusters(config)
@@ -56,11 +70,25 @@ def assemble_workflow(config):
 
 
 def display_nicely(config):
+    """
+    Pretty prints the workflow configuration assembled in config["general"].
+
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     esm_parser.pprint_config(config["general"]["workflow"])
     return config
 
 
 def prepend_newrun_job(config):
+    """
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     gw_config = config["general"]["workflow"]
     first_cluster_name = gw_config["first_task_in_queue"]
     first_cluster = gw_config["subjob_clusters"][first_cluster_name]
@@ -103,10 +131,14 @@ def prepend_newrun_job(config):
 
     return config
 
-    #
-
 
 def order_clusters(config):
+    """
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     gw_config = config["general"]["workflow"]
 
     for subjob_cluster in gw_config["subjob_clusters"]:
@@ -190,6 +222,12 @@ def order_clusters(config):
 
 
 def complete_clusters(config):
+    """
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     gw_config = config["general"]["workflow"]
 
     # First, complete the matching subjobs <-> clusters
@@ -272,6 +310,16 @@ def complete_clusters(config):
 
 
 def merge_single_entry_if_possible(entry, sourceconf, targetconf):
+    """
+    Merges a dictionary entry into a target dictionary that has he same key.
+
+    Arguments:
+        entry -- dictionary key
+        sourceconf -- dictionary
+        targetconf -- dictionary
+    Returns:
+        targetconf
+    """
     if entry in sourceconf:
         if entry in targetconf and not sourceconf[entry] == targetconf[entry]:
             print(f"Mismatch found in {entry} for cluster {targetconf}")
@@ -281,7 +329,14 @@ def merge_single_entry_if_possible(entry, sourceconf, targetconf):
 
 
 def init_total_workflow(config):
-    # add compute, tidy etc information already here!
+    """
+    Add compute, tidy etc information already here!
+
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
 
     tasks = 0
     for model in config["general"]["valid_model_names"]:
@@ -349,8 +404,14 @@ def init_total_workflow(config):
 
 
 def collect_all_workflow_information(config):
+    """
+    For each component entry in config (can be a model or a new entry (e.g. 'flows')
 
-    # For each component entry in config (can be a model or a new entry (e.g. 'flows')
+    Arguments:
+        config -- dictionary
+    Returns:
+        config
+    """
     for model in config:
         if "workflow" in config[model]:
             w_config = config[model]["workflow"]
@@ -433,6 +494,16 @@ def collect_all_workflow_information(config):
 
 
 def merge_if_possible(source, target):
+    """
+    Merges the entries of source dictionary into target dictionary, if not already in.
+    (Will not overwrite entries in target dictionary.)
+
+    Arguments:
+        source -- dictionary
+        target -- dictionary
+    Returns:
+        target
+    """
     for entry in source:
         if entry in target:
             if not source[entry] == target[entry]:

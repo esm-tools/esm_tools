@@ -117,6 +117,17 @@ def check_plugin_availability(plugins):
 
 
 def work_through_recipe(recipe, plugins, config):
+    """
+    Works through the esm_runscripts recipes and plugin recipes.
+
+    Arguments:
+        recipe -- dictionary            # What is in these two dictionaries? Where do the entries are comming from?
+        plugins -- dictionary
+        config -- dictionary
+
+    Returns:
+        config
+    """
     if config.get("general", {}).get("debug_recipe", False):
         import pdb
 

@@ -37,7 +37,7 @@ def prepare_environment(config):
             "iterative_coupling_atmosphere_pism_ablation_method": config[config["general"]["setup_name"]]["ablation_method"],
             "DEBM_EXE": config[config["general"]["setup_name"]]["debm_path"],
             "MY_OBLIQUITY": config[config["general"]["setup_name"]]["debm_obl"], 
-            "DEBM_BETA": config[config["general"]["setup_name"]].get("debm_beta", 10),
+            "DEBM_BETA": config[config["general"]["setup_name"]].get("debm_beta", 999),
             "iterative_coupling_atmosphere_pism_regrid_method": config[config["general"]["setup_name"]].get("regrid_method", "DOWNSCALE"), 
             "REDUCE_TEMP": int(config[config["general"]["setup_name"]].get("reduce_temp", 0)), 
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 

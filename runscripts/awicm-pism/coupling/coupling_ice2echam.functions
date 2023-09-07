@@ -12,6 +12,13 @@ ice2echam() {
         . ${FUNCTION_PATH}/general_lists.functions
         . ${FUNCTION_PATH}/coupling_general.functions
 
+        #latest_cpl_in_logfile="${COUPLE_DIR}/../log/${EXP_ID}_awiesm_couple_in_echam_general_${END_YEAR_echam}0101-${END_YEAR_echam}1231.log"
+        #echo " * latest log file=${latest_cpl_in_logfile}"
+        #if [ -f ${latest_cpl_in_logfile} ]; then
+        #    echo " *** couple in has already been run - exiting *** "
+        #    return
+        #fi
+
         ISM_TO_ECHAM_update_orography=${ISM_TO_ECHAM_update_orography:-1}
         ISM_TO_ECHAM_update_glacial_mask=${ISM_TO_ECHAM_update_glacial_mask:-1}
         ISM_TO_ECHAM_update_land_runoff=${ISM_TO_ECHAM_update_land_runoff:-1}

@@ -58,45 +58,52 @@ function pism_atmosphere_get_newest_output {
         # LA: Not sure why. Now taking yearly mean.
         # LA: Summer value for mask only. Now: Summer value for mask, yearmean for runoff
 
+        # Define list of variables selected from PISM output depending on whether icebergs are used or not
+        echo "LA DEBUG: fesom_use_iceberg=${fesom_use_iceberg} ***"
+        if [ "x${fesom_use_iceberg}" == "x1" ]; then
+            echo "LA DEBUG: 1"
+            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow"
+        else 
+            echo "LA DEBUG: 2"
+            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
+        fi 
+        
+        LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
         echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
-        echo; echo "                 *   file1 = ${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc "
-        if [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
-            LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-            rm ${OUTPUT_DIR_pism}/tmp.nc
-            #ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
-            rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
-            #cdo -s cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | head -${CHUNK_SIZE_pism_standalone} ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
-            rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
-            #cdo -s cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | head -${CHUNK_SIZE_pism_standalone} ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+        if [ -f ${LATEST_PISM_FILE_SINGLE} ]; then
+            echo; echo "                 *   file1 = ${LATEST_PISM_FILE_SINGLE} found ***"
+
+            # Remove old files
+            if [ -f ${OUTPUT_DIR_pism}/tmp.nc ];                        then rm ${OUTPUT_DIR_pism}/tmp.nc; fi
+            #if [ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ];        then rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc; fi
+            if [ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ];  then rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc; fi
             unset PISM_OFILE_LIST
-            
-            if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                for i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do 
-                    cdo -ymonmean -select,name=thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}*.nc ) ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc;
-                    echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc )"; 
-                done
-            else
-                for i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do 
-                    cdo -ymonmean -select,name=thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}*.nc ) ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc;
-                    echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc )"; 
-                done
-            fi
+            unset PISM_cleanup_list
 
-            #cdo cat $( ls ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_*.nc | tail -$(( CHUNK_SIZE_pism_standalone/NYEAR)) ) ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+            # Aggregate PISM output to multi-year monthly mean
+            echo "LA DEBUG: CDO_SELECT_VAR_LIST=${CDO_SELECT_VAR_LIST} ***"
+            for i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do
+                j=$(( $i + ${NYEAR} -1 ))
+                if [ ${i} -lt 10 ]; then i=0${i}; fi
+                echo "LA DEBUG: i=${i}; j=${j} ***"
+                IFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}0101-${j}1231.nc"
+                if [[ -f ${IFILE}.ymonmean ]]; then 
+                        IFILE=${IFILE}.ymonmean
+                        PISM_cleanup_list="${PISM_cleanup_list} ${IFILE}"
+                fi
+                OFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc"
+                cdo -ymonmean \
+                    -select,name="${CDO_SELECT_VAR_LIST}" \
+                    ${IFILE} \
+                    ${OFILE} 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+                echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} ${OFILE}"; 
+            done
+
             echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
-            cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
-            ntime=$( cdo ntime ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc )
-            #ntime=$( cdo ntime ${LATEST_PISM_FILE_SINGLE} )
-            #cdo -s timsum ${LATEST_PISM_FILE_SINGLE} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
             cdo timmean ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-            #echo "*** LA DEBUG: ntime = ${ntime}"
-            #cdo divc,${ntime} ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
 
-            rm ${PISM_OFILE_LIST}
-        #elif [ -f ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${START_MONTH_pism}${START_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ]; then
-        #    LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-        #    cdo -s timsum ${LATEST_PISM_FILE_SINGLE} ${OUTPUT_DIR_pism}/tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-        #    cdo -s divc,$( cdo ntime ${LATEST_PISM_FILE_SINGLE} ) ${OUTPUT_DIR_pism}/tmp.nc ${OUTPUT_dir_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            rm ${PISM_OFILE_LIST} ${PISM_cleanup_list}
         else
             echo "*** ${LATEST_PISM_FILE_SINGLE} not found ***"
             exit 42
@@ -105,7 +112,6 @@ function pism_atmosphere_get_newest_output {
         newest_pism_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
         newest_pism_filename=$(basename $newest_pism_file)
         newest_pism_file_chunk=${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
-        newest_pism_filename_chunk=$(basename $newest_pism_file_chunk)
         
         if [[ ${EX_INT} == "monthly" ]]; then
             case $DOMAIN_pism in
@@ -122,7 +128,8 @@ function pism_atmosphere_get_newest_output {
             echo "                 -   selecting summer values only! Month=$month_to_select "
             echo "                 -   ifile = ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc; ofile = ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc "
             
-            
+        
+            # Select mask either by minimum ice thickness over year (MIN_MON_SELECT==1) or by summer value (Jun for NH, Dec for SH)
             if [[ "x${MIN_MON_SELECT}" == "x1" ]]; then
                 cdo -s \
                         -timmin \
@@ -142,7 +149,6 @@ function pism_atmosphere_get_newest_output {
                     -selname,climatic_mass_balance \
                     ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
                     ${COUPLE_DIR}/${EXP_ID}_pism_extra_smb_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-                #${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc \
             newest_pism_mask_file=${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc
         else
             newest_pism_mask_file=${newest_pism_file}
@@ -183,7 +189,7 @@ function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
         files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
         cdo -s -O merge $files_needed ${COUPLE_DIR}/ice_file_for_atmosphere.nc
-	ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
+	    ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
         rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed

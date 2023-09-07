@@ -405,7 +405,11 @@ def init_total_workflow(config):
 
 def collect_all_workflow_information(config):
     """
-    For each component entry in config (can be a model or a new entry (e.g. 'flows')
+    Collects all workflow information for each component entry in config
+    (can be a model/component or a new entry (e.g. 'flows')
+
+    Checks if there are "workflow" entries in the user runscript and copies or merges them into
+    config["general"]["workflow"]
 
     Arguments:
         config -- dictionary
@@ -414,13 +418,16 @@ def collect_all_workflow_information(config):
     """
     for model in config:
         if "workflow" in config[model]:
+            # looks for "workflow" in each entry of config (can be model/component, general, etc.)
             w_config = config[model]["workflow"]
+            # looks for "workflow" in "general" section of config.
             gw_config = config["general"]["workflow"]
 
-            # looks for entry 'subjob_clusters' in config of each component
+            # looks for entry 'subjob_clusters' in config of each component that has a "workflow"
             if "subjob_clusters" in w_config:
                 for cluster in w_config["subjob_clusters"]:
-                    # if a cluster is also in the general config, this cluster will be merged together ...
+                    # if a certain cluster is also in the general config, this cluster will be merged together ...
+                    # what cluster could this be?
                     if cluster in gw_config["subjob_clusters"]:
                         gw_config["subjob_clusters"][cluster] = merge_if_possible(
                             w_config["subjob_clusters"][cluster],

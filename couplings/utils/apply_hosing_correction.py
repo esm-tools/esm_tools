@@ -43,7 +43,7 @@ else:
     exit
 
 if not os.path.isfile(os.path.join(hosing_dir, "landice_nodes_in_region_1.out")):
-    df = pd.read_csv(os.path.join(os.path.dirname(cell_area_fesom_file), "nod2d.out"), sep=" ", skiprows=[0], header=None)
+    df = pd.read_csv(os.path.join(os.path.dirname(cell_area_fesom_file), "nod2d.out"), sep="\s+", skiprows=[0], header=None)
     n=df.iloc[:, 0]
     n.to_csv(os.path.join(hosing_dir, "landice_nodes_in_region_1.out"), header=[str(len(n.values))], index=False)
 

@@ -7,9 +7,9 @@ pism2awiesm() {
         module load anaconda3
     fi
     echo $(module list)
-    . ${FUNCTION_PATH}/general_lists.functions
-    . ${FUNCTION_PATH}/general_helpers.functions
-    . ${FUNCTION_PATH}/coupling_general.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/general_helpers.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
 
     if [ -f ${COUPLE_DIR}/latest_gfw_atmo.nc ]; then
         rm ${COUPLE_DIR}/latest_gfw_atmo.nc

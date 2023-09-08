@@ -1,7 +1,7 @@
 #!/usr/bin/ksh
 
 module load nco
-. ${FUNCTION_PATH}/general_lists.functions
+. ${FUNCTION_PATH}/../general/general_lists.functions
 
 cdo=cdo
 

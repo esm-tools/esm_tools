@@ -164,7 +164,7 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
         #
         # Prepare data for final netcdf output
         #
-        ilevel = ilevel + 1
+        #ilevel = ilevel + 1
 
         flag_verbose=False
 

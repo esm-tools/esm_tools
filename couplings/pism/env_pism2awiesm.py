@@ -10,7 +10,7 @@ def prepare_environment(config):
             "NYEAR": config["general"]["nyear"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "DOWNSCALE_TEMP": 1, 
-            "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]]["lapse_rate"],
+            "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
             "DOWNSCALE_PRECIP": 1, 
             "VERSION_pism": config[config["general"]["setup_name"]]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config[config["general"]["setup_name"]]["pool_dir"],

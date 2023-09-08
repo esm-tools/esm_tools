@@ -2,7 +2,7 @@ def prepare_environment(config):
     environment_dict = {
             "ICE_TO_FESOM": config["fesom"].get("use_icebergs", False),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
-            "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
+            "MESH_DIR_fesom": config["fesom"]["namelist_changes"]["namelist.config"]["paths"]["meshpath"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],

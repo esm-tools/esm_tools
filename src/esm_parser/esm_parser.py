@@ -116,6 +116,7 @@ DEFAULTS_DIR = CONFIG_PATH + "/defaults"
 COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
+COUPLINGS_DIR = RUNSCRIPT_DIR + "../couplings"
 
 # global variables
 list_counter = 0
@@ -2898,6 +2899,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 "esm_function_dir": CONFIG_PATH,
                 "esm_namelist_dir": NAMELIST_DIR,
                 "esm_runscript_dir": RUNSCRIPT_DIR,
+                "esm_couplings_dir": COUPLINGS_DIR,
                 "expid": "test",
             }
         )

@@ -23,7 +23,7 @@ module load nco || module load NCO
 ATM_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 ATM_CONVERT_NETCDF4=true 
-ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_ml reduced_sfc reduced_pv reduced_pl reduced_ml"
+ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_ml regular_th reduced_sfc reduced_pv reduced_pl reduced_ml regular_th"
 
 # Other settings
 max_jobs=20

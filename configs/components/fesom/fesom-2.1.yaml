@@ -120,6 +120,7 @@ namelists:
         - namelist.io
         - namelist.cvmix
         - namelist.icepack
+        - namelist.dyn
 
 
 
@@ -503,6 +504,7 @@ config_files:
         cvmix:   cvmix
         icepack: icepack
         tra:     tra
+        dyn:     dyn
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -513,6 +515,7 @@ config_sources:
         cvmix:   "${namelist_dir}/namelist.cvmix"
         icepack: "${namelist_dir}/namelist.icepack"
         tra:     "${namelist_dir}/namelist.tra"
+        dyn:     "${namelist_dir}/namelist.dyn"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -541,6 +544,7 @@ config_in_work:
         cvmix:   "namelist.cvmix"
         icepack: "namelist.icepack"
         tra:     "namelist.tra"
+        dyn:     "namelist.dyn"
 
 coupling_fields:
         sst_feom:

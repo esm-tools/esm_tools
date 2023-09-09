@@ -1,9 +1,9 @@
 general:
     setup_name: "awiesm"
-    compute_time: "00:45:00"
+    compute_time: "01:10:00"
     initial_date: "2000-01-01T00:00:00"       # Initial exp. date
     final_date: "2009-12-31T00:00:00"         # Final date of the experiment
-    script_dir: "${general.esm_runscript_dir}/awicm-pism/coupling/"
+    script_dir: "${general.esm_couplings_dir}"
     restart_dir: ""
     nmonth: 0
     nyear: 1
@@ -56,7 +56,7 @@ echam:
                     nproc: 1
                     run_before: prepcompute
                     script: coupling_ice2echam.functions
-                    script_dir: ${general.script_dir}
+                    script_dir: ${general.script_dir}/echam
                     call_function: ice2echam
                     env_preparation: env_echam.py
                     run_only: first_run_in_chunk
@@ -66,7 +66,7 @@ echam:
                     nproc: 1
                     run_after: tidy
                     script: coupling_echam2ice.functions
-                    script_dir: ${general.script_dir}
+                    script_dir: ${general.script_dir}/echam
                     call_function: echam2ice
                     env_preparation: env_echam.py
                     run_only: last_run_in_chunk
@@ -88,7 +88,7 @@ fesom:
                     nproc: 1
                     run_before: prepcompute
                     script: coupling_ice2fesom.functions
-                    script_dir: ${general.script_dir}
+                    script_dir: ${general.script_dir}/fesom
                     call_function: ice2fesom
                     env_preparation: env_fesom.py
                     run_only: first_run_in_chunk
@@ -98,7 +98,7 @@ fesom:
                     nproc: 1
                     run_after: tidy
                     script: coupling_fesom2ice.functions
-                    script_dir: ${general.script_dir}
+                    script_dir: ${general.script_dir}/fesom
                     call_function: fesom2ice
                     env_preparation: env_fesom.py
                     run_only: last_run_in_chunk

@@ -54,7 +54,7 @@ choose_heterogeneous_parallelization:
                     "*":
                         taskset_chs: ""
 
-#hetjob_flag: packjob
+hetjob_flag: packjob
 
 # standard environment setup
 #

@@ -86,7 +86,7 @@ general:
                         pool_dir: "/albedo/pool"
                         pool_structure: new
                 ecmwf-atos:
-                        pool_dir: "/scratch/deu5912/pool" #"/perm/duts/pool"
+                        pool_dir: "/hpcperm/duts/pool" #"/perm/duts/pool"
                         pool_structure: new
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"

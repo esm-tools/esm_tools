@@ -28,7 +28,7 @@ logical_cpus_per_core: 1
 
 threads_per_core: 1
 
-pool_dir: "/dev/null"
+pool_dir: "/hpcperm/duts/pool"
 
 pool_directories:
         pool: "/dev/null"
@@ -53,17 +53,8 @@ choose_heterogeneous_parallelization:
                             I_MPI_SLURM_EXT: 0
                     "*":
                         taskset_chs: ""
-                add_unset_vars:
-                        - "SLURM_DISTRIBUTION"
-                        - "SLURM_NTASKS"
-                        - "SLURM_NPROCS"
-                        - "SLURM_ARBITRARY_NODELIST"
 
-hetjob_flag: packjob
-
-unset_vars:
-        - "SLURM_MEM_PER_NODE"
-        - "SLURM_MEM_PER_CPU"
+#hetjob_flag: packjob
 
 # standard environment setup
 #
@@ -75,11 +66,13 @@ module_actions:
         - "load prgenv/intel"
         - "load udunits"
         - "load intel-mkl/19.0.5"
-        - "load openmpi/4.1.1.1"
+        - "load hpcx-openmpi/2.9.0"
         - "load hdf5-parallel/1.10.6"
         - "load netcdf4-parallel/4.7.4"
         - "load cdo nco"
-        - "load ecmwf-toolbox/2021.08.3.0"
+        - "load openblas"
+        - "load fftw"
+        - "load ecmwf-toolbox/2023.01.0.0"
         - "load python3/3.8.8-01"
         - "load git"
         - "list"
@@ -117,6 +110,8 @@ export_vars:
 
         LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_PARALLEL_DIR/lib
         OMPI_MCA_btl: "^vader"
+        OMP_PLACES: "threads"
+        SLURM_MPI_TYPE: "none"
 
 choose_useMPI:
         openmpi:

@@ -54,7 +54,7 @@ choose_heterogeneous_parallelization:
                     "*":
                         taskset_chs: ""
 
-hetjob_flag: packjob
+hetjob_flag: ""
 
 # standard environment setup
 #
@@ -110,7 +110,9 @@ export_vars:
 
         LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_PARALLEL_DIR/lib
         OMPI_MCA_btl: "^vader"
+        # Ensure OpenMP correct pinning
         OMP_PLACES: "threads"
+        # Avoid PMI hangs with heterogeneous jobs
         SLURM_MPI_TYPE: "none"
 
 choose_useMPI:

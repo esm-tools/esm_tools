@@ -44,15 +44,10 @@ choose_submitted:
                 nothing: much
 
 submitted: false
-hyper_flag: "" # No hyperthreading on ollie
-choose_heterogeneous_parallelization:
-        True:
-                choose_taskset:
-                    False:
-                        add_export_vars:
-                            I_MPI_SLURM_EXT: 0
-                    "*":
-                        taskset_chs: ""
+
+# No hyperthreading in ECMWF-ATOS
+hyper_flag: ""
+mt_launcher_flag: "--hint=nomultithread "
 
 hetjob_flag: ""
 

@@ -183,6 +183,7 @@ oifs:
                                                 LECURR: true
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
+                                                NAERANT_SCALE: "1"
 
                 "frontiers-xios":
                         with_xios: True
@@ -236,13 +237,6 @@ oifs:
                                                 LCORBMD: "true"
                                                 ORBMODE: "fixed_year"
                                                 ORBIY: ${start_date!syear}
-
-        choose_general.version:
-                "v3.2":
-                        add_namelist_changes:
-                                fort.4:
-                                        NAERAD:
-                                                NAERANT_SCALE: "1"
 
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data

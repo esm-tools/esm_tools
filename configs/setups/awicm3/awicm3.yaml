@@ -398,11 +398,49 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.2":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.2/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        add_namelists:
+                                - namelist.tra
+                                - namelist.dyn
+                                - namelist.cvmix
+                        add_config_sources:
+                                tra:     "${namelist_dir}/namelist.tra"
+                                dyn:     "${namelist_dir}/namelist.dyn"
+                                cvmix:   "${namelist_dir}/namelist.cvmix"
+                        add_config_in_work:
+                                tra:     "namelist.tra"
+                                dyn:     "namelist.dyn"
+                                cvmix:   "namelist.cvmix"
+                        add_config_files:
+                                tra:     tra
+                                dyn:     dyn
+                                cvmix:   cvmix
                         add_namelist_changes:
+                                namelist.config:
+                                        ale_def:
+                                                which_ALE: 'zstar'
                                 namelist.oce:
+                                        oce_dyn:
+                                                SPP: true
+                                                k_gm_max: 3000
+                                                k_gm_rampmax: 40.0
+                                                k_gm_rampmin: 30
+                                                scaling_ferreira: true
+                                                scaling_fesom14: true
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
+
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
+                                                use_momix: false
+                                                kv0_const: false
+                                namelist.ice:
+                                        ice_therm:
+                                                albsn: 0.81
+                                                albsnm: 0.77
+                                                albi: 0.6
+                                                albim: 0.43
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -443,43 +481,6 @@ fesom:
         # Note that this choose block (version) can overwrite settings from the block above (major_version)
         choose_general.version:
                 "v3.2":
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/"
-                        add_namelists:
-                                - namelist.tra
-                                - namelist.cvmix
-                        add_config_sources:
-                                tra:     "${namelist_dir}/namelist.tra"
-                                dyn:     "${namelist_dir}/namelist.dyn"
-                        add_config_in_work:
-                                tra:     "namelist.tra"
-                                dyn:     "namelist.dyn"
-                        add_config_files:
-                                tra:     tra
-                                dyn:     dyn
-                        add_namelist_changes:
-                                namelist.config:
-                                        ale_def:
-                                                which_ALE: 'zstar'
-                                namelist.oce:
-                                        oce_dyn:
-                                                SPP: true
-                                                k_gm_max: 3000
-                                                k_gm_rampmax: 40.0
-                                                k_gm_rampmin: 30
-                                                scaling_ferreira: true
-                                                scaling_fesom14: true
-
-                                namelist.tra:
-                                        tracer_phys:
-                                                surf_relax_s: "${surf_relax_s}"
-                                                use_momix: false
-                                                kv0_const: false
-                                namelist.ice:
-                                        ice_therm:
-                                                albsn: 0.81
-                                                albsnm: 0.77
-                                                albi: 0.6
-                                                albim: 0.43
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
         remove_forcing_files:

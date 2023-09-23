@@ -11,14 +11,15 @@ general:
     use_venv: False
     clean_old_rundirs_except: 5
     clean_old_rundirs_keep_every: 25
-    version: "2.1"
+    version: "2.1-refac"
     account: "paleodyn.paleo_work"
     description: >
       Basic AWIESM Test for PI
 
 awiesm:
+    version: "2.1-refac"
     postprocessing: false
-    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1/"
+    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-refac/"
 
 echam:
     restart_rate: 1
@@ -39,7 +40,7 @@ jsbach:
     dynamic_vegetations: True
 
 fesom:
-    version: "2.1"
+    version: "2.5"
     nproc: 384
     restart_rate: 1
     restart_unit: "y"
@@ -48,14 +49,14 @@ fesom:
     ini_parent_dir: "/albedo/work/user/lackerma/restarts/pi_from_fernanda/fesom/"
     ini_parent_date: "25001231"
     ini_parent_exp_id: "<placeholder>"
-    mesh_dir: "/albedo/pool/FESOM2/core2"
+    mesh_dir: "/albedo/pool/FESOM/meshes_default/core/"
     ###########################################
     # icebergs
     use_icebergs: True
     use_icesheet_coupling: True
     update_icebergs: True
     ini_iceberg_dir: "/albedo/home/lackerma/icebergs/sh_refac/"
-    disch_file: "/albedo/home/lackerma/icebergs/latest_discharge.nc"
+    disch_file: "/albedo/home/lackerma/icebergs/sh_refac/latest_discharge.nc"
     basin_file: "/albedo/work/user/lackerma/pool_pism/basins/antarctica.16km.nc"
     scaling_factor:
         - 100
@@ -66,6 +67,8 @@ fesom:
         - 1
     add_namelist_changes:
             namelist.config:
+                    paths:
+                        meshpath: "/albedo/pool/FESOM2/core2/"
                     geometry:
                         force_rotation: True
                     icebergs:

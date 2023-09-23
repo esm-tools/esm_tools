@@ -672,12 +672,12 @@ class IcebergCalving:
                     break
 
         if not ib_elems_loc.empty:
-            np.savetxt(os.path.join(self.icb_path, "LON.dat"), ib_elems_loc.lon.values)
-            np.savetxt(os.path.join(self.icb_path, "LAT.dat"), ib_elems_loc.lat.values)
-            np.savetxt(os.path.join(self.icb_path, "LENGTH.dat"), ib_elems_loc.length.values * 1e3)
-            np.savetxt(os.path.join(self.icb_path, "HEIGHT.dat"), ib_elems_loc.depth.values * 1e3)
-            np.savetxt(os.path.join(self.icb_path, "SCALING.dat"), ib_elems_loc.scaling.values)
-            np.savetxt(os.path.join(self.icb_path, "FELEM.dat"), ib_elems_loc.felem.values)
+            np.savetxt(os.path.join(self.icb_path, "icb_longitude.dat"), ib_elems_loc.lon.values)
+            np.savetxt(os.path.join(self.icb_path, "icb_latitude.dat"), ib_elems_loc.lat.values)
+            np.savetxt(os.path.join(self.icb_path, "icb_length.dat"), ib_elems_loc.length.values * 1e3)
+            np.savetxt(os.path.join(self.icb_path, "icb_height.dat"), ib_elems_loc.depth.values * 1e3)
+            np.savetxt(os.path.join(self.icb_path, "icb_scaling.dat"), ib_elems_loc.scaling.values)
+            np.savetxt(os.path.join(self.icb_path, "icb_felem.dat"), ib_elems_loc.felem.values)
 
 
 

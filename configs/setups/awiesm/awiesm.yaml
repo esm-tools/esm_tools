@@ -66,8 +66,14 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
+        - '2.1-refac'
 
         choose_version:
+          '2.1-refac':
+            couplings:
+            - fesom-2.5+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
           '2.1':
             couplings:
             - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
@@ -154,6 +160,10 @@ echam:
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
+                "2.1-refac":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
 
         # --- icebergs ---
         choose_general.with_icb:
@@ -276,6 +286,10 @@ fesom:
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
+                "2.1-refac":
+                        version: "2.5"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'zstar'

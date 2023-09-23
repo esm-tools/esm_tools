@@ -3,7 +3,7 @@
 
 model: fesom
 branch: master
-version: "2.1"
+version: "2.5"
 type: ocean
 
 comp_command: ${defaults.comp_command}
@@ -21,37 +21,20 @@ with_recom: false
 wiso_code: false
 
 choose_version:
-  2.1-unstable:
-    branch: master
-    namelist_dir: "${model_dir}/config/"
-  '2.1':
-    branch: "2.1.0"
-  2.1-awiesm-2.1:
-    branch: "2.1-awiesm-2.1"
-    destination: "fesom-2.1"
+  "2.5":
+    branch: "icb_into_v2.5" #LA: we need a correct name for it once everything is merged
+    destination: "fesom-2.5"
     wiso_code: true
     icb_code: true
-  2.1-wiso:
-    branch: wiso
-    wiso_code: true
-  2.1-recom: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
-    branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
-    choose_general.setup_name:
-        fesom:
-            destination: "fesom-2.1-recom"
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    wiso_code: true
+    add_namelists:
+        - namelist.dyn
+    add_config_files:
+        tra:     tra
+        dyn:     dyn
     namelist_dir: "${model_dir}/config/"
-    asforcing: CORE2
-    nproc: 1024
-    with_recom: true
-    include_models: ["recom"]
-    fesom_Dflags: "-DRECOM_COUPLED=ON"
-    mpi_num_groups: 1
 
 
-destination: "fesom-2.1"
+destination: "fesom-2.5"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
@@ -154,7 +137,7 @@ restart_in_in_work:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart: iceberg.restart 
         icb_restart_ISM: iceberg.restart.ISM
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
@@ -166,7 +149,7 @@ restart_in_sources:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart.${parent_date!syear} #.${parent_date!syear!month}
+        icb_restart: iceberg.restart.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear}
 
 restart_out_files:
@@ -207,8 +190,7 @@ restart_out_sources:
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        #fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
-        fesom: "*.fesom.*.nc"
+        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 choose_use_icebergs:
         True:
@@ -410,6 +392,9 @@ choose_icb_code:
 use_landice_water: False
 choose_general.iterative_coupling:
         true:
+                add_output_targets:
+                        fesom: "*.fesom.*.nc"
+                        
                 choose_general.chunk_number:
                         1:
                                 use_landice_water: False
@@ -418,8 +403,6 @@ choose_general.iterative_coupling:
                 
                 fwf_path: "${general.experiment_couple_dir}" 
                 
-                #choose_echam.hosing_correction:
-                #        true:
                 add_namelist_changes:
                             namelist.forcing:
                                     land_ice:

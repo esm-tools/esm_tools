@@ -144,6 +144,11 @@ choose_general.iterative_coupling:
                                                 lupdate_orography: True
                                         "*":
                                                 lupdate_orography: False
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        lgfw: "${lgfw}"
+                                        lupdate_orog: "${lupdate_orography}"
                 hosing_correction: True
         '*':
                 hosing_correction: False
@@ -604,6 +609,8 @@ input_in_work:
         "tslclim": "unit.92"
         "vgratclim": "unit.91"
         "vltclim": "unit.90"
+        "gfw_atmo": "gfw_atmo.nc"
+        "target_oro": "target_orography_echam6.nc"
 
 forcing_in_work:
         sic: "unit.96"
@@ -805,9 +812,6 @@ namelist_changes:
                 parctl:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"
-                submodelctl:
-                        lgfw: "${lgfw}"
-                        lupdate_orog: "${lupdate_orography}"
 
 wiso_fields: [o18w_atm, hdow_atm, o16w_atm, o18i_atm, hdoi_atm, o16i_atm, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm]
 
@@ -861,21 +865,13 @@ grids:
 
 choose_lgfw:
         True:
-                add_input_sources:
-                        gfw_atmo: "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
                 add_input_files:
                         gfw_atmo: gfw_atmo
-                add_input_in_work:
-                        gfw_atmo: "gfw_atmo.nc"
 
 choose_lupdate_orography:
         True:
-                add_input_sources:
-                        target_oro: "${general.experiment_couple_dir}/latest_target_orography.nc"
                 add_input_files:
                         target_oro: target_oro
-                add_input_in_work:
-                        target_oro: "target_orography_echam6.nc"
 
 # Configuration Files:
 config_sources:

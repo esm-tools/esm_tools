@@ -189,6 +189,9 @@ choose_switch:
 # choice
 #
 
+with_icb: false
+icb_code: false
+
 with_wiso: false
 wiso_code: false
 
@@ -236,6 +239,7 @@ choose_version:
         6.3.05p2-awiesm-2.1:
                 # TODO MA: this problably needs much more stuff from the wiso version
                 wiso_code: true
+                icb_code: true
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0008
@@ -547,6 +551,15 @@ choose_yr_perp_off:
                                         yr_perp: "remove_from_namelist"
                                 runctl:
                                         l_orbsvop87: ".false."
+
+choose_icb_code:
+        True:
+                licb: "${with_icb}"
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        licb: "${licb}"
+                
 
 choose_wiso_code:
         True:

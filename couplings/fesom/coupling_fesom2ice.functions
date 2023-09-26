@@ -292,8 +292,8 @@ function fesom_ice_select_relevant_variables {
 
 function fesom_ice_fesom_build_grid_with_lonlat_depth {
 	# Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
-        if [ "${MACHINE}" == "mistral" ]; then
-            module unload python3
+        if [ "${MACHINE}" == "levante" ]; then
+            #module unload python3
             module load python3
         fi
         echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"

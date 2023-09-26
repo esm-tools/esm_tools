@@ -303,7 +303,7 @@ fesom:
                         namelist_dir: ${fesom.model_dir}/config/
         
                         # --- icebergs ---
-        choose_fesom.with_icb:
+        choose_general.with_icb:
                 True:
                         icb_fields: [u10w_oce, v10w_oce]
                         add_coupling_fields:

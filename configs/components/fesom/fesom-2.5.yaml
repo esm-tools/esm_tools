@@ -9,16 +9,15 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-# LA these are both iceberg related
-use_icebergs: False                 # turns on icebergs
-use_icesheet_coupling: False        # initializes new icebergs every restart
 # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
 # below) whose source code contains the icebergs implementation
-icb_code: False
+icb_code: false
+with_icb: false
 
-with_wiso: false
-with_recom: false
 wiso_code: false
+with_wiso: false
+
+with_recom: false
 
 choose_version:
   "2.5":
@@ -189,11 +188,24 @@ restart_out_sources:
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
-outdata_targets:
-        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
-choose_use_icebergs:
+choose_icb_code:
         True:
+            use_icebergs: "${with_icb}"
+            use_icesheet_coupling: "${with_icb}"
+            add_namelist_changes:
+                namelist.config:
+                    icebergs:
+                        use_icebergs: "${use_icebergs}"
+                        use_icesheet_coupling: "${use_icesheet_coupling}"
+                        steps_per_ib_step: 8
+       
+choose_with_icb:
+        True:
+            use_icebergs: True                 # turns on icebergs
+            use_icesheet_coupling: True        # initializes new icebergs every restart
+            update_icebegs: True
+
             icb_inputs: [longitude,latitude,length,height,scaling,felem]
 
             add_restart_in_files:
@@ -380,14 +392,6 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
-choose_icb_code:
-    True:
-        add_namelist_changes:
-            namelist.config:
-                icebergs:
-                    use_icebergs: "${use_icebergs}"
-                    use_icesheet_coupling: "${use_icesheet_coupling}"
-                    steps_per_ib_step: 8
 
 use_landice_water: False
 choose_general.iterative_coupling:
@@ -410,8 +414,12 @@ choose_general.iterative_coupling:
                                             landice_start_mon: 1
                                             landice_end_mon: 12
                                             fwf_path: "${fwf_path}" 
+                outdata_targets:
+                        fesom: "*.fesom.*.nc"
         '*':
                 use_landice_water: False
+                outdata_targets:
+                        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

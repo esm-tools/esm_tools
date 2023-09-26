@@ -37,7 +37,7 @@ choose_version:
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
 git-repository:
-- https://github.com/FESOM/fesom2.git
+- https://github.com/ackerlar/fesom2.git # LA: only temporarily until everything paleo related is merged into a specific "paleo" branch!!
 contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 

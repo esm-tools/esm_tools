@@ -24,7 +24,7 @@ general:
 
 awiesm:
     postprocessing: false
-    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-paleodyn-2.5/"
+    model_dir: "/home/a/a270124/model_codes/awiesm-2.1-paleodyn-2.5/"
 
 echam:
     restart_rate: 1
@@ -33,7 +33,7 @@ echam:
     use_transient_forcing: False
     transient_forcing_table: ""
     add_config_sources: 
-            echam: "/albedo/home/lackerma/namelists/production/echam/namelist.echam"
+            echam: "/home/a/a270124/namelists/production/echam/namelist.echam"
     add_namelist_changes:
             namelist.echam:
                 radctl:
@@ -81,7 +81,7 @@ fesom:
     restart_unit: "y"
     restart_first: 1
     lresume: False
-    mesh_dir: "/albedo/pool/FESOM2/core2"
+    mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_core2/"
     workflow:
             next_run_triggered_by: couple_out
             subjobs:

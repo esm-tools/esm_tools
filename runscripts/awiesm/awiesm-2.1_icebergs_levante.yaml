@@ -3,7 +3,7 @@ general:
     compute_time: "01:20:00"
     initial_date: "2018-01-01T00:00:00"       # Initial exp. date
     final_date: "2117-12-31T00:00:00"         # Final date of the experiment
-    base_dir: "/albedo/work/user/lackerma/experiments/"
+    base_dir: "/work/ba0989/a270124/PalModII/experiments/"
     nmonth: 0
     nyear: 1
     with_wiso: False
@@ -12,14 +12,14 @@ general:
     clean_old_rundirs_except: 5
     clean_old_rundirs_keep_every: 25
     version: "2.1-paleodyn-2.5"
-    account: "paleodyn.paleo_work"
+    account: "ab0246"
     description: >
       Basic AWIESM Test for PI
 
 awiesm:
     version: "2.1-paleodyn-2.5"
     postprocessing: false
-    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-paleodyn-2.5/"
+    model_dir: "/home/a/a270124/model_codes/awiesm-2.1-paleodyn-2.5/"
 
 echam:
     restart_rate: 1
@@ -49,15 +49,15 @@ fesom:
     #ini_parent_dir: "/albedo/work/user/lackerma/restarts/pi_from_fernanda/fesom/"
     #ini_parent_date: "25001231"
     #ini_parent_exp_id: "<placeholder>"
-    mesh_dir: "/albedo/pool/FESOM/meshes_default/core/"
+    mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_core2/"
     #-----------------------
     # icebergs
     #use_icebergs: True
     #use_icesheet_coupling: True
     update_icebergs: false
-    ini_iceberg_dir: "/albedo/home/lackerma/icebergs/fesom/"
-    disch_file: "/albedo/home/lackerma/icebergs/sh_refac/latest_discharge.nc"
-    basin_file: "/albedo/work/user/lackerma/pool_pism/basins/antarctica.16km.nc"
+    ini_iceberg_dir: "/home/a/a270124/icebergs/fesom/"
+    disch_file: "/home/a/a270124/icebergs/sh_refac/latest_discharge.nc"
+    basin_file: "/work/ba1066/a270124/pool_pism//basins/antarctica.16km.nc"
     scaling_factor:
         - 100
         - 50
@@ -68,13 +68,13 @@ fesom:
     #-----------------------
     add_namelist_changes:
             namelist.config:
-                    paths:
-                        meshpath: "/albedo/pool/FESOM2/core2/"
+                    #paths:
+                    #    meshpath: "/albedo/pool/FESOM2/core2/"
                     geometry:
                         force_rotation: True
                     #icebergs:
-                    #    use_icebergs: True
                     #    steps_per_ib_step: 8
+                    #    use_icebergs: True
                     #    ib_async_mode: 0
                     #    turn_off_hf: False
                     #    turn_off_fw: False

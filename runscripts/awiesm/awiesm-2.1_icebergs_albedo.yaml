@@ -11,15 +11,15 @@ general:
     use_venv: False
     clean_old_rundirs_except: 5
     clean_old_rundirs_keep_every: 25
-    version: "2.1-refac"
+    version: "2.1-paleodyn-2.5"
     account: "paleodyn.paleo_work"
     description: >
       Basic AWIESM Test for PI
 
 awiesm:
-    version: "2.1-refac"
+    version: "2.1-paleodyn-2.5"
     postprocessing: false
-    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-refac/"
+    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-paleodyn-2.5/"
 
 echam:
     restart_rate: 1

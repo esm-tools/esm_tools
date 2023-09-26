@@ -63,3 +63,11 @@ choose_general.check:
                     For more info on how to implement a new machine in ESM-Tools check:
                     https://esm-tools.readthedocs.io/en/latest/cookbook.html#implement-a-new-hpc-machine\\
                     "
+    "*":
+        warning:
+            generic.yaml:
+                message: "
+                    You are trying to build with the environment from
+                    ``configs/machines/generic.yaml``. This is not recommended, you
+                    should always build using a specific machine file.
+                    "

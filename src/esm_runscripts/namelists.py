@@ -544,7 +544,7 @@ class Namelist:
         Relevant configuration entries:
         """
         if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
-            "use_icebergs", False
+            "with_icb", False
         ):
             # Get the fesom config namelist:
             nml = config["fesom"]["namelists"]["namelist.config"]
@@ -552,12 +552,11 @@ class Namelist:
             icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
             # Determine if icesheet coupling is enabled:
             if config["fesom"].get("use_icesheet_coupling", False):
-                print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                 icebergs["use_icesheet_coupling"] = True
                 if os.path.isfile(
                     config["fesom"]["input_sources"]["num_non_melted_icb_file"]
                 ):
-                    print(" * LA DEBUG: using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
+                    print(" * using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
                     with open(
                         config["fesom"]["input_sources"]["num_non_melted_icb_file"]
                         #config["fesom"]["iceberg_dir"] + "/num_non_melted_icb_file"

@@ -190,7 +190,7 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom" and config["fesom"].get("use_icebergs", False):
+        if model == "fesom" and config["fesom"].get("with_icb", False):
             config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
@@ -231,7 +231,7 @@ def copy_files_to_thisrun(config):
 
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
     if "fesom" in config["general"]["valid_model_names"]:
-        if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
+        if config["fesom"].get("with_icb", False) and config["fesom"].get("use_icesheet_coupling", False):
             if not config["general"].get("iterative_coupling", False):
                 config = update_icebergs(config)
             if config["general"].get("run_number", 0) == 1:
@@ -254,14 +254,13 @@ def copy_files_to_thisrun(config):
 
 
 def update_icebergs(config):
-    print("* starting update icebergs")
     if (
-        config["fesom"].get("use_icebergs", False)
+        config["fesom"].get("with_icb", False)
         and config["fesom"].get("update_icebergs", False)
         and config["general"]["run_number"] > 1
     ):
        
-        print(" * update icebergs!")
+        print("* starting update icebergs")
         icb_script  = config["fesom"].get("icb_script", "")
         disch_file  = config["fesom"].get("disch_file", "")
         iceberg_dir = config["fesom"].get("iceberg_dir", config['general']['experiment_couple_dir'])

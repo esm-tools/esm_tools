@@ -462,14 +462,6 @@ oasis3mct:
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
         
-        # --- icebergs ---
-        choose_general.with_icb:
-                True:
-                        add_coupling_target_fields:
-                                add_a2o_flux:
-                                        - 'u10w_oce <--distwgt-- u10_atmo'
-                                        - 'v10w_oce <--distwgt-- v10_atmo'
-        
         choose_general.with_wiso:
                 True:
         # choose_general.wiso_code: # MA: after merging FESOM, from Martin B. this can be unified
@@ -489,6 +481,13 @@ oasis3mct:
                                         - 'i1_oce <--distwgt-- i1_atm'
                                         - 'i2_oce <--distwgt-- i2_atm'
                                         - 'i3_oce <--distwgt-- i3_atm'
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        add_coupling_target_fields:
+                                add_a2o_flux:
+                                        - 'u10w_oce <--distwgt-- u10_atmo'
+                                        - 'v10w_oce <--distwgt-- v10_atmo'
         choose_general.with_recom:
                 True: # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_target_fields:

@@ -11,6 +11,7 @@ input_sources:
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
 
 # forcings
+hist_extend_scenario: ssp370
 forcing_sources:
         # sst
         "amipsst":
@@ -115,11 +116,12 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
+                # Note: The variable hist_extend_scenario is set to ssp370 by default in line 14.
+                # Change if necessary to ssp126, ssp119, ssp245, ssp370, or ssp585
+                "${forcing_dir}/ozone/${resolution}_ozone_${hist_extend_scenario}_@YEAR@.nc":
                         from: 2015
                         to: 2099
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc":
+                "${forcing_dir}/ozone/${resolution}_ozone_${hist_extend_scenario}_2099.nc":
                         from: 2100
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"

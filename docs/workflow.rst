@@ -63,64 +63,60 @@ In general, a workflow can be defined in the runscript or in any component confi
 
 To define a new phase, the following keywords and mappings (key/value pair) are available:
 
-====================================================== ============ ================= ==========================================================
-Keyword                                                Mandatory    Default value     Function
-====================================================== ============ ================= ==========================================================
-  workflow                                             yes          --                Chapter headline in a runscript or configuration section, 
-                                                                                      indicating that an alterations to the standard workflow 
-                                                                                      will be defined here.
+====================================================== ============ =========================== ==========================================================
+Keyword                                                Mandatory    Default value               Function
+====================================================== ============ =========================== ==========================================================
+  workflow                                             yes          --                          Chapter headline in a runscript or configuration section, 
+                                                                                                indicating that an alterations to the standard workflow 
+                                                                                                will be defined here.
 
-  next_run_triggered_by: <value>                       no           last phase in     Key/value entry in ``workflow`` section. The phase/subjob
-                                                                    default workflow  that should start the next run.
-                                                                    (tidy)              
+  next_run_triggered_by: <value>                       no           last phase in               Key/value entry in ``workflow`` section. The phase/subjob
+                                                                    default workflow            that should start the next run.
+                                                                    (tidy)                        
 
-  last_task_in_queue: <value>                                       last phase in     Key/value entry in ``workflow`` section.
-                                                                    default workflow
-                                                                    (tidy)              
+  new_phases                                           yes          --                          Section within the ``workflow`` chapter that collects new 
+                                                                                                additional workflow phases.
 
-  new_phases                                           yes          --                Section within the ``workflow`` chapter that collects new 
-                                                                                      additional workflow phases.
+  <new_phase_name>                                     yes          --                          Section within the ``new_phases`` section for each new phase.
+                                                                                                The name of the new phase needs to be unique. See also further
+                                                                                                explenation here...
 
-  <new_phase_name>                                     yes          --                Section within the ``new_phases`` section for each new phase.
-                                                                                      The name of the new phase needs to be unique. See also further
-                                                                                      explenation here...
+  run_after: <value> or run_before: <value>            no           last phase in               Key/value entry of each ``<new_phase_name>`` section. 
+                                                                    default workflow            This mapping defines the (default or user) phase of the 
+                                                                    (tidy)                      workflow after or before the new phase should be executed.
+                                                                                                Only one of the two should be specified. 
 
-  run_after: <value> or run_before: <value>            no           last phase in     Key/value entry of each ``<new_phase_name>`` section. 
-                                                                    default workflow  This mapping defines the (default or user) phase of the 
-                                                                    (tidy)            workflow after or before the new phase should be executed.
-                                                                                      Only one of the two should be specified. 
+  submit_to_batch_system: <value>                                                               Key/value entry of each ``<new_phase_name>`` section.
 
-  submit_to_batch_system: <value>                                                     Key/value entry of each ``<new_phase_name>`` section.
+  run_on_queue: <value>                                                                         Key/value entry of each ``<new_phase_name>`` section.
 
-  run_on_queue: <value>                                                               Key/value entry of each ``<new_phase_name>`` section.
-
-  batch_or_shell: <value>                                           batch             Key/value entry of each ``<new_phase_name>`` section.
+  batch_or_shell: <value>                                           batch                       Key/value entry of each ``<new_phase_name>`` section.
                                                                               
-  cluster: <value>                                     no           None              Key/value entry of each ``<new_phase_name>`` section. Phases
-                                                                                      that have the same entry in ``subjob_cluster`` will be run 
-                                                                                      from the same batch script.
+  cluster: <value>                                     no           None                        Key/value entry of each ``<new_phase_name>`` section. Phases
+                                                                                                that have the same entry in ``subjob_cluster`` will be run 
+                                                                                                from the same batch script.
 
-  order_in_cluster: <value>                                         concurrent        Key/value entry of each ``<new_phase_name>`` section.
+  order_in_cluster: <value>                                         concurrent                  Key/value entry of each ``<new_phase_name>`` section.
 
-  script: <value>                                      yes          None              Key/value entry of each ``<new_phase_name>`` section. Name 
-                                                                                      of the script that is going to be executed during the new
-                                                                                      workflow phase.
+  script: <value>                                      yes          None                        Key/value entry of each ``<new_phase_name>`` section. Name 
+                                                                                                of the script that is going to be executed during the new
+                                                                                                workflow phase.
 
-  script_dir: <value>                                  yes          None              Key/value entry of each ``<new_phase_name>`` section. 
-                                                                                      Path to the script defined by the variable ``script``.
+  script_dir: <value>                                  yes          None                        Key/value entry of each ``<new_phase_name>`` section. 
+                                                                                                Path to the script defined by the variable ``script``.
 
-  call_function: <value>                               no           None              Key/value entry of each ``<new_phase_name>`` section. 
+  call_function: <value>                               no           None                        Key/value entry of each ``<new_phase_name>`` section. 
 
-  env_preparation: <value>                             no           None              Key/value entry of each ``<new_phase_name>`` section. E.g. a 
-                                                                                      Python script/function that prepares a dictionary with
-                                                                                      environment variables.
+  env_preparation: <value>                             no           None                        Key/value entry of each ``<new_phase_name>`` section. E.g. a 
+                                                                                                Python script/function that prepares a dictionary with
+                                                                                                environment variables.
 
-  nproc: <value>                                       no             1               Key/value entry of each ``<new_phase_name>`` section.
+  nproc: <value>                                       no             1                         Key/value entry of each ``<new_phase_name>`` section.
 
-  run_only: <value>                                    no           None              Key/value entry of each ``<new_phase_name>`` section.
+  run_only: <value>                                    no           None                        Key/value entry of each ``<new_phase_name>`` section.
 
-  skip_chunk_number: <value>                           no           None              Key/value entry of each ``<new_phase_name>`` section.
-====================================================== ============ ================= ==========================================================
+  skip_chunk_number: <value>                           no           None                        Key/value entry of each ``<new_phase_name>`` section.
+====================================================== ============ =========================== ==========================================================
 
 Syntax example
 ^^^^^^^^^^^^^^

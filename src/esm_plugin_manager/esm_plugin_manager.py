@@ -18,11 +18,26 @@ def read_recipe(recipe, additional_dict, needs_parse=True):
 
 
 def read_plugin_information(plugins_bare, recipe, needs_parse=True):
-    # pluginfile = esm_plugins.yaml
+    """
+    Reads in plugin information from the pluginfile = esm_plugins.yaml
+
+    Arguments:
+        plugins_bare -- disctionary as it is read in by function 'read_recipe'
+        recipe -- dictionary of all workitems of an recipe
+        needs_parse -- True (default) or False
+
+    Returns:
+        plugins - dictionary that has information for each workitem of recipe:
+                    module: e.g. esm_runscripts
+                    submodule: e.g. prepare (this is the Python file where the workitem function is defined.
+                    type: e.g. core
+    """
     if needs_parse:
         plugins_bare = yaml_file_to_dict(plugins_bare)
     extra_info = ["location", "git-url"]
     plugins = {}
+    # loop over all recipe entries
+    # tries to find workitem in 'plugins_bare'
     for workitem in recipe["recipe"]:
         found = False
         for module_type in ["core", "plugins"]:
@@ -31,13 +46,22 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
                     for submodule in plugins_bare[module_type][module]:
                         if submodule in extra_info:
                             continue
+                        # functionlist is a list of workitems (Python function names)
                         functionlist = plugins_bare[module_type][module][submodule]
+                        # if the workitem of the recipe is found in this list
+                        # the dictionary plugins will be filled with fields for
+                        # - 'module' (e.g. esm_runscirpts)
+                        # - 'submodule' (e.g. prepare, this is basically the name
+                        #               of the python file this function is defined in)
+                        # - 'type' (core of plugin)
                         if workitem in functionlist:
                             plugins[workitem] = {
                                 "module": module,
                                 "submodule": submodule,
                                 "type": module_type,
                             }
+                            # add extra info ["location", "git-url"] if found in plugins_bare dict
+                            # is there a use case for this?
                             for extra in extra_info:
                                 if extra in plugins_bare[module_type][module]:
                                     plugins[workitem].update(
@@ -47,6 +71,7 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
                                             ]
                                         }
                                     )
+                            # if workitem is found, all loops including loop over module_type can be aborted.
                             found = True
                             break
                     if found:
@@ -133,6 +158,7 @@ def work_through_recipe(recipe, plugins, config):
 
         pdb.set_trace()
     recipes = recipe["recipe"]
+    # Loop over the recipe
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed

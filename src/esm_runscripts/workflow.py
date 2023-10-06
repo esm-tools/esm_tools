@@ -127,23 +127,26 @@ class WorkflowPhase:
     cluster = None
     next_submit = []
     called_from = None
+    batch_or_shell = "SimulationSetup"
+    order_in_cluster = "sequential"
+    run_only = None
+    skip_chunk_number = None
+    skip_run_number = None
 
     def __init__(self, phase_name):
         self.name = phase_name
 
 class UserWorkflowPhase(WorkflowPhase):
     """A user workflow phase class."""
-    batch_or_shell = "batch"
-    order_in_cluster = "concurrent"
     script = None
     script_dir = None
     call_function = None
     env_preparation = None
-    run_only = None
-    skip_chunk_number = None
 
     def __init__(self, phase_name):
         self.name = phase_name
+        batch_or_shell = "batch"
+        submit_to_batch_system = False
 
 def assemble_workflow(config):
     from . import Workflow
@@ -173,11 +176,11 @@ def assemble_workflow(config):
     # 4. Order user workflows into default workflow wrt. workflow attributs.
     workflow = order_clusters(workflow, config)
 
-    workflow = complete_clusters(workflow, config)
-    breakpoint()
-    config = prepend_newrun_job(config)
+    subjob_clusters = complete_clusters(workflow, config)
+    subjob_clusters = prepend_newrun_job(config)
     # 5. write the workflow to config
     config = workflow.write_to_config(config)
+    breakpoint()
     # 6. Remove old worklow from config
 
     # Set "jobtype" for the first task???
@@ -191,6 +194,9 @@ def assemble_workflow(config):
 
     return config
 
+def write_subjob_clusters_to_config(config, subjob_clusters):
+    config["general"]["subjob_clusters"] = subjob_clusters
+    return config
 
 def display_nicely(config):
     """
@@ -205,7 +211,7 @@ def display_nicely(config):
     return config
 
 
-def prepend_newrun_job(workflow, config):
+def prepend_newrun_job(workflow, config, subjob_clusters):
     """
     Looks for subjob_cluster that are set by user workflow (not a 'SimulationSetup')
     and do not follow a 'SimulationSetup' subjob_clusters.
@@ -216,18 +222,16 @@ def prepend_newrun_job(workflow, config):
         config -- dictionary
     Returns:
         workflow
+        subjob_clusters
     """
-    gw_config = config["general"]["workflow"]
-    first_cluster_name = gw_config["first_task_in_queue"]
-    print(first_cluster_name)
-    breakpoint()
-    first_cluster = gw_config["subjob_clusters"][first_cluster_name]
-    esm_parser.pprint_config(first_cluster)
+    first_cluster_name = workflow.first_task_in_queue
+    first_cluster = subjob_clusters[first_cluster_name]
+    #esm_parser.pprint_config(first_cluster)
 
     if not first_cluster.get("batch_or_shell", "Error") == "SimulationSetup":
 
-        last_cluster_name = gw_config["last_task_in_queue"]
-        last_cluster = gw_config["subjob_clusters"][last_cluster_name]
+        last_cluster_name = workflow.last_task_in_queue
+        last_cluster = subjob_clusters[last_cluster_name]
 
         new_first_cluster_name = "newrun"
         new_first_cluster = {
@@ -245,7 +249,7 @@ def prepend_newrun_job(workflow, config):
 
         first_cluster["called_from"] = "newrun"
 
-        gw_config["first_task_in_queue"] = "newrun"
+        workflow.first_task_in_queue = "newrun"
 
         new_subjob = {
             "newrun_general": {
@@ -257,10 +261,12 @@ def prepend_newrun_job(workflow, config):
             }
         }
 
-        gw_config["subjob_clusters"].update(new_first_cluster)
-        gw_config["subjobs"].update(new_subjob)
+        subjob_clusters.update(new_first_cluster)
 
-    return config
+# TODO: add new phase to workflow???
+        #gw_config["subjobs"].update(new_subjob)
+
+    return [workflow, subjob_clusters]
 
 def set_phase_attrib(workflow_phases, phase_name, attrib, value):
     for phase in workflow_phases:
@@ -335,6 +341,8 @@ def order_clusters(workflow, config):
         set_phase_attrib(workflow.phases+workflow.user_phases, called_cluster, "called_from", phase4.name)
         if called_cluster == workflow.first_task_in_queue:
             workflow.first_task_in_queue = phase4.name
+        if phase4.cluster == None:
+            phase4.cluster = phase4.name
 #
     first_cluster_name = workflow.first_task_in_queue
     last_cluster_name = workflow.last_task_in_queue
@@ -355,109 +363,58 @@ def complete_clusters(workflow, config):
     """
     Rearanges the subjobs to their subjobs_clusters ???
     Arguments:
+        workflow -- obj
         config -- dictionary
     Returns:
-        config
+        subjob_clusters -- dictionary
     """
-    gw_config = config["general"]["workflow"]
+    # sort into dict subjob_clusters
+    subjob_clusters = {}
 
-    # sortiert alles in dict subjob_clusters
-    clusters = []
     for phase in workflow.phases + workflow.user_phases:
-        if phase.cluster == None:
-            phase.cluster = phase.name
-        clusters.append(phase.cluster)
-
-    # Check if all subjobs of the same cluster have the same run_after
-
-
-    # TODO: calc nproc
-    # TODO: check for batch
-
-    # First, complete the matching subjobs <-> clusters
-
-    for subjob in gw_config["subjobs"]:
         # Erstellt ein leeres dict im dict subjob_clusters
-        subjob_cluster = gw_config["subjobs"][subjob]["subjob_cluster"]
-        if not subjob_cluster in gw_config["subjob_clusters"]:
-            gw_config["subjob_clusters"][subjob_cluster] = {}
+        if not phase.cluster in subjob_clusters:
+            subjob_clusters[phase.cluster] = {}
 
-        # Erstellt leere Liste fuer den jeweiligen subjob_cluster
-        if not "subjobs" in gw_config["subjob_clusters"][subjob_cluster]:
-            gw_config["subjob_clusters"][subjob_cluster]["subjobs"] = []
+        # Create empty list for each subjob_cluster
+        if not "subjobs" in subjob_clusters[phase.cluster]:
+            subjob_clusters[phase.cluster]["subjobs"] = []
 
-        # Haengt alle subjobs in diese Liste an.
-        gw_config["subjob_clusters"][subjob_cluster]["subjobs"].append(subjob)
+        # Append subjobs to list.
+        subjob_clusters[phase.cluster]["subjobs"].append(phase.name)
 
     # Then, complete the resource information per cluster
     # determine whether a cluster is to be submitted to a batch system
-
-    for subjob_cluster in gw_config["subjob_clusters"]:
+    for subjob_cluster in subjob_clusters:
         nproc_sum = nproc_max = 0
-        clusterconf = gw_config["subjob_clusters"][subjob_cluster]
-        for subjob in clusterconf["subjobs"]:
-            subjobconf = gw_config["subjobs"][subjob]
+        attributes = ["submit_to_batch_system", "order_in_cluster", "run_on_queue", "run_after", "run_before", "run_only", "skip_run_number", "skip_chunk_number", "batch_or_shell"]
+        for attrib in attributes:
+            temp_list = []
+            for subjob in subjob_clusters[subjob_cluster]["subjobs"]:
+                if not get_phase_attrib(workflow.phases + workflow.user_phases, subjob, attrib) in temp_list:
+                    subjob_clusters[subjob_cluster][attrib] = get_phase_attrib(workflow.phases + workflow.user_phases, subjob, attrib)
+                else:
+                    print("Missmatch in attributes")
+                    sys.exit(-1)
+            nproc_sum += get_phase_attrib(workflow.phases + workflow.user_phases, subjob, "nproc")
+            nproc_max = max(get_phase_attrib(workflow.phases + workflow.user_phases, subjob, "nproc"), nproc_max)
 
-            clusterconf = merge_single_entry_if_possible(
-                "submit_to_batch_system", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "order_in_cluster", subjobconf, clusterconf
-            )
-
-            if subjobconf.get("submit_to_batch_system", False):
-                clusterconf["batch_or_shell"] = "batch"
-            elif subjobconf.get("script", False):
-                clusterconf["batch_or_shell"] = "shell"
-
-            clusterconf = merge_single_entry_if_possible(
-                "run_on_queue", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_after", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_before", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_only", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_run_number", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_chunk_number", subjobconf, clusterconf
-            )
-
-            nproc_sum += subjobconf.get("nproc", 1)
-            nproc_max = max(subjobconf.get("nproc", 1), nproc_max)
-
-        if not "submit_to_batch_system" in clusterconf:
-            clusterconf["submit_to_batch_system"] = False
-        else:
-            if not "run_on_queue" in clusterconf:
-                print(
-                    f"Information on target queue is missing in cluster {clusterconf}."
-                )
-                sys.exit(-1)
-
-        if not clusterconf.get("batch_or_shell", False):
-            clusterconf["batch_or_shell"] = "SimulationSetup"
-
-        if not "order_in_cluster" in clusterconf:
-            clusterconf["order_in_cluster"] = "sequential"
-
-        if clusterconf["order_in_cluster"] == "concurrent":
+#        if subjob_clusters[subjob_cluster].get("submit_to_batch_system", False):
+#            subjob_clusters[subjob_cluster]["batch_or_shell"] = "batch"
+#        elif subjob_clusters[subjob_cluster].get("script", False):
+#            subjob_clusters[subjob_cluster]["batch_or_shell"] = "shell"
+#
+        if not "run_on_queue" in subjob_clusters[subjob_cluster]:
+            print(f"Information on target queue is missing in cluster {subjob_cluster}.")
+            sys.exit(-1)
+#
+# TODO: Check in nproc is calculated correctly
+        if subjob_clusters[subjob_cluster]["order_in_cluster"] == "concurrent":
             nproc = nproc_sum
         else:
             nproc = nproc_max
-        clusterconf["nproc"] = nproc
-
-    # wie wird hier config angepasst?
-    breakpoint()
-    return config
-
-
+        subjob_clusters[subjob_cluster]["nproc"] = nproc
+    return subjob_clusters
 
 def calc_number_of_tasks(config):
     """

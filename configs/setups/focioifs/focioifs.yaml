@@ -367,9 +367,9 @@ nemo:
         choose_resolution:
                 # TODO: check settings with Joakim
                 eORCA025:
-                        nproca: 24
-                        nprocb: 20
-                        loccunif_nb: 4
+                        nproca: 48
+                        nprocb: 48
+                        loccunif_nb: 16
                 ORCA05:
                         nproca: 24
                         nprocb: 20
@@ -663,7 +663,7 @@ oasis3mct:
 
                                 sstocean1: sstocean1
                                 flxatmos1: flxatmos1
-                                #rnrunoff1: rnrunoff1
+                                rnrunoff1: rnrunoff1
                                 atmtau1: atmtau1
                                 atmflx1: atmflx1
                                 agrifspg: agrifspg

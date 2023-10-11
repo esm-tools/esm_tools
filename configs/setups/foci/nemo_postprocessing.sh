@@ -184,7 +184,7 @@ if [[ -z $increment ]] ; then
       if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
 			increment=1
 		else
-      	increment=$((endmonth - startmonth + 1)) 
+      	increment=$((${endmonth#0} - ${startmonth#0} + 1)) 
 		fi
 	else
       increment=$((endyear - startyear + 1)) 
@@ -241,7 +241,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
-      	  	if [[ -f $output ]] ; then
+      	  	 echo " Looking for $output " 
+                 if [[ -f $output ]] ; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait

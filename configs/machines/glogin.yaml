@@ -169,6 +169,7 @@ choose_compiler_mpi:
       add_module_actions:
          - "load intel/2022.2"
          - "load impi/2021.6"
+         - "load gcc/9.3.0" 
       add_export_vars:
          FC: mpiifort
          F77: mpiifort

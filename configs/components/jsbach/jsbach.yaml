@@ -316,9 +316,9 @@ choose_scenario_is_ssp:
 choose_echam.with_wiso:
         True:
                 restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
                 restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
                 add_streams:
                         - js_wiso
                         - la_wiso

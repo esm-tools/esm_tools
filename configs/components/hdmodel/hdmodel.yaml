@@ -54,7 +54,7 @@ restart_in_in_work:
 
 restart_in_sources:
         hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
-        hdrestart_wiso: restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart_wiso.nc
+        hdrestart_wiso: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart_wiso.nc
 
 restart_in_files:
         hdrestart: hdrestart
@@ -68,7 +68,7 @@ restart_out_in_work:
 
 restart_out_sources:
         hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart.nc
-        hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart_wiso.nc
+        hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart_wiso.nc
 
 choose_general.with_wiso:
         True:

@@ -15,8 +15,6 @@ input_sources:
 # In case you are running a HIST scenario, change the value of this variable to 
 # ssp126, ssp119, ssp245, ssp370, or ssp585
 ozone_source_file_scenario: ${scenario}
-#ozone_source_file_scenario: ssp370
-
 forcing_sources:
         # sst
         "amipsst":

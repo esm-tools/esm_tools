@@ -120,8 +120,6 @@ forcing_sources:
                         from: 1851
                         to: 2014
                 # Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} at the beginning of the file.
-                # In case you are running a HIST scenario, change the value of this variable to 
-                # ssp126, ssp119, ssp245, ssp370, or ssp585
                 "${forcing_dir}/ozone/${resolution}_ozone_${ozone_source_file_scenario}_@YEAR@.nc":
                         from: 2015
                         to: 2099

@@ -12,8 +12,6 @@ input_sources:
 
 # forcings
 # Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} by default.
-# In case you are running a HIST scenario, change the value of this variable to 
-# ssp126, ssp119, ssp245, ssp370, or ssp585
 ozone_source_file_scenario: ${scenario}
 forcing_sources:
         # sst

@@ -184,6 +184,7 @@ class Slurm:
         if (
             config["computer"].get("heterogeneous_parallelization", False)
             and not config["computer"].get("taskset", False)
+            and config["computer"].get("hetjob_flag")
         ):
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers

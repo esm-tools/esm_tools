@@ -1,0 +1,123 @@
+general:
+    setup_name: "awicm3"
+    version: "frontiers-xios"
+    account: "awiiccp"
+    compute_time: "24:00:00"
+    initial_date: "2015-01-01"
+    final_date: "2200-01-01"
+    base_dir: "/scratch/awiiccp5/"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    #use_venv: false # This needs to be deleted as default so that the user gets the dialogue and takes action
+    runtime_environment_changes:
+        add_export_vars:
+            - "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/awiiccp2/software/ecmwf/skylake/lib64/"
+
+awicm3:
+    postprocessing: false
+    model_dir: /proj/awiiccp5/awicm3-frontiers-xios/
+
+fesom:
+    #setup_dir: "/proj/awiiccp5/awicm3-frontiers-xios/fesom-2.0/"
+    ini_restart_exp_id: "hi1950d"
+    ini_restart_date: "2014-12-31"
+    ini_restart_dir: "/scratch/awiiccp5/hi1950d/run_20140101-20141231/work/"
+    resolution: "DART"
+    mesh_dir: /proj/awi/input/fesom2/dart/
+    lresume: true  # don't forget to check!
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    choose_general.run_number:
+        1:
+            #lasttime: '86340'
+            restart_in_sources:
+                par_oce_restart: /scratch/awiiccp5/hi1950d/run_20140101-20141231/work/fesom.2014.oce.restart/*.nc
+                par_ice_restart: /scratch/awiiccp5/hi1950d/run_20140101-20141231/work/fesom.2014.ice.restart/*.nc
+        "*":
+            remove_restart_in_files: [par_oce_restart, par_ice_restart]
+            remove_restart_out_files: [par_oce_restart, par_ice_restart]
+            add_ignore_sources:
+                par_oce_restart: fesom.*.oce.restart/*
+                par_ice_restart: fesom.*.ice.restart/*
+    namelist_changes:
+        namelist.config:
+           machine:
+             n_levels: 2
+             n_part: [10, 72]
+           restart_log:
+             raw_restart_length: 1
+             raw_restart_length_unit: "y"
+    namelist_dir: "/proj/awiiccp5/esm_tools/namelists/fesom2/2.0/awicm3/DART/"
+    add_file_movements:
+        outdata:
+            all_directions: move
+    time_step: 240
+    nproc: 4800
+
+oifs:
+    ini_restart_exp_id: "hi1950d"
+    ini_restart_date: "${prev_date}"
+    ini_restart_dir: "/scratch/awiiccp5/hi1950d/restart/oifs/"
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true 
+    lresume: true
+    prev_run_config_file: "/scratch/awiiccp5/hi1950d/config/hi1950d_finished_config.yaml_20140101-20141231"
+    time_step: 900
+    nproc: 1040
+    omp_num_threads: 2
+    namelist_changes:
+        fort.4:
+            naerad:
+                NCMIPFIXYR: 0
+                SSPNAME: "SSP5-8.5"
+            namcumf:
+                RPRCON: 1.0E-3
+                ENTRORG: 1.25E-3
+            namgwwms:
+                GGAUSSB: -0.45
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    ini_restart_exp_id: "hi1950d"
+    ini_restart_date: "2014-12-31"
+    ini_restart_dir: "/scratch/awiiccp5/hi1950d/restart/oasis3mct/"
+    time_step: 3600
+    coupling_methods:
+        gauswgt_c:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: glbpos
+                    algorithm: opt
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+

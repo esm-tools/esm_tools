@@ -23,7 +23,7 @@ core:
                         - "initialize_experiment_logfile"
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
-                        
+
 
 
                 prepcompute:
@@ -52,7 +52,7 @@ core:
                         - "throw_away_some_infiles"
 
 
-                observe:          
+                observe:
                         - "init_monitor_file"
                           #- "get_last_jobid"
                         - "wait_and_observe"

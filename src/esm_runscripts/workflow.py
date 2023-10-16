@@ -161,10 +161,26 @@ def assemble_workflow(config):
     """
 
     # 1. Generate default workflow object
-    #TODO: preset of default workflow phases should be set in some config file.
-    workflow = Workflow(["prepcompute","compute","tidy"],always_run_with=["prepare","prepexp"])
     # initialize the default workflow as Workflow object
-    # TODO: NW where are these default phases defined???
+    # TODO: NW where are these default phases defined? For now I placed it in
+    # esm_tools/configs/esm_software/esm_runscripts/defaults.yaml
+    phases = []
+    always_run_with = []
+    if "defaults.yaml" in config["general"]:
+        if "default_workflow_phases" in config["general"]["defaults.yaml"]:
+            phases = config["general"]["defaults.yaml"]["default_workflow_phases"]["phases"]
+            if "always_run_with" in config["general"]["defaults.yaml"]["default_workflow_phases"]:
+                always_run_with = config["general"]["defaults.yaml"]["default_workflow_phases"]["always_run_with"]
+
+    if phases and always_run_with:
+        workflow = Workflow(phases, always_run_with=always_run_with)
+    elif phases:
+        workflow = Workflow(phases)
+    else:
+        esm_parser.user_error("ERROR", "No default workflow phases defined.")
+        # Note: NW Should this work also if no default phases are set in such a config file, but
+        # instead all workflow phases are defined in different configs and/or runscripts?
+        # TODO: NW Where could a user define a different (default) phase list? Or should this be changed in defaults.yaml?
     # 2. Initialize default workflow phases
     workflow = init_default_workflow(workflow, config)
     # 3. Read in workflows from runscript and config files

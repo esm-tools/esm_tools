@@ -56,7 +56,7 @@ general:
           v3.2:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.1.3+xios-2.5
+            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
@@ -398,6 +398,7 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.2":
+                        add_version: "2.5"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
                         add_namelist_changes:
                                 namelist.config:

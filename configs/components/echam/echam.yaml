@@ -394,11 +394,14 @@ choose_scenario:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                        MAC-SP: MAC-SP
+                        MAC-SP: MAC-SP_hist_scenario
+                # For the last year of the hisotical period echam needs an ozone file
+                # of the next year and the ssp370 is given by default
+                ozone_source_file_scenario: ssp370
 
         cmip6hist:
                 scenario_type: cmip6

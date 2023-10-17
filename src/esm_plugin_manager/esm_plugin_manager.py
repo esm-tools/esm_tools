@@ -21,16 +21,22 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
     """
     Reads in plugin information from the pluginfile = esm_plugins.yaml
 
-    Arguments:
-        plugins_bare -- disctionary as it is read in by function 'read_recipe'
-        recipe -- dictionary of all workitems of an recipe
-        needs_parse -- True (default) or False
+    Parameters
+    ----------
+    plugins_bare : dict
+        Dictionary as it is read in by function ``read_recipe``
+    recipe : dict
+        Dictionary of all workitems of a recipe
+    needs_parse : bool
+        True (default) or False
 
-    Returns:
-        plugins - dictionary that has information for each workitem of recipe:
-                    module: e.g. esm_runscripts
-                    submodule: e.g. prepare (this is the Python file where the workitem function is defined.
-                    type: e.g. core
+    Returns
+    -------
+    plugins : dict
+        Dictionary that has information for each workitem of the recipe:
+        - module: e.g. esm_runscripts
+        - submodule: e.g. prepare (this is the Python file where the workitem function is defined.
+        - type: e.g. core
     """
     if needs_parse:
         plugins_bare = yaml_file_to_dict(plugins_bare)

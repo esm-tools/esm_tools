@@ -34,7 +34,7 @@ class Workflow:
         """
         Write to config.
         """
-        # NW: It is assumed here, that there are no workflows in config["general"]
+        # It is assumed here, that there are no workflows in config["general"]
         # or that these are removed after collect_...
         config["general"]["workflow"] = {}
         config["general"]["workflow"].update(self.__dict__)

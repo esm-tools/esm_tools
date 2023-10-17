@@ -40,19 +40,13 @@ fesom:
             restart_in_sources:
                 par_oce_restart: /scratch/awiiccp5/ctl1950d/run_19490101-19491231/work/fesom.1949.oce.restart/*.nc
                 par_ice_restart: /scratch/awiiccp5/ctl1950d/run_19490101-19491231/work/fesom.1949.ice.restart/*.nc
-        "*":
-            remove_restart_in_files: [par_oce_restart, par_ice_restart]
-            remove_restart_out_files: [par_oce_restart, par_ice_restart]
-            add_ignore_sources:
-                par_oce_restart: fesom.*.oce.restart/*
-                par_ice_restart: fesom.*.ice.restart/*
     namelist_changes:
         namelist.config:
            machine:
              n_levels: 2
              n_part: [10, 72]
            restart_log:
-             raw_restart_length: 1
+             raw_restart_length: 2
              raw_restart_length_unit: "m"
         namelist.io:
             nml_listsize:

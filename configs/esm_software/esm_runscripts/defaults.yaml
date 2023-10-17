@@ -7,7 +7,7 @@ per_model_defaults:
             exp_to_run:     copy
             run_to_work:    copy
             work_to_run:    copy
-default_workflow_phases:
+workflow:
     phases:
         - prepcompute
         - compute

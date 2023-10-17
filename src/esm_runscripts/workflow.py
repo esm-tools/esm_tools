@@ -16,9 +16,16 @@ class Workflow:
         """
         Create a new workflow.
 
-        Arguments:
-            phases -- List of workflow phases
-            always_run_with -- List of phases that precedes each phase
+        Parameters
+        ----------
+        phases : list
+            List of workflow phases
+        always_run_with : list
+            List of phases that precedes each phase
+
+        Returns
+        -------
+        none
         """
         # TODO: NW call here the phase object ???
         self.phases = phases
@@ -78,10 +85,14 @@ class Workflow:
         """
         Checks if a phase/cluster can be skipped.
         Needed keywords: run_only, skip_chunk_number
-        Arguments:
+
+        Parameters
+        ----------
             self
-            config
-        Returns:
+            config : dict
+
+        Returns
+        -------
             True or False
         """
         #gw_config = config["general"]["workflow"]
@@ -154,10 +165,13 @@ def assemble_workflow(config):
     Assembles the workflow tasks.
     Is called from the plugin recipe prepcompute.
 
-    Arguments:
-        config -- dictionary
-    Returns:
-        config
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
+        config : dict
     """
 
     # 1. Generate default workflow object
@@ -218,10 +232,13 @@ def display_nicely(config):
     """
     Pretty prints the workflow configuration assembled in config["general"].
 
-    Arguments:
-        config -- dictionary
-    Returns:
-        config
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
+        config : dict
     """
     esm_parser.pprint_config(config["general"]["workflow"])
     return config
@@ -234,9 +251,12 @@ def prepend_newrun_job(workflow, config, subjob_clusters):
     E.g. if two user workflow are the last two subjob_clusters ???
     Any other example cases when this is the case?
 
-    Arguments:
-        config -- dictionary
-    Returns:
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
         workflow
         subjob_clusters
     """
@@ -302,9 +322,12 @@ def order_clusters(workflow, config):
     """
     Put the subjob_clusters in order ???
 
-    Arguments:
-        config -- dictionary
-    Returns:
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
         workflow
     """
     independent = workflow.check_user_workflow_dependency()
@@ -378,11 +401,15 @@ def complete_clusters(workflow, config):
     # have the same cluster entry.
     """
     Rearanges the subjobs to their subjobs_clusters ???
-    Arguments:
-        workflow -- obj
-        config -- dictionary
-    Returns:
-        subjob_clusters -- dictionary
+
+    Parameters
+    ----------
+        workflow
+        config : dict
+
+    Returns
+    -------
+        subjob_clusters : dict
     """
     # sort into dict subjob_clusters
     subjob_clusters = {}
@@ -457,10 +484,14 @@ def init_default_workflow(default_workflow, config):
     Add workflow for precompute, compute, and tidy phases
     etc information already here!
 
-    Arguments:
-        default_workflow -- workflow object
-        config -- dictionary
-    Returns:
+    Parameters
+    ----------
+        default_workflow
+            workflow object
+        config : dict
+
+    Returns
+    -------
         default_workflow
     """
 
@@ -544,10 +575,13 @@ def collect_all_workflow_information(config):
     Checks if there are "workflow" entries in the user runscript and copies or merges them into
     config["general"]["workflow"]
 
-    Arguments:
-        config -- dictionary
-    Returns:
-        config
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
+        config : dict
     """
     for model in config:
         if "workflow" in config[model]:
@@ -621,12 +655,16 @@ def merge_single_entry_if_possible(entry, sourceconf, targetconf):
     """
     Merges a dictionary entry into a target dictionary that has he same key.
 
-    Arguments:
-        entry -- dictionary key
-        sourceconf -- dictionary
-        targetconf -- dictionary
-    Returns:
-        targetconf
+    Parameters
+    ----------
+        entry : str
+            dictionary key
+        sourceconf : dict
+        targetconf : dict
+
+    Returns
+    -------
+        targetconf : dict
     """
     if entry in sourceconf:
         # Check if entry is already in targetconf AND different to sourceconf, then exit
@@ -645,11 +683,14 @@ def merge_if_possible(source, target):
     Merges the entries of source dictionary into target dictionary, if not already in.
     (Will not overwrite entries in target dictionary.)
 
-    Arguments:
-        source -- dictionary
-        target -- dictionary
-    Returns:
-        target
+    Parameters
+    ----------
+        source : dict
+        target : dict
+
+    Returns
+    -------
+        target : dict
     """
     for entry in source:
         if entry in target:

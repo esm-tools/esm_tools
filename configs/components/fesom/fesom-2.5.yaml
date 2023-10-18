@@ -327,6 +327,12 @@ namelist_changes:
                 restart_log:
                         restart_length: "${restart_rate}"
                         restart_length_unit: "${restart_unit}"
+                inout:
+                        restartflag: "${restart_flag}"
+                        output_length: "${restart_rate}"
+                        output_length_unit: "${restart_unit}"
+                        restart_length: "${restart_rate}"
+
 
         namelist.forcing:
 
@@ -547,3 +553,4 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+

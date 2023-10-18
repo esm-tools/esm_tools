@@ -67,6 +67,10 @@ def test_config():
                         'submit_to_batch_system': True}}}}}
     return config
 
+def test_num_phases(test_workflow_object, test_config):
+    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
+    assert test_workflow_object.num_phases == 3
+
 def test_check_user_workflow_dependency(test_workflow_object, test_config):
     test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
     test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)

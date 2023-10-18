@@ -31,7 +31,8 @@ class Workflow:
         self.phases = phases
         self.always_run_with = always_run_with
 
-    def num_phases_in_workflow(self):
+    @property
+    def num_phases(self):
         """
         Return the number of phases in workflow.
         """
@@ -509,7 +510,7 @@ def init_default_workflow(default_workflow, config):
         default_workflow.phases.append(WorkflowPhase(phase))
 
     for ind, phase in enumerate(default_workflow.phases):
-        if ind < default_workflow.num_phases_in_workflow() - 1:
+        if ind < default_workflow.num_phases - 1:
             phase.run_before = default_workflow.phases[ind+1].name
         else:
             phase.run_after = default_workflow.phases[ind-1].name

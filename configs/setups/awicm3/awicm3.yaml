@@ -296,6 +296,11 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
 
+        workflow:
+            next_run_triggered_by: tidy
+            subjobs:
+                my_new_subjob:
+                    batch_or_shell: shell
 
         # Postprocessing
         choose_general.postprocessing:

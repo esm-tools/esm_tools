@@ -78,7 +78,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
 
-        version: "v3.1"
+        version: "v3.2"
         scenario: "piControl"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
@@ -368,6 +368,7 @@ fesom:
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
+        climate_data_dir: "${pool_dir}/hydrography"
 
         restart_unit: "d"
         leapyear: True
@@ -398,7 +399,7 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.2":
-                        add_version: "2.5"
+                        version: "2.5"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
                         add_namelist_changes:
                                 namelist.config:

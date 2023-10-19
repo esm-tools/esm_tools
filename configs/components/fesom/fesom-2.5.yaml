@@ -167,14 +167,18 @@ restart_out_files:
         fesom_raw_restart: fesom_raw_restart
         fesom_bin_restart_info: fesom_bin_restart_info
         fesom_bin_restart: fesom_bin_restart
+        fesom_bin_restart_tar: fesom_bin_restart_tar
+        fesom_raw_restart_tar: fesom_raw_restart_tar
 
 restart_out_in_work:
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
@@ -183,8 +187,10 @@ restart_out_sources:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM

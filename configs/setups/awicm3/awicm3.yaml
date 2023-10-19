@@ -368,7 +368,7 @@ fesom:
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
-        climate_data_dir: "${pool_dir}/hydrography"
+        climate_data_dir: "${pool_dir}/hydrography/"
 
         restart_unit: "d"
         leapyear: True

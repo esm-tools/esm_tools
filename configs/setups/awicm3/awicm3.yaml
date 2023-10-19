@@ -638,7 +638,6 @@ oasis3mct:
                                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.1':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/

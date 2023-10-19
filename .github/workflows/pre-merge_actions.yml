@@ -35,8 +35,8 @@ jobs:
 
       # Installs Hub
       - name: Install hub
-        uses: geertvdc/setup-hub@master
-          
+        run: conda install -c conda-forge hub
+
       # Set the user to author the git actions of the runner    
       - name: set user
         run: |

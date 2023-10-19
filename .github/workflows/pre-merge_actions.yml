@@ -35,7 +35,9 @@ jobs:
 
       # Installs Hub
       - name: Install hub
-        run: conda install -c conda-forge hub
+        run: |
+          conda install -c conda-forge hub;
+          hub --version
 
       # Set the user to author the git actions of the runner    
       - name: set user

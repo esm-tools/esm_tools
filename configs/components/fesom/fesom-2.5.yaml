@@ -19,6 +19,9 @@ icb_code: False
 with_wiso: false
 wiso_code: false
 
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
 choose_version:
   '2.5':
     branch: "2.5"
@@ -553,4 +556,21 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+
+tidy_recipe:
+- "tidy_coupler"
+- "tar_binary_restarts"
+- "assemble"
+- "check_for_unknown_files"
+- "log_used_files"
+- "throw_away_some_infiles"
+- "copy_stuff_back_from_work"
+- "copy_all_results_to_exp"
+#- "_update_chunk_date_file"
+- "clean_run_dir"
+#- "start_post_job"
+#- "signal_tidy_completion"
+#- "_increment_date_and_run_number"
+#- "_write_date_file"
+#- "maybe_resubmit"
 

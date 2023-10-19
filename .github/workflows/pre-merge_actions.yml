@@ -36,7 +36,9 @@ jobs:
       # Installs Hub
       - name: Install hub
         run: |
-          conda install -c conda-forge hub;
+          git clone --config transfer.fsckobjects=false --config receive.fsckobjects=false --config fetch.fsckobjects=false https://github.com/github/hub.git;
+          cd hub;
+          make install prefix=/usr/local;
           hub --version
 
       # Set the user to author the git actions of the runner    

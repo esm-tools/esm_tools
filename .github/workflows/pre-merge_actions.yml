@@ -34,8 +34,15 @@ jobs:
           fetch-depth: 0
 
       # Installs Hub
-      - uses: geertvdc/setup-hub@master
-          
+      - name: Install hub
+        run: |
+          git clone --config transfer.fsckobjects=false --config receive.fsckobjects=false --config fetch.fsckobjects=false https://github.com/github/hub.git;
+          cd hub;
+          make install prefix=~/.local;
+          alias hub=$( realpath ./bin/hub );
+          cd ..;
+          hub --version
+
       # Set the user to author the git actions of the runner    
       - name: set user
         run: |

@@ -1724,6 +1724,9 @@ ic_atm2debm_ablation_debm_run_compile_binary() {
         if [ ! -z ${DEBM_EXE} ]; then
                 echo "*** Copy DEBM_EXE into ${COUPLE_DIR}"
                 cp ${DEBM_EXE} ${COUPLE_DIR}/dEBMmain
+        elif [ ! -z ${FUNCTION_PATH} ]; then 
+                echo "*** Copy DEBM_EXE from ${FUNCTION_PATH} into ${COUPLE_DIR}"
+                cp ${FUNCTION_PATH}/dEBM/Fortran/dEBMmain ${COUPLE_DIR}/dEBMmain
         fi
 
         # Clone Shan's fortran version if it's not already here:
@@ -1735,50 +1738,59 @@ ic_atm2debm_ablation_debm_run_compile_binary() {
                 fi
                 # compile it
                 current_dir=$(pwd)
-                cd dEBM/Fortran
-                if command -v nc-config > /dev/null 2>&1; then
-                        # Do nothing
-                        :
+                #cd dEBM/Fortran
+                cd ${FUNCTION_PATH}
+                ./install_debm.sh ${MACHINE} 2>> debm_compile_stdout_stderr 
+                
+                #if command -v nc-config > /dev/null 2>&1; then
+                #        # Do nothing
+                #        :
+                #else
+                #        echo -e "\t\t!!! F A T A L   E R R O R !!! nc-config not found, not sure how to compile. Aborting"
+                #        exit
+                #fi
+
+                #if [ $(nc-config --has-fortran) == "no" ]; then
+                #        echo -e "\t\t!!! F A T A L   E R R O R !!! netcdf specified via nc-config doesn't have FORTRAN bindings. Aborting"
+                #        exit
+                #fi
+
+                #echo -e "\t\t- Compiling dEBM"
+
+                #compiler=$(nc-config --fc)
+                #include=$(nc-config --fflags)
+                #libs=$(nc-config --flibs)
+
+                ## For ollie, a bad hack: the library -lsz and -lcurl don't
+                ## appear to be found on the compute nodes, we throw them out:
+                #bad_libs="-lsz -lcurl"
+                #for bad_lib in ${bad_libs}; do
+                #        libs="${libs//$bad_lib/}"
+                #done
+
+                #if [ "x${debug_compile_ic_atm2debm_binary}" == "x1" ]; then
+                #        echo -e "\t\t- INFO: compiler=$compiler"
+                #        echo -e "\t\t- INFO: include=$include"
+                #        echo -e "\t\t- INFO: libs=$libs"
+                #        echo -e "\t\t- INFO: the compile command will be:"
+                #        echo "$compiler $include $libs MOD_PRE.f90 MOD_DATA.f90 MOD_MAIN.f90 MOD_OUTPUT.f90 dEBMmain.f90 -o dEBMmain"
+                #fi
+                #$compiler \
+                #        $include \
+                #        $libs \
+                #        MOD_PRE.f90 \
+                #        MOD_DATA.f90 \
+                #        MOD_MAIN.f90 \
+                #        MOD_OUTPUT.f90 \
+                #        dEBMmain.f90 \
+                #        -o dEBMmain \
+                #        2>> ${compiler}_stdout_stderr
+                if [ -f ${COUPLE_DIR}/dEBMmain ]; then
+                    echo -e "\t\t * dEBM compilation was successful!"
                 else
-                        echo -e "\t\t!!! F A T A L   E R R O R !!! nc-config not found, not sure how to compile. Aborting"
-                        exit
+                    echo -e "\t\t!!! F A T A L   E R R O R !!! dEBM not successful. Aborting"
+                    exit
                 fi
-
-                if [ $(nc-config --has-fortran) == "no" ]; then
-                        echo -e "\t\t!!! F A T A L   E R R O R !!! netcdf specified via nc-config doesn't have FORTRAN bindings. Aborting"
-                        exit
-                fi
-
-                echo -e "\t\t- Compiling dEBM"
-
-                compiler=$(nc-config --fc)
-                include=$(nc-config --fflags)
-                libs=$(nc-config --flibs)
-
-                # For ollie, a bad hack: the library -lsz and -lcurl don't
-                # appear to be found on the compute nodes, we throw them out:
-                bad_libs="-lsz -lcurl"
-                for bad_lib in ${bad_libs}; do
-                        libs="${libs//$bad_lib/}"
-                done
-
-                if [ "x${debug_compile_ic_atm2debm_binary}" == "x1" ]; then
-                        echo -e "\t\t- INFO: compiler=$compiler"
-                        echo -e "\t\t- INFO: include=$include"
-                        echo -e "\t\t- INFO: libs=$libs"
-                        echo -e "\t\t- INFO: the compile command will be:"
-                        echo "$compiler $include $libs MOD_PRE.f90 MOD_DATA.f90 MOD_MAIN.f90 MOD_OUTPUT.f90 dEBMmain.f90 -o dEBMmain"
-                fi
-                $compiler \
-                        $include \
-                        $libs \
-                        MOD_PRE.f90 \
-                        MOD_DATA.f90 \
-                        MOD_MAIN.f90 \
-                        MOD_OUTPUT.f90 \
-                        dEBMmain.f90 \
-                        -o dEBMmain \
-                        2>> ${compiler}_stdout_stderr
                 cp dEBMmain ${COUPLE_DIR}
                 cd $current_dir
         fi

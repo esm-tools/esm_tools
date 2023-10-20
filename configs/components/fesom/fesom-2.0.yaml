@@ -77,6 +77,8 @@ restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
 
+tar_binary_restarts: False
+
 time_step: 1800
 resolution: CORE2
 

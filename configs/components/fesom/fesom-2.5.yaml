@@ -572,11 +572,5 @@ tidy_recipe:
 - "throw_away_some_infiles"
 - "copy_stuff_back_from_work"
 - "copy_all_results_to_exp"
-#- "_update_chunk_date_file"
 - "clean_run_dir"
-#- "start_post_job"
-#- "signal_tidy_completion"
-#- "_increment_date_and_run_number"
-#- "_write_date_file"
-#- "maybe_resubmit"
 

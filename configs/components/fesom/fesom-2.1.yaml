@@ -9,6 +9,9 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
 # LA these are both iceberg related
 use_icebergs: False                 # turns on icebergs
 use_icesheet_coupling: False        # initializes new icebergs every restart
@@ -597,3 +600,17 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+
+# ------------------------
+# RECIPE
+# ------------------------
+tidy_recipe:
+    - "tidy_coupler"
+    - "tar_binary_restarts"
+    - "assemble"
+    - "check_for_unknown_files"
+    - "log_used_files"
+    - "throw_away_some_infiles"
+    - "copy_stuff_back_from_work"
+    - "copy_all_results_to_exp"
+    - "clean_run_dir"

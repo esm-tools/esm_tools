@@ -33,7 +33,10 @@ choose_general.mail_user:
         "*":
                 mail2:  "-M ${general.mail_user}"
 
-notification_flag: "${mail1} ${mail2}"
+notification_flag: 
+    - "${mail1}"
+    - "${mail2}"
+
 #single_proc_submit_flag: "--ntasks-per-node=1"
 nodes_flag: "-l nodes=@nodes@"
 partition_flag: "-q ${partition}"

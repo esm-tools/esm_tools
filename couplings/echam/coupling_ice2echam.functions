@@ -11,7 +11,7 @@ ice2echam() {
         ISM_TO_ECHAM_update_orography=${ISM_TO_ECHAM_update_orography:-1}
         ISM_TO_ECHAM_update_glacial_mask=${ISM_TO_ECHAM_update_glacial_mask:-1}
         ISM_TO_ECHAM_update_land_runoff=${ISM_TO_ECHAM_update_land_runoff:-1}
-        HOSING_CORRECTION=${HOSING_CORRECTION:-1}
+        HOSING_CORRECTION=${HOSING_CORRECTION:-0}
 
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
         

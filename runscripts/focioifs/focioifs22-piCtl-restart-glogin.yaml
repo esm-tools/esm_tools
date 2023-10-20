@@ -1,0 +1,165 @@
+# example to use the a small number of nodes / CPUs that 
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   version: "2.2"
+   resolution: "TCO95_ORCA05"
+
+   compute_time: "1:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+
+   nyear: 0
+   nmonth: 11
+   nday: 0
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+  
+   # machine specific setup 
+   account: shk00018 
+   base_dir: ${general.homedir}/esm/esm-experiments/ 
+   
+   postprocessing: 1
+
+   lresume: True
+   # Name of the run you are starting from
+   ini_parent_exp_id: "FOCI_GJK029"
+   # Where are you starting from in the above run
+   #ini_restart_date: "2550-01-01" 
+   ini_string_parent_date: "2550-01-01"
+   # Time step in NEMO from restarts in parent run
+   # NOTE: ESM-Tools looks for a global NEMO restart file 
+   # You must run nocs_combine on restarts first.
+   ini_nemo_restart_steps: 12272160
+   ini_parent_dir: "${homedir}/esm/esm-experiments/${ini_parent_exp_id}/"
+   # Time stamp from OASIS for restarts in parent run
+   oasis_date_stamp: "_25400101-25491231"    
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-2.1.1/
+
+computer: 
+   partition: "standard96:test" 
+  
+oifs:
+   lresume: True
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "/scratch/projects/shk00018/foci_input2/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   time_step: 1800
+   nproc: 168
+   omp_num_threads: 4
+   use_ocean_currents: 0
+   
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_date: "25491231"
+   # where are your restart files for OpenIFS
+   ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
+   ini_string_parent_date: "1850-01-01"
+   # Config file of last restart
+   prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${general.oasis_date_stamp}"
+   # are you branching off from another run
+   branchoff: true
+   # where do you want the model to think its starting from?
+   # for annual restarts, this should be 1 year before general.initial_date
+   # E.g. for historical, initial_date=1850-01-01, with annual restart, then this is 1849-01-01
+   ini_pseudo_initial_date: "1840-01-01"
+   
+   # use CMIP6 ozone
+   o3_scheme: cmip6
+   
+   # new solar spectrum
+   solarspectrum: True
+   
+   # correction for Southern Ocean clouds
+   sclct_switch: 2
+   
+   # perturb i.c. to make ensembles
+   perturb: 0     # set to 1 to add perturbation
+   ensemble_id: 1
+   
+   # namelist changes to OpenIFS   
+   add_namelist_changes:
+      fort.4:
+         NAERAD:
+              NAERANT_SCALE: 1 # turn on aerosol scaling
+         NAMCLDP:
+              # diffusion coeff for cloud edges
+              RCLDIFF: 5.e-6 # default 3e-6
+              # for convection, RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+              #RCLDIFF_CONVI: 7 # default 7.0
+         NAMMCC:
+              RALBSEAD_NML: 0.06 #0.045
+              RALBSCALE_AR: 0.8
+              # couple ice temp from LIM2 
+              #LNEMOLIMTEMP: ".true."
+         #NAEPHY:
+         #     # turn of OpenIFS sea-ice thermodynamics 
+         #     LESICE: ".true."  
+         # GGAUSSB controls magnitude of parameterized GWD
+         # GGAUSSB = -0.95 gives more realistic QBO period.
+         #NAMGWWMS:
+         #     GGAUSSB: -0.95
+
+oasis3mct:
+   lresume: True
+   a2o_remap_method: "conserv"
+   o2a_remap_method: "conserv" 
+   norestart: F
+   use_lucia: True
+   debug_level: 1
+   #export_mode: EXPOUT
+   coupling_time_step: 3600
+   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
+   ini_restart_date: "2549-12-31"
+   oasis_date_stamp: "" #"_19990101-19991231"
+      
+nemo:
+   lresume: ${general.lresume}
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/restart/nemo/"
+   ini_parent_date: "25491231"
+   resolution: "ORCA05"
+   jpni: 24
+   jpnj: 24
+   nproca: 24
+   nprocb: 24
+   nproc: 576
+   
+   add_namelist_changes:
+       namelist_cfg:
+           namtra_ldf:
+               rn_aht_0: 600
+               rn_aeiv_scale: 0.5
+           #namdyn_ldf:
+           #    rn_cmsmag_2: 4
+           namsbc_rnf:
+               rn_rfact: 0.984
+           
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_prod/"
+   nproc: 48

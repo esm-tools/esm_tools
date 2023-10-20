@@ -1451,8 +1451,12 @@ choose_generation:
                             namdyn_hpg:
                                ln_hpg_sco: '.true.'
         "3.6":
-                opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
-
+                choose_sst_grid_name: 
+                        "opat":
+                                opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+                        "opac":
+                                opat_fields: []
+                                opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT, OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1] 
                 add_namelist_changes:
                         namelist_cfg:
                                 namdom:
@@ -1871,6 +1875,8 @@ log_sources:
         layout: layout.dat
 
 ##########################  coupling stuff
+
+sst_grid_name: "opat"
 
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
 

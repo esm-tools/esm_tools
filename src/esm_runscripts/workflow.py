@@ -38,6 +38,27 @@ class Workflow:
         """
         return len(self.phases)
 
+    def get_phases_attribs_list(self, phase_type, attrib):
+        """
+        Return the names of all phases as list.
+
+        Parameters
+        ----------
+            self: class Workflow
+            phase_type: str (default or user)
+            attribute: str
+
+        Returns
+        -------
+            phases_attribs : list
+        """
+        if phase_type == 'user':
+            phases_attribs = [getattr(phase, attrib) for phase in self.user_phases]
+        else:
+            phases_attribs = [getattr(phase, attrib) for phase in self.phases]
+
+        return phases_attribs
+
     def write_to_config(self, config):
         """
         Write to config.
@@ -55,15 +76,20 @@ class Workflow:
 
     def check_user_workflow_dependency(self):
         """
-        Check whether the user defined workflow phases are independent from eachother or not.
+        Check whether the user defined workflow phases are independent from each other or not.
         """
         independent = False
-        user_phases_names = [phase.name for phase in self.user_phases]
-        run_after_list = [phase.run_after for phase in self.user_phases]
-        run_before_list = [phase.run_before for phase in self.user_phases]
+        user_phases_names = self.get_phases_attribs_list('user','name')
+        run_after_list = self.get_phases_attribs_list('user','run_after')
+        run_before_list = self.get_phases_attribs_list('user','run_before')
+
+        # All user phases are independent from each other, if
+        # none of the ``user_phases_names`` are found in the union of ``run_before_list`` and ``run_after_list``
+        # That means alls user phases can be run independent from each other.
         if not set(user_phases_names).intersection(set(run_after_list).union(set(run_before_list))):
             independent = True
         else:
+            # TODO: What todo in other case?
             independent = False
 
         return independent
@@ -73,11 +99,13 @@ class Workflow:
         Check if any user phase addresses an unknown workflow phase.
         """
         unknown_user_phase = True
-        phases_names = [phase.name for phase in self.phases]
-        user_phases_names = [phase.name for phase in self.user_phases]
+        phases_names = self.get_phases_attribs_list('default','name')
+        user_phases_names = self.get_phases_attribs_list('user','name')
+        run_after = self.get_phases_attribs_list('user','run_after')
+        run_before = self.get_phases_attribs_list('user','run_before')
         # Filter out all falsy items (e.g. [], "", None)
-        run_after_list = list(filter(None, [phase.run_after for phase in self.user_phases]))
-        run_before_list = list(filter(None, [phase.run_before for phase in self.user_phases]))
+        run_after_list = list(filter(None, run_after))
+        run_before_list = list(filter(None, run_before))
 
         unknown_user_phases = set(run_after_list).union(set(run_before_list)).difference(set(user_phases_names).union(set(phases_names)))
         return unknown_user_phases

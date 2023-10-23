@@ -198,6 +198,12 @@ choose_general.setup_name:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
+              fs_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
               default_oasismct4: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:

@@ -38,6 +38,7 @@ general:
         - default
         - default_autotools
         - fs
+        - fs_oasismct4
         - default_oasismct4
         - agrif 
         - agrif_oasismct4 
@@ -51,6 +52,9 @@ general:
           fs:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS+echam-6.3.05p2-foci
+          fs_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+echam-6.3.05p2-foci_oasismct4
           default_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
@@ -87,6 +91,7 @@ echam:
              blogin:
                 compiler_mpi: intel2019_impi2019
              glogin:
+                #compiler_mpi: intel2022_impi2021
                 compiler_mpi: intel2019_impi2019
                 #compiler_mpi: intel2019_impi2019_nemo4
              nesh:
@@ -109,6 +114,7 @@ echam:
                 add_module_actions:
                    - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              glogin:
+                #compiler_mpi: intel2022_impi2021
                 compiler_mpi: intel2019_impi2019
                 #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
@@ -125,6 +131,8 @@ echam:
                         version: "6.3.05p2-foci"
                 fs:
                         version: "6.3.05p2-foci"
+                fs_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
                 default_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
                 agrif:
@@ -488,6 +496,8 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AOW_autotools"
                 fs:
                         version: "ORCA05_LIM2_KCM_AOW_FS"
+                fs_oasismct4:
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
                 agrif_aow:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
                 agrif:
@@ -782,6 +792,38 @@ oasis3mct:
                               - '1_OIceEvap <--gauswgt-- AIceEvap'
                               - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
 
+                fs_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0-geomar"
+                        
+                        export_mode_a2o: EXPORTED     
+                         
+                        coupling_target_fields:
+        
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+
         coupling_directions:
                 'opat->atmo':
                         lag: ${o2a_lag}
@@ -895,46 +937,71 @@ oasis3mct:
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 10
-                                        weight: 0.15
-                                #- mapping:
-                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                                #        map_regrid_on: src
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_opat_to_atmo_GAUSWGT_${nemo.resolution}.nc
+                                        map_regrid_on: dest
 
+                # TODO: implement the remapping in a clean way
+                # 1. make remapping weights restart again
+                # 2. for default_oasismct4 and agrif_oasismct4 implement the mapping: correctly
                 gauswgt:
                         time_transformation: instant
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 10
-                                        weight: 0.15
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
                                 #- mapping:
-                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        mapname: rmp_atmo_to_opat_GAUSWGT_${nemo.resolution}.nc
                                 #        map_regrid_on: src
 
-                gauswgt_global:
+                a2ot_gauswgt:
                         time_transformation: instant
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 10
-                                        weight: 0.15
-                                #- mapping:
-                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
-                                #        map_regrid_on: src
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_atmo_to_opat_GAUSWGT_${nemo.resolution}.nc
+                                        map_regrid_on: src
+
+                a2oc_gauswgt:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
+                                        map_regrid_on: src
+
+                a2oc_gauswgt_global:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                - mapping:
+                                        #mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
+                                        map_regrid_on: src
                         postprocessing:
                                 conserv:
                                         method: global
 
-                gauswgt_glbpos:
+                a2oc_gauswgt_glbpos:
                         time_transformation: instant
                         remapping:
                                 - gauswgt:
                                         search_bin: latitude
-                                        nb_of_neighbours: 10
-                                        weight: 0.15
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
                                 #- mapping:
-                                #        #mapname: rmp_atmo_to_agr1_GAUSWGT_${nemo.resolution}.nc
+                                #        #mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
                                 #        map_regrid_on: src
                         postprocessing:
                                 conserv:

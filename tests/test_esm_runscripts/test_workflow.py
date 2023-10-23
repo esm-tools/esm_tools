@@ -68,26 +68,26 @@ def test_config():
     return config
 
 def test_num_phases(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
     assert test_workflow_object.num_phases == 3
 
 def test_check_user_workflow_dependency(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
     independent = test_workflow_object.check_user_workflow_dependency()
     assert independent
 
 def test_check_user_workflow_dependency_2(test_workflow_object, test_config):
     test_config['flow']['workflow']['subjobs']['my_new_subjob_flow']['run_after'] = 'my_new_subjob_oifs'
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
     independent = test_workflow_object.check_user_workflow_dependency()
     assert not independent
 
 def test_check_unknown_phases(test_workflow_object, test_config):
     test_config['flow']['workflow']['subjobs']['my_new_subjob_flow']['run_after'] = 'my_new_subjob'
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
     unknown_phases = test_workflow_object.check_unknown_phases()
     assert unknown_phases
 
@@ -105,40 +105,40 @@ def test_order_clusters(test_workflow_object, test_config):
 #    test_config['flow']['workflow']['next_run_triggered_by'] = 'my_new_subjob_flow'
 #    test_config['oifs']['workflow']['next_run_triggered_by'] = 'my_new_subjob_general'
     #test_config['flow']['workflow']['subjobs']['my_new_subjob_flow']['run_before'] = 'my_new_subjob_oifs'
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
-    test_workflow_object = workflow.order_clusters(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
+    test_workflow_object = test_workflow_object.order_clusters(test_config)
     pytest.fail("something wrong")
 
 def test_complete_clusters(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
-    test_workflow_object = workflow.order_clusters(test_workflow_object, test_config)
-    subjob_clusters = workflow.complete_clusters(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
+    test_workflow_object = test_workflow_object.order_clusters(test_config)
+    subjob_clusters = test_workflow_object.complete_clusters(test_config)
     pytest.fail("something wrong")
 
 def test_prepend_newrun_job(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
-    test_workflow_object = workflow.order_clusters(test_workflow_object, test_config)
-    subjob_clusters = workflow.complete_clusters(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
+    test_workflow_object = test_workflow_object.order_clusters(test_config)
+    subjob_clusters = test_workflow_object.complete_clusters(test_config)
     [test_workflow_object, subjob_clusters] = workflow.prepend_newrun_job(test_workflow_object, test_config, subjob_clusters)
     pytest.fail("something wrong")
 
 def test_write_to_config(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
-    test_workflow_object = workflow.order_clusters(test_workflow_object, test_config)
-    subjob_clusters = workflow.complete_clusters(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
+    test_workflow_object = test_workflow_object.order_clusters(test_config)
+    subjob_clusters = test_workflow_object.complete_clusters(test_config)
     [test_workflow_object, subjob_clusters] = workflow.prepend_newrun_job(test_workflow_object, test_config, subjob_clusters)
     config = test_workflow_object.write_to_config(test_config)
     pytest.fail("something wrong")
 
 def test_write_subjob_clusters_to_config(test_workflow_object, test_config):
-    test_workflow_object = workflow.init_default_workflow(test_workflow_object, test_config)
-    test_workflow_object = workflow.collect_all_user_workflows(test_workflow_object, test_config)
-    test_workflow_object = workflow.order_clusters(test_workflow_object, test_config)
-    subjob_clusters = workflow.complete_clusters(test_workflow_object, test_config)
+    test_workflow_object = test_workflow_object.init_default_workflow(test_config)
+    test_workflow_object = test_workflow_object.collect_all_user_workflows(test_config)
+    test_workflow_object = test_workflow_object.order_clusters(test_config)
+    subjob_clusters = test_workflow_object.complete_clusters(test_config)
     [test_workflow_object, subjob_clusters] = workflow.prepend_newrun_job(test_workflow_object, test_config, subjob_clusters)
     test_config = workflow.write_subjob_clusters_to_config(test_config, subjob_clusters)
     test_config = test_workflow_object.write_to_config(test_config)

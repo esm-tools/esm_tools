@@ -80,7 +80,7 @@ general:
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci211
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT5+oifs43r3-foci22
           '2.1-O12':
             runoff_method: "EM21"
             calving_method: "old"
@@ -148,7 +148,8 @@ oifs:
                 compiler_mpi: intel2022_impi2022
                 #compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2022_impi2021 #intel2019_impi2019_nemo4
+                compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2022_impi2021 
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -169,7 +170,8 @@ oifs:
              blogin:
                 compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                compiler_mpi: intel2022_impi2021 #intel2019_impi2019_nemo4
+                #compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2022_impi2021 
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -1123,7 +1125,7 @@ oasis3mct:
                                         remapping: 
                                                 - conserv:
                                                         search_bin: latitude
-                                                        nb_of_search_bins: 1
+                                                        nb_of_search_bins: 500
                                                         normalization: fracnnei
                                                         order: first
                                                 - mapping: 
@@ -1137,14 +1139,14 @@ oasis3mct:
                                         remapping: 
                                                 - conserv:
                                                         search_bin: latitude
-                                                        nb_of_search_bins: 1
+                                                        nb_of_search_bins: 500
                                                         normalization: fracnnei
                                                         order: first
                                                 - mapping: 
                                                         mapname: rmp_${oifs.oasis_grid_name_a}_to_opac_CONSERV_${nemo.resolution}.nc
                                         postprocessing:
                                                 conserv:
-                                                        method: global 
+                                                        method: glbpos  
         choose_o2a_remap_method: 
                 "gauswgt":
                         add_coupling_methods:
@@ -1169,7 +1171,7 @@ oasis3mct:
                                         remapping:
                                                 - conserv:
                                                         search_bin: latitude
-                                                        nb_of_search_bins: 1
+                                                        nb_of_search_bins: 500
                                                         normalization: fracnnei
                                                         order: first
                                                 - mapping:

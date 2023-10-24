@@ -33,6 +33,7 @@ available_versions:
 - '4.0-awicm-3.0'
 - '4.0-awicm-3.1'
 - '5.0-smhi'
+- '5.0-geomar'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8mct-awiesm-2.1'
@@ -62,6 +63,19 @@ choose_version:
   5.0-smhi:
     branch: main_dkrz
     git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
+  5.0-geomar:
+    # this version is taken directly from the CERFACS gitlab
+    # it compiles in the standard way, i.e. not with cmake
+    branch: master
+    git-repository: https://git.geomar.de/foci/src/oasis3-mct5.git 
+    # compile with make -f TopMakefileOasis3
+    # then copy all modules etc to a oasis/build/lib directory to match the older versions 
+    comp_command: 'export ESM_OASIS_DIR=${model_dir} ; cd util/make_dir/ ; cp make.ESMTOOLS make.inc ; make -f TopMakefileOasis3 ; cd ../../ ; mv INSTALL_OASIS.ESMTOOLS/lib/libpsmile.MPI1.a INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a ; mkdir -p build/lib/psmile/scrip ; mkdir -p build/lib/psmile/mct/mpeu ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/psmile.MPI1/*.mod build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/scrip/*mod build/lib/psmile/scrip/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/mct/*mod build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmct.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libscrip.a build/lib/psmile/scrip/. '
+    install_libs:
+    - INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a
+    - INSTALL_OASIS.ESMTOOLS/lib/libmct.a
+    - INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a
+    - INSTALL_OASIS.ESMTOOLS/lib/libscrip.a
   ec-earth:
     branch: ec-earth-version
   foci:

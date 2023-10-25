@@ -90,6 +90,8 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
+                        ssp119:
+                                scenario_type: ssp
                         ssp126:
                                 scenario_type: ssp
                         ssp245:
@@ -195,6 +197,8 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
+                        ssp119:
+                                scenario_type: ssp
                         ssp126:
                                 scenario_type: ssp
                         ssp245:

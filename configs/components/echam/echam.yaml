@@ -543,6 +543,9 @@ choose_with_lco2_emis:
                     HIST:
                         add_forcing_files:
                             carbon_emissions: carbon_emissions_hist
+                    ssp119:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp119
                     ssp126:
                         add_forcing_files:
                             carbon_emissions: carbon_emissions_ssp126

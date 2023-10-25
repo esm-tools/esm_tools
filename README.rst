@@ -2,9 +2,16 @@
 ESM Tools
 =========
 
+Documentation
+-------------
+
 .. image:: https://readthedocs.org/projects/esm-tools/badge/?version=latest
 
 For our complete documentation, please check https://esm-tools.readthedocs.io/en/latest/index.html.
+
+How to cite this software
+-------------------------
+To cite ESM-Tools, please use the following DOI: https://zenodo.org/doi/10.5281/zenodo.3737927. This DOI represents all versions of the software, and will always pointing to the latest version available on https://zenodo.org.
 
 
 Before you continue

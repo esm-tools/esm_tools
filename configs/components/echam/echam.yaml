@@ -390,6 +390,8 @@ choose_scenario:
                         swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
+        ssp119:
+                scenario_type: ssp
         ssp126:
                 scenario_type: ssp
         ssp245:

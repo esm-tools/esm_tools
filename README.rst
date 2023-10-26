@@ -2,12 +2,11 @@
 ESM Tools
 =========
 
-HALLO
-
 .. image:: https://readthedocs.org/projects/esm-tools/badge/?version=latest
 
 For our complete documentation, please check https://esm-tools.readthedocs.io/en/latest/index.html.
 
+.. include:: ./docs/before_you_continue.rst
 
 Before you continue
 -------------------

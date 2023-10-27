@@ -233,7 +233,7 @@ compile_infos:
             - xios-2.5_r1910_oifs
           48r1:
             branch: main
-            comp_command: "./openifs-bundle build --threads=32 --arch=esm_tools --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/oifs"
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/oifs"
             clean_command: ./openifs-bundle build --clean
             git-repository: https://gitlab.dkrz.de/ec-earth/oifs-48r1.git
             install_bins: install/bin/oifs

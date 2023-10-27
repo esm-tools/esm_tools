@@ -281,7 +281,8 @@ choose_iolibraries:
          - "list"
        add_export_vars:
             AEC_ROOT: /p/software/juwels/stages/2022/software/libaec/1.0.6-GCCcore-11.2.0
-            PERL5LIB: /p/software/juwels/stages/2022/software/Perl/5.34.0-GCCcore-11.2.0/lib/perl5/site_perl/5.34.1/
+            PERL5LIB: /p/software/juwels/stages/2022/software/Perl/5.34.0-GCCcore-11.2.0/lib/perl5/site_perl/5.34.0/
+            PERL5_PATH: /p/software/juwels/stages/2022/software/Perl/5.34.1-GCCcore-11.3.0/lib/perl5/site_perl/5.34.1/
             MKL_CBWR: AUTO,STRICT
             LD_RUN_PATH: $LD_LIBRARY_PATH
 

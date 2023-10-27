@@ -4,69 +4,115 @@
 Installation
 ============
 
+Prerequisite
+------------
 
-Downloading
------------
+Make sure you have installed or loaded a python version that is 3.6 or later but not newer than 3.10 (see also :ref:`before_you_continue:Before you continue`). Use a pip version that is up-to-date (to update run ``pip install -U pip``). Also make sure that the location to which the python binaries of `ESM-Tools` will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
-``esm_tools`` is hosted on https://github.com/esm-tools. To get access to the software you need to be able to log into GitHub.
+    $ export PATH=$PATH:~/.local/bin
+    $ export LC_ALL=en_US.UTF-8
+    $ export LANG=en_US.UTF-8
 
-Then you can start by cloning the repository ``esm_tools.git``::
+Installing in local environment
+-------------------------------
 
-$ git clone https://github.com/esm-tools/esm_tools.git
+After downloading the `ESM-Tools` software (see :ref:`get_esm-tools:Get ESM-Tools`) you have a new folder named ``esm_tools``. In this new folder you find the script to install `ESM-Tools` on the HPC your are running this install script on. 
 
-This gives you a collection of `yaml` configuration files containing all the information on models, coupled setups, machines, etc. in the subfolder ``config``, default namelists in the folder ``namelists``, example runscripts for a large number of models on different HPC systems in subfolder ``runscripts``, and this documention in ``docs``. Also you will find the installer ``install.sh`` used to install the python packages.
+To change into the new folder and execute the instalation script, execute the following commands::
 
-Installing in an encapuslated environment
+     $ cd esm_tools
+     $ ./install.sh
+
+This should install all necessary python packages of `ESM-Tools`. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
+
+To see where `ESM-Tools` are installed, run the following command::
+
+    $ which esm_tools
+
+A possible (default) output can be ``~/.local/bin/esm_tools``.
+
+Installing using pip
+--------------------
+
+tbd
+
+Installing in a virtual environment
+-----------------------------------
+
+tbd
+
+Installing in an encapsulated environment
 -----------------------------------------
 
-Based on an alternative installation procedure, that provides an esm-tools installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of esm-tools alongside each other. These different installations do not impact each others' configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific esm-tools version that you install. There is no dependency on configurations outside the installation directory of a specific esm-tools version, mitigating the potential for side effects if another version of esm tools is installed in parallel. To install esm-tools as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of direnv, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of esm-tools will be installed, and installing the the esm-tools via pip.
-The commands to be executed are (note comments for further explanation)::
+Based on an alternative installation procedure, that provides an `ESM-Tools` installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of esm-tools alongside each other. These different installations do not impact each others' configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific `ESM-Tools` version that you install. There is no dependency on configurations outside the installation directory of a specific `ESM-Tools` version, mitigating the potential for side effects if another version of `ESM-Tools` is installed in parallel. To install `ESM-Tools` as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of ``direnv``, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of `ESM-Tools` will be installed, and installing the `ESM-Tools` via ``pip``.
 
-    $ curl -sfL https://direnv.net/install.sh | bash # install direnv if not yet done - this enables encapsulation and parallel use of different esm-tools versions
+To set up such an installation in an encapsulated environent, please do the followings steps:
+
+- Install ``direnv`` (if not yet done). This enables encapsulation and parallel use of different `ESM-Tools` versions::
+
+    $ curl -sfL https://direnv.net/install.sh | bash 
+
+- Create and enter a new folder that should hold new new encapsulated environment::
+
     $ mkdir esm_tools_v6.1.10 #adjust version number as appropriate
     $ cd esm_tools_v6.1.10/
-      #create .envrc (e.g. via direnv edit .) and add information matching the result of the cat command below
-    $ cat .envrc
+
+- Set up direnv hooks according to your used shell (see also https://direnv.net/docs/hook.html). For bash add the following line to your ``.bashrc`` file::
+
+    eval "$(direnv hook bash)"
+
+- Create ``.envrc`` file::
+
+    $ direnv edit . 
+
+  This command will create the new file ``.envrc`` and opens it in the default editor. You can also create the file and open it in your favorate editor.
+
+- Add the following lines to the created ``.envrc`` file and save it::
+
       module load python3
       layout python
       module load gcc
+
+- Allow this ``.envrc``::
+
+    $ direnv allow .
+ 
+- Update ``pip`` and ``wheel`` python packages::
+
     $ pip install -U pip wheel
+
+- Install esm-tools::
+
     $ pip install esm-tools
 
+Update ESM-Tools
+----------------
 
-Accessing components in DKRZ server
------------------------------------
+If you installed in editable mode as described above, you can update `ESM-Tools` by using ``git``::
 
-Some of the ``esm_tools`` components are hosted in the gitlab.dkrz.de servers. To be able to reach these components you will need:
+    $ cd esm_tools
+    $ git pull origin release
+    
+..
+    Upgrade ESM-Tools
+    -----------------
 
-1. A DKRZ account (https://www.dkrz.de/up/my-dkrz/getting-started/account/DKRZ-user-account).
-
-2. Become a member of the group ``esm_tools``. Either look for the group and request membership, or directly contact dirk.barbi@awi.de.
-
-3. Request access from the corresponding author of the component. Feel free to contact us if you don't know who the model developers are or check the :ref:`Supported_Models:Supported Models` section.
-
-.. include:: ../README.rst
-
-
-Upgrade ESM-Tools
------------------
-
-To upgrade all the `ESM-Tools` packages you can run::
-
-$ esm_versions upgrade
-
-This will only upgrade the packages that are not installed in editable mode. Those,
-installed in editable mode will need to be upgraded using ``git``.
-
-You can also choose to upgrade specific packages by adding the package name to the
-previous command, i.e. to upgrade ``esm_master``::
-
-$ esm_versions upgrade esm_parser
-
-.. Note:: If there are version conflicts reported back at this point with some of the
-   Python modules (i.e. ``pkg_resources.ContextualVersionConflict: (<package name>)``),
-   try reinstalling that package:
-   ``pip install <package> --upgrade --ignore-installed``.
+    To upgrade all the `ESM-Tools` packages you can run::
+    
+    $ esm_versions upgrade
+    
+    This will only upgrade the packages that are not installed in editable mode. Those,
+    installed in editable mode will need to be upgraded using ``git``.
+    
+    You can also choose to upgrade specific packages by adding the package name to the
+    previous command, i.e. to upgrade ``esm_master``::
+    
+    $ esm_versions upgrade esm_parser
+    
+    .. Note:: If there are version conflicts reported back at this point with some of the
+       Python modules (i.e. ``pkg_resources.ContextualVersionConflict: (<package name>)``),
+       try reinstalling that package:
+       ``pip install <package> --upgrade --ignore-installed``.
 
 Uninstall ESM-Tools
 -------------------

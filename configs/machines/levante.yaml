@@ -137,8 +137,7 @@ choose_compiler_mpi:
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
                         - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
-                        - "load openmpi/4.1.2-gcc-11.2.0"
-                        
+                        - "load openmpi/4.1.2-gcc-11.2.0"                       
 
                 add_export_vars:
                         FC: mpif90
@@ -147,9 +146,6 @@ choose_compiler_mpi:
                         MPIFC: mpif90
                         CC: mpicc
                         CXX: mpic++
-# kh 15.02.22 todo: check
-                        MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-                        MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
                 
        intel2022_impi2021:
                 # ESM-Tools vars necessary for ``system_libs`` case
@@ -212,8 +208,9 @@ choose_iolibraries:
             aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-qk24yp
             NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-l2ulgp
-            NETCDF PATH: /sw/spack-levante/netcdf-c-4.8.1-qk24yp
-            NETCDF ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-l2ulgp
+            NETCDF_PATH: $NetCDF_C_ROOT
+            NETCDF_ROOT: $NetCDF_Fortran_ROOT
+            NETCDFROOT: $NetCDF_Fortran_ROOT
             TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
             TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
             MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t

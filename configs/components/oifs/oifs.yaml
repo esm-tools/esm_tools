@@ -247,11 +247,17 @@ compile_infos:
 compiletime_environment_changes:
         iolibraries: system_libs
         choose_computer.name:
+                levante:
+                        compiler_mpi: gnu11_ompi2022
+                        iolibraries: system_gnu_libs
                 juwels:
                         compiler_mpi: gnu2023_ompi2023
 runtime_environment_changes:
         iolibraries: system_libs
         choose_computer.name:
+                levante:
+                        compiler_mpi: gnu11_ompi2022
+                        iolibraries: system_gnu_libs
                 juwels:
                         compiler_mpi: gnu2023_ompi2023
 

@@ -131,6 +131,26 @@ choose_general.run_or_compile:
             OMPI_MCA_pml: "ucx"
 
 choose_compiler_mpi:
+       gnu11_ompi2022:
+                # ESM-Tools vars necessary for ``system_libs`` case
+                #netcdf_cxx_root: /sw/spack-levante/netcdf-cxx-4.2-q3vhdk #JS: copied from intel2022_impi2021; does this do anything?
+                add_module_actions:
+                        - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
+                        - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
+                        - "load openmpi/4.1.2-gcc-11.2.0"
+                        
+
+                add_export_vars:
+                        FC: mpif90
+                        F77: mpi77
+                        MPICC: mpicc
+                        MPIFC: mpif90
+                        CC: mpicc
+                        CXX: mpic++
+# kh 15.02.22 todo: check
+                        MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+                        MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+                
        intel2022_impi2021:
                 # ESM-Tools vars necessary for ``system_libs`` case
                 mod_netcdf_c: netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
@@ -176,6 +196,33 @@ choose_compiler_mpi:
 
 
 choose_iolibraries:
+    system_gnu_libs: #Copy paste from DE IFS env.sh
+        add_module_actions:
+            - "load gcc/11.2.0-gcc-11.2.0"
+            - "load fftw/3.3.10-gcc-11.2.0"
+            - "load hdf5/1.12.1-gcc-11.2.0"
+            - "load netcdf-c/4.8.1-gcc-11.2.0"
+            - "load netcdf-fortran/4.5.3-gcc-11.2.0"
+            - "load git/2.31.1-gcc-11.2.0"
+            - "load libaec/1.0.5-gcc-11.2.0"
+        add_export_vars:
+            LD_RUN_PATH: $LD_LIBRARY_PATH
+            PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
+            AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
+            aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
+            NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-qk24yp
+            NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-l2ulgp
+            NETCDF PATH: /sw/spack-levante/netcdf-c-4.8.1-qk24yp
+            NETCDF ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-l2ulgp
+            TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
+            TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
+            MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            LD_LIBRARY_PATH: $MPI_HOME/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+
     system_libs:
         add_module_actions:
             - "load ${mod_netcdf_c}"

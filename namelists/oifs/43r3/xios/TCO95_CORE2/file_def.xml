@@ -159,6 +159,32 @@
 
     </file_group>
 
+
+    <!-- 1D output file --> 
+    <file_group
+        type="multiple_file"
+        format="netcdf4"
+        par_access="collective"
+        name="atm_timeseries"
+        split_freq="1y">
+        <file
+            enabled="true"
+	          timeseries="only"
+	          output_freq="6h"
+            name_suffix="_6h"
+            description="OIFS hourly 1D timeseries">
+
+            <field_group grid_ref="sylt_grid" freq_op="6h" operation="instant">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+            </field_group>
+        </file>
+    </file_group>
+
+
+    <!-- 2D Surface output --> 
     <file_group
         type="multiple_file"
         format="netcdf4"

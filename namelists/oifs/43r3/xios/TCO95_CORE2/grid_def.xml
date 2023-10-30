@@ -1,4 +1,12 @@
 <grid_definition>
+
+  <!-- Definition of one point grids -->
+  <grid_group id="1d_grids" >
+    <grid id="sylt_grid" description="1D output at Sylt island" >
+      <domain domain_ref="one_point_domain" />
+    </grid>
+  </grid_group>
+
   <!-- Definition of surface grids -->
   <grid_group id="sfc_grids" >
     <grid id="reduced_sfc" description="2D model grid" >

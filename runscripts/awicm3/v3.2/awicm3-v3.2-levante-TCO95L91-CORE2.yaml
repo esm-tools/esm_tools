@@ -46,6 +46,6 @@ oasis3mct:
 
 xios:
     with_model: oifs
-    nproc: 4
-    omp_num_threads: 32
+    nproc: 1
+    omp_num_threads: 128
 

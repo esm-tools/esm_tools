@@ -4,9 +4,14 @@
 
   <!-- Definition of regular Gaussian domains -->
   <domain_group id="regular_domains" type="rectilinear" >
-    <domain id="regular" long_name="regular grid" ni_glo="400" nj_glo="192" >
+    <domain id="regular" long_name="regular grid" ni_glo="360" nj_glo="180" >
       <generate_rectilinear_domain />
       <interpolate_domain write_weight="true" />
     </domain>
   </domain_group>
+
+  <domain id="one_point_domain" long_name="regular 1p-grid" ni_glo="1" nj_glo="1" type="rectilinear">
+    <generate_rectilinear_domain bounds_lon_start="7.5" bounds_lon_end="8.5" bounds_lat_start="54.5" bounds_lat_end="55.5" />
+    <interpolate_domain write_weight="true"/>
+  </domain>
 </domain_definition>

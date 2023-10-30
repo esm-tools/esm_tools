@@ -15,4 +15,3 @@ sphinx-toolbox
 sqlalchemy
 pyyaml
 xdgenvpy
-.

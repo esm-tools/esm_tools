@@ -16,7 +16,7 @@ You will need python 3 (possibly version 3.6 or newer), a version of git that is
 | albedo                        | .. code-block:: bash              |
 |                               |                                   |
 |                               |    $ module load git              |
-|                               |    $ module load python3          |
+|                               |    $ module load python           |
 +-------------------------------+-----------------------------------+
 | levante.dkrz.de               | .. code-block:: bash              |
 |                               |                                   |

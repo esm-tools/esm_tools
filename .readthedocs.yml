@@ -9,6 +9,7 @@ build:
   apt_packages:
     - libhdf5-dev
     - python3-netcdf4
+    - python3-h5netcdf
   os: ubuntu-22.04
   tools:
     python: "3.7"

@@ -298,7 +298,7 @@ supercooled_liquid_could_fix: 0
 # with random numbers generated using CDO
 # We use ensemble_id as seed, so this number must be unique for each member
 # i.e. ensemble_id = N for r1iNp1
-perturb: 1
+perturb: 0
 ensemble_id: 1
 
 orb_switch: False

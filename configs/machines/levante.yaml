@@ -203,7 +203,7 @@ choose_iolibraries:
             - "load libaec/1.0.5-gcc-11.2.0"
         add_export_vars:
             LD_RUN_PATH: $LD_LIBRARY_PATH
-            PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
+            PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:/work/ab0246/a270092/model_codes/oifs-48r1/install/bin:$PATH
             AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-qk24yp

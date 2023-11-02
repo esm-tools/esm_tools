@@ -24,6 +24,9 @@ jobs:
 
       - name: Install libhdf5-dev
         run: sudo apt-get install libhdf5-dev
+
+      - name: Install libnetcdf-dev
+        run: sudo apt-get install libnetcdf-dev
         
       - name: add to the path
         run: |

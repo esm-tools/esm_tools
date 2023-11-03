@@ -194,6 +194,7 @@ choose_compiler_mpi:
 choose_iolibraries:
     system_gnu_libs: #Copy paste from DE IFS env.sh
         add_module_actions:
+            - "unload cdo"
             - "load gcc/11.2.0-gcc-11.2.0"
             - "load fftw/3.3.10-gcc-11.2.0"
             - "load hdf5/1.12.1-gcc-11.2.0"
@@ -203,7 +204,7 @@ choose_iolibraries:
             - "load libaec/1.0.5-gcc-11.2.0"
         add_export_vars:
             LD_RUN_PATH: $LD_LIBRARY_PATH
-            PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:/work/ab0246/a270092/model_codes/oifs-48r1/install/bin:$PATH
+            PATH: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-gcc-11.2.0/bin:/sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
             AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-qk24yp

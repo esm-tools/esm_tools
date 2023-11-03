@@ -955,6 +955,9 @@ choose_version:
                 further_reading:
                         - oifs/oifs.env.yaml
         48r1:
+                environment_changes:
+                        add_export_vars:
+                                LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:$((model_dir))/build/lib"
                 further_reading:
                         - oifs/oifs48.env.yaml
 

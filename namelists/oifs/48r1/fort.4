@@ -20,6 +20,7 @@ NDLNPR=0,
 &NAMMCC
 LMCCEC=true,
 LMCCIEC=false,
+LMCC_COMPO=false,
 /
 &NAMTRANS
 LUSEFLT=false,
@@ -34,7 +35,7 @@ CRTABLEDIR='./rtables/',
 NRPROMA=0,
 LECOMPGRID=true,
 /
-&NAEPHY
+&NAEPHYM
 LEPHYS=true,
 LEVDIF=true,
 LESURF=true,
@@ -198,27 +199,20 @@ CSTOP='h240',
 NCONF=1,
 CNMEXP="ab45",
 /
-  &NAMRLX
-  /
-  &NAMVAR
-   LMODERR=.false.,
-   LJCDFI=.false.,
-   LUSEJCDFI=.false.,
-   LECV=false,
-  /
-      &NAMMCC
-          LMCC_COMPO=false,
-  /
- &NAETLDIAG
- /
-  &NAMVV0
-    LLFORCE_READ=false,
-  /
+&NAMRLX
+/
+&NAMVAR
+ LMODERR=.false.,
+ LJCDFI=.false.,
+ LUSEJCDFI=.false.,
+ LECV=false,
+/
+&NAETLDIAG
+/
+&NAMVV0
+ LLFORCE_READ=false,
+/
 &NAEAER
-/
-&NAEPHY
-/
-&NAERAD
 /
 &NALBAR
 /
@@ -262,29 +256,17 @@ CNMEXP="ab45",
 /
 &NAMCVA
 /
-&NAMDDH
-/
 &NAMDFHD
 /
 &NAMDFI
 /
 &NAMDIF
 /
-&NAMDIM
-/
 &NAMDIMO
 /
 &NAMDMSP
 /
-&NAMDPHY
-/
-&NAMDYN
-/
-&NAMDYNA
-/
 &NAMDYNA_STATIC
-/
-&NAMDYNCORE
 /
 &NAMEMIS_CONF
 /
@@ -293,8 +275,6 @@ CNMEXP="ab45",
 &NAMFA
 /
 &NAMFFT
-/
-&NAMFPC
 /
 &NAMFPD
 /
@@ -326,17 +306,11 @@ CNMEXP="ab45",
 /
 &NAMFY2
 /
-&NAMGEM
-/
-&NAMGFL
-/
 &NAMGMS
 /
 &NAMGOES
 /
 &NAMGOM
-/
-&NAMGRIB
 /
 &NAMGWD
 /
@@ -347,8 +321,6 @@ CNMEXP="ab45",
 &NAMINI
 /
 &NAMIOMI
-/
-&NAMIOS
 /
 &NAMJBCODES
 /
@@ -366,8 +338,6 @@ CNMEXP="ab45",
 /
 &NAMLFI
 /
-&NAMMCC
-/
 &NAMMCUF
 /
 &NAMMETEOSAT
@@ -379,8 +349,6 @@ CNMEXP="ab45",
 &NAMMTT
 /
 &NAMMUL
-/
-&NAMNMI
 /
 &NAMNASA
 /
@@ -398,11 +366,7 @@ CNMEXP="ab45",
 /
 &NAMOPTCMEM
 /
-&NAMPAR0
-/
 &NAMPARAR
-/
-&NAMPAR1
 /
 &NAMPHY
 /
@@ -426,11 +390,7 @@ CNMEXP="ab45",
 /
 &NAMRCOEF
 /
-&NAMRES
-/
 &NAMRINC
-/
-&NAMRIP
 /
 &NAMSATS
 /
@@ -466,11 +426,7 @@ CNMEXP="ab45",
 /
 &NAMTRAJP
 /
-&NAMTRANS
-/
 &NAMTRM
-/
-&NAMVAR
 /
 &NAMVARBC
 /
@@ -496,8 +452,6 @@ CNMEXP="ab45",
 /
 &NAMVRTL
 /
-&NAMVV0
-/
 &NAMVV1
 /
 &NAMVV2
@@ -516,13 +470,9 @@ CNMEXP="ab45",
 /
 &NAEPHLI
 /
-&NAMCVER
-/
 &NAMPPVI
 /
 &NAMSPNG
-/
-&NAMRLX
 /
 &NAMTHLIM
 /
@@ -543,8 +493,6 @@ CNMEXP="ab45",
 &NAMMETHOX
 /
 &NAM_ATLAS_IFS
-/
-&NAETLDIAG
 /
 &NAMACV
 /

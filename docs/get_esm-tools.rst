@@ -24,9 +24,7 @@ Some of the `ESM-Tools` components are hosted in the gitlab.dkrz.de servers. To 
 
 1. A DKRZ account (https://www.dkrz.de/up/my-dkrz/getting-started/account/DKRZ-user-account).
 
-2. Become a member of the group ``esm_tools``. Either look for the group and request membership, or directly contact dirk.barbi@awi.de.
-
-3. Request access from the corresponding author of the component. Feel free to contact us if you don't know who the model developers are or check the :ref:`Supported_Models:Supported Models` section.
+2. Request access to the repository from the corresponding author of the component if necessary. Feel free to contact us if you don't know who the model developers are or check the :ref:`Supported_Models:Supported Models` section.
 
 
 

@@ -374,6 +374,7 @@ class batch_system:
 
         commands = []
         if subjob.startswith("compute"):
+            # for batch jobs
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
@@ -384,6 +385,7 @@ class batch_system:
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
+            # for shell scrips
             else:
                 for model in config:
                     if model == "computer":
@@ -516,7 +518,7 @@ class batch_system:
             #    dummy = 0
             else:  # "normal" case
                 dummy = 0
-
+# was macht das hier? wo/wie wird submits_abother_job definiert?
             if submits_another_job(config, cluster):  # and batch_or_shell == "batch":
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]

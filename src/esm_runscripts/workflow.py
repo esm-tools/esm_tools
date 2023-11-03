@@ -1,6 +1,8 @@
 import sys, copy
 import esm_parser
 
+from pprint import pprint
+
 import pdb
 
 class Workflow:
@@ -172,7 +174,7 @@ class Workflow:
                         if not new_phase_name in user_workflow_phases_names:
                             # and append it to the list of user phases of the workflow
                             user_workflow_phases_names.append(new_phase_name)
-                            # set attributes of user_workflow phases
+                            # set attributes of user_workflow phases from config settings
                             # check if valid workflow phase keywords
                             for key, value in w_config["phases"][phase].items():
                                 if new_phase.check_if_keyword_is_valid(key):
@@ -191,15 +193,37 @@ class Workflow:
         """
         Write to config.
         """
+        cluster_att = []
+        for att in dir(self.phases[0]):
+            if(att[:2] != "__"):
+                cluster_att.append(att)
+        # 1. Delete unnecessary config workflow entries (e.g. in general)
+        if "workflow" in config["general"]:
+            del config["general"]["workflow"]
+
         # It is assumed here, that there are no workflows in config["general"]
         # or that these are removed after collect_...
         config["general"]["workflow"] = {}
         config["general"]["workflow"].update(self.__dict__)
+        # 3. Write clusters
+        config["general"]["workflow"]["subjob_clusters"] = {}
+        for cluster in self.get_phases_attribs_list("default", "cluster") + self.get_phases_attribs_list("user", "cluster"):
+            config["general"]["workflow"]["subjob_clusters"][cluster] = {}
+            config["general"]["workflow"]["subjob_clusters"][cluster]["subjobs"] = []
+            for phase in self.phases + self.user_phases:
+                if phase.cluster == cluster:
+                    config["general"]["workflow"]["subjob_clusters"][cluster]["subjobs"].append(phase.name)
+                    for att in cluster_att:
+                        config["general"]["workflow"]["subjob_clusters"][cluster][att] = getattr(phase, att)
+        # 2. Write subjobs/phases
         config["general"]["workflow"]["subjobs"] = {}
-        for phase in self.phases:
+        for phase in self.phases+self.user_phases:
             temp_dict = {phase.name: phase.__dict__}
             config["general"]["workflow"]["subjobs"].update(temp_dict)
 
+        # Todo: delete phases and user_phases
+        del config["general"]["workflow"]["phases"]
+        del config["general"]["workflow"]["user_phases"]
         return config
 
     def check_user_workflow_dependency(self):
@@ -306,6 +330,8 @@ class Workflow:
         ##else: let default
 
         # Set "next_submit" and "called_from"
+        # "next_submit" which phase will be called next (run_after of the next phase)
+        # "called_from" name of previous phase, run_after of current phase
         # Create a dict of all phases with empty lists
         next_submits = {}
         for phase in self.phases + self.user_phases:
@@ -319,32 +345,51 @@ class Workflow:
         for phase3 in self.phases + self.user_phases:
             phase3.next_submit = next_submits[phase3.name]
 
-        print(self.last_task_in_queue)
-        # ich bin hier
-        breakpoint()
+#        for phase6 in self.phases + self.user_phases:
+#            print(phase6.name, phase6.run_after, phase6.called_from, phase6.next_submit)
+
+
+# assign user phases to a cluster (tbd)
+        # - if all phases have the same run_after and run_before they can be in the cluster
+        # - in this cluster they will be run in parallel?
+
 
         for phase4 in self.phases + self.user_phases:
             calling_cluster = phase4.run_after
-    #
+
+    # set last_task_in_queue
             if calling_cluster == self.last_task_in_queue:
-                self.last_task_in_queue = phase4.name
-    #
+                self.last_task_in_queue.append(phase4.name)
+
             called_cluster = phase4.run_before
+#            print(f"calling_cluster: {calling_cluster} ->", phase4.name, f" -> called_cluster: {called_cluster}")
             set_phase_attrib(self.phases+self.user_phases, called_cluster, "called_from", phase4.name)
+
+    # set first_task_in_queue
             if called_cluster == self.first_task_in_queue:
-                self.first_task_in_queue = phase4.name
+                self.first_task_in_queue.append(phase4.name)
+
+    # set empty cluster entries to phase name
             if phase4.cluster == None:
                 phase4.cluster = phase4.name
-    #
-        first_cluster_name = self.first_task_in_queue
-        last_cluster_name = self.last_task_in_queue
-    #
-        value = get_phase_attrib(self.phases+self.user_phases, last_cluster_name, "next_submit")
+
+# todo: check if num list > 1, is this possible ???
+        first_cluster_name = self.first_task_in_queue[0]
+        last_cluster_name = self.last_task_in_queue[0]
+
+        # if first_cluster_name is not next_submit of last_cluster_name
         if not first_cluster_name in get_phase_attrib(self.phases+self.user_phases, last_cluster_name, "next_submit"):
             set_phase_attrib(self.phases+self.user_phases, last_cluster_name, "next_submit", first_cluster_name)
+        # if last_cluster_name is not called_from of first_cluster_name
         if not last_cluster_name == get_phase_attrib(self.phases+self.user_phases, first_cluster_name, "called_from"):
             set_phase_attrib(self.phases+self.user_phases, first_cluster_name, "called_from", last_cluster_name)
-    #
+
+#        for i in range(len(self.phases)):
+#            pprint(self.phases[i].__dict__)
+#
+#        for i in range(len(self.user_phases)):
+#            pprint(self.user_phases[i].__dict__)
+
         return self
 
     def complete_clusters(self, config):
@@ -528,7 +573,7 @@ class WorkflowPhase:
         self.nproc = 1
         self.run_before = None
         self.run_after = None
-        self.submit_to_batch_system = True
+        self.submit_to_batch_system = False
         self.run_on_queue = None
         self.cluster = None
         self.next_submit = []
@@ -553,6 +598,7 @@ class UserWorkflowPhase(WorkflowPhase):
         self.env_preparation = None
         self.batch_or_shell = "shell"
         self.submit_to_batch_system = False
+
 
     def check_if_keyword_is_valid(self, keyword):
         """
@@ -613,16 +659,13 @@ def assemble_workflow(config):
     workflow = workflow.init_default_workflow(config)
     # 3. Read in workflows from runscript and config files
     workflow = workflow.collect_all_user_workflows(config)
-
     #config = collect_all_workflow_information(config)
-
-# Why do I need to do the following function call?
     # 4. Order user workflows into default workflow wrt. workflow attributs.
     workflow = workflow.order_clusters(config)
 
-    breakpoint()
-    subjob_clusters = workflow.complete_clusters(config)
-    subjob_clusters = workflow.prepend_newrun_job(config)
+# What is the next functions needed for?
+#    subjob_clusters = workflow.complete_clusters(config)
+#    subjob_clusters = workflow.prepend_newrun_job(config)
     # 5. write the workflow to config
     config = workflow.write_to_config(config)
     # 6. Remove old worklow from config
@@ -631,10 +674,10 @@ def assemble_workflow(config):
     if config["general"]["jobtype"] == "unknown":
         config["general"]["command_line_config"]["jobtype"] = config["general"][
             "workflow"
-        ]["first_task_in_queue"]
+        ]["first_task_in_queue"][0]
         config["general"]["jobtype"] = config["general"]["workflow"][
             "first_task_in_queue"
-        ]
+        ][0]            # todo: this needs to be a string, not a list
 
     return config
 

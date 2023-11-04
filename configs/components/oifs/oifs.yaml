@@ -476,12 +476,6 @@ namelist_changes:
                 NAMCT0:
                         LFDBOP: "${lfdbop}"
                         LSMSSIG: "${lsmssig}"
-                # For this changes to have an effect use a version of OpenIFS that
-                # contains yomorb.F90
-                NAMORB:
-                        LCORBMD:  "${orb_switch}"
-                        ORBMODE: "${orb_mode}"
-                        ORBIY: "${orb_iyear}"
 
 
 lresume: false
@@ -861,12 +855,12 @@ choose_wam:
 ## (once per day might be ok)
 ##
 choose_massfixer:
-        0:
+        0: #OFF
                 add_namelist_changes:
                         fort.4:
                                 NAMDYN:
                                         LMASCOR: ".false."
-        1:
+        1: #AWI-CM3 early tests
                 add_namelist_changes:
                         fort.4:
                                 NAMDYN:
@@ -874,7 +868,7 @@ choose_massfixer:
                                         LMASDRY: ".false."
                                 NAMCT0:
                                         NFRMASSCON: ${oifs.nfrmasscon}
-        2:
+        2: #AWI-CM3 43r3 setting
                 add_namelist_changes:
                         fort.4:
                                 NAMDYN:
@@ -890,6 +884,30 @@ choose_massfixer:
                                         YI_NL%LMASSFIX: ".true."
                                         YL_NL%LMASSFIX: ".true."
                                         YQ_NL%LMASSFIX: ".true."
+        3: #DestinE 48r1 settings
+                add_namelist_changes:
+                        fort.4:
+                                NAMDYN:
+                                        LMASCOR: ".true."
+                                        LMASDRY: ".false."
+                                NAMCT0:
+                                        NFRMASSCON: ${oifs.nfrmasscon}
+                                NAMGFL:
+                                        NMFDIAGLEV: 1
+                                        NOPTVFE: 0
+                                        YA_NL%LGP: ".true."
+                                        YI_NL%BETAMFBC: -1
+                                        YI_NL%LGP: ".true."
+                                        YI_NL%LINTLIN: ".true."
+                                        YL_NL%BETAMFBC: -1
+                                        YL_NL%LGP: ".true."
+                                        YL_NL%LINTLIN: ".true."
+                                        YO3_NL%LGP: ".true."
+                                        YQ_NL%LSP: ".false."
+                                        YR_NL%BETAMFBC: -1
+                                        YR_NL%LINTLIN: ".true."
+                                        YS_NL%BETAMFBC: -1
+                                        YS_NL%LINTLIN: ".true."
 
 
 choose_cloudfixer:
@@ -939,8 +957,8 @@ choose_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${nfrres}
-                                        NRESTS${nrest_ind}: ${nfrests}
+                                        NFRRES: 1
+                                        NRESTS: "-1, -${oifs.next_step}"
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
                                 NAMARG:
@@ -949,15 +967,52 @@ choose_version:
                                         CUSTOP: "t${oifs.next_step}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
+                                NAMORB:
+                                        LCORBMD:  "${orb_switch}"
+                                        ORBMODE: "${orb_mode}"
+                                        ORBIY: "${orb_iyear}"
 
                 add_outdata_files:
                         ICMUA: ICMUA
                 further_reading:
                         - oifs/oifs.env.yaml
         48r1:
+                mip: none
+                o3_scheme: none
+                cloudfixer: none
+                massfixer: 3
+                tl_o3_data_dir: "${pool_dir}/../climate.v020/"
+                add_namelist_changes:
+                        fort.4:
+                                NAMRES:
+                                        NFRRES: ${nfrres}
+                                        NRESTS${nrest_ind}: ${nfrests}
+                                NAMPAR0:
+                                        NPROC: ${oifs.nproc}
+                                NAMRIP:
+                                        TSTEP: ${oifs.time_step}
+                                        CSTOP: "t${oifs.next_step}"
+                                NAMARG:
+                                        CNMEXP: "${oifs.input_expid}"
+                                NAMPPC:
+                                        LRSACC: ".true." # reset accumulation of fluxes
                 environment_changes:
                         add_export_vars:
-                                LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:$((model_dir))/build/lib"
+                                OIFS_CYCLE: 48r1
+                                OIFS_HOME: ${model_dir}
+                                OIFS_LOGFILE: "$OIFS_HOME/oifs_test_log.txt"
+                                OIFS_DATA_DIR: /work/ab0246/a270092/input/oifs-48r1/
+                                LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
+                                GRIB_SAMPLES_PATH: '${model_dir}/build/share/eccodes/ifs_samples/grib1_mlgrib2'
+                        choose_computer.name:
+                                juwels:
+                                        add_export_vars:
+                                                OIFS_DATA_DIR: "/p/project/chhb19/streffing1/input/oifs-48r1/"
+                                levante:
+                                        add_export_vars:
+                                                OIFS_DATA_DIR: "/work/ab0246/a270092/input/oifs-48r1/"
+
+
                 further_reading:
                         - oifs/oifs48.env.yaml
 

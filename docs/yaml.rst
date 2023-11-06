@@ -118,7 +118,7 @@ runscripts.
 Variable Calls
 ~~~~~~~~~~~~~~
 
-Variables defined in a `YAML` file can be invoked on the same file or in oder files
+Variables defined in a `YAML` file can be invoked on the same file or in other files
 provided that the file where it is defined is read for the given operation.
 The syntax for calling an already defined variable is:
 
@@ -529,10 +529,61 @@ Two types of `yaml` elements can be nested inside an environment changes:
   command ``export`` is not needed here, just define the variable as
   ``VAR_NAME: VAR_VALUE`` or as a nested dictionary.
 
+Syntax
+^^^^^^
+
+``add_export_vars`` can be defined as a list of exports or as a dictionary. We are strongly encourage to define the export variables as a dictionary.
+
+As list
+'''''''
+
+::
+
+    [ ... ]
+
+        add_export_vars:
+            - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+            - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+            - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+
+    [ ... ]
+
+As dictionary
+'''''''''''''
+
+::
+
+    [ ... ]
+
+        add_export_vars:
+            NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+            LD_LIBRARY_PATH: '$NETCDF_DIR/lib/:$LD_LIBRARY_PATH'
+        
+
+    [ ... ]
+
+.. Note:: It is also possible here to use variables that are defined in a yaml file (see also :ref:`yaml:Variable Calls`). If you need to mix enviroment variables and `ESM-Tools` variables (defined in a yaml file), please note the following syntax:
+
+   - put `ESM-Tools` variables in curly braces (see also :ref:`yaml:Variable Calls`)
+   - give the environment variable without curly braces
+
+   **Example**::
+       
+    [ ... ]
+   
+        model_dir: "some_path_to_model_dir"
+   
+    [ ... ]
+
+        add_export_vars:
+            LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
+
+
 For more information about ``esm_environment`` package, please check
 :ref:`esm_environment:ESM Environment`.
 
-**Example**
+Example
+^^^^^^^
 
 .. tabs::
    .. tab:: fesom.yaml

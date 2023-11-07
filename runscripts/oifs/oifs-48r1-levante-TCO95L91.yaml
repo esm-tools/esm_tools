@@ -5,9 +5,9 @@ general:
     account: "ab0246"
     compute_time: "00:20:00"
     initial_date: "1990-01-01"
-    final_date: "1990-02-01"
+    final_date: "1990-01-15"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 1
+    nday: 15
     nmonth: 0
     nyear: 0
 

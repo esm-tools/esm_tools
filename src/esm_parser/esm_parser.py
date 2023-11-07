@@ -140,7 +140,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "omp_num_threads"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "environment_changes", "further_reading"]
 
 
 def flatten_nested_lists(lst):

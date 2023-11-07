@@ -928,14 +928,8 @@ choose_version:
                                         # By default, turn off coupling
                                         FOCI_CPL_NEMO_LIM: ".false."
 
-                environment_changes:
-                        add_export_vars:
-                                - 'OIFS_FFIXED="-fixed"'
-                                - 'DR_HOOK_IGNORE_SIGNALS="-1"'
-                                - 'OIFS_EXPID="${input_expid}"'
-                                - 'FOCI_USE_CPLNG="no"'
-                                - 'FESOM_USE_CPLNG="no"'
-                                - 'ECE_USE_CPLNG="no"'
+                further_reading:
+                        - oifs/oifs.env.yaml
 
         43r3:
                 add_namelist_changes:
@@ -966,12 +960,6 @@ choose_version:
                 cloudfixer: none
                 massfixer: 3
                 tl_o3_data_dir: "${pool_dir}/../climate.v020/"
-                choose_computer.name:
-                        levante:
-                                compiler_mpi: gnu11_ompi2022
-                                iolibraries: system_gnu_libs
-                        juwels:
-                                compiler_mpi: gnu2023_ompi2023
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
@@ -987,11 +975,12 @@ choose_version:
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
                 environment_changes:
-                        add_export_vars:
-                                DATA: "${general.work_dir}"
-                                LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
-                                GRIB_SAMPLES_PATH: '${model_dir}/build/share/eccodes/ifs_samples/grib1_mlgrib2'
-
+                        choose_computer.name:
+                                levante:
+                                        compiler_mpi: gnu11_ompi2022
+                                        iolibraries: system_gnu_libs
+                                juwels:
+                                        compiler_mpi: gnu2023_ompi2023
 
                 further_reading:
                         - oifs/oifs48.env.yaml

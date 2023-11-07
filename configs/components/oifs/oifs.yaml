@@ -244,22 +244,6 @@ compile_infos:
         git-repository: https://gitlab.dkrz.de/modular_esm/oifs-40r1.git
         install_bins: make/esm/oifs/bin/master.exe
 
-compiletime_environment_changes:
-        iolibraries: system_libs
-        choose_computer.name:
-                levante:
-                        compiler_mpi: gnu11_ompi2022
-                        iolibraries: system_gnu_libs
-                juwels:
-                        compiler_mpi: gnu2023_ompi2023
-runtime_environment_changes:
-        iolibraries: system_libs
-        choose_computer.name:
-                levante:
-                        compiler_mpi: gnu11_ompi2022
-                        iolibraries: system_gnu_libs
-                juwels:
-                        compiler_mpi: gnu2023_ompi2023
 
 input_expid: ECE3
 resolution: TL159
@@ -982,6 +966,12 @@ choose_version:
                 cloudfixer: none
                 massfixer: 3
                 tl_o3_data_dir: "${pool_dir}/../climate.v020/"
+                choose_computer.name:
+                        levante:
+                                compiler_mpi: gnu11_ompi2022
+                                iolibraries: system_gnu_libs
+                        juwels:
+                                compiler_mpi: gnu2023_ompi2023
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
@@ -998,20 +988,9 @@ choose_version:
                                         LRSACC: ".true." # reset accumulation of fluxes
                 environment_changes:
                         add_export_vars:
-                                OIFS_CYCLE: 48r1
-                                OIFS_HOME: ${model_dir}
-                                OIFS_LOGFILE: "$OIFS_HOME/oifs_test_log.txt"
-                                OIFS_DATA_DIR: /work/ab0246/a270092/input/oifs-48r1/
                                 DATA: "${general.work_dir}"
                                 LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
                                 GRIB_SAMPLES_PATH: '${model_dir}/build/share/eccodes/ifs_samples/grib1_mlgrib2'
-                        choose_computer.name:
-                                juwels:
-                                        add_export_vars:
-                                                OIFS_DATA_DIR: "/p/project/chhb19/streffing1/input/oifs-48r1/"
-                                levante:
-                                        add_export_vars:
-                                                OIFS_DATA_DIR: "/work/ab0246/a270092/input/oifs-48r1/"
 
 
                 further_reading:

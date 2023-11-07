@@ -1002,6 +1002,7 @@ choose_version:
                                 OIFS_HOME: ${model_dir}
                                 OIFS_LOGFILE: "$OIFS_HOME/oifs_test_log.txt"
                                 OIFS_DATA_DIR: /work/ab0246/a270092/input/oifs-48r1/
+                                DATA: "${general.work_dir}"
                                 LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
                                 GRIB_SAMPLES_PATH: '${model_dir}/build/share/eccodes/ifs_samples/grib1_mlgrib2'
                         choose_computer.name:

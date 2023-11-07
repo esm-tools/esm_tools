@@ -76,6 +76,10 @@ choose_version:
     - INSTALL_OASIS.ESMTOOLS/lib/libmct.a
     - INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a
     - INSTALL_OASIS.ESMTOOLS/lib/libscrip.a
+    # this is a quick fix for now
+    clean_command: 'rm -rf INSTALL_OASIS.ESMTOOLS'
+    # this is how we should do it but it does not work
+    #clean_command: 'export ESM_OASIS_DIR=${model_dir} ; cd util/make_dir/ ; make -f TopMakefileOasis3 realclean ; cd ../../ ; rm -rf build lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
   ec-earth:
     branch: ec-earth-version
   foci:

@@ -87,20 +87,20 @@ compile_infos:
         # this require currently causes esm_master install-... to not work properly
         # workaround esm_master get-... ; esm_master comp-...
         available_versions:
-        - 48r1
+        - 40r1
+        - 40r1-agcm
+        - 40r1-foci
+        - 43r3
         - 43r3-master
-        - 43r3-awicm-3.2
-        - 43r3-awicm-3.1.2
-        - 43r3-awicm-3.1.1
-        - 43r3-awicm-3.1
         - 43r3-awicm-3.0
+        - 43r3-awicm-3.1
+        - 43r3-awicm-3.1.1
+        - 43r3-awicm-3.1.2
+        - 43r3-awicm-3.2
         - 43r3-awicm-frontiers-xios
         - 43r3-foci
         - 43r3-v1
-        - 43r3
-        - 40r1-foci
-        - 40r1-agcm
-        - 40r1
+        - 48r1
         choose_version:
           40r1:
             branch: foci_conserv

@@ -94,6 +94,8 @@ from esm_calendar import Date
 # Loader for package yamls
 import esm_tools
 
+import pdb
+
 # Logger and related constants
 logger = logging.getLogger("root")
 DEBUG_MODE = logger.level == logging.DEBUG
@@ -140,7 +142,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "major_version", "omp_num_threads", "environment_changes", "further_reading"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
 
 def flatten_nested_lists(lst):
@@ -275,6 +277,7 @@ def check_for_empty_components_in_user_config(user_config):
     return user_config
 
 def complete_config(user_config):
+    # user_config is config from runscript???
     if not "general" in user_config:
         user_config["general"] = {}
     user_config["general"]["additional_files"] = []
@@ -1425,10 +1428,12 @@ def find_one_independent_choose(all_set_variables):
             return task_list[0]
 
 
-def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
+def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}, component_with_key=""):
     path_to_key = choose_key.replace("choose_", "").split(".")
     try:
         choice = recursive_get(config, path_to_key)
+        if "general" in choose_key and component_with_key:
+            choose_key = choose_key.replace("general", component_with_key)
     except ValueError:
         if "*" not in config_to_replace_in[choose_key]:
             raise KeyError("Key %s was not defined" % ".".join(path_to_key))
@@ -1621,6 +1626,9 @@ def resolve_choose_with_var(
             config_to_search_into = None
             if choose_key in user_config.get(component_with_key, []):
                 config_to_search_into = user_config
+            elif choose_key in user_config.get("general", []):
+                config_to_search_into = user_config
+                choose_with_var = choose_with_var.replace(component_with_key, "general")
             elif choose_key in setup_config.get(component_with_key, []):
                 config_to_search_into = setup_config
             elif choose_key in model_config.get(component_with_key, []):
@@ -1629,7 +1637,7 @@ def resolve_choose_with_var(
             if config_to_search_into:
                 # Resolve the case
                 resolve_basic_choose(
-                    config_to_search_into, config_copy, choose_with_var
+                    config_to_search_into, config_copy, choose_with_var, component_with_key=component_with_key
                 )
                 # If ``var`` was defined through the resolution of the ``choose_``, add
                 # the ``var`` value to the ``config``.
@@ -2851,6 +2859,14 @@ class GeneralConfig(dict):  # pragma: no cover
             self.config = yaml_file_to_dict(include_path)
         else:
             self.config = include_path
+        for var in ["further_reading"]:
+            resolve_choose_with_var(
+                var,
+                self.config,
+#                current_model=self.config,
+                user_config=user_config)
+#                setup_config=self.config)
+
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2945,18 +2961,19 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
             # Resolve the chooses including versions of the components to be able to
             # later load the correct yaml files
-            for component in setup_config:
-                resolve_choose_with_var(
-                    "version",
-                    setup_config[component],
-                    current_model=component,
-                    user_config=user_config,
-                    setup_config=setup_config)
+            for var in ["version"]:
+                for component in setup_config:
+                    resolve_choose_with_var(
+                        var,
+                        setup_config[component],
+                        current_model=component,
+                        user_config=user_config,
+                        setup_config=setup_config)
         else:
             setup_config["general"].update({"standalone": True})
             setup_config["general"].update({"models": [self.config["model"]]})
 
-            # Resolve choose with include_models
+            # Resolve choose with include_modelse
             resolve_choose_with_var(
                 "include_models",
                 self.config,

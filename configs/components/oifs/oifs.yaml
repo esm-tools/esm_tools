@@ -923,7 +923,8 @@ choose_cloudfixer:
 ## specifics for 40r1 and 43r3
 ##
 
-choose_major_version:
+#choose_major_version:
+choose_version:
         40r1:
                 add_namelist_changes:
                         fort.4:
@@ -992,17 +993,9 @@ choose_major_version:
                                         CNMEXP: "${oifs.input_expid}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
-                environment_changes:
-                        choose_computer.name:
-                                levante:
-                                        compiler_mpi: gnu11_ompi2022
-                                        iolibraries: system_gnu_libs
-                                juwels:
-                                        compiler_mpi: gnu2023_ompi2023
 
                 further_reading:
-                        - oifs/oifs48.env.yaml
-
+                    - "oifs/oifs48.env.yaml"
 
     # If 1, use Coddington spectrum which reduced stratospheric warm bias
 # Only available in 43r3-v2

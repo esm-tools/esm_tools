@@ -3130,23 +3130,24 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             If something goes wrong with the user's version choices it exits the code
             with a ``esm_parser.user_error``
         """
-        version_in_runscript_general = user_config["general"].get("version")
-        model_name = user_config["general"]["setup_name"]
-        version_in_runscript_model = user_config.get(model_name, {}).get("version")
-        if version_in_runscript_general and version_in_runscript_model:
-            user_error(
-                "Version",
-                "You have defined the ``version`` variable both in the "
-                f"``general`` and ``{model_name}`` sections of your runscript. "
-                "This is not supported as it is redundant information. Please "
-                "define ``only one version`` in one of the two sections.",
-            )
-        elif version_in_runscript_general and not version_in_runscript_model:
-            if model_name in user_config:
-                user_config[model_name]["version"] = version_in_runscript_general
-        elif version_in_runscript_model and not version_in_runscript_general:
-            if "general" in user_config:
-                user_config["general"]["version"] = version_in_runscript_model
+        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
+            version_in_runscript_general = user_config["general"].get("version")
+            model_name = user_config["general"]["setup_name"]
+            version_in_runscript_model = user_config.get(model_name, {}).get("version")
+            if version_in_runscript_general and version_in_runscript_model:
+                user_error(
+                    "Version",
+                    "You have defined the ``version`` variable both in the "
+                    f"``general`` and ``{model_name}`` sections of your runscript. "
+                    "This is not supported as it is redundant information. Please "
+                    "define ``only one version`` in one of the two sections.",
+                )
+            elif version_in_runscript_general and not version_in_runscript_model:
+                if model_name in user_config:
+                    user_config[model_name]["version"] = version_in_runscript_general
+            elif version_in_runscript_model and not version_in_runscript_general:
+                if "general" in user_config:
+                    user_config["general"]["version"] = version_in_runscript_model
 
     def finalize(self):
         self.run_recursive_functions(self)

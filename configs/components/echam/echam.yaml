@@ -399,6 +399,9 @@ choose_scenario:
                         volcsw: histvolcsw
                         swflux: histswflux
                         MAC-SP: MAC-SP_hist_scenario
+                # For the last year of the hisotical period echam needs an ozone file
+                # of the next year and the ssp370 is given by default
+                ozone_source_file_scenario: ssp370
 
         cmip6hist:
                 scenario_type: cmip6

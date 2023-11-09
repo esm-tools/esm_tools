@@ -785,6 +785,18 @@ oasis3mct:
                                         nb_of_search_bins: 1
                                         nb_of_neighbours: 25
                                         weight: "0.1"
+                gauswgt_glo:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
+                        postprocessing:
+                                conserv:
+                                        method: global
+                                        algorithm: opt
 
         input_files: {}
 

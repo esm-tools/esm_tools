@@ -2,7 +2,7 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.21.20"
+__version__ = "6.25.2"
 
 
 from .esm_parser import *

@@ -2,9 +2,16 @@
 ESM Tools
 =========
 
+Documentation
+-------------
+
 .. image:: https://readthedocs.org/projects/esm-tools/badge/?version=latest
 
 For our complete documentation, please check https://esm-tools.readthedocs.io/en/latest/index.html.
+
+How to cite this software
+-------------------------
+To cite ESM-Tools, please use the following DOI: https://zenodo.org/doi/10.5281/zenodo.3737927. This DOI represents all versions of the software, and will always pointing to the latest version available on https://zenodo.org.
 
 
 Before you continue
@@ -12,10 +19,10 @@ Before you continue
 
 You will need python 3 (possibly version 3.6 or newer), a version of git that is not ancient (everything newer than 2.10 should be good), and up-to-date pip (``pip install -U pip``) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
 
-ollie.awi.de::
+albedo::
 
     $ module load git
-    $ module load python3
+    $ module load python
 
 levante.dkrz.de::
 

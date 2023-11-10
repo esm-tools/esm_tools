@@ -199,8 +199,6 @@ def yaml_file_to_dict(filepath):
                     yaml_load["computer"]["runtime_environment_changes"][
                         "add_export_vars"
                     ] = add_export_vars
-                # Check for empty components/models
-                # check_for_empty_components(yaml_load, filepath + extension)
                 return yaml_load
         except IOError as error:
             logger.debug(
@@ -313,7 +311,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
                 esm_parser.user_error(
                     "YAML syntax",
-                    "More than one ``_changes`` out of a ``choose_``in "
+                    "More than one ``_changes`` out of a ``choose_`` in "
                     + fpath
                     + ":\n    - "
                     + "\n    - ".join(changes_no_choose)

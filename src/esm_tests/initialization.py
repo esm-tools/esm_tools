@@ -228,7 +228,7 @@ def read_info_from_rs(info):
             with open(v["path"], "r") as rs:
                 runscript = yaml.load(rs, Loader=yaml.SafeLoader)
             v["version"] = runscript["general"].get(
-                "comp_version", runscript["general"].get("version", runscript[model]["version"])
+                "comp_version", runscript["general"].get("version", runscript[model].get("version"))
             )
             v["comp_command"] = runscript["general"].get("comp_command", None)
             # Data for iterative coupling

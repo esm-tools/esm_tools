@@ -736,28 +736,23 @@ def calc_number_of_tasks(config):
                     tasks += config[model]["nprocar"] * config[model]["nprocbr"]
     return tasks
 
+def display_nicely(config):
+    """
+    Pretty prints the workflow configuration assembled in config["general"].
+    Is called by e.g. ``esm_runscripts runscript.yaml -e <expid> -i workflow``
 
+    Parameters
+    ----------
+        config : dict
 
-
-
-
+    Returns
+    -------
+        config : dict
+    """
+    esm_parser.pprint_config(config["general"]["workflow"])
+    return config
 
 ################### Maybe outdated routines ######################
-
-#def display_nicely(config):
-#    """
-#    Pretty prints the workflow configuration assembled in config["general"].
-#
-#    Parameters
-#    ----------
-#        config : dict
-#
-#    Returns
-#    -------
-#        config : dict
-#    """
-#    esm_parser.pprint_config(config["general"]["workflow"])
-#    return config
 #
 #
 #def collect_all_workflow_information(config):

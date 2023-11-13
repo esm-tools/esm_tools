@@ -1541,7 +1541,7 @@ def resolve_choose_with_var(
     var : str
         Name of the variable to be searched inside ``choose_`` blocks.
     config : dict
-        Model configuration to be changed if the ``var`` is resolved by the ``choose_``.
+        Component configuration to be changed if the ``var`` is resolved by the ``choose_``.
     user_config : dict
         User configuration, used to search for the selected case of the ``choose_``.
     model_config : dict
@@ -1554,14 +1554,10 @@ def resolve_choose_with_var(
     sep = ","
     # Find the path to the variable ``var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_var = find_key(config, var, exc_strings="add_", paths2finds=[], sep=sep)
-    choose_with_var = [
-        x for x in choose_with_var if "choose_" in x and f"choose_{var}" not in x
-    ]
+    choose_with_var = get_chooses_with_var(config, var, sep=sep)
     # Find the path to the variable ``add_var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_add_var = find_key(config, f"add_{var}", paths2finds=[], sep=sep)
-    choose_with_add_var = [x for x in choose_with_add_var if "choose_" in x]
+    choose_with_add_var = get_chooses_with_var(config, f"add_{var}", sep=sep)
 
     # Resolve first for ``<var>`` and then for ``add_<var>``
     for choose_with_var, lvar in [
@@ -1606,6 +1602,20 @@ def resolve_choose_with_var(
                 config_copy[choose_with_var_new] = config_copy[choose_with_var]
                 del config_copy[choose_with_var]
                 choose_with_var = choose_with_var_new
+
+            # Resolve choose_key in case it is defined within another choose_block
+            for conf in [user_config, setup_config, model_config]:
+                component_config = conf.get(component_with_key, [])
+                if component_config:
+                    resolve_choose_with_var(
+                        choose_key,
+                        component_config,
+                        current_model=component_with_key,
+                        user_config=user_config,
+                        model_config=model_config,
+                        setup_config=setup_config
+                    )
+
             # Find where the case for the ``choose_`` is defined, with priority: user ->
             # setup -> model
             config_to_search_into = None
@@ -1625,6 +1635,63 @@ def resolve_choose_with_var(
                 # the ``var`` value to the ``config``.
                 if config_copy.get(var):
                     config[var] = config_copy.get(var)
+
+
+def get_chooses_with_var(component_config, var, sep=","):
+    """
+    Finds all the paths of a variable ``var`` contained in a case of a ``choose_``
+    (paths that start with ``choose_`` and containing the variable defined by the
+    string ``var``).
+
+    Parameters
+    ----------
+    component_config : dict
+        Config dictionary of a given component
+    var : str
+        Variable contained in the case of a choose
+    sep : str
+        Path separator
+
+    Returns
+    -------
+    choose_paths : list
+        A list of all the paths of the ``var`` vatiable contained in a case of a
+        ``choose_``
+    """
+
+    # Find all paths containing the variable ``var`` and excluding the ``exc_string``
+    paths_with_var = find_key(
+        component_config, var, paths2finds=[], sep=sep
+    )
+
+    # Filter out the paths that do not start with ``choose_`` and the ones including the
+    # target variable
+    choose_paths = []
+    for path_with_var in paths_with_var:
+        # Finds whether the variable containing the string ``var`` is a real variable
+        # or instead, a case of a ``choose_`` block. For example, var="albedo" and
+        # there is a path with ``choose_computer.name,albedo,pool_dir``. This path
+        # needs to be excluded as ``albedo`` in this case is not a var, but a case for
+        # the ``choose_``
+        split_path = path_with_var.split(sep)
+        prev_part = ""
+        for path_part in split_path:
+            if "choose_" not in path_part and "choose_" in prev_part and var in path_part:
+                var_is_variable = False
+            elif path_part == var:
+                var_is_variable = True
+            else:
+                var_is_variable = False
+            prev_part = path_part
+
+        # Filters out choose paths not containing the matching variable
+        if (
+            path_with_var.startswith("choose_")
+            and var_is_variable
+        ):
+            choose_paths.append(path_with_var)
+
+    return choose_paths
 
 
 def basic_add_more_important_tasks(choose_keyword, all_set_variables, task_list):
@@ -2708,9 +2775,9 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
         # If the key meets the criteria, add the path to the paths2finds
         if strings_in_key:
             paths2finds.append(level + str(key))
-        # If the key does not meet the criteria, but its value is a dictionary
-        # keep searching inside (recursion).
-        elif not strings_in_key and isinstance(d_search[key], dict):
+
+        # If the key is a dictionary keep searching inside (recursion).
+        if isinstance(d_search[key], dict):
             paths2finds = find_key(
                 d_search[key],
                 k_search,
@@ -2767,6 +2834,8 @@ class GeneralConfig(dict):  # pragma: no cover
     def __init__(self, model, version, user_config):
         super(dict, self).__init__()
 
+        self.check_user_defined_versions(user_config)
+
         if os.path.isfile(model + "-" + version):
             config_path = model + "-" + version
         elif os.path.isfile(model):
@@ -2784,6 +2853,14 @@ class GeneralConfig(dict):  # pragma: no cover
             self.config = yaml_file_to_dict(include_path)
         else:
             self.config = include_path
+
+        resolve_choose_with_var(
+            "further_reading",
+            self.config,
+            model_config={model: self.config},
+            user_config=user_config,
+        )
+
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2875,6 +2952,16 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 setup_config
             )
             setup_config["general"]["valid_model_names"] = valid_model_names = []
+
+            # Resolve the chooses including versions of the components to be able to
+            # later load the correct yaml files
+            for component in setup_config:
+                resolve_choose_with_var(
+                    "version",
+                    setup_config[component],
+                    current_model=component,
+                    user_config=user_config,
+                    setup_config=setup_config)
         else:
             setup_config["general"].update({"standalone": True})
             setup_config["general"].update({"models": [self.config["model"]]})
@@ -2902,8 +2989,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             ]
 
         del self.config
-
-        self.check_user_defined_versions(user_config, setup_config)
 
         setup_config["general"].update(
             {
@@ -3022,10 +3107,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # pprint_config(self.config)
         # sys.exit(0)
 
-    def check_user_defined_versions(self, user_config={}, setup_config={}):
+    def check_user_defined_versions(self, user_config):
         """
-        When running a standalone model, checks whether the users has define the
-        variable ``version`` in more than one section and if that's the case
+        Checks whether the user has defined the variable ``version`` in both the
+        main model/coupled setup section and in ``general`` and if that's the case
         throws and error. If ``version`` is only defined in the ``general`` section
         it creates a ``version`` with the same value in the model section, ensuring
         that the user can arbitrarily define ``version`` in either ``general`` or
@@ -3045,12 +3130,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             If something goes wrong with the user's version choices it exits the code
             with a ``esm_parser.user_error``
         """
-        if "general" in self:
-            user_config = setup_config = self
-        if (
-            setup_config["general"].get("standalone")
-            and user_config["general"].get("run_or_compile", "runtime") == "runtime"
-        ):
+        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
             version_in_runscript_model = user_config.get(model_name, {}).get("version")
@@ -3059,12 +3139,15 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     "Version",
                     "You have defined the ``version`` variable both in the "
                     f"``general`` and ``{model_name}`` sections of your runscript. "
-                    "This is not supported for ``standalone`` simulations. Please "
+                    "This is not supported as it is redundant information. Please "
                     "define ``only one version`` in one of the two sections.",
                 )
             elif version_in_runscript_general and not version_in_runscript_model:
                 if model_name in user_config:
                     user_config[model_name]["version"] = version_in_runscript_general
+            elif version_in_runscript_model and not version_in_runscript_general:
+                if "general" in user_config:
+                    user_config["general"]["version"] = version_in_runscript_model
 
     def finalize(self):
         self.run_recursive_functions(self)

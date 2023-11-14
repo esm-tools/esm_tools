@@ -44,7 +44,24 @@ Phase                                                  Function                 
 
 It is important to understand that none of this has to be edited by the users. The above described workflow phases form the default set of phases. Changing anyone of these phases may lead esm-tools to fail. 
 
+Inspect workflow phases
+-----------------------
 
+To inspect the workflow and workflow phases that are defined by e.g. a choosen setup or in an already run simulation/experiment, you can run esm_runscript with the -i (--inspect) option. This can be done for two different cases:
+
+- To inspect the workflow previous to running a certain experiment. For exampl, if you want to add a new workflow phase, and need to know which phases are already defined in a choosen setup or model configuration::
+
+        esm_runscripts runscript.yaml -i workflow
+
+- To inspect a workflow from an experiment that has beed carried out already or created during a check-run (-c)::
+
+        esm_runscripts runscript.yaml -e <expid> -i workflow
+
+It will display the workflow configuration showing the order of workflow phases and their attributes and possible dependencies. This output should help to find out the correct keyworkds to be set when integrating a new workflow phase.
+
+**Example output**::
+
+        sldkfj
 
 .. _def_workflow_phases:
 

@@ -169,8 +169,6 @@ restart_out_files:
         fesom_raw_restart: fesom_raw_restart
         fesom_bin_restart_info: fesom_bin_restart_info
         fesom_bin_restart: fesom_bin_restart
-        fesom_bin_restart_tar: fesom_bin_restart_tar
-        fesom_raw_restart_tar: fesom_raw_restart_tar
 
 restart_out_in_work:
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
@@ -292,6 +290,8 @@ file_movements:
                 all_directions: move
         fesom_raw_restart_info_out:
                 all_directions: move
+        fesom_raw_restart_tar_out:
+                all_directions: move
         fesom_bin_restart_in:
                 all_directions: move
         fesom_bin_restart_out:
@@ -300,6 +300,13 @@ file_movements:
                 all_directions: move
         fesom_bin_restart_info_out:
                 all_directions: move
+        fesom_bin_restart_tar_out:
+                all_directions: move
+
+choose_tar_binary_restarts:
+    True:
+        add_restart_out_files:
+            fesom_raw_restart_tar: fesom_raw_restart_tar
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -565,6 +572,9 @@ grids:
 further_reading:
         - fesom/fesom.forcing.yaml
 
+# ------------------------
+# RECIPE
+# ------------------------
 tidy_recipe:
 - "tidy_coupler"
 - "tar_binary_restarts"

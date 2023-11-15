@@ -204,8 +204,9 @@ def install_missing_plugins(config: esm_parser.ConfigSetup) -> esm_parser.Config
     config : esm_parser.ConfigSetup
         ConfigSetup object containing the information of the current simulation.
     """
-    for component in config:
-        for plugin in config[component].get("required_plugins", []):
-            install(plugin)
+    if config.get("general", {}).get("install_missing_plugins", True)
+        for component in config:
+            for plugin in config[component].get("required_plugins", []):
+                install(plugin)
 
     return config

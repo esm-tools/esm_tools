@@ -11,6 +11,8 @@ input_sources:
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
 
 # forcings
+# Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} by default.
+ozone_source_file_scenario: ${scenario}
 forcing_sources:
         # sst
         "amipsst":
@@ -115,11 +117,11 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                # scenario: ssp126, ssp119, ssp245, ssp370, ssp585
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_@YEAR@.nc":
+                # Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} at the beginning of the file.
+                "${forcing_dir}/ozone/${resolution}_ozone_${ozone_source_file_scenario}_@YEAR@.nc":
                         from: 2015
                         to: 2099
-                "${forcing_dir}/ozone/${resolution}_ozone_${scenario}_2099.nc":
+                "${forcing_dir}/ozone/${resolution}_ozone_${ozone_source_file_scenario}_2099.nc":
                         from: 2100
 
         "1850ozone": "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc"

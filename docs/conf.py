@@ -194,7 +194,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
+html_logo = "_static/logo_canvas_fit_to_logo_BlueDots.png"
 
 # Add custom css (to disable the horizontal scrolling in tables).
 def setup(app):

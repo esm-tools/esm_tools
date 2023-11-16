@@ -2,6 +2,6 @@
 
 __author__ = """Dirk Barbi, Paul Gierz, Sebastian Wahl"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.24.2"
+__version__ = "6.25.5"
 
 from .esm_plugin_manager import *

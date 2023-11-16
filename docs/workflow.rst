@@ -61,7 +61,9 @@ It will display the workflow configuration showing the order of workflow phases 
 
 **Example output**::
 
-        sldkfj
+        Workflow sequence
+        -----------------
+        prepcompute ->  compute ->  tidy ->  my_new_subjob_general ->  prepcompute
 
 .. _def_workflow_phases:
 
@@ -88,7 +90,7 @@ Keywords to define a new workflow phase
 To define a new phase, the following keywords and mappings (key/value pairs) are available. (Keywords that are indicated with ``< >`` need to be adapted by the user.)
 
 ====================================================== ============ =========================== ==========================================================
-Keyword                                                Mandatory    Default value               Function
+Keyword                                                Mandatory    (Default) values            Function
 ====================================================== ============ =========================== ==========================================================
   **workflow**                                         yes          --                          Chapter headline in a runscript or configuration section, 
                                                                                                 indicating that an alterations to the standard workflow 
@@ -98,19 +100,19 @@ Keyword                                                Mandatory    Default valu
                                                                     (default) workflow          that should start the next run.
                                                                     (e.g. tidy)                        
 
-  **phases**                                           yes          --                          Section within the ``workflow`` chapter that containes new 
+  **phases**                                           yes          user defined string         Section within the ``workflow`` chapter that containes new 
                                                                                                 additional workflow phases.
 
-  **<new_phase_name>**                                 yes          --                          Section within the ``new_phases`` section for each new phase.
+  **<new_phase_name>**                                 yes          user defined string         Section within the ``new_phases`` section for each new phase.
                                                                                                 The name of the new phase needs to be unique. See also further
                                                                                                 explenation here :ref:`def_workflow_phases`
 
-  run_after: <value> or run_before: <value>            no           last phase in               Key/value entry in each ``<new_phase_name>`` section. 
+  run_after: <value> or run_before: <value>            no           default: last phase in      Key/value entry in each ``<new_phase_name>`` section. 
                                                                     (default) workflow          This mapping defines the (default or user) phase of the 
                                                                     (e.g. tidy)                 workflow after or before the new phase should be executed.
                                                                                                 Only one of the two should be specified. 
 
-  submit_to_batch_system: <value>                      no           false                       Key/value entry in each ``<new_phase_name>`` section. 
+  submit_to_batch_system: <value>                      no           **false**, true             Key/value entry in each ``<new_phase_name>`` section. 
                                                                                                 This mapping defines if the (default or user) phase is 
                                                                                                 submitted to batch system or not.
 
@@ -118,15 +120,16 @@ Keyword                                                Mandatory    Default valu
                                                                                                 This mapping defines to which queue (name) the job of the new phase
                                                                                                 should be submitted to.
 
-  batch_or_shell: <value>                              no           shell                       Key/value entry in each ``<new_phase_name>`` section.
-                                                                                                This Mapping defines if the (default or user) phase is submitted
-                                                                                                as batch job or as shell script.
-                                                                              
+  batch_or_shell: <value>                              no           **shell**, batch            Key/value entry in each ``<new_phase_name>`` section.
+                                                                                                This mapping defines if the (default or user) phase is submitted
+                                                                                                as batch job or as shell script. 
+                                                                                                This attribute will be overwritten depending on ``submit_to_batch_system``
+                                                                                                
   cluster: <value>                                     no           Phase name                  Key/value entry in each ``<new_phase_name>`` section. Phases
                                                                                                 that have the same entry in ``cluster`` will be run 
                                                                                                 from the same batch script.
 
-  order_in_cluster: <value>                            no           sequential                  Key/value entry in each ``<new_phase_name>`` section. This mapping
+  order_in_cluster: <value>                            no           **sequential**, concurrent  Key/value entry in each ``<new_phase_name>`` section. This mapping
                                                                                                 defines how phases in the same ``<cluster>`` should be run.
                                                                                                 Concurrent or serial.
 
@@ -172,7 +175,6 @@ The following code snippet shows the general syntax for defining a new workflow 
                 run_after: <value>
                 submit_to_batch_system: <value>
                 run_on_queue: <value>
-                batch_or_shell: <value>
                 cluster: <value>
                 order_in_cluster: <value>
                 script: <value>
@@ -231,7 +233,32 @@ To integrate a new phase that should be run as the last task in every run but be
                     script_dir: <value>
                     script: <values>
 
-Example 4: Adding an iterative coupling job
+Example 4: Adding multiple user phases that can be run concurrently in a workflow cluster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to define multiple new phases that should start at the same but can be run independently from each other. This can be done by assigning these phases to the same workflow cluster and run them concurrently over the batch system::
+
+    echam:
+        [...other information...]
+
+        workflow:
+            phases:
+                my_new_last_phase:
+                    script_dir: <value>
+                    script: <values>
+                    submit_to_batch_system: True
+                    run_on_queue: <value>
+                    cluster: my_own_new_cluster
+
+                my_second_new_phase:
+                    script_dir: <value>
+                    script: <values>
+                    submit_to_batch_system: True
+                    run_on_queue: <value>
+                    cluster: my_own_new_cluster
+
+
+Example 5: Adding an iterative coupling job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing a runscript for iterative coupling using the workflow manager requires some more changes. The principal idea is

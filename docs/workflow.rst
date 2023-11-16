@@ -85,12 +85,12 @@ In general, a workflow can be defined in the runscript or in any component confi
 
 Keywords to define a new workflow phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To define a new phase, the following keywords and mappings (key/value pairs) are available:
+To define a new phase, the following keywords and mappings (key/value pairs) are available. (Keywords that are indicated with ``< >`` need to be adapted by the user.)
 
 ====================================================== ============ =========================== ==========================================================
 Keyword                                                Mandatory    Default value               Function
 ====================================================== ============ =========================== ==========================================================
-  workflow                                             yes          --                          Chapter headline in a runscript or configuration section, 
+  **workflow**                                         yes          --                          Chapter headline in a runscript or configuration section, 
                                                                                                 indicating that an alterations to the standard workflow 
                                                                                                 will be defined here.
 
@@ -98,10 +98,10 @@ Keyword                                                Mandatory    Default valu
                                                                     (default) workflow          that should start the next run.
                                                                     (e.g. tidy)                        
 
-  new_phases                                           yes          --                          Section within the ``workflow`` chapter that containes new 
+  **phases**                                           yes          --                          Section within the ``workflow`` chapter that containes new 
                                                                                                 additional workflow phases.
 
-  <new_phase_name>                                     yes          --                          Section within the ``new_phases`` section for each new phase.
+  **<new_phase_name>**                                 yes          --                          Section within the ``new_phases`` section for each new phase.
                                                                                                 The name of the new phase needs to be unique. See also further
                                                                                                 explenation here :ref:`def_workflow_phases`
 
@@ -110,31 +110,31 @@ Keyword                                                Mandatory    Default valu
                                                                     (e.g. tidy)                 workflow after or before the new phase should be executed.
                                                                                                 Only one of the two should be specified. 
 
-  submit_to_batch_system: <value>                                   true (???)                  Key/value entry in each ``<new_phase_name>`` section. 
+  submit_to_batch_system: <value>                      no           false                       Key/value entry in each ``<new_phase_name>`` section. 
                                                                                                 This mapping defines if the (default or user) phase is 
                                                                                                 submitted to batch system or not.
 
-  run_on_queue: <value>                                                                         Key/value entry in each ``<new_phase_name>`` section.
+  run_on_queue: <value>                                no           None                        Key/value entry in each ``<new_phase_name>`` section.
                                                                                                 This mapping defines to which queue (name) the job of the new phase
                                                                                                 should be submitted to.
 
-  batch_or_shell: <value>                                           batch                       Key/value entry in each ``<new_phase_name>`` section.
+  batch_or_shell: <value>                              no           shell                       Key/value entry in each ``<new_phase_name>`` section.
                                                                                                 This Mapping defines if the (default or user) phase is submitted
                                                                                                 as batch job or as shell script.
                                                                               
-  cluster: <value>                                     no           None                        Key/value entry in each ``<new_phase_name>`` section. Phases
+  cluster: <value>                                     no           Phase name                  Key/value entry in each ``<new_phase_name>`` section. Phases
                                                                                                 that have the same entry in ``cluster`` will be run 
                                                                                                 from the same batch script.
 
-  order_in_cluster: <value>                            no           concurrent                  Key/value entry in each ``<new_phase_name>`` section. This mapping
+  order_in_cluster: <value>                            no           sequential                  Key/value entry in each ``<new_phase_name>`` section. This mapping
                                                                                                 defines how phases in the same ``<cluster>`` should be run.
                                                                                                 Concurrent or serial.
 
-  script: <value>                                      yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
+  **script: <value>**                                  yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
                                                                                                 This mapping defines the name of the script that is going 
                                                                                                 to be executed during the new workflow phase.
 
-  script_dir: <value>                                  yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
+  **script_dir: <value>**                              yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
                                                                                                 This mapping defines the path to the script set by the variable
                                                                                                 ``<script>``.
 
@@ -146,7 +146,7 @@ Keyword                                                Mandatory    Default valu
                                                                                                 mapping defines e.g. a Python script/function that prepares 
                                                                                                 a dictionary with environment variables.
 
-  nproc: <value>                                       no             1                         Key/value entry in each ``<new_phase_name>`` section.
+  nproc: <value>                                       no           1                           Key/value entry in each ``<new_phase_name>`` section.
                                                                                                 This mapping defines the number of CPUs a phase should run with
                                                                                                 (if run via sbatch).
 
@@ -166,21 +166,21 @@ The following code snippet shows the general syntax for defining a new workflow 
 
     workflow:
         next_run_triggered_by: <value>
-        last_task_in_queue: <value>
         
-        <new_phase_name>:
-            run_after: <value>
-            submit_to_batch_system: <value>
-            run_on_queue: <value>
-            batch_or_shell: <value>
-            cluster: <value>
-            order_in_cluster: <value>
-            script: <value>
-            call_function: <value>
-            env_preparation: <value>
-            nproc: <value>
-            run_only: <value>
-            skip_chunk_number: <value>
+        phases:
+            <new_phase_name>:
+                run_after: <value>
+                submit_to_batch_system: <value>
+                run_on_queue: <value>
+                batch_or_shell: <value>
+                cluster: <value>
+                order_in_cluster: <value>
+                script: <value>
+                call_function: <value>
+                env_preparation: <value>
+                nproc: <value>
+                run_only: <value>
+                skip_chunk_number: <value>
 
 Examples for the definition of new workflow phases
 --------------------------------------------------
@@ -188,41 +188,57 @@ Examples for the definition of new workflow phases
 Example 1: Adding an additional postprocessing subjob
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the case of a simple echam postprocessing job, the corresponding section in the runscript could look like this ::
+In the case of a simple postprocessing task (here for model Echam), that sould be run as the last task of each run, independantly from restarting the experiment, the corresponding minimal code snippet in a runscript could look like this ::
 
     echam:
         [...other information...]
 
         workflow:
-            next_run_triggered_by: tidy
-                    
-            subjobs:
-                my_new_subjob:
-                    nproc: 1
-                    run_after: tidy
-                    script_dir:
-                    script:
-                    call_function:
-                    env_preparation:
-
+            phases:
+                my_postprocessing:
+                    script_dir: <value>
+                    script: <values>
 
 
 Example 2: Adding an additional preprocessing subjob
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A preprocessing job basically is configured the same way as a postprocessing job, but the run_after entry is repl
+A preprocessing job basically is configured the same way as a postprocessing job, but the run_before keyword is needed now, to define when the new phase should be run::
 
+    echam:
+        [...other information...]
 
+        workflow:
+            phases:
+                my_preprocessing:
+                    run_before: prepcompute
+                    script_dir: <value>
+                    script: <values>
 
+Example 3: Adding a new phase as the last task in a run
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Example 3: Adding an iterative coupling job
+To integrate a new phase that should be run as the last task in every run but before the next run starts, use the following example::
+
+    echam:
+        [...other information...]
+
+        workflow:
+            next_run_triggered: my_new_last_phase
+
+            phases:
+                my_new_last_phase:
+                    script_dir: <value>
+                    script: <values>
+
+Example 4: Adding an iterative coupling job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing a runscript for iterative coupling using the workflow manager requires some more changes. The principal idea is
 that each coupling step consists of two data processing jobs, one pre- and one postprocessing job. This is done this way
 as to make the coupling modular, and enable the modeller to easily replace one of the coupled components by a different
 implementation. This is of course up to the user to decide, but we generally advise to do so, and the iterative couplings
-distributed with ESM-Tools are organized this way. ::
+distributed with `ESM-Tools` are organized this way. ::
 
     echam:
         [...other information...]

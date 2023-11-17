@@ -357,6 +357,9 @@ class Namelist:
                     radctl["cecc"] = cecc
                     radctl["cobld"] = cobld
                     radctl["clonp"] = clonp
+                    # Line needed for making sure the changes in radctl make it to nml,
+                    # even when ``radctl`` did not exist in ``nml``
+                    nml["radctl"] = radctl
                     print(
                         "-------------------------------------------------------------"
                     )

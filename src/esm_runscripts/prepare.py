@@ -8,6 +8,7 @@ import esm_parser
 import yaml
 import esm_utilities
 from esm_calendar import Calendar, Date
+from esm_plugin_manager import install_missing_plugins
 from loguru import logger
 
 from . import batch_system, helpers

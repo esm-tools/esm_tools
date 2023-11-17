@@ -15,3 +15,5 @@ workflow:
     always_run_with:
         - prepare
         - prepexp
+    phases_to_submit_to_batch_system:
+        - compute

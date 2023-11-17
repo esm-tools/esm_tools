@@ -259,7 +259,7 @@ class Workflow:
     def write_to_config(self, config):
         """
         Write to config.
-        TODO: Rename subjobs to phases. Nees changes also in resubmit.py and other files???
+        TODO: Rename ``subjobs`` to ``phases``. But this needs changes also in resubmit.py and other files???
         """
         cluster_att = []
         for att in dir(self.phases[0]):
@@ -416,18 +416,8 @@ class Workflow:
             self.phases[0].called_from = next_triggered
             self.last_task_in_queue = next_triggered
 
-        # what does this do?
-        #next_triggered = list(filter((self.next_run_triggered_by).__ne__, next_triggered))
-        # if len(next_triggered) > 1:
-        #    err_msg = "Mismatch found setting next_run_triggered_by for workflow."
-        #    esm_parser.user_error("ERROR", err_msg)
-        # elif len(next_triggered) == 1:
-        #    self.next_run_triggered_by = next_triggered[0]
-        # # else: let default
-        #breakpoint()
-
         # Set "next_submit" and "called_from"
-        # "next_submit" which phase will be called next (run_after of the next phase)
+        # "next_submit" which phase/cluster will be called next (run_after of the next phase)
         # "called_from" name of previous phase, run_after of current phase
         # Create a dict of all phases with empty lists
         next_submits = {}
@@ -441,9 +431,9 @@ class Workflow:
             if phase4.cluster is None:
                 phase4.cluster = phase4.name
 
+        # set next_submits to the cluster name rather then to the phase name
         for phase2 in self.phases + self.user_phases:
             if phase2.run_after is not None:
-                #next_submits[phase2.run_after].append(phase2.name)
                 if phase2.cluster not in next_submits[phase2.run_after]:
                     next_submits[phase2.run_after].append(phase2.cluster)
                 phase2.called_from = phase2.run_after
@@ -455,9 +445,11 @@ class Workflow:
         last_cluster_name = self.last_task_in_queue
 
         # if first_cluster_name is not next_submit of last_cluster_name
+        # set 'next_submit' of last phase/cluster to first phase/cluster in workflow
         if first_cluster_name not in get_phase_attrib(self.phases+self.user_phases, last_cluster_name, "next_submit"):
             set_phase_attrib(self.phases+self.user_phases, last_cluster_name, "next_submit", first_cluster_name)
         # if last_cluster_name is not called_from of first_cluster_name
+        # set 'called_from' of first phase/cluster to last phase/cluster
         if not last_cluster_name == get_phase_attrib(self.phases+self.user_phases, first_cluster_name, "called_from"):
             set_phase_attrib(self.phases+self.user_phases, first_cluster_name, "called_from", last_cluster_name)
 
@@ -804,35 +796,42 @@ def display_workflow(config):
         config : dict (needed???)
     """
 
-    esm_parser.pprint_config(config["general"]["workflow"])
+    display_nicely(config)
 
     first_phase = config["general"]["workflow"]["first_task_in_queue"]
+    subjobs = config["general"]["workflow"]["subjob_clusters"][first_phase]["subjobs"]
+    # Note: next_submit points to the next cluster (not phase)
     second_phase = config["general"]["workflow"]["subjobs"][first_phase]["next_submit"]
 
-    workflow_order = f"{first_phase}"
+    workflow_order = f"``{first_phase}`` {subjobs}"
 
+    # While first_phase (first_task_in_queue) is not to be called by the next phase (next_submit).
+    # In other words: If not last phase/cluster is reached.
     while first_phase not in second_phase and second_phase:
         sec_phase_str = ""
         for sec_phase in second_phase:
             if config["general"]["workflow"]["subjobs"][sec_phase]["next_submit"]:
                 second_phase = config["general"]["workflow"]["subjobs"][sec_phase]["next_submit"]
+                subjobs = config["general"]["workflow"]["subjob_clusters"][sec_phase]["subjobs"]
             if sec_phase_str == "":
-                sec_phase_str = f"{sec_phase_str} {sec_phase}"
+                sec_phase_str = f"{sec_phase_str} ``{sec_phase}`` {subjobs}"
             else:
-                sec_phase_str = f"{sec_phase_str}, {sec_phase}"
+                sec_phase_str = f"{sec_phase_str}, ``{sec_phase}`` {subjobs}"
         workflow_order = f"{workflow_order} -> {sec_phase_str}"
+    # For last phase that would start the next run
     else:
-        # second_phase.remove(first_phase)
         sec_phase_str = ""
+        # for all cluster in next_submit
         for sec_phase in second_phase:
             second_phase = config["general"]["workflow"]["subjob_clusters"][sec_phase]["next_submit"]
+            subjobs = config["general"]["workflow"]["subjob_clusters"][sec_phase]["subjobs"]
             if sec_phase_str == "":
-                sec_phase_str = f"{sec_phase_str} {sec_phase}"
+                sec_phase_str = f"{sec_phase_str} ``{sec_phase}`` {subjobs}"
             else:
-                sec_phase_str = f"{sec_phase_str}, {sec_phase}"
+                sec_phase_str = f"{sec_phase_str} and ``{sec_phase}`` {subjobs}"
         workflow_order = f"{workflow_order} -> {sec_phase_str}"
 
-    esm_parser.user_note("Workflow sequence", f"{workflow_order}")
+    esm_parser.user_note("Workflow sequence (cluster [phases])", f"{workflow_order}")
     return config
 
 

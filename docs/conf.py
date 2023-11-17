@@ -42,8 +42,9 @@ with open("Supported_Models.rst", "w") as rst:
     rst.write("Supported Models\n")
     rst.write("================\n")
 configs.sort()
+ignore_models = ["sample"]
 for config in configs:
-    if not config == "sample":
+    if not config in ignore_models:
         with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
             d = yaml.load(f, Loader=yaml.FullLoader)
             metadata = d.get("metadata")

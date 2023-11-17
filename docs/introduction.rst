@@ -6,7 +6,7 @@ Introduction
 
 Welcome to the user documentation of the `ESM-Tools` software. 
     
-`ESM-Tools` is a collection of command-line tools to download and build different simulation models for the Earth system, such as atmosphere, ocean, geo-biochemistry, hydrology, sea-ice and ice-sheet models, as well as coupled Earth System Models (ESMs). It also includes the functionality to write unified runscripts to carry out model simulations for different model setups (standalone and ESMs) on different High Performance Computing (HPC) systems.
+`ESM-Tools` is a collection of command-line tools to download and build different simulation models for the Earth system, such as atmosphere, ocean, biogeochemistry, hydrology, sea-ice and ice-sheet models, as well as coupled Earth System Models (ESMs). It also includes the functionality to write unified runscripts to carry out model simulations for different model setups (standalone and ESMs) on different High Performance Computing (HPC) systems.
 
 `ESM-Tools` consists of the following command line tools:
 

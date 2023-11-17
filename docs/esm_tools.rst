@@ -3,7 +3,7 @@ ESM Tools
 =========
 
 `ESM-Tools` includes also a command line tool named ``esm_tools``. It can be used to interact with several parts of our software.
-``esm_tools`` can be used with two options and two subcommands:
+``esm_tools`` can be used with the following options and subcommands:
 
 Options
 ^^^^^^^
@@ -71,7 +71,7 @@ You can get a pre-generated template to add a new component with::
     ...EDITOR OPENS....
 
     Thank you! The new configuration has been saved. Please commit it (and get in touch with the
-    esm-tools team if you need help)!
+    ESM-Tools team if you need help)!
 
 You can also specify if you want to create a new ``setup``, ``component`` or ``machine`` configuration file by giving the option ``-t`` or ``--type`` to the subcommand::
 

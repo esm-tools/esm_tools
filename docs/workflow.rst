@@ -61,9 +61,9 @@ It will display the workflow configuration showing the order of workflow phases 
 
 **Example output**::
 
-        Workflow sequence
-        -----------------
-        prepcompute ->  compute ->  tidy ->  my_new_subjob_general ->  prepcompute
+        Workflow sequence (cluster [phases])
+        ------------------------------------
+        prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute'] and my_own_new_cluster ['my_new_last_phase', 'my_second_new_phase']
 
 .. _def_workflow_phases:
 
@@ -184,13 +184,23 @@ The following code snippet shows the general syntax for defining a new workflow 
                 run_only: <value>
                 skip_chunk_number: <value>
 
+Workflow defaults
+-----------------
+
+A minimal example of defining a new workflow phase is given in Example 1. This will integrate a new phase with the following default assumptions:
+
+- The new phase will be run after the last phase of the default workflow.
+- The script given for this phase is run as a subprocess (not a batch run).
+- The next run of the overall experiment will be (still) triggered by the last phase of the default workflow and not the new phase.
+
+
 Examples for the definition of new workflow phases
 --------------------------------------------------
 
 Example 1: Adding an additional postprocessing subjob
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the case of a simple postprocessing task (here for model Echam), that sould be run as the last task of each run, independantly from restarting the experiment, the corresponding minimal code snippet in a runscript could look like this ::
+In the case of a simple postprocessing task (here for model Echam), that sould be run as the last task of each run, independantly from restarting the experiment, the corresponding minimal code snippet in a runscript could look like this::
 
     echam:
         [...other information...]

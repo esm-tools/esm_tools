@@ -325,18 +325,22 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
 
-        workflow:
-            next_run_triggered_by: tidy
-            subjobs:
-                my_new_subjob:
-                    batch_or_shell: shell
+#        workflow:
+#            next_run_triggered_by: tidy
+#            phases:
+#                my_new_subjob:
+#                    batch_or_shell: shell
+#                    run_before: tidy
+#                    run_after: compute
+#                    script_dir: "/work/ab0995/a270089/myrunscripts/"
+#                    script: "helloworld.sh"
 
         # Postprocessing
         choose_general.postprocessing:
                 True:
-                        workflow:
+                        add_workflow:
                                 next_run_triggered_by: tidy
-                                subjobs:
+                                phases:
                                         postprocessing:
                                                 batch_or_shell: batch
                                                 order_in_cluster: concurrent

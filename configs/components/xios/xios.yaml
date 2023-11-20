@@ -178,6 +178,15 @@ choose_general.setup_name:
                                         field_def: field_def
                                         file_def: file_def
                                         file_def_agrif: file_def_agrif
+                        "agrif-3.0":
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        domain_def: domain_def
+                                        field_def: field_def
+                                        file_def: file_def
+                                        file_def_agrif: file_def_agrif
+
         foci:
            choose_general.version:
               default: 

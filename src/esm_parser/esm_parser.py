@@ -610,7 +610,7 @@ def new_deep_update(
 # END NEW STUFF
 
 
-@keep_provenance_for_dict_or_list
+@keep_provenance_in_setitem
 def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -1887,7 +1887,7 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -2250,7 +2250,7 @@ def determine_computer_from_hostname():
     # )
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2355,7 +2355,7 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2370,7 +2370,7 @@ def mark_dates(tree, rhs, config):
     return entry
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2401,7 +2401,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2413,7 +2413,7 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2464,7 +2464,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
-@keep_provenance_for_recursive_function
+@keep_provenance_in_recursive_function
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]

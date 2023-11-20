@@ -549,7 +549,7 @@ class ListWithProvenance(list):
 PROVENANCE_MAPPINGS = (DictWithProvenance, ListWithProvenance)
 
 
-def keep_provenance_for_dict_or_list(func):
+def keep_provenance_in_setitem(func):
     def inner(val_with_prov, *args, **kwargs):
         if hasattr(val_with_prov, "custom_setitem"):
             val_with_prov.custom_setitem = True
@@ -564,7 +564,7 @@ def keep_provenance_for_dict_or_list(func):
     return inner
 
 
-def keep_provenance_for_recursive_function(func):
+def keep_provenance_in_recursive_function(func):
     # TODO: this is an incorrect description
     """
     Decorator for recursive functions in ``esm_parser`` to preserve
@@ -581,21 +581,26 @@ def keep_provenance_for_recursive_function(func):
         The function to decorate
     """
 
+    does_not_modify_prov = ["esm_parser.find_variable"]
+    modify_prov = not str(func) in does_not_modify_prov
+
     def inner(tree, rhs, *args, **kwargs):
         output = func(tree, rhs, *args, **kwargs)
 
         if hasattr(rhs, "provenance"):
-            provenance = rhs.provenance
+            provenance = copy.deepcopy(rhs.provenance)
             # Value was modified
             if type(rhs) != type(output) or rhs != output:
                 # If the new value has an inherited provenance, keep it (i.e. variable
                 # was called: rhs = ${fesom.namelist_dir}, output =
                 # /actual/path/with/provenance/to/be/kept})
                 if hasattr(output, "provenance"):
-                    provenance.extend_and_modified_by(output.provenance, func)
+                    if modify_prov:
+                        provenance.extend_and_modified_by(output.provenance, func)
+                    output.provenance = provenance
                 # If the rhs.provenance is not None and output has no provenance, keep
                 # the old provenance
-                elif provenance is not None:
+                elif provenance is not None and modify_prov:
                     provenance.append_last_step_modified_by(func)
                     output = wrapper_with_provenance_factory(output, provenance)
 
@@ -634,5 +639,3 @@ if __name__ == "__main__":
 
     print(asd["a_string"], asd["a_string"].provenance)
     print(asd["list_with_dict_inside"], asd["list_with_dict_inside"])
-
-    # TODO: tests for the keep_provenance functions

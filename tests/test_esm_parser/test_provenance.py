@@ -358,20 +358,16 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         config["person"]["my_other_list"][2].provenance = new_prov
 
 
-def test_keep_provenance_for_dict_or_list(config):
-    @provenance.keep_provenance_for_dict_or_list
-    def change_dict_elem(config, key, val):
+def test_keep_provenance_in_setitem(config):
+    @provenance.keep_provenance_in_setitem
+    def change_elem(config, key, val):
         config[key] = val
-
-    @provenance.keep_provenance_for_dict_or_list
-    def change_list_elem(config, indx, val):
-        config[indx] = val
 
     # Create a value with provenance
     val = provenance.wrapper_with_provenance_factory("changed elem", [{"file": "new"}])
 
-    change_dict_elem(config["echam"], "type", val)
-    change_list_elem(config["echam"]["files"]["greenhouse"]["a_list"], 1, val)
+    change_elem(config["echam"], "type", val)
+    change_elem(config["echam"]["files"]["greenhouse"]["a_list"], 1, val)
 
     check_provenance1 = [
         {
@@ -397,3 +393,42 @@ def test_keep_provenance_for_dict_or_list(config):
         config["echam"]["files"]["greenhouse"]["a_list"][1].provenance
         == check_provenance2
     )
+
+
+def test_keep_provenance_in_recursive_function(config):
+    @provenance.keep_provenance_in_recursive_function
+    def change_elem(tree, rhs):
+        return provenance.wrapper_with_provenance_factory("new_val", {"modified": True})
+
+    tree = []
+
+    check_provenance1 = [
+        {
+            "line": 2,
+            "col": 11,
+            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "category": "runscript",
+        },
+        {
+            "modified": True,
+            "extended_by": "<function test_keep_provenance.<locals>.change_elem at 0x11433f8b0>",
+        },
+    ]
+    check_provenance2 = [
+        {
+            "line": 9,
+            "col": 19,
+            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "category": "runscript",
+        },
+        {
+            "modified": True,
+            "extended_by": "<function test_keep_provenance.<locals>.change_elem at 0x11433f8b0>",
+        },
+    ]
+
+    rhs1 = change_elem(tree, config["echam"]["type"])
+    rhs2 = change_elem(tree, config["echam"]["files"]["greenhouse"]["a_list"][1])
+
+    assert rhs1 == "new_val" and rhs1.provenance[0] == check_provenance1[0]
+    assert rhs2 == "new_val" and rhs2.provenance[0] == check_provenance2[0]

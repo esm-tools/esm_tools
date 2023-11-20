@@ -581,8 +581,8 @@ def keep_provenance_in_recursive_function(func):
         The function to decorate
     """
 
-    does_not_modify_prov = ["esm_parser.find_variable"]
-    modify_prov = not str(func) in does_not_modify_prov
+    does_not_modify_prov = ["find_variable"]
+    modify_prov = not func.__name__ in does_not_modify_prov
 
     def inner(tree, rhs, *args, **kwargs):
         output = func(tree, rhs, *args, **kwargs)

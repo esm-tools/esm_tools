@@ -19,6 +19,16 @@ class Provenance(list):
             super().__init__([provenance_data])
 
     def append_last_step_modified_by(self, func):
+        """
+        Copies the last step in the provenance history and adds the entry ``modify_by``
+        with value ``func``.
+
+        Parameters
+        ----------
+        func : str
+            Function that is modifying the variable
+        """
+
         new_provenance_step = copy.deepcopy(self[-1])
         new_provenance_step = self.add_modified_by(new_provenance_step, func)
 
@@ -26,16 +36,54 @@ class Provenance(list):
 
 
     def extend_and_modified_by(self, additional_provenance, func):
+        """
+        Extends the current provenance with an ``additional_provenance``. This happends
+        when for example a variable comes originally from a file, but then is
+        overwritten by a file higher in the hierarchy. This would keep both histories,
+        with the history of the second been on top of the first.
+
+        Parameters
+        ----------
+        additional_provenance : esm_parser.Provenance
+            Additional provenance history to be used for extending ``self``
+        func : str
+            Function triggering this method
+        """
         new_additional_provenance = copy.deepcopy(additional_provenance)
+        # If the new provenance is not identical to the current one extend the
+        # provenance
         if new_additional_provenance is not self:
             for elem in new_additional_provenance:
-                new_additional_provenance.add_modified_by(elem, func, modified_by="extended_by")
+                new_additional_provenance.add_modified_by(
+                    elem, func, modified_by="extended_by"
+                )
             self.extend(new_additional_provenance)
+        # If the new provenance is identical just mark the variable as modified_by
+        # func
         else:
             self.append_last_step_modified_by(func)
 
 
     def add_modified_by(self, provenance_step, func, modified_by="modified_by"):
+        """
+        Adds an variable of name defined by ``modified_by`` to the given provenance step
+        with value ``func``. This variable is used to label provenance steps of the
+        provenance history with functions that modified it.
+
+        Parameters
+        ----------
+        provenance_step : dict
+            Provenance entry of the current step
+        func : str
+            Function triggering this method
+        modified_by : str
+            Name of the key for the labelling the type of modification
+
+        Returns
+        -------
+        provenance_step : dict
+            Provenance entry of the current step with the ``modified_by`` item
+        """
         if provenance_step is not None:
             provenance_step[modified_by] = str(func)
 
@@ -105,7 +153,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
     that are not subclassable (``bool`` and ``NoneType``) intanciates an object that
     mimics their behaviour but also contains the ``provenance`` attribute.
 
-    Objects of type ``esm_calendari.esm_calendar.Date`` are not subclass (and the
+    Objects of type ``esm_calendar.esm_calendar.Date`` are not subclass (and the
     ``provenance`` attribute is simply added to them, because they fail to be subclassed
     with in the ``WrapperWithProvenance`` with the following error::
 
@@ -148,13 +196,29 @@ def wrapper_with_provenance_factory(value, provenance=None):
                 return super(WrapperWithProvenance, cls).__new__(cls, value)
 
             def __init__(self, value, provenance=None):
-                self.provenance = Provenance(provenance)
+                self._provenance = Provenance(provenance)
+
+            @property
+            def provenance(self):
+                return self._provenance
+
+            @provenance.setter
+            def provenance(self, new_provenance):
+                # Check if new_provenance is an instance of Provenance
+                if not isinstance(new_provenance, Provenance):
+                    raise ValueError(
+                        "Provenance must be an instance of the provenance.Provenance "
+                        "class!"
+                    )
+
+                self._provenance = new_provenance
 
         # Instantiate the subclass with the given value and provenance
         return WrapperWithProvenance(value, provenance)
 
 
 class DictWithProvenance(dict):
+    # TODO: this is an incorrect description
     """
     A dictionary subclass that contains a ``provenance`` attribute. This attribute is
     a ``dict`` that contains those `keys` of the original dictionary whose `values`
@@ -220,6 +284,7 @@ class DictWithProvenance(dict):
     """
 
     def __init__(self, dictionary, provenance):
+        # TODO: this is an incorrect description
         """
         Instanciates the ``dictionary`` as an object of ``DictWithProvenance`` and
         defines its ``provenance`` attribute recursively with ``set_provenance``.
@@ -235,9 +300,11 @@ class DictWithProvenance(dict):
 
         super().__init__(dictionary)
 
+        self.custom_setitem = False
         self.put_provenance(provenance)
 
     def put_provenance(self, provenance):
+        # TODO: this is an incorrect description
         """
         Defines recursively the ``provenance`` of the ``DictWithProvenance`` object
         ``self`` or it's nested ``dictionary``.
@@ -257,13 +324,14 @@ class DictWithProvenance(dict):
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, provenance.get(key, []))
             elif hasattr(val, "provenance"):
-                self[key].provenance.extend(provenance.get(key, None))
+                self[key].provenance.extend(provenance.get(key, {}))
             else:
                 self[key] = wrapper_with_provenance_factory(
                     val, provenance.get(key, None)
                 )
 
     def set_provenance(self, provenance):
+        # TODO: this is an incorrect description
         """
         Defines recursively the ``provenance`` of the ``DictWithProvenance`` object
         ``self`` or it's nested ``dictionary``.
@@ -277,6 +345,9 @@ class DictWithProvenance(dict):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
+        if not isinstance(provenance, list):
+            provenance = [provenance]
+
         for key, val in self.items():
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, {})
@@ -326,38 +397,45 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
-    def set_leaf_id_provenance(self, key):
+    def __setitem__(self, key, val):
         """
-        Stores the last-leaf provenance information in the class level
-        variable ``leaf_id_provenance``.
-
-        This method gets the ``id`` value (unique Python object counter), which
-        is used as a key in the `leaf_id_provenance`. The value becomes the
-        provenance of that key, or defaults to ``None``
+        Any time an item in a DictWithProvenance is set, extend the old provenance of
+        the old value with the provenance of the new ``val`` and make that be the new
+        extended provenance history of the value.
 
         Parameters
         ----------
-        key : Any
-           The key of the "inner-most" leaf to store provenance information for
+        key : str
+            Key of the item
+        val : any
+            Value of the item
         """
-        # If it's a leaf
-        if not isinstance(super().__getitem__(key), DictWithProvenance):
-            val_id = id(super().__getitem__(key))
-            # Stores the provenance in a class variable, under an id key
-            DictWithProvenance.leaf_id_provenance[val_id] = self.provenance.get(
-                key, None
-            )
+        # TODO: this needs to happen recursively if is a dict or a list
+        if (
+            key in self
+            and not isinstance(self[key], (dict, list))
+            and hasattr(self[key], "provenance")
+            and hasattr(self, "custom_setitem")
+            and self.custom_setitem
+        ):
+            new_provenance = copy.deepcopy(self[key].provenance)
+            if hasattr(val, "provenance"):
+                new_provenance.extend_and_modified_by(val.provenance, "dict.__setitem__")
+                val.provenance = new_provenance
+
+        super().__setitem__(key, val)
 
 
 class ListWithProvenance(list):
     def __init__(self, mylist, provenance):
         super().__init__(mylist)
 
+        self.custom_setitem = False
         self.put_provenance(provenance)
 
     def put_provenance(self, provenance):
         if not provenance:
-            provenance = [None] * len(self)
+            provenance = [{}] * len(self)
 
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
@@ -370,6 +448,7 @@ class ListWithProvenance(list):
                 self[c] = wrapper_with_provenance_factory(elem, provenance[c])
 
     def set_provenance(self, provenance):
+        # TODO: this is an incorrect description
         """
         Defines recursively the ``provenance`` of the ``DictWithProvenance`` object
         ``self`` or it's nested ``dictionary``.
@@ -383,6 +462,9 @@ class ListWithProvenance(list):
             given, the ``dictionary`` takes the value of ``self``. Only for recursion
             within nested ``DictWithProvenance``, do not use it outside of this method.
         """
+        if not isinstance(provenance, list):
+            provenance = [provenance]
+
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, {})
@@ -391,7 +473,7 @@ class ListWithProvenance(list):
                 self[c] = ListWithProvenance(elem, [])
                 self[c].set_provenance(provenance)
             elif hasattr(elem, "provenance"):
-                self[c].provenance.append(provenance)
+                self[c].provenance.extend(provenance)
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 
@@ -432,11 +514,29 @@ class ListWithProvenance(list):
 
         return provenance_list
 
+    # TODO: add __setitem__ equivalent here
+
 
 PROVENANCE_MAPPINGS = (DictWithProvenance, ListWithProvenance)
 
 
-def keep_provenance(func):
+def keep_provenance_for_dict_or_list(func):
+    def inner(val_with_prov, *args, **kwargs):
+        if hasattr(val_with_prov, "custom_setitem"):
+            val_with_prov.custom_setitem = True
+
+        output = func(val_with_prov, *args, **kwargs)
+
+        if hasattr(val_with_prov, "custom_setitem"):
+            val_with_prov.custom_setitem = False
+
+        return output
+
+    return inner
+
+
+def keep_provenance_for_recursive_function(func):
+    # TODO: this is an incorrect description
     """
     Decorator for recursive functions in ``esm_parser`` to preserve
     provenance.
@@ -505,3 +605,5 @@ if __name__ == "__main__":
 
     print(asd["a_string"], asd["a_string"].provenance)
     print(asd["list_with_dict_inside"], asd["list_with_dict_inside"])
+
+    # TODO: tests for the keep_provenance functions

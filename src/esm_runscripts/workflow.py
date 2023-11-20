@@ -64,9 +64,9 @@ class Workflow:
 
         Parameters
         ----------
-            self: Workflow object
-            phase_type: str (default or user)
-            attrib: str
+            phase_type : str
+                ``default`` or ``user``
+            attrib : str
 
         Returns
         -------
@@ -86,7 +86,6 @@ class Workflow:
 
         Parameters
         ----------
-            self : Workflow object
             config : dict
 
         Returns
@@ -96,8 +95,7 @@ class Workflow:
 
         workflow_phases = self.phases
 
-        # Calculating the number of tasks for each component/model
-        # needed for phase compute
+        # Calculating the number of mpi tasks for each component/model/script
         tasks = calc_number_of_tasks(config)
         # Initiate/create default workflow phase objects
         # and reset/append to Workflow.phases variable

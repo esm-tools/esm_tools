@@ -12,6 +12,7 @@ class Provenance(list):
     an attribute of that value. To be used from the ``WithProvenance`` classes created
     by ``wrapper_with_provenance_factory``.
     """
+
     def __init__(self, provenance_data):
         if isinstance(provenance_data, list):
             super().__init__(provenance_data)
@@ -33,7 +34,6 @@ class Provenance(list):
         new_provenance_step = self.add_modified_by(new_provenance_step, func)
 
         self.append(new_provenance_step)
-
 
     def extend_and_modified_by(self, additional_provenance, func):
         """
@@ -62,7 +62,6 @@ class Provenance(list):
         # func
         else:
             self.append_last_step_modified_by(func)
-
 
     def add_modified_by(self, provenance_step, func, modified_by="modified_by"):
         """
@@ -410,7 +409,7 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
-        # TODO: this needs to happen recursively if is a dict or a list
+        new_val = copy.deepcopy(val)
         if (
             key in self
             and not isinstance(self[key], (dict, list))
@@ -420,10 +419,12 @@ class DictWithProvenance(dict):
         ):
             new_provenance = copy.deepcopy(self[key].provenance)
             if hasattr(val, "provenance"):
-                new_provenance.extend_and_modified_by(val.provenance, "dict.__setitem__")
-                val.provenance = new_provenance
+                new_provenance.extend_and_modified_by(
+                    val.provenance, "dict.__setitem__"
+                )
+                new_val.provenance = new_provenance
 
-        super().__setitem__(key, val)
+        super().__setitem__(key, new_val)
 
 
 class ListWithProvenance(list):
@@ -514,7 +515,35 @@ class ListWithProvenance(list):
 
         return provenance_list
 
-    # TODO: add __setitem__ equivalent here
+    def __setitem__(self, indx, val):
+        """
+        Any time an item in a ListWithProvenance is set, extend the old provenance of
+        the old value with the provenance of the new ``val`` and make that be the new
+        extended provenance history of the value.
+
+        Parameters
+        ----------
+        indx : int
+            Index of the element
+        val : any
+            Value of the item
+        """
+        new_val = copy.deepcopy(val)
+        if (
+            indx in self
+            and not isinstance(self[indx], (dict, list))
+            and hasattr(self[indx], "provenance")
+            and hasattr(self, "custom_setitem")
+            and self.custom_setitem
+        ):
+            new_provenance = copy.deepcopy(self[indx].provenance)
+            if hasattr(val, "provenance"):
+                new_provenance.extend_and_modified_by(
+                    val.provenance, "dict.__setitem__"
+                )
+                new_val.provenance = new_provenance
+
+        super().__setitem__(indx, new_val)
 
 
 PROVENANCE_MAPPINGS = (DictWithProvenance, ListWithProvenance)

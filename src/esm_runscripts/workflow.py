@@ -10,29 +10,27 @@ import pdb
 class Workflow:
     """A workflow class."""
 
-    def __init__(self, phases, always_run_with=[], phases_to_submit_to_batch_system=[]):
+    def __init__(self, workflow_yaml):
         """
         Create a new workflow.
 
         Parameters
         ----------
-        phases : list
-            List of workflow phases names
-        always_run_with : list
-            List of phases that precedes each phase in phases
+        workflow_yaml : dict
+            Dictionary from defaults.yaml to initialize workflow
+            for default phases.
 
         Returns
         -------
         none
         """
+        # TODO: check if key is in workflow_yaml dict
+        self.phases = []
         self.user_phases = []
-        self.first_task_in_queue = None                     # needed
-        self.last_task_in_queue = None
-        self.next_run_triggered_by = None
+        self.first_task_in_queue = workflow_yaml["first_task_in_queue"]
+        self.last_task_in_queue = workflow_yaml["last_task_in_queue"]
+        self.next_run_triggered_by = workflow_yaml["next_run_triggered_by"]
         # TODO: Call here the phase object ???
-        self.phases = phases
-        self.always_run_with = always_run_with
-        self.phases_to_submit_to_batch_system = phases_to_submit_to_batch_system
 
     @property
     def num_phases(self):
@@ -79,10 +77,10 @@ class Workflow:
 
         return phases_attribs
 
-    def init_default_workflow(self, config):
+    def config_sbatch_phases(self, config):
         """
-        Add workflow for precompute, compute, and tidy phases
-        etc information already here!
+        Calculating the number of mpi tasks for each component/model/script
+        and set queue for default phases that run as batch jobs
 
         Parameters
         ----------
@@ -93,40 +91,15 @@ class Workflow:
             self : Workflow object
         """
 
-        workflow_phases = self.phases
+        #workflow_phases = self["phases"]
 
-        # Calculating the number of mpi tasks for each component/model/script
         tasks = calc_number_of_tasks(config)
-        # Initiate/create default workflow phase objects
-        # and reset/append to Workflow.phases variable
-        self.phases = []
-        for ind, phase in enumerate(workflow_phases):
-            self.phases.append(WorkflowPhase(phase))
 
         for ind, phase in enumerate(self.phases):
-            if ind < self.num_phases - 1:
-                # Set run_before attrib of all phases (except last on)
-                # to the next phase name
-                phase["run_before"] = self.phases[ind+1]["name"]
-                phase["next_submit"].append(self.phases[ind+1]["name"])
-                phase["run_after"] = self.phases[ind-1]["name"]
-            else:
-                # Set run_after attrib of last phase to previous phase name
-                phase["run_before"] = self.phases[0]["name"]
-                phase["next_submit"].append(self.phases[0]["name"])
-                phase["run_after"] = self.phases[ind-1]["name"]
-
-            phase["cluster"] = phase["name"]
-            if phase["name"] in self.phases_to_submit_to_batch_system:
+            if phase["submit_to_batch_system"]:
                 phase["batch_or_shell"] = 'batch'
-                phase["submit_to_batch_system"] = True
                 phase["run_on_queue"] = config["computer"]["partitions"]["compute"]["name"]
                 phase["nproc"] = tasks
-
-        # Set default workflow values
-        self.set_workflow_attrib("first_task_in_queue", self.phases[0]["name"])
-        self.set_workflow_attrib("last_task_in_queue", self.phases[-1]["name"])
-        self.set_workflow_attrib("next_run_triggered_by", self.phases[-1]["name"])
 
         return self
 
@@ -164,10 +137,7 @@ class Workflow:
             true or false
         """
 
-        if hasattr(self, keyword):
-            return True
-        else:
-            return False
+        return hasattr(self, keyword)
 
     def collect_all_user_workflows(self, config):
         """
@@ -202,12 +172,11 @@ class Workflow:
                         else:
                             err_msg = f"``{key}`` is not a valid keyword of a workflow."
                             esm_parser.user_error("ERROR", err_msg)
-                    # for subjob in list(copy.deepcopy(w_config["subjobs"])):
-                    for phase in list(copy.deepcopy(w_config["phases"])):
-#                        new_phase_name = phase
-                        # create a new user phase object for ``phase``
-                        new_phase = WorkflowPhase(phase)
-                        # each subjob needs to have an unique name
+                    for phase in w_config["phases"]:
+                        # each phase (of a model/setup) needs to have an unique name
+                        # same phases of the same model/setup defined in different config files
+                        # are overwritten by the usual config file hierarchy
+                        # user phases are not alowed to have the same name asdefault phases (e.g. compute)
                         # 1. check if ``new_phase`` is already defined as a default phase
                         if phase in self.get_phases_attribs_list("default", "name"):
                             err_msg = (
@@ -216,7 +185,8 @@ class Workflow:
                                 f"This is not allowed."
                             )
                             esm_parser.user_error("ERROR", err_msg)
-                        # 2. check if the name of the new user phase does not already exist
+                        # 2. check if the name of the new user phase (for a model/setup) does not already exist
+                        #    (for another model/setup).
                         if phase in user_workflow_phases_names:
                             err_msg = (
                                 f"Two workflow phases have the same name "
@@ -225,30 +195,22 @@ class Workflow:
                             esm_parser.user_error("ERROR", err_msg)
                         # 3. if user phase has a new and unique name
                         else:
-                            # append it to the list of user phases of the workflow
-                            user_workflow_phases_names.append(phase)
-                            # set attributes of user_workflow phases from
-                            # config settings
-                            # check if valid phase keywords
-                            for key, value in w_config["phases"][phase].items():
-                                if key in new_phase:
-                                    new_phase[key] = value
-                                else:
-                                    err_msg = (
-                                        f"``{key}`` of workflow phase "
-                                        f"``{new_phase_name}`` is not a valid keyword "
-                                        f"of a workflow phase."
-                                    )
-                                    esm_parser.user_error("ERROR", err_msg)
+                            phase_config = copy.deepcopy(w_config["phases"][phase])
+                            # add phase name
+                            phase_config["name"] = phase
                             # Make sure that batch_or_shell is set to batch if submit_to_batch is true
                             # TODO: remove/replace batch_or_shell by submit_to_batch_system? Is needed
                             # for setting it to SimulationSetup and in other functions (resubmit, etc.)
                             # Should not be set by user. TODO: Remove from documentation.
-                            if new_phase["submit_to_batch_system"]:
-                                new_phase["batch_or_shell"] = "batch"
+                            if phase_config["submit_to_batch_system"]:
+                                phase_config["batch_or_shell"] = "batch"
                             else:
-                                new_phase["batch_or_shell"] = "shell"
+                                phase_config["batch_or_shell"] = "shell"
+                            # create a new user phase object for ``phase``
+                            new_phase = WorkflowPhase(phase_config)
+                            # append it to the list of user phases of the workflow
                             user_workflow_phases.append(new_phase)
+                            user_workflow_phases_names.append(phase)
 
         self.user_phases = user_workflow_phases
         return self
@@ -356,14 +318,14 @@ class Workflow:
 
         Parameters
         ----------
-            config : dict
 
         Returns
         -------
             self : Workflow object
         """
         # check if user phases are independent from each other
-        # TODO: What if not independent?
+        # TODO: What if not independent???
+        # do not run in parallel in same cluster???
         independent = self.check_user_workflow_dependency()
         # check if there are unknown phases, if yes, will give error exception
         unknown_phases = self.check_unknown_phases()
@@ -616,7 +578,8 @@ def skip_cluster(cluster, config):
 class WorkflowPhase(dict):
     """A workflow phase class."""
 
-    def __init__(self, phase_name):
+    def __init__(self, phase):
+        # default
         self["nproc"] = 1                              # needed
         self["run_before"] = None
         self["run_after"] = None
@@ -630,11 +593,23 @@ class WorkflowPhase(dict):
         self["run_only"] = None
         self["skip_chunk_number"] = None
         self["skip_run_number"] = None
-        self["name"] = phase_name
+        self["name"] = None
         self["script"] = None
         self["script_dir"] = None
         self["call_function"] = None
         self["env_preparation"] = None
+
+        # check if phase keywords are valid
+        for key, value in phase.items():
+            if key not in self:
+                err_msg = (
+                    f"``{key}`` of workflow phase "
+                    f"``{new_phase_name}`` is not a valid keyword "
+                    f"of a workflow phase."
+                )
+                esm_parser.user_error("ERROR", err_msg)
+
+        super().__init__(phase)
 
     def set_attrib(self, attrib, value):
         if type(self[attrib]) == "list":
@@ -670,12 +645,14 @@ def assemble_workflow(config):
     # esm_tools/configs/esm_software/esm_runscripts/defaults.yaml
     if "defaults.yaml" in config["general"]:
         if "workflow" in config["general"]["defaults.yaml"]:
+            workflow = config["general"]["defaults.yaml"]["workflow"]
             phases = config["general"]["defaults.yaml"]["workflow"].get("phases", [])
-            always_run_with = config["general"]["defaults.yaml"]["workflow"].get("always_run_with", [])
-            phases_to_submit_to_batch_system = config["general"]["defaults.yaml"]["workflow"].get("phases_to_submit_to_batch_system", [])
 
+    # 2. Initialize default workflow phases
     if phases:
-        workflow = Workflow(phases, always_run_with=always_run_with, phases_to_submit_to_batch_system=phases_to_submit_to_batch_system)
+        workflow = Workflow(workflow)
+        for phase in phases:
+            workflow.phases.append(WorkflowPhase(phases[phase]))
     else:
         esm_parser.user_error("ERROR", "No default workflow phases defined.")
         # Note: Should this work also if no default phases are set in such a config
@@ -684,8 +661,9 @@ def assemble_workflow(config):
         # Where could a user define a different (default) phase list?
         # Or should this be changed in defaults.yaml as it is now?
 
-    # 2. Initialize default workflow phases
-    workflow = workflow.init_default_workflow(config)
+    # 3. Calc mpi tasks and set queue for batch jobs for default phases
+    # TODO: Put it into other method?
+    workflow = workflow.config_sbatch_phases(config)
 
     # 3. Read in workflows from runscript and config files
     workflow = workflow.collect_all_user_workflows(config)

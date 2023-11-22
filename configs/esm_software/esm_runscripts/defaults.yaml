@@ -7,13 +7,71 @@ per_model_defaults:
             exp_to_run:     copy
             run_to_work:    copy
             work_to_run:    copy
+
 workflow:
+    user_phases: None
+    first_task_in_queue: prepcompute
+    last_task_in_queue: tidy
+    next_run_triggered_by: tidy
+
     phases:
-        - prepcompute
-        - compute
-        - tidy
-    always_run_with:
-        - prepare
-        - prepexp
-    phases_to_submit_to_batch_system:
-        - compute
+        prepcompute:
+            batch_or_shell: SimulationSetup
+            call_function: None
+            called_from: tidy
+            cluster: prepcompute
+            env_preparation: None
+            name: prepcompute
+            next_submit:
+                - compute
+            nproc: 1
+            order_in_cluster: sequential
+            run_after: tidy
+            run_before: compute
+            run_on_queue: None
+            run_only: None
+            script: None
+            script_dir: None
+            skip_chunk_number: None
+            skip_run_number: None
+            submit_to_batch_system: False
+        compute:
+            batch_or_shell: batch
+            call_function: None
+            called_from: prepcompute
+            cluster: compute
+            env_preparation: None
+            name: compute
+            next_submit:
+                - tidy
+            nproc: None
+            order_in_cluster: sequential
+            run_after: prepcompute
+            run_before: tidy
+            run_on_queue: None
+            run_only: None
+            script: None
+            script_dir: None
+            skip_chunk_number: None
+            skip_run_number: None
+            submit_to_batch_system: True
+        tidy:
+            batch_or_shell: SimulationSetup
+            call_function: None
+            called_from: compute
+            cluster: tidy
+            env_preparation: None
+            name: tidy
+            next_submit:
+                - prepcompute
+            nproc: 1
+            order_in_cluster: sequential
+            run_after: compute
+            run_before: prepcompute
+            run_on_queue: None
+            run_only: None
+            script: None
+            script_dir: None
+            skip_chunk_number: None
+            skip_run_number: None
+            submit_to_batch_system: False

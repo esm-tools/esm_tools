@@ -180,7 +180,7 @@ class Workflow:
                         # 1. check if ``new_phase`` is already defined as a default phase
                         if phase in self.get_phases_attribs_list("default", "name"):
                             err_msg = (
-                                f"The user phase ``{new_phase_name}`` "
+                                f"The user phase ``{phase}`` "
                                 f"has the same name as a default workflow phase. "
                                 f"This is not allowed."
                             )
@@ -190,7 +190,7 @@ class Workflow:
                         if phase in user_workflow_phases_names:
                             err_msg = (
                                 f"Two workflow phases have the same name "
-                                f"{new_phase_name}."
+                                f"``{phase}``."
                             )
                             esm_parser.user_error("ERROR", err_msg)
                         # 3. if user phase has a new and unique name
@@ -202,7 +202,7 @@ class Workflow:
                             # TODO: remove/replace batch_or_shell by submit_to_batch_system? Is needed
                             # for setting it to SimulationSetup and in other functions (resubmit, etc.)
                             # Should not be set by user. TODO: Remove from documentation.
-                            if phase_config["submit_to_batch_system"]:
+                            if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
                             else:
                                 phase_config["batch_or_shell"] = "shell"
@@ -327,6 +327,7 @@ class Workflow:
         # TODO: What if not independent???
         # do not run in parallel in same cluster???
         independent = self.check_user_workflow_dependency()
+
         # check if there are unknown phases, if yes, will give error exception
         unknown_phases = self.check_unknown_phases()
         if unknown_phases:

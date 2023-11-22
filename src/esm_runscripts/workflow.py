@@ -91,8 +91,6 @@ class Workflow:
             self : Workflow object
         """
 
-        #workflow_phases = self["phases"]
-
         tasks = calc_number_of_tasks(config)
 
         for ind, phase in enumerate(self.phases):
@@ -155,6 +153,7 @@ class Workflow:
 
         user_workflow_phases = []
         user_workflow_phases_names = []
+        user_workflow_next_run_triggered_by = []
         for model in config:
             if "workflow" in config[model]:
                 w_config = config[model]["workflow"]
@@ -211,6 +210,17 @@ class Workflow:
                             # append it to the list of user phases of the workflow
                             user_workflow_phases.append(new_phase)
                             user_workflow_phases_names.append(phase)
+                            if phase_config.get("trigger_next_run", False):
+                                user_workflow_next_run_triggered_by.append(phase)
+        if len(user_workflow_next_run_triggered_by) > 1:
+            err_msg = (
+                f"More than one phase is set to "
+                f"trigger the next run: ``{user_workflow_next_run_triggered_by}``. "
+                f"Only set ``trigger_next_run: True`` for one phase."
+            )
+            esm_parser.user_error("ERROR", err_msg)
+        else:
+            self.next_run_triggered_by = user_workflow_next_run_triggered_by[0]
 
         self.user_phases = user_workflow_phases
         return self
@@ -362,7 +372,7 @@ class Workflow:
 #                esm_parser.user_error("ERROR", err_msg)
 
         # Correct for ``last_task_in_queue`` if necessary
-        # Collect all next_run_triggered_by entries
+        # Collect all next_run_triggered_by entries???
         next_triggered = self.next_run_triggered_by
         # check if next_triggered is default or user phase
         # if user phase
@@ -580,10 +590,14 @@ class WorkflowPhase(dict):
     """A workflow phase class."""
 
     def __init__(self, phase):
-        # default
+        # defaults
+        self["name"] = None
+        self["script"] = None
+        self["script_dir"] = None
         self["nproc"] = 1                              # needed
         self["run_before"] = None
         self["run_after"] = None
+        self["trigger_next_run"] = False               # needed
         self["submit_to_batch_system"] = False         # needed
         self["run_on_queue"] = None
         self["cluster"] = None
@@ -594,9 +608,6 @@ class WorkflowPhase(dict):
         self["run_only"] = None
         self["skip_chunk_number"] = None
         self["skip_run_number"] = None
-        self["name"] = None
-        self["script"] = None
-        self["script_dir"] = None
         self["call_function"] = None
         self["env_preparation"] = None
 

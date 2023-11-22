@@ -219,7 +219,7 @@ class Workflow:
                 f"Only set ``trigger_next_run: True`` for one phase."
             )
             esm_parser.user_error("ERROR", err_msg)
-        else:
+        elif user_workflow_next_run_triggered_by:
             self.next_run_triggered_by = user_workflow_next_run_triggered_by[0]
 
         self.user_phases = user_workflow_phases

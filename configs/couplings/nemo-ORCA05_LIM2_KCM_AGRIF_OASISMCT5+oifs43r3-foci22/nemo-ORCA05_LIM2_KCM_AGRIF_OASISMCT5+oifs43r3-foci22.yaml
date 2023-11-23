@@ -1,0 +1,9 @@
+components:
+- oifs-43r3-foci22
+- nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- oasis3mct-5.0-geomar
+- rnfmap-agrif
+coupling_changes:
+- sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3-foci22/src/ifs/module/yommcc.F90
+- sed -i '/COUPLEFESOM2 = /s/.TRUE./.FALSE./g' oifs-43r3-foci22/src/ifs/module/yommcc.F90
+- sed -i '/COUPLENEMOFOCI = /s/.FALSE./.TRUE./g' oifs-43r3-foci22/src/ifs/module/yommcc.F90

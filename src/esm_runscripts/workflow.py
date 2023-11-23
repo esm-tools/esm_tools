@@ -203,6 +203,10 @@ class Workflow:
                             # Should not be set by user. TODO: Remove from documentation.
                             if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
+                                if not phase_config.get("run_on_queue", False):
+                                    breakpoint()
+                                    err_msg = f"No value for target queue given by ``run_on_queue' for phase {phase}."
+                                    esm_parser.user_error("ERROR", err_msg)
                             else:
                                 phase_config["batch_or_shell"] = "shell"
                             # create a new user phase object for ``phase``
@@ -249,6 +253,30 @@ class Workflow:
                     for att in phase:
                         config["general"]["workflow"]["subjob_clusters"][cluster][att] = phase[att]
                     config["general"]["workflow"]["subjob_clusters"][cluster]["name"] = cluster
+                    # if a phase in a cluster triggers the next run, set next_submit in cluster conf
+        for cluster in self.get_phases_attribs_list("default", "cluster") + self.get_phases_attribs_list("user", "cluster"):
+            for phase in self.phases + self.user_phases:
+                if phase["cluster"] == cluster:
+                    if phase["name"] in self.next_run_triggered_by:
+                        if self.first_task_in_queue not in config["general"]["workflow"]["subjob_clusters"][cluster]["next_submit"]:
+                            config["general"]["workflow"]["subjob_clusters"][cluster]["next_submit"].append(self.first_task_in_queue)
+
+        for subjob_cluster in config["general"]["workflow"]["subjob_clusters"]:
+            nproc_sum = nproc_max = 0
+            for subjob in config["general"]["workflow"]["subjob_clusters"][subjob_cluster]["subjobs"]:
+                nproc_sum += get_phase_attrib(self.phases + self.user_phases, subjob, "nproc")
+                nproc_max = max(get_phase_attrib(self.phases + self.user_phases, subjob, "nproc"), nproc_max)
+            if config["general"]["workflow"]["subjob_clusters"][subjob_cluster].get("submit_to_batch_system", False):
+# Why setting batch_or_shell to shell if a script is given? Wouldn't now all phases be executed as shell and never as batch?
+#    #        elif subjob_clusters[subjob_cluster].get("script", False):
+#    #            subjob_clusters[subjob_cluster]["batch_or_shell"] = "shell"
+#    #
+                if config["general"]["workflow"]["subjob_clusters"][subjob_cluster]["order_in_cluster"] == "concurrent":
+                    nproc = nproc_sum
+                else:
+                    nproc = nproc_max
+                config["general"]["workflow"]["subjob_clusters"][subjob_cluster]["nproc"] = nproc
+
         # 2. Write subjobs/phases
         config["general"]["workflow"]["subjobs"] = {}
         for phase in self.phases + self.user_phases:
@@ -322,9 +350,9 @@ class Workflow:
 
         return unknown_phases
 
-    def order_phases(self):
+    def order_phases_and_clusters(self):
         """
-        Put the phases in order.
+        Put the phases and clusters in order.
 
         Parameters
         ----------
@@ -333,6 +361,7 @@ class Workflow:
         -------
             self : Workflow object
         """
+
         # check if user phases are independent from each other
         # TODO: What if not independent???
         # do not run in parallel in same cluster???
@@ -371,9 +400,11 @@ class Workflow:
 #                )
 #                esm_parser.user_error("ERROR", err_msg)
 
-        # Correct for ``last_task_in_queue`` if necessary
-        # Collect all next_run_triggered_by entries???
+        # Correct workflow attributes (``last_task_in_queue``, `next_run_triggered``)
+        # if necessary
+
         next_triggered = self.next_run_triggered_by
+
         # check if next_triggered is default or user phase
         # if user phase
         # get last default phase and correct next_submit
@@ -390,9 +421,9 @@ class Workflow:
         # "next_submit" which phase/cluster will be called next (run_after of the next phase)
         # "called_from" name of previous phase, run_after of current phase
         # Create a dict of all phases with empty lists
-        next_submits = {}
-        for phase in self.phases + self.user_phases:
-            next_submits[phase["name"]] = []
+
+        # Create a cluster dict:
+        clusters = {}
 
         for phase4 in self.phases + self.user_phases:
             # if a cluster is not set for a phase set it to the phase name,
@@ -400,16 +431,27 @@ class Workflow:
             # default cluster has the same name as the phase itself
             if phase4["cluster"] is None:
                 phase4["cluster"] = phase4["name"]
+            clusters[phase4["cluster"]] = {"name": phase4["cluster"]}
+
+
+        next_submits = {}
+        for phase in self.phases + self.user_phases:
+            next_submits[phase["name"]] = []
+            next_submits[phase["cluster"]] = []
 
         # set next_submits to the cluster name rather then to the phase name
         for phase2 in self.phases + self.user_phases:
             if phase2["run_after"] is not None:
                 if phase2["cluster"] not in next_submits[phase2["run_after"]]:
-                    next_submits[phase2["run_after"]].append(phase2["cluster"])
+                    if phase2["cluster"] not in next_submits[phase2["run_after"]]:
+                        next_submits[phase2["run_after"]].append(phase2["cluster"])
+                    if phase2["cluster"] not in next_submits[get_phase_attrib(self.phases + self.user_phases, phase2["run_after"], "cluster")]:
+                        next_submits[get_phase_attrib(self.phases + self.user_phases, phase2["run_after"], "cluster")].append(phase2["cluster"])
                 phase2["called_from"] = phase2["run_after"]
 
         for phase3 in self.phases + self.user_phases:
-            phase3["next_submit"] = next_submits[phase3["name"]]
+            phase3.set_attrib("next_submit", next_submits[phase3["name"]])
+#            phase3["next_submit"] = next_submits[phase3["name"]]
 
         first_cluster_name = self.first_task_in_queue
         first_phase = self.get_workflow_phase_by_name(first_cluster_name)
@@ -427,63 +469,8 @@ class Workflow:
 
         return self
 
-    def complete_clusters(self, config):
-        # all that are within a next_submit list are in a cluster if:
-        # run concurrently
-        # have the same cluster entry.
-        """
-        Rearanges the subjobs to their subjobs_clusters ???
 
-        TODO: Can this be put into other functions/methods?
-
-        Parameters
-        ----------
-            self : Workflow object
-            config : dict
-
-        Returns
-        -------
-            config : dict
-        """
-        subjob_clusters = config["general"]["workflow"]["subjob_clusters"]
-
-        # Then, complete the resource information per cluster
-        # determine whether a cluster is to be submitted to a batch system
-        for subjob_cluster in subjob_clusters:
-            nproc_sum = nproc_max = 0
-            # Check if the following attributes are set for each cluster???
-#            attributes = ["submit_to_batch_system", "order_in_cluster", "run_on_queue", "run_after", "run_before", "run_only", "skip_run_number", "skip_chunk_number", "batch_or_shell"]
-#            for attrib in attributes:
-#                temp_list = []
-            for subjob in subjob_clusters[subjob_cluster]["subjobs"]:
-                # Check if the following attributes are set for each cluster???
-#                    if not get_phase_attrib(self.phases + self.user_phases, subjob, attrib) in temp_list:
-#                        subjob_clusters[subjob_cluster][attrib] = get_phase_attrib(self.phases + self.user_phases, subjob, attrib)
-#                    else:
-#                        print("Missmatch in attributes")
-#                        sys.exit(-1)
-                nproc_sum += get_phase_attrib(self.phases + self.user_phases, subjob, "nproc")
-                nproc_max = max(get_phase_attrib(self.phases + self.user_phases, subjob, "nproc"), nproc_max)
-#
-            if subjob_clusters[subjob_cluster].get("submit_to_batch_system", False):
-#    #            subjob_clusters[subjob_cluster]["batch_or_shell"] = "batch"
-
-# Why setting batch_or_shell to shell if a script is given? Wouldn't now all phases be executed as shell and never as batch?
-#    #        elif subjob_clusters[subjob_cluster].get("script", False):
-#    #            subjob_clusters[subjob_cluster]["batch_or_shell"] = "shell"
-#    #
-                if "run_on_queue" not in subjob_clusters[subjob_cluster]:
-                    err_msg = f"No value for target queue given by ``run_on_queue' for cluster {subjob_cluster}."
-                    esm_parser.user_error("ERROR", err_msg)
-
-                if subjob_clusters[subjob_cluster]["order_in_cluster"] == "concurrent":
-                    nproc = nproc_sum
-                else:
-                    nproc = nproc_max
-                subjob_clusters[subjob_cluster]["nproc"] = nproc
-        return config
-
-    def prepend_newrun_job(self, config):
+    def prepend_newrun_job(self):
         """
         - Creates a new cluster "newrun" if first_task_in_queue is not of
           type 'SimulationSetup'
@@ -496,7 +483,6 @@ class Workflow:
         Parameters
         ----------
             self : Workflow object
-            config : dict
 
         Returns
         -------
@@ -681,19 +667,16 @@ def assemble_workflow(config):
     workflow = workflow.collect_all_user_workflows(config)
 
     # 4. Order user workflows into default workflow wrt. workflow and phase attributs.
-    workflow = workflow.order_phases()
+    workflow = workflow.order_phases_and_clusters()
 
     # 5. create new first phase of type SimulationSetup, if first_task_in_queue is
     #    user phase (type batch or shell)
-    workflow = workflow.prepend_newrun_job(config)
+    workflow = workflow.prepend_newrun_job()
 
     # 6. write the workflow to config
     # 7. Remove old worklow from config
     config = workflow.write_to_config(config)
 
-    # 8. complete some information in a cluster
-    #    e.g. if phases in cluster are submit to sbatch system
-    config = workflow.complete_clusters(config)
 
     # Set "jobtype" for the first task???
     if config["general"]["jobtype"] == "unknown":
@@ -764,8 +747,10 @@ def display_workflow(config):
     while first_phase not in second_phase and second_phase:
         sec_phase_str = ""
         for sec_phase in second_phase:
-            if config["general"]["workflow"]["subjobs"][sec_phase]["next_submit"]:
-                second_phase = config["general"]["workflow"]["subjobs"][sec_phase]["next_submit"]
+            if config["general"]["workflow"]["subjob_clusters"][sec_phase]["next_submit"]:
+                second_phase = config["general"]["workflow"]["subjob_clusters"][sec_phase]["next_submit"]
+                subjobs = config["general"]["workflow"]["subjob_clusters"][sec_phase]["subjobs"]
+            else:
                 subjobs = config["general"]["workflow"]["subjob_clusters"][sec_phase]["subjobs"]
             if sec_phase_str == "":
                 sec_phase_str = f"{sec_phase_str} ``{sec_phase}`` {subjobs}"

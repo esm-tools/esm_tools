@@ -722,7 +722,7 @@ def calc_number_of_tasks(config):
 
 def display_workflow(config):
     """
-    Displays current workflow settings.
+    Displays workflow sequence.
 
     Parameters
     ----------
@@ -730,7 +730,7 @@ def display_workflow(config):
 
     Returns
     -------
-        config : dict (needed???)
+        config : dict
     """
 
     display_nicely(config)
@@ -789,145 +789,3 @@ def display_nicely(config):
     """
     esm_parser.pprint_config(config["general"]["workflow"])
     return config
-
-# ################## Maybe outdated routines ######################
-#
-#
-# def collect_all_workflow_information(config):
-#    """
-#    Collects all workflow information for each component entry in config
-#    (can be a model/component or a new entry (e.g. 'flows')
-#    NOTE: Should it be possible to set a workflow in the model section of the
-#          runscript? Why not?
-#
-#    Checks if there are "workflow" entries in the user runscript and copies or
-#    merges them into
-#    config["general"]["workflow"]
-#
-#    Parameters
-#    ----------
-#        config : dict
-#
-#    Returns
-#    -------
-#        config : dict
-#    """
-#    for model in config:
-#        if "workflow" in config[model]:
-#            # looks for "workflow" in each entry of config (can be model/component, general, etc.)
-#            w_config = config[model]["workflow"]
-#            # looks for "workflow" in "general" section of config.
-#            gw_config = config["general"]["workflow"]
-#
-#            # looks for entry 'subjob_clusters' in config of each component that has a "workflow"
-#            if "subjob_clusters" in w_config:
-#                for cluster in w_config["subjob_clusters"]:
-#                    # if a certain cluster is also in the general config, this cluster will be merged together ...
-#                    # what cluster could this be?
-#                    if cluster in gw_config["subjob_clusters"]:
-#                        gw_config["subjob_clusters"][cluster] = merge_if_possible(
-#                            w_config["subjob_clusters"][cluster],
-#                            gw_config["subjob_clusters"][cluster],
-#                        )
-#                    # if cluster is not in general config, it will copied into it.
-#                    else:
-#                        gw_config["subjob_clusters"][cluster] = copy.deepcopy(
-#                            w_config["subjob_clusters"][cluster],
-#                        )
-#
-#            # looks for entry 'subjobs' in config of each component
-#            if "subjobs" in w_config:
-#                # copies component workflow config to new variable ref_config
-#                ref_config = copy.deepcopy(w_config)
-#                # ??? for every subjob in ???
-#                for subjob in list(copy.deepcopy(w_config["subjobs"])):
-#
-#                    # subjobs (other than clusters) should be model specific
-#                    # subjobs that are defined in subjobs of components workflow configs and not in a subjob_cluster are copied to general with suffix of componet entry.
-#                    # appends the model name to the subjob name and copy it to config["general"]
-#                    gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
-#                        w_config["subjobs"][subjob]
-#                    )
-#                    # if this copied subjobs is also n general workflow subjobs it will be deleted there
-#                    if subjob in gw_config["subjobs"]:
-#                        del gw_config["subjobs"][subjob]
-#
-#                    # make sure that the run_after and run_before refer to that cluster
-#                    # for all subjobs now in general workflow
-#                    for other_subjob in gw_config["subjobs"]:
-#                        # sets run_after and run_before to correct subjob???
-#                        # if a subjob of general workflow has run_after attribute to a user subjob (that has been renamed to subjob_model)
-#                        # this run_after will be set to the new subjob name (subjob_model)
-#                        if "run_after" in gw_config["subjobs"][other_subjob]:
-#                            if (gw_config["subjobs"][other_subjob]["run_after"] == subjob):
-#                                gw_config["subjobs"][other_subjob]["run_after"] == subjob + "_" + model
-#                        if "run_before" in gw_config["subjobs"][other_subjob]:
-#                            if (gw_config["subjobs"][other_subjob]["run_before"] == subjob):
-#                                gw_config["subjobs"][other_subjob]["run_before"] == subjob + "_" + model
-#
-#                    # if not in another cluster, each subjob gets its own
-#                    if (not "subjob_cluster" in gw_config["subjobs"][subjob + "_" + model]):
-#                        gw_config["subjobs"][subjob + "_" + model]["subjob_cluster"] = subjob  # + "_" + model
-#
-#            # checks if next_run:triggered_by is tidy or the one in user workflow, or empty?
-#            if "next_run_triggered_by" in w_config:
-#                if not gw_config["next_run_triggered_by"] in ["tidy", w_config["next_run_triggered_by"], ]:
-#                    print("Mismatch found setting next_run_triggered_by for workflow.")
-#                    sys.exit(-1)
-#                else:
-#                    gw_config["next_run_triggered_by"] = w_config["next_run_triggered_by"]
-#                    # what if w_config["next_run_triggered_by"] is empty?
-#
-#    return config
-#
-# def merge_single_entry_if_possible(entry, sourceconf, targetconf):
-#    """
-#    Merges a dictionary entry into a target dictionary that has he same key.
-#
-#    Parameters
-#    ----------
-#        entry : str
-#            dictionary key
-#        sourceconf : dict
-#        targetconf : dict
-#
-#    Returns
-#    -------
-#        targetconf : dict
-#    """
-#    if entry in sourceconf:
-#        # Check if entry is already in targetconf AND different to sourceconf, then exit
-#        if entry in targetconf and not sourceconf[entry] == targetconf[entry]:
-#            print(f"Mismatch found in {entry} for cluster {targetconf}")
-#            sys.exit(-1)
-#        # Continues here if entry exists already in targetconf AND the same as sourceconf or
-#        # not already in targetconf and set it to sourceconf
-#        targetconf[entry] = sourceconf[entry]
-#    return targetconf
-#
-# def merge_if_possible(source, target):
-#    """
-#    Does the same as above but for a whole dict
-#
-#    Merges the entries of source dictionary into target dictionary, if not already in.
-#    (Will not overwrite entries in target dictionary.)
-#
-#    Parameters
-#    ----------
-#        source : dict
-#        target : dict
-#
-#    Returns
-#    -------
-#        target : dict
-#    """
-#    for entry in source:
-#        if entry in target:
-#            if not source[entry] == target[entry]:
-#                print(
-#                    f"Mismatch while trying to merge subjob_clusters {source} into {target}"
-#                )
-#                sys.exit(-1)
-#        else:
-#            target[entry] = source[entry]
-#    return target

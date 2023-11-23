@@ -60,8 +60,14 @@ general:
         - '2.1.1'
         - '2.2'
         - '3.0'
+        - '3.0_busan'
 
         choose_version:
+          '3.0_busan':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci30 
           '3.0':
             runoff_method: "EM21"
             calving_method: "JS"
@@ -289,7 +295,20 @@ oifs:
                     NAMMCC:
                        RALBSEAD_NML: 0.045
                        RALBSCALE_AR: 0.8
-
+           "3.0_busan":
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                       FOCI_CPL_NEMO_LIM: false
+                       FOCI_CPL_NEMO_SI3: true
+                    #NAERAD:
+                    #   NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMCLDP:
+                       # diffusion coeff for cloud edges
+                       RCLDIFF: 5.e-6 # default 3e-6
+                    NAMMCC:
+                       RALBSEAD_NML: 0.045
+                       RALBSCALE_AR: 0.8
            "*":
               add_namelist_changes:
                   fort.4:
@@ -362,6 +381,9 @@ nemo:
         
         # For 2.1-O12 we choose ORCA12 config for NEMO
         choose_general.version:
+                "3.0_busan":
+                        version: "ORCA05_Z46_SI3_COUPLED"
+                        resolution: ORCA05
                 "2.1-O12":
                         version: "ORCA12_LIM2_KCM_AOW_FS_OASISMCT4"
                         resolution: ORCA12
@@ -509,6 +531,9 @@ rnfmap:
         time_step: ${oasis3mct.coupling_time_step}       
         
         choose_general.version:
+                "3.0_busan":
+                        version: foci211
+                        runoff_method: "JK22"
                 "3.0":
                         version: foci211
                         runoff_method: "JK22"

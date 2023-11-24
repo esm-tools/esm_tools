@@ -77,10 +77,9 @@ class Workflow:
 
         return phases_attribs
 
-    def config_sbatch_phases(self, config):
+    def set_default_nproc(self, config):
         """
         Calculating the number of mpi tasks for each component/model/script
-        and set queue for default phases that run as batch jobs
 
         Parameters
         ----------
@@ -95,8 +94,6 @@ class Workflow:
 
         for ind, phase in enumerate(self.phases):
             if phase["submit_to_batch_system"]:
-                phase["batch_or_shell"] = 'batch'
-                phase["run_on_queue"] = config["computer"]["partitions"]["compute"]["name"]
                 phase["nproc"] = tasks
 
         return self
@@ -137,7 +134,7 @@ class Workflow:
 
         return hasattr(self, keyword)
 
-    def collect_all_user_workflows(self, config):
+    def collect_all_user_phases(self, config):
         """
         Collect all workflows defined in config files.
 
@@ -609,6 +606,9 @@ class WorkflowPhase(dict):
 
         super().__init__(phase)
 
+        if self.get("submit_to_batch_system", False):
+            self["batch_or_shell"] = "batch"
+
     def set_attrib(self, attrib, value):
         if type(self[attrib]) == "list":
             self[attrib].append(value)
@@ -659,12 +659,12 @@ def assemble_workflow(config):
         # Where could a user define a different (default) phase list?
         # Or should this be changed in defaults.yaml as it is now?
 
-    # 3. Calc mpi tasks and set queue for batch jobs for default phases
+    # 3. Calc mpi tasks for batch jobs of default phases
     # TODO: Put it into other method?
-    workflow = workflow.config_sbatch_phases(config)
+    workflow = workflow.set_default_nproc(config)
 
-    # 3. Read in workflows from runscript and config files
-    workflow = workflow.collect_all_user_workflows(config)
+    # 3. Read in phases from runscript and config files
+    workflow = workflow.collect_all_user_phases(config)
 
     # 4. Order user workflows into default workflow wrt. workflow and phase attributs.
     workflow = workflow.order_phases_and_clusters()

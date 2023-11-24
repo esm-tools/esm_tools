@@ -96,10 +96,6 @@ Keyword                                                Mandatory    (Default) va
                                                                                                 indicating that an alterations to the standard workflow 
                                                                                                 will be defined here.
 
-  next_run_triggered_by: <value>                       no           last phase in               Key/value entry in ``workflow`` section. Name of the phase
-                                                                    (default) workflow          that should start the next run.
-                                                                    (e.g. tidy)                        
-
   **phases**                                           yes          user defined string         Section within the ``workflow`` chapter that containes new 
                                                                                                 additional workflow phases.
 
@@ -160,6 +156,8 @@ Keyword                                                Mandatory    (Default) va
   skip_chunk_number: <value>                           no           None                        Key/value entry in each ``<new_phase_name>`` section. This
                                                                                                 mapping defines how many chunks should be skipped before the 
                                                                                                 phase will be execited.
+
+  trigger_next_run: <value>                            no           **false**, true             If phase should trigger next run                    
 ====================================================== ============ =========================== ==========================================================
 
 Syntax example
@@ -168,8 +166,6 @@ The following code snippet shows the general syntax for defining a new workflow 
 ::
 
     workflow:
-        next_run_triggered_by: <value>
-        
         phases:
             <new_phase_name>:
                 run_after: <value>
@@ -183,6 +179,7 @@ The following code snippet shows the general syntax for defining a new workflow 
                 nproc: <value>
                 run_only: <value>
                 skip_chunk_number: <value>
+                trigger_next_run: <value>
 
 Workflow defaults
 -----------------
@@ -236,12 +233,11 @@ To integrate a new phase that should be run as the last task in every run but be
         [...other information...]
 
         workflow:
-            next_run_triggered: my_new_last_phase
-
             phases:
                 my_new_last_phase:
                     script_dir: <value>
                     script: <values>
+                    trigger_next_run: True
 
 Example 4: Adding multiple user phases that can be run concurrently in a workflow cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -281,7 +277,6 @@ distributed with `ESM-Tools` are organized this way. ::
         [...other information...]
 
          workflow:
-            next_run_triggered_by: couple_out
             subjobs:
                 couple_in:
                     nproc: 1
@@ -301,12 +296,12 @@ distributed with `ESM-Tools` are organized this way. ::
                     call_function: echam2ice
                     env_preparation: env_echam.py
                     run_only: last_run_in_chunk
+                    trigger_next_run: True
 
     fesom:
         [...other information...]
 
         workflow:
-            next_run_triggered_by: couple_out
             subjobs:
                 couple_in:
                     nproc: 1
@@ -326,3 +321,4 @@ distributed with `ESM-Tools` are organized this way. ::
                     call_function: fesom2ice
                     env_preparation: env_fesom.py
                     run_only: last_run_in_chunk
+                    trigger_next_run: True

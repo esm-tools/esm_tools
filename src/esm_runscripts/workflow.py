@@ -156,17 +156,9 @@ class Workflow:
                 w_config = config[model]["workflow"]
                 # if "subjobs" in w_config:
                 if "phases" in w_config:
-                    # Set attributes of workflow
-                    # This will be overwritten by all user defined workflows???
-                    # Collect them in a list???
-                    # check if valid workflow keywords
                     for key, value in w_config.items():
-                        if self.check_if_keyword_is_valid(key):
-                            # set here only workflow attributes
-                            if not key == "phases":
-                                self.set_workflow_attrib(key, value)
-                        else:
-                            err_msg = f"``{key}`` is not a valid keyword of a workflow."
+                        if not key == "phases":
+                            err_msg = f"``{key}`` is not allowed to be set for a workflow."
                             esm_parser.user_error("ERROR", err_msg)
                     for phase in w_config["phases"]:
                         # each phase (of a model/setup) needs to have an unique name

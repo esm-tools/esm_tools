@@ -2,8 +2,6 @@ import sys
 import copy
 import esm_parser
 
-# from pprint import pprint
-
 import pdb
 
 
@@ -193,8 +191,7 @@ class Workflow:
                             if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
                                 if not phase_config.get("run_on_queue", False):
-                                    breakpoint()
-                                    err_msg = f"No value for target queue given by ``run_on_queue' for phase {phase}."
+                                    err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase}``."
                                     esm_parser.user_error("ERROR", err_msg)
                             else:
                                 phase_config["batch_or_shell"] = "shell"
@@ -237,7 +234,6 @@ class Workflow:
             for phase in self.phases + self.user_phases:
                 if phase["cluster"] == cluster:
                     # TODO: Are there more attributes to be merged from the different phases within a cluster???
-                    # nproc is calculated in complete_clusters -> can be placed here???
                     config["general"]["workflow"]["subjob_clusters"][cluster]["subjobs"].append(phase["name"])
                     for att in phase:
                         config["general"]["workflow"]["subjob_clusters"][cluster][att] = phase[att]
@@ -591,7 +587,7 @@ class WorkflowPhase(dict):
             if key not in self:
                 err_msg = (
                     f"``{key}`` of workflow phase "
-                    f"``{new_phase_name}`` is not a valid keyword "
+                    f"``{phase['name']}`` is not a valid keyword "
                     f"of a workflow phase."
                 )
                 esm_parser.user_error("ERROR", err_msg)
@@ -637,8 +633,13 @@ def assemble_workflow(config):
         if "workflow" in config["general"]["defaults.yaml"]:
             workflow = config["general"]["defaults.yaml"]["workflow"]
             phases = config["general"]["defaults.yaml"]["workflow"].get("phases", [])
+        else:
+            esm_parser.user_error("ERROR", "No default workflow defined.")
+    else:
+        workflow = []
+        phases = []
 
-    # 2. Initialize default workflow phases
+    # 2. Initialize default workflow phases from defaults.yaml
     if phases:
         workflow = Workflow(workflow)
         for phase in phases:
@@ -652,17 +653,17 @@ def assemble_workflow(config):
         # Or should this be changed in defaults.yaml as it is now?
 
     # 3. Calc mpi tasks for batch jobs of default phases
-    # TODO: Put it into other method?
+    # TODO: Put it into other method???
     workflow = workflow.set_default_nproc(config)
 
     # 3. Read in phases from runscript and config files
     workflow = workflow.collect_all_user_phases(config)
 
-    # 4. Order user workflows into default workflow wrt. workflow and phase attributs.
+    # 4. Order user workflows into default workflow wrt. phase attributs.
     workflow = workflow.order_phases_and_clusters()
 
     # 5. create new first phase of type SimulationSetup, if first_task_in_queue is
-    #    user phase (type batch or shell)
+    #    a user phase (type batch or shell)
     workflow = workflow.prepend_newrun_job()
 
     # 6. write the workflow to config
@@ -671,6 +672,8 @@ def assemble_workflow(config):
 
 
     # Set "jobtype" for the first task???
+    # NOTE: This is either first default phase or
+    #       newrun??? Can't this not be set in prepend_newrun then?
     if config["general"]["jobtype"] == "unknown":
         config["general"]["command_line_config"]["jobtype"] = config["general"][
             "workflow"
@@ -726,6 +729,9 @@ def display_workflow(config):
     """
 
     display_nicely(config)
+    display_workflow_sequence(config)
+
+def display_workflow_sequence(config):
 
     first_phase = config["general"]["workflow"]["first_task_in_queue"]
     subjobs = config["general"]["workflow"]["subjob_clusters"][first_phase]["subjobs"]

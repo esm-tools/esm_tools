@@ -339,6 +339,10 @@ class Workflow:
         """
         Put the phases and clusters in order.
 
+        Tasks:
+        1. Correct for ``triggered_next_run`` if set by user phase
+            - next_submit, run_after, called_from, run_before???
+
         Parameters
         ----------
 
@@ -396,10 +400,16 @@ class Workflow:
         # get first default phase and correct run_after, called_from
         # correct last_task_in_queue of workflow
         if next_triggered not in self.get_phases_attribs_list("default", "name"):
-            self.phases[-1]["next_submit"].remove(self.phases[0]["name"])
-            self.phases[-1]["next_submit"].append(next_triggered)
-            self.phases[0]["run_after"] = next_triggered
-            self.phases[0]["called_from"] = next_triggered
+            first_task_name = self.first_task_in_queue
+            first_phase = self.get_workflow_phase_by_name(first_task_name)
+            last_task_name = self.last_task_in_queue
+            last_phase = self.get_workflow_phase_by_name(last_task_name)
+
+            last_phase["next_submit"].remove(first_phase["name"])
+            last_phase["next_submit"].append(next_triggered)
+            last_phase["run_before"] = next_triggered
+            first_phase["run_after"] = next_triggered
+            first_phase["called_from"] = next_triggered
             self.last_task_in_queue = next_triggered
 
         # Set "next_submit" and "called_from"
@@ -731,7 +741,7 @@ def display_workflow(config):
     display_nicely(config)
     display_workflow_sequence(config)
 
-def display_workflow_sequence(config):
+def display_workflow_sequence(config, display=True):
 
     first_phase = config["general"]["workflow"]["first_task_in_queue"]
     subjobs = config["general"]["workflow"]["subjob_clusters"][first_phase]["subjobs"]
@@ -768,8 +778,11 @@ def display_workflow_sequence(config):
                 sec_phase_str = f"{sec_phase_str} and ``{sec_phase}`` {subjobs}"
         workflow_order = f"{workflow_order} -> {sec_phase_str}"
 
-    esm_parser.user_note("Workflow sequence (cluster [phases])", f"{workflow_order}")
-    return config
+    if display:
+        esm_parser.user_note("Workflow sequence (cluster [phases])", f"{workflow_order}")
+    else:
+        workflow_order = workflow_order.replace("``", "")
+    return workflow_order
 
 
 def display_nicely(config):

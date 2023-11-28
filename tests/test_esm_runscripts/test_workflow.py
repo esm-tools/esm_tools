@@ -173,7 +173,8 @@ def test_config_2():
                             'order_in_cluster': 'sequential',
                             'run_after': 'compute',
                             'run_before': 'prepcompute',
-                            'submit_to_batch_system': False}
+                            'submit_to_batch_system': False,
+                            'trigger_next_run': True}
                     }
                 }
             },
@@ -222,6 +223,74 @@ def test_config_2():
                 }
             }
         },
+    }
+    return config
+
+@pytest.fixture()
+def test_default_config_example():
+    """Setup a test config dictionary."""
+    config = {
+        'computer': {'partitions': {'compute': {'name': 'test'}}},
+        'fesom': {
+            'nproc': 128},
+        'oifs': {
+            'nproc': 128},
+        'rnfmap': {
+            'nproc': 128},
+        'oasis3mct': {
+            'nproc': 128},
+        'xios': {
+            'nproc': 128},
+        'general': {
+            'valid_model_names': ['fesom', 'oifs', 'rnfmap', 'oasis3mct', 'xios'],
+            'jobtype': 'unknown',
+            'command_line_config': {
+                'jobtype': None
+            },
+            "defaults.yaml": {
+                'workflow': {
+                    'first_task_in_queue': 'prepcompute',
+                    'last_task_in_queue': 'tidy',
+                    'next_run_triggered_by': 'tidy',
+                    'phases': {
+                        'compute': {
+                            'called_from': 'prepcompute',
+                            'cluster': 'compute',
+                            'name': 'compute',
+                            'next_submit': ['tidy'],
+                            'nproc': 'None',
+                            'order_in_cluster': 'sequential',
+                            'run_after': 'prepcompute',
+                            'run_before': 'tidy',
+                            'run_on_queue': 'compute',
+                            'submit_to_batch_system': True},
+                        'prepcompute': {
+                            'batch_or_shell': 'SimulationSetup',
+                            'called_from': 'tidy',
+                            'cluster': 'prepcompute',
+                            'name': 'prepcompute',
+                            'next_submit': ['compute'],
+                            'nproc': 1,
+                            'order_in_cluster': 'sequential',
+                            'run_after': 'tidy',
+                            'run_before': 'compute',
+                            'submit_to_batch_system': False},
+                        'tidy': {
+                            'batch_or_shell': 'SimulationSetup',
+                            'called_from': 'compute',
+                            'cluster': 'tidy',
+                            'name': 'tidy',
+                            'next_submit': ['prepcompute'],
+                            'nproc': 1,
+                            'order_in_cluster': 'sequential',
+                            'run_after': 'compute',
+                            'run_before': 'prepcompute',
+                            'submit_to_batch_system': False,
+                            'trigger_next_run': True}
+                    }
+                }
+            }
+        }
     }
     return config
 
@@ -297,13 +366,80 @@ def test_write_to_config(test_workflow_object, test_default_phases_dict, test_co
     pytest.fail("something wrong")
 
 # Test scenarios
-# 1. Add one single phase at the end of the default workflow (Example 1 in documentation)
-def test_example_1(test_config_2):
-    test_config_2 = workflow.assemble_workflow(test_config_2)
-    workflow.display_workflow_sequence(test_config_2)
-#    esm_parser.pprint_config(test_config_2)
+# 0. Default workflow
+def test_example_0(test_default_config_example):
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute']"
+    assert order == assumption
 
-    pytest.fail("something wrong")
+# 1. Add one single phase at the end of the default workflow (Example 1 in documentation)
+def test_example_1(test_default_config_example):
+    test_default_config_example["general"]["workflow"] = {
+        'phases': {
+            'my_postprocessing': {
+                'script': 'helloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/'}
+        }
+    }
+    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute'] and my_postprocessing ['my_postprocessing']"
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assert order == assumption
+
+# 2. Prepend new phase at the beginning of workflow
+def test_example_2(test_default_config_example):
+    test_default_config_example["general"]["workflow"] = {
+        'phases': {
+            'my_preprocessing': {
+                'run_before': 'prepcompute',
+                'script': 'helloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/'}
+        }
+    }
+    assumption = "newrun ['newrun'] -> my_preprocessing ['my_preprocessing'] -> prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute']"
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assert order == assumption
+
+# 3. Append new phase at the beginning of workflow
+def test_example_3(test_default_config_example):
+    test_default_config_example["general"]["workflow"] = {
+        'phases': {
+            'my_new_last_phase': {
+                'script': 'helloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+                'trigger_next_run': True}
+        }
+    }
+    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  my_new_last_phase ['my_new_last_phase'] ->  prepcompute ['prepcompute']"
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assert order == assumption
+
+# 4. Append two new phases in the same cluster
+def test_example_4(test_default_config_example):
+    test_default_config_example["general"]["workflow"] = {
+        'phases': {
+            'my_new_last_phase': {
+                'script': 'helloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+                'submit_to_batch_system': True,
+                'run_on_queue': 'compute',
+                'cluster': 'my_own_new_cluster'},
+            'my_second_new_phase': {
+                'script': 'halloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+                'submit_to_batch_system': True,
+                'run_on_queue': 'compute',
+                'cluster': 'my_own_new_cluster'}
+        }
+    }
+    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute'] and my_own_new_cluster ['my_new_last_phase', 'my_second_new_phase']"
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assert order == assumption
+
 
 # Test exceptions
 # 1. If still a workflow keyword is set by user.

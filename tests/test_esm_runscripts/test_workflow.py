@@ -441,6 +441,28 @@ def test_example_4(test_default_config_example):
     assert order == assumption
 
 # 5. Append two new phases in the same cluster, one of them triggers the next run
+def test_example_5(test_default_config_example):
+    test_default_config_example["general"]["workflow"] = {
+        'phases': {
+            'my_new_last_phase': {
+                'script': 'helloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+                'submit_to_batch_system': True,
+                'run_on_queue': 'compute',
+                'cluster': 'my_own_new_cluster',
+                'trigger_next_run': True},
+            'my_second_new_phase': {
+                'script': 'halloworld.sh',
+                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+                'submit_to_batch_system': True,
+                'run_on_queue': 'compute',
+                'cluster': 'my_own_new_cluster'}
+        }
+    }
+    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  my_own_new_cluster ['my_new_last_phase', 'my_second_new_phase'] ->  prepcompute ['prepcompute']"
+    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+    assert order == assumption
 
 # Test exceptions
 # 1. If still a workflow keyword is set by user.

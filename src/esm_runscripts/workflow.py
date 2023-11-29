@@ -443,7 +443,17 @@ class Workflow:
                     if phase2["cluster"] not in next_submits[get_phase_attrib(self.phases + self.user_phases, phase2["run_after"], "cluster")]:
                         next_submits[get_phase_attrib(self.phases + self.user_phases, phase2["run_after"], "cluster")].append(phase2["cluster"])
                 phase2["called_from"] = phase2["run_after"]
-
+            else:
+                if phase2["run_before"] is not None:
+                    if phase2["run_before"] == self.first_task_in_queue:
+                        next_submits[phase2["name"]].append(self.first_task_in_queue)
+                        next_submits[self.last_task_in_queue].append(phase2["cluster"])
+                        next_submits[self.last_task_in_queue].remove(self.first_task_in_queue)
+                        phase2["run_after"] = self.last_task_in_queue
+                        last_phase = self.get_workflow_phase_by_name(self.last_task_in_queue)
+                        last_phase["run_before"] = phase2["name"]
+                        last_phase["next_submit"].append(phase2["name"])
+                        self.first_task_in_queue = phase2["name"]
         for phase3 in self.phases + self.user_phases:
             phase3.set_attrib("next_submit", next_submits[phase3["name"]])
 #            phase3["next_submit"] = next_submits[phase3["name"]]
@@ -493,18 +503,24 @@ class Workflow:
 
             new_first_phase_name = "newrun_general"
             # Create new default phase object
-            new_first_phase = WorkflowPhase(new_first_phase_name)
-            new_first_phase.set_attrib("next_submit", first_phase["cluster"])
-            new_first_phase.set_attrib("called_from", last_phase["cluster"])
-            new_first_phase.set_attrib("run_before", first_phase["cluster"])
-            new_first_phase.set_attrib("next_submit", first_phase["cluster"])
-            new_first_phase.set_attrib("cluster", "newrun")
-            new_first_phase.set_attrib("batch_or_shell", "SimulationSetup")
-            new_first_phase.set_attrib("nproc", 1)
+            config_new_first_phase = {
+                "name": "newrun",
+                "next_submit": [first_phase["cluster"]],
+                "called_from": last_phase["cluster"],
+                "run_before": first_phase["cluster"],
+                "run_after": last_phase["cluster"],
+                "cluster": "newrun",
+                "batch_or_shell": "SimulationSetup",
+                "nproc": 1
+            }
+            new_first_phase = WorkflowPhase(config_new_first_phase)
 
             # reset last_task attributes
-            last_phase.set_attrib("next_submit", "newrun")
-            last_phase.remove_attrib("next_submit", first_phase["cluster"])
+            last_phase["next_submit"].append("newrun")
+            last_phase["next_submit"].remove(first_phase["cluster"])
+            # why does the next line not work???
+            #last_phase.set_attrib("next_submit", "newrun")
+            #last_phase.remove_attrib("next_submit", first_phase["cluster"])
 
             # reset first_task attributes
             first_phase.set_attrib("called_from", "newrun")

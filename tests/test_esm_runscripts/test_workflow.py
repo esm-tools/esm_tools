@@ -397,7 +397,7 @@ def test_example_2(test_default_config_example):
                 'script_dir': '/work/ab0995/a270089/myrunscripts/'}
         }
     }
-    assumption = "newrun ['newrun'] -> my_preprocessing ['my_preprocessing'] -> prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute']"
+    assumption = "newrun ['newrun'] ->  my_preprocessing ['my_preprocessing'] ->  prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  newrun ['newrun']"
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
@@ -440,6 +440,7 @@ def test_example_4(test_default_config_example):
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
 
+# 5. Append two new phases in the same cluster, one of them triggers the next run
 
 # Test exceptions
 # 1. If still a workflow keyword is set by user.

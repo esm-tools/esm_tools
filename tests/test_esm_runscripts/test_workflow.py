@@ -367,6 +367,7 @@ def test_write_to_config(test_workflow_object, test_default_phases_dict, test_co
 
 # Test scenarios
 # 0. Default workflow
+@pytest.mark.example
 def test_example_0(test_default_config_example):
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
@@ -374,6 +375,7 @@ def test_example_0(test_default_config_example):
     assert order == assumption
 
 # 1. Add one single phase at the end of the default workflow (Example 1 in documentation)
+@pytest.mark.example
 def test_example_1(test_default_config_example):
     test_default_config_example["general"]["workflow"] = {
         'phases': {
@@ -388,6 +390,7 @@ def test_example_1(test_default_config_example):
     assert order == assumption
 
 # 2. Prepend new phase at the beginning of workflow
+@pytest.mark.example
 def test_example_2(test_default_config_example):
     test_default_config_example["general"]["workflow"] = {
         'phases': {
@@ -400,9 +403,13 @@ def test_example_2(test_default_config_example):
     assumption = "newrun ['newrun'] ->  my_preprocessing ['my_preprocessing'] ->  prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  newrun ['newrun']"
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
-    assert order == assumption
+    print(assumption)
+    print(order)
+    pytest.fail("something wrong")
+    #assert order == assumption
 
 # 3. Append new phase at the beginning of workflow
+@pytest.mark.example
 def test_example_3(test_default_config_example):
     test_default_config_example["general"]["workflow"] = {
         'phases': {
@@ -418,6 +425,7 @@ def test_example_3(test_default_config_example):
     assert order == assumption
 
 # 4. Append two new phases in the same cluster
+@pytest.mark.example
 def test_example_4(test_default_config_example):
     test_default_config_example["general"]["workflow"] = {
         'phases': {
@@ -426,12 +434,14 @@ def test_example_4(test_default_config_example):
                 'script_dir': '/work/ab0995/a270089/myrunscripts/',
                 'submit_to_batch_system': True,
                 'run_on_queue': 'compute',
+                'order_in_cluster': 'concurrent',
                 'cluster': 'my_own_new_cluster'},
             'my_second_new_phase': {
                 'script': 'halloworld.sh',
                 'script_dir': '/work/ab0995/a270089/myrunscripts/',
                 'submit_to_batch_system': True,
                 'run_on_queue': 'compute',
+                'order_in_cluster': 'concurrent',
                 'cluster': 'my_own_new_cluster'}
         }
     }
@@ -441,6 +451,7 @@ def test_example_4(test_default_config_example):
     assert order == assumption
 
 # 5. Append two new phases in the same cluster, one of them triggers the next run
+@pytest.mark.example
 def test_example_5(test_default_config_example):
     test_default_config_example["general"]["workflow"] = {
         'phases': {
@@ -449,6 +460,7 @@ def test_example_5(test_default_config_example):
                 'script_dir': '/work/ab0995/a270089/myrunscripts/',
                 'submit_to_batch_system': True,
                 'run_on_queue': 'compute',
+                'order_in_cluster': 'concurrent',
                 'cluster': 'my_own_new_cluster',
                 'trigger_next_run': True},
             'my_second_new_phase': {
@@ -456,6 +468,7 @@ def test_example_5(test_default_config_example):
                 'script_dir': '/work/ab0995/a270089/myrunscripts/',
                 'submit_to_batch_system': True,
                 'run_on_queue': 'compute',
+                'order_in_cluster': 'concurrent',
                 'cluster': 'my_own_new_cluster'}
         }
     }
@@ -463,6 +476,34 @@ def test_example_5(test_default_config_example):
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
+
+# 6. Append two new phases in the same cluster at the beginning of run
+#@pytest.mark.example
+#def test_example_6(test_default_config_example):
+#    test_default_config_example["general"]["workflow"] = {
+#        'phases': {
+#            'my_new_last_phase': {
+#                'script': 'helloworld.sh',
+#                'run_before': 'prepcompute',
+#                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+#                'submit_to_batch_system': True,
+#                'run_on_queue': 'compute',
+#                'cluster': 'my_own_new_cluster'},
+#            'my_second_new_phase': {
+#                'script': 'halloworld.sh',
+#                'script_dir': '/work/ab0995/a270089/myrunscripts/',
+#                'run_before': 'prepcompute',
+#                'submit_to_batch_system': True,
+#                'run_on_queue': 'compute',
+#                'cluster': 'my_own_new_cluster'}
+#        }
+#    }
+#    assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  my_own_new_cluster ['my_new_last_phase', 'my_second_new_phase'] ->  prepcompute ['prepcompute']"
+#    test_default_config_example = workflow.assemble_workflow(test_default_config_example)
+#    order = workflow.display_workflow_sequence(test_default_config_example, display=False)
+#    assert order == assumption
+
+
 
 # Test exceptions
 # 1. If still a workflow keyword is set by user.

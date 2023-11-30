@@ -49,7 +49,7 @@ class Provenance(list):
         func : str
             Function triggering this method
         """
-        new_additional_provenance = copy.deepcopy(additional_provenance)
+        new_additional_provenance = additional_provenance
         # If the new provenance is not identical to the current one extend the
         # provenance
         if new_additional_provenance is not self:
@@ -301,6 +301,7 @@ class DictWithProvenance(dict):
 
         self.custom_setitem = False
         self.put_provenance(provenance)
+        self.custom_setitem = True
 
     def put_provenance(self, provenance):
         # TODO: this is an incorrect description
@@ -409,7 +410,7 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
-        new_val = copy.deepcopy(val)
+        val_new = val
         if (
             key in self
             and not isinstance(self[key], (dict, list))
@@ -417,14 +418,15 @@ class DictWithProvenance(dict):
             and hasattr(self, "custom_setitem")
             and self.custom_setitem
         ):
-            new_provenance = copy.deepcopy(self[key].provenance)
+            new_provenance = self[key].provenance
             if hasattr(val, "provenance"):
                 new_provenance.extend_and_modified_by(
                     val.provenance, "dict.__setitem__"
                 )
-                new_val.provenance = new_provenance
+                val_new = copy.deepcopy(val)
+                val_new.provenance = new_provenance
 
-        super().__setitem__(key, new_val)
+        super().__setitem__(key, val_new)
 
 
 class ListWithProvenance(list):
@@ -433,6 +435,7 @@ class ListWithProvenance(list):
 
         self.custom_setitem = False
         self.put_provenance(provenance)
+        self.custom_setitem = True
 
     def put_provenance(self, provenance):
         if not provenance:
@@ -528,7 +531,7 @@ class ListWithProvenance(list):
         val : any
             Value of the item
         """
-        new_val = copy.deepcopy(val)
+        val_new = val
         if (
             indx in self
             and not isinstance(self[indx], (dict, list))
@@ -536,32 +539,18 @@ class ListWithProvenance(list):
             and hasattr(self, "custom_setitem")
             and self.custom_setitem
         ):
-            new_provenance = copy.deepcopy(self[indx].provenance)
+            new_provenance = self[indx].provenance
             if hasattr(val, "provenance"):
                 new_provenance.extend_and_modified_by(
                     val.provenance, "dict.__setitem__"
                 )
-                new_val.provenance = new_provenance
+                val_new = copy.deepcopy(val)
+                val_new.provenance = new_provenance
 
-        super().__setitem__(indx, new_val)
+        super().__setitem__(indx, val_new)
 
 
 PROVENANCE_MAPPINGS = (DictWithProvenance, ListWithProvenance)
-
-
-def keep_provenance_in_setitem(func):
-    def inner(val_with_prov, *args, **kwargs):
-        if hasattr(val_with_prov, "custom_setitem"):
-            val_with_prov.custom_setitem = True
-
-        output = func(val_with_prov, *args, **kwargs)
-
-        if hasattr(val_with_prov, "custom_setitem"):
-            val_with_prov.custom_setitem = False
-
-        return output
-
-    return inner
 
 
 def keep_provenance_in_recursive_function(func):
@@ -581,16 +570,22 @@ def keep_provenance_in_recursive_function(func):
         The function to decorate
     """
 
-    does_not_modify_prov = ["find_variable"]
+    does_not_modify_prov = ["find_variable", "recursive_run_function"]
     modify_prov = not func.__name__ in does_not_modify_prov
 
     def inner(tree, rhs, *args, **kwargs):
+        custom_setitem_was_turned_off_in_this_instance = False
+        if hasattr(rhs, "custom_setitem") and rhs.custom_setitem:
+            rhs.custom_setitem = False
+            custom_setitem_was_turned_off = True
+
         output = func(tree, rhs, *args, **kwargs)
 
         if hasattr(rhs, "provenance"):
             provenance = copy.deepcopy(rhs.provenance)
             # Value was modified
             if type(rhs) != type(output) or rhs != output:
+                output = copy.deepcopy(output)
                 # If the new value has an inherited provenance, keep it (i.e. variable
                 # was called: rhs = ${fesom.namelist_dir}, output =
                 # /actual/path/with/provenance/to/be/kept})
@@ -600,9 +595,13 @@ def keep_provenance_in_recursive_function(func):
                     output.provenance = provenance
                 # If the rhs.provenance is not None and output has no provenance, keep
                 # the old provenance
-                elif provenance is not None and modify_prov:
-                    provenance.append_last_step_modified_by(func)
+                elif provenance is not None:
+                    if modify_prov:
+                        provenance.append_last_step_modified_by(func)
                     output = wrapper_with_provenance_factory(output, provenance)
+
+        if custom_setitem_was_turned_off_in_this_instance:
+            rhs.custom_setitem = True
 
         return output
 

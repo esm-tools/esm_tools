@@ -358,43 +358,6 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         config["person"]["my_other_list"][2].provenance = new_prov
 
 
-def test_keep_provenance_in_setitem(config):
-    @provenance.keep_provenance_in_setitem
-    def change_elem(config, key, val):
-        config[key] = val
-
-    # Create a value with provenance
-    val = provenance.wrapper_with_provenance_factory("changed elem", [{"file": "new"}])
-
-    change_elem(config["echam"], "type", val)
-    change_elem(config["echam"]["files"]["greenhouse"]["a_list"], 1, val)
-
-    check_provenance1 = [
-        {
-            "line": 2,
-            "col": 11,
-            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
-            "category": "runscript",
-        },
-        {"file": "new", "extended_by": "dict.__setitem__"},
-    ]
-    check_provenance2 = [
-        {
-            "line": 9,
-            "col": 19,
-            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
-            "category": "runscript",
-        },
-        {"file": "new", "extended_by": "dict.__setitem__"},
-    ]
-
-    assert config["echam"]["type"].provenance == check_provenance1
-    assert (
-        config["echam"]["files"]["greenhouse"]["a_list"][1].provenance
-        == check_provenance2
-    )
-
-
 def test_keep_provenance_in_recursive_function(config):
     @provenance.keep_provenance_in_recursive_function
     def change_elem(tree, rhs):

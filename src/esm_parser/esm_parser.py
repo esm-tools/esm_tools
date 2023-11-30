@@ -610,7 +610,6 @@ def new_deep_update(
 # END NEW STUFF
 
 
-@keep_provenance_in_setitem
 def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -622,6 +621,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """
     # option to overwrite a dict value if merge_dict contains empty value. Default
     # is False
+
     dont_overwrite_with_empty_value = kwargs.get(
         "dont_overwrite_with_empty_value", False
     )
@@ -1700,6 +1700,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
     return task_list
 
 
+@keep_provenance_in_recursive_function
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """Recursively runs func on all nested dicts.
 

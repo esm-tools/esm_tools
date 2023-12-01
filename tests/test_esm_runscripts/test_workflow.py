@@ -403,10 +403,7 @@ def test_example_2(test_default_config_example):
     assumption = "newrun ['newrun'] ->  my_preprocessing ['my_preprocessing'] ->  prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  newrun ['newrun']"
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
-    print(assumption)
-    print(order)
-    pytest.fail("something wrong")
-    #assert order == assumption
+    assert order == assumption
 
 # 3. Append new phase at the beginning of workflow
 @pytest.mark.example

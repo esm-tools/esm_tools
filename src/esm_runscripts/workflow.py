@@ -1,4 +1,3 @@
-import sys
 import copy
 import esm_parser
 
@@ -153,8 +152,8 @@ class Workflow:
         for model in config:
             if "workflow" in config[model]:
                 w_config = config[model]["workflow"]
-                # if "subjobs" in w_config:
                 if "phases" in w_config:
+                    # check if still tries to set workflow keywords
                     for key, value in w_config.items():
                         if not key == "phases":
                             err_msg = f"``{key}`` is not allowed to be set for a workflow."
@@ -163,8 +162,11 @@ class Workflow:
                         # each phase (of a model/setup) needs to have an unique name
                         # same phases of the same model/setup defined in different config files
                         # are overwritten by the usual config file hierarchy
-                        # user phases are not alowed to have the same name asdefault phases (e.g. compute)
-                        # 1. check if ``new_phase`` is already defined as a default phase
+                        # user phases are not alowed to have the same name as default phases (e.g. compute)
+
+                        # check if ``new_phase`` is already defined as a default phase
+                        # look for the name of the current phase in the list of default phase names
+                        # if found, raise exception
                         if phase in self.get_phases_attribs_list("default", "name"):
                             err_msg = (
                                 f"The user phase ``{phase}`` "
@@ -172,24 +174,26 @@ class Workflow:
                                 f"This is not allowed."
                             )
                             esm_parser.user_error("ERROR", err_msg)
-                        # 2. check if the name of the new user phase (for a model/setup) does not already exist
-                        #    (for another model/setup).
+
+                        # check if the name of the new user phase (for a model/setup) does not already exist
+                        # (for another model/setup).
                         if phase in user_workflow_phases_names:
                             err_msg = (
                                 f"Two workflow phases have the same name "
                                 f"``{phase}``."
                             )
                             esm_parser.user_error("ERROR", err_msg)
-                        # 3. if user phase (for each setup/model) has a new and unique name
+
+                        # if user phase (for each setup/model) has a new and unique name
                         else:
                             phase_config = copy.deepcopy(w_config["phases"][phase])
                             # add phase name
                             phase_config["name"] = phase
                             # Make sure that batch_or_shell is set to batch if submit_to_batch is true
                             # Should not be set by user. TODO: Remove from documentation.
-                            # Check if run_on_queue is given if sbatch job
                             if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
+                                # Check if run_on_queue is given if submit_to_sbatch is true
                                 if not phase_config.get("run_on_queue", False):
                                     err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase}``."
                                     esm_parser.user_error("ERROR", err_msg)
@@ -202,7 +206,7 @@ class Workflow:
                             user_workflow_phases_names.append(phase)
                             if phase_config.get("trigger_next_run", False):
                                 user_workflow_next_run_triggered_by.append(phase)
-        # check if more than one user phase is set to trigger the next run
+        # check if more than one user phase has set trigger_next_run to true
         if len(user_workflow_next_run_triggered_by) > 1:
             err_msg = (
                 f"More than one phase is set to "
@@ -244,44 +248,55 @@ class Workflow:
         """Merge phases into clusters."""
 
         clusters = {}
+        # create an empty phases list for each cluster
         for cluster in self.get_phases_attribs_list("default", "cluster") + self.get_phases_attribs_list("user", "cluster"):
             clusters[cluster] = {"phases": []}
+        # append all phases that are within the same cluster
         for phase in self.phases + self.user_phases:
             clusters[phase["cluster"]]["phases"].append(phase["name"])
 
         for cluster in clusters:
             nproc = nproc_sum = nproc_max = 0
+            # if only one phase in cluster
             if len(clusters[cluster]["phases"]) == 1:
                 phase_name = clusters[cluster]["phases"][0]
                 phase = self.get_workflow_phase_by_name(phase_name)
                 clusters[cluster].update(phase)
+            # if more than one phase are within the same cluster
             else:
+                # fill in default phase keys for each cluster to cluster dictionary
                 clusters[cluster].update(WorkflowPhase({}))
+                # create a list of all phases (dicts) that are within the same cluster
                 phases_list = []
                 for phase_name in clusters[cluster]["phases"]:
                     phases_list.append(self.get_workflow_phase_by_name(phase_name))
 
-                # check for inconsistencies
-                attribs = {}
-                for attrib in WorkflowPhase({}):
-                    attribs[attrib] = []
-                    [attribs[attrib].append(item) for item in [phase[attrib] for phase in phases_list] if item not in attribs[attrib]]
-                    if len(attribs[attrib]) == 1:
-                        clusters[cluster][attrib] = attribs[attrib][0]
+                # check for inconsistencies of phase keywords within a cluster
+                keywords = {}
+                for key in WorkflowPhase({}):
+                    keywords[key] = []
+                    # append keyword of a phase only if not already in keywords[key]
+                    [keywords[key].append(item) for item in [phase[key] for phase in phases_list] if item not in keywords[key]]
+                    # if there are no inconsistencies, all phases have the same values for keyword
+                    if len(keywords[key]) == 1:
+                        clusters[cluster][key] = keywords[key][0]
+                    # if different phases have set different values for the same keyword/attrib
                     else:
-                        if type(clusters[cluster][attrib]) is list:
-                            clusters[cluster][attrib] = attribs[attrib]
+                        if type(clusters[cluster][key]) is list:
+                            clusters[cluster][key] = keywords[key]
                         else:
-                            if attrib not in ["name", "script", "scriptdir", "order_in_cluster", "nproc", "trigger_next_run"]:
+                            if key not in ["name", "script", "scriptdir", "order_in_cluster", "nproc", "trigger_next_run"]:
                                 err_msg = (
-                                    f"Mismatch for {attrib}")
+                                    f"Mismatch for {key}")
                                 esm_parser.user_error("ERROR", err_msg)
-                            elif attrib == "name":
+                            elif key == "name":
                                 clusters[cluster]["name"] = cluster
-                            elif attrib == "trigger_next_run":
-                                clusters[cluster][attrib] = any(attribs[attrib])
+                            elif key == "trigger_next_run":
+                                # set key of cluster to True if key for any (at least one) of the phases is set to True
+                                clusters[cluster][key] = any(keywords[key])
                             else:
-                                clusters[cluster][attrib] = "check phase"
+                                # if key is set different for each phase in same cluster set to fill value (e.g. for script, scriptdir)
+                                clusters[cluster][key] = "check phase"
 
                 # calculate nproc if cluster is to be submitted to sbatch system
                 for phase in phases_list:
@@ -297,7 +312,7 @@ class Workflow:
                             clusters[cluster]["order_in_cluster"] = "sequential"
                             nproc = nproc_max
                 clusters[cluster]["nproc"] = nproc
-
+        # write clusters dictionary to workflow object attribute
         self.clusters = clusters
         return self
 
@@ -367,7 +382,7 @@ class Workflow:
 
     def check_unknown_phases(self):
         """
-        Check if any user phase attributes points to any unknown workflow phase.
+        Check if any user phase keyword (run_afteer, run_before) points to an unknown workflow phase.
 
         Parameters
         ----------
@@ -378,10 +393,10 @@ class Workflow:
             unknown_phases : set
         """
         unknown_phases = []
-        phases_names = self.get_phases_attribs_list('default', 'name')
-        user_phases_names = self.get_phases_attribs_list('user', 'name')
-        run_after = self.get_phases_attribs_list('user', 'run_after')
-        run_before = self.get_phases_attribs_list('user', 'run_before')
+        phases_names = self.get_phases_attribs_list('default', 'name')          # list of names of all default phases
+        user_phases_names = self.get_phases_attribs_list('user', 'name')        # list of name of all user phases
+        run_after = self.get_phases_attribs_list('user', 'run_after')           # list of all run_after values for all user phases
+        run_before = self.get_phases_attribs_list('user', 'run_before')         # list of all run_before values for all user phases
         # Filter out all elements that are None
         # ``filter(None, anylist)`` will filter out all items of anylist,
         # for which ``if item`` is false (e.g. [], "", None, {}, '').
@@ -398,39 +413,22 @@ class Workflow:
 
     def order_phases_and_clusters(self):
         """
-        Put the phases and clusters in order.
-
-        Tasks:
-        1. Correct for ``triggered_next_run`` if set by user phase
-            - next_submit, run_after, called_from, run_before???
+        Put the phases and clusters in the right order.
 
         Parameters
         ----------
+            self : Workflow object
 
         Returns
         -------
             self : Workflow object
         """
 
-
-        # check if user phases are independent from each other
-        # independent = self.check_user_workflow_dependency()
-
-            # Check if not both run_after and run_before are set at the same
-            # time for each user phase
-#            if user_phase['run_before'] and user_phase['run_after']:
-#                err_msg = (
-#                    f"Both run_after and run_before are set. Don't know when "
-#                    f"to start {user_phase['name']}. Please only set run_after "
-#                    f"or run_before."
-#                )
-#                esm_parser.user_error("ERROR", err_msg)
-
-# 3. Correct workflow attributes (``last_task_in_queue``, ``first_task_in_queue``, ``next_run_triggered``)
+# Correct workflow attributes (``last_task_in_queue``, ``first_task_in_queue``, ``next_run_triggered``)
 
         # next_run_triggered_by is always the last phase
 
-        # check if next_triggered is default or user phase
+        # check if next_triggered is set to a default or user phase
         # if user phase
         # get last default phase and correct next_submit and run_before
         # get first default phase and correct run_after, called_from
@@ -465,20 +463,19 @@ class Workflow:
             self.last_task_in_queue = next_triggered
 
 
-# 4. Intergrate new user phases by correcting next_submit, called_from, run_after, run_before
+# Intergrate new user phases by correcting next_submit, called_from, run_after, run_before
 
         # Set "next_submit" and "called_from"
         # "next_submit" which phase/cluster will be called next (run_after of the next phase)
         # "called_from" name of previous phase, run_after of current phase
 
-        # Create a dict of all phases with empty lists
+        # Create a dict of all phases and for all clusters with empty lists
         next_submits_phases = {}
         next_submits_clusters = {}
         for phase in self.phases + self.user_phases:
             next_submits_phases[phase["name"]] = []
             next_submits_clusters[phase["cluster"]] = []
 
-#        for cluster in self.clusters:
         for phase2 in self.phases + self.user_phases:
             if phase2.get("run_after", None):
                 if phase2["name"] not in next_submits_phases[phase2["run_after"]]:
@@ -519,24 +516,7 @@ class Workflow:
             if next_submits_phases[phase3["name"]]:
                 phase3.set_attrib("next_submit", next_submits_phases[phase3["name"]])
 
-# 5. Correct first and last new phases of whole workflow
-
-        first_cluster_name = self.first_task_in_queue
-        first_phase = self.get_workflow_phase_by_name(first_cluster_name)
-        last_cluster_name = self.last_task_in_queue
-        last_phase = self.get_workflow_phase_by_name(last_cluster_name)
-
-        # if first_cluster_name is not next_submit of last_cluster_name
-        # set 'next_submit' of last phase/cluster to first phase/cluster in workflow
-        if first_cluster_name not in last_phase["next_submit"]:
-            last_phase.set_attrib("next_submit", first_cluster_name)
-        # if last_cluster_name is not called_from of first_cluster_name
-        # set 'called_from' of first phase/cluster to last phase/cluster
-        if not last_cluster_name == first_phase["called_from"]:
-            first_phase.set_attrib("called_from", last_cluster_name)
-
         return self
-
 
     def prepend_newrun_job(self):
         """
@@ -562,7 +542,6 @@ class Workflow:
             last_task_name = self.last_task_in_queue
             last_phase = self.get_workflow_phase_by_name(last_task_name)
 
-            new_first_phase_name = "newrun_general"
             # Create new default phase object
             config_new_first_phase = {
                 "name": "newrun",
@@ -584,8 +563,8 @@ class Workflow:
             self.clusters[new_first_phase["cluster"]]["phases"] = ["newrun"]
             last_phase["next_submit"].remove(first_phase["cluster"])
             # why does the next line not work???
-            #last_phase.set_attrib("next_submit", "newrun")
-            #last_phase.remove_attrib("next_submit", first_phase["cluster"])
+            # last_phase.set_attrib("next_submit", "newrun")
+            # last_phase.remove_attrib("next_submit", first_phase["cluster"])
 
             # reset first_task attributes
             first_phase.set_attrib("called_from", "newrun")
@@ -771,7 +750,6 @@ def assemble_workflow(config):
     # 7. Remove old worklow from config
     config = workflow.write_to_config(config)
 
-
     # Set "jobtype" for the first task???
     # NOTE: This is either first default phase or
     #       newrun??? Can't this not be set in prepend_newrun then?
@@ -831,6 +809,7 @@ def display_workflow(config):
 
     display_nicely(config)
     display_workflow_sequence(config)
+
 
 def display_workflow_sequence(config, display=True):
 

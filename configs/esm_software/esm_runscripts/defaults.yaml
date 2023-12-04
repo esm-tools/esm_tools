@@ -17,10 +17,8 @@ workflow:
     phases:
         prepcompute:
             batch_or_shell: SimulationSetup
-            call_function: None
             called_from: tidy
             cluster: prepcompute
-            env_preparation: None
             name: prepcompute
             next_submit:
                 - compute
@@ -28,19 +26,10 @@ workflow:
             order_in_cluster: sequential
             run_after: tidy
             run_before: compute
-            run_on_queue: None
-            run_only: None
-            script: None
-            script_dir: None
-            skip_chunk_number: None
-            skip_run_number: None
             submit_to_batch_system: False
         compute:
-            batch_or_shell: batch
-            call_function: None
             called_from: prepcompute
             cluster: compute
-            env_preparation: None
             name: compute
             next_submit:
                 - tidy
@@ -48,19 +37,12 @@ workflow:
             order_in_cluster: sequential
             run_after: prepcompute
             run_before: tidy
-            run_on_queue: None
-            run_only: None
-            script: None
-            script_dir: None
-            skip_chunk_number: None
-            skip_run_number: None
+            run_on_queue: ${computer.partitions.pp.name}
             submit_to_batch_system: True
         tidy:
             batch_or_shell: SimulationSetup
-            call_function: None
             called_from: compute
             cluster: tidy
-            env_preparation: None
             name: tidy
             next_submit:
                 - prepcompute
@@ -68,10 +50,4 @@ workflow:
             order_in_cluster: sequential
             run_after: compute
             run_before: prepcompute
-            run_on_queue: None
-            run_only: None
-            script: None
-            script_dir: None
-            skip_chunk_number: None
-            skip_run_number: None
             submit_to_batch_system: False

@@ -44,7 +44,13 @@ class oasis:
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
         # seb-wahl: add lucia support
         if lucia:
-            self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
+            # LUCIA (load balancing) is done differently in MCT 5.0
+            if mct_version >= (5,0):
+                # In MCT5 you set X Y Z, where X refers to verbosity, Y to timing info and Z to load balancing
+                # Here: Set X = debug_level, Y = 0 (no info), Z = 1 (activate load balancing)
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1 ", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
             self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
         if mct_version >= (4, 0):

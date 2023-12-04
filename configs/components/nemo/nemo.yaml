@@ -618,7 +618,7 @@ choose_version:
     use_tracer: false 
     leapyear: false  
     free_surface: nonlinear
-
+    
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
 
     # override hardcoded path to runoff forcing
@@ -1563,7 +1563,12 @@ namelist_changes:
 choose_generation:
         "4.2": 
                 opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
-
+                # in NEMO 4, the periodic points, i.e. i=1, i=imax
+                # are not included in the coupling
+                # So we need to set P 0 in namecouple
+                # oasis_p: 2 is left as default for compatibility with NEMO 3.6
+                oasis_p: 0
+                
                 add_namelist_changes:
                         namelist_cfg:
                                 namdom:
@@ -2026,6 +2031,13 @@ agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_
 agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OTotEvap, 1_OIceEvap, 1_O_dQnsdT]
 agr2_t_fields: [1_O_AgrSpg]
 
+# How many periodic points on the NEMO grid
+# This is 2 for NEMO 3.6 (i=1, and i=imax)
+# But 0 for NEMO 4, where the halo points are not included in coupling
+# oasis_p is set to 2 as default here, 
+# but is set to 0 for if generation is 4.2, somewhere above 
+oasis_p: 2
+
 coupling_fields:
         "[[opat_fields-->FIELD]]":
                 grid: opat
@@ -2069,13 +2081,13 @@ grids:
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR"
-                number_of_overlapping_points: 2 # oasis P-value
+                number_of_overlapping_points: ${oasis_p} # oasis P-value
         opac:
                 name: opac
                 nx: ${_nx}
                 ny: ${_ny}
                 oasis_grid_type: "LR" #??? not sure, doesn't matter
-                number_of_overlapping_points: 2 # oasis P-value
+                number_of_overlapping_points: ${oasis_p} # oasis P-value
         opaa:   
                 name: opaa
                 nx: ${_nx}

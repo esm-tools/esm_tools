@@ -7,6 +7,18 @@ from . import workflow
 
 
 def submit(config):
+    """
+    Submits a jobscript to the batch system by calling os.system
+
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
+
     if config["general"]["verbose"]:
         print("\n", 40 * "+ ")
     print("Submitting jobscript to batch system...")
@@ -22,15 +34,43 @@ def submit(config):
 
 
 def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
+    """
+    - Creates a submit_commant and sets it to config depending on kind of submission (batch or shell)
+    - Calls function submit to acually submitting the shell or batch command
+
+    Arguments
+    ---------
+        config : dict
+        batch_or_shell : Bool
+        cluster : (optional)
+
+    Returns
+    -------
+        config : dict
+    """
+
     config = config["general"]["batch"].write_simple_runscript(
         config, cluster, batch_or_shell
     )
+    # Checks, if not submitted with option -c in esm_runscript call (check run)
     if not check_if_check(config):
         config = submit(config)
     return config
 
 
 def resubmit_SimulationSetup(config, cluster=None):
+    """
+    Resubmitting a workflow phase/cluster that is of type SimulationSetup
+    - Initialize the cluster as a new SimulationSetup object
+
+    Arguments
+    ---------
+        config : dict
+        cluster : str (optional: name of cluster)
+    Returns
+    -------
+        config : dict
+    """
     monitor_file = logfiles.logfile_handle
     # Jobs that should be started directly from the compute job:
 
@@ -60,6 +100,7 @@ def resubmit_SimulationSetup(config, cluster=None):
             cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]
         )
 
+    # Checks, if not submitted with option -c in esm_runscript call (check run)
     if not check_if_check(config):
 
         monitor_file.write(f"Calling {cluster} job:\n")
@@ -69,14 +110,29 @@ def resubmit_SimulationSetup(config, cluster=None):
 
 
 def get_submission_type(cluster, config):
-    # Figure out if next job is resubmitted to batch system,
-    # just executed in shell or invoked as new SimulationSetup
-    # object
+    """
+    Figure out if next job is
+        - resubmitted to batch system,
+        - just executed in shell or
+        - invoked as new SimulationSetup object
+
+    Arguments
+    ---------
+        cluster : str (name of cluster)
+        config : dict
+
+    Returns
+    -------
+        submission_type : str
+    """
 
     clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
 
     if clusterconf.get("submit_to_batch_system", False):
         submission_type = "batch"
+    # This information should come from the config of the cluster/workflow phase
+    # This information is given in batch_or_shell attribute of workflow phase/cluster
+    # TODO: Make this a function of workflow manager???
     elif cluster in ["newrun", "prepcompute", "tidy", "inspect", "viz"]:
         submission_type = "SimulationSetup"
     else:
@@ -86,6 +142,17 @@ def get_submission_type(cluster, config):
 
 
 def end_of_experiment(config):
+    """
+    Checks if it is the end of the experiment.
+
+    Arguments
+    ---------
+        config
+
+    Returns
+    -------
+        True or False
+    """
     if config["general"]["next_date"] >= config["general"]["final_date"]:
         monitor_file = logfiles.logfile_handle
         monitor_file.write("Reached the end of the simulation, quitting...\n")
@@ -96,6 +163,17 @@ def end_of_experiment(config):
 
 
 def end_of_experiment_all_models(config):
+    """
+    Checks if end of experiment is reached and everything is done
+
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        True or False
+    """
     index = 1
     expid = config["general"]["expid"]
     while "model" + str(index) in config["general"]["original_config"]:
@@ -131,6 +209,17 @@ def end_of_experiment_all_models(config):
 
 
 def check_if_check(config):
+    """
+    Will check if esm_runscripts has been called with option -c (check run only)
+
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        True or False
+    """
     if config["general"]["check"]:
         print(
             "Actually not submitting anything, this job preparation was launched in 'check' mode (-c)."
@@ -142,7 +231,21 @@ def check_if_check(config):
 
 
 def maybe_resubmit(config):
+    """
+    If nextrun is started,
+    - calls funtion to increment date and run_number
+    - calls function to write new date file
+    If it recognizes that is was actually the last run
+    - returns if end of the experiment (if not iterative_coupling)
 
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
     jobtype = config["general"]["jobtype"]
 
     nextrun = resubmit_recursively(config, jobtype=jobtype)
@@ -154,6 +257,9 @@ def maybe_resubmit(config):
 
         if end_of_experiment(config):
             if config["general"].get("iterative_coupling", False):
+                # If not iterative coupling
+                # check if end of experiment for all models
+                # if not???
                 if end_of_experiment_all_models(config):
                     return config
             else:
@@ -161,6 +267,7 @@ def maybe_resubmit(config):
                 return config
 
         cluster = config["general"]["workflow"]["first_task_in_queue"]
+        # For what is nextrun here nedded?
         nextrun = resubmit_recursively(
             config, list_of_clusters=[cluster], nextrun_in=True
         )
@@ -169,8 +276,26 @@ def maybe_resubmit(config):
 
 
 def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in=False):
-    nextrun = False
+    """
+    - Reads in a list of all clusters (next_submit) in a workflow of a given jobtype (if not passes as argument)
+    - Checks if cluster is going to be skipped
+    - Gets the submission_type of cluster and calls the corresponding resubmit function
+    - If cluster is skipped, calls this function again ???
+    - What is nextrun_in for? What if true? If within a run???
+    - When could cluster be first_task_in_queue and nextrun_in=true?
 
+    Arguments
+    ---------
+        config : dict
+        jobtype : (optional)
+        list_of_clusters: (optional)
+        nextrun_in: (optional)
+
+    Returns
+    -------
+        nextrun : Boolean
+    """
+    nextrun = False
     if not list_of_clusters:
         list_of_clusters = config["general"]["workflow"]["subjob_clusters"][
             jobtype
@@ -180,7 +305,7 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
         if (
             cluster == config["general"]["workflow"]["first_task_in_queue"]
             and not nextrun_in
-        ):
+        ):                          # if beginning of next run?
             nextrun = True
         else:
             if not workflow.skip_cluster(cluster, config):
@@ -199,6 +324,20 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
 
 
 def _increment_date_and_run_number(config):
+    """
+    - Incrementing
+        - date by adding "delta_date" to "cuirrent_date"
+        - run_number by adding +1
+    - Updating config
+
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
     config["general"]["run_number"] += 1
     config["general"]["current_date"] += config["general"]["delta_date"]
 
@@ -216,6 +355,17 @@ def _increment_date_and_run_number(config):
 
 
 def _write_date_file(config):  # self, date_file=None):
+    """
+    Writes new date file for experiment.
+
+    Arguments
+    ---------
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
     # monitor_file = config["general"]["logfile"]
     monitor_file = logfiles.logfile_handle
 

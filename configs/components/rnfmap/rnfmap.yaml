@@ -25,6 +25,7 @@ available_versions:
 - focioifs1
 - focioifs21
 - foci211
+- v1.0
 
 runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -51,6 +52,12 @@ choose_version:
     branch: runoff
   foci211:
     branch: foci211
+  v1.0:
+    branch: rnfmap_compile_vars
+    further_reading:
+      - rnfmap/rnfmap.env.yaml
+    destination: rnfmap
+    runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
 
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma

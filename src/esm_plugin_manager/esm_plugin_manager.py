@@ -1,5 +1,7 @@
 """ ESM Framework for organizing python code in plugins / yaml recipes """
 
+import os
+import subprocess
 import sys
 import esm_parser
 from esm_parser import yaml_file_to_dict
@@ -201,4 +203,55 @@ def work_through_recipe(recipe, plugins, config):
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
                 config = getattr(thismodule, workitem)(config)
+    return config
+
+
+def install(package: str) -> None:
+    """
+    Checks if a package is already installed in the system and if it's not, then it
+    installs it.
+
+    Parameters
+    ----------
+    package : str
+        Name of the package or get operation. Can be a package name (e.g.
+        ``numpy``) or a full pip address (e.g.
+        ``git@https://github.com/esm-tools/esm_tools.git``)
+
+    Returns
+    -------
+    None
+    """
+    package_name = package.split("/")[-1].replace(".git", "")
+    installed_packages = find_installed_plugins()
+    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
+    if os.environ.get("VIRTUAL_ENV"):
+        arg_list.remove("--user")
+    if not package_name in installed_packages:
+        try:
+            subprocess.check_call(arg_list)
+        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
+            subprocess.check_call(arg_list)
+
+
+def install_missing_plugins(config: esm_parser.ConfigSetup) -> esm_parser.ConfigSetup:
+    """
+    Loop through the components and install the missing plugins. This method can be
+    called from a recipe.
+
+    Parameters
+    ----------
+    config : esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+
+    Returns
+    -------
+    config : esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+    """
+    if config.get("general", {}).get("install_missing_plugins", True):
+        for component in config:
+            for plugin in config[component].get("required_plugins", []):
+                install(plugin)
+
     return config

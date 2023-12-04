@@ -9,6 +9,7 @@ core:
                         - "set_prev_date"
                         - "set_parent_info"
                         - "finalize_config"
+                        - "install_missing_plugins"
                         - "add_submission_info"
                         - "initialize_batch_system"
                         - "initialize_coupler"

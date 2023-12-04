@@ -30,6 +30,8 @@ general:
             major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
+            add_further_reading:
+            - oifs/oifs.env.yaml
           v3.1:
             major_version: v3.1
             couplings:
@@ -37,6 +39,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
           v3.1.1:
             major_version: v3.1
@@ -45,6 +48,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
           v3.1.2:
             major_version: v3.1
@@ -53,6 +57,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
           v3.2:
             major_version: v3.2
@@ -61,6 +66,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
           v3.3:
             major_version: v3.3
@@ -69,6 +75,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
           master:
             major_version: master
@@ -77,6 +84,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
           frontiers-xios:
             major_version: frontiers-xios
@@ -85,6 +93,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs.env.yaml
             - xios/xios.env.yaml
 
         version: "v3.2"
@@ -120,7 +129,6 @@ general:
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
         further_reading:
-                - oifs/oifs.env.yaml
                 - oasis3mct/oasis3mct.env.yaml
 
 

@@ -30,13 +30,6 @@ class Workflow:
         self.next_run_triggered_by = workflow_yaml["next_run_triggered_by"]
         # TODO: Call here the phase object ???
 
-    @property
-    def num_phases(self):
-        """
-        Return the number of phases in workflow.
-        """
-        return len(self.phases)
-
     def get_workflow_phase_by_name(self, phase_name):
         """
         Returns phase of phase_name

@@ -68,6 +68,7 @@ class Workflow:
 
         return phases_attribs
 
+
     def set_default_nproc(self, config):
         """
         Calculating the number of mpi tasks for each component/model/script
@@ -694,33 +695,9 @@ def assemble_workflow(config):
     -------
         config : dict
     """
-
-    # 1. Generate default workflow object
-    # initialize the default workflow as Workflow object
-    # TODO: Where are these default phases defined? For now I placed it in
-    # esm_tools/configs/esm_software/esm_runscripts/defaults.yaml
-    if "defaults.yaml" in config["general"]:
-        if "workflow" in config["general"]["defaults.yaml"]:
-            workflow = config["general"]["defaults.yaml"]["workflow"]
-            phases = config["general"]["defaults.yaml"]["workflow"].get("phases", [])
-        else:
-            esm_parser.user_error("ERROR", "No default workflow defined.")
-    else:
-        workflow = []
-        phases = []
-
-    # 2. Initialize default workflow phases from defaults.yaml
-    if phases:
-        workflow = Workflow(workflow)
-        for phase in phases:
-            workflow.phases.append(WorkflowPhase(phases[phase]))
-    else:
-        esm_parser.user_error("ERROR", "No default workflow phases defined.")
-        # Note: Should this work also if no default phases are set in such a config
-        # file, but instead all workflow phases are defined in different configs
-        # and/or runscripts?
-        # Where could a user define a different (default) phase list?
-        # Or should this be changed in defaults.yaml as it is now?
+    # 1. Generate default workflow object and
+    # 2. initialize default workflow phases from defaults.yaml
+    workflow = init_default_workflow(config)
 
     # 3. Calc mpi tasks for batch jobs of default phases
     # TODO: Put it into other method???
@@ -756,6 +733,38 @@ def assemble_workflow(config):
 
     return config
 
+def init_default_workflow(config):
+    """
+    Initialize workflow and default phases from defauls.yaml
+    """
+    # 1. Generate default workflow object
+    # initialize the default workflow as Workflow object
+    # TODO: Where are these default phases defined? For now I placed it in
+    # esm_tools/configs/esm_software/esm_runscripts/defaults.yaml
+    if "defaults.yaml" in config["general"]:
+        if "workflow" in config["general"]["defaults.yaml"]:
+            workflow = config["general"]["defaults.yaml"]["workflow"]
+            phases = config["general"]["defaults.yaml"]["workflow"].get("phases", [])
+        else:
+            esm_parser.user_error("ERROR", "No default workflow defined.")
+    else:
+        workflow = []
+        phases = []
+
+    # 2. Initialize default workflow phases from defaults.yaml
+    if phases:
+        workflow = Workflow(workflow)
+        for phase in phases:
+            workflow.phases.append(WorkflowPhase(phases[phase]))
+    else:
+        esm_parser.user_error("ERROR", "No default workflow phases defined.")
+        # Note: Should this work also if no default phases are set in such a config
+        # file, but instead all workflow phases are defined in different configs
+        # and/or runscripts?
+        # Where could a user define a different (default) phase list?
+        # Or should this be changed in defaults.yaml as it is now?
+
+    return workflow
 
 def get_phase_attrib(workflow_phases, phase_name, attrib):
     if not type(workflow_phases) is list:

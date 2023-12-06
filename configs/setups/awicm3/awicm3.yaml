@@ -77,6 +77,7 @@ general:
             add_further_reading:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
+            - rnfmap/rnfmap.env.yaml
           master:
             major_version: master
             couplings:

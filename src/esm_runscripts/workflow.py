@@ -22,13 +22,26 @@ class Workflow:
         none
         """
         # TODO: check if key is in workflow_yaml dict
-        self.phases = []
-        self.user_phases = []
-        self.clusters = {}
-        self.first_task_in_queue = workflow_yaml["first_task_in_queue"]
-        self.last_task_in_queue = workflow_yaml["last_task_in_queue"]
-        self.next_run_triggered_by = workflow_yaml["next_run_triggered_by"]
-        # TODO: Call here the phase object ???
+        self.phases = []                            # list for default phases (defined in defauls.yaml)
+        self.user_phases = []                       # list of user phases (collected by collect_all_user_phases)
+        self.clusters = {}                          # dictionary of clusters
+
+        error = False
+
+        if "first_task_in_queue" in workflow_yaml: self.first_task_in_queue = workflow_yaml["first_task_in_queue"]
+        else: error = True
+        if "last_task_in_queue" in workflow_yaml: self.last_task_in_queue = workflow_yaml["last_task_in_queue"]
+        else: error = True
+        if "next_run_triggered_by" in workflow_yaml: self.next_run_triggered_by =  workflow_yaml["next_run_triggered_by"]
+        else: error = True
+
+        if error:
+            err_msg = (
+                        f"Missing workflow keywords. "
+                        f"Make sure the following keywords are set in defaults.yaml: "
+                        f"``first_task_in_queue``, ``last_task_in_queue``, ``next_run_triggered_by``."
+            )
+            esm_parser.user_error("ERROR", err_msg)
 
     def get_workflow_phase_by_name(self, phase_name):
         """
@@ -47,7 +60,7 @@ class Workflow:
             if phase["name"] == phase_name:
                 return phase
 
-    def get_phases_attribs_list(self, phase_type, attrib):
+    def get_phases_values_list(self, phase_type, keyword):
         """
         Returns a certain attribute for all phases as a list.
 
@@ -55,23 +68,23 @@ class Workflow:
         ----------
             phase_type : str
                 ``default`` or ``user``
-            attrib : str
+            keyword : str
 
         Returns
         -------
-            phases_attribs : list
+            phases_values : list
         """
         if phase_type == 'user':
-            phases_attribs = [phase[attrib] for phase in self.user_phases]
+            phases_values = [phase[keyword] for phase in self.user_phases]
         else:
-            phases_attribs = [phase[attrib] for phase in self.phases]
+            phases_values = [phase[keyword] for phase in self.phases]
 
-        return phases_attribs
+        return phases_values
 
 
     def set_default_nproc(self, config):
         """
-        Calculating the number of mpi tasks for each component/model/script
+        Calculating the number of mpi tasks for default phases and each component/model/script
 
         Parameters
         ----------
@@ -82,11 +95,14 @@ class Workflow:
             self : Workflow object
         """
 
+        # Get the sum of all mpi tasks
         tasks = calc_number_of_tasks(config)
 
+        # Write this number of tasks to phase, if
+        # phase will be submitted to batch system
         for ind, phase in enumerate(self.phases):
             if phase["submit_to_batch_system"]:
-                phase["nproc"] = tasks
+                set_value(phase, "nproc", tasks)
 
         return self
 
@@ -104,7 +120,7 @@ class Workflow:
             None
         """
 
-        if type(getattr(self, attrib)).__name__ == "list":
+        if type(getattr(self, attrib)).__name__ == list:
             self.__dict__[attrib].append(value)
         else:
             self.__setattr__(attrib, value)
@@ -147,12 +163,12 @@ class Workflow:
             if "workflow" in config[model]:
                 w_config = config[model]["workflow"]
                 if "phases" in w_config:
-                    # check if still tries to set workflow keywords
+                    # check if there are still workflow keywords set (except 'phases')
                     for key, value in w_config.items():
                         if not key == "phases":
                             err_msg = f"``{key}`` is not allowed to be set for a workflow."
                             esm_parser.user_error("ERROR", err_msg)
-                    for phase in w_config["phases"]:
+                    for phase_name in w_config["phases"]:
                         # each phase (of a model/setup) needs to have an unique name
                         # same phases of the same model/setup defined in different config files
                         # are overwritten by the usual config file hierarchy
@@ -161,9 +177,10 @@ class Workflow:
                         # check if ``new_phase`` is already defined as a default phase
                         # look for the name of the current phase in the list of default phase names
                         # if found, raise exception
-                        if phase in self.get_phases_attribs_list("default", "name"):
+
+                        if phase_name in self.get_phases_values_list("default", "name"):
                             err_msg = (
-                                f"The user phase ``{phase}`` "
+                                f"The user phase ``{phase_name}`` "
                                 f"has the same name as a default workflow phase. "
                                 f"This is not allowed."
                             )
@@ -171,35 +188,39 @@ class Workflow:
 
                         # check if the name of the new user phase (for a model/setup) does not already exist
                         # (for another model/setup).
-                        if phase in user_workflow_phases_names:
+                        if phase_name in user_workflow_phases_names:
                             err_msg = (
                                 f"Two workflow phases have the same name "
-                                f"``{phase}``."
+                                f"``{phase_name}``."
                             )
                             esm_parser.user_error("ERROR", err_msg)
 
-                        # if user phase (for each setup/model) has a new and unique name
+                        # if user phase (for each setup/model) has a non-default and unique name
                         else:
-                            phase_config = copy.deepcopy(w_config["phases"][phase])
+                            phase_config = copy.deepcopy(w_config["phases"][phase_name])
                             # add phase name
-                            phase_config["name"] = phase
-                            # Make sure that batch_or_shell is set to batch if submit_to_batch is true
-                            # Should not be set by user. TODO: Remove from documentation.
+                            phase_config["name"] = phase_name
+                            # make sure that batch_or_shell is set to batch if submit_to_batch is true
+                            # should not be set by user. TODO: Remove from documentation
                             if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
-                                # Check if run_on_queue is given if submit_to_sbatch is true
+                                # check if run_on_queue is given if submit_to_sbatch is true
                                 if not phase_config.get("run_on_queue", False):
-                                    err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase}``."
+                                    err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase_name}``."
                                     esm_parser.user_error("ERROR", err_msg)
                             else:
                                 phase_config["batch_or_shell"] = "shell"
+
                             # create a new user phase object for ``phase``
                             new_phase = WorkflowPhase(phase_config)
+
                             # append it to the list of user phases of the workflow
                             user_workflow_phases.append(new_phase)
-                            user_workflow_phases_names.append(phase)
+                            user_workflow_phases_names.append(phase_name)
+
+                            # collect all user phases that are set to trigger the next run
                             if phase_config.get("trigger_next_run", False):
-                                user_workflow_next_run_triggered_by.append(phase)
+                                user_workflow_next_run_triggered_by.append(phase_name)
         # check if more than one user phase has set trigger_next_run to true
         if len(user_workflow_next_run_triggered_by) > 1:
             err_msg = (
@@ -209,9 +230,10 @@ class Workflow:
             )
             esm_parser.user_error("ERROR", err_msg)
         elif user_workflow_next_run_triggered_by:
-            self.next_run_triggered_by = user_workflow_next_run_triggered_by[0]
+            self.set_workflow_attrib("next_run_triggered_by", user_workflow_next_run_triggered_by[0])
 
-        self.user_phases = user_workflow_phases
+        # add user phases to workflow
+        self.set_workflow_attrib("user_phases", user_workflow_phases)
 
         # check if there are unknown phases, if yes, will give error exception
         unknown_phases = self.check_unknown_phases()
@@ -227,7 +249,7 @@ class Workflow:
         # if not, run_after will be set to last default phase
         for user_phase in self.user_phases:
             if not user_phase["run_before"] and not user_phase["run_after"]:
-                user_phase["run_after"] = self.phases[-1]["name"]
+                set_value(user_phase, "run_after", self.phases[-1]["name"])
                 err_msg = (
                     f"No value given for ``run_after`` or ``run_before`` "
                     f"of user phase ``{user_phase['name']}``. "
@@ -239,75 +261,87 @@ class Workflow:
         return self
 
     def cluster_phases(self):
-        """Merge phases into clusters."""
+        """
+        Merge phases into clusters.
+        """
 
         clusters = {}
         # create an empty phases list for each cluster
-        for cluster in self.get_phases_attribs_list("default", "cluster") + self.get_phases_attribs_list("user", "cluster"):
-            clusters[cluster] = {"phases": []}
-        # append all phases that are within the same cluster
+        for cluster_name in self.get_phases_values_list("default", "cluster") + self.get_phases_values_list("user", "cluster"):
+            clusters[cluster_name] = {"phases": []}
+        # collect all phases that are within the same cluster
         for phase in self.phases + self.user_phases:
             clusters[phase["cluster"]]["phases"].append(phase["name"])
 
-        for cluster in clusters:
+        for cluster_name in clusters:
             nproc = nproc_sum = nproc_max = 0
             # if only one phase in cluster
-            if len(clusters[cluster]["phases"]) == 1:
-                phase_name = clusters[cluster]["phases"][0]
+            if len(clusters[cluster_name]["phases"]) == 1:
+                phase_name = clusters[cluster_name]["phases"][0]
                 phase = self.get_workflow_phase_by_name(phase_name)
-                clusters[cluster].update(phase)
+                clusters[cluster_name].update(phase)
             # if more than one phase are within the same cluster
             else:
                 # fill in default phase keys for each cluster to cluster dictionary
-                clusters[cluster].update(WorkflowPhase({}))
+                clusters[cluster_name].update(WorkflowPhase({}))
                 # create a list of all phases (dicts) that are within the same cluster
                 phases_list = []
-                for phase_name in clusters[cluster]["phases"]:
+                for phase_name in clusters[cluster_name]["phases"]:
                     phases_list.append(self.get_workflow_phase_by_name(phase_name))
 
                 # check for inconsistencies of phase keywords within a cluster
+                # collect all values for keywords of WorkflowPhase in a dictionary 'keywords'
                 keywords = {}
                 for key in WorkflowPhase({}):
                     keywords[key] = []
                     # append keyword of a phase only if not already in keywords[key]
                     [keywords[key].append(item) for item in [phase[key] for phase in phases_list] if item not in keywords[key]]
-                    # if there are no inconsistencies, all phases have the same values for keyword
+                    # if there are no inconsistencies, all phases have the same values for a keyword 'key'
                     if len(keywords[key]) == 1:
-                        clusters[cluster][key] = keywords[key][0]
-                    # if different phases have set different values for the same keyword/attrib
+                        clusters[cluster_name][key] = keywords[key][0]
+                    # if different phases have set different values for the same keyword
                     else:
-                        if type(clusters[cluster][key]) is list:
-                            clusters[cluster][key] = keywords[key]
+                        # if keyword is of type list, just add the list into the cluster
+                        if type(clusters[cluster_name][key]) is list:
+                            clusters[cluster_name][key] = keywords[key]
+                        # otherwise select a single value for keyword
                         else:
-                            if key not in ["name", "script", "scriptdir", "order_in_cluster", "nproc", "trigger_next_run"]:
+                            # TODO: Explain this exception handling more
+                            if key not in ["name", "script", "script_dir", "order_in_cluster", "nproc", "trigger_next_run"]:
                                 err_msg = (
                                     f"Mismatch for {key}")
                                 esm_parser.user_error("ERROR", err_msg)
                             elif key == "name":
-                                clusters[cluster]["name"] = cluster
+                                # set keyword name to the name of the cluster
+                                clusters[cluster_name]["name"] = cluster_name
                             elif key == "trigger_next_run":
                                 # set key of cluster to True if key for any (at least one) of the phases is set to True
-                                clusters[cluster][key] = any(keywords[key])
+                                clusters[cluster_name][key] = any(keywords[key])
+#                            elif key in ["script", "script_dir"]:
+#                                for ind, phase_name in enumerate(clusters[cluster_name]["phases"]):
+#                                    phase = self.get_workflow_phase_by_name(phase_name)
+#                                    phase_dict = {phase["name"]: {"script": phase["script"], "script_dir": phase["script_dir"]}}
+#                                    clusters[cluster_name]["phases"][ind] = phase_dict
                             else:
                                 # if key is set different for each phase in same cluster set to fill value (e.g. for script, scriptdir)
-                                clusters[cluster][key] = "check phase"
+                                clusters[cluster_name][key] = "check phase"
 
                 # calculate nproc if cluster is to be submitted to sbatch system
                 for phase in phases_list:
                     nproc_sum += phase["nproc"]
                     nproc_max = max(phase["nproc"], nproc_max)
 
-                    if clusters[cluster].get("submit_to_batch_system", False):
+                    if clusters[cluster_name].get("submit_to_batch_system", False):
                         if phase["order_in_cluster"] == "concurrent":
-                            if clusters[cluster]["order_in_cluster"] is None:
-                                clusters[cluster]["order_in_cluster"] = "concurrent"
+                            if clusters[cluster_name]["order_in_cluster"] is None:
+                                clusters[cluster_name]["order_in_cluster"] = "concurrent"
                             nproc = nproc_sum
                         else:
-                            clusters[cluster]["order_in_cluster"] = "sequential"
+                            clusters[cluster_name]["order_in_cluster"] = "sequential"
                             nproc = nproc_max
-                clusters[cluster]["nproc"] = nproc
+                clusters[cluster_name]["nproc"] = nproc
         # write clusters dictionary to workflow object attribute
-        self.clusters = clusters
+        self.set_workflow_attrib("clusters", clusters)
         return self
 
     def write_to_config(self, config):
@@ -358,9 +392,9 @@ class Workflow:
             independent : bool (default: False)
         """
         independent = False
-        user_phases_names = self.get_phases_attribs_list('user', 'name')
-        run_after_list = self.get_phases_attribs_list('user', 'run_after')
-        run_before_list = self.get_phases_attribs_list('user', 'run_before')
+        user_phases_names = self.get_phases_values_list('user', 'name')
+        run_after_list = self.get_phases_values_list('user', 'run_after')
+        run_before_list = self.get_phases_values_list('user', 'run_before')
 
         # All user phases are independent from each other, if
         # none of the ``user_phases_names`` are found in the union of
@@ -387,10 +421,10 @@ class Workflow:
             unknown_phases : set
         """
         unknown_phases = []
-        phases_names = self.get_phases_attribs_list('default', 'name')          # list of names of all default phases
-        user_phases_names = self.get_phases_attribs_list('user', 'name')        # list of name of all user phases
-        run_after = self.get_phases_attribs_list('user', 'run_after')           # list of all run_after values for all user phases
-        run_before = self.get_phases_attribs_list('user', 'run_before')         # list of all run_before values for all user phases
+        phases_names = self.get_phases_values_list('default', 'name')          # list of names of all default phases
+        user_phases_names = self.get_phases_values_list('user', 'name')        # list of name of all user phases
+        run_after = self.get_phases_values_list('user', 'run_after')           # list of all run_after values for all user phases
+        run_before = self.get_phases_values_list('user', 'run_before')         # list of all run_before values for all user phases
         # Filter out all elements that are None
         # ``filter(None, anylist)`` will filter out all items of anylist,
         # for which ``if item`` is false (e.g. [], "", None, {}, '').
@@ -418,7 +452,7 @@ class Workflow:
             self : Workflow object
         """
 
-# Correct workflow attributes (``last_task_in_queue``, ``first_task_in_queue``, ``next_run_triggered``)
+# correct workflow attributes (``last_task_in_queue``, ``first_task_in_queue``, ``next_run_triggered``)
 
         # next_run_triggered_by is always the last phase
 
@@ -428,36 +462,36 @@ class Workflow:
         # get first default phase and correct run_after, called_from
         # correct last_task_in_queue of workflow
 
-        next_triggered = self.next_run_triggered_by
-        triggered_next_run_phase = self.get_workflow_phase_by_name(next_triggered)
-        if next_triggered not in self.get_phases_attribs_list("default", "name"):
+        old_next_triggered = self.next_run_triggered_by
+        triggered_next_run_phase = self.get_workflow_phase_by_name(old_next_triggered)
+        if old_next_triggered not in self.get_phases_values_list("default", "name"):
             first_task_name = self.first_task_in_queue
             first_phase = self.get_workflow_phase_by_name(first_task_name)
             old_last_task_name = self.last_task_in_queue
             old_last_phase = self.get_workflow_phase_by_name(old_last_task_name)
 
-            old_last_phase["next_submit"].remove(first_phase["name"])
-            old_last_phase["next_submit"].append(next_triggered)
-            old_last_phase["run_before"] = next_triggered
-            old_last_phase["trigger_next_run"] = False
-            if triggered_next_run_phase["cluster"] not in self.clusters[old_last_phase["cluster"]]["next_submit"]:
-                self.clusters[old_last_phase["cluster"]]["next_submit"].append(triggered_next_run_phase["cluster"])
-            self.clusters[old_last_phase["cluster"]]["run_before"] = triggered_next_run_phase["cluster"]
-            self.clusters[old_last_phase["cluster"]]["trigger_next_run"] = False
+            remove_value(old_last_phase, "next_submit", first_phase["name"])
+            set_value(old_last_phase, "next_submit", old_next_triggered)
+            set_value(old_last_phase, "run_before", old_next_triggered)
+            set_value(old_last_phase, "trigger_next_run", False)
 
-            first_phase["run_after"] = next_triggered
-            first_phase["called_from"] = next_triggered
-            self.clusters[first_phase["cluster"]]["run_after"] = triggered_next_run_phase["cluster"]
-            self.clusters[first_phase["cluster"]]["called_from"] = triggered_next_run_phase["cluster"]
+            set_value(self.clusters[old_last_phase["cluster"]], "next_submit", triggered_next_run_phase["cluster"], if_not_in=True)
+            set_value(self.clusters[old_last_phase["cluster"]], "run_before", triggered_next_run_phase["cluster"])
+            set_value(self.clusters[old_last_phase["cluster"]], "trigger_next_run", False)
 
-            self.clusters[triggered_next_run_phase["cluster"]]["next_submit"].append(first_phase["cluster"])
+            set_value(first_phase, "run_after", old_next_triggered)
+            set_value(first_phase, "called_from" ,old_next_triggered)
+            set_value(self.clusters[first_phase["cluster"]], "run_after", triggered_next_run_phase["cluster"])
+            set_value(self.clusters[first_phase["cluster"]], "called_from", triggered_next_run_phase["cluster"])
+
+            set_value(self.clusters[triggered_next_run_phase["cluster"]], "next_submit" , first_phase["cluster"])
             self.clusters[triggered_next_run_phase["cluster"]]["run_before"] = first_phase["cluster"]
             self.clusters[triggered_next_run_phase["cluster"]]["run_after"] = old_last_phase["cluster"]
 
-            self.last_task_in_queue = next_triggered
+            self.set_workflow_attrib("last_task_in_queue", old_next_triggered)
 
 
-# Intergrate new user phases by correcting next_submit, called_from, run_after, run_before
+# intergrate new user phases by correcting next_submit, called_from, run_after, run_before
 
         # Set "next_submit" and "called_from"
         # "next_submit" which phase/cluster will be called next (run_after of the next phase)
@@ -473,12 +507,12 @@ class Workflow:
         for phase2 in self.phases + self.user_phases:
             if phase2.get("run_after", None):
                 if phase2["name"] not in next_submits_phases[phase2["run_after"]]:
-                    next_submits_phases[phase2["run_after"]].append(phase2["name"])
-                phase2["called_from"] = phase2["run_after"]
+                    next_submits_phases[phase2["run_after"]].append(phase2["name"])     # use set_value ???
+                set_value(phase2, "called_from",phase2["run_after"])
             if self.clusters[phase2["cluster"]].get("run_after", None):
                 if phase2["cluster"] not in next_submits_clusters[self.clusters[phase2["cluster"]]["run_after"]]:
                     next_submits_clusters[self.clusters[phase2["cluster"]]["run_after"]].append(phase2["cluster"])
-                self.clusters[phase2["cluster"]]["called_from"] = self.clusters[phase2["cluster"]]["run_after"]
+                set_value(self.clusters[phase2["cluster"]], "called_from", self.clusters[phase2["cluster"]]["run_after"])
             else:
                 # if only run_before is set, e.g. to add a phase at the beginning of a run
                 if phase2.get("run_before", None):
@@ -492,15 +526,16 @@ class Workflow:
                         next_submits_phases[self.last_task_in_queue].append(phase2["name"])
                         next_submits_phases[self.last_task_in_queue].remove(self.first_task_in_queue)
                         next_submits_clusters[last_phase["cluster"]].remove(old_first_phase["cluster"])
-                        phase2["run_after"] = self.last_task_in_queue
-                        last_phase["run_before"] = phase2["name"]
-                        self.clusters[last_phase["cluster"]]["run_before"] = phase2["name"]
-                        self.clusters[old_first_phase["cluster"]]["run_after"] = phase2["name"]
-                        self.clusters[old_first_phase["cluster"]]["called_from"] = phase2["name"]
-                        self.clusters[phase2["cluster"]]["called_from"] = last_phase["cluster"]
-                        self.clusters[phase2["cluster"]]["run_after"] = last_phase["cluster"]
-                        last_phase["next_submit"].append(phase2["name"])
-                        self.first_task_in_queue = phase2["name"]
+                        set_value(phase2, "run_after", self.last_task_in_queue)
+                        set_value(last_phase, "run_before", phase2["name"])
+                        set_value(self.clusters[last_phase["cluster"]], "run_before", phase2["name"])
+                        set_value(self.clusters[old_first_phase["cluster"]], "run_after", phase2["name"])
+                        set_value(self.clusters[old_first_phase["cluster"]], "called_from", phase2["name"])
+                        set_value(self.clusters[phase2["cluster"]], "called_from",last_phase["cluster"])
+                        set_value(self.clusters[phase2["cluster"]], "run_after", last_phase["cluster"])
+                        set_value(last_phase, "next_submit", phase2["name"])
+
+                        self.set_workflow_attrib("first_task_in_queue", phase2["name"])
 
         for cluster in self.clusters:
             if next_submits_clusters[cluster]:
@@ -508,7 +543,7 @@ class Workflow:
 
         for phase3 in self.phases + self.user_phases:
             if next_submits_phases[phase3["name"]]:
-                phase3.set_attrib("next_submit", next_submits_phases[phase3["name"]])
+                phase3["next_submit"] = next_submits_phases[phase3["name"]]
 
         return self
 
@@ -550,24 +585,21 @@ class Workflow:
             new_first_phase = WorkflowPhase(config_new_first_phase)
 
             # reset last_task attributes
-            last_phase["next_submit"].append("newrun")
-            self.clusters[last_phase["cluster"]]["next_submit"] = ["newrun"]
-            self.clusters[last_phase["cluster"]]["run_before"] = "newrun"
+            set_value(last_phase, "next_submit", "newrun")
+            set_value(self.clusters[last_phase["cluster"]], "next_submit", "newrun", reset=True)
+            set_value(self.clusters[last_phase["cluster"]], "run_before", "newrun")
             self.clusters[new_first_phase["cluster"]] = new_first_phase
-            self.clusters[new_first_phase["cluster"]]["phases"] = ["newrun"]
-            last_phase["next_submit"].remove(first_phase["cluster"])
-            # why does the next line not work???
-            # last_phase.set_attrib("next_submit", "newrun")
-            # last_phase.remove_attrib("next_submit", first_phase["cluster"])
+            set_value(self.clusters[new_first_phase["cluster"]], "phases", ["newrun"], new=True)
+            remove_value(last_phase, "next_submit", first_phase["cluster"])
 
             # reset first_task attributes
-            first_phase.set_attrib("called_from", "newrun")
-            first_phase.set_attrib("run_after", "newrun")
-            self.clusters[first_phase["cluster"]]["called_from"] = "newrun"
-            self.clusters[first_phase["cluster"]]["run_after"] = "newrun"
+            set_value(first_phase, "called_from", "newrun")
+            set_value(first_phase, "run_after", "newrun")
+            set_value(self.clusters[first_phase["cluster"]], "called_from", "newrun")
+            set_value(self.clusters[first_phase["cluster"]], "run_after", "newrun")
 
             # reset workflow attributes
-            self.first_task_in_queue = "newrun"
+            self.set_workflow_attrib("first_task_in_queue", "newrun")
 
             # Set new phase to beginning of default phase list
             self.phases.insert(0, new_first_phase)
@@ -668,17 +700,55 @@ class WorkflowPhase(dict):
         if self.get("cluster", None) is None:
             self["cluster"] = self["name"]
 
-    def set_attrib(self, attrib, value):
-        if type(self[attrib]) == "list":
-            self[attrib].append(value)
-        else:
-            self[attrib] = value
+def set_value(phase, keyword, value, if_not_in=False, reset=False, new=False):
+    """
+    Set a value for a given keyword.
 
-    def remove_attrib(self, attrib, value):
-        if type(self[attrib]) == "list":
-            self[attrib].remove(value)
+    Parameters
+    ----------
+        phase : dict or phase object
+            Phase or cluster
+        keyword : str
+        value : str or list
+        if_not_in : boolean (optional)
+            False (default) - if value should always be appended.
+            True - if value should only be appended if not already in value list.
+        reset : boolean (optional)
+            False (default) - if only append to value list.
+            True - if value list should be reset with new value list.
+        new : boolean (optional)
+            False (default) - for keywords that are already in phase.
+            True - if a new keyword should be created in phase and set to value.
+    """
+    if not new:
+        if type(phase[keyword]) == list:
+            if if_not_in:
+                if value not in phase[keyword]:
+                    phase[keyword].append(value)
+            elif reset:
+                phase[keyword] = [value]
+            else:
+                phase[keyword].append(value)
         else:
-            self[attrib] = None
+            phase[keyword] = value
+    else:
+        phase[keyword] = value
+
+def remove_value(phase, keyword, value):
+    """
+    Remove value for keyword from phase.
+
+    Parameters
+    ----------
+        phase : dict or phase object
+            Phase or cluster
+        keyword : str
+        value : str
+    """
+    if type(phase[keyword]) == list:
+        phase[keyword].remove(value)
+    else:
+        phase[keyword] = None
 
 
 def assemble_workflow(config):
@@ -766,21 +836,23 @@ def init_default_workflow(config):
 
     return workflow
 
-def get_phase_attrib(workflow_phases, phase_name, attrib):
-    if not type(workflow_phases) is list:
-        workflow_phases = [workflow_phases]
-    for phase in workflow_phases:
-        if phase["name"] == phase_name:
-            value = phase[attrib]
-            return value
-
 
 def calc_number_of_tasks(config):
     """
     Calculates the total number of needed tasks
     in phase compute
     TODO: make this phase method??? Or recipe entry???
+
+    Parameters
+    ----------
+        config : dict
+
+    Returns
+    -------
+        tasks : int
+            Number of task for all models
     """
+
     tasks = 0
     for model in config["general"]["valid_model_names"]:
         if "nproc" in config[model]:

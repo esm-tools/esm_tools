@@ -773,21 +773,21 @@ def assemble_workflow(config):
     # TODO: Put it into other method???
     workflow = workflow.set_default_nproc(config)
 
-    # 3. Read in phases from runscript and config files
+    # 4. Collect all user phases from runscript and config files
     workflow = workflow.collect_all_user_phases(config)
 
-    # 4. Cluster phases
+    # 5. Cluster phases
     workflow = workflow.cluster_phases()
 
-    # 4. Order user workflows into default workflow wrt. phase attributs.
+    # 6. Order user phases into default phases wrt. phase keywords
     workflow = workflow.order_phases_and_clusters()
 
-    # 5. create new first phase of type SimulationSetup, if first_task_in_queue is
+    # 7. create new first phase of type SimulationSetup, if first_task_in_queue is
     #    a user phase (type batch or shell)
     workflow = workflow.prepend_newrun_job()
 
-    # 6. write the workflow to config
-    # 7. Remove old worklow from config
+    # 8. write the workflow to config
+    # 9. Remove old worklow from config
     config = workflow.write_to_config(config)
 
     # Set "jobtype" for the first task???

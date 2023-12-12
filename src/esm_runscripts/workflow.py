@@ -206,9 +206,9 @@ class Workflow:
                             if phase_config.get("submit_to_batch_system", False):
                                 phase_config["batch_or_shell"] = "batch"
                                 # check if run_on_queue is given if submit_to_sbatch is true
-                                if not phase_config.get("run_on_queue", False):
-                                    err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase_name}``."
-                                    esm_parser.user_error("ERROR", err_msg)
+#                                if not phase_config.get("run_on_queue", False):
+#                                    err_msg = f"No value for target queue given by ``run_on_queue`` for phase ``{phase_name}``."
+#                                    esm_parser.user_error("ERROR", err_msg)
                             else:
                                 phase_config["batch_or_shell"] = "shell"
 
@@ -254,10 +254,9 @@ class Workflow:
                 err_msg = (
                     f"No value given for ``run_after`` or ``run_before`` "
                     f"of user phase ``{user_phase['name']}``. "
-                    f"Set it to last default phase in workflow: "
-                    f"``{self.phases[-1]['name']}``."
+                    f"Please set either run_after or run_before."
                 )
-                esm_parser.user_note("NOTE", err_msg)
+                esm_parser.user_error("NOTE", err_msg)
 
         return self
 
@@ -669,7 +668,7 @@ class WorkflowPhase(dict):
         self["run_after"] = None
         self["trigger_next_run"] = False               # needed
         self["submit_to_batch_system"] = False         # needed
-        self["run_on_queue"] = None
+#        self["run_on_queue"] = None
         self["cluster"] = None
         self["next_submit"] = []                       # needed
         self["called_from"] = None                     # needed

@@ -1,6 +1,7 @@
 import copy
 import esm_parser
 
+import pygraphviz as pgv
 import pdb
 
 
@@ -765,29 +766,25 @@ def assemble_workflow(config):
     -------
         config : dict
     """
-    # 1. Generate default workflow object and
-    # 2. initialize default workflow phases from defaults.yaml
+    # - Generate default workflow object and
+    # - initialize default workflow phases from defaults.yaml
     workflow = init_default_workflow(config)
 
-    # 3. Calc mpi tasks for batch jobs of default phases
-    # TODO: Put it into other method???
-    workflow = workflow.set_default_nproc(config)
-
-    # 4. Collect all user phases from runscript and config files
+    # - Collect all user phases from runscript and config files
     workflow = workflow.collect_all_user_phases(config)
 
-    # 5. Cluster phases
+    # - Cluster phases
     workflow = workflow.cluster_phases()
 
-    # 6. Order user phases into default phases wrt. phase keywords
+    # - Order user phases into default phases wrt. phase keywords
     workflow = workflow.order_phases_and_clusters()
 
-    # 7. create new first phase of type SimulationSetup, if first_task_in_queue is
-    #    a user phase (type batch or shell)
+    # - create new first phase of type SimulationSetup, if first_task_in_queue is
+    #   a user phase (type batch or shell)
     workflow = workflow.prepend_newrun_job()
 
-    # 8. write the workflow to config
-    # 9. Remove old worklow from config
+    # - write the workflow to config
+    # - Remove old worklow from config
     config = workflow.write_to_config(config)
 
     # Set "jobtype" for the first task???
@@ -926,6 +923,7 @@ def display_workflow_sequence(config, display=True):
         esm_parser.user_note("Workflow sequence (cluster [phases])", f"{workflow_order}")
     else:
         workflow_order = workflow_order.replace("``", "")
+
     return workflow_order
 
 

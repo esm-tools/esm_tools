@@ -4,15 +4,15 @@ general:
    homedir: !ENV ${HOME}
    
    setup_name: "focioifs"      
-   resolution: "TCO95_eORCA025"
+   resolution: "TCO95_ORCA05"
    version: "3.0_busan"
    
-   compute_time: "01:00:00"
+   compute_time: "02:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
    
-   nyear: 0
-   nmonth: 1
+   nyear: 1
+   nmonth: 0
    nday: 0
    #restart_rate: 1
    #restart_unit: days 
@@ -87,8 +87,8 @@ oifs:
    
    resolution: TCO95
    levels: L91
-   nproc: 288 #168
-   #omp_num_threads: 4
+   nproc: 168
+   omp_num_threads: 4
    use_ocean_currents: 0
    sclct_switch: 2
    #initial_date_cold: "4000-01-01"
@@ -96,20 +96,19 @@ oifs:
    
    ini_pseudo_initial_date: "1859-01-01"
     
-   add_namelist_changes:
-       fort.4:
-           NAMFOCICFG:
-              FOCI_CPL_NEMO_LIM: false
-              FOCI_CPL_NEMO_SI3: true
-           # To do: Cherry-pick Tidos aerosol scaling into foci30 branch
-           #NAERAD:
-           #   NAERANT_SCALE: 1
-           NAMCLDP:
-              # diffusion coeff for cloud edges
-              RCLDIFF: 5.e-6 # default 3e-6
-           NAMMCC:
-               RALBSEAD_NML: 0.045
-               RALBSCALE_AR: 0.8
+   #add_namelist_changes:
+   #    fort.4:
+   #        NAMFOCICFG:
+   #           FOCI_CPL_NEMO_LIM: false
+   #           FOCI_CPL_NEMO_SI3: true
+   #        # To do: Cherry-pick Tidos aerosol scaling into foci30 branch
+   #        #NAERAD:
+   #        #   NAERANT_SCALE: 1
+   #        NAMCLDP:
+   #           # diffusion coeff for cloud edges
+   #           RCLDIFF: 5.e-6 # default 3e-6
+   #        NAMMCC:
+   #            RALBSEAD_NML: 0.045
 
 oasis3mct:
    lresume: True
@@ -121,11 +120,14 @@ oasis3mct:
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    #ini_parent_date: "${prev_date}"
-
+   
+   a2o_remap_method: "bilincub"
+   o2a_remap_method: "bilinear"
    norestart: F
    use_lucia: True
    #export_mode: EXPOUT
    debug_level: 1
+   mct_version: "5.0"
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
@@ -148,22 +150,28 @@ nemo:
    # 24x24 = 576
    _nx: 720
    _ny: 510 
-   jpni: 36
+   jpni: 24
    jpnj: 24
    nproca: ${nemo.jpni}
    nprocb: ${nemo.jpnj}
-   nproc: 864 
+   nproc: 576 #862 
    add_namelist_changes:
        namelist_cfg:
           namctl:
               ln_timing: ".false."
+          namrun:
+              nn_istate: 0
+          namdyn_ldf:
+              # Use time-varying viscosity set by deformation rate
+              # (Smagorinsky)
+              nn_ahm_ijk_t: 32 
+          namtra_eiv:
+              rn_aeiv_scale: 0.5 
    
 rnfmap:
    nproc: 1
 
 xios: 
    with_model: focioifs 
-   #xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_eorca025/output_lite/"
-   #xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_eorca025/output_for_test/"
-   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_prod/"
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
    nproc: 48

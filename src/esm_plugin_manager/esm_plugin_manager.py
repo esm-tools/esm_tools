@@ -173,7 +173,7 @@ def work_through_recipe(recipe, plugins, config):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
             message = (
-                f"::: Executing the step:  {workitem}    "
+                f"::: START Executing the step:  {workitem}    "
                 f"(step [{index}/{len(recipes)}] of the job:  "
                 f'{recipe["job_type"]})'
             )
@@ -203,6 +203,18 @@ def work_through_recipe(recipe, plugins, config):
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
                 config = getattr(thismodule, workitem)(config)
+        if config["general"].get("verbose", False):
+            # diagnostic message of which recipe step is being executed
+            message = (
+                f"::: END Executing the step:  {workitem}    "
+                f"(step [{index}/{len(recipes)}] of the job:  "
+                f'{recipe["job_type"]})'
+            )
+
+            print()
+            print("=" * len(message))
+            print(message)
+            print("=" * len(message))
     return config
 
 

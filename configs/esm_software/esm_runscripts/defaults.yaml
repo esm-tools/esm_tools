@@ -37,7 +37,7 @@ workflow:
             order_in_cluster: sequential
             run_after: prepcompute
             run_before: tidy
-            run_on_queue: ${computer.partitions.pp.name}
+            #run_on_queue: ${computer.partitions.pp.name}
             submit_to_batch_system: True
         tidy:
             batch_or_shell: SimulationSetup

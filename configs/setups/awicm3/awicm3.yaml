@@ -345,7 +345,7 @@ oifs:
                                         postprocessing:
                                                 batch_or_shell: batch
                                                 order_in_cluster: concurrent
-                                                run_on_queue: ${computer.partitions.pp.name}
+                                                #run_on_queue: ${computer.partitions.pp.name}
                                                 run_after: tidy
                                                 script_dir: ${general.esm_function_dir}/setups/awicm3
                                                 submit_to_batch_system: True

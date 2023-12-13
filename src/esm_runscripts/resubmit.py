@@ -248,6 +248,19 @@ def maybe_resubmit(config):
     """
     jobtype = config["general"]["jobtype"]
 
+    # check if nextrun starts???
+    # this resubmits any following jobtypes/phases until nextrun is true
+    # here nextrun is always set to true (if resubmit_recursively is finished)
+
+    # cases: 1. it is the beginning of (next) run:
+    #           - resubmit_recursively returns true but does not do anything except for returning true
+    #           - check if end of simulation -> return
+    #           - returns if iterative coupling, why ???
+    #           - if not end of simulation and not iterative_coupling -> calls itself again with nextrun_in=True which leads to case 2.
+    #        2. it is NOT the beginning if (next) run:
+    #           it will start to loop over all remaining clusters to check if it can sumbit something (SimulationSetup, sbatch, shell) and do so,
+    #           until first start of next run is reached.
+    #        3. nextrun is fals if no entries in next_submit for that particular jobtype/cluster
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 
     if nextrun:  # submit list contains stuff from next run
@@ -296,22 +309,28 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
         nextrun : Boolean
     """
     nextrun = False
+    # get a list of clusters that follow the current jobtype
     if not list_of_clusters:
         list_of_clusters = config["general"]["workflow"]["subjob_clusters"][
             jobtype
         ].get("next_submit", [])
 
     for cluster in list_of_clusters:
+        # if beginning of next run
         if (
             cluster == config["general"]["workflow"]["first_task_in_queue"]
             and not nextrun_in
-        ):                          # if beginning of next run?
+        ):
             nextrun = True
+        # if not at the beginning of a run
         else:
+            # and cluster is not going to be skipped
             if not workflow.skip_cluster(cluster, config):
                 submission_type = get_submission_type(cluster, config)
                 if submission_type == "SimulationSetup":
+                    # create the SimulationSetup object for the this/next jobtype
                     resubmit_SimulationSetup(config, cluster)
+                    # or submits to batch or shell if not check run
                 elif submission_type in ["batch", "shell"]:
                     resubmit_batch_or_shell(config, submission_type, cluster)
             else:

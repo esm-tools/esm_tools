@@ -1021,7 +1021,7 @@ choose_major_version:
                         - oifs/oifs48.env.yaml
 
 
-    # If 1, use Coddington spectrum which reduced stratospheric warm bias
+# If 1, use Coddington spectrum which reduced stratospheric warm bias
 # Only available in 43r3-v2
 choose_solarspectrum:
         True:

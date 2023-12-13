@@ -1009,13 +1009,6 @@ choose_major_version:
                                         CNMEXP: "${oifs.input_expid}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
-                environment_changes:
-                        choose_computer.name:
-                                levante:
-                                        compiler_mpi: gnu11_ompi2022
-                                        iolibraries: system_gnu_libs
-                                juwels:
-                                        compiler_mpi: gnu2023_ompi2023
 
                 further_reading:
                         - oifs/oifs48.env.yaml

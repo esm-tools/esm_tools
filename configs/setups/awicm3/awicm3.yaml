@@ -21,6 +21,7 @@ general:
         - 'v3.1'
         - 'v3.1.1'
         - 'v3.1.2'
+        - 'v3.1.2_recom'
         - 'v3.2'
         - 'master'
         - 'frontiers-xios'
@@ -49,6 +50,14 @@ general:
             major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          v3.1.2_recom:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1-recom3+oifs-43r3-awicm-3.1.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
@@ -348,7 +357,11 @@ oifs:
 
 
 fesom:
-        version: "2.0"
+        choose_general.version:
+                "2.0":
+                        version: "2.0"
+                "2.0-recom3":
+                        version: "2.0-recom3"
         time_step: 1800
         resolution: CORE2
         lresume: false

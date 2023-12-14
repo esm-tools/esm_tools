@@ -52,7 +52,7 @@ class SimulationSetup(object):
             self.inspect()
             helpers.end_it_all(self.config)
 
-        # Run the prepexp recipe
+        # Run the prepexp recipe always before every jobtype/cluster
         self.config = prepexp.run_job(self.config)
 
         # self.pseudocall(kill_after_submit)
@@ -60,6 +60,8 @@ class SimulationSetup(object):
         org_jobtype = str(self.config["general"]["jobtype"])
         self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
 
+        # if not check run???
+        # set stdout and stderr to lofile
         if self.config["general"]["submitted"]:
             old_stdout = sys.stdout
             old_stderr = sys.stderr

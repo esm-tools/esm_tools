@@ -518,7 +518,7 @@ class batch_system:
             #    dummy = 0
             else:  # "normal" case
                 dummy = 0
-# was macht das hier? wo/wie wird submits_abother_job definiert?
+            # check if this cluster has has something to submit (next_submit not empty)
             if submits_another_job(config, cluster):  # and batch_or_shell == "batch":
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]

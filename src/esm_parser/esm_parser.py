@@ -2804,7 +2804,7 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``
     reset_s = colorama.Style.RESET_ALL
     for dsymbol in dsymbols:
         note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
         )
     print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")

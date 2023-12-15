@@ -360,8 +360,10 @@ fesom:
         choose_general.version:
                 "2.0":
                         version: "2.0"
+                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
                 "2.0-recom3":
                         version: "2.0-recom3"
+                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DRECOM_COUPLED=ON..;   make install -j `nproc --all`
         time_step: 1800
         resolution: CORE2
         lresume: false
@@ -373,7 +375,6 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
 
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""

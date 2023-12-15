@@ -107,7 +107,7 @@ class IcebergCalving:
         self.min_disch_in_cell = min_disch_in_cell
 
     def _read_mesh(self):
-        self.mesh = pf.load_mesh(self.mesh_path, self.abg)
+        self.mesh = pf.load_mesh(self.mesh_path, self.abg, usepickle=False)
 
     def _read_pism_file(self):
         print(" * open latest discharge file: ", self.ifile)

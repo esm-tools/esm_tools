@@ -83,29 +83,29 @@ class Workflow:
         return phases_values
 
 
-    def set_default_nproc(self, config):
-        """
-        Calculating the number of mpi tasks for default phases and each component/model/script
-
-        Parameters
-        ----------
-            config : dict
-
-        Returns
-        -------
-            self : Workflow object
-        """
-
-        # Get the sum of all mpi tasks
-        tasks = calc_number_of_tasks(config)
-
-        # Write this number of tasks to phase, if
-        # phase will be submitted to batch system
-        for ind, phase in enumerate(self.phases):
-            if phase["submit_to_batch_system"]:
-                set_value(phase, "nproc", tasks)
-
-        return self
+#    def set_default_nproc(self, config):
+#        """
+#        Calculating the number of mpi tasks for default phases and each component/model/script
+#
+#        Parameters
+#        ----------
+#            config : dict
+#
+#        Returns
+#        -------
+#            self : Workflow object
+#        """
+#
+#        # Get the sum of all mpi tasks
+#        tasks = calc_number_of_tasks(config)
+#
+#        # Write this number of tasks to phase, if
+#        # phase will be submitted to batch system
+#        for ind, phase in enumerate(self.phases):
+#            if phase["submit_to_batch_system"]:
+#                set_value(phase, "nproc", tasks)
+#
+#        return self
 
     def set_workflow_attrib(self, attrib, value):
         """
@@ -833,35 +833,35 @@ def init_default_workflow(config):
     return workflow
 
 
-def calc_number_of_tasks(config):
-    """
-    Calculates the total number of needed tasks
-    in phase compute
-    TODO: make this phase method??? Or recipe entry???
-
-    Parameters
-    ----------
-        config : dict
-
-    Returns
-    -------
-        tasks : int
-            Number of task for all models
-    """
-
-    tasks = 0
-    for model in config["general"]["valid_model_names"]:
-        if "nproc" in config[model]:
-            tasks += config[model]["nproc"]
-        elif "nproca" in config[model] and "nprocb" in config[model]:
-            tasks += config[model]["nproca"] * config[model]["nprocb"]
-            if "nprocar" in config[model] and "nprocbr" in config[model]:
-                if (
-                    config[model]["nprocar"] != "remove_from_namelist"
-                    and config[model]["nprocbr"] != "remove_from_namelist"
-                ):
-                    tasks += config[model]["nprocar"] * config[model]["nprocbr"]
-    return tasks
+#def calc_number_of_tasks(config):
+#    """
+#    Calculates the total number of needed tasks
+#    in phase compute
+#    TODO: make this phase method??? Or recipe entry???
+#
+#    Parameters
+#    ----------
+#        config : dict
+#
+#    Returns
+#    -------
+#        tasks : int
+#            Number of task for all models
+#    """
+#
+#    tasks = 0
+#    for model in config["general"]["valid_model_names"]:
+#        if "nproc" in config[model]:
+#            tasks += config[model]["nproc"]
+#        elif "nproca" in config[model] and "nprocb" in config[model]:
+#            tasks += config[model]["nproca"] * config[model]["nprocb"]
+#            if "nprocar" in config[model] and "nprocbr" in config[model]:
+#                if (
+#                    config[model]["nprocar"] != "remove_from_namelist"
+#                    and config[model]["nprocbr"] != "remove_from_namelist"
+#                ):
+#                    tasks += config[model]["nprocar"] * config[model]["nprocbr"]
+#    return tasks
 
 
 def display_workflow(config):

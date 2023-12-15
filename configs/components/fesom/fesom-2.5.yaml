@@ -222,6 +222,14 @@ choose_with_icb:
             add_outdata_sources:
                     buoys_track: "buoys_track.nc"
 
+            choose_general.iterative_coupling:
+                    True:
+                            choose_general.chunk_number:
+                                    1:
+                                            disch_file: "${ini_disch_file}"
+                                    "*":
+                                            disch_file: "${general.experiment_couple_dir}/latest_discharge.nc" 
+
             choose_use_icesheet_coupling:
                     true:
                             choose_general.run_number:

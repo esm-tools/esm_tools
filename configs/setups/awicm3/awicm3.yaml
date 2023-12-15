@@ -357,13 +357,7 @@ oifs:
 
 
 fesom:
-        choose_general.version:
-                "2.0":
-                        version: "2.0"
-                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
-                "2.0-recom3":
-                        version: "2.0-recom3"
-                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DRECOM_COUPLED=ON..;   make install -j `nproc --all`
+        version: "2.0"
         time_step: 1800
         resolution: CORE2
         lresume: false
@@ -408,11 +402,18 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.1":
+                        version: "2.0${subversion}"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
+                        choose_general.version:
+                                "2.0-recom3":
+                                        subversion: "-recom3"
+                                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DRECOM_COUPLED=ON..;   make install -j `nproc --all`
+                                "*":
+                                        subversion: ""
                 "v3.2":
                         version: "2.5"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"

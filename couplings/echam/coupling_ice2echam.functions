@@ -5,8 +5,8 @@ ice2echam() {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    ice2echam *** "; echo
 
-        . ${FUNCTION_PATH}..//general/general_lists.functions
-        . ${FUNCTION_PATH}..//general/coupling_general.functions
+        . ${FUNCTION_PATH}/../general/general_lists.functions
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
 
         ISM_TO_ECHAM_update_orography=${ISM_TO_ECHAM_update_orography:-1}
         ISM_TO_ECHAM_update_glacial_mask=${ISM_TO_ECHAM_update_glacial_mask:-1}
@@ -148,13 +148,13 @@ update_orography_run_calnoro() {
         echo; echo "                *   running CALNORO"
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
-                if [ ! -f ${FUNCTION_PATH}..//utils/calnoro ]; then
+                if [ ! -f ${FUNCTION_PATH}/../utils/calnoro ]; then
                         echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
-                        echo "                   !!!   Looking in: ${FUNCTION_PATH}..//iterative_coupling/"
+                        echo "                   !!!   Looking in: ${FUNCTION_PATH}/../iterative_coupling/"
                         echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
                         exit 42
                 else
-                        cp ${FUNCTION_PATH}..//utils/calnoro .
+                        cp ${FUNCTION_PATH}/../utils/calnoro .
                 fi
         fi
         # Make sure dimension order is correct:
@@ -391,9 +391,9 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        cp ${FUNCTION_PATH}..//utils/jsbach_init_file .
-        cp ${FUNCTION_PATH}..//utils/mo_kinds.mod .
-        cp ${FUNCTION_PATH}..//utils/mo_vegparams.mod .
+        cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
+        cp ${FUNCTION_PATH}/../utils/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/../utils/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}
@@ -592,9 +592,9 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
-                if [ -f ${FUNCTION_PATH}..//utils/unpack ]; then
-                        cp -v ${FUNCTION_PATH}..//utils/unpack ./
-                        cp -v ${FUNCTION_PATH}..//utils/unpack ${COUPLE_DIR}/
+                if [ -f ${FUNCTION_PATH}/../utils/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/unpack ./
+                        cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
@@ -607,11 +607,11 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         cp ${newest_jsbach_restart_file} ./
         cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
         echo -e "\t\t- Running unpack binary with arguments:"
-        echo -e "\t\t- Script: ${FUNCTION_PATH}..//utils/unpack_file.ksh"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/unpack_file.ksh"
         echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
         echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
         echo "$(module list)"
-        ${FUNCTION_PATH}..//utils/unpack_file.ksh \
+        ${FUNCTION_PATH}/../utils/unpack_file.ksh \
                 $(basename $newest_jsbach_restart_file) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
                 2>&1 > ${COUPLE_DIR}/unpack_script_stdout_stderr
@@ -771,8 +771,8 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         if [ ! -f pack ]; then
                 #if [ -f ${FUNCTION_PATH}..//utils/_build/pack ]; then
                 #        cp -v ${FUNCTION_PATH}..//utils/_build/pack .
-                if [ -f ${FUNCTION_PATH}..//utils/pack ]; then
-                        cp -v ${FUNCTION_PATH}..//utils/pack .
+                if [ -f ${FUNCTION_PATH}/../utils/pack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/pack .
                 else
                         echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
                         exit
@@ -782,11 +782,11 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         cp ${newest_jsbach_restart_file} .
         cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
         echo -e "\t\t- Running pack binary with arguments:"
-        echo -e "\t\t- Script: ${FUNCTION_PATH}..//utils/pack_file.ksh"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/pack_file.ksh"
         echo -e "\t\t- Restart File: $(readlink -f ${ofile})"
         echo -e "\t\t- Mask file: $(readlink -f ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
         echo -e "\n\t\t - NOTE: Errors with >VARDIMIDS (value 2) is out of range (1:1)< can be ignored (maybe?)"
-        ${FUNCTION_PATH}..//utils/pack_file.ksh \
+        ${FUNCTION_PATH}/../utils/pack_file.ksh \
                 $(basename $ofile) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)
 
@@ -841,8 +841,8 @@ set_glacial_mask_jsbach_update_restart_veg() {
         if [ ! -f unpack ]; then
                 #if [ -f ${FUNCTION_PATH}..//utils/_build/unpack ]; then
                 #        cp -v ${FUNCTION_PATH}..//utils/_build/unpack ./
-                if [ -f ${FUNCTION_PATH}..//utils/unpack ]; then
-                        cp -v ${FUNCTION_PATH}..//utils/unpack ./
+                if [ -f ${FUNCTION_PATH}/../utils/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/unpack ./
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
@@ -852,10 +852,10 @@ set_glacial_mask_jsbach_update_restart_veg() {
         cp ${newest_jsbach_restart_file} ./
         cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
         echo -e "\t\t- Running unpack binary with arguments:"
-        echo -e "\t\t- Script: ${FUNCTION_PATH}..//utils/unpack_file.ksh"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/unpack_file.ksh"
         echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
         echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
-        ${FUNCTION_PATH}..//utils/unpack_file.ksh \
+        ${FUNCTION_PATH}/../utils/unpack_file.ksh \
                 $(basename $newest_jsbach_restart_file) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
                 2>&1 > ${COUPLE_DIR}/unpack_veg_script_stdout_stderr
@@ -982,8 +982,8 @@ set_glacial_mask_jsbach_update_restart_veg() {
         echo -e "\t\t- Finished with modification of variables, now we need to repack"
         # Ensure that the pack binary is here:
         if [ ! -f pack ]; then
-                if [ -f ${FUNCTION_PATH}..//utils/pack ]; then
-                        cp -v ${FUNCTION_PATH}..//utils/pack .
+                if [ -f ${FUNCTION_PATH}/../utils/pack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/pack .
                 else
                         echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
                         exit
@@ -993,11 +993,11 @@ set_glacial_mask_jsbach_update_restart_veg() {
         cp ${newest_jsbach_restart_file} .
         cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
         echo -e "\t\t- Running pack binary with arguments:"
-        echo -e "\t\t- Script: ${FUNCTION_PATH}..//utils/pack_file.ksh"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/pack_file.ksh"
         echo -e "\t\t- Restart File: $(readlink -f ${ofile})"
         echo -e "\t\t- Mask file: $(readlink -f ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
         echo -e "\n\t\t - NOTE: Errors with >VARDIMIDS (value 2) is out of range (1:1)< can be ignored (maybe?)"
-        ${FUNCTION_PATH}..//utils/pack_file.ksh \
+        ${FUNCTION_PATH}/../utils/pack_file.ksh \
                 $(basename $ofile) \
                 $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)
 
@@ -1044,7 +1044,7 @@ distribute_total_discharge_over_ocean() {
             rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
         fi
 
-        python ${FUNCTION_PATH}..//utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
+        python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
         #module unload python3
         echo; echo "            * Finished apply_hosing_correction.py "
 #
@@ -1068,7 +1068,7 @@ update_land_runoff_prepare_for_oasis() {
         ncrename -v total_ice_mass_loss_flux,gfw_atmo $ifile tmp; mv tmp $ifile
         ncrename -d lon,nx $ifile tmp; mv tmp $ifile
         ncrename -d lat,ny $ifile tmp; mv tmp $ifile
-        ncks -A ${FUNCTION_PATH}..//utils/axis_366.nc $ifile
+        ncks -A ${FUNCTION_PATH}/../utils/axis_366.nc $ifile
         ncpdq -a time,ny,nx $ifile tmp; mv tmp $ifile
         mv $ifile $ofile
         cp ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/gfw_atmo.nc 
@@ -1141,7 +1141,7 @@ set_in_jsbach_restart_file() {
         echo "                           in: $SOURCE_FILENAME"
         if [ ! -z $unpack ]; then
                 echo "                -   with unpacking from landpoint grid to latlon grid"
-                python ${FUNCTION_PATH}..//utils/unpack_jsbach.py $TARGET_VARNAME $RESTART_FILE 
+                python ${FUNCTION_PATH}/../utils/unpack_jsbach.py $TARGET_VARNAME $RESTART_FILE 
                 ################################################################################ 
                 # $ cdo -h replace
                 # NAME
@@ -1161,7 +1161,7 @@ set_in_jsbach_restart_file() {
                         ${TARGET_VARNAME}_lonlat_grid_replaced.nc
                 echo "                -   and repacking from latlon grid to landpoint grid"
                 # FIXME: The next line is probably wrong, or incomplete.
-                python ${FUNCTION_PATH}..//utils/pack_jsbach.py ${TARGET_VARNAME} ${TARGET_VARNAME}_lonlat_grid_replaced.nc ${RESTART_FILE}
+                python ${FUNCTION_PATH}/../utils/pack_jsbach.py ${TARGET_VARNAME} ${TARGET_VARNAME}_lonlat_grid_replaced.nc ${RESTART_FILE}
         else
                cdo -s replace \
                         ${RESTART_FILE} \

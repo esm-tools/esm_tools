@@ -208,7 +208,7 @@ ic_atm2pism_regrid_dyn_downscale() {
     ic_atm2pism_regrid_dyn_downscale_TOAshortwave
     ic_atm2pism_regrid_dyn_downscale_humidity
     ic_atm2pism_regrid_dyn_downscale_emissivity
-    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+    if [[ "x${DEBM_BETA}" == "xWIND" ]]; then
         ic_atm2pism_regrid_dyn_downscale_wind
     fi
     ic_atm2pism_regrid_dyn_downscale_cloud_cover
@@ -244,7 +244,7 @@ ic_atm2pism_regrid_downscale() {
     ic_atm2pism_regrid_downscale_shortwave_downward_radiation
     ic_atm2pism_regrid_downscale_TOAshortwave
     ic_atm2pism_regrid_downscale_humidity
-    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+    if [[ "x${DEBM_BETA}" == "xWIND" ]]; then
         ic_atm2pism_regrid_downscale_wind
     fi
     ic_atm2pism_regrid_downscale_emissivity
@@ -268,7 +268,7 @@ ic_atm2pism_regrid_interpolate() {
     ic_atm2pism_regrid_interpolate_shortwave_downward_radiation
     ic_atm2pism_regrid_interpolate_TOAshortwave
     ic_atm2pism_regrid_interpolate_humidity
-    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+    if [[ "x${DEBM_BETA}" == "xWIND" ]]; then
         ic_atm2pism_regrid_interpolate_wind
     fi
     ic_atm2pism_regrid_interpolate_emissivity
@@ -291,7 +291,7 @@ ic_atm2pism_regrid_remap() {
     ic_atm2pism_regrid_remap_shortwave_downward_radiation
     ic_atm2pism_regrid_remap_TOAshortwave
     ic_atm2pism_regrid_remap_humidity
-    if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+    if [[ "x${DEBM_BETA}" == "xWIND" ]]; then
         ic_atm2pism_regrid_remap_wind
     fi
     ic_atm2pism_regrid_remap_emissivity
@@ -1483,7 +1483,7 @@ ic_atm2debm_ablation_debm_make_forcing_set_longwave_units() {
 
 ic_atm2debm_ablation_debm_make_forcing_merge_preliminary_files() {
         echo -e "\t\t-   merging together atmospheric temperature, precip, cloud cover, SW and LW radiation"
-        if [[ "x${DEBM_BETA}"=="xWIND" ]]; then
+        if [[ "x${DEBM_BETA}" == "xWIND" ]]; then
                 $cdo -s -O \
                         -merge \
                         ${COUPLE_DIR}/temperature.nc \
@@ -1506,8 +1506,8 @@ ic_atm2debm_ablation_debm_make_forcing_merge_preliminary_files() {
                         ${COUPLE_DIR}/cloud_cover.nc \
                         ${COUPLE_DIR}/shortwave_down.nc \
                         ${COUPLE_DIR}/TOAshortwave.nc \
-	                ${COUPLE_DIR}/emissivity.nc \
-	                ${COUPLE_DIR}/transmissivity.nc \
+	                    ${COUPLE_DIR}/emissivity.nc \
+	                    ${COUPLE_DIR}/transmissivity.nc \
                         ${COUPLE_DIR}/humidity.nc \
                         ${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
                         2>> ${COUPLE_DIR}/cdo_stderr_atm2pism

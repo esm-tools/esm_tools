@@ -390,6 +390,17 @@ choose_scenario:
                         swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
+                allow_hist2ssp_transition: False # allow transition historical up to year 2014 --> ssp from year 2015 onwards
+                transition_hist2ssp_name: ssp370 # which ssp data should be used for year+1 interpolation
+                choose_allow_hist2ssp_transition:
+                    True:
+                        after_2014: "$(( ${start_date!year} > 2014 ))"
+                        choose_after_2014:
+                            True:
+                                add_namelist_changes:
+                                    namelist.echam:
+                                        radctl:
+                                            iaero: 9
         ssp119:
                 scenario_type: ssp
         ssp126:
@@ -405,7 +416,6 @@ choose_scenario:
                 scenario_type: ssp
 
 # check forcing files of common scenarios
-allow_hist2ssp_transition: False
 choose_scenario_type:
     ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
         greenhouse_dir: "${input_dir}"
@@ -425,34 +435,33 @@ choose_scenario_type:
                 swflux: histswflux
                 volcir: histvolcir
                 volcsw: histvolcsw
-        after_2014: "$(( ${start_date!year} > 2014 ))"
-        initial_date_non_ssp: "$((
-            ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
-        ))"
-        choose_initial_date_non_ssp:
-            True:
-                add_error:
-                    "Initial date out of the ssp period":
-                        message: "
-                            You are trying to run a ``ssp`` scenario (``${scenario}``)
-                            with an initial date that does not correspond to a ssp
-                            period (``${initial_date}``). Consider running a historical
-                            scenario until the end of 2014, and then branch off a new
-                            experiment for the ssp period. Alternatively, you can set
-                            ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
-                            against that!)."
-            # Automatic switching of iaero if simulations are allowed to run from
-            # historical to ssp periods
-            False:
-                choose_after_2014:
-                    True:
-                        iaero: 9
-                    False:
-                        iaero: 8
-                add_namelist_changes:
-                    namelist.echam:
-                        radctl:
-                            iaero: "${iaero}"
+        #initial_date_non_ssp: "$((
+        #    ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
+        #))"
+        #choose_initial_date_non_ssp:
+        #    True:
+        #        add_error:
+        #            "Initial date out of the ssp period":
+        #                message: "
+        #                    You are trying to run a ``ssp`` scenario (``${scenario}``)
+        #                    with an initial date that does not correspond to a ssp
+        #                    period (``${initial_date}``). Consider running a historical
+        #                    scenario until the end of 2014, and then branch off a new
+        #                    experiment for the ssp period. Alternatively, you can set
+        #                    ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
+        #                    against that!)."
+        #    # Automatic switching of iaero if simulations are allowed to run from
+        #    # historical to ssp periods
+        #    False:
+        #        choose_after_2014:
+        #            True:
+        #                iaero: 9
+        #            False:
+        #                iaero: 8
+        #        add_namelist_changes:
+        #            namelist.echam:
+        #                radctl:
+        #                    iaero: "${iaero}"
 
 choose_lresume:
         False:

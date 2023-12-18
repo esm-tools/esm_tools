@@ -63,11 +63,9 @@ forcing_sources:
         # - year 2015 CO2 values: ssp126:399.9492, ssp245:399.9491, ssp370:399.9484, ssp585:399.9488 ppm
         # --> doesn't really matter which is used; T. Semmler and C. Danek used ssp370 for their CMIP6 simulations
         "greenhouse_hist":
-                "${greenhouse_dir}/greenhouse_historical.nc":
-                        to: 2013
-                "${greenhouse_dir}/greenhouse_ssp370.nc":
-                        from: 2014
-                        to: 2014
+                "${greenhouse_dir}/greenhouse_${transition_hist2ssp_name}.nc": # all grenhouse_ssp*.nc files have the same values up to year 2014
+                        from: 0
+                        to: 2500
         "greenhouse_scenario":
                 "${greenhouse_dir}/greenhouse_${scenario}.nc":
                         from: 2015
@@ -96,9 +94,8 @@ forcing_sources:
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                "${forcing_dir}/ozone/${resolution}_ozone_ssp370_@YEAR@.nc": 
+                "${forcing_dir}/ozone/${resolution}_ozone_${transition_hist2ssp_name}_@YEAR@.nc":
                         from: 2015
-                        to: 2015
         "ozone_scenario":
                 "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                         from: 2014
@@ -121,7 +118,7 @@ forcing_sources:
                          from: 2015
         
         # carbon emissions for echam6:with_lco2_emis
-        carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc" # all ssp* identical from 1849 to 2015
+        carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_${transition_hist2ssp_name}.nc" # all ssp* identical from 1849 to 2015
         carbon_emissions_ssp119: "${forcing_dir}/${resolution}_carbon_emissions_ssp119.nc"
         carbon_emissions_ssp126: "${forcing_dir}/${resolution}_carbon_emissions_ssp126.nc"
         carbon_emissions_ssp245: "${forcing_dir}/${resolution}_carbon_emissions_ssp245.nc"

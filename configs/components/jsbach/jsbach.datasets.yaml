@@ -1,9 +1,5 @@
 hist_fold: hist_harvest
 
-# - year+1 data necessary for interpolation; historical ends 2014; use year 2015 of ssp370
-# - done for CMIP6 AWI-CM-1-1-LR/MR and AWI-ESM-1-1-LR simulations (tsemmler@awi.de, cdanek@awi.de)
-hist_extend_scenario: ssp370 
-
 input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
         "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
@@ -25,7 +21,7 @@ forcing_sources:
                 "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_fold}/LUH_harvest_${echam.resolution}_@YEAR@.nc":
                         from: 1851
                         to: 2014
-                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
+                "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.transition_hist2ssp_name}_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
                         from: 2015
 
         # landuse transitions
@@ -34,7 +30,7 @@ forcing_sources:
         "LU_trans_hist":
             "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                 to: 2014
-            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${hist_extend_scenario}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.transition_hist2ssp_name}${jsbachnc_file_ending}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": # y+1 necessary for interpoliation
                 from: 2015
 
         # ndepo

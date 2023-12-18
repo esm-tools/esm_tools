@@ -26,6 +26,7 @@ choose_job_type:
                         - "set_prev_date"
                         - "set_parent_info"
                         - "finalize_config"
+                        - "install_missing_plugins"
                         - "assemble_workflow"
                         - "restore_protected_last_minute_changes"
                         - "add_submission_info"

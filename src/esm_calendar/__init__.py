@@ -2,6 +2,6 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.25.3"
+__version__ = "6.25.7"
 
 from .esm_calendar import *

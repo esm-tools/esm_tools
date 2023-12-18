@@ -105,6 +105,7 @@ general:
 
         # Load compute recipe from oifs.yaml
         prepcompute_recipe: ${oifs.prepcompute_recipe}
+        tidy_recipe: ${fesom.tidy_recipe}
 
 
 

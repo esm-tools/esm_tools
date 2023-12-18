@@ -998,8 +998,8 @@ choose_major_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${nfrres}
-                                        NRESTS${nrest_ind}: ${nfrests}
+                                        NFRRES: 1
+                                        NRESTS${:}: -1 ${nfrests}
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
                                 NAMRIP:

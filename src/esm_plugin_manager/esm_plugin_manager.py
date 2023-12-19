@@ -20,11 +20,32 @@ def read_recipe(recipe, additional_dict, needs_parse=True):
 
 
 def read_plugin_information(plugins_bare, recipe, needs_parse=True):
-    # pluginfile = esm_plugins.yaml
+    """
+    Reads in plugin information from the pluginfile = esm_plugins.yaml
+
+    Parameters
+    ----------
+    plugins_bare : dict
+        Dictionary as it is read in by function ``read_recipe``
+    recipe : dict
+        Dictionary of all workitems of a recipe
+    needs_parse : bool
+        True (default) or False
+
+    Returns
+    -------
+    plugins : dict
+        Dictionary that has information for each workitem of the recipe:
+        - module: e.g. esm_runscripts
+        - submodule: e.g. prepare (this is the Python file where the workitem function is defined.
+        - type: e.g. core
+    """
     if needs_parse:
         plugins_bare = yaml_file_to_dict(plugins_bare)
     extra_info = ["location", "git-url"]
     plugins = {}
+    # loop over all recipe entries
+    # tries to find workitem in 'plugins_bare'
     for workitem in recipe["recipe"]:
         found = False
         for module_type in ["core", "plugins"]:
@@ -33,13 +54,22 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
                     for submodule in plugins_bare[module_type][module]:
                         if submodule in extra_info:
                             continue
+                        # functionlist is a list of workitems (Python function names)
                         functionlist = plugins_bare[module_type][module][submodule]
+                        # if the workitem of the recipe is found in this list
+                        # the dictionary plugins will be filled with fields for
+                        # - 'module' (e.g. esm_runscirpts)
+                        # - 'submodule' (e.g. prepare, this is basically the name
+                        #               of the python file this function is defined in)
+                        # - 'type' (core of plugin)
                         if workitem in functionlist:
                             plugins[workitem] = {
                                 "module": module,
                                 "submodule": submodule,
                                 "type": module_type,
                             }
+                            # add extra info ["location", "git-url"] if found in plugins_bare dict
+                            # is there a use case for this?
                             for extra in extra_info:
                                 if extra in plugins_bare[module_type][module]:
                                     plugins[workitem].update(
@@ -49,6 +79,7 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
                                             ]
                                         }
                                     )
+                            # if workitem is found, all loops including loop over module_type can be aborted.
                             found = True
                             break
                     if found:
@@ -119,16 +150,30 @@ def check_plugin_availability(plugins):
 
 
 def work_through_recipe(recipe, plugins, config):
+    """
+    Works through the esm_runscripts recipes and plugin recipes.
+
+    Parameters
+    ----------
+        recipe : dict            # What is in these two dictionaries? Where do the entries are comming from?
+        plugins : dict
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
     if config.get("general", {}).get("debug_recipe", False):
         import pdb
 
         pdb.set_trace()
     recipes = recipe["recipe"]
+    # Loop over the recipe
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
             message = (
-                f"::: Executing the step:  {workitem}    "
+                f"::: START Executing the step:  {workitem}    "
                 f"(step [{index}/{len(recipes)}] of the job:  "
                 f'{recipe["job_type"]})'
             )
@@ -158,6 +203,18 @@ def work_through_recipe(recipe, plugins, config):
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
                 config = getattr(thismodule, workitem)(config)
+        if config["general"].get("verbose", False):
+            # diagnostic message of which recipe step is being executed
+            message = (
+                f"::: END Executing the step:  {workitem}    "
+                f"(step [{index}/{len(recipes)}] of the job:  "
+                f'{recipe["job_type"]})'
+            )
+
+            print()
+            print("=" * len(message))
+            print(message)
+            print("=" * len(message))
     return config
 
 

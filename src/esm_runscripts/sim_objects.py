@@ -15,6 +15,7 @@ from . import prev_run
 
 import esm_parser
 
+#import pdb
 
 class SimulationSetup(object):
     def __init__(self, command_line_config=None, user_config=None):
@@ -51,7 +52,7 @@ class SimulationSetup(object):
             self.inspect()
             helpers.end_it_all(self.config)
 
-        # Run the preexp recipe
+        # Run the prepexp recipe always before every jobtype/cluster
         self.config = prepexp.run_job(self.config)
 
         # self.pseudocall(kill_after_submit)
@@ -59,6 +60,8 @@ class SimulationSetup(object):
         org_jobtype = str(self.config["general"]["jobtype"])
         self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
 
+        # if not check run???
+        # set stdout and stderr to lofile
         if self.config["general"]["submitted"]:
             old_stdout = sys.stdout
             old_stderr = sys.stderr
@@ -83,12 +86,15 @@ class SimulationSetup(object):
             ].replace("observe_", "")
             # that last line is necessary so that maybe_resubmit knows which
             # cluster to look up in the workflow
+            # because all cluster with batch_or_shell=sbatch will be called 
+            # esm_runscripts ... -t observe_<cluster> ...
 
         else:
             self.assembler()
 
         resubmit.maybe_resubmit(self.config)
 
+        # if this line is reached, the run is submitted and running or finished
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
 
         if self.config["general"]["submitted"]:

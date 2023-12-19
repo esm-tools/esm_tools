@@ -52,8 +52,9 @@ setup(
         "miguel.andres-martinez@awi.de",
         "deniz.ural@awi.de",
         "jan.streffing@awi.de",
+        "nadine.wieters@awi.de",
         "sebastian.wahl@geomar.de",
-	      "kai.himstedt@dkrz.de",
+        "kai.himstedt@dkrz.de",
     ],
     python_requires=">=3.6, <=3.11",
     classifiers=[

@@ -1,11 +1,53 @@
-
 per_model_defaults:
-        file_movements:
-                default:
-                        all_directions: copy
-                bin:
-                        init_to_exp:    copy
-                        exp_to_run:     copy
-                        run_to_work:    copy
-                        work_to_run:    copy
+    file_movements:
+        default:
+            all_directions: copy
+        bin:
+            init_to_exp:    copy
+            exp_to_run:     copy
+            run_to_work:    copy
+            work_to_run:    copy
 
+workflow:
+    user_phases: None
+    first_task_in_queue: prepcompute
+    last_task_in_queue: tidy
+    next_run_triggered_by: tidy
+
+    phases:
+        prepcompute:
+            batch_or_shell: SimulationSetup
+            called_from: tidy
+            cluster: prepcompute
+            name: prepcompute
+            next_submit:
+                - compute
+            nproc: 1
+            order_in_cluster: sequential
+            run_after: tidy
+            run_before: compute
+            submit_to_batch_system: False
+        compute:
+            called_from: prepcompute
+            cluster: compute
+            name: compute
+            next_submit:
+                - tidy
+            nproc: None
+            order_in_cluster: sequential
+            run_after: prepcompute
+            run_before: tidy
+            #run_on_queue: ${computer.partitions.pp.name}
+            submit_to_batch_system: True
+        tidy:
+            batch_or_shell: SimulationSetup
+            called_from: compute
+            cluster: tidy
+            name: tidy
+            next_submit:
+                - prepcompute
+            nproc: 1
+            order_in_cluster: sequential
+            run_after: compute
+            run_before: prepcompute
+            submit_to_batch_system: False

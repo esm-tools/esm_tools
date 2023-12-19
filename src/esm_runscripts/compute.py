@@ -281,12 +281,13 @@ def initialize_experiment_logfile(config):
     # Write trace-log file now that we know where to do that
     if "trace_sink" in dir(logger):
         experiment_dir = config["general"]["experiment_dir"]
+        jobtype = config["general"]["jobtype"]
         expid = config["general"]["expid"]
         it_coupled_model_name = config["general"]["iterative_coupled_model"]
         datestamp = config["general"]["run_datestamp"]
         logfile_path = (
             f"{experiment_dir}/log/"
-            f"{expid}_{it_coupled_model_name}esm_runscripts_{datestamp}.log"
+            f"{expid}_{it_coupled_model_name}esm_runscripts_{jobtype}_{datestamp}.log"
         )
 
         logger.trace_sink.def_path(logfile_path)

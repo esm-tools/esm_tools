@@ -17,8 +17,7 @@ def run_job(config):
 
 def inspect_workflow(config):
     if config["general"]["inspect"] == "workflow":
-
-        config = workflow.display_nicely(config)
+        config = workflow.display_workflow(config)
         sys.exit(0)
     return config
 

@@ -103,7 +103,7 @@ def write_to_log(config, message, message_sep=None):
     ----
     The user can control two things regarding the logfile format:
 
-    1) The datestamp formatting, whjich is taken from the config
+    1) The datestamp formatting, which is taken from the config
        section ``general.experiment_log_file_dateformat``.
     2) The message separators; taken from
        ``general.experiment_log_file_message_sep``. Note that if the
@@ -304,7 +304,7 @@ class SmartSink:
             Path of the logging file.
         """
         self.path = path
-        self.write_log(self.log_record, "w")
+        self.write_log(self.log_record, "a")
 
 
 ################################################################################

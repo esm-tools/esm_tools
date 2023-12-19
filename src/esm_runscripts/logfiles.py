@@ -62,9 +62,15 @@ def finalize_logfiles(config, org_jobtype):
 
 
 def set_logfile_name(config, jobtype=None):
+    jobid = str(config["general"].get("jobid", None))
 
     if not jobtype:
         jobtype = config["general"]["jobtype"]
+
+    if jobid:
+        jobid = f"_{jobid}"
+    else:
+        jobid = "_nojobid"
 
     filejobtype = jobtype
     # if "observe" in filejobtype:
@@ -92,6 +98,7 @@ def set_logfile_name(config, jobtype=None):
         + filejobtype
         + "_"
         + config["general"]["run_datestamp"]
+        + jobid
         + ".log"
     )
 

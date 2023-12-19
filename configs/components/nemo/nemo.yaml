@@ -616,7 +616,7 @@ choose_version:
     generation: "4.2"
     resolution: ORCA05
     use_tracer: false 
-    leapyear: false  
+    leapyear: true  
     free_surface: nonlinear
     
     input_dir: ${pool_dir}/NEMO4_${resolution}/input

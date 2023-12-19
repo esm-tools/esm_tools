@@ -1,7 +1,7 @@
 components:
 - oifs-43r3-foci30
 - nemo-ORCA05_Z46_SI3_COUPLED
-- oasis3mct-EM21
+- oasis3mct-5.0-geomar
 - rnfmap-foci211
 #- xios-trunk_oasis
 coupling_changes:

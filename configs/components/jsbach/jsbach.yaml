@@ -178,12 +178,11 @@ choose_version:
                                 forcing_files:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_hist
-                                        cover_fract: cover_fract_HIST
                                         Ndepo: Ndepo_1850
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
-
+                        
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -281,7 +280,6 @@ choose_version:
                                 forcing_files:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -290,6 +288,12 @@ choose_version:
                                         LU_trans: LU_trans_none
 
 # check forcing files of common scenarios
+add_choose_dynamic_vegetations:
+        false:
+                choose_echam.scenario: # TODO: not needed for piControl?
+                        HIST:
+                                add_forcing_files:
+                                        cover_fract: cover_fract_HIST
 ssp_num: null
 choose_scenario_type:
         ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
@@ -303,6 +307,10 @@ choose_scenario_type:
                         a_nd_file: a_nd_file
                         lightning: lightning
                         popdens: popdens_ssp
+                add_choose_dynamic_vegetations:
+                        false:
+                                add_forcing_files:
+                                        cover_fract: cover_fract_ssp
 
 choose_echam.with_wiso:
         True:

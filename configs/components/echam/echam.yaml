@@ -533,7 +533,6 @@ choose_with_lco2_emis:
         # - run emission-driven and not concentration-driven experiment, e.g. `esm-piControl` or `esm-hist` and not `piControl` or `historical`
         # - atmosheric CO2 concentration is not prescribed but calculated by the model setup
         # - CO2 emissions need to be provided as `carbon_emissions.nc`, not CO2 concentrations as `greenhouse_gases.nc`
-        # - todo: mpi-esm namelist.echam:&co2ctl:lco2_emis is false for piControl but there are non-zero emissions for 1850 in pool
         add_namelist_changes:
             namelist.echam:
                 submodelctl:
@@ -545,11 +544,13 @@ choose_with_lco2_emis:
         add_choose_scenario: # loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
             # set namelist.echam:&co2ctl:lco2_emis
             PI-CTRL:
-                lco2_emis: false
+                lco2_emis: false # TODO: mpi-esm namelist.echam:&co2ctl:lco2_emis is false for piControl but there are non-zero emissions for 1850 in pool
             "*":
                 lco2_emis: true # use carbon emissions from forcing file -> needs carbon_emissions.nc in work
-        choose_lco2_emis:
-            True:
+                add_namelist_changes:
+                    namelist.echam:
+                        co2ctl:
+                            lco2_emis: true
                 add_choose_scenario:
                     HIST:
                         add_forcing_files:

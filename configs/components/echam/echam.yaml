@@ -168,6 +168,8 @@ choose_switch:
 with_wiso: false
 wiso_code: false
 with_lco2_emis: false
+allow_hist2ssp_transition: False # allow transition historical up to year 2014 --> ssp from year 2015 onwards
+transition_hist2ssp_name: ssp370 # which ssp data should be used for year+1 interpolation
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -390,8 +392,6 @@ choose_scenario:
                         swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                allow_hist2ssp_transition: False # allow transition historical up to year 2014 --> ssp from year 2015 onwards
-                transition_hist2ssp_name: ssp370 # which ssp data should be used for year+1 interpolation
                 choose_allow_hist2ssp_transition:
                     True:
                         after_2014: "$(( ${start_date!year} > 2014 ))"

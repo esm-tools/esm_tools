@@ -295,7 +295,7 @@ add_choose_dynamic_vegetations:
                                 add_forcing_files:
                                         cover_fract: cover_fract_HIST
 ssp_num: null
-choose_scenario_type:
+add_choose_scenario_type:
         ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
                 ssp_num: "$(( '${scenario}'[:4] ))" # first 4 characters, e.g. 'ssp1' in case of 'ssp126'
                 add_input_files:

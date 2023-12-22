@@ -108,14 +108,14 @@ forcing_sources:
 
         # plume parameterization
         "MAC-SP_hist":
-                 #"${input_dir}/MAC-SP.nc": # NOTE: historical MAC-SP.nc not in r0008 --> use r0007 instead
-                 "${pool_dir}/input/r0007/MAC-SP.nc":
-                         to: 2014
-                 "${input_dir}/MAC-SP_${scenario}.nc":
-                         from: 2015
+                #"${input_dir}/MAC-SP.nc": # NOTE: historical MAC-SP.nc not in r0008 --> use r0007 instead
+                "${pool_dir}/input/r0007/MAC-SP.nc":
+                        to: 2014
+                "${input_dir}/MAC-SP_${transition_hist2ssp_name}.nc":
+                        from: 2015
         "MAC-SP_scenario":
-                 "${input_dir}/MAC-SP_${scenario}.nc":
-                         from: 2015
+                "${input_dir}/MAC-SP_${scenario}.nc":
+                        from: 2015
         
         # carbon emissions for echam6:with_lco2_emis
         carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_${transition_hist2ssp_name}.nc" # all ssp* identical from 1849 to 2015

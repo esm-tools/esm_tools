@@ -2,14 +2,14 @@
 Ten Steps to a Running Model
 ============================
 
-1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see :ref:`installation:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+1. Make sure you have git installed with version newer than 2.13, that the python version is 3.6 or later (see also :ref:`before_you_continue:Before you continue`), and that pip is up-to-date (``pip install -U pip``). Also make sure that the location to which the python binaries will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
     $ export PATH=$PATH:~/.local/bin
     $ export LC_ALL=en_US.UTF-8
     $ export LANG=en_US.UTF-8
 
 
-2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools``).
+2. Make sure you have a GitHub account and check our GitHub repository (``https://github.com/esm-tools/esm_tools``).
 
 3. Download the git repository ``esm_tools.git`` from GitHub::
 
@@ -20,7 +20,7 @@ Ten Steps to a Running Model
      $ cd esm_tools
      $ ./install.sh
 
-   This should install the python packages of ESM-Tools. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
+   This should install the python packages of `ESM-Tools`. If you wonder where they end up, take a look at ``~/.local/lib/python%versionnumber%/site-packages``.
 
 5. Run ``esm_master`` once. You should see a long list of available targets if everything works.
 
@@ -31,7 +31,7 @@ Ten Steps to a Running Model
     $ cd model_codes
     $ esm_master install-fesom-2.0
 
-  You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access (:ref:`Supported_Models:Supported Models`). Feel free to contact us if you don't know who the model developers are.
+  You will be asked for your password to the repository of the model you are trying to install. If you don't have access to that repo yet, ``esm_master`` will not be able to install the model; you will have to contact the model developers to be granted access. A list of supported model can be found in the section :ref:`Supported_Models:Supported Models`. Feel free to contact us if you don't know who the model developers are.
 
 7. Check if the installation process worked; if so, you should find the model executable in the subfolder ``bin`` of the model folder. E.g.::
 

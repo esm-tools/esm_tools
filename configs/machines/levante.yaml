@@ -133,7 +133,6 @@ choose_general.run_or_compile:
 choose_compiler_mpi:
        gnu11_ompi2022:
                 # ESM-Tools vars necessary for ``system_libs`` case
-                #netcdf_cxx_root: /sw/spack-levante/netcdf-cxx-4.2-q3vhdk #JS: copied from intel2022_impi2021; does this do anything?
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
                         - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"

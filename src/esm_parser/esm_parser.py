@@ -140,7 +140,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "major_version", "omp_num_threads", "environment_changes", "further_reading"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
 
 def flatten_nested_lists(lst):
@@ -2802,9 +2802,16 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``
         Text clarifying the note.
     """
     reset_s = colorama.Style.RESET_ALL
+
+    if isinstance(note_text, list):
+        new_note_text = ""
+        for item in note_text:
+            new_note_text = f"{new_note_text}- {item}\n"
+        note_text = new_note_text
+
     for dsymbol in dsymbols:
         note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
         )
     print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")

@@ -998,8 +998,8 @@ choose_major_version:
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:
-                                        NFRRES: ${nfrres}
-                                        NRESTS${nrest_ind}: ${nfrests}
+                                        NFRRES: 1
+                                        NRESTS(:): -1 ${nfrests}
                                 NAMPAR0:
                                         NPROC: ${oifs.nproc}
                                 NAMRIP:
@@ -1009,19 +1009,11 @@ choose_major_version:
                                         CNMEXP: "${oifs.input_expid}"
                                 NAMPPC:
                                         LRSACC: ".true." # reset accumulation of fluxes
-                add_environment_changes:
-                        choose_computer.name:
-                                levante:
-                                        compiler_mpi: gnu11_ompi2022
-                                        iolibraries: system_gnu_libs
-                                juwels:
-                                        compiler_mpi: gnu2023_ompi2023
-
                 further_reading:
                         - oifs/oifs48.env.yaml
 
 
-    # If 1, use Coddington spectrum which reduced stratospheric warm bias
+# If 1, use Coddington spectrum which reduced stratospheric warm bias
 # Only available in 43r3-v2
 choose_solarspectrum:
         True:

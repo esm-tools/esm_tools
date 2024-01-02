@@ -1616,6 +1616,9 @@ ic_atm2debm_ablation_debm_run_compile_binary() {
         if [ ! -z ${DEBM_EXE} ]; then
                 echo "*** Copy DEBM_EXE into ${COUPLE_DIR}"
                 cp ${DEBM_EXE} ${COUPLE_DIR}/dEBMmain
+        elif [ ! -z ${FUNCTION_PATH} ]; then
+                echo "*** Copy DEBM_EXE from ${FUNCTION_PATH} into ${COUPLE_DIR}"
+                cp ${FUNCTION_PATH}/dEBMmain ${COUPLE_DIR}/dEBMmain
         fi
 
         # Clone Shan's fortran version if it's not already here:

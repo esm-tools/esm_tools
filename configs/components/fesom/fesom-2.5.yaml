@@ -102,7 +102,8 @@ namelists:
         - namelist.io
         - namelist.cvmix
         - namelist.icepack
-
+        - namelist.tra
+        - namelist.dyn
 
 
 choose_resolution:
@@ -467,6 +468,8 @@ config_files:
         io:      io
         cvmix:   cvmix
         icepack: icepack
+        tra:     tra
+        dyn:     dyn
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"

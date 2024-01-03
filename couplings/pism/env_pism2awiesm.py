@@ -37,7 +37,7 @@ def prepare_environment(config):
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             
-            "PISM_TO_OCEAN": 0,
+            "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False)),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "fesom_use_iceberg": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False)), 
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
@@ -49,7 +49,7 @@ def prepare_environment(config):
             #"MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
             }
     print (environment_dict)

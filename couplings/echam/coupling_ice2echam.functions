@@ -149,10 +149,19 @@ update_orography_run_calnoro() {
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
                 if [ ! -f ${FUNCTION_PATH}/../utils/calnoro ]; then
-                        echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
-                        echo "                   !!!   Looking in: ${FUNCTION_PATH}/../iterative_coupling/"
-                        echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
-                        exit 42
+                        if [ -f ${FUNCTION_PATH}/../utils/install_calnoro.sh ]; then
+                                echo "                   install_calnoro.sh found. Running installation ..."
+                                currentdir=$(pwd)
+                                cd ${FUNCTION_PATH}/../utils/
+                                ./install_calnoro.sh ${MACHINE}
+                                cd ${currentdir}
+                                cp ${FUNCTION_PATH}/../utils/calnoro .
+                        else
+                                echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
+                                echo "                   !!!   Looking in: ${FUNCTION_PATH}/../utils/"
+                                echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
+                                exit 42
+                        fi
                 else
                         cp ${FUNCTION_PATH}/../utils/calnoro .
                 fi
@@ -391,9 +400,21 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
-        cp ${FUNCTION_PATH}/../utils/mo_kinds.mod .
-        cp ${FUNCTION_PATH}/../utils/mo_vegparams.mod .
+        if [ -f jsbach_init_file ]; then
+                cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
+        elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_init_file.sh ]; then
+                echo "                   install_jsbach_init_file.sh found. Running installation ..."
+                currentdir=$(pwd)
+                cd ${FUNCTION_PATH}/../utils/
+                ./install_jsbach_init_file.sh ${MACHINE}
+                cd ${currentdir}
+                cp -v ${FUNCTION_PATH}/../utils/jsbach_init_file .
+        else
+                echo -e "\t\t E R O R R --- binary missing, don't know how to proceed"
+                exit
+        fi
+        cp ${FUNCTION_PATH}/../utils/_build/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/../utils/_build/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}
@@ -570,6 +591,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
             ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
             ${FORCING_DIR_jsbach}/jsbach.nc \
             ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_land_cover_fractions/cdo_stderr_ice2echam
+        
         # Make two masks: one for glacial retreat, and one for glacial advance
         cdo -s gtc,0 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc
         cdo -s gtc,0 -mulc,-1 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc
@@ -593,8 +615,16 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
                 if [ -f ${FUNCTION_PATH}/../utils/unpack ]; then
-                        cp -v ${FUNCTION_PATH}/../utils/unpack ./
-                        cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
+                        #cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
+                        cp -v ${FUNCTION_PATH}/../utils/unpack .
+                elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_pack_unpack.sh ]; then
+                        echo "                   install_jsbach_pack_unpack.sh found. Running installation ..."
+                        currentdir=$(pwd)
+                        cd ${FUNCTION_PATH}/../utils/
+                        ./install_jsbach_pack_unpack.sh ${MACHINE}
+                        cd ${currentdir}
+                        #cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
+                        cp -v ${FUNCTION_PATH}/../utils/unpack .
                 else
                         echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
                         exit
@@ -1038,14 +1068,14 @@ distribute_total_discharge_over_ocean() {
 #        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
         CELL_AREA_FESOM_FILE=${CELL_AREA_FESOM_FILE:-"fesom.mesh.diag.nc"}
         echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE} ${HOSING_FILE_LANDICE_LOSS} "
-        #module load python3
-        echo "LA DEBUG: HOSING_FILE_LANDICE_LOSS = ${HOSING_FILE_LANDICE_LOSS}"
+        module load python3
+        echo " * HOSING_FILE_LANDICE_LOSS = ${HOSING_FILE_LANDICE_LOSS}"
         if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
             rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
         fi
 
         python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
-        #module unload python3
+        module unload python3
         echo; echo "            * Finished apply_hosing_correction.py "
 #
 #        

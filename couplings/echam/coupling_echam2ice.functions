@@ -45,8 +45,20 @@ echam2ice() {
 
         echo "*** build dynamic link of ${RESTART_DIR_echam}/restart_${EXP_ID}_echam_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc"
         ln -sf ${RESTART_DIR_echam}/restart_${EXP_ID}_echam_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
-        ln -sf ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc
-        ln -sf ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc
+        
+        for STREAM in jsbach veg
+        do
+            rfile_1=${RESTART_DIR_jsbach}/restart_${EXP_ID}_${STREAM}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc
+            rfile_2=${RESTART_DIR_jsbach}/restart_${EXP_ID}_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}_${STREAM}.nc
+            if [ -f ${rfile_1} ]; then
+                ln -sf ${rfile_1} ${RESTART_DIR_jsbach}/restart_${EXP_ID}_${STREAM}.nc
+            elif [ -f ${rfile_2} ]; then
+                ln -sf ${rfile_2} ${RESTART_DIR_jsbach}/restart_${EXP_ID}_${STREAM}.nc
+            else
+                echo " * no ${rfile_1} or ${rfile_2} found ..."
+                exit
+            fi
+        done
 
         echo "                 *** F I N I S E D      echam2ice *** "
         echo "                =================================================================="

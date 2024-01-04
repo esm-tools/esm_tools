@@ -428,6 +428,38 @@ class DictWithProvenance(dict):
 
         super().__setitem__(key, val_new)
 
+    def update(self, dictionary, *args, **kwargs):
+    """
+    Preserves the provenance history when using the ``update`` method
+
+    Parameters
+    ----------
+    dictionary : dict, esm_parser.provenance.DictWithProvenance
+        Dictionary that will update ``self``
+    """
+
+        new_provs = {}
+
+        for key, val in dictionary.items():
+            if (
+                key in self
+                and not isinstance(self[key], (dict, list))
+                and hasattr(self[key], "provenance")
+                and hasattr(self, "custom_setitem")
+                and self.custom_setitem
+            ):
+                new_provenance = self[key].provenance
+                if hasattr(val, "provenance"):
+                    new_provenance.extend_and_modified_by(
+                        val.provenance, "dict.update"
+                    )
+                    new_provs[key] = new_provenance
+
+        super().update(dictionary, *args, **kwargs)
+
+        for key, val in new_provs.items():
+            self[key].provenance = val
+
 
 class ListWithProvenance(list):
     def __init__(self, mylist, provenance):

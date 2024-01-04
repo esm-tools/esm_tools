@@ -195,6 +195,44 @@ def test_set_provenance_for_a_new_leaf(config, check_provenance):
     assert config.get_provenance() == check_provenance
 
 
+def test_provenance_update(config, check_provenance):
+    """
+    Checks that the method update preserves the provenance history
+    """
+
+    new_prov = {
+        "line": 2,
+        "col": 11,
+        "yaml_file": "someother.yaml",
+        "category": "set_for_unknown_leaf",
+    }
+    new_config = {
+        "echam": provenance.DictWithProvenance({"type": "mpi_atmosphere"}, {})
+    }
+    new_config["echam"].set_provenance(new_prov)
+
+    config["echam"].update(new_config["echam"])
+    check_provenance["echam"]["type"] = new_prov
+    assert config.get_provenance() == check_provenance
+    # Checks that update preserves provenance history
+    assert config["echam"]["type"].provenance == [
+        {
+            "line": 2,
+            "col": 11,
+            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "category": "runscript",
+        },
+        None,
+        {
+            "line": 2,
+            "col": 11,
+            "extended_by": "dict.update",
+            "yaml_file": "someother.yaml",
+            "category": "set_for_unknown_leaf",
+        },
+    ]
+
+
 def test_set_provenance_for_a_list_leaf(config, check_provenance):
     """
     Test 9: Reset the provenance of a list")

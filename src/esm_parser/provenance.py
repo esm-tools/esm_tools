@@ -429,14 +429,14 @@ class DictWithProvenance(dict):
         super().__setitem__(key, val_new)
 
     def update(self, dictionary, *args, **kwargs):
-    """
-    Preserves the provenance history when using the ``update`` method
+        """
+        Preserves the provenance history when using the ``update`` method
 
-    Parameters
-    ----------
-    dictionary : dict, esm_parser.provenance.DictWithProvenance
-        Dictionary that will update ``self``
-    """
+        Parameters
+        ----------
+        dictionary : dict, esm_parser.provenance.DictWithProvenance
+            Dictionary that will update ``self``
+        """
 
         new_provs = {}
 

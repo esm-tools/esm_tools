@@ -90,17 +90,25 @@ def _read_date_file(config):
                 f"Please confirm if you want to continue:"
             )
             esm_parser.user_note("Detached experiment:", msg)
-            proceed = True
+            proceed = ""
             if isresubmitted:
-                proceed = questionary.confirm(
-                    "Do you want to continue?"
-                ).ask()
-            if proceed:
-                date = str(date_c)
-                run_number = run_number_c
-            else:
-                esm_parser.user_note("The experiment will be cancelled:", f"You cancelled the experiment due to date discrepancies.")
-                sys.exit(1)
+                proceed = questionary.select(
+                    "Do you want to continue?",
+                    choices=[
+                        f"Yes, with date from command line argument: {str(config['general']['current_date'])}",
+                        f"Yes, with date from date file: {date}",
+                        "No, cancel."
+                    ]).ask()
+
+                if 'Yes, with date from command line argument' in proceed:
+                    date = str(date_c)
+                    run_number = run_number_c
+                elif 'Yes, with date from date file' in proceed:
+                    date = date
+                    run_number = run_number
+                else:
+                    esm_parser.user_note("The experiment will be cancelled:", f"You cancelled the experiment due to date discrepancies.")
+                    sys.exit(1)
 
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date

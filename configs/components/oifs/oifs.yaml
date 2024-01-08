@@ -250,7 +250,7 @@ choose_version:
   48r1:
     branch: main
     comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/oifs"
-    clean_command: ./openifs-bundle build --clean
+    clean_command: rm -rf build
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-48r1.git
     install_bins: install/bin/oifs
     destination: oifs-48r1

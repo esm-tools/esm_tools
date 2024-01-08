@@ -69,34 +69,38 @@ def _read_date_file(config):
         run_number = 1
         write_file = True
 
-    # Get date from command_line_config
-    # - check if > run_number (from file)
-    # - check if date_c and run_number_c  do not fit together
-    # - give notification to user that this is a detached run
-    date_c = str(config["general"]["command_line_config"]["current_date"])
-    run_number_c = int(config["general"]["command_line_config"]["run_number"])
-    isinteractive = config["general"].get("isinteractive", "")
+    date_c = config["general"].get("current_date", None)
 
-    if run_number_c <= run_number:
+    if date_c is not None:
+        date_fdf = Date(date)
+        date_c = Date(str(config["general"]["current_date"]))
+        run_number_c = int(config["general"]["run_number"])
+        last_jobtype = config["general"].get("last_jobtype", "")
+        isresubmitted = last_jobtype == config["general"]["jobtype"]
 
-        msg = (
-            f"``Date`` and ``run_number`` are ``not`` taken from date file, "
-            f"but from command_line argument (privided by -s or --start_date). "
-            f"The given start_date and run_number are different from the values "
-            f"in the current date file of your experiment. "
-            f"Your experiment may now be in a non consecutive state. "
-            f"Please confirm that this is what you want."
-        )
-        esm_parser.user_note("Detached experiment:", msg)
-        proceed = True
-#        proceed = questionary.confirm(
-#            "Do you want to continue?"
-#        ).ask()
-        if proceed:
-            date = date_c
-            run_number = run_number_c
-        else:
-            sys.exit(1)
+        if date_fdf != date_c:
+
+            msg = (
+                f"``Date`` and ``run_number`` are ``not`` taken from date file, "
+                f"but from command_line argument (provided by -s or --start_date). "
+                f"The given start_date ({date_c}) and run_number ({run_number_c}) "
+                f"are different from the values "
+                f"in the current date file of your experiment ({date}, {run_number}). "
+                f"Your experiment may now be in a non consecutive state. "
+                f"Please confirm if you want to continue:"
+            )
+            esm_parser.user_note("Detached experiment:", msg)
+            proceed = True
+            if isresubmitted:
+                proceed = questionary.confirm(
+                    "Do you want to continue?"
+                ).ask()
+            if proceed:
+                date = str(date_c)
+                run_number = run_number_c
+            else:
+                esm_parser.user_note("The experiment will be cancelled:", f"You cancelled the experiment due to date discrepancies.")
+                sys.exit(1)
 
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date

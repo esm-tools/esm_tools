@@ -40,7 +40,7 @@ There is a version of `ESM-Tools` available that can be installed using ``pip``:
     
     $ pip install -U pip wheel
     
-- Install esm-tools::
+- Install `ESM-Tools`::
     
     $ pip install esm-tools 
 
@@ -56,7 +56,7 @@ Work in progress. We are still testing it.
 Installing in an encapsulated environment using ``direnv``
 ----------------------------------------------------------
     
-Based on an alternative installation procedure, that provides an `ESM-Tools` installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of `ESM-Tools` alongside each other. These different installations do not impact each others' configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific `ESM-Tools` version that you install. There is no dependency on configurations outside the installation directory of a specific `ESM-Tools` version, mitigating the potential for side effects if another version of `ESM-Tools` is installed in parallel. To install `ESM-Tools` as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of ``direnv``, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of `ESM-Tools` will be installed.
+Based on an alternative installation procedure, that provides an `ESM-Tools` installation employing direnv (https://direnv.net/), you can now install various encapsulated versions of `ESM-Tools` alongside each other. These different installations do not impact each other's configuration. Consequently, they can coexist in peaceful harmony. In the suggested alternative installation method all configurations will reside within the base folder of a specific `ESM-Tools` version that you install. There is no dependency on configurations outside the installation directory of a specific `ESM-Tools` version, mitigating the potential for side effects if another version of `ESM-Tools` is installed in parallel. To install `ESM-Tools` as suggested here, just follow the procedure outlined below. The steps to create the installation involve preparation of ``direnv``, including setting up an environment that encapsulates potentially version-specific settings, creating a dedicated directory to which a specific version of `ESM-Tools` will be installed.
     
 To set up such an installation in an encapsulated environent, please do the followings steps:
     
@@ -165,7 +165,7 @@ Make sure you have the most recent version of
 
 $ python3 -m pip install -U pip
 
-Then, you can use use the following command to uninstall all `ESM-Tools` packages::
+Then, you can use the following command to uninstall all `ESM-Tools` packages::
 
 $ pip freeze | grep esm | xargs pip uninstall -y
 

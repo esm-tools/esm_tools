@@ -72,7 +72,7 @@ To set up such an installation in an encapsulated environent, please do the foll
     $ mkdir esm_tools_v6.1.10 #adjust version number as appropriate
     $ cd esm_tools_v6.1.10/
     
-- Set up ``direnv`` hooks according to your used shell (see also https://direnv.net/docs/hook.html). For the ``bash`` shell add the following line at the end of your ``.bashrc`` file::
+- Set up ``direnv`` hooks according to your used shell (see also https://direnv.net/docs/hook.html). For the ``bash`` shell add the following line at the end of your ``.bashrc`` and/or ``.bash_profile`` file::
     
     eval "$(direnv hook bash)"
     

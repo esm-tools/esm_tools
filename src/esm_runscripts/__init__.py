@@ -2,7 +2,7 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.25.8"
+__version__ = "6.25.9"
 
 from .batch_system import *
 from .chunky_parts import *

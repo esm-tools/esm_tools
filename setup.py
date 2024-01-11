@@ -20,7 +20,7 @@ requirements = [
     "emoji==1.7.0",
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.37",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.41",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
@@ -103,6 +103,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.25.8",
+    version="6.25.9",
     zip_safe=False,
 )

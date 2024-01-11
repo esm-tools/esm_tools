@@ -1820,8 +1820,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run":  # PrevRunInfo
-                continue  # PrevRunInfo
+            #if key == "prev_run":  # PrevRunInfo
+            if isinstance(key, str):
+                if ("prev_run" in key) or ("prev_chunk" in key):  # PrevRunInfo
+                    continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs

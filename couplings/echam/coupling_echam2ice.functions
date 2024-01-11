@@ -134,6 +134,9 @@ iterative_coupling_echam6_ice_write_names() {
         echo ""; echo "                 *   emissivity"
         echo "atmosphere_name_emissivity=emiss" >> atmosphere_names_for_ice.dat
         echo "atmosphere_units_emissivity=frac" >> atmosphere_names_for_ice.dat
+        echo ""; echo "                 *   wind speed"
+        echo "atmosphere_name_wind=uv" >> atmosphere_names_for_ice.dat
+        echo "atmosphere_units_wind=m/s" >> atmosphere_names_for_ice.dat
         #echo ""; echo "                 *   longwave downward radiation"
         #echo "atmosphere_name_longwave=lwd" >> atmosphere_names_for_ice.dat
         #echo "atmosphere_units_longwave=W/m2" >> atmosphere_names_for_ice.dat

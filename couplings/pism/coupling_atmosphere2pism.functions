@@ -490,7 +490,7 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
         echo ""; echo "                *  calculating elevation difference"
         echo "*** INPUT_FILE_pism = ${INPUT_FILE_pism} ***"
         if [ -z ${INPUT_FILE_pism} ]; then
-                echo "Oh no, help."
+                echo "Oh no, help. please don't use unusual operators like -z"
                 exit 5
         fi
         #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
@@ -502,15 +502,19 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
         else
-                ${cdo} -s -add \
+                ${cdo} -s -setrtoc,-10000,0,0 \
+			-add \
                         -selvar,thk ${INPUT_FILE_pism} \
-                        -setrtoc,-10000,0,0 \
                         -selvar,topg ${INPUT_FILE_pism} \
                         "${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+	        ncrename -v thk,usurf ${COUPLE_DIR}/${elev_hi_file} ${COUPLE_DIR}/elev_hi.nc
         fi
-        mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
+        #mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
+	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
+	cp ${COUPLE_DIR}/tmp.nc ${COUPLE_DIR}/elev_lo.nc
+
         ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
 	cdo settbounds,1mon -setreftime,1850-01-01,00:00:00 -setunit,m tmp.nc surface_altitude_coarse_resolution.nc
@@ -731,11 +735,13 @@ ic_atm2pism_regrid_downscale_temperature() {
                         exit 6
                 fi
                 echo "                -  Lapse rate applied was Γ=${DOWNSCALING_LAPSE_RATE} (K/km)"
+                cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/uta_temp_before.nc
                 ${cdo} -s -f nc \
                         -add ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc \
                         -mulc,${DOWNSCALING_LAPSE_RATE} \
                         ${COUPLE_DIR}/elev_hi_minus_lo.nc \
                         ${COUPLE_DIR}/temp_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+		cp ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/uta_temp_after.nc
                 echo "                -  corrections applied (time mean of difference Hi-Res - Lo-Res) "
                 echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc)"
                 echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/temp_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc)"
@@ -1812,6 +1818,7 @@ ic_atm2debm_ablation_debm_run_execute_binary() {
         DEBM_BINARY=dEBMmain
         DEBM_NAMELIST=namelist.debm
         required_files_to_run_dEBM="$DEBM_NAMELIST $DEBM_BINARY"
+        echo -e "\t\t! UKK required_files_to_run_dEBM=$DEBM_NAMELIST $DEBM_BINARY"
         for required_file in $required_files_to_run_dEBM; do
                 required_file_exit_code=1
                 if [ ! -f $required_file ]; then
@@ -1914,6 +1921,8 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 ${COUPLE_DIR}/air_temp_copy.nc \
                 ${COUPLE_DIR}/smb.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         rm tmp
+                cp ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/uta_smb.nc
+                cp ${COUPLE_DIR}/air_temp_copy.nc ${COUPLE_DIR}/uta_air_temp_copy.nc
 		cleanup_list="$cleanup_list ${COUPLE_DIR}/air_temp_copy.nc"
                 cd -
 }
@@ -1957,6 +1966,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
                 #cdo -s -O merge SNH ME SMB RZ A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
+                cp surface_mass_balance_masked.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked2.nc
                 # TODO/BUG (sxu): For right now, Paul is just filling in any missing
                 # values with a setmisstodis, maybe there is a better way to solve
                 # this?
@@ -1980,6 +1990,10 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
                 #cdo -s -O merge SNH MELT SMB REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
+                cp ${COUPLE_DIR}/uta_smb.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked3.nc
+                cdo -selvar,SNH,MELT,SMB,REFR,A,tsurf ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
+		        #cp ${COUPLE_DIR}/uta_smb.nc  ${COUPLE_DIR}/surface_mass_balance_masked.nc
+          
                 # TODO/BUG (sxu): For right now, Paul is just filling in any missing
                 # values with a setmisstodis, maybe there is a better way to solve
                 # this?
@@ -2048,6 +2062,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_smb_varname_and_units() {
                 units,${pism_mass_balance_varname},o,c,"kg m-2 s-1" \
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc \
                 tmp_${debm_mass_balance_varname}
+        cp tmp_${debm_mass_balance_varname} ${COUPLE_DIR}/uta_tmp_${debm_mass_balance_varname}
         mv tmp_${debm_mass_balance_varname} \
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc
 }
@@ -2063,6 +2078,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files() {
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc \
                 ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
                 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+                cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 }
 
 ## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
@@ -2084,6 +2100,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
                 time_calendar="360_day"
         fi
 
+        cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_dummy.nc
         ncatted \
                 -a \
                 bounds,time,o,c,"time_bnds" \

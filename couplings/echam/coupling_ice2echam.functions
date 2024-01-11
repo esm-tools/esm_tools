@@ -347,7 +347,7 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         #echam_albedo_on_glaciers=0.7
         echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS}
         cdo -s \
-                -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,1,2 \
+                -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,-1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
                 input_if_mask_true.nc
         cdo -s \

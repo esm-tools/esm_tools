@@ -386,7 +386,7 @@ def get_config_filepath(config=""):
         cpath = _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
-    print(cpath)
+    logger.debug(cpath)
     return cpath
 
 

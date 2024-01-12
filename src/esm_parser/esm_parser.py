@@ -423,6 +423,14 @@ def attach_to_config_and_reduce_keyword(
                 config_to_read_from[reduced_keyword] = config_to_read_from[full_keyword]
         # FIXME: Does this only need to work for lists?
         if isinstance(config_to_read_from[full_keyword], list):
+
+            # Deduplicate items
+            new_conf_reduced_keyword = []
+            for elem in config_to_read_from[reduced_keyword]:
+                if elem not in new_conf_reduced_keyword:
+                    new_conf_reduced_keyword.append(elem)
+            config_to_read_from[reduced_keyword] = new_conf_reduced_keyword
+
             for item in config_to_read_from[full_keyword]:
                 model = item
                 if "-" in item:

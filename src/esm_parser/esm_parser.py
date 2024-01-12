@@ -2861,13 +2861,6 @@ class GeneralConfig(dict):  # pragma: no cover
         else:
             self.config = include_path
 
-        resolve_choose_with_var(
-            "further_reading",
-            self.config,
-            model_config={model: self.config},
-            user_config=user_config,
-        )
-
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2880,6 +2873,17 @@ class GeneralConfig(dict):  # pragma: no cover
         raise NotImplementedError(
             "Subclasses of GeneralConfig must define a _config_init!"
         )
+
+    def is_coupled_setup(self):
+
+        if (
+            "general" in self.config
+            and isinstance(self.config["general"], dict)
+            and "coupled_setup" in self.config["general"]
+        ):
+            return True
+        else:
+            return False
 
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
@@ -2933,7 +2937,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # distribute self.config into setup_config
 
-        if "general" in self.config and "coupled_setup" in self.config["general"]:
+        if self.is_coupled_setup():
             setup_config["general"].update({"standalone": False})
             # Resolve choose with include_models
             resolve_choose_with_var(
@@ -3041,38 +3045,36 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             # print (old_model_list)
             setup_config["general"]["models"] = old_model_list
 
-        if "models" in setup_config["general"]:
-            # Solve the variables within choose_ blocks that need to be solved early
-            # (i.e. include_models, versions...)
-            for model in setup_config["general"]["models"]:
-                # Solve the variable for each configuration type
-                for this_config in [user_config, setup_config, model_config]:
-                    if model in this_config:
-                        # Resolve the target variable
-                        for var in early_choose_vars:
-                            resolve_choose_with_var(
-                                var,
-                                this_config.get(model),
-                                user_config=user_config,
-                                model_config=model_config,
-                                setup_config=setup_config,
-                            )
-                        # Special treatment for "include_models"
-                        attach_to_config_and_reduce_keyword(
-                            this_config[model], model_config, "include_models", "models"
+        # Solve the variables within choose_ blocks that need to be solved early
+        # (i.e. include_models, versions, further_reading,...)
+        components = ["general", "computer"]
+        components.extend(setup_config["general"].get("models", []))
+        for component in components:
+            # Solve the variable for each configuration type
+            for this_config in [user_config, setup_config, model_config]:
+                if component in this_config:
+                    # Resolve the target variable
+                    for var in early_choose_vars:
+                        resolve_choose_with_var(
+                            var,
+                            this_config.get(component),
+                            current_model=component,
+                            user_config=user_config,
+                            model_config=model_config,
+                            setup_config=setup_config,
                         )
-            for model in list(model_config):
-                for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                    attach_to_config_and_remove(
-                        model_config[model], attachment, all_config=None
+                    # Special treatment for "include_models"
+                    attach_to_config_and_reduce_keyword(
+                        this_config[component], model_config, "include_models", "models"
                     )
 
-        # Allows the ``general`` section to be able to handle attachable files (e.g.
-        # ``further_reading``)
-        for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-            attach_to_config_and_remove(
-                setup_config["general"], attachment, all_config=None
-            )
+        # Attach all the ``further_reading``
+        for this_config in [user_config, setup_config, model_config]:
+            for component in this_config:
+                for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
+                    attach_to_config_and_remove(
+                        this_config[component], attachment, all_config=None
+                    )
 
         # if "models" in setup_config["general"]:
         #    new_model_list = []

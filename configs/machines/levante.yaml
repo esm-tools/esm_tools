@@ -131,7 +131,7 @@ choose_general.run_or_compile:
             OMPI_MCA_pml: "ucx"
 
 choose_compiler_mpi:
-       gnu11_ompi2022:
+       gnu11_ompi4:
                 # ESM-Tools vars necessary for ``system_libs`` case
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"

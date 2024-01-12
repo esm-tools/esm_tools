@@ -31,7 +31,7 @@ general:
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
           v3.1:
             major_version: v3.1
             couplings:
@@ -39,7 +39,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
           v3.1.1:
             major_version: v3.1
@@ -48,7 +48,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
           v3.1.2:
             major_version: v3.1
@@ -57,7 +57,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
           v3.2:
             major_version: v3.2
@@ -66,7 +66,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
           v3.3:
             major_version: v3.3
@@ -85,7 +85,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
           frontiers-xios:
             major_version: frontiers-xios
@@ -94,7 +94,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs.env.yaml
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
 
         version: "v3.2"
@@ -306,34 +306,12 @@ oifs:
                 OpenMP_CCDEFS: "_OPENMP"
 
         runtime_environment_changes:
-                iolibraries: awi_libs
-                choose_computer.name:
-                        juwels:
-                                compiler_mpi: intel2022_ompi2022
-                        blogin:
-                                iolibraries: geomar_libs
-                        glogin:
-                                iolibraries: geomar_libs
-                        levante:
-                                iolibraries: system_libs
                 add_export_vars:
                         # Turn on FESOM coupling
                         FESOM_USE_CPLNG: '"active"'
                         ECE_CPL_NEMO_LIM: '"false"'
                         ECE_CPL_FESOM_FESIM: '"true"'
                         ECE_AWI_CPL_FESOM: '"true"'
-
-        compiletime_environment_changes:
-                iolibraries: awi_libs
-                choose_computer.name:
-                        juwels:
-                                compiler_mpi: intel2022_ompi2022
-                        blogin:
-                                iolibraries: geomar_libs
-                        glogin:
-                                iolibraries: geomar_libs
-                        levante:
-                                iolibraries: system_libs
 
         res_level: ${resolution}${levels}
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]

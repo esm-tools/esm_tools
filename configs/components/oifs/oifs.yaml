@@ -947,7 +947,7 @@ choose_major_version:
                                         FOCI_CPL_NEMO_LIM: ".false."
 
                 further_reading:
-                        - oifs/oifs.env.yaml
+                        - oifs/oifs.env43.yaml
         43r3:
                 append_icmcl: ""
                 add_namelist_changes:
@@ -971,7 +971,7 @@ choose_major_version:
                 add_outdata_files:
                         ICMUA: ICMUA
                 further_reading:
-                        - oifs/oifs.env.yaml
+                        - oifs/oifs43.env.yaml
         48r1:
                 mip: none
                 o3_scheme: none

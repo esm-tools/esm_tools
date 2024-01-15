@@ -37,9 +37,12 @@ echo " Start year: $startyear "
 echo " End year: $endyear "
 echo " "
 
+mkdir -p $outdir/icmcl/
+mkdir -p $outdir/icmcl/out/
+
 echo " *Using grib_ls to extract the dataDates of original ICMCL file"
-grib_copy -w shortName=lai_lv ${icmcl_file} $outdir/ICMCL_for_dataDate_list
-dataDate_list=$(grib_ls -p dataDate $outdir/ICMCL_for_dataDate_list | tail -n +3 | head -n -3)
+grib_copy -w shortName=lai_lv ${icmcl_file} $outdir/icmcl/ICMCL_for_dataDate_list
+dataDate_list=$(grib_ls -p dataDate $outdir/icmcl/ICMCL_for_dataDate_list | tail -n +3 | head -n -3)
 
 echo " *Checking if original ICMCL file has already been cut"
 exists=1
@@ -51,7 +54,6 @@ done
 
 if [ "$exists" -eq 0 ]; then
     echo " *Cutting original ICMCL file into daily files"
-    mkdir -p $outdir/icmcl/
     for dataDate in $dataDate_list; do
         echo "grib_copy -w dataDate=$dataDate ${icmcl_file} $outdir/icmcl/ICMCL_$dataDate"
         grib_copy -w dataDate=$dataDate ${icmcl_file} $outdir/icmcl/ICMCL_$dataDate &
@@ -59,7 +61,10 @@ if [ "$exists" -eq 0 ]; then
     wait
 else
     echo " *Orinal ICMCL file is already cut into daily files; linking"
-    ln -s $pooldir/icmcl $outdir/
+    for dataDate in $dataDate_list; do
+        ln -s $pooldir/icmcl/ICMCL_$dataDate $outdir/icmcl/ &
+    done
+    wait
 fi
 
 orig_year=${dataDate:0:4}
@@ -88,8 +93,8 @@ for ((y = $startyear ; y < $(($endyear+1)) ; y++)); do
         fi
         # Create files with correct dates
         for ((d = 1 ; d < $((day_per_month+1)) ; d++)); do
-            grib_set -s dataDate=$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d) $outdir/icmcl/ICMCL_$orig_year$(printf "%02d" $m)$(printf "%02d" $d) $outdir/icmcl/ICMCL_$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d) &
-            export filelist="$filelist $outdir/icmcl/ICMCL_$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d)"
+            grib_set -s dataDate=$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d) $outdir/icmcl/ICMCL_$orig_year$(printf "%02d" $m)$(printf "%02d" $d) $outdir/icmcl/out/ICMCL_$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d) &
+            export filelist="$filelist $outdir/icmcl/out/ICMCL_$(printf "%04d" $y)$(printf "%02d" $m)$(printf "%02d" $d)"
         done
     done
 done
@@ -108,13 +113,7 @@ if [ "$exists" -eq 0 ]; then
         done
         wait
     fi
-else
-    echo " *Cleaning up daily original files"
-    for dataDate in $dataDate_list; do
-        rm $outdir/icmcl/ICMCL_$dataDate &
-    done
-    wait
 fi
-echo " *Cleaning up temporary files"
-rm -rf $filelist $outdir/icmcl $outdir/ICMCL_for_dataDate_list
+echo " *Cleaning up the temporary folder $outdir/icmcl"
+rm -rf $outdir/icmcl &
 

@@ -15,7 +15,7 @@ from . import prev_run
 
 import esm_parser
 
-#import pdb
+import pdb
 
 class SimulationSetup(object):
     def __init__(self, command_line_config=None, user_config=None):
@@ -46,6 +46,7 @@ class SimulationSetup(object):
         # sys.exit(0)
 
     def __call__(self, kill_after_submit=True):
+        breakpoint()
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
             # esm_parser.pprint_config(self.config)
@@ -86,13 +87,16 @@ class SimulationSetup(object):
             ].replace("observe_", "")
             # that last line is necessary so that maybe_resubmit knows which
             # cluster to look up in the workflow
-            # because all cluster with batch_or_shell=sbatch will be called 
+            # because all cluster with batch_or_shell=sbatch will be called
             # esm_runscripts ... -t observe_<cluster> ...
 
         else:
+            # write .run file for all workflow phases.
+
+            # Is this dunction call needed here?
             self.assembler()
 
-        resubmit.maybe_resubmit(self.config)
+        #resubmit.maybe_resubmit(self.config)
 
         # if this line is reached, the run is submitted and running or finished
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)

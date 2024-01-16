@@ -78,6 +78,9 @@ general:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
+            add_add_environment_changes:
+                levante:
+                    iolibraries: system_gnu_libs
           master:
             major_version: master
             couplings:
@@ -133,6 +136,14 @@ general:
         further_reading:
                 - oasis3mct/oasis3mct.env.yaml
 
+        add_environment_changes:
+                choose_computer.name:
+                        blogin:
+                                compiler_mpi: intel2019_ompi
+                        glogin:
+                                compiler_mpi: intel2019_ompi
+                        levante:
+                                compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -929,11 +940,3 @@ computer:
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
         taskset: true
-
-        choose_computer.name:
-                blogin:
-                        compiler_mpi: intel2019_ompi
-                glogin:
-                        compiler_mpi: intel2019_ompi
-                levante:
-                        compiler_mpi: intel2022_openmpi

@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.25.7"
+__version__ = "6.25.9"
 
 import functools
 import inspect
@@ -96,6 +96,18 @@ def _get_real_dir_from_pth_file(subfolder):
         [],
     )
     logger.debug(site_packages_dirs)
+
+    # Check if the user is running with direnv and removes all other sites
+    direnv = os.getenv("VIRTUAL_ENV")
+    if direnv:
+        logger.debug(f"User running with direnv, removing other sites")
+        site_package_dirs_new = []
+        for site_package_dir in site_packages_dirs:
+            if direnv in site_package_dir:
+                site_package_dirs_new.append(site_package_dir)
+        site_packages_dirs = site_package_dirs_new
+        logger.debug(site_packages_dirs)
+
     for site_package_dir in site_packages_dirs:
         logger.debug(f"Working on {site_package_dir}")
         # Read the pth file:
@@ -374,6 +386,7 @@ def get_config_filepath(config=""):
         cpath = _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
+    logger.debug(cpath)
     return cpath
 
 

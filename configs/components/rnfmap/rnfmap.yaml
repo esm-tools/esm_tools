@@ -194,31 +194,12 @@ choose_general.setup_name:
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
 #
-compiletime_environment_changes:
-   add_export_vars:
-      # OASIS
-      OIFS_OASIS_BASE: '$(pwd)/oasis'
-      OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-      OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-      # NetCDF
-      OIFS_NETCDF_INCLUDE: '"-I$NETCDFROOT/include"'
-      OIFS_NETCDF_LIB: '"-L$NETCDFROOT/lib -lnetcdf"'
-      OIFS_NETCDFF_INCLUDE: '"-I$NETCDFFROOT/include"'
-      OIFS_NETCDFF_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-      # compiler and compiler flags
-      OIFS_FC: '$FC'
-      OIFS_FFLAGS: '"${rnfmap.fflags}"'
-      OIFS_FFIXED: '""'
-      OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
-      OIFS_LFLAGS: '$OIFS_MPI_LIB'
-      OIFS_CC: '$CC'
-      OIFS_CFLAGS: '"${rnfmap.cflags}"'
-      OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
-
-choose_computer.name:
-    levante:
-        fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
-        cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
-    "*":
-       fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0
+environment_changes:
+    choose_computer.name:
+        levante:
+            iolibraries: system_gnu_libs
+            fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+            cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+        "*":
+           fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
+           cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0

@@ -12,8 +12,8 @@ accounting: true
 #compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2019_impi2019
-iolibraries: none
+compiler_mpi: intel2022_ompi2022
+iolibraries: awi_libs
 useMPI: intelmpi
 
 # slurm setup

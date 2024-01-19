@@ -33,6 +33,7 @@ available_versions:
 - '4.0-awicm-3.0'
 - '4.0-awicm-3.1'
 - '5.0-smhi'
+- '6.0-YAC'
 choose_version:
   '2.8-paleodyn':
     branch: '2.8mct-awiesm-2.1'
@@ -84,21 +85,18 @@ choose_version:
   6.0-YAC:
     # this version is taken directly from the CERFACS gitlab
     # it compiles in the standard way, i.e. not with cmake
-    branch: feature/yac_remap
-    git-repository: https://gitlab.com/cerfacs/oasis3-mct.git
+    branch: feature/yac_remap_esm-tools
+    git-repository: git@gitlab.com:awi-esm/oasis3-mct.git
     # compile with make -f TopMakefileOasis3
     # then copy all modules etc to a oasis/build/lib directory to match the older versions 
-    comp_command: 'export ESM_OASIS_DIR=${model_dir}; cd lib; [ -d "yaxt" ] || rm -f yaxt-0.10.0.tar.gz && wget https://swprojects.dkrz.de/redmine/attachments/download/529/yaxt-0.10.0.tar.gz ; [ -d "yaxt" ] || mkdir yaxt && tar -xzvf yaxt-0.10.0.tar.gz -C yaxt --strip-components=1 ; rm yaxt-0.10.0.tar.gz ; cd yaxt; export YAXT_ROOT=$(pwd) ; mkdir -p build; cd build; echo "../configure --prefix=${model_dir}/lib/yaxt --without-regard-for-quality ; make -j 6 install" ; cd ../../ ; [ -d "yac" ] || git clone --branch=release-3.1.0 https://gitlab.dkrz.de/dkrz-sw/yac.git ; cd yac ; export YAC_ROOT=$(pwd) ; mkdir -p build ; cd build ; echo "../configure --enable-lib-core-only --disable-mpi-checks --with-yaxt-root=${model_dir}/lib/yaxt --with-netcdf-root=$NETCDFFROOT --prefix=${model_dir}/lib/yac" ; echo "make -j 6 install" ; export YAC_INCLUDE="-I${model_dir}/lib/yac/include -I${model_dir}/lib/yaxt/include"; echo "YAC_INCLUDE=$YAC_INCLUDE" ; cd ../../../util/make_dir/ ; cp make.ESMTOOLS make.inc ; make -f TopMakefileOasis3 ; cd ../../ ; mv INSTALL_OASIS.ESMTOOLS/lib/libpsmile.MPI1.a INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a ; mkdir -p build/lib/psmile/scrip ; mkdir -p build/lib/psmile/mct/mpeu ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/psmile.MPI1/*.mod build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/scrip/*mod build/lib/psmile/scrip/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/mct/*mod build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmct.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libscrip.a build/lib/psmile/scrip/. '
+    comp_command: 'export ESM_OASIS_DIR=${model_dir}; cd lib; [ -d "yaxt" ] || rm -f yaxt-0.10.0.tar.gz && wget https://swprojects.dkrz.de/redmine/attachments/download/529/yaxt-0.10.0.tar.gz ; [ -d "yaxt" ] || mkdir yaxt && tar -xzvf yaxt-0.10.0.tar.gz -C yaxt --strip-components=1 ; rm yaxt-0.10.0.tar.gz ; cd yaxt; export YAXT_ROOT=$(pwd) ; mkdir -p build; cd build; ../configure --prefix=${model_dir}/lib/yaxt --without-regard-for-quality ; make -j 6 install ; cd ../../ ; [ -d "yac" ] || git clone --branch=release-3.1.0 https://gitlab.dkrz.de/dkrz-sw/yac.git ; cd yac ; export YAC_ROOT=$(pwd) ; mkdir -p build ; cd build ; ../configure --enable-lib-core-only --disable-mpi-checks --with-yaxt-root=${model_dir}/lib/yaxt --with-netcdf-root=$NETCDFFROOT --prefix=${model_dir}/lib/yac ; make -j 6 install ; export YAC_INCLUDE="-I${model_dir}/lib/yac/include -I${model_dir}/lib/yaxt/include"; cd ../../../util/make_dir/ ; cp make.ESMTOOLS make.inc ; make -f TopMakefileOasis3 ; cd ../../ ; mv INSTALL_OASIS.ESMTOOLS/lib/libpsmile.MPI1.a INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a ; mkdir -p build/lib/psmile/scrip ; mkdir -p build/lib/psmile/mct/mpeu ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/psmile.MPI1/*.mod build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/scrip/*mod build/lib/psmile/scrip/. ; cp INSTALL_OASIS.ESMTOOLS/build-static/lib/mct/*mod build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmct.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a build/lib/psmile/mct/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a build/lib/psmile/. ; cp INSTALL_OASIS.ESMTOOLS/lib/libscrip.a build/lib/psmile/scrip/. '
     install_libs:
     - INSTALL_OASIS.ESMTOOLS/lib/libpsmile.a
     - INSTALL_OASIS.ESMTOOLS/lib/libmct.a
     - INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a
     - INSTALL_OASIS.ESMTOOLS/lib/libscrip.a
     clean_command: 'rm -rf yaxt/build yac/build include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
-    add_compiletime_environment_changes:
-      choose_computer.name:
-        juwels:
-          iolibraries: awi_libs    
+    
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 

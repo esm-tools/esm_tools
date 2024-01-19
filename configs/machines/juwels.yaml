@@ -13,7 +13,7 @@ accounting: true
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
 compiler_mpi: intel2022_ompi2022
-iolibraries: awi_libs
+iolibraries: none
 useMPI: intelmpi
 
 # slurm setup

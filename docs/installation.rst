@@ -31,21 +31,22 @@ To see where `ESM-Tools` are installed, run the following command::
 
 A possible (default) output can be ``~/.local/bin/esm_tools``.
 
-Installing using pip
---------------------
+..
+    Installing using pip
+    --------------------
 
-There is a version of `ESM-Tools` available that can be installed using ``pip``:
+    There is a version of `ESM-Tools` available that can be installed using ``pip``:
     
-- Update ``pip`` and ``wheel`` python packages::
+    - Update ``pip`` and ``wheel`` python packages::
     
-    $ pip install -U pip wheel
+        $ pip install -U pip wheel
     
-- Install `ESM-Tools`::
+    - Install `ESM-Tools`::
     
-    $ pip install esm-tools 
+        $ pip install esm-tools 
 
-.. note::
-   The version that is available via ``pip`` is not the most recent version. We strongly recommend to install the most recent version of `ESM-Tools` using the install script described above (see also :ref:`get_esm-tools:Get ESM-Tools` and :ref:`installation:Installing in local environment`).
+    .. note::
+    The version that is available via ``pip`` is not the most recent version. We strongly recommend to install the most recent version of `ESM-Tools` using the install script described above (see also :ref:`get_esm-tools:Get ESM-Tools` and :ref:`installation:Installing in local environment`).
 
 Installing in a conda environment
 -----------------------------------
@@ -165,14 +166,12 @@ Make sure you have the most recent version of
 
 $ python3 -m pip install -U pip
 
-Then, you can use the following command to uninstall all `ESM-Tools` packages::
-
-$ pip freeze | grep esm | xargs pip uninstall -y
-
-
-You may also use ``pip`` to uninstall any of the packages::
+If you are using `ESM-Tools` version 6.0.0 or higher you can use the following command to uninstall all `ESM-Tools` packages::
 
 $ pip uninstall [--user] esm-tools
 
 The ``--user`` flag may be required when using ``pip`` if you are not uninstalling in either a virtual environment or a global install (you would need to be root in that case).
 
+If you are using a version of `ESM-Tools` that is older than 6.0.0 use ``pip`` to uninstall as follows::
+
+$ pip freeze | grep esm | xargs pip uninstall -y

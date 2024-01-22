@@ -83,11 +83,13 @@ choose_version:
         branch: recom-update
     2.0-recom-awicm:
         branch: oxygen
+        use_medusa: "without_medusa"
 
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
 install_libs:
   - build/librecom.a
+contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
@@ -99,6 +101,7 @@ scenario: "PI-CTRL"
 time_step: 1800
 
 use_ciso: false
+use_medusa: false
 
 choose_use_ciso:
         true:
@@ -110,6 +113,36 @@ choose_use_ciso:
         false:
                 recom_namelist:  "namelist.recom"
 
+#chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds )) 
+
+choose_use_medusa:
+        true:
+                add_namelist_changes:
+                        namelist.recom:
+                                pavariables:
+                                        use_MEDUSA: true
+                                        sedflx_num: 7
+                                        add_loopback: true
+                choose_lresume:
+                        true:
+                                choose_general.chunk_number:
+                                        1:
+                                                add_input_sources:
+                                                        flux2fesom: ${data_path}/medusa_flux2fesom.init.nc
+                                        "*":
+                                                add_input_sources:
+                                                        flux2fesom: ${experiment_outdata_dir}/../medusa/medusa_flux2fesom.${prev_chunk_awiesm.general.chunk_end_date}.nc
+                                add_input_files:
+                                        flux2fesom: flux2fesom
+                                add_input_in_work:
+                                        flux2fesom: "medusa_flux2fesom.nc"
+        false:
+                add_namelist_changes:
+                        namelist.recom:
+                              pavariables:
+                                      use_MEDUSA: true
+                                      sedflx_num: 0
+                                      add_loopback: false
 
 choose_scenario:
         PI-CTRL:
@@ -162,9 +195,19 @@ choose_scenario:
 namelist_sce: ""
 namelist_dir: "${general.model_dir}/recom/"
 
+# FESOM-2 standalone + REcoM options
+fesom2_standalone: "$((
+        '${general.setup_name}' == 'fesom' and
+        '2.' in '${fesom.version}'
+    ))"
+choose_fesom2_standalone:
+    True:
+        namelist_dir: "${fesom.model_dir}/config/"
+
 namelists:
         - namelist.recom
 
+use_atbox: "remove_from_namelist"
 namelist_changes:
         namelist.recom:
                 pavariables:
@@ -176,6 +219,7 @@ namelist_changes:
                         currentCO2cycle: "${currentCO2cycle}"
                         REcoM_PI: "${REcoM_PI}"
                         recom_restart: "${recom.lresume}"  # this was in the feat/ssp branch
+                        use_atbox: "${use_atbox}"
                 paco2_flux_param:
                         CO2_for_spinup: "${CO2_for_spinup}"
 
@@ -301,3 +345,10 @@ outdata_sources:
         "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
         "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+
+check_error:
+        "ERROR: CANNOT READ runoff FILE CORRECTLY":
+                frequency: 30
+                method: "kill"
+                message: "REcoM ERROR: CANNOT READ runoff FILE CORRECTLY"
+                file: "stdout"

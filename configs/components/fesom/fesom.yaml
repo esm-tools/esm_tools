@@ -61,6 +61,7 @@ git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;   make install
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 metadata:
         Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
@@ -126,11 +127,11 @@ executable: fesom
 choose_resolution:
         CORE2:
                 nx: 126859
-                mesh_dir: "${pool_dir}/meshes_default/core/"
+                mesh_dir: "${fesom.mesh_base_dir}/core/"
                 nproc: 288
         GLOB:
                 nx: 830305
-                mesh_dir: "${pool_dir}/meshes_default/glob/"
+                mesh_dir: "${fesom.mesh_base_dir}/glob/"
         GLOB_rmstep:
                 nx: 830305
                 mesh_dir: "/work/ba1150/a270147/meshes/"
@@ -142,12 +143,12 @@ choose_resolution:
                 mesh_dir: "${pool_dir}/meshes/mesh_ref/"
         BOLD:
                 nx: 1306775
-                mesh_dir: "${pool_dir}/meshes_default/bold/"
+                mesh_dir: "${fesom.mesh_base_dir}/bold/"
         fArc:
                 nx: 638387
         PI-GRID:
                 nx: 3140
-                mesh_dir: "${pool_dir}/meshes_default/pi-grid/"
+                mesh_dir: "${fesom.mesh_base_dir}/pi-grid/"
         CAVCORE2:
                 nx: 72411
 
@@ -445,29 +446,33 @@ ignore_sources:
         gf: goodfile
         chloro: Chl_Sweeney.dat
 
-compiletime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom1
 choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
+        ollie:
+                pool_dir: "${computer.pool_directories.pool}/FESOM/"
+                mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
-                add_compiletime_environment_changes:
-                        add_export_vars:
-                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
+        glogin:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         levante:
+                pool_dir: "${computer.pool_directories.pool}/AWICM/FESOM1/"
+                mesh_base_dir: "${pool_dir}/MESHES/"
                 add_compiletime_environment_changes:
                         add_export_vars:
                                 NETCDF_DIR: ${computer.netcdf_cxx_root}
                                 NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include
                                 NETCDF_CXX_LIBRARIES: ${computer.netcdf_cxx_root}/lib
                                 LD_LIBRARY_PATH[(10)]: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+        albedo:
+                pool_dir: "${computer.pool_directories.pool}/FESOM/"
+                mesh_base_dir: "${pool_dir}/meshes_default/"
+
+environment_changes:
+    choose_computer.name:
+        blogin:
+            iolibraries: system_libs
+        glogin:
+            iolibraries: system_libs
 
 coupling_fields:
         sst_feom:

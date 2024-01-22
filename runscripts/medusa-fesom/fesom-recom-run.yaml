@@ -1,0 +1,90 @@
+general:
+        base_dir: "/work/bm1030/a270105/awiesm-output" 
+        initial_date: "2000-01-01"
+        final_date: "2003-01-01"
+        setup_name: fesom
+        version: "2.1-recom"
+        compute_time: 05:30:00
+        nyear: 1
+        nmonth: 0
+        account: bm1030
+        #use_venv: False
+        #submit_to_batch_system: False
+
+fesom:
+#        version: "2.1-recom"
+        with_recom: true
+        nproc: 512
+        mpi_num_groups: 2
+        lresume: False
+        model_dir: /work/ab0995/a270105/esm_code/fesom-2.1
+        resolution: ${general.fesom_resolution} 
+        mesh_dir: /work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/
+        climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
+        run_length: 1
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
+                        couple_out:
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script: "
+                                        postprocessing_fesom.sh
+                                        ${experiment_outdata_dir}
+                                        ${experiment_outdata_dir}
+                                        ${chunk_start_date!syear}
+                                        ${chunk_end_date!syear}"
+                                script_dir: ${general.esm_function_dir}/components/medusa
+                                run_only: last_run_in_chunk
+                                nproc: 1
+
+        # FESOM-RECOM BLOCK ###########################################################
+        # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone
+        # version
+        # TODO: eventually move this to fesom-2.1.yaml?
+        #version: "2.1-recom"
+        ALE_scheme: 'zstar'
+
+        namelist_changes:
+            namelist.forcing:
+                nam_sbc:
+                    y_perpetual: false
+#                namelist.config:
+#                        paths:
+#                            ForcingDataPath: remove_from_namelist
+#                            OpbndPath: remove_from_namelist
+#                            TideForcingPath: remove_from_namelist
+
+
+recom:
+    use_ciso: true
+    use_medusa: true
+    lresume: false
+    benthos_num: 8
+    bottflx_num: 8
+    add_namelist_changes:
+        namelist.recom:
+            pavariables:
+                benthos_num: "${benthos_num}"
+                bottflx_num: "${bottflx_num}"
+    data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
+    restart_name: "restart."
+    remove_namelist_changes.namelist.recom.pavariables:
+        - constant_CO2
+        - firstyearoffesomcycle
+        - lastyearoffesomcycle
+        - numofCO2cycles
+        - currentCO2cycle
+        - REcoM_PI
+    remove_namelist_changes.namelist.recom.paco2_flux_param:
+        - CO2_for_spinup
+
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                DIC_PI: false
+                use_atbox: true
+
+        # END FESOM-RECOM BLOCK #######################################################

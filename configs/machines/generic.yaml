@@ -42,3 +42,26 @@ cxx: "unset"
 
 further_reading:
         - batch_system/slurm.yaml
+
+choose_general.check:
+    False:
+        error:
+            generic.yaml:
+                message: "
+                    You are trying to run an actual simulation with the environment from
+                    ``configs/machines/generic.yaml``. This is not allowed, you should
+                    always run using a specific machine file. The ``generic.yaml`` file
+                    is only aimed for local testing of ESM-Tools functionalities and dry
+                    check runs (``esm_runscripts -c``).\n
+
+                    If you are running on an HPC and you're seeing this message, it's
+                    likely that the HOSTNAME of your machine does not match the
+                    pattern defined in ``configs/machines/all_machines.yaml``. Please,
+                    check that your machine is included in that file and that the
+                    ``configs/machines/<your_machine>.yaml`` exists.\n
+
+                    For more info on how to implement a new machine in ESM-Tools check:
+                    https://esm-tools.readthedocs.io/en/latest/cookbook.html#implement-a-new-hpc-machine\\
+                    "
+    "*":
+        placeholder: null

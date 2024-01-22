@@ -29,6 +29,7 @@ available_versions:
 - 2.5_r1910
 - 2.5_r1910_oifs
 - 2.5_r1910_ogcm
+- 2.5_smhi
 
 branch: esm-tools
 
@@ -49,12 +50,14 @@ choose_version:
     archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    contact: "swahl(at)geomar.de"
   trunk_oasis:
     git-repository: https://git.geomar.de/foci/src/xios.git
     branch: xios_trunk 
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    contact: "swahl(at)geomar.de"
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
     archfile: ESMTOOLS_generic_oasis_intel
@@ -67,6 +70,16 @@ choose_version:
         archfile: ESMTOOLS_generic_oasis_intel
       "*":
         foo: bar
+    # MA: yet another block, this time for albedo. We cannot fix this now, but in the
+    # future we should adopt the compiler suite logic for the other computers. Already
+    # included in ESM-Tools clickup
+    choose_computer.compiler_suite:
+        gcc:
+            archfile: ESMTOOLS_generic_oasis_gcc
+        intel-oneapi:
+            archfile: ESMTOOLS_levante_oasis_intel
+        "*":
+            foo: bar
     choose_computer.name:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
@@ -88,11 +101,30 @@ choose_version:
     archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
     branch: 2.5_r1910
+  2.5_smhi:
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece
+    branch: main
+    archfile: ESMTOOLS_generic_oasis_intel
+    choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+      cray_mpich:
+        archfile: ESMTOOLS_generic_oasis_cray
+      intelmpi:
+        archfile: ESMTOOLS_generic_oasis_intel
+      parastationmpi:
+        archfile: ESMTOOLS_generic_oasis_intel
+      "*":
+        foo: bar
+    choose_computer.name:
+        levante:
+            archfile: ESMTOOLS_levante_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
 comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git
+contact: "jan.streffing(at)awi.de, miguel.andres-martinez(at)awi.de"
 install_bins: bin/xios.x
 use_oasis: ''
 #
@@ -106,11 +138,17 @@ config_files:
 
 choose_general.setup_name:
         nemo:
-                xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
-                add_config_files:
-                        domain_def: domain_def
-                        field_def: field_def
-                        file_def: file_def
+                choose_nemo.generation:
+                        "3.6":
+                              xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                              add_config_files:
+                                    domain_def: domain_def
+                                    field_def: field_def
+                                    file_def: file_def
+                        "4.2":
+                              xml_dir: ${nemo.model_dir}/cfgs/${nemo.version}/${nemo.reference_expid}
+                              add_config_files:
+                                    nemo_xml: nemo_xml
         oifs:
                 xml_dir: "${computer.pool_directories.focipool}"
                 add_config_files:
@@ -137,38 +175,38 @@ choose_general.setup_name:
         foci:
            choose_general.version:
               default: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
               default_autotools: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
               fs: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
               default_oasismct4: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
               agrif: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
                     file_def_agrif: file_def_agrif
               agrif_oasismct4: 
-                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
                     field_def: field_def
@@ -196,6 +234,7 @@ config_sources:
         grid_def: ${xml_dir}/grid_def.xml
         ifs_xml: ${xml_dir}/ifs_xml/*
         context_ifs: ${xml_dir}/context_ifs.xml
+        nemo_xml: ${xml_dir}/*.xml
 
 config_in_work:
         domain_def: domain_def.xml
@@ -207,6 +246,7 @@ config_in_work:
         grid_def: grid_def.xml
         ifs_xml: ifs_xml/*
         context_ifs: context_ifs.xml
+        nemo_xml: '*.xml'
 
 ignore_sources:
         xios_out: xios*.out

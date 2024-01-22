@@ -19,20 +19,50 @@ general:
         available_versions:
         - 'v3.0'
         - 'v3.1'
+        - 'v3.1.1'
+        - 'v3.1.2'
+        - 'v3.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:
           v3.0:
+            major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
           v3.1:
+            major_version: v3.1
             couplings:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+          v3.1.1:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          v3.1.2:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+          v3.2:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
           master:
+            major_version: master
             couplings:
             - fesom-2.0-master+oifs-43r3-master
             add_include_models:
@@ -40,6 +70,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
           frontiers-xios:
+            major_version: frontiers-xios
             couplings:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
@@ -47,7 +78,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
 
-        version: "v3.1"
+        version: "v3.2"
         scenario: "piControl"
         resolution: ${oifs.resolution}_${fesom.resolution}
         postprocessing: false
@@ -67,11 +98,14 @@ general:
                         pool_dir: "/proj/awi/input"
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
+                albedo:
+                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
         # Load compute recipe from oifs.yaml
         prepcompute_recipe: ${oifs.prepcompute_recipe}
+        tidy_recipe: ${fesom.tidy_recipe}
 
 
 
@@ -99,7 +133,6 @@ oifs:
         restart_rate: 12
         ocean_resolution: "${fesom.resolution}"
 
-        mip: "cmip6"
         scenario: "historical"
 
         prepifs_expid: h6mv
@@ -108,12 +141,16 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
+                        mip: "cmip6"
+                        wam: true
                 "v3.1":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.1
+                        mip: "cmip6"
+                        wam: true
                         add_namelist_changes:
                                 fort.4:
                                         NAMCT0:
@@ -128,10 +165,32 @@ oifs:
                                                 LECURR: true
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
+                "v3.2":
+                        with_xios: True
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.2
+                        mip: "cmip6"
+                        wam: true
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                                        NAEPHY:
+                                                LECURR: true
+                                        NAERAD:
+                                                NSOLARSPECTRUM: "1"
+                                                NAERANT_SCALE: "1"
 
                 "frontiers-xios":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
+                        mip: "cmip6"
+                        wam: true
                         add_namelist_changes:
                                 fort.4:
                                         NAMCT0:
@@ -145,6 +204,19 @@ oifs:
                 "master":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/master
+                        mip: "false"
+                        wam: false
+                        executable: OpenIFS
+                        cloudfixer: 0
+                        append_icmcl: "
+                            ${general.esm_function_dir}/components/oifs/append_icmcl_file.sh
+                                ${thisrun_input_dir}/
+                                ${icmcl_dir}/${res_level}/${icmcl_file}
+                                ${oifs.input_expid}
+                                ${start_date!syear!smonth!sday}
+                                ${icmcl_end_date_formatted}
+                                ${work_dir};"
+
 
                         add_namelist_changes:
                                 fort.4:
@@ -160,8 +232,13 @@ oifs:
                                                 LECURR: true
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
-                                        NAMMCC:
-                                                RALBSEAD_NML: 0.045
+                                        #NAMMCC:
+                                        #        RALBSEAD_NML: 0.045
+                                        NAMORB:
+                                                LCORBMD: "true"
+                                                ORBMODE: "fixed_year"
+                                                ORBIY: ${start_date!syear}
+
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -183,8 +260,6 @@ oifs:
                 TCO159_CORE2:
                         nproc: 36
 
-        # Wave model switch
-        wam: true
 
         perturb: 0
         ensemble_id: 1
@@ -251,9 +326,6 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
 
-        # Remove ICMCL_INIT forcing, which is only required for standalone simulations
-        remove_forcing_files:
-                - ICMCL_INIT
 
         # Postprocessing
         choose_general.postprocessing:
@@ -297,6 +369,7 @@ fesom:
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
+        climate_data_dir: "${pool_dir}/hydrography/"
 
         restart_unit: "d"
         leapyear: True
@@ -312,11 +385,8 @@ fesom:
                         restart_log:
                                 restart_length_unit: "${restart_unit}"
                                 restart_length: "${restart_rate}"
-                namelist.oce:
-                        oce_tra:
-                                surf_relax_s: "${surf_relax_s}"
 
-        choose_general.version:
+        choose_general.major_version:
                 "v3.0":
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.0/"
                         add_namelist_changes:
@@ -329,6 +399,35 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
+                "v3.2":
+                        version: "2.5"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        add_namelist_changes:
+                                namelist.config:
+                                        ale_def:
+                                                which_ALE: 'zstar'
+                                namelist.oce:
+                                        oce_dyn:
+                                                SPP: true
+                                                k_gm_max: 3000
+                                                k_gm_rampmax: 40.0
+                                                k_gm_rampmin: 30
+                                                scaling_ferreira: true
+                                                scaling_fesom14: true
+                                        oce_tra:
+                                                surf_relax_s: "${surf_relax_s}"
+
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
+                                                use_momix: false
+                                                kv0_const: false
+                                namelist.ice:
+                                        ice_therm:
+                                                albsn: 0.81
+                                                albsnm: 0.77
+                                                albi: 0.6
+                                                albim: 0.43
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -366,6 +465,10 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
 
+
+        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
+        remove_forcing_files:
+                - ICMCL_INIT
         remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
                 - restart_length
                 - restart_length_unit
@@ -402,7 +505,43 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 xios:
-        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+        choose_general.version:
+                "master":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/master/"
+                        config_sources:
+                                domain_def: ${xml_dir}/domain_def_oifs.xml
+                                field_def_raw: ${xml_dir}/field_def_oifs_raw.xml
+                                field_def_cmip6: ${xml_dir}/field_def_oifs_cmip6.xml
+                                field_def_noncmip6: ${xml_dir}/field_def_oifs_noncmip6.xml
+                                file_def_default: ${xml_dir}/file_def_oifs_default.xml
+                                file_def_orig: ${xml_dir}/file_def_oifs_orig.xml
+                                io_def: ${xml_dir}/iodef.xml
+                                axis_def: ${xml_dir}/axis_def_oifs.xml
+                                grid_def: ${xml_dir}/grid_def_oifs.xml
+                                ifs_xml: ${xml_dir}/ifs_xml/*
+                                context_ifs: ${xml_dir}/context_oifs.xml
+
+                        config_in_work:
+                                domain_def: domain_def_oifs.xml
+                                axis_def: axis_def_oifs.xml
+                                grid_def: grid_def_oifs.xml
+                                context_ifs: context_oifs.xml
+
+                        add_config_files:
+                                field_def_raw: field_def_raw
+                                field_def_cmip6: field_def_cmip6
+                                field_def_noncmip6: field_def_noncmip6
+                                file_def_default: file_def_default
+                                file_def_orig: file_def_orig
+
+                        remove_config_files:
+                                - file_def
+                                - field_def
+                "*":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+
+
+
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
 
@@ -431,6 +570,17 @@ rnfmap:
         input_files:
                 runoff_maps: runoff_maps
 
+        choose_general.version:
+                "master":
+                        add_namelist_changes:
+                                namelist.runoffmapper:
+                                        NAMRNFMAP:
+                                                LCalvingEnthalpy: True
+                        add_grids:
+                                rnfa:
+                                        name: RNFA
+                                rnfo:
+                                        name: RNFO
 
 #########################################################################################
 
@@ -438,8 +588,6 @@ rnfmap:
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
-        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
-        mct_version: 4.0
         norestart: "F"
 
         process_ordering:
@@ -473,42 +621,94 @@ oasis3mct:
         r2a_seq: 2
 
         coupling_time_step: "${oasis3mct.time_step}"
-        choose_general.version:
+        choose_general.major_version:
                 'frontiers-xios':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         add_process_ordering:
                                 - xios
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                 'v3.1':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
                         add_process_ordering:
                                 - xios
-                        add_coupling_target_fields:
-                                add_rstos.nc:
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                'v3.2':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+                        rstos_file_name: 'rstos_uv'
+                        rstas_file_name: 'rstas_uv'
+                        add_process_ordering:
+                                - xios
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'master':
+                        mct_version: 5.0
+                        input_dir: ${pool_dir}/cy${oifs.version}-master/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
                         add_process_ordering:
                                 - xios
-                        add_coupling_target_fields:
-                                add_rstos.nc:
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 '*':
+                        mct_version: 4.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
 
-        coupling_target_fields:
-                rstas.nc:
-                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
-                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
-                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
-                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
-                rstos.nc:
-                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
 
         coupling_directions:
@@ -586,6 +786,18 @@ oasis3mct:
                                         nb_of_search_bins: 1
                                         nb_of_neighbours: 25
                                         weight: "0.1"
+                gauswgt_glo:
+                        time_transformation: conserv
+                        remapping:
+                                gauswgt:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 1
+                                        nb_of_neighbours: 25
+                                        weight: "0.1"
+                        postprocessing:
+                                conserv:
+                                        method: global
+                                        algorithm: opt
 
         input_files: {}
 
@@ -624,15 +836,15 @@ oasis3mct:
                 true:
                         lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
-                        # it is not a branched off experiment add the /fesom.nproc/ to the
+                        # it is not a branched off experiment adds the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( '${input_dir}' == '${ini_restart_dir}' and ${general.run_number} == 1))"
+                        load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}') and ${general.run_number} == 1 ))"
                         choose_load_restart_from_pool:
                                 true:
-                                        add_restart_in_sources:
-                                                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                                rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
-                                                rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                                    add_restart_in_sources:
+                                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc
@@ -653,6 +865,9 @@ oasis3mct:
                 rmp: rmp_*.nc
                 rstas.nc: rstas.nc
                 rstos.nc: rstos.nc
+        remove_config_files:
+                - cf
+        
 
 
 computer:

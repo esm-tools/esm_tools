@@ -45,15 +45,16 @@ Installation variables
    :header: Key, Description
    :widths: 15, 85
 
-   model,               "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
-   setup_name,          Name of the coupled setup.
-   version,             "Version of the model/setup (one of the available options in the ``available_versions`` list)."
-   available_versions,  List of supported versions of the component or coupled setup.
-   git-repository,      Address of the model's git repository.
-   branch,              Branch from where to clone.
-   destination,         "Name of the folder where the model is downloaded and compiled, in a coupled setup."
-   comp_command,        Command used to compile the component.
-   install_bins,        "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   model,                   "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
+   setup_name,              Name of the coupled setup.
+   version,                 "Version of the model/setup (one of the available options in the ``available_versions`` list)."
+   available_versions,      List of supported versions of the component or coupled setup.
+   git-repository,          Address of the model's git repository.
+   branch,                  Branch from where to clone.
+   destination,             "Name of the folder where the model is downloaded and compiled, in a coupled setup."
+   comp_command,            Command used to compile the component.
+   install_bins,            "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   source_code_permissions, "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
 
 Runtime variables
 -----------------
@@ -82,6 +83,7 @@ Runtime variables
    execution_command,   "Command for executing the component, including ``${executable}`` and the necessary flags."
    heterogeneous_parallelization,   "A boolean that controls whether the simulation needs to be run with or without heterogeneous parallelization. When ``false`` OpenMP is not used for any component, independently of the value of ``omp_num_threads`` defined in the components. When ``true``, ``open_num_threads`` needs to be specified for each component using OpenMP. ``heterogeneous_parallelization`` variable **needs to be defined inside the** ``computer`` section of the runscript. See :ref:`cookbook:Heterogeneous Parallelization Run (MPI/OpenMP)` for examples."
    omp_num_threads,     "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   general.install_missing_plugins, "A boolean to indicate whether ``esm_runscripts`` needs to install missing plugins (``True``, default) or not (``False``). Implemented to solve a problem with the ``esm_tests`` CI in GitHub where we might not have access to some repositories."
 
 Calendar variables
 ------------------

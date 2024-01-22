@@ -12,6 +12,7 @@ choose_version:
     branch: master
 
 git-repository: "https://github.com/mandresm/esm_sample.git"
+contact: "miguel.andres-martinez(at)awi.de"
 install_bins: _build/sample
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p _build; gcc -Wall src/sample.c -o _build/sample

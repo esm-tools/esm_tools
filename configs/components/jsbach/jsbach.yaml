@@ -88,7 +88,23 @@ choose_version:
                                         lightning: lightning
                                         popdens: popdens
 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
                         cmip6hist:
+                                scenario_type: cmip6
+
+                        ssp370:
+                                scenario_type: cmip6
+
+                        ssp126:
+                                scenario_type: cmip6
+
+                        ssp245:
+                                scenario_type: cmip6
+
+                        ssp534os:
+                                scenario_type: cmip6
+                        ssp585:
                                 scenario_type: cmip6
 
 
@@ -183,7 +199,24 @@ choose_version:
                                         #lightning: lightning
                                         #popdens: popdens
 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
                         cmip6hist:
+                                scenario_type: cmip6
+
+                        ssp126:
+                                scenario_type: cmip6
+
+                        ssp245:
+                                scenario_type: cmip6
+
+                        ssp370:
+                                scenario_type: cmip6
+
+                        ssp534os:
+                                scenario_type: cmip6
+
+                        ssp585:
                                 scenario_type: cmip6
 
         "3.10":

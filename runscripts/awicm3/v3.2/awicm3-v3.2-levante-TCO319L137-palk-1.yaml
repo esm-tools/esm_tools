@@ -1,0 +1,144 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.2"
+    account: "ba1407"
+    compute_time: "05:30:00"
+    initial_date: "1920-01-01"
+    final_date: "2014-12-31"
+    base_dir: "/work/ba1407/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+
+computer:
+    taskset: true
+    
+awicm3:
+    postprocessing: false
+    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+#    model_dir: "/work/ba1264/a270210/model/awicm3-v3.1_refactoring/"
+    pool_dir: "/work/ch0636/a270067/input/" 
+
+fesom:
+    resolution: "palk"
+    pool_dir: " /work/ch0636/a270067/input/fesom2/"
+    mesh_dir: "/work/ab0995/a270067/fesom2/palk/mesh/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: true
+    ini_parent_exp_id: "P00"
+    ini_parent_date: "1919-12-31"
+    ini_parent_dir: "/work/ch0636/a270067/runtime/awicm3-v3.1/P00/"
+    choose_general.run_number:
+        1:      
+            lasttime: 85950            
+            restart_in_sources:
+                par_oce_restart: /work/ch0636/a270067/input/fesom2/restart/palk/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /work/ch0636/a270067/input/fesom2/restart/palk/fesom.2000.ice.restart/*.nc
+
+    namelist_dir: "/home/a/a270067/nml/TCO319-palk/"
+    add_namelists:
+        - namelist.tra
+        - namelist.dyn
+    add_config_sources:
+        tra:     "${namelist_dir}/namelist.tra"
+        dyn:     "${namelist_dir}/namelist.dyn"
+    add_config_in_work:
+        tra:     "namelist.tra"
+        dyn:     "namelist.dyn"
+    add_config_files:
+        tra:     tra
+        dyn:     dyn
+
+    namelist_changes:
+        namelist.config:
+            restart_log:
+                restart_length: 1
+                restart_length_unit: 'y'
+                raw_restart_length: 1
+                raw_restart_length_unit: 'm' 
+                bin_restart_length: 1
+                bin_restart_length_unit: 'off' 
+            machine:
+                n_levels: 1
+                n_part: 3456 #[27, 128]
+            ale_def:
+                which_ale: 'linfs'
+                use_partial_cell: ".false."
+
+        namelist.tra:
+            tracer_phys:
+                surf_relax_S: 0.0    
+        
+        namelist.ice:
+            ice_therm:
+                albsn: 0.81     #0.81
+                albsnm: 0.77    #0.77
+                albi: 0.75      #0.78
+                albim: 0.55     #0.70
+    
+    time_step: 360
+    nproc: 3456
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 1200
+    nproc: 896
+    omp_num_threads: 4 #8
+    namelist_changes:
+        fort.4:
+            naerad:
+                NCMIPFIXYR: 0
+                SSPNAME: "historical"
+            namct0:
+                LXIOS: ".true." 
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    use_lucia: true
+    coupling_target_fields:
+        rstas.nc:
+             - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
+             - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+             - 'heat_ico <--bicubic-- A_Q_ice'
+             - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+             - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
+             - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+        rstos.nc:
+             - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+    coupling_methods:
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+
+xios:
+    with_model: oifs
+    nproc: 1
+    omp_num_threads: 128
+
+

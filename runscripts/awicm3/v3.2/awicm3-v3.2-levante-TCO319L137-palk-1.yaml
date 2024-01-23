@@ -38,20 +38,6 @@ fesom:
                 par_oce_restart: /work/ch0636/a270067/input/fesom2/restart/palk/fesom.2000.oce.restart/*.nc
                 par_ice_restart: /work/ch0636/a270067/input/fesom2/restart/palk/fesom.2000.ice.restart/*.nc
 
-    namelist_dir: "/home/a/a270067/nml/TCO319-palk/"
-    add_namelists:
-        - namelist.tra
-        - namelist.dyn
-    add_config_sources:
-        tra:     "${namelist_dir}/namelist.tra"
-        dyn:     "${namelist_dir}/namelist.dyn"
-    add_config_in_work:
-        tra:     "namelist.tra"
-        dyn:     "namelist.dyn"
-    add_config_files:
-        tra:     tra
-        dyn:     dyn
-
     namelist_changes:
         namelist.config:
             restart_log:

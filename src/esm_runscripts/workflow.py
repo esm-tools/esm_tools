@@ -1,7 +1,7 @@
 import copy
 import esm_parser
 
-import pygraphviz as pgv
+#import pygraphviz as pgv
 import pdb
 
 
@@ -789,13 +789,13 @@ def assemble_workflow(config):
     # Set "jobtype" for the first task???
     # NOTE: This is either first default phase or
     #       newrun??? Can't this not be set in prepend_newrun then?
-    if config["general"]["jobtype"] == "unknown":
-        config["general"]["command_line_config"]["jobtype"] = config["general"][
-            "workflow"
-        ]["first_task_in_queue"]
-        config["general"]["jobtype"] = config["general"]["workflow"][
-            "first_task_in_queue"
-        ]
+#    if config["general"]["jobtype"] == "unknown":
+#        config["general"]["command_line_config"]["jobtype"] = config["general"][
+#            "workflow"
+#        ]["first_task_in_queue"]
+#        config["general"]["jobtype"] = config["general"]["workflow"][
+#            "first_task_in_queue"
+#        ]
 
     return config
 

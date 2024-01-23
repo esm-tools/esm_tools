@@ -46,7 +46,6 @@ class SimulationSetup(object):
         # sys.exit(0)
 
     def __call__(self, kill_after_submit=True):
-        breakpoint()
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
             # esm_parser.pprint_config(self.config)

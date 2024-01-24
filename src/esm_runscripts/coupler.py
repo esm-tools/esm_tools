@@ -175,7 +175,7 @@ class coupler_class:
                                 "Missing coupling method",
                                 f"The coupling method ``{interpolation}`` defined in "
                                 f"the ``{self.name}.coupling_target_fields`` is not "
-                                f"defined anywhere in ``{self.name}.coupling_methods``"
+                                f"defined anywhere in ``{self.name}.coupling_methods``."
                             )
 
                     self.coupler.add_output_file(

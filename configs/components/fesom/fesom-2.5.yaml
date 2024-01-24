@@ -135,6 +135,8 @@ choose_resolution:
                 nx: 33348172
         SO3:
                 nx: 11087062
+        palk:
+                nx: 1724005
 
 
 restart_in_files:

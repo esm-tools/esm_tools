@@ -41,7 +41,7 @@ def mini_resolve_variable_date_file(date_file, config):
                         )
                         print(f"date_file = {date_file}")
                         sys.exit(1)
-        date_file = str(pre) + str(answer) + str(post)
+        date_file = f"{pre}{answer}{post}"
     return date_file
 
 

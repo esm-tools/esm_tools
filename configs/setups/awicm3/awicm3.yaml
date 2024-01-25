@@ -23,6 +23,7 @@ general:
         - 'v3.1.2'
         - 'v3.2'
         - 'v3.2.1'
+        - 'v3.2.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:
@@ -66,6 +67,15 @@ general:
             major_version: v3.2
             couplings:
             - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
+          v3.2.2:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5+oifs-43r3-awicm-3.2.2+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
             add_further_reading:

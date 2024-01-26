@@ -20,8 +20,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../src/'))
-sys.path.append(os.path.abspath('../src/esm_tools/'))
-print(os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath(os.path.join("..", "src", "esm_tools")))
 print(sys.path)
 
 

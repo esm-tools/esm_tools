@@ -19,7 +19,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath('../src/'))
+sys.path.append('esm-tools/')
 print(os.path.abspath('../src'))
 print(sys.path)
 

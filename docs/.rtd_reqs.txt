@@ -16,4 +16,4 @@ sqlalchemy
 pyyaml
 xdgenvpy
 sphinx-rtd-theme
--e .
+.

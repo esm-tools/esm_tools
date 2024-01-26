@@ -20,7 +20,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../src/'))
-sys.path.insert(0, os.path.abspath(os.path.join("..", "src", "esm_tools")))
+sys.path.insert(0, os.path.abspath(os.path.join("..", "configs")))
 print(sys.path)
 
 
